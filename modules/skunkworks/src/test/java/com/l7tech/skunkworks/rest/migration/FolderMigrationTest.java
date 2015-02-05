@@ -1262,6 +1262,16 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
         response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
+
+        //check that all auto created roles where deleted
+        response = getTargetEnvironment().processRequest("roles", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<RbacRoleMO> roles = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+
+        for(Item<RbacRoleMO> role : roles.getContent()) {
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), folderCreated.getId(), role.getContent().getEntityID());
+        }
     }
 
     @Test
@@ -1288,7 +1298,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
         Assert.assertEquals(Mapping.Action.Delete, rootFolderMapping.getAction());
-        Assert.assertEquals(Mapping.ErrorType.InvalidResource, rootFolderMapping.getErrorType());
+        Assert.assertEquals(Mapping.ErrorType.ImproperMapping, rootFolderMapping.getErrorType());
         Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getTargetId());
     }
 }

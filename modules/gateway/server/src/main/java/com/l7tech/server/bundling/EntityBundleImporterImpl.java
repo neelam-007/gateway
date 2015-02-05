@@ -51,6 +51,7 @@ import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
@@ -229,7 +230,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     case Delete:
-                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, cachedPrivateKeyOperations);
+                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
                                         break;
                                     default:
@@ -339,102 +340,113 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @return The entity header of the deleted entity
      * @throws DeleteException This is thrown if there was an error attempting to delete the entity
      */
-    private EntityHeader deleteEntity(@NotNull final Entity entity,
-                                      @NotNull final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations) throws DeleteException {
+    private EntityHeader deleteEntity(@NotNull final Entity entity, @NotNull final EntityMappingInstructions mapping,
+                                      @NotNull final Map<EntityHeader, Callable<String>> cachedPrivateKeyOperations) throws IncorrectMappingInstructionsException, DeleteException {
         // Create the manage entity within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
-        final Either<DeleteException, EntityHeader> headerOrException = tt.execute(new TransactionCallback<Either<DeleteException, EntityHeader>>() {
+        final Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader> headerOrException = tt.execute(new TransactionCallback<Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader>>() {
             @Override
-            public Either<DeleteException, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
-                if (EntityType.SSG_KEY_ENTRY == EntityType.findTypeByEntity(entity.getClass())) {
-                    // check entity exists
-                    final int sepIndex = entity.getId().indexOf(":");
-                    if (sepIndex < 0) {
-                        return Either.left(new DeleteException("Cannot delete private key. Invalid key id: " + entity.getId() + ". Expected id with format: <keystoreId>:<alias>"));
-                    }
-                    final String keyStoreId = entity.getId().substring(0, sepIndex);
-                    final String keyAlias = entity.getId().substring(sepIndex + 1);
-                    final SsgKeyFinder keyStore;
+            public Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
+                try {
                     try {
-                        keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
-                        if(!keyStore.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE))
-                            Either.left(new DeleteException("Cannot delete from hardware keystore via migration: " + keyStore.getType() + "."));
-                        if(!keyStore.getKeyStore().getAliases().contains(keyAlias)){
-                            Either.left(new DeleteException("Cannot find alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + "."));
-                        }
-                    }catch (FindException | KeyStoreException  e) {
-                        return Either.left(new DeleteException("Cannot find keystore with id: " + keyStoreId + ". Error message: " + ExceptionUtils.getMessage(e), e));
-                    }
-
-                    cachedPrivateKeyOperations.put(EntityHeaderUtils.fromEntity(entity), new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            //need to specially handle deletion of ssg key entries
+                        if (EntityType.SSG_KEY_ENTRY == EntityType.findTypeByEntity(entity.getClass())) {
+                            // check entity exists
+                            final int sepIndex = entity.getId().indexOf(":");
+                            if (sepIndex < 0) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot delete private key. Invalid key id: " + entity.getId() + ". Expected id with format: <keystoreId>:<alias>")));
+                            }
+                            final String keyStoreId = entity.getId().substring(0, sepIndex);
+                            final String keyAlias = entity.getId().substring(sepIndex + 1);
+                            final SsgKeyFinder keyStore;
                             try {
-                                keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
-                                return null;
-                            } catch (KeyStoreException e) {
-                                throw new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + ". Error message: " + ExceptionUtils.getMessage(e), e);
+                                keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
+                                if (!keyStore.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE))
+                                    return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot delete from hardware keystore via migration: " + keyStore.getType())));
+                            } catch (FindException | KeyStoreException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find keystore with id: " + keyStoreId, e)));
+                            }
+
+                            cachedPrivateKeyOperations.put(EntityHeaderUtils.fromEntity(entity), new Callable<String>() {
+                                @Override
+                                public String call() throws Exception {
+                                    //need to specially handle deletion of ssg key entries
+                                    try {
+                                        keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
+                                        return null;
+                                    } catch (KeyStoreException e) {
+                                        throw new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias, e);
+                                    }
+                                }
+                            });
+
+                        } else if (entity instanceof Identity) {
+                            //need to specially handle deletion of identity entities
+                            final Goid providerId = ((Identity) entity).getProviderId();
+                            final IdentityProvider identityProvider;
+                            try {
+                                identityProvider = identityProviderFactory.getProvider(providerId);
+                            } catch (FindException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find identity provider with id: " + providerId, e)));
+                            }
+                            try {
+                                if (entity instanceof Group) {
+                                    identityProvider.getGroupManager().delete((Group) entity);
+                                } else if (entity instanceof User) {
+                                    identityProvider.getUserManager().delete((User) entity);
+                                }
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(e));
+                            }
+                        } else if (entity instanceof InterfaceTag) {
+                            try {
+                                final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
+
+                                final Set<InterfaceTag> interfaceTags = new HashSet<>();
+                                if (interfaceTagsClusterProperty != null) {
+                                    interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
+
+                                    //remove the existing interface tag from the list (returns all but the existing)
+                                    Set<InterfaceTag> interfaceTagsWithoutExisting = new HashSet<>(Functions.grep(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
+                                        @Override
+                                        public Boolean call(InterfaceTag interfaceTagExisting) {
+                                            return !(((InterfaceTag) entity).getName()).equals(interfaceTagExisting.getName());
+                                        }
+                                    }));
+                                    //resaves the interface tags with the existing removed.
+                                    clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTagsWithoutExisting));
+                                }
+                            } catch (ObjectModelException | ParseException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find interface tag: " + ((InterfaceTag) entity).getName(), e)));
+                            }
+                        } else if (entity instanceof Role && !((Role) entity).isUserCreated()) {
+                            return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete system role '" + ((Role) entity).getName() + "' with Id " + entity.getId())));
+                        } else if (entity instanceof Folder && Goid.equals(Folder.ROOT_FOLDER_ID, ((Folder) entity).getGoid())) {
+                            return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete the root folder")));
+                        } else {
+                            try {
+                                entityCrud.delete(entity);
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete entity", e)));
                             }
                         }
-                    });
-
-                } else if (entity instanceof Identity) {
-                    //need to specially handle deletion of identity entities
-                    final Goid providerId = ((Identity) entity).getProviderId();
-                    final IdentityProvider identityProvider;
-                    try {
-                        identityProvider = identityProviderFactory.getProvider(providerId);
-                    } catch (FindException e) {
-                        return Either.left(new DeleteException("Cannot find identity provider with id: " + providerId + ". Error message: " + ExceptionUtils.getMessage(e), e));
+                    } finally {
+                        transactionStatus.flush();
                     }
-                    try {
-                        if (entity instanceof Group) {
-                            identityProvider.getGroupManager().delete((Group) entity);
-                        } else if (entity instanceof User) {
-                            identityProvider.getUserManager().delete((User) entity);
-                        }
-                    } catch (DeleteException e) {
-                        return Either.left(e);
-                    }
-                } else if (entity instanceof InterfaceTag) {
-                    try {
-                        final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
-
-                        final Set<InterfaceTag> interfaceTags = new HashSet<>();
-                        if (interfaceTagsClusterProperty != null) {
-                            interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
-
-                            //remove the existing interface tag from the list (returns all but the existing)
-                            Set<InterfaceTag> interfaceTagsWithoutExisting = new HashSet<>(Functions.grep(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
-                                @Override
-                                public Boolean call(InterfaceTag interfaceTagExisting) {
-                                    return !(((InterfaceTag) entity).getName()).equals(interfaceTagExisting.getName());
-                                }
-                            }));
-                            //resaves the interface tags with the existing removed.
-                            clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTagsWithoutExisting));
-                        }
-                    } catch (ObjectModelException | ParseException e) {
-                        return Either.left(new DeleteException("Cannot find interface tag: " + ((InterfaceTag) entity).getName() + ". Error message: " + ExceptionUtils.getMessage(e), e));
-                    }
-                } else if (entity instanceof Role && !((Role) entity).isUserCreated()) {
-                    return Either.left(new DeleteException("Cannot delete system role '" + ((Role) entity).getName() + "' with Id " + entity.getId()));
-                } else if (entity instanceof Folder && Goid.equals(Folder.ROOT_FOLDER_ID, ((Folder) entity).getGoid())) {
-                    return Either.left(new DeleteException("Cannot delete the root folder"));
-                } else {
-                    try {
-                        entityCrud.delete(entity);
-                    } catch (DeleteException e) {
-                        return Either.left(e);
-                    }
+                } catch (DataIntegrityViolationException e) {
+                    return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete entity. Mappings are likely out of order", e)));
                 }
                 return Either.right(EntityHeaderUtils.fromEntity(entity));
             }
         });
-        return Eithers.extract(headerOrException);
+        if (headerOrException.isRight()) {
+            return headerOrException.right();
+        } else if (headerOrException.left().isLeft()) {
+            throw headerOrException.left().left();
+        } else {
+            throw headerOrException.left().right();
+        }
     }
 
     /**

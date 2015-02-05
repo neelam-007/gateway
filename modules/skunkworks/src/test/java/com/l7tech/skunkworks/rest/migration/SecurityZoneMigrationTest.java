@@ -341,5 +341,15 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
 
         response = getTargetEnvironment().processRequest("securityZones/"+securityZoneItemTarget.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
+
+        //check that all auto created roles where deleted
+        response = getTargetEnvironment().processRequest("roles", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<RbacRoleMO> roles = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+
+        for(Item<RbacRoleMO> role : roles.getContent()) {
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), securityZoneItemTarget.getId(), role.getContent().getEntityID());
+        }
     }
 }

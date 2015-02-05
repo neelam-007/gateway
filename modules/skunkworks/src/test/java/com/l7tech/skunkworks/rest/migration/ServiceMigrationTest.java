@@ -872,5 +872,16 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
 
         response = getTargetEnvironment().processRequest("services/"+serviceCreated2.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
+
+        //check that all auto created roles where deleted
+        response = getTargetEnvironment().processRequest("roles", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<RbacRoleMO> roles = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+
+        for(Item<RbacRoleMO> role : roles.getContent()) {
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), serviceCreated1.getId(), role.getContent().getEntityID());
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), serviceCreated2.getId(), role.getContent().getEntityID());
+        }
     }
 }

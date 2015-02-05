@@ -20,4 +20,15 @@ public class IncorrectMappingInstructionsException extends BundleImportException
     public IncorrectMappingInstructionsException(@NotNull final EntityMappingInstructions mapping, @NotNull final String message) {
         super(mapping, String.format(exceptionMessage, message, mapping.getSourceEntityHeader().toStringVerbose()));
     }
+
+    /**
+     * Create a new incorrect mapping exception.
+     *
+     * @param mapping The mapping instructions that are incorrect
+     * @param message The error message
+     * @param t       The associated error with this mapping exception
+     */
+    public IncorrectMappingInstructionsException(@NotNull final EntityMappingInstructions mapping, @NotNull final String message, @NotNull final Throwable t) {
+        super(mapping, String.format(exceptionMessage, message, mapping.getSourceEntityHeader().toStringVerbose()), t);
+    }
 }
