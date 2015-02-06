@@ -330,7 +330,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause();
             return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
         } else {
-            return ExceptionUtils.getMessageWithCause(exception);
+            return ExceptionUtils.getMessage(exception);
         }
     }
 
