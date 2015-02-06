@@ -3026,6 +3026,7 @@
                 <mkdir dir="@{dir}/etc/profile.d"/>
                 <mkdir dir="@{dir}/etc/snmp"/>
                 <mkdir dir="@{dir}/etc/sysconfig"/>
+                <mkdir dir="@{dir}/etc/skel_ssg"/>
                 <mkdir dir="@{dir}/${install.src.app.bin}" />
                 <mkdir dir="@{dir}/${install.src.app.etc}" />
                 <mkdir dir="@{dir}/${install.src.app.firewall}" />
@@ -3035,7 +3036,7 @@
                 <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
                 <mkdir dir="@{dir}/${install.src.app.ssgprofile}"/>
                 <mkdir dir="@{dir}/${install.src.app.configdir}"/>
-                <mkdir dir="@{dir}/${install.src.app.configlogs}"/>
+                <mkdir dir="@{dir}/${install.src.app.configlogs}"/>                
                 <!--<mkdir dir="@{dir}/${install.src.app.scaconfig}"/>-->
 
                 <!--copy the system config wizard -->
@@ -3062,6 +3063,7 @@
                 <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
                 <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
                 <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
+                <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/etc/skel_ssg/.bash_profile"/>
 
                 <copy todir="@{dir}/${install.src.app.libexec}">
                     <fileset dir="${src.root}/etc/appliance">
