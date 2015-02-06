@@ -203,7 +203,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         String proxyUri;
 
         try {
-            String wsdlHandlerServiceRoutingUri = getRoutingUri(context.getService());
+            String wsdlHandlerServiceRoutingUri = SecureSpanConstants.SERVICE_FILE + context.getService().getId();
 
             proxyUri = new URI(context.getRequest().getHttpRequestKnob().getRequestUrl())
                     .resolve(wsdlHandlerServiceRoutingUri).toString();
@@ -258,7 +258,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         String protocol = getProtocol(context);
         String host = getHost(vars);
         int port = getPort(vars);
-        String path = getRoutingUri(service);
+        String path = getEndpointRoutingUri(service);
 
         try {
             endpointUrl = new URL(protocol, host, port, path);
@@ -340,8 +340,14 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return port;
     }
 
-    private String getRoutingUri(PublishedService service) {
-        return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+    private String getEndpointRoutingUri(PublishedService service) {
+        String routingUri = service.getRoutingUri();
+
+        if (routingUri == null || routingUri.length() < 1) {
+            return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+        } else {
+            return routingUri;
+        }
     }
 
     private Message getTargetMessage(PolicyEnforcementContext context) {
