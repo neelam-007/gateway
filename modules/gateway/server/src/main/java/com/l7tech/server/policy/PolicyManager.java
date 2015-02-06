@@ -50,4 +50,14 @@ public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeade
     Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) throws FindException;
 
     Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types, boolean includeAliases) throws FindException;
+
+    /**
+     * This will delete without validating the policy usages in the policy cache.
+     * This is used in the bundle imported because the cache while within a transaction.
+     * DO NOT USE unless you have a good reason for it.
+     *
+     * @param policy The policy to delete.
+     * @throws DeleteException
+     */
+    void deleteWithoutValidation(Policy policy) throws DeleteException;
 }

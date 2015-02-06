@@ -35,6 +35,7 @@ import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.PolicyAliasManager;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -113,6 +114,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private ClusterPropertyManager clusterPropertyManager;
     @Inject
     private ClientCertManager clientCertManager;
+    @Inject
+    private PolicyCache policyCache;
 
 
     /**
@@ -182,6 +185,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 //loop through each mapping instruction to perform the action.
                 final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
+                //keeps track of policies deleted so far
+                final Set<Goid> deletedPolicyIds = new HashSet<>();
                 int progressCounter = 1;
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
@@ -230,7 +235,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     case Delete:
-                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations);
+                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
                                         break;
                                     default:
@@ -353,11 +358,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * This will attempt to delete the given entity from the gateway.
      *
      * @param entity The entity to delete
+     * @param deletedPolicyIds policies deleted so far.
      * @return The entity header of the deleted entity
      * @throws DeleteException This is thrown if there was an error attempting to delete the entity
      */
     private EntityHeader deleteEntity(@NotNull final Entity entity, @NotNull final EntityMappingInstructions mapping,
-                                      @NotNull final Map<EntityHeader, Callable<String>> cachedPrivateKeyOperations) throws IncorrectMappingInstructionsException, DeleteException {
+                                      @NotNull final Map<EntityHeader, Callable<String>> cachedPrivateKeyOperations, @NotNull final Set<Goid> deletedPolicyIds) throws IncorrectMappingInstructionsException, DeleteException {
         // Create the manage entity within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
@@ -440,6 +446,31 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete system role '" + ((Role) entity).getName() + "' with Id " + entity.getId())));
                         } else if (entity instanceof Folder && Goid.equals(Folder.ROOT_FOLDER_ID, ((Folder) entity).getGoid())) {
                             return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete the root folder")));
+                        } else if (entity instanceof Policy) {
+                            //validate that it is not used by things that have not been deleted.
+                            final Set<Policy> usages = policyCache.findUsages(((Policy) entity).getGoid());
+                            final Policy policyUsed = Functions.grepFirst(usages, new Functions.Unary<Boolean, Policy>() {
+                                @Override
+                                public Boolean call(Policy policy) {
+                                    return !deletedPolicyIds.contains(policy.getGoid());
+                                }
+                            });
+                            if(policyUsed != null){
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete policy, it is being used by: " + EntityHeaderUtils.fromEntity(policyUsed).toStringVerbose())));
+                            }
+                            try {
+                                policyManager.deleteWithoutValidation((Policy) entity);
+                                deletedPolicyIds.add(((Policy) entity).getGoid());
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete policy", e)));
+                            }
+                        } else if (entity instanceof PublishedService) {
+                            try {
+                                serviceManager.delete((PublishedService) entity);
+                                deletedPolicyIds.add(((PublishedService) entity).getPolicy().getGoid());
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete service", e)));
+                            }
                         } else {
                             try {
                                 entityCrud.delete(entity);

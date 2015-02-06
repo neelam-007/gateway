@@ -52,6 +52,11 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
     }
 
     @Override
+    public void deleteWithoutValidation(Policy policy) throws DeleteException {
+        delete(policy);
+    }
+
+    @Override
     public Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) {
         Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {
