@@ -1,5 +1,6 @@
 package com.l7tech.server.search;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -77,6 +78,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             HttpConfiguration.class,
             IdentityProviderConfig.class,
             InterfaceTag.class,
+            CassandraConnection.class,
             JdbcConnection.class,
 //            JmsConnection.class,
             JmsEndpoint.class,

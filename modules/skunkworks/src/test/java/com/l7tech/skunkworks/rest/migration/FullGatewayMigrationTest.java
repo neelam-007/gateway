@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
@@ -849,6 +850,73 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
                 assertOkEmptyResponse(response);
             }
         }
+    }
+
+    /**
+     * Test that full bundle export includes cassandra connections
+     */
+    @BugId("SSG-10724")
+    @Test
+    public void testFullGatewayExportIncludesCassandraConnections() throws Exception {
+        Item<CassandraConnectionMO> cassandraConnectionMOItem = null;
+        try {
+            cassandraConnectionMOItem = createCassandraConnection(getSourceEnvironment());
+
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Mapping cassandraSourceMapping = getMapping(bundleItem.getContent().getMappings(), cassandraConnectionMOItem.getId());
+            Assert.assertNotNull(cassandraSourceMapping);
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            Mapping targetCassandraMapping = getMapping(mappings.getContent().getMappings(), cassandraConnectionMOItem.getId());
+            Assert.assertEquals(EntityType.CASSANDRA_CONFIGURATION.toString(), targetCassandraMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, targetCassandraMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, targetCassandraMapping.getActionTaken());
+            Assert.assertEquals(cassandraConnectionMOItem.getId(), targetCassandraMapping.getSrcId());
+            Assert.assertEquals(cassandraConnectionMOItem.getId(), targetCassandraMapping.getSrcId());
+        } finally {
+            if (cassandraConnectionMOItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("cassandraConnections/" + cassandraConnectionMOItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("cassandraConnections/" + cassandraConnectionMOItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    private Item<CassandraConnectionMO> createCassandraConnection(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+        //create Cassandra connection;
+        CassandraConnectionMO cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
+        cassandraConnectionMO.setName("MyCassandraConnection");
+        //cassandraConnectionMO.setId(getGoid().toString());
+        cassandraConnectionMO.setCompression(CassandraConnection.COMPRESS_NONE);
+        cassandraConnectionMO.setSsl(true);
+        cassandraConnectionMO.setKeyspace("test");
+        cassandraConnectionMO.setPort("9042");
+        cassandraConnectionMO.setContactPoint("localhost");
+        cassandraConnectionMO.setEnabled(true);
+        cassandraConnectionMO.setUsername("");
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
+        RestResponse response = getSourceEnvironment().processRequest("cassandraConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(cassandraConnectionMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<CassandraConnectionMO> cassandraConnectionItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        cassandraConnectionItem.setContent(cassandraConnectionMO);
+        cassandraConnectionMO.setId(cassandraConnectionItem.getId());
+        return cassandraConnectionItem;
     }
 
     private Goid newRandomID() {
