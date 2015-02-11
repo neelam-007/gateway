@@ -482,6 +482,13 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
             contentEncryptionAlgorithmComboBox.setEnabled(encryptPayloadCheckBox.isSelected());
 
+            final Object km = keyManagementAlgorithmComboBox.getSelectedItem();
+            encryptionKeyWarningLabel.setVisible("RSAES-PKCS1-V1_5".equals(km));
+            if ("RSAES-PKCS1-V1_5".equals(km)) {
+                encryptionKeyWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSAES-PKCS1-V1_5' is not recommended.");
+                encryptionKeyWarningLabel.setVisible(true);
+            }
+
             updateOkButtonState();
         }
     });
