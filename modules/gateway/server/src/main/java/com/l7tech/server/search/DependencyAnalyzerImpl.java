@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
+import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -71,7 +72,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             TrustedCert.class,
             ClusterProperty.class,
             CustomKeyValueStore.class,
-//            ServiceDocument.class,
+//            ServiceDocument.class, These are not treated as restman resources
             EmailListener.class,
             EncapsulatedAssertionConfig.class,
             GenericEntity.class,
@@ -80,7 +81,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             InterfaceTag.class,
             CassandraConnection.class,
             JdbcConnection.class,
-//            JmsConnection.class,
+//            JmsConnection.class, JMS connections are not needed here they are treated as part of the endpoint
             JmsEndpoint.class,
             SsgConnector.class,
             PolicyAlias.class,
@@ -100,7 +101,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             PublishedServiceAlias.class,
             SsgFirewallRule.class,
             SampleMessage.class,
-            InterfaceTag.class
+            ResourceEntry.class
     );
     @Inject
     private EntityCrud entityCrud;

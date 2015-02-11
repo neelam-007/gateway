@@ -873,4 +873,56 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
+
+    @Test
+    public void includedInFullBundleExportTest() throws Exception {
+        //create the resource document on the target
+        ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
+        Resource createResource = ManagedObjectFactory.createResource();
+        createResource.setSourceUrl("sourcebooks2.dtd");
+        createResource.setType("dtd");
+        createResource.setContent("<![CDATA[<!ELEMENT book ANY>]]>");
+        resourceDocumentMO.setResource(createResource);
+        resourceDocumentMO.setProperties(new HashMap<String, Object>());
+        resourceDocumentMO.getProperties().put("description", "source resource");
+        resourceDocumentMO.getProperties().put("publicIdentifier", "books2");
+        RestResponse response = getSourceEnvironment().processRequest("resources", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(resourceDocumentMO)));
+
+        assertOkCreatedResponse(response);
+        Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        resourceDocumentMO.setId(docCreated.getId());
+        docCreated.setContent(resourceDocumentMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Mapping resourceDocumentMapping = getMapping(bundleItem.getContent().getMappings(), docCreated.getId());
+            Assert.assertNotNull(resourceDocumentMapping);
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            resourceDocumentMapping = getMapping(mappings.getContent().getMappings(), docCreated.getId());
+            Assert.assertNotNull(resourceDocumentMapping);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), resourceDocumentMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, resourceDocumentMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, resourceDocumentMapping.getActionTaken());
+            Assert.assertEquals(docCreated.getId(), resourceDocumentMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMapping.getSrcId(), resourceDocumentMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+            response = getSourceEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+    }
 }
