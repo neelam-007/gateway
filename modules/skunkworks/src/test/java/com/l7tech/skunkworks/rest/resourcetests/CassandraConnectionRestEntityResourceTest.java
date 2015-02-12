@@ -193,6 +193,25 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
             }
         });
 
+        cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
+        cassandraConnectionMO.setName("Test Cassandra connection created No Port");
+        cassandraConnectionMO.setKeyspace("test.keyspace");
+        cassandraConnectionMO.setContactPoint("localhost");
+        cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
+        cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setSsl(true);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
+        cassandraConnectionMO.setEnabled(true);
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
+
+        builder.put(cassandraConnectionMO, new Functions.BinaryVoid<CassandraConnectionMO, RestResponse>() {
+            @Override
+            public void call(CassandraConnectionMO activeConnectorMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
     }
 
