@@ -256,7 +256,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 final ServerModuleFilePropertiesDialog dlg = new ServerModuleFilePropertiesDialog(
                         ServerModuleFileManagerWindow.this,
                         newMod,
-                        getStateMessageForSelectedNode(newMod),
+                        create ? StringUtils.EMPTY : getStateMessageForSelectedNode(newMod),
                         readOnly
                 );
                 dlg.pack();
@@ -700,7 +700,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
             final ClusterNodeInfo selectedClusterNode = getSelectedClusterNode();
             if (selectedClusterNode != null) {
                 final String selectedClusterNodeId = selectedClusterNode.getNodeIdentifier();
-                if (StringUtils.isNotBlank(selectedClusterNodeId)) {
+                if (moduleFile.getStates() != null && StringUtils.isNotBlank(selectedClusterNodeId)) {
                     final ServerModuleFileState moduleState = moduleFile.getStateForNode(selectedClusterNodeId);
                     if (moduleState != null) {
                         if (StringUtils.isNotBlank(moduleState.getErrorMessage())) {
@@ -733,7 +733,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
             final ClusterNodeInfo selectedClusterNode = getSelectedClusterNode();
             if (selectedClusterNode != null) {
                 final String selectedClusterNodeId = selectedClusterNode.getNodeIdentifier();
-                if (StringUtils.isNotBlank(selectedClusterNodeId)) {
+                if (moduleFile.getStates() != null && StringUtils.isNotBlank(selectedClusterNodeId)) {
                     final ServerModuleFileState moduleState = moduleFile.getStateForNode(selectedClusterNodeId);
                     if (moduleState != null) {
                         return moduleState.getState().toString();
