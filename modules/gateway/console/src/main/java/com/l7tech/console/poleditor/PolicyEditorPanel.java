@@ -119,6 +119,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final TopComponents topComponents = TopComponents.getInstance();
     private NumberedPolicyTreePane policyTreePane;
     private boolean messageAreaVisible = false;
+    private boolean inputsAndOutputsVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
     private SecureAction saveAndActivateAction;
@@ -431,6 +432,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public void setPolicyInputsAndOutputsVisible( boolean b ) {
+        inputsAndOutputsVisible = b;
+
         InputAndOutputVariablesPanel p = getInputsAndOutputsPanel();
 
         p.setVisible( b );
@@ -450,6 +453,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             BasicSplitPaneUI bsui = (BasicSplitPaneUI) sui;
             bsui.getDivider().setVisible( b );
         }
+    }
+
+    public boolean isInputsAndOutputsVisible() {
+        return inputsAndOutputsVisible;
     }
 
     private JPanel getFindPanel(){
@@ -934,6 +941,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         private JButton buttonSaveAndActivate;
         private JButton buttonSaveOnly;
         private JButton buttonValidate;
+        private JButton toggleInputsOutputsButton;
+
         private final boolean enableUddi;
 
         PolicyEditToolBar(boolean enableUddi) {
@@ -1013,6 +1022,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             displayAssertionNumsBtn.setAction(getShowAssertionLineNumbersAction(displayAssertionNumsBtn));
             displayAssertionNumsBtn.setDisplayedMnemonicIndex(15);
             add(displayAssertionNumsBtn);
+
+            toggleInputsOutputsButton = createToggleInputsAndOutputsButton();
+            add(toggleInputsOutputsButton);
         }
 
         public void setSaveButtonsEnabled(boolean enabled) {
@@ -1020,6 +1032,58 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             buttonSaveAndActivate.getAction().setEnabled(enabled);
             buttonSaveOnly.setEnabled(enabled);
             buttonSaveOnly.getAction().setEnabled(enabled);
+        }
+
+        public void updateToggleInputsAndOutputsButton() {
+            String label = isInputsAndOutputsVisible() ?
+                    "Hide Inputs and Outputs" :
+                    "Show Inputs and Outputs";
+
+            String iconName = isInputsAndOutputsVisible() ?
+                    "com/l7tech/console/resources/RedCrossSign16.gif" :
+                    "com/l7tech/console/resources/star16.gif";
+
+            toggleInputsOutputsButton.setText(label);
+            toggleInputsOutputsButton.setToolTipText(label);
+            toggleInputsOutputsButton.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconName)));
+        }
+
+        /**
+         * Create/get an action to toggle the visibility of the Inputs and Outputs panel in the policy editor panel.
+         */
+        private JButton createToggleInputsAndOutputsButton() {
+            Action togglePolicyInputsAndOutputs = new SecureAction(null) {
+                @Override
+                protected void performAction() {
+                    // toggle visibility
+                    setPolicyInputsAndOutputsVisible(!isInputsAndOutputsVisible());
+
+                    // update button
+                    updateToggleInputsAndOutputsButton();
+                }
+
+                @Override
+                public String getName() {
+                    return isInputsAndOutputsVisible() ?
+                            "Hide Inputs and Outputs" :
+                            "Show Inputs and Outputs";
+                }
+
+                @Override
+                protected String iconResource() {
+                    return isInputsAndOutputsVisible() ?
+                            "com/l7tech/console/resources/RedCrossSign16.gif" :
+                            "com/l7tech/console/resources/star16.gif";
+                }
+            };
+
+            togglePolicyInputsAndOutputs.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_U);
+            togglePolicyInputsAndOutputs.putValue(Action.ACCELERATOR_KEY,
+                    KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.ALT_DOWN_MASK));
+
+            togglePolicyInputsAndOutputs.setEnabled(null != getPolicyNode().getInterfaceDescription());
+
+            return new JButton(togglePolicyInputsAndOutputs);
         }
     }
 

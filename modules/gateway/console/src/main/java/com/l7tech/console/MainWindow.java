@@ -255,6 +255,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
+    private JCheckBoxMenuItem showInputsAndOutputsMenuItem;
     private JMenuItem showAstnCommentsMenuItem;
     private JMenuItem showAstnLnsMenuItem;
     private JMenuItem importMenuItem;
@@ -647,6 +648,21 @@ public class MainWindow extends JFrame implements SheetHolder {
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return validateMenuItem;
+    }
+
+    private JCheckBoxMenuItem getShowInputsAndOutputsMenuItem() {
+        if (null == showInputsAndOutputsMenuItem) {
+            boolean inputsAndOutputsVisible = getPreferences().isPolicyInputsAndOutputsVisible();
+
+            showInputsAndOutputsMenuItem = new JCheckBoxMenuItem(getInputsAndOutputsToggleAction());
+
+            showInputsAndOutputsMenuItem.setSelected(inputsAndOutputsVisible);
+            showInputsAndOutputsMenuItem.setMnemonic(KeyEvent.VK_U);
+            showInputsAndOutputsMenuItem.setDisplayedMnemonicIndex(4);
+            showInputsAndOutputsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.ALT_DOWN_MASK));
+        }
+
+        return showInputsAndOutputsMenuItem;
     }
 
     private JMenuItem getShowAssertionCommentsMenuItem() {
@@ -1153,10 +1169,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         jcm.setSelected(policyMessageAreaVisible);
         menu.add(jcm);
 
-        jcm = new JCheckBoxMenuItem( getInputsAndOutputsToggleAction() );
-        boolean inputsAndOutputsVisisble = getPreferences().isPolicyInputsAndOutputsVisible();
-        jcm.setSelected( inputsAndOutputsVisisble );
-        menu.add( jcm );
+        menu.add(getShowInputsAndOutputsMenuItem());
 
         if (!isApplet()) {
             jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
@@ -1683,19 +1696,31 @@ public class MainWindow extends JFrame implements SheetHolder {
         String atext = resapplication.getString("toggle.policy.inputsAndOutputs.action.name");
         String aDesc = resapplication.getString("toggle.policy.inputsAndOutputs.action.desc");
 
-        // TODO this action should actually be disabled unless the policy open for editing in the current tab implements an interface
         togglePolicyInputsAndOutputs =
             new AbstractAction( atext ) {
                 @Override
                 public void actionPerformed(ActionEvent event) {
                     JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
                     final boolean selected = item.isSelected();
+
                     final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                    final JComponent c = cw.getComponent();
-                    if (c != null && c instanceof PolicyEditorPanel) {
-                        PolicyEditorPanel pe = (PolicyEditorPanel) c;
-                        pe.setPolicyInputsAndOutputsVisible(selected);
+                    final WorkSpacePanel.TabbedPane tabbedPane = cw.getTabbedPane();
+
+                    int numTabs = tabbedPane.getTabCount();
+
+                    for (int i = 0; i < numTabs; i++) {
+                        Component c = tabbedPane.getComponentAt(i);
+
+                        if (c != null && c instanceof PolicyEditorPanel) {
+                            PolicyEditorPanel pe = (PolicyEditorPanel) c;
+
+                            if (null != pe.getPolicyNode().getInterfaceDescription()) {
+                                pe.setPolicyInputsAndOutputsVisible(selected);
+                                pe.getToolBar().updateToggleInputsAndOutputsButton();
+                            }
+                        }
                     }
+
                     try {
                         SsmPreferences p = preferences;
                         p.setPolicyInputsAndOutputsVisible(selected);
@@ -1705,7 +1730,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                     }
                 }
             };
+
         togglePolicyInputsAndOutputs.putValue( Action.SHORT_DESCRIPTION, aDesc );
+
         return togglePolicyInputsAndOutputs;
     }
 
