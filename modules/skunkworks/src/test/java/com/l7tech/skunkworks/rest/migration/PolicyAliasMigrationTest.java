@@ -259,6 +259,207 @@ public class PolicyAliasMigrationTest extends MigrationTestBase {
     }
 
     @Test
+    public void testImportExistingUpdate() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "defaultAction=NewOrUpdate", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+        Mapping folderMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
+        Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
+        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
+
+        validate(mappings);
+
+        //import the bundle again
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+        folderMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, folderMapping.getActionTaken());
+        Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
+        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+        policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
+
+        validate(mappings);
+    }
+
+    @Test
+    public void testImportExistingUpdateAliasConflict() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "defaultAction=NewOrUpdate", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
+
+        //don't migrate the alias
+        getMapping(bundleItem.getContent().getMappings(), policyAliasItem.getId()).setAction(Mapping.Action.Ignore);
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+        Mapping folderMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
+        Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
+        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.Ignore, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+
+        validate(mappings);
+
+        // create policy alias
+        PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setFolderId(folderItem.getId());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyItem.getId()));
+        response = getTargetEnvironment().processRequest("policyAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyAliasMO)));
+        assertOkCreatedResponse(response);
+        Item<PolicyAliasMO> policyAliasTargetItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyAliasTargetItem.setContent(policyAliasMO);
+
+        try {
+            //don't ignore the alias
+            getMapping(bundleItem.getContent().getMappings(), policyAliasItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+
+            //import the bundle again
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertConflictResponse(response);
+
+            mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            rootFolderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            folderMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, folderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, folderMapping.getActionTaken());
+            Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
+            Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+            policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            policyAliasMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+            Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, policyAliasMapping.getErrorType());
+            Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+
+            validate(mappings);
+        } finally {
+            response = getTargetEnvironment().processRequest("policyAliases/" + policyAliasTargetItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+    }
+
+    @Test
     public void testImportNewMapAliasToBeInFolderWithAliasForSamePolicy() throws Exception {
 
         Item<FolderMO> folderItem2 = null;

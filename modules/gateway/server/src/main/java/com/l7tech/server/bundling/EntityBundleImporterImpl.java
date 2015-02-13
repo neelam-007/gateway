@@ -1128,7 +1128,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             // This checks if it is to be created in a folder with another alias for the same service or policy
             final AliasManager aliasManager = entityContainer.getEntity() instanceof PublishedServiceAlias ? serviceAliasManager : policyAliasManager;
             final Alias checkAlias = aliasManager.findAliasByEntityAndFolder(((Alias) entityContainer.getEntity()).getEntityGoid(), ((Alias) entityContainer.getEntity()).getFolder().getGoid());
-            if (checkAlias != null) {
+            if (checkAlias != null && (existingEntity == null || !StringUtils.equals(existingEntity.getId(), checkAlias.getId()))) {
                 throw new DuplicateObjectException("Cannot create alias in the same folder as an alias for the same aliased policy or service");
             }
         } else if (entityContainer.getEntity() instanceof SsgKeyEntry && targetId != null) {
