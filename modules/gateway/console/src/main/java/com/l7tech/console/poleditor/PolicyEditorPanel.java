@@ -1024,7 +1024,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             add(displayAssertionNumsBtn);
 
             toggleInputsOutputsButton = createToggleInputsAndOutputsButton();
-            add(toggleInputsOutputsButton);
+            if ( TopComponents.getInstance().isApplet() ) {
+                add( toggleInputsOutputsButton );
+            }
         }
 
         public void setSaveButtonsEnabled(boolean enabled) {
