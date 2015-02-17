@@ -24,8 +24,6 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.security.Principal;
@@ -317,7 +315,6 @@ public class KerberosClient {
                         scontext = manager.createContext(scred);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
-//                        KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = buildKrbApReq( apReqBytes, scred, clientAddress );
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
                         //extract additional Kerberos Data from the ticket such as PAC Logon Info, PAC Signature, etc.  as per
@@ -816,8 +813,11 @@ public class KerberosClient {
 
         for( Object o : creds ) {
             //extract Kerberos keys from the keytab
+            // unlike previous versions JDK8 does not provide keys via private credentials instead
+            // the keys can be extracted from the keytab
             if(o instanceof javax.security.auth.kerberos.KeyTab) {
                 javax.security.auth.kerberos.KeyTab ktab = (javax.security.auth.kerberos.KeyTab) o;
+                //TODO: validate that principal is the one from the keytab
                 KerberosPrincipal kerbClientPrinc = ktab.getPrincipal();
                 for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
                     keys.add(key);
@@ -828,23 +828,6 @@ public class KerberosClient {
         if (keys.isEmpty()) throw new IllegalStateException("Private Kerberos key not found!");
 
         return keys.toArray(new KerberosKey[keys.size()]);
-    }
-
-    /**
-     * Takes the array of KerberosKeys and converts them into corresponding
-     * sun.security.krb5.EncryptionKey objects.
-	 *
-     * @param keys the Kerberos Keys
- 	 * @return Array of EncryptionKeys, one for each Kerberos key in the argument
-     */
-    private static EncryptionKey[] toEncryptionKey(KerberosKey[] keys) {
-        EncryptionKey[] ekeys = new EncryptionKey[keys.length];
-
-        for (int k=0; k<keys.length; k++) {
-            ekeys[k] = new EncryptionKey(keys[k].getKeyType(), keys[k].getEncoded());
-        }
-
-        return ekeys;
     }
 
     /**
@@ -861,37 +844,6 @@ public class KerberosClient {
            throw new KerberosException(e);
         }
     }
-    /*protected KrbApReq buildKrbApReq( final byte[] apReqBytes,
-                                    final KerberosKey[] keys,
-                                    final InetAddress clientAddress ) throws KerberosException {
-        KrbApReq apReq;
-
-        try {
-            Constructor constructor;
-            Object[] args;
-            try {
-                // OpenJDK / new constructor
-                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class, InetAddress.class );
-                args = new Object[]{ apReqBytes, toEncryptionKey(keys), PASS_INETADDR ? clientAddress : null };
-            } catch ( NoSuchMethodException nsme ) {
-                // original constructor
-                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class );
-                args = new Object[]{ apReqBytes, toEncryptionKey(keys) };
-            }
-
-            apReq = (KrbApReq) constructor.newInstance( args );
-        } catch (NoSuchMethodException e) {
-            throw new KerberosException( e );
-        } catch (InvocationTargetException e) {
-            throw new KerberosException( e );
-        } catch (IllegalAccessException e) {
-            throw new KerberosException( e );
-        } catch (InstantiationException e) {
-            throw new KerberosException( e );
-        }
-
-        return apReq;
-    }*/
 
     /**
      * Returns a callback handler used for authenticating the kerberos service principal.
