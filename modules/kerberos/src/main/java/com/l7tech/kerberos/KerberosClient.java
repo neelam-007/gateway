@@ -808,10 +808,17 @@ public class KerberosClient {
  	 * @throws IllegalStateException if the private key cannot be found
      */
     protected static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
-        List<KerberosKey> keys = new ArrayList<KerberosKey>();
+        List<KerberosKey> keys = new ArrayList<>();
 
         for( Object o : creds ) {
-            if( o instanceof KerberosKey ) keys.add( (KerberosKey) o );
+            //extract Kerberos keys from the keytab
+            if(o instanceof javax.security.auth.kerberos.KeyTab) {
+                javax.security.auth.kerberos.KeyTab ktab = (javax.security.auth.kerberos.KeyTab) o;
+                KerberosPrincipal kerbClientPrinc = ktab.getPrincipal();
+                for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
+                    keys.add(key);
+                }
+            }
         }
 
         if (keys.isEmpty()) throw new IllegalStateException("Private Kerberos key not found!");

@@ -1,16 +1,13 @@
 package com.l7tech.kerberos.delegate;
 
 import com.l7tech.kerberos.*;
-import com.l7tech.kerberos.delegate.KerberosDelegateClient;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import sun.security.krb5.Credentials;
 import sun.security.krb5.KrbException;
-import sun.security.krb5.internal.Ticket;
 
 import javax.security.auth.kerberos.KerberosTicket;
 import java.io.File;
@@ -44,7 +41,13 @@ public class KerberosDelegateClientTest {
         //FOR ELI LILLY
         //String keytab = "BQIAAABEAAIAC0hSLktQTUcuQ09NAARodHRwABBzc2cxLmhyLmtwbWcuY29tAAAAAAAAAAAEABcAEJGop3XbIPGpAd5LfDOxp8M=";
         KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null, false);
+        MockKrb5LoginModule.setKeyTabBytes(keytab);
 
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        MockKrb5LoginModule.setKeyTabBytes(null);
     }
 
     /**

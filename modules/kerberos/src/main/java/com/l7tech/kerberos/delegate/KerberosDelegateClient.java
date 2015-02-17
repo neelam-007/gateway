@@ -553,6 +553,10 @@ public class KerberosDelegateClient extends KerberosClient {
 
                 Credentials s4u2SelfCred = Krb5Util.ticketToCreds(s4u2SelfServiceTicket);
 
+//                PrincipalName clientPrincipalName = getPrincipalName(behalfOf, userRealm);
+//                Credentials s4u2SelfCred = Credentials.acquireS4U2selfCreds(clientPrincipalName, Krb5Util.ticketToCreds(tgt));//Krb5Util.ticketToCreds(s4u2SelfServiceTicket);
+//                KerberosTicket s4u2SelfServiceTicket = Krb5Util.credsToTicket(s4u2SelfCred);
+
                 KrbApReq apReq = new KrbApReq(s4u2SelfCred, false, false, false, null);
 
                 KerberosGSSAPReqTicket gssapReqTicket = new KerberosGSSAPReqTicket(apReq.getMessage());
@@ -654,12 +658,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @throws IOException
      */
     protected KerberosTicket getS4U2SelfTicket(KerberosTicket tgt, String servicePrincipal, String user, String userRealm) throws KrbException, IOException {
-        PrincipalName clientPrincipalName = null;
-        if (userRealm != null) {
-            clientPrincipalName = new PrincipalName(user, userRealm);
-        } else {
-            clientPrincipalName = new PrincipalName(user);
-        }
+        PrincipalName clientPrincipalName = getPrincipalName(user, userRealm);
 
         KerberosTicket kerberosTicket = cacheManager.getKerberosTicket(clientPrincipalName, tgt);
         if (kerberosTicket == null) {
@@ -669,6 +668,16 @@ public class KerberosDelegateClient extends KerberosClient {
             cacheManager.store(clientPrincipalName, tgt, kerberosTicket);
         }
         return kerberosTicket;
+    }
+
+    private PrincipalName getPrincipalName(String user, String userRealm) throws RealmException {
+        PrincipalName clientPrincipalName;
+        if (userRealm != null) {
+            clientPrincipalName = new PrincipalName(user, userRealm);
+        } else {
+            clientPrincipalName = new PrincipalName(user);
+        }
+        return clientPrincipalName;
     }
 
     /**

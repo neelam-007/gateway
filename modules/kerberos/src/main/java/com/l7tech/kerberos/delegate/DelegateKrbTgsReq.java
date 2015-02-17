@@ -5,7 +5,6 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * Implementation of TGS_REQ for S4U2Self and S4U2Proxy,
@@ -77,7 +76,7 @@ public class DelegateKrbTgsReq {
                 options,
                 tgtCreds.getTicket(),
                 tgtCreds.getSessionKey(),
-                new KerberosTime( new Date() ),
+                KerberosTime.now(), //used to be new KerberosTime(KerberosTime.NOW)
                 princName,
                 princName.getRealm(),
                 servName,
@@ -117,10 +116,11 @@ public class DelegateKrbTgsReq {
         if (eTypes == null) {
             throw new KrbCryptoException("Not supported encryption types");
         }
-
+        //realm is missing from KDCReqBody param
         KDCReqBody reqBody = new KDCReqBody(
                 kdc_options,
                 cname,
+                /*sname.getRealm(),*/
                 sname,
                 null,
                 new KerberosTime(0),
@@ -139,7 +139,6 @@ public class DelegateKrbTgsReq {
                 new APOptions(),
                 ticket,
                 key,
-                crealm,
                 cname,
                 cksum,
                 ctime,
