@@ -6,6 +6,10 @@ import org.ietf.jgss.*;
 import org.jaaslounge.decoding.DecodingException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.jaaslounge.decoding.kerberos.KerberosToken;
+import sun.security.jgss.GSSCredentialImpl;
+import sun.security.jgss.GSSUtil;
+import sun.security.jgss.krb5.Krb5AcceptCredential;
+import sun.security.jgss.spi.GSSCredentialSpi;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.APReq;
 import sun.security.krb5.internal.ktab.KeyTab;
@@ -313,12 +317,12 @@ public class KerberosClient {
                         scontext = manager.createContext(scred);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
-                        KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
-                        KrbApReq apReq = buildKrbApReq( apReqBytes, keys, clientAddress );
+//                        KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
+                        KrbApReq apReq = buildKrbApReq( apReqBytes, scred, clientAddress );
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
                         //extract additional Kerberos Data from the ticket such as PAC Logon Info, PAC Signature, etc.  as per
                         // Utilizing the Windows 2000 Authorization Data in Kerberos Tickets for  Access Control to Resources http://msdn.microsoft.com/en-us/library/aa302203.aspx
-                        KerberosEncData krbEncData = getKerberosAuthorizationData(keys, gssAPReqTicket);
+                        KerberosEncData krbEncData = getKerberosAuthorizationData(getKeys(kerberosSubject.getPrivateCredentials()), gssAPReqTicket);
                         // Extract the delegated kerberos ticket if one exists
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
@@ -848,6 +852,16 @@ public class KerberosClient {
      * the old or the new constructor.
      */
     protected KrbApReq buildKrbApReq( final byte[] apReqBytes,
+                                      final GSSCredential scred,
+                                      final InetAddress clientAddress ) throws KerberosException {
+        try {
+            GSSCredentialSpi credentialSpi = ((GSSCredentialImpl)scred).getElement(GSSUtil.GSS_KRB5_MECH_OID, false);
+            return new KrbApReq(apReqBytes, (Krb5AcceptCredential) credentialSpi, clientAddress);
+        } catch (Exception e) {
+           throw new KerberosException(e);
+        }
+    }
+    /*protected KrbApReq buildKrbApReq( final byte[] apReqBytes,
                                     final KerberosKey[] keys,
                                     final InetAddress clientAddress ) throws KerberosException {
         KrbApReq apReq;
@@ -877,7 +891,7 @@ public class KerberosClient {
         }
 
         return apReq;
-    }
+    }*/
 
     /**
      * Returns a callback handler used for authenticating the kerberos service principal.
