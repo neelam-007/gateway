@@ -4,6 +4,7 @@ import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.mail.internet.HeaderTokenizer;
@@ -150,7 +151,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     private static ContentTypeHeader quickParse(String contentTypeHeaderValue) {
         // Quick parse without validation, does not gather parameters, returns a lazy header
-        Matcher matcher = QUICK_CONTENT_TYPE_PARSER.matcher(contentTypeHeaderValue);
+        Matcher matcher = QUICK_CONTENT_TYPE_PARSER.matcher( contentTypeHeaderValue );
         if (matcher.matches()) {
             String type = matcher.group(1);
             String ws = matcher.group(2);
@@ -170,7 +171,7 @@ public class ContentTypeHeader extends MimeHeader {
             throw new IOException("MIME Content-Type header missing or empty");
 
         final String originalValue = contentTypeHeaderValue;
-        if (contentTypeHeaderValue.endsWith(";")) {
+        if (contentTypeHeaderValue.endsWith( ";" )) {
             contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);
         }
 
@@ -324,6 +325,25 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     /**
+     * Get the default encoding to use for the specified media type when it has no charset parameter.
+     *
+     * @param type  the media type, if known.
+     * @param subtype the media subtype, if known.
+     * @return the default Charset to use for this media type and subtype when no charset parameter is present.  Never null.
+     */
+    @NotNull
+    static Charset getDefaultJavaEncodingForMediaType( @Nullable String type, @Nullable String subtype ) {
+        // TODO replace this hardcoded if/else with a configurable table of media types and their default encodings
+        if ( "application".equalsIgnoreCase( type ) && "json".equalsIgnoreCase( subtype ) ) {
+            // Default character set for application/json media type
+            return Charsets.UTF8;
+        }
+
+        // Use HTTP default charset
+        return DEFAULT_HTTP_ENCODING;
+    }
+
+    /**
      * Convert MIME charset into Java encoding.
      *
      * @return the Java Charset corresponding to the charset of this content-type header,
@@ -336,8 +356,9 @@ public class ContentTypeHeader extends MimeHeader {
             this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
-                if (logger.isLoggable(Level.FINEST)) logger.finest("No charset value found in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
-                javaEncoding = DEFAULT_HTTP_ENCODING;
+                javaEncoding = getDefaultJavaEncodingForMediaType( getType(), getSubtype() );
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest( "No charset value found in Content-Type header; using " + javaEncoding );
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
                 if ("UTF8".equalsIgnoreCase(tmp)) {
@@ -346,9 +367,12 @@ public class ContentTypeHeader extends MimeHeader {
                     try {
                         javaEncoding = Charset.forName(tmp);
                     } catch (UnsupportedCharsetException e) {
-                        if (STRICT_CHARSET) throw e;
-                        if (logger.isLoggable(Level.FINEST)) logger.finest("Unrecognized charset in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
-                        javaEncoding = DEFAULT_HTTP_ENCODING;
+                        if (STRICT_CHARSET)
+                            throw e;
+
+                        javaEncoding = getDefaultJavaEncodingForMediaType( getType(), getSubtype() );
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest( "Unrecognized charset in Content-Type header; using " + javaEncoding );
                     }
                 }
             }
