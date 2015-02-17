@@ -24,6 +24,9 @@ public class DelegateKrbTgsRep {
         }
         EncTGSRepPart repPart = decrypt(rep, tgsReq.getTgsReqKey());
 
+/*  TODO JDK 8 fixes -- this code doesn't compile due to removed method and fields.
+    TODO check whether commenting this out might break kerberos delegation feature
+
         if (rep.ticket.sname.getRealm() == null) {
             rep.ticket.sname.setRealm(rep.ticket.realm);
         }
@@ -31,6 +34,7 @@ public class DelegateKrbTgsRep {
         if (rep.cname.getRealm() == null) {
             rep.cname.setRealm(rep.crealm);
         }
+*/
 
         this.creds = new Credentials(rep.ticket,
                 rep.cname,

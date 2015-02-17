@@ -190,7 +190,7 @@ public class KerberosClientTest {
         assertNotNull(serviceTicket);
     }
 
-    @Ignore("Needs connection to the KDC")
+    @Ignore("Needs connection to the KDC, also broken in JDK 8")
     @Test
     /**
      * Capture the data from the real KDC connection and
@@ -207,6 +207,7 @@ public class KerberosClientTest {
         //The TGT
         KerberosTicket kerberosTicket = (KerberosTicket) subject.getPrivateCredentials().toArray()[0];
         KeyTab keyTab = (KeyTab) subject.getPrivateCredentials().toArray()[1];
+/*  JDK 8 compatibilty:  the KeysFromKeyTab inner classes no longer exists
         Krb5Util.KeysFromKeyTab keysFromKeyTab = (Krb5Util.KeysFromKeyTab) subject.getPrivateCredentials().toArray()[2];
         KerberosKey k = new KerberosKey(keysFromKeyTab.getPrincipal(), keysFromKeyTab.getEncoded(), keysFromKeyTab.getKeyType(), keysFromKeyTab.getVersionNumber());
         System.out.println("KerberosPrincipal: " + encode(kerberosPrincipal));
@@ -214,6 +215,7 @@ public class KerberosClientTest {
         System.out.println("KeyBytes: " + Base64.encodeBase64String(keysFromKeyTab.getEncoded()));
         System.out.println("KeyType: " + keysFromKeyTab.getKeyType());
         System.out.println("VersionNumber: " + keysFromKeyTab.getVersionNumber());
+*/
         Subject.doAs(subject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
             @Override
             public KerberosServiceTicket run() throws Exception {
