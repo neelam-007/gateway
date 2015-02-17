@@ -3228,6 +3228,20 @@
                     <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
                 </copy>
 
+                <!-- Copy prebuilt modular assertions -->
+                <copy todir="@{dir}/${install.src.ssg.aarmods}" flatten="true">
+                    <fileset dir="${src.root}/lib/prebuilt/modass" includes="**/*.aar" excludes="*-client-*.aar"/>
+                </copy>
+
+                <!-- Copy prebuilt custom assertions -->
+                <copy todir="@{dir}/${install.src.ssg.calibs}" flatten="true">
+                    <fileset dir="${src.root}/lib/prebuilt/customassertions">
+                        <include name="**/*.jar"/>
+                        <include name="**/*.properties"/>
+                    </fileset>
+
+                </copy>
+
                 <!-- Copy modified / new files -->
                 <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.ssg.conf}/omp.dat"/>
 
