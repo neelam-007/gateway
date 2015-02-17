@@ -28,6 +28,13 @@ public class PropertiesMapType {
        for(Map.Entry<String,Object> entry : map.entrySet()) {
             this.entry.add(new PropertiesMapEntryType(entry));
         }
+        //sort the properties in the properties map by name
+        Collections.sort(this.entry, new Comparator<PropertiesMapEntryType>() {
+            @Override
+            public int compare(PropertiesMapEntryType entry1, PropertiesMapEntryType entry2) {
+                return entry1.getKey().compareTo(entry2.getKey());
+            }
+        });
     }
 
     public Map<String,Object> toMap() {
