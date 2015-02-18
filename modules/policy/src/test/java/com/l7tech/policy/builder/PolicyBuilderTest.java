@@ -136,18 +136,21 @@ public class PolicyBuilderTest {
 
     @Test
     public void setContextVariables() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n";
+        final String setVarA =
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"Yg==\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"2\"/>\n" +
-                "            </L7p:SetVariable>\n" +
+                "            </L7p:SetVariable>\n";
+        final String setVarB =
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"YQ==\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"1\"/>\n" +
-                "            </L7p:SetVariable>\n" +
+                "            </L7p:SetVariable>\n";
+        final String expected2 =
                 "        </wsp:All>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
@@ -155,23 +158,27 @@ public class PolicyBuilderTest {
         vars.put("1", "a");
         vars.put("2", "b");
         builder.setContextVariables(vars, null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(setVarA) && result.contains(setVarB) && result.endsWith(expected2));
     }
 
     @Test
     public void setContextVariablesWithComment() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n";
+        final String setVarA =
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"Yg==\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"2\"/>\n" +
-                "            </L7p:SetVariable>\n" +
+                "            </L7p:SetVariable>\n";
+        final String setVarB =
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"YQ==\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"1\"/>\n" +
-                "            </L7p:SetVariable>\n" +
+                "            </L7p:SetVariable>\n";
+        final String expected2 =
                 "            <L7p:assertionComment>\n" +
                 "                <L7p:Properties mapValue=\"included\">\n" +
                 "                    <L7p:entry>\n" +
@@ -187,7 +194,8 @@ public class PolicyBuilderTest {
         vars.put("1", "a");
         vars.put("2", "b");
         builder.setContextVariables(vars, "// SET CONSTANTS");
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(setVarA) && result.contains(setVarB) && result.endsWith(expected2));
     }
 
     @Test
@@ -577,7 +585,7 @@ public class PolicyBuilderTest {
 
     @Test
     public void manageCookieNames() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
@@ -593,9 +601,12 @@ public class PolicyBuilderTest {
                 "                        <L7p:Expression1 stringValue=\"${l7_tmp_cname}\"/>\n" +
                 "                        <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                        <L7p:Predicates predicates=\"included\">\n" +
-                "                            <L7p:item binary=\"included\">\n" +
-                "                                <L7p:RightValue stringValue=\"foo\"/>\n" +
-                "                                <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                            <L7p:item binary=\"included\">\n";
+        final String expectedRightVal =
+                "                                <L7p:RightValue stringValue=\"foo\"/>\n";
+        final String expectedOperator =
+                "                                <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                            </L7p:item>\n" +
                 "                        </L7p:Predicates>\n" +
                 "                    </L7p:ComparisonAssertion>\n" +
@@ -636,12 +647,13 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.replaceHttpCookieNames(TargetMessageType.REQUEST, null, "foo", "bar", true, null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedRightVal) && result.contains(expectedOperator) && result.endsWith(expected2));
     }
 
     @Test
     public void manageCookieNamesDisabled() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:ForEachLoop L7p:Enabled=\"false\" L7p:Usage=\"Required\"\n" +
@@ -657,9 +669,12 @@ public class PolicyBuilderTest {
                 "                        <L7p:Expression1 stringValue=\"${l7_tmp_cname}\"/>\n" +
                 "                        <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                        <L7p:Predicates predicates=\"included\">\n" +
-                "                            <L7p:item binary=\"included\">\n" +
-                "                                <L7p:RightValue stringValue=\"foo\"/>\n" +
-                "                                <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                            <L7p:item binary=\"included\">\n";
+        final String expectedRightVal =
+                "                                <L7p:RightValue stringValue=\"foo\"/>\n";
+        final String expectedOperator =
+                "                                <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                            </L7p:item>\n" +
                 "                        </L7p:Predicates>\n" +
                 "                    </L7p:ComparisonAssertion>\n" +
@@ -700,12 +715,13 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.replaceHttpCookieNames(TargetMessageType.REQUEST, null, "foo", "bar", false, null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedRightVal) && result.contains(expectedOperator) && result.endsWith(expected2));
     }
 
     @Test
     public void manageCookieNamesOtherTarget() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
@@ -721,9 +737,12 @@ public class PolicyBuilderTest {
                 "                        <L7p:Expression1 stringValue=\"${l7_tmp_cname}\"/>\n" +
                 "                        <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                        <L7p:Predicates predicates=\"included\">\n" +
-                "                            <L7p:item binary=\"included\">\n" +
-                "                                <L7p:RightValue stringValue=\"foo\"/>\n" +
-                "                                <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                            <L7p:item binary=\"included\">\n";
+        final String expectedRightVal =
+                "                                <L7p:RightValue stringValue=\"foo\"/>\n";
+        final String expectedOperator =
+                "                                <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                            </L7p:item>\n" +
                 "                        </L7p:Predicates>\n" +
                 "                    </L7p:ComparisonAssertion>\n" +
@@ -765,7 +784,8 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.replaceHttpCookieNames(TargetMessageType.OTHER, "myMsg", "foo", "bar", true, null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedRightVal) && result.contains(expectedOperator) && result.endsWith(expected2));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -970,7 +990,7 @@ public class PolicyBuilderTest {
 
     @Test
     public void rewriteHtml() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
@@ -980,10 +1000,14 @@ public class PolicyBuilderTest {
                 "                    <L7p:Expression1 stringValue=\"${request.http.header.content-type}\"/>\n" +
                 "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                    <L7p:Predicates predicates=\"included\">\n" +
-                "                        <L7p:item binary=\"included\">\n" +
-                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
-                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        <L7p:item binary=\"included\">\n";
+        final String expectedCaseSensitive =
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n";
+        final String expectedRightValue =
+                "                            <L7p:RightValue stringValue=\"html\"/>\n";
+        final String expectedOperator =
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                        </L7p:item>\n" +
                 "                    </L7p:Predicates>\n" +
                 "                </L7p:ComparisonAssertion>\n" +
@@ -999,12 +1023,14 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.rewriteHtml(TargetMessageType.REQUEST, null, Collections.singleton("foo"), "bar", "a,p,script", null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedCaseSensitive)
+                && result.contains(expectedRightValue) && result.contains(expectedOperator) && result.endsWith(expected2));
     }
 
     @Test
     public void rewriteHtmlOtherTargetMessage() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
@@ -1014,10 +1040,14 @@ public class PolicyBuilderTest {
                 "                    <L7p:Expression1 stringValue=\"${myMsg.http.header.content-type}\"/>\n" +
                 "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                    <L7p:Predicates predicates=\"included\">\n" +
-                "                        <L7p:item binary=\"included\">\n" +
-                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
-                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        <L7p:item binary=\"included\">\n";
+        final String expectedCaseSensitive =
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n";
+        final String expectedRightVal =
+                "                            <L7p:RightValue stringValue=\"html\"/>\n";
+        final String expectedOperator =
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                        </L7p:item>\n" +
                 "                    </L7p:Predicates>\n" +
                 "                </L7p:ComparisonAssertion>\n" +
@@ -1034,7 +1064,10 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.rewriteHtml(TargetMessageType.OTHER, "myMsg", Collections.singleton("foo"), "bar", "a,p,script", null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedCaseSensitive)
+                && result.contains(expectedRightVal) && result.contains(expectedOperator)
+                && result.contains(expectedCaseSensitive) && result.endsWith(expected2));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1044,7 +1077,7 @@ public class PolicyBuilderTest {
 
     @Test
     public void rewriteHtmlMultipleSearch() throws Exception {
-        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String expected1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
@@ -1054,32 +1087,44 @@ public class PolicyBuilderTest {
                 "                    <L7p:Expression1 stringValue=\"${request.http.header.content-type}\"/>\n" +
                 "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
                 "                    <L7p:Predicates predicates=\"included\">\n" +
-                "                        <L7p:item binary=\"included\">\n" +
-                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
-                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        <L7p:item binary=\"included\">\n";
+        final String expectedCaseSensitive =
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n";
+        final String expectedRightVal =
+                "                            <L7p:RightValue stringValue=\"html\"/>\n";
+        final String expectedOperator =
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n";
+        final String expected2 =
                 "                        </L7p:item>\n" +
                 "                    </L7p:Predicates>\n" +
-                "                </L7p:ComparisonAssertion>\n" +
+                "                </L7p:ComparisonAssertion>\n";
+        final String expectedReplaceTagContentA =
                 "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
                 "                    <L7p:SearchFor stringValue=\"foo2\"/>\n" +
                 "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
                 "                    <L7p:Target target=\"REQUEST\"/>\n" +
-                "                </L7p:ReplaceTagContent>\n" +
+                "                </L7p:ReplaceTagContent>\n";
+        final String expectedReplaceTagContentB =
                 "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
                 "                    <L7p:SearchFor stringValue=\"foo\"/>\n" +
                 "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
                 "                    <L7p:Target target=\"REQUEST\"/>\n" +
-                "                </L7p:ReplaceTagContent>\n" +
+                "                </L7p:ReplaceTagContent>\n";
+        final String expected3 =
                 "            </wsp:All>\n" +
                 "            <L7p:TrueAssertion/>\n" +
                 "        </wsp:OneOrMore>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
         builder.rewriteHtml(TargetMessageType.REQUEST, null, new HashSet<>(Arrays.asList("foo", "foo2")), "bar", "a,p,script", null);
-        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        final String result = XmlUtil.nodeToFormattedString(builder.getPolicy());
+        assertTrue(result.startsWith(expected1) && result.contains(expectedCaseSensitive)
+                && result.contains(expectedRightVal) && result.contains(expectedOperator)
+                && result.contains(expectedCaseSensitive) && result.contains(expected2)
+                && result.contains(expectedReplaceTagContentA) && result.contains(expectedReplaceTagContentB)
+                && result.endsWith(expected3));
     }
 
     @Test

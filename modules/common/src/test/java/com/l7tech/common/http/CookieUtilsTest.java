@@ -203,7 +203,13 @@ public class CookieUtilsTest {
 
     @Test
     public void getCookieHeaderDoNotQuoteSpecialCharacters() {
-        final Set<HttpCookie> cookies = new HashSet<>();
+        // Use TreeMap to guarantee the order
+        final Set<HttpCookie> cookies = new TreeSet<HttpCookie>(new Comparator() {
+            @Override
+            public int compare(Object o1, Object o2) {
+                return ((HttpCookie) o2).getCookieName().compareTo(((HttpCookie) o1).getCookieName());
+            }
+        });
         cookies.add(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", true));
         cookies.add(new HttpCookie("specialChar", "DQAAAK…Eaem_vYg", 1, "/", "localhost", -1, false, null, false));
         assertEquals("specialChar=DQAAAK…Eaem_vYg; foo=bar", CookieUtils.getCookieHeader(cookies));

@@ -24,6 +24,7 @@ import java.util.zip.GZIPInputStream;
  */
 public class EcdsaSignatureMethodTest {
     private static Provider addedProvider = null;
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Win");
     Random random = new Random(1L);
 
     @BeforeClass
@@ -84,10 +85,21 @@ public class EcdsaSignatureMethodTest {
 
     @Test
     public void testConversionBehavesSameAsApache() throws Exception {
-        InputStream rawin = EcdsaSignatureMethodTest.class.getClassLoader().getResourceAsStream("com/l7tech/security/xml/apacheEcdsaTestVectors.gz");
-        assertNotNull("Test data file not found; need to add *.gz to resource file extensions?", rawin);
-        GZIPInputStream in = new GZIPInputStream(rawin);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+        InputStream rawin;
+        GZIPInputStream in;
+        BufferedReader reader;
+
+        if (IS_WINDOWS) {
+            rawin = EcdsaSignatureMethodTest.class.getClassLoader().getResourceAsStream("com/l7tech/security/xml/apacheEcdsaTestVectors.dat");
+            assertNotNull("Test data file not found, apacheEcdsaTestVectors.dat exists?", rawin);
+            reader = new BufferedReader(new InputStreamReader(rawin));
+        } else {
+            rawin = EcdsaSignatureMethodTest.class.getClassLoader().getResourceAsStream("com/l7tech/security/xml/apacheEcdsaTestVectors.gz");
+            assertNotNull("Test data file not found; need to add *.gz to resource file extensions?", rawin);
+            in = new GZIPInputStream(rawin);
+            reader = new BufferedReader(new InputStreamReader(in));
+        }
 
         for (int i = 0;;++i) {
             String line = reader.readLine();

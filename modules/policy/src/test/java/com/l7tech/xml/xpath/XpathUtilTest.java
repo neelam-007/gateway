@@ -502,8 +502,8 @@ public class XpathUtilTest {
     public void testGetUnprefixedVarsXP20() throws Exception {
         List<String> got = XpathUtil.getUnprefixedVariablesUsedInXpath("$foo = $bar + $pfx:blat", XpathVersion.XPATH_2_0);
         assertEquals(2, got.size());
-        assertEquals("foo", got.get(0));
-        assertEquals("bar", got.get(1));
+        assertTrue(got.contains("foo"));
+        assertTrue(got.contains("bar"));
 
         List<String> got2 = XpathUtil.getUnprefixedVariablesUsedInXpath("//employee[startDateTime > xs:dateTime($dateTime)]", XpathVersion.XPATH_2_0);
         assertEquals(1, got2.size());

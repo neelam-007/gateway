@@ -26,36 +26,22 @@ public class NamedEntityWithPropertiesImpTest {
             "   <string>my.value.a</string>\n" +
             "  </void>\n" +
             " </object>";
-    private static String xmlKey1and2Value1and2 = " <object class=\"java.util.HashMap\">\n" +
-            "  <void method=\"put\">\n" +
+    private static String xmlKey1Value1Method = "  <void method=\"put\">\n" +
+            "   <string>my.key.a</string>\n" +
+            "   <string>my.value.a</string>\n" +
+            "  </void>\n";
+    private static String xmlKey2Value2Method = "  <void method=\"put\">\n" +
             "   <string>my.key.b</string>\n" +
             "   <string>my.value.b</string>\n" +
-            "  </void>\n" +
-            "  <void method=\"put\">\n" +
-            "   <string>my.key.a</string>\n" +
-            "   <string>my.value.a</string>\n" +
-            "  </void>\n" +
-            " </object>";
-    private static String xmlKey1and2Value1and1 = " <object class=\"java.util.HashMap\">\n" +
-            "  <void method=\"put\">\n" +
+            "  </void>\n";
+    private static String xmlKey2Value1Method = "  <void method=\"put\">\n" +
             "   <string>my.key.b</string>\n" +
             "   <string>my.value.a</string>\n" +
-            "  </void>\n" +
-            "  <void method=\"put\">\n" +
-            "   <string>my.key.a</string>\n" +
-            "   <string>my.value.a</string>\n" +
-            "  </void>\n" +
-            " </object>";
-    private static String xmlKey1and2Value1andnull = " <object class=\"java.util.HashMap\">\n" +
-            "  <void method=\"put\">\n" +
+            "  </void>\n";
+    private static String xmlKey2ValueNull = "  <void method=\"put\">\n" +
             "   <string>my.key.b</string>\n" +
             "   <null/>\n" +
-            "  </void>\n" +
-            "  <void method=\"put\">\n" +
-            "   <string>my.key.a</string>\n" +
-            "   <string>my.value.a</string>\n" +
-            "  </void>\n" +
-            " </object>";
+            "  </void>\n";
 
     private Field propertiesField;
     @Before
@@ -86,7 +72,8 @@ public class NamedEntityWithPropertiesImpTest {
         entity.setProperty(key2, value2);
         xmlProperties = entity.getXmlProperties();
         Assert.assertNotNull("xmlProperties should be not be null there is a key set.", xmlProperties);
-        Assert.assertTrue(xmlProperties.contains(xmlKey1and2Value1and2));
+        Assert.assertTrue(xmlProperties.contains(xmlKey1Value1Method));
+        Assert.assertTrue(xmlProperties.contains(xmlKey2Value2Method));
         Assert.assertEquals(value1, entity.getProperty(key1));
         Assert.assertEquals(value2, entity.getProperty(key2));
         entityCopy.setXmlProperties(entity.getXmlProperties());
@@ -95,7 +82,8 @@ public class NamedEntityWithPropertiesImpTest {
         entity.setProperty(key2, value1);
         xmlProperties = entity.getXmlProperties();
         Assert.assertNotNull("xmlProperties should be not be null there is a key set.", xmlProperties);
-        Assert.assertTrue(xmlProperties.contains(xmlKey1and2Value1and1));
+        Assert.assertTrue(xmlProperties.contains(xmlKey2Value1Method));
+        Assert.assertTrue(xmlProperties.contains(xmlKey1Value1Method));
         Assert.assertEquals(value1, entity.getProperty(key1));
         Assert.assertEquals(value1, entity.getProperty(key2));
         entityCopy.setXmlProperties(entity.getXmlProperties());
@@ -104,7 +92,8 @@ public class NamedEntityWithPropertiesImpTest {
         entity.setProperty(key2, null);
         xmlProperties = entity.getXmlProperties();
         Assert.assertNotNull("xmlProperties should be not be null there is a key set.", xmlProperties);
-        Assert.assertTrue(xmlProperties.contains(xmlKey1and2Value1andnull));
+        Assert.assertTrue(xmlProperties.contains(xmlKey1Value1Method));
+        Assert.assertTrue(xmlProperties.contains(xmlKey2ValueNull));
         Assert.assertEquals(value1, entity.getProperty(key1));
         Assert.assertNull(entity.getProperty(key2));
         entityCopy.setXmlProperties(entity.getXmlProperties());

@@ -47,6 +47,14 @@ public class KerberosConfig implements KerberosConfigConstants {
         return kerberosFiles.krb5Prop.getRealms();
     }
 
+    /**
+     * Clears Kerberos cache, should be used for unit testing only.
+     */
+    static void clearCache() {
+        principalCache.clear();
+        kerberosFiles = null;
+    }
+
     public static KeyTab getKeytab(boolean nullIfMissing) throws KerberosException {
 
         if (kerberosFiles != null) {

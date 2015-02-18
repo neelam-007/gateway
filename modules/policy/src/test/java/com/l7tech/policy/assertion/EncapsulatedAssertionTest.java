@@ -275,7 +275,13 @@ public class EncapsulatedAssertionTest {
         arg2.setArgumentName("in2");
         arg2.setGuiPrompt(true);
         arg2.setArgumentType(DataType.STRING.getShortName());
-        final Set<EncapsulatedAssertionArgumentDescriptor> args = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
+        // Use TreeMap to guarantee the order
+        final Set<EncapsulatedAssertionArgumentDescriptor> args = new TreeSet<EncapsulatedAssertionArgumentDescriptor>(new Comparator() {
+            @Override
+            public int compare(Object o1, Object o2) {
+                return ((EncapsulatedAssertionArgumentDescriptor) o1).getArgumentName().compareTo(((EncapsulatedAssertionArgumentDescriptor) o2).getArgumentName());
+            }
+        });
         args.add(arg1);
         args.add(arg2);
         config.setArgumentDescriptors(args);
