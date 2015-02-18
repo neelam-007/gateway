@@ -222,4 +222,51 @@ public class GeneralMigrationTest extends MigrationTestBase {
         response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
     }
+
+    @Test
+    public void importCreateNewWithMapByName() throws Exception{
+        // create role with specific id
+        RbacRoleMO roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setId("9ac49df76998c179cd4b48512b550000");
+        roleMO.setName("MyAlwaysCreateNewRole");
+        roleMO.setUserCreated(true);
+        RestResponse response =  getTargetEnvironment().processRequest("roles/"+roleMO.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                        objectToString(roleMO));
+        assertOkCreatedResponse(response);
+
+        try {
+
+            // create bundle
+            Bundle bundle = ManagedObjectFactory.createBundle();
+            bundle.setReferences(CollectionUtils.<Item>list(new ItemBuilder<RbacRoleMO>(roleMO.getName(), roleMO.getId(), EntityType.RBAC_ROLE.toString()).setContent(roleMO).build()));
+            Mapping mapping = ManagedObjectFactory.createMapping();
+            mapping.setAction(Mapping.Action.AlwaysCreateNew);
+            mapping.setSrcId(roleMO.getId());
+            mapping.setType(EntityType.RBAC_ROLE.toString());
+            mapping.setProperties(CollectionUtils.<String, Object>mapBuilder().put("MapBy", "name").put("MapTo", roleMO.getName() + " Updated").map());
+            bundle.setMappings(CollectionUtils.<Mapping>list(mapping));
+
+            // import bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundle));
+            assertOkResponse(response);
+
+            // check created with different id
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals("There should be 1 mapping after the import", 1, mappings.getContent().getMappings().size());
+            Mapping roleMappping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.RBAC_ROLE.toString(), roleMappping.getType());
+            Assert.assertEquals(Mapping.Action.AlwaysCreateNew, roleMappping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, roleMappping.getActionTaken());
+            Assert.assertNotSame(roleMappping.getTargetId(), roleMappping.getSrcId());
+
+            response =  getTargetEnvironment().processRequest("roles/"+roleMappping.getTargetId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkEmptyResponse(response);
+
+        }finally{
+            // delete role
+            response =  getTargetEnvironment().processRequest("roles/"+roleMO.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkEmptyResponse(response);
+        }
+    }
 }
