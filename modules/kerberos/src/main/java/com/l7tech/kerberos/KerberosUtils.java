@@ -4,11 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.Principal;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ktab.KeyTabEntry;
+
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 /**
  * Kerberos Utility class.
