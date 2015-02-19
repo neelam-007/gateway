@@ -141,36 +141,6 @@ public class MqNativeModuleLoadListener {
             // Register ExternalReferenceFactory
             registerExternalReferenceFactory(context);
 
-            // Probe for MQ native class files - not installed by default on the Gateway
-            try {
-                Class.forName("com.ibm.mq.MQException", false, MqNativeModuleLoadListener.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                // Cannot proceed with initialization
-                logger.fine("MQ Native Jars are not installed. Cannot load MQ Native Module.");
-                return;
-            }
-
-            // Instantiate the MQ native boot process
-            ThreadPoolBean pool = new ThreadPoolBean(
-                    ServerConfig.getInstance(),
-                    "MQ Native Listener Pool",
-                    MQ_LISTENER_THREAD_LIMIT_PROPERTY,
-                    MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY,
-                    25);
-            final Injector injector = context.getBean( "injector", Injector.class );
-            mqNativeListenerModule = new MqNativeModule(pool);
-            injector.inject( mqNativeListenerModule );
-            mqNativeListenerModule.setApplicationContext(context);
-
-            // Start the module
-            try {
-                // Start the MqBootProcess which will start the listeners
-                logger.log(Level.INFO, "MQNativeConnector MqNativeModuleLoadListener - starting MqNativeModuleLoadListener...");
-                mqNativeListenerModule.start();
-            } catch (LifecycleException e) {
-                logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
-            }
-
             // Get the ssg connector dependency processor registry to add the mq connector dependency processor
             //noinspection unchecked
             processorRegistry = context.getBean( "ssgActiveConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
@@ -236,6 +206,36 @@ public class MqNativeModuleLoadListener {
                     return srcId;
                 }
             });
+
+            // Probe for MQ native class files - not installed by default on the Gateway
+            try {
+                Class.forName("com.ibm.mq.MQException", false, MqNativeModuleLoadListener.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                // Cannot proceed with initialization
+                logger.fine("MQ Native Jars are not installed. Cannot load MQ Native Module.");
+                return;
+            }
+
+            // Instantiate the MQ native boot process
+            ThreadPoolBean pool = new ThreadPoolBean(
+                    ServerConfig.getInstance(),
+                    "MQ Native Listener Pool",
+                    MQ_LISTENER_THREAD_LIMIT_PROPERTY,
+                    MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY,
+                    25);
+            final Injector injector = context.getBean( "injector", Injector.class );
+            mqNativeListenerModule = new MqNativeModule(pool);
+            injector.inject( mqNativeListenerModule );
+            mqNativeListenerModule.setApplicationContext(context);
+
+            // Start the module
+            try {
+                // Start the MqBootProcess which will start the listeners
+                logger.log(Level.INFO, "MQNativeConnector MqNativeModuleLoadListener - starting MqNativeModuleLoadListener...");
+                mqNativeListenerModule.start();
+            } catch (LifecycleException e) {
+                logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 
