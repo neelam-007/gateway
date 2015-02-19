@@ -8,6 +8,9 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.module.ServerModuleFileData;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
@@ -70,6 +73,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add("com.l7tech.server.ems.migration.MigrationMappingRecord");
         ignoredClassNames.add(UDDIRegistrySubscription.class.getName());
         ignoredClassNames.add(UDDIBusinessServiceStatus.class.getName());
+        ignoredClassNames.add(ServerModuleFileState.class.getName());
+        ignoredClassNames.add(ServerModuleFileData.class.getName());
 
         // System entities that should generate application events but should not be audited
         noAuditClassNames = new HashSet<String>();
@@ -103,10 +108,19 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     }
 
     private AdminEvent setsys(Object entity, AdminEvent event) {
-        if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
+        if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName()) || isServerModuleFileCreateOrDelete(entity, event)) {
             event.setAuditIgnore(true);
         }
         return event;
+    }
+
+    /**
+     * Handle {@link ServerModuleFile} special case.<br/>
+     * For persistence events, such as {@link Created} and {@link Deleted}, set audit ignore flag to {@code true},
+     * as those events are already handled by {@link ServerModuleFileAdminEvent}.
+     */
+    private boolean isServerModuleFileCreateOrDelete(final Object entity, final AdminEvent event) {
+        return (entity instanceof ServerModuleFile && (event instanceof Created || event instanceof Deleted));
     }
 
     /**

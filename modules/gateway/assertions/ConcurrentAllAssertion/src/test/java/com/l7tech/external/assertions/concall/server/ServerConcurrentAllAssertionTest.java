@@ -347,7 +347,7 @@ public class ServerConcurrentAllAssertionTest {
         AssertionStatus status = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, status);
 
-        assertEquals(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), context.getVariable("date").toString().substring(0, 4));
+        assertEquals(String.valueOf(Calendar.getInstance(TimeZone.getTimeZone("GMT")).get(Calendar.YEAR)), context.getVariable("date").toString().substring(0, 4));
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.EntityNameResolver;
@@ -69,6 +70,7 @@ public final class RegistryImpl extends Registry
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
+    private CassandraConnectionManagerAdmin cassandraConnectionAdmin;
     private SiteMinderAdmin siteMinderAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private ResourceAdmin resourceAdmin;
@@ -84,12 +86,15 @@ public final class RegistryImpl extends Registry
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private PolicyBackedServiceAdmin policyBackedServiceAdmin;
     private CustomKeyValueStoreAdmin customKeyValueStoreAdmin;
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
     private EntityNameResolver entityNameResolver;
     private SolutionKitAdmin solutionKitAdmin;
+    // When you add an admin interface don't forget to
+    // add it to the reset method
 
     @Override
     public boolean isAdminContextPresent() {
@@ -183,6 +188,16 @@ public final class RegistryImpl extends Registry
         }
         jdbcAdmin = adminContext.getJdbcConnectionAdmin();
         return jdbcAdmin;
+    }
+
+    @Override
+    public synchronized CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
+        checkAdminContext();
+        if (cassandraConnectionAdmin != null) {
+            return cassandraConnectionAdmin;
+        }
+        cassandraConnectionAdmin = adminContext.getCassandraConnecitonAdmin();
+        return cassandraConnectionAdmin;
     }
 
     /**
@@ -394,6 +409,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public PolicyBackedServiceAdmin getPolicyBackedServiceAdmin() {
+        checkAdminContext();
+        if (policyBackedServiceAdmin != null) {
+            return policyBackedServiceAdmin;
+        }
+        policyBackedServiceAdmin = adminContext.getAdminInterface(PolicyBackedServiceAdmin.class);
+        return policyBackedServiceAdmin;
+    }
+
+    @Override
     public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
         checkAdminContext();
         if (customKeyValueStoreAdmin != null) {
@@ -519,11 +544,13 @@ public final class RegistryImpl extends Registry
         logSinkAdmin = null;
         uddiRegistryAdmin = null;
         encapsulatedAssertionAdmin = null;
+        policyBackedServiceAdmin = null;
         customKeyValueStoreAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
         entityNameResolver = null;
         siteMinderAdmin = null;
+        cassandraConnectionAdmin = null;
         solutionKitAdmin = null;
     }
 

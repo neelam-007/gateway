@@ -202,7 +202,8 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.SiteMinderContextSelector",
         "com.l7tech.server.policy.variable.RadiusAuthenticationContextSelector",
         "com.l7tech.server.policy.variable.MessageContextMappingSelector",
-        "com.l7tech.server.policy.variable.GoidSelector"
+        "com.l7tech.server.policy.variable.GoidSelector",
+        "com.l7tech.server.policy.variable.ByteGenSelector"
     };
 
     private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{

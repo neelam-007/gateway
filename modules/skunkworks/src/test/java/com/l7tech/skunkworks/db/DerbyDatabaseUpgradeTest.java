@@ -183,7 +183,7 @@ public class DerbyDatabaseUpgradeTest {
 
         Resource[] resources = new Resource[]{
                 new PathMatchingResourcePatternResolver().getResource("com/l7tech/server/resources/ssg_embedded_8.2.00.sql"),
-                new PathMatchingResourcePatternResolver().getResource("com/l7tech/server/resources/derby/upgrade_8.2.00-8.3.pre.sql")};
+                new PathMatchingResourcePatternResolver().getResource("com/l7tech/server/resources/derby/upgrade_8.2.01-8.3.pre.sql")};
         DerbyDbHelper.runScripts(derbyssg82sql.getConnection(), resources, false);
 
         EmbeddedDataSource40 derbyssg82liquibase = new EmbeddedDataSource40();

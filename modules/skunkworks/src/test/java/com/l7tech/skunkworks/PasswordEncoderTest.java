@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks;
 
+import com.l7tech.test.BugId;
 import com.l7tech.util.HexUtils;
 import org.junit.Test;
 
@@ -60,11 +61,11 @@ public class PasswordEncoderTest {
     @Test
     public void testGenerateKey() throws Exception {
         Key k = PasswordEncoder.generateKey( "blah" );
-        byte[] expected = HexUtils.unHexDump( "92f64099a7d93bddbbea1b5dac5147e74a7df577978649cc6c3745475f376938" );
+        byte[] expected = HexUtils.unHexDump( "92f64099a7d93bddbbea1b5dac5147e7" );
         assertTrue( Arrays.equals( expected, k.getEncoded() ) );
 
         k = PasswordEncoder.generateKey( "other" );
-        expected = HexUtils.unHexDump( "8b844a55d1f4bb3b9506ab0415ccd8fb4a1cbf41e539c9d7763b663b7c5118b0" );
+        expected = HexUtils.unHexDump( "8b844a55d1f4bb3b9506ab0415ccd8fb" );
         assertTrue( Arrays.equals( expected, k.getEncoded() ) );
     }
 
@@ -125,10 +126,10 @@ public class PasswordEncoderTest {
 
     @Test
     public void testDecodePassword() throws Exception {
-        byte[] decoded = PasswordEncoder.decodePassword( "45LCIWYgEbE.-3Z9-sIGN0F7Bdq8rFxn-w" );
+        byte[] decoded = PasswordEncoder.decodePassword( "FEH78QMaVA0.0m8NV0uBiF_QgdgOypZ_UA" );
         assertEquals( "", new String( decoded, "UTF-8" ) );
 
-        decoded = PasswordEncoder.decodePassword( "cUlSZjf7Big.jwKfburLztN-JNVmhg7zGw" );
+        decoded = PasswordEncoder.decodePassword( "Q2jRqo3Gl5g.uC5Omhl4s0Nhg1SsSfaWfg" );
         assertEquals( "sekrit", new String( decoded, "UTF-8" ) );
     }
 
@@ -200,6 +201,14 @@ public class PasswordEncoderTest {
             assertEquals( len, plain3.length );
             assertTrue( Arrays.equals( passwordBytes, plain3 ) );
         }
+    }
+
+    @Test
+    @BugId( "SSG-10060" )
+    public void testKeySizeLimitedTo128Bits() throws Exception {
+        Key key = PasswordEncoder.generateKey( "blah" );
+        assertEquals( "Key size must be limited to 128 bits in order to work with a JDK lacking unlimited strength crypto policy files",
+                16, key.getEncoded().length );
     }
 
     private byte[] b( String s ) {

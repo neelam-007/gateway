@@ -16,6 +16,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import javax.inject.Inject;
 import java.util.Set;
@@ -65,6 +66,11 @@ public class PolicyBackedUserManagerImpl implements PolicyBackedUserManager {
 
     @Override
     public String save(VirtualPolicyUser user, Set<IdentityHeader> groupHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String save(Goid id, VirtualPolicyUser user, Set<IdentityHeader> groupHeaders) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
@@ -119,27 +125,34 @@ public class PolicyBackedUserManagerImpl implements PolicyBackedUserManager {
 
     @Override
     public AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException {
+        // TODO use the policy backed authenticator
+
         Goid policyGoid = identityProviderConfig.getPolicyId();
 
         Message request = new Message();
         Message response = new Message();
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = null;
+        try {
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
-        // TODO we should find a better way to send the credentials into the backing policy
-        context.setVariable("idp.userid", pc.getLogin());
-        context.setVariable("idp.password", new String(pc.getCredentials()));
+            // TODO we should find a better way to send the credentials into the backing policy
+            context.setVariable("idp.userid", pc.getLogin());
+            context.setVariable("idp.password", new String(pc.getCredentials()));
 
-        AssertionStatus status = executePolicy(policyGoid, context);
+            AssertionStatus status = executePolicy(policyGoid, context);
 
-        final String login = pc.getLogin();
-        if (!AssertionStatus.NONE.equals(status)) {
-            final String msg = "backing policy failed with status \"" + status.getMessage() + "\" for login " + login;
-            logger.info(msg);
-            throw new BadCredentialsException(msg);
+            final String login = pc.getLogin();
+            if (!AssertionStatus.NONE.equals(status)) {
+                final String msg = "backing policy failed with status \"" + status.getMessage() + "\" for login " + login;
+                logger.info(msg);
+                throw new BadCredentialsException(msg);
+            }
+
+            // TODO we should probably grab the authetnicated user from the policy PEC, instead of just ginning up a fake one here
+            return new AuthenticationResult(makeUser(login), pc.getSecurityTokens());
+        } finally {
+            ResourceUtils.closeQuietly( context );
         }
-
-        // TODO we should probably grab the authetnicated user from the policy PEC, instead of just ginning up a fake one here
-        return new AuthenticationResult(makeUser(login), pc.getSecurityTokens());
     }
 
     private AssertionStatus executePolicy(Goid policyGoid, PolicyEnforcementContext context) {

@@ -3,6 +3,7 @@ package com.l7tech.server.policy.validator;
 import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
@@ -38,6 +39,7 @@ import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -120,6 +122,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private Config config;
     private KeyValueStore keyValueStore;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
+    private CassandraConnectionEntityManager cassandraEntityManager;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -480,12 +483,16 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             checkPrivateKey((PrivateKeyable) assertion, path, pvc, result);
         }
 
-        if ( assertion instanceof JdbcConnectionable ) {
-            checkJdbcConnection((JdbcConnectionable) assertion, path, result);
+        if ( assertion instanceof Connectionable ) {
+            checkConnection((Connectionable) assertion, path, result);
         }
 
         if ( assertion instanceof HttpDigest) {
             checkHttpDigestConfiguration((HttpDigest) assertion, path, result);
+        }
+
+        if ( assertion instanceof CassandraConnectionable ) {
+            checkCassandraConnection((CassandraConnectionable) assertion, path, result);
         }
     }
 
@@ -636,21 +643,47 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         return PolicyType.TAG_AUDIT_VIEWER.equals(pvc.getPolicyInternalTag());
     }
 
-    protected void checkJdbcConnection( final JdbcConnectionable jdbcConnectionable,
+    protected void checkConnection(final Connectionable connectionable, final AssertionPath ap, final PolicyValidatorResult r) {
+        final String name = connectionable.getConnectionName();
+        if ( name != null && Syntax.getReferencedNames(name).length == 0) {
+            if(connectionable instanceof JdbcConnectionable) {
+                checkJdbcConnection((JdbcConnectionable) connectionable, ap, r);
+            }
+            else if(connectionable instanceof CassandraConnection) {
+                checkCassandraConnection((CassandraConnectionable) connectionable, ap, r);
+            }
+        }
+    }
+
+    private void checkJdbcConnection( final JdbcConnectionable jdbcConnectionable,
                                         final AssertionPath ap,
                                         final PolicyValidatorResult r ) {
         final String name = jdbcConnectionable.getConnectionName();
-        if ( name != null && Syntax.getReferencedNames(name).length == 0) {
-            try {
-                JdbcConnection connection = jdbcConnectionManager.getJdbcConnection( name );
-                if ( connection == null ) {
-                    r.addError(new PolicyValidatorResult.Error( (Assertion)jdbcConnectionable,
-                            "Assertion refers to the " + EntityType.JDBC_CONNECTION.getName() +" '"+name+"' which cannot be located on this system.", null));
+        try {
+            JdbcConnection connection = jdbcConnectionManager.getJdbcConnection( name );
+            if ( connection == null ) {
+                r.addError(new PolicyValidatorResult.Error( (Assertion)jdbcConnectionable,
+                        "Assertion refers to the " + EntityType.JDBC_CONNECTION.getName() +" '"+name+"' which cannot be located on this system.", null));
 
-                }
-            } catch ( FindException e ) {
-                logger.log(Level.WARNING, "Error looking for JDBC connection: " + ExceptionUtils.getMessage(e), e);
             }
+        } catch ( FindException e ) {
+            logger.log(Level.WARNING, "Error looking for JDBC connection: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private void checkCassandraConnection( final CassandraConnectionable cassandraConnectionable,
+                                        final AssertionPath ap,
+                                        final PolicyValidatorResult r ) {
+        final String name = cassandraConnectionable.getConnectionName();
+        try {
+            CassandraConnection connection = cassandraEntityManager.getCassandraConnectionEntity( name );
+            if ( connection == null ) {
+                r.addError(new PolicyValidatorResult.Error( (Assertion)cassandraConnectionable,
+                        "Assertion refers to the " + EntityType.CASSANDRA_CONFIGURATION.getName() +" '"+name+"' which cannot be located on this system.", null));
+
+            }
+        } catch ( FindException e ) {
+            logger.log(Level.WARNING, "Error looking for Cassandra Connection connection: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -784,6 +817,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     public void setJdbcConnectionManager( final JdbcConnectionManager jdbcConnectionManager ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
+    }
+
+    public void setCassandraEntityManager(CassandraConnectionEntityManager cassandraEntityManager) {
+        this.cassandraEntityManager = cassandraEntityManager;
     }
 
     public void setConfig(Config config) {

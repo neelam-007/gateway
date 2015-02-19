@@ -92,12 +92,13 @@ public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractI
     @NotNull
     @Override
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
+                                                         @NotNull Goid folderGoid,
                                                          @NotNull Map<String, BundleMapping> bundleMappings,
                                                          @Nullable String installationPrefix,
                                                          boolean integrateApiPortal) {
         super.checkingAssertionExistenceRequired = integrateApiPortal;
         this.integrateApiPortal = integrateApiPortal;
-        return dryRunInstall(componentIds, bundleMappings, installationPrefix);
+        return dryRunInstall(componentIds, bundleMappings, folderGoid, installationPrefix);
     }
 
     @NotNull

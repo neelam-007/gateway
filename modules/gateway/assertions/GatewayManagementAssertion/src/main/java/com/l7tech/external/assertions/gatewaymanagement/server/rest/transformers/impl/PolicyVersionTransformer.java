@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -31,13 +32,18 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer) {
-        return convertToMO(policyVersionEntityContainer.getEntity());
+    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(policyVersionEntityContainer.getEntity(), secretsEncryptor);
+    }
+
+    @NotNull
+    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion) {
+        return convertToMO(policyVersion, null);
     }
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion) {
+    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion,  SecretsEncryptor secretsEncryptor) {
         PolicyVersionMO policyVersionMO = ManagedObjectFactory.createPolicyVersionMO();
         policyVersionMO.setActive(policyVersion.isActive());
         policyVersionMO.setComment(policyVersion.getName());
@@ -51,13 +57,13 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(policyVersionMO,true);
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(policyVersionMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
 
         PolicyVersion policyVersion = new PolicyVersion();
         policyVersion.setActive(policyVersionMO.isActive());

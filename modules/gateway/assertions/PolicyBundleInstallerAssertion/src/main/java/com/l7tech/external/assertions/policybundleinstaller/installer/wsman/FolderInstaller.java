@@ -21,11 +21,12 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 
-import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.FOLDER;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityName;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.CREATE_ENTITY_XML;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.GATEWAY_MGMT_ENUMERATE_FILTER;
 
 /**
  * Install folder.

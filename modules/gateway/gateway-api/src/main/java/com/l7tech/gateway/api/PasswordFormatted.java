@@ -24,6 +24,25 @@ public class PasswordFormatted {
         this.format = format;
     }
 
+    /**
+     * This is the bundle key that the password is encrypted with
+     *
+     * @return The bundle key the password is encrypted with.
+     */
+    @XmlAttribute(name = "bundleKey")
+    public String getBundleKey() {
+        return bundleKey;
+    }
+
+    /**
+     * Sets the bundle key to encrypt the password with
+     *
+     * @param bundleKey The bundle key to encrypt the password with.
+     */
+    public void setBundleKey(String bundleKey) {
+        this.bundleKey = bundleKey;
+    }
+
     @XmlValue
     public String getPassword() {
         return password;
@@ -42,4 +61,5 @@ public class PasswordFormatted {
 
     private String format = "plain";
     private String password;
+    private String bundleKey;
 }

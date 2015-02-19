@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.security.keystore;
 
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.security.xml.SignerInfo;
@@ -21,7 +18,7 @@ import java.security.cert.X509Certificate;
  * Represents a private key entry in a Gateway key store, including information about a cert chain and
  * RSA private key.
  */
-public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable, ZoneableEntity {
+public class SsgKeyEntry extends SignerInfo implements NamedEntity, NameableEntity, Serializable, ZoneableEntity {
     private static final long serialVersionUID = 23272983482973430L;
 
     private static Functions.Nullary<Boolean> restrictedKeyAccessChecker;
@@ -106,6 +103,11 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     @Override
     public String getName() {
         return getAlias();
+    }
+
+    @Override
+    public void setName(final String name) {
+        setAlias(name);
     }
 
     /** @return the alias of this entry, or null if it's not yet assigned.  This is also used as the ID. */

@@ -36,6 +36,7 @@ public class DocumentationResource {
             .put("migration.html", "Migration")
             .put("migration-example.html", "Migration Example")
             .put("restDoc.html", "API Resources")
+            .put("gmu.html", "Gateway Migration Utility")
             .map();
 
     @Context

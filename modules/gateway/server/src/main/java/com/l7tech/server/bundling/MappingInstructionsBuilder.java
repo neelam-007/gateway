@@ -19,10 +19,6 @@ import java.util.Map;
  */
 public class MappingInstructionsBuilder {
 
-    //The map of registered mapping instructions
-    @NotNull
-    private final Map<EntityType, Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>> mappingInstructionBuilders;
-
     // The default mapping instructions builder to use if there isnt a custom one registered.
     private static final Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type> defaultMappingInstructionsBuilder = new Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>() {
         @Override
@@ -30,21 +26,16 @@ public class MappingInstructionsBuilder {
             return new EntityMappingInstructions(sourceEntityHeader, EntityMappingInstructions.TargetMapping.Type.ID.equals(mappingType) ? null : new EntityMappingInstructions.TargetMapping(mappingType), mappingAction);
         }
     };
+    //The map of registered mapping instructions
+    @NotNull
+    private final Map<EntityType, Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>> mappingInstructionBuilders;
 
     /**
      * Creates a MappingInstructionsBuilder the default builders for core entities are added here.
      */
     public MappingInstructionsBuilder() {
         //Create any default builders
-        mappingInstructionBuilders = CollectionUtils.MapBuilder.<EntityType, Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>>builder()
-                //For identity providers fail if one doesn't already exist.
-                .put(EntityType.ID_PROVIDER_CONFIG, new Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>() {
-                    @Override
-                    public EntityMappingInstructions call(EntityHeader sourceEntityHeader, EntityMappingInstructions.MappingAction mappingAction, EntityMappingInstructions.TargetMapping.Type mappingType) {
-                        return new EntityMappingInstructions(sourceEntityHeader, EntityMappingInstructions.TargetMapping.Type.ID.equals(mappingType) ? null : new EntityMappingInstructions.TargetMapping(mappingType), mappingAction, true, false);
-                    }
-                })
-                .map();
+        mappingInstructionBuilders = CollectionUtils.MapBuilder.<EntityType, Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>>builder().map();
     }
 
     /**

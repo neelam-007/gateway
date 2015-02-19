@@ -36,7 +36,7 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import static com.l7tech.gateway.common.AsyncAdminMethods.JobId;
 import static com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin.PolicyBundleInstallerException;
 import static com.l7tech.policy.bundle.BundleInfo.getPrefixedUrlErrorMsg;
-import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
+import static com.l7tech.policy.bundle.BundleMapping.Type.JDBC_CONNECTION_NAME;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
@@ -249,14 +249,9 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     protected JobId<PolicyBundleDryRunResult> adminDryRunInstall(@NotNull Collection<String> componentIds,
                                                                  @NotNull Map<String, BundleMapping> bundleMappings,
+                                                                 @NotNull Goid folderGoid,
                                                                  @Nullable String installationPrefix) {
-        return getExtensionInterface(extensionInterfaceInstanceIdentifier).dryRunInstall(componentIds, bundleMappings, installationPrefix);
-    }
-
-    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
-                                            @NotNull Goid folderGoid,
-                                            @NotNull Map<String, BundleMapping> bundleMappings) throws PolicyBundleInstallerException {
-        return adminInstall(componentIds, folderGoid, bundleMappings, null, null);
+        return getExtensionInterface(extensionInterfaceInstanceIdentifier).dryRunInstall(componentIds, bundleMappings, folderGoid, installationPrefix);
     }
 
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
@@ -267,11 +262,11 @@ public abstract class BundleInstallerDialog extends JDialog {
     }
 
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
-                                            @NotNull Goid folderGoid,
-                                            @NotNull Map<String, BundleMapping> bundleMappings,
-                                            @Nullable String installationPrefix,
-                                            @Nullable Map<String, Pair<String, Properties>> migrationActionOverrides) throws PolicyBundleInstallerException {
-        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationActionOverrides);
+                                          @NotNull Goid folderGoid,
+                                          @NotNull Map<String, BundleMapping> bundleMappings,
+                                          @Nullable String installationPrefix,
+                                          @Nullable Map<String, Map<String, Pair<String, Properties>>> migrationBundlesActionOverrides) throws PolicyBundleInstallerException {
+        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundlesActionOverrides);
     }
 
     protected Dimension getSizingPanelPreferredSize() {
@@ -320,7 +315,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                 final Map<String, String> mappedJdbcConnections = bundleComponent.getMappedJdbcConnections();
                 final BundleMapping bundleMapping = new BundleMapping();
                 for (Map.Entry<String, String> mappedEntry : mappedJdbcConnections.entrySet()) {
-                    bundleMapping.addMapping(JDBC_CONNECTION, mappedEntry.getKey(), mappedEntry.getValue());
+                    bundleMapping.addMapping(JDBC_CONNECTION_NAME, mappedEntry.getKey(), mappedEntry.getValue());
                 }
                 bundleMappings.put(componentId, bundleMapping);
 
@@ -359,7 +354,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                     BundleInstallerDialog.this,
                     "Pre Installation Check",
                     "The gateway is being checked for conflicts for the selected components",
-                    adminDryRunInstall(bundlesToInstall, bundleMappings, prefix));
+                    adminDryRunInstall(bundlesToInstall, bundleMappings, selectedFolderGoid, prefix));
 
             if (dryRunEither.isRight()) {
                 boolean areConflicts = false;
@@ -380,7 +375,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                         public void run() {
                             if (conflictDialog.wasOKed()) {
                                 try {
-                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, conflictDialog.getSelectedMigrationResolutions());
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, conflictDialog.getMigrationBundlesActionOverrides());
                                 } catch (Exception e) {
                                     // this may execute after the code below completes as it's a callback
                                     handleException(e);
@@ -432,23 +427,19 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     private void doInstall(final List<String> bundlesToInstall,
                            final Map<String, BundleMapping> bundleMappings,
-                           final PolicyBundleInstallerAdmin admin)
-            throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
-        doInstall(bundlesToInstall, bundleMappings, admin, null, null);
-    }
-
-    private void doInstall(final List<String> bundlesToInstall,
-                           final Map<String, BundleMapping> bundleMappings,
                            final PolicyBundleInstallerAdmin admin,
                            @Nullable final String prefixToUse,
-                           @Nullable final Map<String, Pair<String, Properties>> selectedMigrationActions)
-            throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
+                           @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesActionOverrides)
+        throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
-                admin,
-                BundleInstallerDialog.this,
-                installFolder + " Installation",
-                "The selected components of the " + installFolder + " are being installed.",
-                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, selectedMigrationActions));
+            admin,
+            BundleInstallerDialog.this,
+            installFolder + " Installation",
+            "The selected components of the " + installFolder + " are being installed.",
+            (migrationBundlesActionOverrides == null || migrationBundlesActionOverrides.isEmpty())?
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse) :
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, migrationBundlesActionOverrides)
+        );
 
         if (resultEither.isRight()) {
             final ArrayList right = resultEither.right();

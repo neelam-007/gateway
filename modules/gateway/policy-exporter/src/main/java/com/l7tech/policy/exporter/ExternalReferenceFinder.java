@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -53,6 +54,8 @@ public interface ExternalReferenceFinder {
     Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( String key, ResourceType type ) throws FindException;
 
     JdbcConnection getJdbcConnection( String name ) throws FindException;
+
+    CassandraConnection getCassandraConnection(String name) throws FindException;
 
     JmsEndpoint findEndpointByPrimaryKey( Goid goid ) throws FindException;
 

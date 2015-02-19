@@ -210,7 +210,8 @@ public class WsdlUtil {
                                          final Document wsdlDoc,
                                          final HashMap<String, Pair<String,String>> dependencies,
                                          final String requestUri,
-                                         final Functions.UnaryVoid<Exception> errorHandler) {
+                                         final Functions.UnaryVoid<Exception> errorHandler,
+                                         final boolean appendUserFriendlyPath) {
         if (!dependencies.isEmpty()) {
             DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
             documentReferenceProcessor.processDocumentReferences(wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
@@ -225,7 +226,7 @@ public class WsdlUtil {
                         try {
                             URI base = new URI(documentUrl);
                             String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
-                            if (docUrl.equals(serviceWsdlUrl)) {  // TODO jwilliams: add test
+                            if (docUrl.equals(serviceWsdlUrl)) {
                                 uri = requestUri + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId;
                             } else {
                                 for (String dependencyUri : dependencies.keySet()) {
@@ -236,10 +237,16 @@ public class WsdlUtil {
                                         // This occurred prior to 4.5 when we stripped XSDs on import since we only
                                         // used the WSDL documents.
                                         if (!NOOP_WSDL.equals(dependencyIdContentPair.right)) {
-                                            uri = requestUri + "/" + getName(dependencyUri) + "?" +
-                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
-                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + dependencyIdContentPair.left;
+                                            uri = appendUserFriendlyPath
+                                                    ? requestUri + "/" + getName(dependencyUri)
+                                                    : requestUri;
+
+                                            uri += "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
+                                                    "=" + serviceId + "&" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID +
+                                                    "=" + dependencyIdContentPair.left;
                                         }
+
                                         break;
                                     }
                                 }

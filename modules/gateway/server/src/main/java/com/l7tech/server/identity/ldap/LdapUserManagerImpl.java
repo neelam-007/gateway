@@ -220,6 +220,11 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    public String save(Goid id, LdapUser user, Set groupHeaders) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public LdapUser reify(UserBean bean) {
         throw new UnsupportedOperationException();
     }

@@ -1,10 +1,12 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.*;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -72,6 +74,14 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 public class IdentityProviderMO extends SecurityZoneableObject {
 
     //- PUBLIC
+
+    private AttributeExtensibleString name;
+    private AttributeExtensibleIdentityProviderType identityProviderType;
+    private Map<String,Object> properties;
+    private IdentityProviderExtension identityProviderExtension;
+
+    IdentityProviderMO() {
+    }
 
     /**
      * Get the name for the identity provider (case insensitive)
@@ -171,6 +181,63 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         return getIdentityProviderOptions( PolicyBackedIdentityProviderDetail.class );
     }
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    //- PROTECTED
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="IdentityProviderType", required=true)
+    protected AttributeExtensibleIdentityProviderType getIdentityProviderTypeValue() {
+        return identityProviderType;
+    }
+
+    protected void setIdentityProviderTypeValue( final AttributeExtensibleIdentityProviderType identityProviderType ) {
+        this.identityProviderType = identityProviderType;
+    }
+
+    @XmlElement(name="Extension")
+    protected IdentityProviderExtension getIdentityProviderExtension() {
+        return identityProviderExtension;
+    }
+
+    protected void setIdentityProviderExtension( final IdentityProviderExtension identityProviderExtension ) {
+        this.identityProviderExtension = identityProviderExtension;
+    }
+
+    @XmlAnyElement(lax=true)
+    @Override
+    protected List<Object> getExtensions() {
+        return super.getExtensions();
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private <DT extends IdentityProviderDetail> DT getIdentityProviderOptions( final Class<DT> optionsClass ) {
+        DT options = null;
+
+        if ( identityProviderExtension != null &&
+             optionsClass.isInstance( identityProviderExtension.getIdentityProviderDetail() ) ) {
+            options = (DT) identityProviderExtension.getIdentityProviderDetail();
+        } else if ( identityProviderExtension == null ) {
+            identityProviderExtension = new IdentityProviderExtension();
+            try {
+                options = optionsClass.newInstance();
+            } catch ( InstantiationException e ) {
+                throw new ManagementRuntimeException(e);
+            } catch ( IllegalAccessException e ) {
+                throw new ManagementRuntimeException(e);
+            }
+            identityProviderExtension.setIdentityProviderDetail( options );
+        }
+
+        return options;
+    }
+
     /**
      * Type for identity providers
      */
@@ -209,6 +276,9 @@ public class IdentityProviderMO extends SecurityZoneableObject {
     @XmlType(name="FederatedIdentityProviderDetailType", propOrder={"certificateReferencesValue"})
     public static class FederatedIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleReferenceList certificateReferences;
+
+        protected FederatedIdentityProviderDetail() {
+        }
 
         /**
          * Get the list of trusted certificate identifiers.
@@ -250,15 +320,12 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         protected void setCertificateReferencesValue( final AttributeExtensibleReferenceList certificateReferences ) {
             this.certificateReferences = certificateReferences;
         }
-
-        protected FederatedIdentityProviderDetail() {
-        }
     }
 
     /**
      * Details for a simple BIND-only LDAP identity provider.
      */
-    @XmlType(name="BindOnlyLdapIdentityProviderDetailType", propOrder={"serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", 
+    @XmlType(name="BindOnlyLdapIdentityProviderDetailType", propOrder={"serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue",
             "bindPatternPrefixValue", "bindPatternSuffixValue"})
     public static class BindOnlyLdapIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleStringList serverUrls;
@@ -266,6 +333,9 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private ManagedObjectReference sslKeyReference;
         private AttributeExtensibleString bindPatternPrefix;
         private AttributeExtensibleString bindPatternSuffix;
+
+        protected BindOnlyLdapIdentityProviderDetail() {
+        }
 
         /**
          * Get the LDAP server URLs.
@@ -328,7 +398,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
                 sslKeyReference = null;
             }
         }
-                
+
         /**
          * Get the prefix to prepend to the username for building a bind DN.
          *
@@ -346,7 +416,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         public void setBindPatternPrefix( final String bindPatternPrefix ) {
             this.bindPatternPrefix = set(this.bindPatternPrefix,bindPatternPrefix);
         }
-        
+
         /**
          * Get the suffix to prepend to the username for building a bind DN.
          *
@@ -363,9 +433,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          */
         public void setBindPatternSuffix( final String bindPatternSuffix ) {
             this.bindPatternSuffix = set(this.bindPatternSuffix,bindPatternSuffix);
-        }
-
-        protected BindOnlyLdapIdentityProviderDetail() {
         }
 
         @XmlElement(name="ServerUrls", required=true)
@@ -444,6 +511,9 @@ public class IdentityProviderMO extends SecurityZoneableObject {
 
         private AttributeExtensibleStringList specifiedAttributes;
         private Map<String,Object> ntlmProperties;
+
+        protected LdapIdentityProviderDetail() {
+        }
 
         /**
          * Get the source type for the provider.
@@ -579,6 +649,19 @@ public class IdentityProviderMO extends SecurityZoneableObject {
             this.bindPassword = set(this.bindPassword,bindPassword);
         }
 
+        public void setBindPassword(final String password, final String bundleKey){
+            this.bindPassword = new AttributeExtensibleType.AttributeExtensibleString();
+            this.bindPassword.setValue(password);
+            this.bindPassword.setAttributeExtensions(CollectionUtils.<QName,Object>mapBuilder().put(new QName("bundleKey"),bundleKey).map());
+        }
+
+        public String getBindPasswordBundleKey(){
+            if(this.bindPassword!=null && this.bindPassword.getAttributeExtensions() != null){
+                return (String)this.bindPassword.getAttributeExtensions().get(new QName("bundleKey"));
+            }
+            return null;
+        }
+
         /**
          * Flag for user mapping presence.
          *
@@ -659,9 +742,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
 
         public void setNtlmProperties(Map<String, Object> ntlmProperties) {
             this.ntlmProperties = ntlmProperties;
-        }
-
-        protected LdapIdentityProviderDetail() {
         }
 
         @XmlElement(name="SourceType")
@@ -755,6 +835,8 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         }
     }
 
+    //- PACKAGE
+
     /**
      * Details for a policy backed identity provider.
      */
@@ -763,6 +845,9 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private AttributeExtensibleString authenticationPolicyId;
         private AttributeExtensibleString defaultRoleAssignmentId;
 
+
+        protected PolicyBackedIdentityProviderDetail() {
+        }
 
         /**
          * Get the authentication policy ID.
@@ -800,9 +885,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
             this.defaultRoleAssignmentId = set(this.defaultRoleAssignmentId,defaultRoleAssignmentId);
         }
 
-        protected PolicyBackedIdentityProviderDetail() {
-        }
-
         @XmlElement(name="AuthenticationPolicyId", required=true)
         protected AttributeExtensibleString getAuthenticationPolicyIdValue() {
             return authenticationPolicyId;
@@ -822,6 +904,8 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         }
     }
 
+    //- PRIVATE
+
     /**
      * Represents a user or group mapping
      *
@@ -832,6 +916,9 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private AttributeExtensibleString objectClass;
         private Map<String,Object> mappings;
         private Map<String,Object> properties;
+
+        LdapIdentityProviderMapping() {
+        }
 
         /**
          * Get the LDAP objectclass for the mapping (required)
@@ -899,44 +986,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         protected void setObjectClassValue( final AttributeExtensibleString objectClass ) {
             this.objectClass = objectClass;
         }
-
-        LdapIdentityProviderMapping() {
-        }
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Name", required=true)
-    protected AttributeExtensibleString getNameValue() {
-        return name;
-    }
-
-    protected void setNameValue( final AttributeExtensibleString name ) {
-        this.name = name;
-    }
-
-    @XmlElement(name="IdentityProviderType", required=true)
-    protected AttributeExtensibleIdentityProviderType getIdentityProviderTypeValue() {
-        return identityProviderType;
-    }
-
-    protected void setIdentityProviderTypeValue( final AttributeExtensibleIdentityProviderType identityProviderType ) {
-        this.identityProviderType = identityProviderType;
-    }
-
-    @XmlElement(name="Extension")
-    protected IdentityProviderExtension getIdentityProviderExtension() {
-        return identityProviderExtension;
-    }
-
-    protected void setIdentityProviderExtension( final IdentityProviderExtension identityProviderExtension ) {
-        this.identityProviderExtension = identityProviderExtension;
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
     }
 
     @XmlType(name="IdentityProviderTypePropertyType")
@@ -985,7 +1034,17 @@ public class IdentityProviderMO extends SecurityZoneableObject {
      */
     @XmlType(name="LdapIdentityProviderMappingListPropertyType", propOrder={"value"})
     protected static class AttributeExtensibleLdapIdentityProviderMappingList  extends AttributeExtensibleType.AttributeExtensible<List<LdapIdentityProviderMapping>> {
+        private static final Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList> Builder =
+                new Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList>(){
+            @Override
+            public AttributeExtensibleLdapIdentityProviderMappingList call() {
+                return new AttributeExtensibleLdapIdentityProviderMappingList();
+            }
+        };
         private List<LdapIdentityProviderMapping> value;
+
+        protected AttributeExtensibleLdapIdentityProviderMappingList() {
+        }
 
         @Override
         @XmlElement(name="Mapping")
@@ -997,51 +1056,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         public void setValue( final List<LdapIdentityProviderMapping> value ) {
             this.value = value;
         }
-
-        protected AttributeExtensibleLdapIdentityProviderMappingList() {
-        }
-
-        private static final Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList> Builder =
-                new Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList>(){
-            @Override
-            public AttributeExtensibleLdapIdentityProviderMappingList call() {
-                return new AttributeExtensibleLdapIdentityProviderMappingList();
-            }
-        };
-    }
-
-    //- PACKAGE
-
-    IdentityProviderMO() {
-    }
-
-    //- PRIVATE
-
-    private AttributeExtensibleString name;
-    private AttributeExtensibleIdentityProviderType identityProviderType;
-    private Map<String,Object> properties;
-    private IdentityProviderExtension identityProviderExtension;
-
-    @SuppressWarnings({ "unchecked" })
-    private <DT extends IdentityProviderDetail> DT getIdentityProviderOptions( final Class<DT> optionsClass ) {
-        DT options = null;
-
-        if ( identityProviderExtension != null &&
-             optionsClass.isInstance( identityProviderExtension.getIdentityProviderDetail() ) ) {
-            options = (DT) identityProviderExtension.getIdentityProviderDetail();
-        } else if ( identityProviderExtension == null ) {
-            identityProviderExtension = new IdentityProviderExtension();
-            try {
-                options = optionsClass.newInstance();
-            } catch ( InstantiationException e ) {
-                throw new ManagementRuntimeException(e);
-            } catch ( IllegalAccessException e ) {
-                throw new ManagementRuntimeException(e);
-            }
-            identityProviderExtension.setIdentityProviderDetail( options );
-        }
-
-        return options;
     }
 
 

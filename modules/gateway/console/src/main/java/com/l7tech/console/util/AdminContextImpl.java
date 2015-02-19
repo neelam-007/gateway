@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.gateway.common.admin.*;
@@ -70,6 +71,11 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public JdbcAdmin getJdbcConnectionAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(JdbcAdmin.class);
+    }
+
+    @Override
+    public CassandraConnectionManagerAdmin getCassandraConnecitonAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(CassandraConnectionManagerAdmin.class);
     }
 
     @Override

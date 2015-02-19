@@ -18,6 +18,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.codec.binary.Base32;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -99,9 +100,98 @@ public class ServerEncodeDecodeAssertionTest{
     }
 
     @Test
+    public void testBase32() throws Exception {
+        roundTripTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE,
+                EncodeDecodeAssertion.TransformType.BASE32_DECODE,
+                false );
+
+        roundTripTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE,
+                EncodeDecodeAssertion.TransformType.BASE32_DECODE,
+                true );
+    }
+
+    @Test
     public void testBase64Strict() throws Exception {
         oneWayTest( EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, "L 3 R l e H\tQvI\rHdpd\nGg    gc3BhY2VzIGFuZCA8Ij5z" );
         oneWayTest( EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, "L3 [ RleHQvIHdpdGggc3BhY2VzIGFuZCA8Ij5z" );
+    }
+
+    @Test
+    public void testBase32Strict() throws Exception {
+        String testString = "test input string \u0000 \u0373 \u8827";
+        String testStringEncoded = "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAU4======";
+
+        assertEquals( testStringEncoded, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE, AssertionStatus.NONE, true, 0, testString ) );
+        assertEquals( testString, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, testStringEncoded ) );
+        assertEquals( testString, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, " O RSXG5  BAN F X H \t A5\r\nLUE\nBZX\r I4TJNZTSAA\t\tBAZWZSB2FAU4===\r\n==  =\r\n" ) );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXX====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXXX===" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXXXXX=" );
+
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZ=TSAABAZWZSB2FAU4======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNzTSAABAZWZSB2FAU4======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXH\u0000A5LUEBZXI4TJNZTSAABAZWZSB2FAU4======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXH\u0000A5LUEBZXI4TJNZTSAABAZWZSB2FA" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA=" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA==" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA===" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA=====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA=======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA=========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FA==========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX=" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX==" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX===" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX=====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX=======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX=========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAX==========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX=" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX==" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX===" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX=====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX=======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX=========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXX==========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX=" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX==" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX===" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX=====" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX=======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX=========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX==========" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXXX======" );
+        oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.FALSIFIED, true, 0, "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAXXXXXX======" );
+    }
+
+    @Test
+    public void testRawByteArrayInput() throws Exception {
+        String testString = "test input string \u0000 \u0373 \u8827";
+        String testStringEncoded = "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAU4======";
+
+        assertEquals( testStringEncoded, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE, AssertionStatus.NONE, true, 0, testString.getBytes() ) );
+        assertEquals( testString, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, testStringEncoded.getBytes() ) );
     }
 
     @Test

@@ -586,7 +586,11 @@ public class XencUtil {
             // decrypt
             try {
                 Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
-                rsa.init(Cipher.DECRYPT_MODE, recipientKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec(oaepParams));
+                if ( oaepParams.length > 0 ) {
+                    rsa.init( Cipher.DECRYPT_MODE, recipientKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec( oaepParams ) );
+                } else {
+                    rsa.init( Cipher.DECRYPT_MODE, recipientKey );
+                }
                 unencryptedKey = rsa.doFinal(encryptedKeyBytes);
             }
             catch(NoClassDefFoundError ncdfe) {
@@ -680,7 +684,11 @@ public class XencUtil {
         Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
         try {
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
-            rsa.init(Cipher.ENCRYPT_MODE, publicKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec(oaepParams));
+            if ( oaepParams != null && oaepParams.length > 0 ) {
+                rsa.init( Cipher.ENCRYPT_MODE, publicKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec( oaepParams ) );
+            } else {
+                rsa.init( Cipher.ENCRYPT_MODE, publicKey );
+            }
         }
         catch(NoClassDefFoundError ncdfe) {
             throw (GeneralSecurityException) new GeneralSecurityException("Platform support for OAEP not available.").initCause(ncdfe);

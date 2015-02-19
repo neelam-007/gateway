@@ -163,6 +163,10 @@
                 <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor</value>
                 <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor</value>
 
+                <!-- Policy-Backed Services -->
+                <value>com.l7tech.objectmodel.polback.PolicyBackedService</value>
+                <value>com.l7tech.objectmodel.polback.PolicyBackedServiceOperation</value>
+
                 <!-- UDDI -->
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo</value>
@@ -180,12 +184,20 @@
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
 
+                <!-- Gateway-installable-via-DB server module files (.AAR and .JAR) -->
+                <value>com.l7tech.gateway.common.module.ServerModuleFile</value>
+                <value>com.l7tech.gateway.common.module.ServerModuleFileState</value>
+                <value>com.l7tech.gateway.common.module.ServerModuleFileData</value>
+
                 <!-- Firewall Rules Entity -->
                 <value>com.l7tech.gateway.common.transport.firewall.SsgFirewallRule</value>
 
                 <!-- Custom Key Value Store -->
                 <value>com.l7tech.policy.CustomKeyValueStore</value>
-
+                
+                <!-- Cassandra Connection -->
+                <value>com.l7tech.gateway.common.cassandra.CassandraConnection</value>
+                
                 <!-- Solution Kit -->
                 <value>com.l7tech.gateway.common.solutionkit.SolutionKit</value>
             </list>

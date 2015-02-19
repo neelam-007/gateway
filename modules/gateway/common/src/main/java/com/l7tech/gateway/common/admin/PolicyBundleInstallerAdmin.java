@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
@@ -59,6 +60,13 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
     List<BundleInfo> getAllComponents() throws PolicyBundleInstallerException;
 
     /**
+     * Optionally pass in the authenticated user from a service using authentication assertions (e.g. from the PolicyEnforcementContext).
+     * @param authenticatedUser authenticated user from the PolicyEnforcementContext
+     */
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+    void setAuthenticatedUser(@Nullable UserBean authenticatedUser);
+
+    /**
      * Dry run the installation.
      * Checks to see if:
      * <ul>
@@ -79,6 +87,17 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
     JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
                                                   @NotNull Map<String, BundleMapping> bundleMappings,
+                                                  @Nullable String installationPrefix);
+
+    /**
+     * This method is the same as the above method, except a target folder with a goid folderGoid" used during dry run.
+     * @param folderGoid: the goid of the target folder
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
+                                                  @NotNull Map<String, BundleMapping> bundleMappings,
+                                                  @NotNull Goid folderGoid,
                                                   @Nullable String installationPrefix);
     /**
      * Install the bundle identified by the supplied name
@@ -104,7 +123,8 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
      * @param bundleMappings Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
-     * @param migrationBundleOverrides override value to resolve migration conflicts
+     * @param migrationBundlesOverrides override value to resolve migration conflicts for all bundle components.
+     *                                  Key is the bundle component id, and Value is an overrides map for a particular bundle component.
      * @return the name of each bundle installed. If successful this will be each bundle requested.
      */
     @NotNull
@@ -113,5 +133,5 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
                              @NotNull Goid folderGoid,
                              @NotNull Map<String, BundleMapping> bundleMappings,
                              @Nullable String installationPrefix,
-                             @Nullable Map<String,Pair<String,Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException;
+                             @Nullable Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException;
 }

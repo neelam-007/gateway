@@ -26,7 +26,7 @@ while [ $# -ge 1 ]; do
             break
            ;;
         -h|--help)
-            echo "Usage: $0 --type=[mysql|derby] --url='jdbc:mysql://localhost:3306/ssg' --changeLogFile='filepath' -u 'username' -p 'userpass'"
+            echo "Usage: $0 --type=[mysql|derby] --url='jdbc:mysql://localhost:3306/ssg' --changeLogFile='filepath' -u 'username' [--password 'userpass']"
             exit 0
             ;;
         -t|--type)
@@ -119,4 +119,7 @@ liquibaseOut=$( "${SSG_JAVA_HOME}/bin/java" -jar ${LIQUIBASE_JAR} --classpath=${
 popd > /dev/null
 
 echo "${liquibaseOut}"
+# check if the response was successful
+echo "${liquibaseOut}" | grep "Successful" -q
+# This will respond with 0 if "Successful" is contained in the liquibase response. It will respond with 1 otherwise.
 exit $?

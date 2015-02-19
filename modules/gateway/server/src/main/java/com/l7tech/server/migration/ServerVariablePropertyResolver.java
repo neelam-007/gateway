@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_RANDOM;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ServerConfig;
@@ -49,7 +50,8 @@ public class ServerVariablePropertyResolver extends AbstractPropertyResolver {
         for (String varName : variableNames) {
             if (varName.startsWith(PREFIX_CLUSTER_PROPERTY) &&
                 varName.length() > PREFIX_CLUSTER_PROPERTY.length() &&
-                !varName.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
+                !varName.startsWith(PREFIX_GATEWAY_RANDOM) &&
+                !varName.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_RANDOM and PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
                 String cpName = varName.substring(PREFIX_CLUSTER_PROPERTY.length()+1);
                 ExternalEntityHeader cpExternalHeader = new ExternalEntityHeader(cpName, EntityType.CLUSTER_PROPERTY, null, cpName, null, null);
                 try {

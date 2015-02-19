@@ -2,6 +2,7 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.identity.InternalUserBean;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -74,6 +75,16 @@ public class InternalUserManagerImpl
         iu.setSubjectDn(bean.getSubjectDn());
         iu.setChangePassword(bean.isChangePassword());
         iu.setPasswordExpiry(bean.getPasswordExpiry());
+
+        if (bean instanceof InternalUserBean) {
+            if(((InternalUserBean) bean).getExpiration() != null) {
+                iu.setExpiration(((InternalUserBean) bean).getExpiration());
+            }
+            if(((InternalUserBean) bean).isEnabled() != null) {
+                iu.setEnabled(((InternalUserBean) bean).isEnabled());
+            }
+        }
+
         return iu;
     }
 

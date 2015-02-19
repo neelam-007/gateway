@@ -34,7 +34,7 @@ public class EntityMappingInstructions {
     private final TargetMapping targetMapping;
 
     public enum MappingAction {
-        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore
+        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore, Delete
     }
 
     /**
@@ -187,7 +187,7 @@ public class EntityMappingInstructions {
         private final Type type;
 
         public enum Type {
-            ID, NAME, GUID
+            ID, NAME, GUID, MAP_BY_ROLE_ENTITY
         }
 
         /**

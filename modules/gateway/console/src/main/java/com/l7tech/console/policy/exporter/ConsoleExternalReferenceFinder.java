@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
@@ -126,6 +128,12 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     public JdbcConnection getJdbcConnection( final String name ) throws FindException {
         JdbcAdmin jdbcAdmin = getAdminInterface( JdbcAdmin.class );
         return jdbcAdmin.getJdbcConnection( name );
+    }
+
+    @Override
+    public CassandraConnection getCassandraConnection(final String name) throws FindException {
+        CassandraConnectionManagerAdmin cassandraConnectionManagerAdmin = getAdminInterface(CassandraConnectionManagerAdmin.class);
+        return cassandraConnectionManagerAdmin.getCassandraConnection(name);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.radius;
 
+import net.jradius.dictionary.Attr_CallbackId;
+import net.jradius.dictionary.Attr_EAPCode;
 import net.jradius.exception.RadiusException;
 import net.jradius.packet.attribute.AttributeFactory;
 import net.jradius.packet.attribute.RadiusAttribute;
@@ -75,7 +77,14 @@ public class RadiusUtilsTest {
     }
 
     @Test
-    public void testParseIntValue() throws Exception {
+    public void testExtractAttributeValue() throws Exception {
+        RadiusAttribute attr = new Attr_EAPCode();
+        byte[] b = {1};
+        attr.setValue( b );
+        assertEquals(1, RadiusUtils.extractAttributeValue(attr));
 
+        attr = new Attr_CallbackId();
+        attr.setValue("Id");
+        assertEquals("Id", RadiusUtils.extractAttributeValue(attr));
     }
 }

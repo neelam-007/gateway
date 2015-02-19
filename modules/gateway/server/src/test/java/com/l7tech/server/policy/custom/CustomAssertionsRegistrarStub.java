@@ -2,6 +2,7 @@ package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
@@ -10,6 +11,7 @@ import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -179,5 +181,10 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
         }
         return customAssertionHolder;
+    }
+
+    @Override
+    public boolean isServerModuleFileLoaded(@NotNull final ServerModuleFile moduleFile) {
+        return false;
     }
 }

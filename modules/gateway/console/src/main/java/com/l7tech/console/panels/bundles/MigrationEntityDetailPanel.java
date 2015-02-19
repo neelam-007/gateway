@@ -1,29 +1,28 @@
 package com.l7tech.console.panels.bundles;
 
-import com.l7tech.console.panels.JdbcConnectionPropertiesDialog;
-import com.l7tech.console.panels.NewPrivateKeyDialog;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.action.ManageJdbcConnectionsAction;
+import com.l7tech.console.action.ManagePrivateKeysAction;
+import com.l7tech.console.action.ManageSecurePasswordsAction;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.SecurePasswordComboBox;
-import com.l7tech.console.panels.SecurePasswordPropertiesDialog;
 import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -37,11 +36,11 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.EntityDeleted;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetExists;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetNotFound;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MAPPING_TARGET_ID_ATTRIBUTE;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MappingAction.*;
-import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import static com.l7tech.objectmodel.EntityType.*;
 
 /**
@@ -59,10 +58,11 @@ public class MigrationEntityDetailPanel {
     private JLabel idLabel;
     private JRadioButton useExistRadioButton;
     private JRadioButton updateRadioButton;
-    private JButton createEntityButton;
+    private JButton manageEntityButton;
     private JComboBox entitiesComboBox;
     private JRadioButton createRadioButton;
     private JButton compareEntityButton;
+    private JCheckBox deleteEntityCheckBox;
     private EntityType targetType;
     private String policyResourceXml;
     private String existingEntityXml;
@@ -72,7 +72,8 @@ public class MigrationEntityDetailPanel {
 
     public MigrationEntityDetailPanel(final JDialog parent, final ConflictDisplayerDialog.ErrorType errorType,
                                       final EntityType targetType, final String name, final String id, final boolean versionModified, final String policyResourceXml,
-                                      final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
+                                      final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions,
+                                      @NotNull final JButton[] selectAllButtons) {
         this.targetType = targetType;
         this.parent = parent;
         this.policyResourceXml = policyResourceXml;
@@ -102,7 +103,8 @@ public class MigrationEntityDetailPanel {
         });
 
         entitiesComboBox.setVisible(errorType == TargetNotFound);
-        createEntityButton.setVisible(errorType == TargetNotFound);
+        manageEntityButton.setVisible(errorType == TargetNotFound);
+        deleteEntityCheckBox.setVisible(errorType == EntityDeleted);
 
         // default to "Use Existing", unless there's a version modifier (prefix) default to "Create New"
         if (versionModified) {
@@ -143,6 +145,8 @@ public class MigrationEntityDetailPanel {
         entitiesComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (entitiesComboBox.getItemCount() == 0) return;
+
                 final Properties properties = new Properties();
                 if (targetType == JDBC_CONNECTION) {
                     String selectedJdbcConnName = (String) entitiesComboBox.getSelectedItem();
@@ -172,8 +176,43 @@ public class MigrationEntityDetailPanel {
             }
         });
 
+        deleteEntityCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final String id = idLabel.getText();
+
+                if (deleteEntityCheckBox.isSelected()) {
+                    Properties properties = new Properties();
+                    properties.setProperty(id, targetType.toString());
+                    selectedMigrationResolutions.put(id, new Pair<>(Delete, properties));
+                } else {
+                    selectedMigrationResolutions.remove(id);
+                }
+            }
+        });
+
         if (errorType == TargetNotFound) {
             initializeEntityComponents();
+        }
+
+        for (int i = 0; i < selectAllButtons.length; i++) {
+            final JButton selectAllButton = selectAllButtons[i];
+            final JRadioButton radioButton = i == 0? useExistRadioButton : (i == 1? updateRadioButton : createRadioButton);
+
+            final int index = i;
+            selectAllButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    radioButton.setSelected(true);
+
+                    // Don't directly call radioButton.doClick().
+                    // Otherwise, the UI shows very slow on selecting all radio buttons, if there are a large amount of radio buttons.
+                    selectedMigrationResolutions.put(
+                        idLabel.getText(),
+                        new Pair<>(index == 0? NewOrExisting : (index == 1? NewOrUpdate : AlwaysCreateNew), (Properties) null)
+                    );
+                }
+            });
         }
     }
 
@@ -202,7 +241,7 @@ public class MigrationEntityDetailPanel {
         if (targetType == null) return;
 
         populateEntitiesList();
-        initializeCreatingEntityButtons();
+        initializeManagingEntitiesButtons();
     }
 
     private void populateEntitiesList() {
@@ -283,153 +322,29 @@ public class MigrationEntityDetailPanel {
         }
     }
 
-    private void initializeCreatingEntityButtons() {
-        if (targetType == JDBC_CONNECTION) {
-            createEntityButton.setText("Create JDBC Connection");
-            createEntityButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    createJdbcConnection(new JdbcConnection());
-                }
-            });
-        } else if (targetType == SSG_KEY_ENTRY) {
-            createEntityButton.setText("Create Private Key");
-            createEntityButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    createPrivateKey();
-                }
-            });
-        } else if (targetType == SECURE_PASSWORD) {
-            createEntityButton.setText("Create Stored Password");
-            createEntityButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    createSecurePassword(new SecurePassword());
-                }
-            });
-        } else {
+    private void initializeManagingEntitiesButtons() {
+        if (targetType != JDBC_CONNECTION && targetType != SSG_KEY_ENTRY && targetType != SECURE_PASSWORD) {
             showErrorMessage("Error Resolving Migration Issues", "Initialize Target Entity Error: Invalid target type: " + targetType, null, null);
-        }
-    }
-
-    private void createJdbcConnection(final JdbcConnection connection) {
-        final JdbcConnectionPropertiesDialog jdbcConnPropDialog = new JdbcConnectionPropertiesDialog(parent, connection);
-        jdbcConnPropDialog.pack();
-        Utilities.centerOnParentWindow(jdbcConnPropDialog);
-        DialogDisplayer.display(jdbcConnPropDialog, new Runnable() {
-            @Override
-            public void run() {
-                if (jdbcConnPropDialog.isConfirmed()) {
-                    Runnable redo = new Runnable() {
-                        public void run() {
-                            createJdbcConnection(connection);
-                        }
-                    };
-                    // Save the connection
-                    JdbcAdmin admin = getJdbcConnectionAdmin();
-                    if (admin == null) return;
-                    try {
-                        admin.saveJdbcConnection(connection);
-                    } catch (UpdateException e) {
-                        showErrorMessage("Error Resolving Migration Issues", "Failed to save a JDBC connection: " + ExceptionUtils.getMessage(e), e, redo);
-                        return;
-                    }
-                    // refresh the list
-                    populateJdbcConnectionComboBox();
-
-                    entitiesComboBox.setSelectedItem(connection.getName());
-                }
-            }
-        });
-    }
-
-    private void createPrivateKey() {
-        TrustedCertAdmin trustedCertAdmin = getTrustedCertAdmin();
-        if (trustedCertAdmin == null) return;
-
-        KeystoreFileEntityHeader mutableKeystore = null;
-        try {
-            for (KeystoreFileEntityHeader keystore : trustedCertAdmin.findAllKeystores(true)) {
-                if (!keystore.isReadonly()) {
-                    mutableKeystore = keystore;
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            showErrorMessage("Error Resolving Migration Issues", "Cannot retrieve key stores", e, null);
             return;
         }
 
-        final NewPrivateKeyDialog privateKeyDialog = new NewPrivateKeyDialog(parent, mutableKeystore);
-        privateKeyDialog.setModal(true);
-        privateKeyDialog.pack();
-        Utilities.centerOnParentWindow(privateKeyDialog);
-        DialogDisplayer.display(privateKeyDialog, new Runnable() {
+        final SecureAction action =
+            targetType == JDBC_CONNECTION? new ManageJdbcConnectionsAction() :
+            targetType == SSG_KEY_ENTRY? new ManagePrivateKeysAction() : new ManageSecurePasswordsAction();
+
+        manageEntityButton.setText("Manage " + (targetType == JDBC_CONNECTION? "JDBC Connection" : (targetType == SSG_KEY_ENTRY? "Private Key" : "Stored Password")));
+        manageEntityButton.setEnabled(action.isEnabled());
+        manageEntityButton.addActionListener(new ActionListener() {
             @Override
-            public void run() {
-                if (privateKeyDialog.isConfirmed()) {
-                    final ActiveKeypairJob activeKeypairJob = TopComponents.getInstance().getActiveKeypairJob();
-                    activeKeypairJob.setKeypairJobId(privateKeyDialog.getKeypairJobId());
-                    activeKeypairJob.setActiveKeypairJobAlias(privateKeyDialog.getNewAlias());
+            public void actionPerformed(ActionEvent e) {
+                action.actionPerformed(e);
 
-                    int minPoll = (privateKeyDialog.getSecondsToWaitForJobToFinish() * 1000) / 30;
-                    if (minPoll < ActiveKeypairJob.DEFAULT_POLL_INTERVAL)
-                        minPoll = ActiveKeypairJob.DEFAULT_POLL_INTERVAL;
-                    activeKeypairJob.setMinJobPollInterval(minPoll);
-
+                if (targetType == JDBC_CONNECTION)
+                    populateJdbcConnectionComboBox();
+                else if (targetType == SSG_KEY_ENTRY)
                     populatePrivateKeyComboBox();
-
-                    for (int i = 0; i < entitiesComboBox.getItemCount(); i++) {
-                        KeystoreComboEntry entry = (KeystoreComboEntry) entitiesComboBox.getItemAt(i);
-                        if (entry.getAlias().equals(privateKeyDialog.getNewAlias())) {
-                            entitiesComboBox.setSelectedItem(entry);
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    private void createSecurePassword(final SecurePassword securePassword) {
-        final SecurePasswordPropertiesDialog passwordPropertiesDialog = new SecurePasswordPropertiesDialog(parent, securePassword, false, true);
-        passwordPropertiesDialog.pack();
-        Utilities.centerOnParentWindow(passwordPropertiesDialog);
-        DialogDisplayer.display(passwordPropertiesDialog, new Runnable() {
-            @Override
-            public void run() {
-                if (passwordPropertiesDialog.isConfirmed()) {
-                    Runnable redo = new Runnable() {
-                        public void run() {
-                            createSecurePassword(securePassword);
-                        }
-                    };
-                    // Save the secure password
-                    TrustedCertAdmin admin = getTrustedCertAdmin();
-                    if (admin == null) return;
-
-                    final Goid savedId;
-                    try {
-                        savedId = admin.saveSecurePassword(securePassword);
-
-                        // Update password field, if necessary
-                        char[] newpass = passwordPropertiesDialog.getEnteredPassword();
-                        if (newpass != null) admin.setSecurePassword(savedId, newpass);
-
-                        int keybits = passwordPropertiesDialog.getGenerateKeybits();
-                        if (keybits > 0) {
-                            doAsyncAdmin(admin, parent, "Generating Key", "Generating PEM private key ...", admin.setGeneratedSecurePassword(savedId, keybits));
-                        }
-                    } catch (Exception e) {
-                        showErrorMessage("Error Resolving Migration Issues", "Failed to save a secure password: " + ExceptionUtils.getMessage(e), e, redo);
-                        return;
-                    }
-                    // refresh the list
+                else
                     populateSecurePasswordComboBox();
-
-                    ((SecurePasswordComboBox) entitiesComboBox).setSelectedSecurePassword(savedId);
-                }
             }
         });
     }
@@ -455,8 +370,10 @@ public class MigrationEntityDetailPanel {
             return false;
         }
 
-        if (policyResourceXml.equals(currentActiveEntityXml)) {
-            logger.fine("The existing entity XML is the same as the updated entity XML, so 'Compare Entity' is disabled.");
+        if (XmlUtil.reformatXml(policyResourceXml).equals(XmlUtil.reformatXml(currentActiveEntityXml))) {
+            String message = "The existing entity is identical to the updated entity, so comparing entity is not necessary.";
+            logger.fine(message);
+            compareEntityButton.setToolTipText(message);
             return false;
         }
 

@@ -51,7 +51,6 @@ import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
-import javax.imageio.ImageIO;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.Timer;
@@ -173,6 +172,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
+    private Action togglePolicyInputsAndOutputs = null;
     private MyAccountAction myAccountAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
@@ -199,6 +199,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurePasswordsAction manageSecurePasswordsAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
     private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
+    private ManageCassandraConnectionAction manageCassandraConnectionAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalResourcesAction manageGlobalResourcesAction = null;
@@ -213,10 +214,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
     private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
     private ManageEncapsulatedAssertionsAction manageEncapsulatedAssertionsAction = null;
+    private ManagePolicyBackedServicesAction managePolicyBackedServicesAction = null;
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
+    private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
     private ManageSolutionKitsAction manageSolutionKitsAction = null;
-
+    
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -253,6 +256,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
+    private JCheckBoxMenuItem showInputsAndOutputsMenuItem;
     private JMenuItem showAstnCommentsMenuItem;
     private JMenuItem showAstnLnsMenuItem;
     private JMenuItem importMenuItem;
@@ -645,6 +649,21 @@ public class MainWindow extends JFrame implements SheetHolder {
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return validateMenuItem;
+    }
+
+    private JCheckBoxMenuItem getShowInputsAndOutputsMenuItem() {
+        if (null == showInputsAndOutputsMenuItem) {
+            boolean inputsAndOutputsVisible = getPreferences().isPolicyInputsAndOutputsVisible();
+
+            showInputsAndOutputsMenuItem = new JCheckBoxMenuItem(getInputsAndOutputsToggleAction());
+
+            showInputsAndOutputsMenuItem.setSelected(inputsAndOutputsVisible);
+            showInputsAndOutputsMenuItem.setMnemonic(KeyEvent.VK_U);
+            showInputsAndOutputsMenuItem.setDisplayedMnemonicIndex(4);
+            showInputsAndOutputsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.ALT_DOWN_MASK));
+        }
+
+        return showInputsAndOutputsMenuItem;
     }
 
     private JMenuItem getShowAssertionCommentsMenuItem() {
@@ -1048,7 +1067,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageGlobalResourcesMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageSsgConnectorsAction());
-            menu.add(getManageJdbcConnectionsAction());
+            menu.add(getManageDataSourcesAction());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
@@ -1063,6 +1082,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageServiceResolutionMenuItem());
             menu.add(getManageEncapsulatedAssertionsAction());
             menu.add(getSiteMinderConfigurationAction());
+            menu.add(getManageServerModuleFilesAction());
             menu.add(getManageSolutionKitsAction());
 
             menu.add(getCustomGlobalActionsMenu());
@@ -1073,6 +1093,13 @@ public class MainWindow extends JFrame implements SheetHolder {
             tasksMenu = menu;
         }
         return tasksMenu;
+    }
+
+    private JMenu getManageDataSourcesAction() {
+        JMenu dataSourcesMenu = new JMenu("Manage Data Sources");
+        dataSourcesMenu.add(getManageJdbcConnectionsAction());
+        dataSourcesMenu.add(getManageCassandraConnectionsAction());
+        return dataSourcesMenu;
     }
 
     private JMenuItem getManageAuditAlertOptionsMenuItem() {
@@ -1143,6 +1170,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         boolean policyMessageAreaVisible = getPreferences().isPolicyMessageAreaVisible();
         jcm.setSelected(policyMessageAreaVisible);
         menu.add(jcm);
+
+        menu.add(getShowInputsAndOutputsMenuItem());
 
         if (!isApplet()) {
             jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
@@ -1662,6 +1691,53 @@ public class MainWindow extends JFrame implements SheetHolder {
         return toggleStatusBarAction;
     }
 
+    private Action getInputsAndOutputsToggleAction() {
+        if ( togglePolicyInputsAndOutputs != null )
+            return togglePolicyInputsAndOutputs;
+
+        String atext = resapplication.getString("toggle.policy.inputsAndOutputs.action.name");
+        String aDesc = resapplication.getString("toggle.policy.inputsAndOutputs.action.desc");
+
+        togglePolicyInputsAndOutputs =
+            new AbstractAction( atext ) {
+                @Override
+                public void actionPerformed(ActionEvent event) {
+                    JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                    final boolean selected = item.isSelected();
+
+                    final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                    final WorkSpacePanel.TabbedPane tabbedPane = cw.getTabbedPane();
+
+                    int numTabs = tabbedPane.getTabCount();
+
+                    for (int i = 0; i < numTabs; i++) {
+                        Component c = tabbedPane.getComponentAt(i);
+
+                        if (c != null && c instanceof PolicyEditorPanel) {
+                            PolicyEditorPanel pe = (PolicyEditorPanel) c;
+
+                            if (null != pe.getPolicyNode().getInterfaceDescription()) {
+                                pe.setPolicyInputsAndOutputsVisible(selected);
+                                pe.getToolBar().updateToggleInputsAndOutputsButton();
+                            }
+                        }
+                    }
+
+                    try {
+                        SsmPreferences p = preferences;
+                        p.setPolicyInputsAndOutputsVisible(selected);
+                        p.store();
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
+            };
+
+        togglePolicyInputsAndOutputs.putValue( Action.SHORT_DESCRIPTION, aDesc );
+
+        return togglePolicyInputsAndOutputs;
+    }
+
     /**
      * create the Action (the component that is used by several controls)
      *
@@ -2164,6 +2240,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         //
         menuActions.addAll(this.getCustomAssertionActions());
 
+        // Expose policy backed services if enabled
+        if ( haveAnyPolicyBackedServices() ) {
+            menuActions.add( getManagePolicyBackedServicesAction() );
+        }
+
         // sort actions before sticking them into Additional Actions menu
         // so they'll appear in the same order
         Collections.sort(menuActions, new ActionComparator());
@@ -2174,6 +2255,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         menu.setEnabled(added);
+    }
+
+    private boolean haveAnyPolicyBackedServices() {
+        try {
+            if ( Registry.getDefault().isAdminContextPresent() ) {
+                Collection<String> templates = Registry.getDefault().getPolicyBackedServiceAdmin().findAllTemplateInterfaceNames();
+                //noinspection ConstantConditions
+                return templates != null && !templates.isEmpty();
+            }
+        } catch ( Exception e ) {
+            log.log( Level.INFO, "Unable to check for policy backed services: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+        return false;
     }
 
     private List<Action> getCustomAssertionActions() {
@@ -2273,6 +2367,22 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageEncapsulatedAssertionsAction;
     }
 
+    private Action getManagePolicyBackedServicesAction() {
+        if ( managePolicyBackedServicesAction == null ) {
+            managePolicyBackedServicesAction = new ManagePolicyBackedServicesAction();
+            disableUntilLogin( managePolicyBackedServicesAction );
+        }
+        return managePolicyBackedServicesAction;
+    }
+
+    private Action getManageServerModuleFilesAction() {
+        if ( manageServerModuleFilesAction == null ) {
+            manageServerModuleFilesAction = new ManageServerModuleFilesAction();
+            disableUntilLogin( manageServerModuleFilesAction );
+        }
+        return manageServerModuleFilesAction;
+    }
+
     private Action getManageSecurityZonesAction() {
         if (manageSecurityZonesAction == null) {
             manageSecurityZonesAction = new ManageSecurityZonesAction();
@@ -2304,6 +2414,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         manageJdbcConnectionsAction = new ManageJdbcConnectionsAction();
         disableUntilLogin(manageJdbcConnectionsAction);
         return manageJdbcConnectionsAction;
+    }
+
+    private Action getManageCassandraConnectionsAction() {
+        if(manageCassandraConnectionAction != null) {
+            return manageCassandraConnectionAction;
+        }
+
+        manageCassandraConnectionAction = new ManageCassandraConnectionAction();
+        disableUntilLogin(manageCassandraConnectionAction);
+        return manageCassandraConnectionAction;
     }
 
     private Action getSiteMinderConfigurationAction() {
@@ -2663,7 +2783,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageGlobalResourcesMenuItem());
                 manageMenu.add(getManageClusterPropertiesActionMenuItem());
                 manageMenu.add(getManageSsgConnectorsAction());
-                manageMenu.add(getManageJdbcConnectionsAction());
+                manageMenu.add(getManageDataSourcesAction());
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
@@ -2680,6 +2800,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageServiceResolutionMenuItem());
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
+                manageMenu.add(getManageServerModuleFilesAction());
                 manageMenu.add(getManageSolutionKitsAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());

@@ -21,7 +21,7 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
-    public void delete(LdapGroup group) throws DeleteException, ObjectNotFoundException {
+    public void delete(LdapGroup group) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
@@ -52,6 +52,11 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
 
     @Override
     public String save(LdapGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String save(Goid id, LdapGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
         throw new UnsupportedOperationException();
     }
 

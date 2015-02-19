@@ -43,6 +43,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
+    public static final String UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD = "ui:PublishWsdlQueryHandlerWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
     public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
@@ -50,7 +51,9 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
+    public static final String UI_MANAGE_POLICY_BACKED_SERVICES = "ui:ManagePolicyBackedServices";
     public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
+    public static final String UI_MANAGE_CASSANDRA_CONNECTIONS = "ui:ManageCassandraConnections";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =

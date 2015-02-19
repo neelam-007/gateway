@@ -1,11 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
-import com.l7tech.gateway.api.GroupMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.EntityType;
@@ -33,13 +31,13 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
 
     @NotNull
     @Override
-    public GroupMO convertToMO(@NotNull EntityContainer<Group> groupEntityContainer) {
-        return convertToMO(groupEntityContainer.getEntity());
+    public GroupMO convertToMO(@NotNull EntityContainer<Group> groupEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(groupEntityContainer.getEntity(), secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public GroupMO convertToMO(@NotNull Group group) {
+    public GroupMO convertToMO(@NotNull Group group,  SecretsEncryptor secretsEncryptor) {
         GroupMO groupMO = ManagedObjectFactory.createGroupMO();
         groupMO.setId(group.getId());
         groupMO.setProviderId(group.getProviderId().toString());
@@ -50,13 +48,13 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
 
     @NotNull
     @Override
-    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(groupMO,true);
+    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(groupMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         GroupBean group = new GroupBean();
         group.setUniqueIdentifier(groupMO.getId());
 

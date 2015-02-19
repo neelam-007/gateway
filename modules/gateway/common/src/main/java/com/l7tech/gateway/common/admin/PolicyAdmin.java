@@ -8,6 +8,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -71,6 +73,19 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Policy findPolicyByGuid(String guid) throws FindException;
+
+    /**
+     * Finds policies with the specified policy type, tag, and sub tag.
+     * @param policyType   policy type to find. Required.
+     * @param internalTag  policy tag to find, or null to avoid filtering by policy tag.
+     * @param internalSubTag policy sub tag to find, or null to avoid filtering by policy sub tag.
+     * @return a collection of policies with the requested policy type, tag, and sub tag.  May be empty but never null.
+     * @throws FindException on database error
+     */
+    @NotNull
+    @Secured(stereotype=FIND_ENTITIES)
+    @Transactional(readOnly=true)
+    Collection<Policy> findPoliciesByTypeTagAndSubTag( @NotNull PolicyType policyType, @Nullable String internalTag, @Nullable String internalSubTag ) throws FindException;
 
     /**
      * Finds all policies in the system with the given type.
@@ -277,9 +292,48 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @param internalTag the internal tag if the policy type has a relevant one
      * @return policy XML, null if no relevant policy xml for the type and tag.
      */
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     @Transactional(readOnly = true)
     String getDefaultPolicyXml(PolicyType type, String internalTag);
+
+    /**
+     * Represents a description of a policy tag.
+     */
+    public static final class PolicyTagInfo implements Serializable {
+        private static final long serialVersionUID = 4436438769393913753L;
+
+        /** The policy tag name.  Required. */
+        @NotNull
+        public final String policyTag;
+
+        /** Default policy XML for this tag, or null. */
+        @Nullable
+        public final String defaultPolicyXml;
+
+        /** Sub tag names for this tag, or empty if no sub tags are supported. */
+        @NotNull
+        public final Set<String> policySubTags;
+
+        public PolicyTagInfo( @NotNull String policyTag, @Nullable String defaultPolicyXml, @Nullable Set<String> policySubTags ) {
+            this.policyTag = policyTag;
+            this.defaultPolicyXml = defaultPolicyXml;
+            this.policySubTags = policySubTags == null
+                                        ? Collections.<String>emptySet()
+                                        : policySubTags;
+        }
+    }
+
+    /**
+     * Get any dynamically-registered policy tag (and sub tag) values that should be offered for the specified policy type (if any).
+     *
+     * @param policyType policy type whose tags to obtain.  Required.
+     * @return a Collection of PolicyTagInfo instances, each describing a policy tag to add to the available set
+     *         for the specified policy type.  May be empty, but never null.
+     */
+    @NotNull
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    @Transactional(readOnly = true)
+    Collection<PolicyTagInfo> getPolicyTags( @NotNull PolicyType policyType );
 
     /**
      * Get the xml part max bytes value set in the io.xmlPartMaxBytes cluster property

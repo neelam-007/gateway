@@ -3,6 +3,7 @@ package com.l7tech.server.policy.custom;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
@@ -22,6 +23,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
@@ -615,5 +617,18 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             serviceFinder.setSignerServicesImpl(new SignerServicesImpl(ssgKeyStoreManager, defaultKey));
         }
         return serviceFinder;
+    }
+
+    @Override
+    public boolean isServerModuleFileLoaded(@NotNull final ServerModuleFile moduleFile) {
+        final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
+        if (StringUtils.isNotBlank(moduleFileName)) {
+            for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+                if (moduleFileName.equals(module.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

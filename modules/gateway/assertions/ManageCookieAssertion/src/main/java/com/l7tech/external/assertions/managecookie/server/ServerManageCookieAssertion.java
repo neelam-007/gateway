@@ -230,7 +230,10 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
                 logger.log(Level.WARNING, "Unknown cookie attribute: " + attributeName);
             }
         } else if (assertion.getCookieAttributes().containsKey(attributeName)) {
-            attributeValue = ExpandVariables.process(assertion.getCookieAttributes().get(attributeName).getValue(), variableMap, getAudit());
+            final String value = assertion.getCookieAttributes().get(attributeName).getValue();
+            if (value != null) {
+                attributeValue = ExpandVariables.process(value, variableMap, getAudit());
+            }
         }
         return attributeValue;
     }

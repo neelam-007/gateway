@@ -1,0 +1,31 @@
+<div>
+    <h1>Gateway Migration Utility</h1>
+    <p>Gateway Migration Utility (GMU) is a standalone, Java-based command-line tool for migrating Gateway-specific resources between CA API Gateways. GMU commands let you control which resources on a CA API Gateway are migrated, and how they are migrated. You can automate migrations using GMU commands and the CA API REST Management API.</p>
+    <p>For more information on the Gateway Migration Utility see the production documentation, Migrate Gateways section.</p>
+    <p>Use GMU to do these common tasks:</p>
+    <ul>
+        <li>Provision new CA API Gateways (for example, from Test to Production)</li>
+        <li>Migrate policies between CA API Gateways</li>
+        <li>Create templates to:
+            <ul>
+                <li>Easily make minor changes to CA API Gateways</li>
+                <li>Migrate the same bundle with different environment configurations to different CA API Gateways</li>
+            </ul>
+        </li>
+    </ul>
+    <h3>Getting the GMU</h3>
+    <ol>
+        <li>Go to CA Support: <a href="www.layer7tech.com/support">www.layer7tech.com/support</a> and:
+            <ol>
+                <li>Get the CA API REST Management API documentation.</li>
+                <li>Download the Gateway Migration Utility.zip and extract the contents to a directory.</li>
+            </ol>
+        </li>
+        <li>Open a command prompt or terminal, and set Java environment variables.<br/>
+            <strong>Windows</strong>: The %PATH% environment variable must contain the path of the bin directory for the Java SDK/JRE.<br/>
+            <strong>Linux/Unix</strong>: One of the following methods: JAVA_HOME, SSG_JAVA_HOME, JAVA in the path, or use the argument –jdk to specify the location of the Java SDK/JRE.</li>
+        <li>Go to the extracted .zip directory, and run GMU:<br/>
+            <strong>Windows</strong>: GatewayMigrationUtility.bat<br/>
+            <strong>Linux/Unix</strong>: ./GatewayMigrationUtility.sh</li>
+    </ol>
+</div>

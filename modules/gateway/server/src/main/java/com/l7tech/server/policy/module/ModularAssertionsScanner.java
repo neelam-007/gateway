@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * Extend abstract {@link com.l7tech.server.policy.module.ModulesScanner} and implement modular assertions specific logic.
  */
 public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAssertionModule> {
-    protected static final Logger logger = Logger.getLogger(ScheduledModuleScanner.class.getName());
+    protected static final Logger logger = Logger.getLogger(ModularAssertionsScanner.class.getName());
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final boolean useApplicationClasspath = ConfigFactory.getBooleanProperty("ssg.modularAssertions.useApplicationClasspath", false);

@@ -6,6 +6,7 @@ import com.l7tech.policy.PolicyVersion;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.text.DateFormat;
@@ -98,16 +99,17 @@ public class PolicyRevisionUtils {
      *
      * @param policyName: the policy name without any decoration
      * @param versionNum: the policy version ordinal
-     * @param latestVersionNum: the latest policy version number
+     * @param latestVersionNum: the latest policy version number, if known, otherwise null
      * @param isVersionActive: is the policy version active?
      * @return a displaying name with above information
      */
-    public static String getDisplayName(final String policyName, final long versionNum, final long latestVersionNum, final boolean isVersionActive) {
+    public static String getDisplayName(final String policyName, final long versionNum, final @Nullable Long latestVersionNum, final boolean isVersionActive) {
         String activeStr = isVersionActive ? "active" : "inactive";
         if (versionNum < 1)
             return policyName + " (" + activeStr + ')';
         else {
-            return policyName + " (v" + versionNum + "/" + latestVersionNum + ", " + activeStr + ')';
+            String latest = latestVersionNum == null ? "?" : latestVersionNum.toString();
+            return policyName + " (v" + versionNum + "/" + latest + ", " + activeStr + ')';
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
@@ -130,7 +131,13 @@ public class RegistryStub extends Registry {
     }
 
     @Override
-      public JdbcAdmin getJdbcConnectionAdmin() {
+    public JdbcAdmin getJdbcConnectionAdmin() {
+        return null;
+    }
+
+
+    @Override
+    public CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
         return null;
     }
 
@@ -582,6 +589,11 @@ public class RegistryStub extends Registry {
     }
 
     @Override
+    public PolicyBackedServiceAdmin getPolicyBackedServiceAdmin() {
+        return policyBackedServiceAdmin;
+    }
+
+    @Override
     public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
         return customKeyValueStoreAdmin;
     }
@@ -598,6 +610,10 @@ public class RegistryStub extends Registry {
 
     public void setEncapsulatedAssertionAdmin(@NotNull final EncapsulatedAssertionAdmin encapsulatedAssertionAdmin) {
         this.encapsulatedAssertionAdmin = encapsulatedAssertionAdmin;
+    }
+
+    public void setPolicyBackedServiceAdmin( @NotNull PolicyBackedServiceAdmin policyBackedServiceAdmin ) {
+        this.policyBackedServiceAdmin = policyBackedServiceAdmin;
     }
 
     public void setCustomKeyValueStoreAdmin(@NotNull final CustomKeyValueStoreAdmin customKeyValueStoreAdmin) {
@@ -649,6 +665,7 @@ public class RegistryStub extends Registry {
     private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
     private TrustedCertAdmin trustedCertAdmin = new TrustedCertAdminStub();
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private PolicyBackedServiceAdmin policyBackedServiceAdmin;
     private CustomKeyValueStoreAdmin customKeyValueStoreAdmin;
     private ServiceAdmin serviceManager;
     private PolicyAdmin policyAdmin;

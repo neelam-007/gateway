@@ -1,23 +1,22 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
-import com.l7tech.common.io.ProcResult;
-import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.processcontroller.patching.PatchException;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 
 /**
  * @author jbufu
  */
 public class ShellScriptPatchTask implements PatchTask {
     @Override
-    public void runPatch(String resourceDirEntry) throws Exception {
+    public void runPatch(String resourceDirEntry)
+            throws IOException, InterruptedException, PatchException {
+        System.out.println("Executing shell script patch task");
+
+        System.out.println("Extracting shell script to run");
         String scriptName = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
 
         File resourceTempDir = new File( ConfigFactory.getProperty( PatchMain.RESOURCE_TEMP_PROPERTY ) );
@@ -29,17 +28,35 @@ public class ShellScriptPatchTask implements PatchTask {
             scriptIn = PatchMain.getResourceStream(this.getClass(), resourceDirEntry + scriptName);
             tempOut = new FileOutputStream(tempFile);
             IOUtils.copyStream(scriptIn, tempOut);
-        } finally {
+        }
+        finally {
             ResourceUtils.closeQuietly(scriptIn);
             ResourceUtils.closeQuietly(tempOut);
         }
+        System.out.println("Done extracting shell script to run");
 
+        System.out.println("Running shell script");
+        ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", tempFile.getAbsolutePath(), resourceTempDir.getAbsolutePath());
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
 
-        ProcResult result = ProcUtils.exec("/bin/bash " + tempFile.getAbsolutePath() + " " + resourceTempDir.getAbsolutePath());
-        if(result.getExitStatus() != 0) {
-            byte[] output = result.getOutput();
-            throw new PatchException("Error executing patch task: '" + scriptName + (output == null ? "'" : "', error message: " + new String(output) + "\n"));
+        InputStream processStdOut = process.getInputStream();
+        InputStreamReader inputStreamReader = new InputStreamReader(processStdOut);
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        String line;
+        while((line = bufferedReader.readLine()) != null) {
+            System.out.println(line);
+            System.out.flush();
         }
+        int processExitCode = process.waitFor();
+        if(processExitCode != 0) {
+            throw new PatchException("Error executing patch task: non-zero exit code returned from patch install script (returned " + processExitCode + ")");
+        }
+        System.out.println("Patch returned exit code " + processExitCode);
+        ResourceUtils.closeQuietly(processStdOut);
+        System.out.println("Done running shell script");
+
+        System.out.println("Done executing shell script patch task");
     }
 
     @Override
@@ -51,6 +68,7 @@ public class ShellScriptPatchTask implements PatchTask {
             "com.l7tech.util.ArrayUtils",
             "com.l7tech.util.ArrayUtils$1",
             "com.l7tech.util.ArrayUtils$1$1",
+            "com.l7tech.util.BufferPool",
             "com.l7tech.util.CausedIOException",
             "com.l7tech.util.Charsets",
             "com.l7tech.util.CollectionUtils",

@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -121,13 +122,13 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("resources/" + resourceDocItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -260,7 +261,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -353,7 +354,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -403,7 +404,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -570,7 +571,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -665,7 +666,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -715,7 +716,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("Could not locate entity"));
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -806,7 +807,122 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
+        }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the resource document on the target
+        ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
+        Resource createResource = ManagedObjectFactory.createResource();
+        createResource.setSourceUrl("targetbooks2.dtd");
+        createResource.setType("dtd");
+        createResource.setContent("<![CDATA[<!ELEMENT book ANY>]]>");
+        resourceDocumentMO.setResource(createResource);
+        resourceDocumentMO.setProperties(new HashMap<String, Object>());
+        resourceDocumentMO.getProperties().put("description", "target resource");
+        resourceDocumentMO.getProperties().put("publicIdentifier", "books2");
+        RestResponse response = getTargetEnvironment().processRequest("resources", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(resourceDocumentMO)));
+
+        assertOkCreatedResponse(response);
+        Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        resourceDocumentMO.setId(docCreated.getId());
+        docCreated.setContent(resourceDocumentMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(resourceDocumentMO.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(docCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(docCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(docCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(docCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+    }
+
+    @Test
+    public void includedInFullBundleExportTest() throws Exception {
+        //create the resource document on the target
+        ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
+        Resource createResource = ManagedObjectFactory.createResource();
+        createResource.setSourceUrl("sourcebooks2.dtd");
+        createResource.setType("dtd");
+        createResource.setContent("<![CDATA[<!ELEMENT book ANY>]]>");
+        resourceDocumentMO.setResource(createResource);
+        resourceDocumentMO.setProperties(new HashMap<String, Object>());
+        resourceDocumentMO.getProperties().put("description", "source resource");
+        resourceDocumentMO.getProperties().put("publicIdentifier", "books2");
+        RestResponse response = getSourceEnvironment().processRequest("resources", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(resourceDocumentMO)));
+
+        assertOkCreatedResponse(response);
+        Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        resourceDocumentMO.setId(docCreated.getId());
+        docCreated.setContent(resourceDocumentMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Mapping resourceDocumentMapping = getMapping(bundleItem.getContent().getMappings(), docCreated.getId());
+            Assert.assertNotNull(resourceDocumentMapping);
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            resourceDocumentMapping = getMapping(mappings.getContent().getMappings(), docCreated.getId());
+            Assert.assertNotNull(resourceDocumentMapping);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), resourceDocumentMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, resourceDocumentMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, resourceDocumentMapping.getActionTaken());
+            Assert.assertEquals(docCreated.getId(), resourceDocumentMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMapping.getSrcId(), resourceDocumentMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+            response = getSourceEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
         }
     }
 }

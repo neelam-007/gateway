@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -121,13 +122,13 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         RestResponse response;
 
         response = getSourceEnvironment().processRequest("serviceAliases/" + serviceAliasItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -306,10 +307,10 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         }finally{
 
             response = getTargetEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -477,13 +478,13 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -561,7 +562,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
 
         }finally{
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -781,14 +782,106 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
 
         }finally{
             response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/" + folderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
+        }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        ServiceMO serviceMO1 = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
+        serviceMO1.setId(null);
+        serviceMO1.getServiceDetail().setName("Target Service");
+        RestResponse response = getTargetEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO1)));
+        logger.log(Level.INFO, response.toString());
+        assertOkCreatedResponse(response);
+        Item<ServiceMO> serviceCreated1 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceMO1.setId(serviceCreated1.getId());
+        serviceCreated1.setContent(serviceMO1);
+
+        ServiceMO serviceMO2 = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
+        serviceMO2.setId(null);
+        serviceMO2.getServiceDetail().setName("Target Service By Name");
+        response = getTargetEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO2)));
+        logger.log(Level.INFO, response.toString());
+        assertOkCreatedResponse(response);
+        Item<ServiceMO> serviceCreated2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceMO2.setId(serviceCreated2.getId());
+        serviceCreated2.setContent(serviceMO2);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(serviceCreated1.getId());
+        mapping.setType(serviceCreated1.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(serviceCreated1.getType());
+
+        Mapping mappingByName = ManagedObjectFactory.createMapping();
+        mappingByName.setAction(Mapping.Action.Delete);
+        mappingByName.setProperties(CollectionUtils.MapBuilder.<String,Object>builder()
+                .put("MapBy", "name")
+                .put("MapTo", serviceCreated2.getName()).map());
+        mappingByName.setType(serviceCreated2.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting, mappingByName));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mapping after the import", 3, mappings.getContent().getMappings().size());
+        Mapping serviceMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, serviceMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, serviceMapping.getActionTaken());
+        Assert.assertEquals(serviceCreated1.getId(), serviceMapping.getTargetId());
+
+        Mapping serviceMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, serviceMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, serviceMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, serviceMappingNotExisting.getTargetId());
+
+        Mapping mappingByNameResult = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.SERVICE.toString(), mappingByNameResult.getType());
+        Assert.assertEquals(Mapping.Action.Delete, mappingByNameResult.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, mappingByNameResult.getActionTaken());
+        Assert.assertEquals(serviceCreated2.getId(), mappingByNameResult.getTargetId());
+
+        response = getTargetEnvironment().processRequest("services/"+serviceCreated1.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+
+        response = getTargetEnvironment().processRequest("services/"+serviceCreated2.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+
+        //check that all auto created roles where deleted
+        response = getTargetEnvironment().processRequest("roles", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<RbacRoleMO> roles = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+
+        for(Item<RbacRoleMO> role : roles.getContent()) {
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), serviceCreated1.getId(), role.getContent().getEntityID());
+            Assert.assertNotSame("Found the auto created role for the deleted entity: " + objectToString(role), serviceCreated2.getId(), role.getContent().getEntityID());
         }
     }
 }

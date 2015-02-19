@@ -1,5 +1,6 @@
 package com.l7tech.gateway.rest;
 
+import com.l7tech.message.Header;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * bean.
  * <p/>
  * After properties are set call {@link #init()} to initialize the rest handler. Once the handler has been initialized
- * you can handle requests by calling {@link #handleRequest(java.lang.String, java.net.URI, java.net.URI, String, String, java.io.InputStream, javax.ws.rs.core.SecurityContext, java.util.Map)}
+ * you can handle requests by calling {@link #handleRequest(java.lang.String, java.net.URI, java.net.URI, String, String, java.io.InputStream, javax.ws.rs.core.SecurityContext, java.util.Map, java.util.Collection)}
  */
 public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(RestAgentImpl.class.getName());
@@ -137,7 +138,10 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
      * @throws RequestProcessingException
      */
     @Override
-    public RestResponse handleRequest(@Nullable final String requesterHost, @NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
+    public RestResponse handleRequest(@Nullable final String requesterHost, @NotNull URI baseUri, @NotNull URI uri,
+                                      @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body,
+                                      @Nullable SecurityContext securityContext,
+                                      @Nullable Map<String,Object> properties, @NotNull final Collection<Header> headers) throws PrivilegedActionException, RequestProcessingException {
         if (handler == null) {
             throw new RequestProcessingException("The Rest handler has not yet been initialized. Cannot process requests until it have been.");
         }
@@ -145,7 +149,7 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
         RestResponse restResponse = null;
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream(BUFFER_SIZE);
-            ContainerResponse response = handler.handle(requesterHost, baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
+            ContainerResponse response = handler.handle(requesterHost, baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties, headers);
             final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
             restResponse = new RestResponse(bin, response.getMediaType() != null ? response.getMediaType().toString() : null, response.getStatus(), response.getHeaders());
         } finally {

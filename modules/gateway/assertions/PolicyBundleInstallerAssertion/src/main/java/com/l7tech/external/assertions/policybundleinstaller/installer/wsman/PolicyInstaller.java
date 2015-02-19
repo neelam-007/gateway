@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
+import static com.l7tech.policy.bundle.BundleMapping.Type.JDBC_CONNECTION_NAME;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
@@ -126,6 +127,9 @@ public class PolicyInstaller extends WsmanInstaller {
                         @NotNull final Map<String, String> oldToNewPolicyIds,
                         @NotNull final Map<String, String> oldToNewPolicyGuids) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, POLICY, true);
+        if (policyBundle == null) {
+            logger.info("No policy item found in folder: " + subFolder);
+        }
         install(policyBundle, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
     }
 
@@ -157,10 +161,8 @@ public class PolicyInstaller extends WsmanInstaller {
         updatePolicyIncludes(oldToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
 
         BundleMapping bundleMapping = context.getBundleMapping();
-        if (bundleMapping != null) {
-            final Map<String, String> mappedJdbcReferences = bundleMapping.getJdbcMappings();
-            JdbcConnectionInstaller.setJdbcReferencesInPolicy(policyDocumentFromResource, mappedJdbcReferences);
-        }
+        final Map<String, String> mappedJdbcReferences = bundleMapping.getMappings(JDBC_CONNECTION_NAME);
+        JdbcConnectionInstaller.setJdbcReferencesInPolicy(policyDocumentFromResource, mappedJdbcReferences);
 
         if (policyBundleInstallerCallback != null) {
             policyBundleInstallerCallback.prePolicySave(context.getBundleInfo(), entityDetailElmReadOnly, policyDocumentFromResource);
@@ -211,7 +213,8 @@ public class PolicyInstaller extends WsmanInstaller {
             PolicyBundleInstallerCallback.CallbackException,
             InvalidBundleException,
             InterruptedException,
-            AccessDeniedManagementResponse {
+            AccessDeniedManagementResponse,
+            InstallationException {
 
         final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyMgmtEnumeration.getDocumentElement(), "Policy");
         int policyElmsSize = enumPolicyElms.size();
@@ -259,7 +262,8 @@ public class PolicyInstaller extends WsmanInstaller {
             PolicyBundleInstallerCallback.CallbackException,
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             InterruptedException,
-            AccessDeniedManagementResponse {
+            AccessDeniedManagementResponse,
+            InstallationException {
 
         final String policyId = enumPolicyElmReadOnly.getAttribute("id");
         final String policyGuid = enumPolicyElmReadOnly.getAttribute("guid");

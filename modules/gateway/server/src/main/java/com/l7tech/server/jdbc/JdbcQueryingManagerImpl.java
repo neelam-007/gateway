@@ -153,8 +153,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         try {
             dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
         } catch (Exception e) {
-            logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
-            return "Cannot retrieve a C3P0 DataSource.";
+            logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(e) + " " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
+            return "Cannot retrieve a C3P0 DataSource: " + ExceptionUtils.getMessage(e) + " " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
         }
         return performJdbcQuery(connectionName, dataSource, query, schema, maxRecords, timeoutSeconds, preparedStmtParams);
     }
@@ -222,7 +222,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
 
             if (ExceptionUtils.causedBy(e, CannotGetJdbcConnectionException.class)) {
-                return "Could not get JDBC Connection.";
+                return "Could not get JDBC Connection: " + ExceptionUtils.getMessage(e) + " " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             } else if (ExceptionUtils.causedBy(e, BadSqlGrammarException.class)) {
                 return "Bad SQL Grammar: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             } else if (ExceptionUtils.causedBy(e, InvalidDataAccessApiUsageException.class)

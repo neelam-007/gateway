@@ -50,7 +50,9 @@ public class ClusterPropertyRestEntityResourceTest extends RestEntityTests<Clust
     public void after() throws FindException, DeleteException {
         Collection<ClusterProperty> all = clusterPropertyManager.findAll();
         for (ClusterProperty clusterProperty : all) {
-            clusterPropertyManager.delete(clusterProperty.getGoid());
+            if(!Goid.equals(new Goid(0,-700001), clusterProperty.getGoid())) {
+                clusterPropertyManager.delete(clusterProperty.getGoid());
+            }
         }
     }
 
@@ -183,13 +185,16 @@ public class ClusterPropertyRestEntityResourceTest extends RestEntityTests<Clust
 
     @Override
     public Map<String, List<String>> getListQueryAndExpectedResults() throws FindException {
+        List<String> allClusterPropertiesIds = Functions.map(clusterProperties, new Functions.Unary<String, ClusterProperty>() {
+            @Override
+            public String call(ClusterProperty clusterProperty) {
+                return clusterProperty.getId();
+            }
+        });
+        //adds the cluster hostname
+        allClusterPropertiesIds.add(0, new Goid(0,-700001).toString());
         return CollectionUtils.MapBuilder.<String, List<String>>builder()
-                .put("", Functions.map(clusterProperties, new Functions.Unary<String, ClusterProperty>() {
-                    @Override
-                    public String call(ClusterProperty clusterProperty) {
-                        return clusterProperty.getId();
-                    }
-                }))
+                .put("", allClusterPropertiesIds)
                 .put("name=" + URLEncoder.encode(clusterProperties.get(0).getName()), Arrays.asList(clusterProperties.get(0).getId()))
                 .put("name=" + URLEncoder.encode(clusterProperties.get(0).getName()) + "&name=" + URLEncoder.encode(clusterProperties.get(1).getName()), Functions.map(clusterProperties.subList(0, 2), new Functions.Unary<String, ClusterProperty>() {
                     @Override

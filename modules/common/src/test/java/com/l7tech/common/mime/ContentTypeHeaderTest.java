@@ -1,6 +1,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import org.junit.Test;
 
@@ -140,6 +141,19 @@ public class ContentTypeHeaderTest {
         assertEquals("utf-8", ContentTypeHeader.TEXT_DEFAULT.getParam("charset"));
         assertEquals("utf-8", ContentTypeHeader.SOAP_1_2_DEFAULT.getParam("charset"));
         assertEquals("utf-8", ContentTypeHeader.APPLICATION_JSON.getParam("charset"));
+    }
+
+    @Test
+    @BugId( "SSG-10718" )
+    public void testTypeSpecificDefaultCharsets() throws Exception {
+        assertEquals("ISO-8859-1", ContentTypeHeader.parseValue( "text/plain" ).getEncoding().toString() );
+        assertEquals("ISO-8859-1", ContentTypeHeader.parseValue( "text/xml" ).getEncoding().toString() );
+        assertEquals("ISO-8859-1", ContentTypeHeader.parseValue( "application/blah" ).getEncoding().toString() );
+        assertEquals("UTF-32LE", ContentTypeHeader.parseValue( "application/blah; charset=utf-32le" ).getEncoding().toString() );
+        assertEquals("UTF-8", ContentTypeHeader.parseValue( "application/json" ).getEncoding().toString() );
+        assertEquals("UTF-16", ContentTypeHeader.parseValue( "application/json; charset=utf-16" ).getEncoding().toString() );
+        assertEquals("US-ASCII", ContentTypeHeader.parseValue( "application/json; charset=ASCII" ).getEncoding().toString() );
+        assertEquals("UTF-8", ContentTypeHeader.parseValue( "application/json; charset=INVALID" ).getEncoding().toString() );
     }
 
     private void ensureFormattingPreserved( final String description, final String contentType ) throws Exception {

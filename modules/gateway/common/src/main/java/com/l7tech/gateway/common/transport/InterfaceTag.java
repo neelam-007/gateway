@@ -1,21 +1,21 @@
 package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NameableEntity;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.TextUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Represents zero or more named sets of IP address patterns.
  */
-public class InterfaceTag implements Entity {
+public class InterfaceTag implements Entity, NameableEntity {
     /** Conventional name of a property that might contain an interface tag set in string format. */
     public static final String PROPERTY_NAME = "interfaceTags";
 
@@ -138,5 +138,16 @@ public class InterfaceTag implements Entity {
         result = name.hashCode();
         result = 31 * result + ipPatterns.hashCode();
         return result;
+    }
+
+    /**
+     * Returns the synthetic id for an interface tag, this is used in wsman and restman.
+     *
+     * @param interfaceTag The interface tag to get the synthetic id for
+     * @return The synthetic id for the given interface tag
+     */
+    @NotNull
+    public static String getSyntheticId(@NotNull final InterfaceTag interfaceTag) {
+        return UUID.nameUUIDFromBytes(interfaceTag.getName().getBytes(Charsets.UTF8)).toString();
     }
 }

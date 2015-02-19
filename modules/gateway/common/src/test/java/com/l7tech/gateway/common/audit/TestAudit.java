@@ -88,6 +88,10 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
         } );
     }
 
+    public boolean isAnyAuditPresent() {
+        return iterator().hasNext();
+    }
+
     /**
      * Get an AuditFactory that always returns this Audit instance.
      *

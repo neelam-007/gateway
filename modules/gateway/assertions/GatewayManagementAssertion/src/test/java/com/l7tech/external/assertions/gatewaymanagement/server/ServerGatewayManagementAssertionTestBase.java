@@ -19,11 +19,13 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.AssertionRegistryStub;
 import com.l7tech.policy.PolicyValidatorStub;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditRecordManagerStub;
 import com.l7tech.server.bundling.EntityBundleExporterStub;
 import com.l7tech.server.bundling.EntityBundleImporterStub;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -45,6 +47,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
@@ -64,6 +67,7 @@ import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.server.uddi.UDDIServiceControlManagerStub;
+import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ResourceClassLoader;
 import com.l7tech.util.*;
@@ -177,12 +181,20 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub());
         applicationContext.getBeanFactory().registerSingleton( "entityCrud", new EntityFinderStub() );
         applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub());
-        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", new AssertionRegistryStub());
+        final AssertionRegistryStub assertionRegistryStub = new AssertionRegistryStub();
+        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", assertionRegistryStub);
         applicationContext.getBeanFactory().registerSingleton("policyAliasManager", new PolicyAliasManagerStub());
         applicationContext.getBeanFactory().registerSingleton("serviceAliasManager", new ServiceAliasManagerStub());
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub());
         applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
         applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub());
+
+        applicationContext.getBeanFactory().registerSingleton( "wspReader", new WspReader(assertionRegistryStub));
+        final TestLicenseManager testLicenseManager = new TestLicenseManager();
+        applicationContext.getBeanFactory().registerSingleton( "licenseManager", testLicenseManager);
+        final ApplicationContextInjector applicationContextInjector = new ApplicationContextInjector();
+        applicationContext.getBeanFactory().registerSingleton( "injector", applicationContextInjector);
+        applicationContext.getBeanFactory().registerSingleton( "policyFactory", new ServerPolicyFactory(testLicenseManager, applicationContextInjector));
 
         Mockito.when(identityProviderConfigManager.getImpClass()).thenReturn(IdentityProviderConfig.class);
 
@@ -201,7 +213,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
         applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
-
+        applicationContext.getBeanFactory().registerSingleton("cassandraEntityManager", new CassandraConnectionEntityManagerStub());
 
         moreInit();
 

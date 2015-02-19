@@ -3,7 +3,6 @@ package com.l7tech.gui;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -12,7 +11,7 @@ import java.util.List;
  * @param <T> the type of object to store in the model.
  */
 public class SelectableTableModel<T> extends SimpleTableModel<T> {
-    private final List selected;
+    private final List<T> selected;
 
     private final boolean allowMultipleSelect;
     private final int selectionColumnIndex;
@@ -20,11 +19,8 @@ public class SelectableTableModel<T> extends SimpleTableModel<T> {
     public SelectableTableModel(final boolean allowMultiSelect, final int selectionColumnIndex) {
         this.allowMultipleSelect = allowMultiSelect;
         this.selectionColumnIndex = selectionColumnIndex;
-        if (allowMultiSelect) {
-            selected = new ArrayList();
-        } else {
-            selected = Arrays.asList(new Object[1]);
-        }
+
+        selected = new ArrayList<>();
     }
 
     @Override
@@ -114,18 +110,20 @@ public class SelectableTableModel<T> extends SimpleTableModel<T> {
         if (selectable != null) {
             if (select) {
                 if (allowMultipleSelect) {
-                    selected.add(selectable);
-                } else {
-                    selected.set(0, selectable);
+                    selected.clear();
                 }
+                selected.add(selectable);
             } else {
-                if (allowMultipleSelect) {
-                    selected.remove(selectable);
-                } else {
-                    selected.set(0, null);
-                }
+                selected.remove(selectable);
             }
+
             fireTableRowsUpdated(index, index);
         }
+    }
+
+    @Override
+    public void setRows(List<T> rows) {
+        deselectAll();
+        super.setRows(rows);
     }
 }

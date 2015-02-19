@@ -21,6 +21,7 @@
                 <ref bean="resourceAdmin"/>
                 <ref bean="jmsAdmin"/>
                 <ref bean="jdbcAdmin"/>
+                <ref bean="cassandraAdmin"/>
                 <ref bean="ftpAdmin"/>
                 <ref bean="trustedCertAdmin"/>
                 <ref bean="customAssertionsRegistrar"/>
@@ -36,6 +37,7 @@
                 <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
                 <ref bean="encapsulatedAssertionAdmin" />
+                <ref bean="policyBackedServiceAdmin" />
                 <ref bean="siteMinderAdmin" />
                 <ref bean="customKeyValueStoreAdmin" />
                 <ref bean="debugAdmin" />
@@ -76,6 +78,11 @@
     <bean id="jdbcAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/JdbcAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
+    </bean>
+
+    <bean id="cassandraAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/CassandraAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin"/>
     </bean>
 
     <bean id="ftpAdmin" parent="invokerCommon">
@@ -180,6 +187,11 @@
     <bean id="encapsulatedAssertionAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/EncapsulatedAssertionAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
+    </bean>
+
+    <bean id="policyBackedServiceAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyBackedServiceAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin"/>
     </bean>
 
    <bean id="siteMinderAdmin" parent="invokerCommon">

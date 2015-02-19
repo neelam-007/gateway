@@ -70,7 +70,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null, false);
+                "ba525763-6e55-4748-9376-76055247c8b1"), new Goid(0, -5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -170,19 +170,24 @@ public class OAuthInstallerAdminImplTest {
         BundleInfo expected;
 
         expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "2.1.2", "OAuth 1.0", "Core Services and Test Client");
+        expected.setHasWsmanFile(true);
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "2.1.2", "OAuth 2.0", "Auth Server and Test Clients");
+        expected.setHasWsmanFile(true);
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "2.1.2", "Secure Zone OVP", "OVP - OAuth Validation Point");
+        expected.setHasWsmanFile(true);
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "2.1.2", "Secure Zone Storage", "Token and Client Store");
         expected.addJdbcReference("OAuth");
+        expected.setHasWsmanFile(true);
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "2.1.2", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
+        expected.setHasWsmanFile(true);
         assertTrue(allBundles.contains(expected));
     }
 

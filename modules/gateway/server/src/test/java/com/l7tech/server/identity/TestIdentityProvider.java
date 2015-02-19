@@ -243,7 +243,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public void delete(Group group) throws DeleteException, ObjectNotFoundException {
+        public void delete(Group group) throws DeleteException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -274,6 +274,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
         @Override
         public String save(Group group, Set<IdentityHeader> userHeaders) throws SaveException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        @Override
+        public String save(Goid id, Group group, Set<IdentityHeader> userHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -444,6 +449,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
         @Override
         public String save(User user, Set<IdentityHeader> groupHeaders) throws SaveException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        @Override
+        public String save(Goid id, User user, Set<IdentityHeader> groupHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

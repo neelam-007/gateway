@@ -147,6 +147,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
     public void testDryInstallationWithConflicts() throws Exception {
         final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         bundleInfo.addJdbcReference("OAuth");
+        bundleInfo.setHasWsmanFile(true);
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
@@ -299,7 +300,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
 
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override

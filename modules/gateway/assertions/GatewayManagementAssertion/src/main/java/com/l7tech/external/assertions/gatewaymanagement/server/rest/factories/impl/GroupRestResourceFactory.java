@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.util.Functions;
@@ -68,10 +69,18 @@ public class GroupRestResourceFactory {
                 });
             }
 
+            // filter out virtual groups
+            groups = Functions.grep(groups, new Functions.Unary<Boolean, Group>() {
+                @Override
+                public Boolean call(Group group) {
+                    return !(group instanceof VirtualGroup);
+                }
+            });
+
             return Functions.map(groups, new Functions.Unary<GroupMO, Group>() {
                 @Override
                 public GroupMO call(Group group) {
-                    return transformer.convertToMO(group);
+                    return transformer.convertToMO(group, null);
                 }
             });
         } catch (FindException e) {
@@ -86,6 +95,10 @@ public class GroupRestResourceFactory {
             if (group == null) {
                 throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
             }
+            // filter out virtual groups
+            if( group instanceof VirtualGroup){
+                throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+            }
         }catch(FindException e){
             if(e.getCause() instanceof IllegalArgumentException){
                 throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
@@ -93,7 +106,7 @@ public class GroupRestResourceFactory {
             throw e;
         }
         rbacAccessService.validatePermitted(group, OperationType.READ);
-        return transformer.convertToMO(group);
+        return transformer.convertToMO(group, null);
     }
 
     private GroupManager retrieveGroupManager(String providerId) throws ResourceFactory.ResourceNotFoundException, FindException {

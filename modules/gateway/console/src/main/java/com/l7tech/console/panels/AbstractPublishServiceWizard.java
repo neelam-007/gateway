@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * Parent class for all wizards that publish services.
  */
-public abstract class AbstractPublishServiceWizard extends Wizard {
+public abstract class AbstractPublishServiceWizard<ST> extends Wizard<ST> {
     /**
      * Set the Folder for the service.
      *
@@ -55,8 +56,15 @@ public abstract class AbstractPublishServiceWizard extends Wizard {
 
     protected Option<Folder> folder = Option.none();
 
-    protected AbstractPublishServiceWizard(@NotNull final Frame parent, @NotNull final WizardStepPanel firstPanel, @NotNull final String title) {
-        super(parent, firstPanel);
+    protected AbstractPublishServiceWizard(@NotNull final Frame parent, @NotNull final WizardStepPanel<ST> firstPanel,
+                                           @NotNull final String title) {
+        this(parent, firstPanel, null, title);
+    }
+
+    protected AbstractPublishServiceWizard(@NotNull final Frame parent, @NotNull final WizardStepPanel<ST> firstPanel,
+                                           @Nullable final ST input, @NotNull final String title) {
+        super(parent, firstPanel, input);
+
         setTitle(title);
         Utilities.setEscKeyStrokeDisposes(this);
         getButtonHelp().addActionListener(new ActionListener() {

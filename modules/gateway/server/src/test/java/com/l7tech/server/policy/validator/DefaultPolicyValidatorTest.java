@@ -22,13 +22,13 @@ import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.soap.SoapVersion;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the default policy assertion path validator functionality.
@@ -44,7 +44,7 @@ public class DefaultPolicyValidatorTest {
     }
 
     private PolicyValidationContext pvc(PolicyType type, SerializableWSDLLocator wsdlLocator, boolean soap, SoapVersion soapVersion) {
-        return new PolicyValidationContext(type, null, wsdlLocator, soap, soapVersion);
+        return new PolicyValidationContext(type, null, null, wsdlLocator, soap, soapVersion);
     }
 
     /**

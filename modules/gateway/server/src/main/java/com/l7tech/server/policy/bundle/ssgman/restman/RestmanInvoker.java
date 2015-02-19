@@ -3,7 +3,6 @@ package com.l7tech.server.policy.bundle.ssgman.restman;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.HttpRequestKnob;
@@ -18,7 +17,6 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.BaseGatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
-import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -46,7 +44,8 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
     private static final String URL_LOCALHOST_8080_RESTMAN = "http://localhost:8080/restman/";
     public static final String UTF_8 = "UTF-8";
 
-    public RestmanInvoker(@NotNull final Functions.Nullary<Boolean> cancelledCallback, @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {
+    public RestmanInvoker(@NotNull final Functions.Nullary<Boolean> cancelledCallback,
+                          @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {
         super(cancelledCallback, gatewayManagementInvoker);
     }
 
@@ -154,15 +153,11 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
         response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});   // note: attachKnob(HttpResponseKnob.class, new AbstractHttpResponseKnob() {}) returns null for Message.getHttpResponseKnob() in ServerRESTGatewayManagementAssertion
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        final User currentUser = JaasUtils.getCurrentUser();
-        if (currentUser != null) {
-            // convert logged on user into a UserBean as if the user was authenticated via policy.
-            final UserBean userBean = new UserBean(currentUser.getProviderId(), currentUser.getLogin());
-            userBean.setUniqueIdentifier(currentUser.getId());
-            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
-                    userBean,
-                    new HttpBasicToken(currentUser.getLogin(), "".toCharArray()), null, false)
-            );
+
+        final UserBean authenticatedUser = getAuthenticatedUser();
+        if (authenticatedUser != null) {
+            context.getDefaultAuthenticationContext().addAuthenticationResult(
+                    new AuthenticationResult(authenticatedUser, new HttpBasicToken(authenticatedUser.getLogin(), "".toCharArray()), null, false));
         } else {
             // no action will be allowed - this will result in permission denied later
             logger.warning("No administrative user found. Request to install will fail.");

@@ -2,12 +2,12 @@
 <!--
     Application context for the Gateway Management assertion 
 -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:spr="http://www.springframework.org/schema/beans"
+<beans xmlns:spr="http://www.springframework.org/schema/beans"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation= "http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
@@ -77,6 +77,7 @@
         <constructor-arg index="17" ref="roleManager" />
         <constructor-arg index="18" ref="securePasswordManager" />
         <constructor-arg index="19" ref="customKeyValueStoreManager" />
+        <constructor-arg index="20" ref="cassandraEntityManager" />
     </bean>
 
     <bean id="securityFilter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -318,4 +319,13 @@
     <bean id="bundleImporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter" />
     <bean id="bundleExporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter" />
     <bean id="rbacAccessService" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService" />
+
+    <bean id="secretsEncryptorFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptorFactory">
+        <constructor-arg index="0">
+            <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
+                <constructor-arg ref="nodeProperties"/>
+                <constructor-arg value="node.cluster.pass"/>
+            </bean>
+        </constructor-arg>
+    </bean>
 </beans>

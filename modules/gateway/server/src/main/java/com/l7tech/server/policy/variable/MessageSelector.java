@@ -1,4 +1,5 @@
 /**
+/**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy.variable;
@@ -107,6 +108,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String SSL_CIPHER_SUITE = "ssl.ciphersuite";
     private static final String SSL_KEY_SIZE = "ssl.keysize";
     private static final String SSL_SESSION_ID = "ssl.sessionid";
+    private static final String SSL_PROTOCOL = "ssl.protocol";
 
     // NOTE: Variable names must be lower case
     private static final String AUTH_USER_PASSWORD = "password";
@@ -131,6 +133,8 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String FTP_REPLY_CODE = "ftp.replycode";
     private static final String FTP_REPLY_TEXT = "ftp.replytext";
 
+    private static final String LISTENER_CONCURRENCY = "listener.concurrency";
+
     private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
         put(TCP_REMOTE_ADDRESS, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
         put(TCP_REMOTE_IP, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
@@ -147,6 +151,8 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         put(SSL_CIPHER_SUITE, "javax.servlet.request.cipher_suite");
         put(SSL_KEY_SIZE, "javax.servlet.request.key_size");
         put(SSL_SESSION_ID, "javax.servlet.request.ssl_session");
+        put(SSL_PROTOCOL, "com.l7tech.servlet.request.sslprotocol");
+        put(LISTENER_CONCURRENCY, "com.l7tech.server.ssgConnectorPoolConcurrency");
     }});
 
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
@@ -310,6 +316,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                 "wss",
                 "tcp",
                 "ssl",
+                "listener",
                 "soap",
                 "buffer",
                 SIZE_NAME,

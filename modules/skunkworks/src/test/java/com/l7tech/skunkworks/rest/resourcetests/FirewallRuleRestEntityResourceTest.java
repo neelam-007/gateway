@@ -313,6 +313,32 @@ public class FirewallRuleRestEntityResourceTest extends RestEntityTests<SsgFirew
     }
 
     @Test
+    public void testCreateFirstOrdinalRule() throws Exception {
+
+        FirewallRuleMO firewallRule = ManagedObjectFactory.createFirewallRuleMO();
+        firewallRule.setName("Test Firewall Rule create middle ordinal");
+        firewallRule.setOrdinal(-6);
+        firewallRule.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put("jump", "REDIRECT")
+                .put("protocol", "tcp")
+                .map());
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(firewallRule)));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 201, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item createdItem = MarshallingUtils.unmarshal(Item.class, source);
+
+        response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri()+ "/"+ createdItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), null);
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        Item createdRule = MarshallingUtils.unmarshal(Item.class, source);
+
+        Assert.assertEquals("Expected ordinal",((FirewallRuleMO)createdRule.getContent()).getOrdinal(),1);
+    }
+
+    @Test
     public void testCreateLastOrdinalRule() throws Exception {
 
         FirewallRuleMO firewallRule = ManagedObjectFactory.createFirewallRuleMO();
@@ -360,6 +386,38 @@ public class FirewallRuleRestEntityResourceTest extends RestEntityTests<SsgFirew
         response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(),"sort=ordinal", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), null);
 
         final List<String> expectedIds = Arrays.asList(rules.get(1).getId(), rules.get(0).getId(), rules.get(2).getId());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ItemsList itemsList = MarshallingUtils.unmarshal(ItemsList.class, source);
+
+        List<Item> references = itemsList.getContent();
+        for (int i = 0; i < expectedIds.size(); i++) {
+            Assert.assertEquals("Ordinals in incorrect order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), references.get(i).getId());
+            Assert.assertEquals("Ordinals should be in sequential order.", i+1, (((FirewallRuleMO)references.get(i).getContent()).getOrdinal()));
+        }
+    }
+
+    @Test
+    public void testChangeRuleOrderToTop() throws Exception {
+
+        FirewallRuleMO firewallRule = ManagedObjectFactory.createFirewallRuleMO();
+        firewallRule.setId(rules.get(2).getId());
+        firewallRule.setName(rules.get(2).getName());
+        firewallRule.setVersion(rules.get(2).getVersion());
+        firewallRule.setEnabled(rules.get(2).isEnabled());
+        firewallRule.setOrdinal(0);
+        firewallRule.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put("jump", "REDIRECT")
+                .put("protocol", "tcp")
+                .map());
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri()+ "/"+ firewallRule.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(firewallRule)));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 200, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+
+        response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(),"sort=ordinal", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), null);
+
+        final List<String> expectedIds = Arrays.asList(rules.get(2).getId(), rules.get(0).getId(), rules.get(1).getId());
         StreamSource source = new StreamSource(new StringReader(response.getBody()));
         ItemsList itemsList = MarshallingUtils.unmarshal(ItemsList.class, source);
 
@@ -466,7 +524,7 @@ public class FirewallRuleRestEntityResourceTest extends RestEntityTests<SsgFirew
         // create rule
         FirewallRuleMO firewallRule = ManagedObjectFactory.createFirewallRuleMO();
         firewallRule.setName("First rule");
-        firewallRule.setOrdinal(10);
+        firewallRule.setOrdinal(-2);
         firewallRule.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
                 .put("jump", "REDIRECT")
                 .put("protocol", "tcp")

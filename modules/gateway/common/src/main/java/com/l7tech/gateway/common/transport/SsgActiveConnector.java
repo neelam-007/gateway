@@ -99,10 +99,6 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE = "MqNativeOutboundIsTemplateQueue";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT = "MqNativeOutboundMessageFormat";
-    // MQ Native - connection pool properties
-    public static final String PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = "MqNativeConnectionPoolMaxActive";
-    public static final String PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = "MqNativeConnectionPoolMaxWait";
-    public static final String PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = "MqNativeConnectionPoolMaxIdle";
 
     private boolean enabled;
     private String type;

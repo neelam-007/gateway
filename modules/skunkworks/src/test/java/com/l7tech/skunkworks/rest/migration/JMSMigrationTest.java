@@ -251,31 +251,31 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("jmsDestinations/" + jmsItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItemTarget.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem2Target.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -371,6 +371,164 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals(5, jmsDependency.getDependencies().size());
 
         validate(mappings);
+    }
+
+    @Test
+    public void testImportNewEncryptSecrets() throws Exception {
+        Item<JMSDestinationMO> jmsItem2 = null;
+        Item<PolicyMO> policyItem2 = null;
+        Item<PrivateKeyMO> thisPrivateKeyItem = null;
+
+        RestResponse response;
+        try {
+            // create private key
+            PrivateKeyCreationContext createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+            createPrivateKey.setDn("CN=srcAlias16");
+            createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("ecName", "secp384r1")
+                    .map());
+            response = getSourceEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":srcAlias16", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+            assertOkCreatedResponse(response);
+            thisPrivateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            response = getSourceEnvironment().processRequest("privateKeys/"+ thisPrivateKeyItem.getId(), HttpMethod.GET,null,"");
+            assertOkResponse(response);
+            thisPrivateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //create jms
+            JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
+            jmsDetail.setName("Source JMS 2");
+            jmsDetail.setDestinationName("Source JMS Destination");
+            jmsDetail.setInbound(false);
+            jmsDetail.setEnabled(true);
+            jmsDetail.setTemplate(false);
+            JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
+            jmsConnection.setTemplate(false);
+            jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
+            jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
+                    .put("jndi.initialContextFactoryClassname", "om.context.Classname")
+                    .put("jndi.providerUrl", "ldap://jndi")
+                    .put("queue.connectionFactoryName", "qcf")
+                    .put("password", "pass")
+                    .map());
+            jmsConnection.setContextPropertiesTemplate(CollectionUtils.<String, Object>mapBuilder()
+                    .put("com.l7tech.server.jms.prop.hardwired.service.id", serviceItem.getId())
+                    .put("java.naming.security.credentials", "credPass")
+                    .put("com.l7tech.server.jms.prop.jndi.ssgKeyAlias", thisPrivateKeyItem.getContent().getAlias())
+                    .put("com.l7tech.server.jms.prop.jndi.ssgKeystoreId", thisPrivateKeyItem.getContent().getKeystoreId())
+                    .put("com.tibco.tibjms.naming.security_protocol", "ssl")
+                    .put("com.l7tech.server.jms.prop.customizer.class", "com.l7tech.server.transport.jms.prov.MQSeriesCustomizer")
+                    .put("com.l7tech.server.jms.prop.queue.ssgKeyAlias", thisPrivateKeyItem.getContent().getAlias())
+                    .put("com.l7tech.server.jms.prop.queue.ssgKeystoreId", thisPrivateKeyItem.getContent().getKeystoreId())
+                    .map());
+            JMSDestinationMO jmsMO = ManagedObjectFactory.createJMSDestination();
+            jmsMO.setJmsDestinationDetail(jmsDetail);
+            jmsMO.setJmsConnection(jmsConnection);
+
+            response = getSourceEnvironment().processRequest("jmsDestinations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(jmsMO)));
+
+            assertOkCreatedResponse(response);
+
+            jmsItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            jmsItem2.setContent(jmsMO);
+
+            // create policy
+            PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+            PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyMO.setPolicyDetail(policyDetail);
+            policyDetail.setName("MyPolicy2");
+            policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+            policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+            policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("soap", false)
+                    .map());
+            ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+            policyMO.setResourceSets(Arrays.asList(resourceSet));
+            resourceSet.setTag("policy");
+            Resource resource = ManagedObjectFactory.createResource();
+            resourceSet.setResources(Arrays.asList(resource));
+            resource.setType("policy");
+            resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:JmsRoutingAssertion>\n" +
+                    "            <L7p:EndpointName stringValue=\"name\"/>\n" +
+                    "            <L7p:EndpointOid goidValue=\""+jmsItem2.getId()+"\"/>\n" +
+                    "            <L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+                    "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+                    "            </L7p:RequestJmsMessagePropertyRuleSet>\n" +
+                    "            <L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+                    "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+                    "            </L7p:ResponseJmsMessagePropertyRuleSet>\n" +
+                    "        </L7p:JmsRoutingAssertion>" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>");
+
+            response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+            assertOkCreatedResponse(response);
+
+            policyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            policyItem2.setContent(policyMO);
+
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem2.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 4 items. A policy, and jms endpoint", 4, bundleItem.getContent().getReferences().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 6 mappings after the import", 5, mappings.getContent().getMappings().size());
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+             Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), thisPrivateKeyItem.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, privateKeyMapping.getActionTaken());
+            Assert.assertEquals(thisPrivateKeyItem.getId(), privateKeyMapping.getSrcId());
+            Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+            Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem2.getId());
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jmsMapping.getActionTaken());
+            Assert.assertEquals(jmsItem2.getId(), jmsMapping.getSrcId());
+            Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
+
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem2.getId());
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem2.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        }finally{
+            response = getSourceEnvironment().processRequest("jmsDestinations/" + jmsItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getSourceEnvironment().processRequest("policies/" + policyItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getSourceEnvironment().processRequest("privateKeys/"+ thisPrivateKeyItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
     }
 
     @Test
@@ -500,7 +658,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -739,7 +897,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -880,7 +1038,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
 
     }
@@ -1012,7 +1170,76 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the jms on the target
+        JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
+        jmsDetail.setName("Target JMS");
+        jmsDetail.setDestinationName("Target JMS Destination");
+        jmsDetail.setInbound(false);
+        jmsDetail.setEnabled(true);
+        jmsDetail.setTemplate(false);
+        JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
+        jmsConnection.setTemplate(false);
+        jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
+                .put("jndi.initialContextFactoryClassname","om.context.Classname")
+                .put("jndi.providerUrl","ldap://jndi")
+                .put("queue.connectionFactoryName","qcf").map());
+        JMSDestinationMO jmsMO = ManagedObjectFactory.createJMSDestination();
+        jmsMO.setJmsDestinationDetail(jmsDetail);
+        jmsMO.setJmsConnection(jmsConnection);
+        RestResponse response = getTargetEnvironment().processRequest("jmsDestinations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(jmsMO)));
+
+        assertOkCreatedResponse(response);
+        Item<JMSDestinationMO> jmsCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        jmsMO.setId(jmsCreated.getId());
+        jmsCreated.setContent(jmsMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(jmsCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(jmsCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(jmsCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(jmsCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(jmsCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

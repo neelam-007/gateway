@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -90,10 +91,10 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("clusterProperties/"+clusterPropertyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -225,7 +226,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -251,10 +252,6 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
             Assert.assertEquals("The bundle should have 2 items. A policy and cluster property", 2 , bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 3 mappings. A policy, root folder, and a cluster property", 3, bundleItem.getContent().getMappings().size());
-
-            // map
-            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String,Object>mapBuilder().put("MapBy", "name")
-                                                                .put("MapTo", createdClusterPropertyItem.getName()).map());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -304,7 +301,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -333,6 +330,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
             // map
             bundleItem.getContent().getMappings().get(0).setTargetId(createdClusterPropertyItem.getId());
+            bundleItem.getContent().getMappings().get(0).getProperties().remove("MapBy");
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -382,7 +380,64 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create cluster property
+        ClusterPropertyMO clusterPropertyMO = ManagedObjectFactory.createClusterProperty();
+        clusterPropertyMO.setName("targetName");
+        clusterPropertyMO.setValue("targetValue");
+
+        RestResponse response = getTargetEnvironment().processRequest("clusterProperties/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(clusterPropertyMO)));
+        assertOkCreatedResponse(response);
+        Item<ClusterPropertyMO> clusterPropertyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        clusterPropertyItem.setContent(clusterPropertyMO);
+        clusterPropertyMO.setId(clusterPropertyItem.getId());
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(clusterPropertyMO.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(clusterPropertyItem.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(clusterPropertyItem.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(clusterPropertyItem));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.CLUSTER_PROPERTY.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(clusterPropertyItem.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.CLUSTER_PROPERTY.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("clusterProperties/"+clusterPropertyItem.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

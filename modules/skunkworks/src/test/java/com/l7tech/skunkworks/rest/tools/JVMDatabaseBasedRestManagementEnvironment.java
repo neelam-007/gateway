@@ -11,10 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -105,10 +102,14 @@ public class JVMDatabaseBasedRestManagementEnvironment {
     }
 
     public RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+        return processRequest(uri, queryString, method, contentType, body, null);
+    }
+
+    public RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body, @Nullable  Map<String,String> headers) throws Exception {
         // send the request to the other jvm process
         printWriter.println(DatabaseBasedRestManagementEnvironment.PROCESS);
 
-        byte[] requestBytes = SerializationUtils.serialize(new RestRequest(uri, queryString, method, contentType, body));
+        byte[] requestBytes = SerializationUtils.serialize(new RestRequest(uri, queryString, method, contentType, body, headers));
         printWriter.println(Arrays.toString(requestBytes));
 
         //validate that the process is still running.

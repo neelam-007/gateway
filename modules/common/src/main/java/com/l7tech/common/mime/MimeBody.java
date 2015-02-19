@@ -350,6 +350,9 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                                 s = BdwState.SAW_SECOND_DASH;
                                 mainInputStream.unread( "\r\n--".getBytes( Charsets.UTF8 ) );
                                 break CHARLOOP;
+                            default:
+                                s = BdwState.SAW_NONE;
+                                break;
                         }
                         break;
 
@@ -357,6 +360,9 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                         throw new IllegalStateException( "Impossible BdwState" ); // can't happen
                 }
             } while ( true );
+
+            //noinspection ConstantConditions
+            assert( BdwState.SAW_SECOND_DASH == s );
 
             // Assertion: first sequence of any (linefeeds/crs) + "--" has been transformed into "\r\n--", and
             //            mainstream is now positioned there

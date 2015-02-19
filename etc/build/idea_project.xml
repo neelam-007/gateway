@@ -52,6 +52,7 @@
             <entry name="?*.ldif"/>
             <entry name="?*.dat"/>
             <entry name="?*.pem"/>
+            <entry name="?*_audit"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">

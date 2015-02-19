@@ -2,14 +2,15 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.DesignTimeEntityProvider;
-import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
@@ -17,15 +18,14 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.*;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -43,10 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.text.ParseException;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -60,6 +58,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private AuditRecordManager auditRecordManager;
     private CustomKeyValueStoreManager customKeyValueStoreManager;
+    private ServerModuleFileManager serverModuleFileManager;
 
     private static final int MAX_RESULTS = 100;
 
@@ -89,6 +88,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     public void setCustomKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager customKeyValueStoreManager) {
         this.customKeyValueStoreManager = customKeyValueStoreManager;
+    }
+
+    public void setServerModuleFileManager(@NotNull final ServerModuleFileManager serverModuleFileManager) {
+        this.serverModuleFileManager = serverModuleFileManager;
     }
 
     /**
@@ -180,7 +183,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     @Override
     @Transactional(readOnly=true)
-    public Entity find(@NotNull EntityHeader header) throws FindException {
+    public Entity find(@NotNull final EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
             IdentityHeader identityHeader = (IdentityHeader)header;
             IdentityProvider provider = identityProviderFactory.getProvider(identityHeader.getProviderGoid());
@@ -239,6 +242,24 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else {
                 return customKeyValueStoreManager.findByPrimaryKey(header.getGoid());
             }
+        } else if (EntityType.INTERFACE_TAG.equals(header.getType())) {
+            final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
+            Set<InterfaceTag> tags;
+            try {
+                tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
+            } catch (ParseException e) {
+                throw new FindException("Could not load InterfaceTags: " + ExceptionUtils.getMessageWithCause(e), e);
+            }
+            InterfaceTag tag = null;
+            if (tags != null) {
+                tag = Functions.grepFirst(tags, new Functions.Unary<Boolean, InterfaceTag>() {
+                    @Override
+                    public Boolean call(InterfaceTag interfaceTag) {
+                        return header.getStrId().equals(InterfaceTag.getSyntheticId(interfaceTag));
+                    }
+                });
+            }
+            return tag;
         } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
@@ -247,18 +268,31 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @SuppressWarnings({ "unchecked" })
     @Override
     @Transactional(readOnly=true)
-    public <ET extends Entity> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
+    public <ET extends Entity> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
         try {
             EntityType type = EntityTypeRegistry.getEntityType(clazz);
             Serializable tempPk;
             if (EntityType.SSG_KEY_ENTRY == type) {
                 String id = (String) pk;
                 int sepIndex = id.indexOf(":");
+                if (sepIndex < 0) {
+                    logger.fine("Primary key " + pk + " is not a valid SSG_KEY_ENTRY key. Needs to be in the format: <keystoreId>:<alias>");
+                    return null;
+                }
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id.substring(0, sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
             } else if (EntityType.GENERIC == type) {
                 return (ET) genericEntityManager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.GENERIC, pk.toString()));
+            } else if (EntityType.SERVER_MODULE_FILE == type) {
+                final ServerModuleFile moduleFile = serverModuleFileManager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.SERVER_MODULE_FILE, pk.toString()));
+                if (moduleFile != null) {
+                    final ServerModuleFile moduleFileCopy = new ServerModuleFile();
+                    // exclude data bytes
+                    moduleFileCopy.copyFrom(moduleFile, false, true, true);
+                    return (ET) moduleFileCopy;
+                }
+                return null;
             } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
                 try {
                     tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
@@ -266,6 +300,25 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     logger.fine("Primary key "+pk+" is not a valid key; using String value instead");
                     tempPk = pk;
                 }
+            } else if (EntityType.INTERFACE_TAG.equals(type)) {
+                final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
+                Set<InterfaceTag> tags;
+                try {
+                    tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
+                } catch (ParseException e) {
+                    logger.fine("Could not load InterfaceTags: " + ExceptionUtils.getMessageWithCause(e));
+                    return null;
+                }
+                InterfaceTag tag = null;
+                if (tags != null) {
+                    tag = Functions.grepFirst(tags, new Functions.Unary<Boolean, InterfaceTag>() {
+                        @Override
+                        public Boolean call(InterfaceTag interfaceTag) {
+                            return pk.equals(InterfaceTag.getSyntheticId(interfaceTag));
+                        }
+                    });
+                }
+                return tag == null ? null : (ET) tag;
             } else {
                 tempPk = pk;
             }

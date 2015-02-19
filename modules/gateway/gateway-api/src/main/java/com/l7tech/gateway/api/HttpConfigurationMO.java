@@ -97,11 +97,11 @@ public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
     }
 
     /**
-     * Get the path. This is required and must not ve null.
+     * Get the path.
      *
      * @return The uri path
      */
-    @XmlElement(name = "Path", required = true)
+    @XmlElement(name = "Path")
     public String getPath() {
         return path;
     }
@@ -392,7 +392,7 @@ public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
         private String passwordId;
 
         /**
-         * The proxy host. Required
+         * The proxy host.
          *
          * @return The proxy host
          */
@@ -411,7 +411,7 @@ public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
         }
 
         /**
-         * Retrieves the proxy port. Required.
+         * Retrieves the proxy port..
          *
          * @return The proxy port
          */

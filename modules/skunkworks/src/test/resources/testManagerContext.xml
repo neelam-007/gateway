@@ -28,6 +28,11 @@
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterNodeId"/>
+    </bean>
+
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
         <property name="rbacServices">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
@@ -156,6 +161,7 @@
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -226,6 +232,23 @@
             </bean>
         </property>
         <property name="configManager" ref="identityProviderConfigManager"/>
+    </bean>
+
+    <!-- Simplified bind-only non-listable LDAP identity provider  -->
+    <bean id="bindOnlyLdapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl"/>
+        <constructor-arg value="bindOnlyLdapIdentityProvider"/>
+    </bean>
+    <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl" scope="prototype">
+        <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapGroupManagerImpl" scope="prototype"/>
+        </property>
     </bean>
 
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
@@ -469,6 +492,14 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/></key>
                     <bean class="com.l7tech.server.search.processors.SsgKeyEntryDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.RBAC_ROLE"/></key>
+                    <bean class="com.l7tech.server.search.processors.RoleDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
@@ -584,6 +615,8 @@
         <constructor-arg ref="secureRandom"/>
     </bean>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
     <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
         <constructor-arg ref="entityFinder"/>
@@ -647,6 +680,8 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="securityZoneManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="cassandraEntityManager"/>
+                <ref bean="serverModuleFileManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -677,6 +712,7 @@
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
+        <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -1411,6 +1447,8 @@
                 <constructor-arg value="com.l7tech.server.audit.AuditRecordManager"/>
             </bean>
         </property>
+        <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="serverModuleFileManager" ref="serverModuleFileManager"/>
     </bean>
 
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">

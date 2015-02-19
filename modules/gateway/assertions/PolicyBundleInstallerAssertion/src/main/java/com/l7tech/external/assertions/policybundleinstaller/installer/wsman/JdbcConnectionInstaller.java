@@ -18,14 +18,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.text.MessageFormat;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.GATEWAY_MGMT_ENUMERATE_FILTER;
+import static com.l7tech.policy.bundle.BundleMapping.Type.JDBC_CONNECTION_NAME;
 import static com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException;
 import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.GATEWAY_MGMT_ENUMERATE_FILTER;
 
 /**
  * JDBC connection logic.
@@ -65,7 +65,7 @@ public class JdbcConnectionInstaller extends WsmanInstaller {
         logger.finest("Dry run checking " + jdbcConnRefs.size() + " JDBC reference(s).");
         final BundleMapping bundleMapping = context.getBundleMapping();
         if (!jdbcConnRefs.isEmpty()) {
-            final Map<String, String> jdbcMappings = (bundleMapping != null) ? bundleMapping.getJdbcMappings() : new HashMap<String, String>();
+            final Map<String, String> jdbcMappings = bundleMapping.getMappings(JDBC_CONNECTION_NAME);
 
             // validate each, consider any mapping that may be present.
             for (String jdbcConnRef : jdbcConnRefs) {

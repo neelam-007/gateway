@@ -3,7 +3,6 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.*;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -31,6 +30,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.l7tech.policy.assertion.SetVariableAssertion.CalendarFields;
 
@@ -265,7 +265,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
                 assertion.setLineBreak(lineBreak);
 
-                final String expression = TextUtils.convertLineBreaks(_expressionTextArea.getText(), lineBreak.getCharacters()).trim();
+                final String expression = TextUtils.convertLineBreaks(_expressionTextArea.getText(), lineBreak.getCharacters());
                     // Conversion necessary? Can a CR be pasted into a JTextArea and returned by getText()?
                 assertion.setExpression((AUTO_STRING.equals(expression)) ? "" : expression);
 
@@ -350,8 +350,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
         // JTextArea likes all line break to be LF.
         String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n");
-        if (expression != null)
-            expression = expression.trim();
 
         _expressionTextArea.setText(expression);
         _expressionTextArea.setCaretPosition(0);
@@ -542,14 +540,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         datePreviewTextField.setText(message);
     }
 
-    private String getExpressionTrimmed() {
-        final String exp = _expressionTextArea.getText().trim();
-        if (AUTO_STRING.equals(exp)) {
-            return "";
-        } else {
-            return exp;
-        }
-    }
+
+    private static final Pattern WHITESPACE_PAT = Pattern.compile( "^\\s|\\s$" );
 
     /**
      * Validates values in various fields and sets the status labels as appropriate.
@@ -557,7 +549,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private void validateFields() {
         final String variableName = _variableNameVarPanel.getVariable();
         final String contentType = ((JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent()).getText();
-        final String expression = getExpressionTrimmed();
 
         boolean ok = _variableNameVarPanel.isEntryValid();
 
@@ -569,6 +560,14 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             _dataTypeComboBox.setEnabled(false);
         }
 
+        Icon neutralStatusIcon = OK_ICON;
+        String neutralStatusString = "OK";
+
+        // Lowest-priority ignorable expression status warnings go here (so they will be overridden by higher priority warnings)
+        if ( WHITESPACE_PAT.matcher( _expressionTextArea.getText() ).find() ) {
+            neutralStatusIcon = WARNING_ICON;
+            neutralStatusString = "Expression contains leading or trailing whitespace";
+        }
 
         if (getSelectedDataType() == DataType.MESSAGE) {
             _contentTypeComboBox.setEnabled(true);
@@ -594,9 +593,9 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         if (getSelectedDataType() == DataType.INTEGER) {
             String text = _expressionTextArea.getText();
 
-            if(Syntax.isAnyVariableReferenced(text)){
-                _expressionStatusLabel.setIcon(OK_ICON);
-                _expressionStatusTextArea.setText("OK");
+            if (!Syntax.isAnyVariableReferenced(text)) {
+                _expressionStatusLabel.setIcon( neutralStatusIcon );
+                _expressionStatusTextArea.setText( neutralStatusString );
                 _expressionStatusScrollPane.setBorder(null);
                 _okButton.setEnabled(!readOnly);
                 return;
@@ -606,8 +605,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 Integer val = Integer.parseInt(text);
                 if(val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE)
                 {
-                    _expressionStatusLabel.setIcon(OK_ICON);
-                    _expressionStatusTextArea.setText("OK");
+                    _expressionStatusLabel.setIcon( neutralStatusIcon );
+                    _expressionStatusTextArea.setText( neutralStatusString );
                     _expressionStatusScrollPane.setBorder(null);
                     _okButton.setEnabled(!readOnly);
                 }
@@ -660,7 +659,9 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         // Expression. Blank is OK.
         final String[] names;
         try {
-            names = Syntax.getReferencedNames(expression);
+            final String exp = _expressionTextArea.getText();
+            String emptyForAuto = AUTO_STRING.equals( exp.trim() ) ? "" : exp;
+            names = Syntax.getReferencedNames( emptyForAuto );
         } catch (VariableNameSyntaxException e) {
             _expressionStatusLabel.setIcon(WARNING_ICON);
             _expressionStatusTextArea.setText(ExceptionUtils.getMessage(e));
@@ -691,8 +692,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         if (expressionStatus.length() == 0) {
-            _expressionStatusLabel.setIcon(OK_ICON);
-            _expressionStatusTextArea.setText("OK");
+            _expressionStatusLabel.setIcon( neutralStatusIcon );
+            _expressionStatusTextArea.setText( neutralStatusString );
             _expressionStatusScrollPane.setBorder(null);
         } else {
             _expressionStatusLabel.setIcon(WARNING_ICON);

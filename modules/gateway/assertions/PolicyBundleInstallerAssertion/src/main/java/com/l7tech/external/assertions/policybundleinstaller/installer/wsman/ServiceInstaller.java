@@ -120,7 +120,8 @@ public class ServiceInstaller extends WsmanInstaller {
             UnexpectedManagementResponse,
             PolicyBundleInstallerCallback.CallbackException,
             InterruptedException,
-            AccessDeniedManagementResponse {
+            AccessDeniedManagementResponse,
+            InstallationException {
 
 
         final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceMgmtEnumeration.getDocumentElement(), "Service");

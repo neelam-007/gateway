@@ -81,7 +81,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private FilterPanel filterPanel;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
-    private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
+    private Map<String, ImageIcon> iconCache = new HashMap<>();
     private PermissionFlags flags;
 
     public EncapsulatedAssertionManagerWindow(Window parent) {
@@ -565,6 +565,13 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
         if (numDeleted > 0) {
             loadEncapsulatedAssertionConfigs(true);
+            SwingUtilities.invokeLater( new Runnable() {
+                @Override
+                public void run() {
+                    TopComponents.getInstance().refreshPoliciesFolderNode();
+                    TopComponents.getInstance().getTopParent().repaint();
+                }
+            } );
         }
         if (errors.size() == 1) {
             final Exception error = errors.get(0);

@@ -14,6 +14,7 @@ import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -28,15 +29,20 @@ import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedEncapsulatedAssertionGuid;
 import static com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller.getPrefixedEncapsulatedAssertionName;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getVersionModifiedEncapsulatedAssertionGuid;
+import static com.l7tech.policy.bundle.BundleMapping.Type.ENCAPSULATE_ASSERTION_GUID;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
+import static com.l7tech.util.Charsets.UTF8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTestBase {
     private static final String SIMPLE_TEST_BUNDLE_ENCASS_NAME = "Simple Encapsulated Assertion";
@@ -51,7 +57,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     public void testInstall() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
@@ -75,7 +81,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     public void testPrerequisiteFolderInstall() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
@@ -101,10 +107,10 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     @Test
     // based on ServiceInstallerTest.testServicesUriPrefixedInstallation()
     public void testPrefixedInstallation() throws Exception {
-        final String prefix = "version1a";
+        final String versionModifier = "version1a";
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), prefix, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), versionModifier, bundleResolver, true);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
@@ -116,8 +122,8 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         assertEquals("Incorrect number of Encapsulated Assertion created", 1, idToGuid.size());
 
         // hardcoded test resources - validate each Encapsulated Assertion found and correct name and GUID was published
-        assertEquals(getPrefixedEncapsulatedAssertionName(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_NAME), idToName.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
-        assertEquals(getPrefixedEncapsulatedAssertionGuid(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_GUID), idToGuid.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
+        assertEquals(getPrefixedEncapsulatedAssertionName(versionModifier, SIMPLE_TEST_BUNDLE_COMP_ENCASS_NAME), idToName.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
+        assertEquals(getVersionModifiedEncapsulatedAssertionGuid(versionModifier, SIMPLE_TEST_BUNDLE_COMP_ENCASS_GUID), idToGuid.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
     }
 
     private GatewayManagementInvoker stubGatewayManagementInvoker(final Map<String, String> idToName, final Map<String, String> idToGuid) {
@@ -134,7 +140,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
                     } else if(requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")){
 
                         ElementCursor cursor = new DomElementCursor(documentReadOnly);
-                        // validate the prefix supplied
+                        // validate the version modifier supplied
                         try {
                             XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(".//l7:Name", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
                             Element element = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
@@ -178,8 +184,9 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         // get the simple test service bundle (e.g. /simpletest/Service.xml)
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final BundleInfo bundleInfo = getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME);
-        final String prefix = "v8.1.0";
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver, true);
+        final String versionModifier = "v8.1.0";
+        final BundleMapping bundleMapping = new BundleMapping();
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, bundleMapping, versionModifier, bundleResolver, true);
         final Document serviceBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), SERVICE, true);
 
         // get the first service which should contain a resource-set that references an encapsulated assertion
@@ -189,14 +196,23 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         assert policyResourceElmWritable != null;
         final Document policyDocumentFromResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", ServiceInstallerTest.SIMPLE_TEST_BUNDLE_SERVICE_ID);
 
-        // update to references
-        EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocumentFromResource, prefix);
-
-        // check its been updated as expected
+        // simulate how guid mappings are set before updatePolicyDoc(...)
         List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
-        assertEquals(getPrefixedEncapsulatedAssertionGuid(prefix, SIMPLE_TEST_BUNDLE_ENCASS_GUID), encapsulatedAssertions.get(0).getAttribute("stringValue"));
+        for (Element encapsulatedAssertion : encapsulatedAssertions) {
+            // map old guid to newly generated guid
+            bundleMapping.addMapping(BundleMapping.Type.ENCAPSULATE_ASSERTION_GUID, encapsulatedAssertion.getAttribute("stringValue"), UUID.randomUUID().toString());
+        }
+
+        // update to references
+        EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocumentFromResource, versionModifier);
+
+        // check guid is not one of the old exiting mapping
+        encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
+        assertNull(bundleMapping.getMapping(ENCAPSULATE_ASSERTION_GUID, encapsulatedAssertions.get(0).getAttribute("stringValue")));
+
+        // check name has been updated as expected
         encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
-        assertEquals(getPrefixedEncapsulatedAssertionName(prefix, SIMPLE_TEST_BUNDLE_ENCASS_NAME), encapsulatedAssertions.get(0).getAttribute("stringValue"));
+        assertEquals(getPrefixedEncapsulatedAssertionName(versionModifier, SIMPLE_TEST_BUNDLE_ENCASS_NAME), encapsulatedAssertions.get(0).getAttribute("stringValue"));
     }
 
     @Test
@@ -208,14 +224,14 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     }
 
     @Test
-    public void testPrefixedGuid() {
-        final String guid = "abc589b0-eba5-4b3f-81b5-be7809817623";
-        assertEquals(guid, getPrefixedEncapsulatedAssertionGuid(null, guid));
-        assertEquals(guid, getPrefixedEncapsulatedAssertionGuid("", guid));
-        assertEquals("123abc589b0-eba5-4b3f-81b5-be7809817", getPrefixedEncapsulatedAssertionGuid("123", guid));
-        assertEquals("12345678901234567890123456789012345a", getPrefixedEncapsulatedAssertionGuid("12345678901234567890123456789012345", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("123456789012345678901234567890123456", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("1234567890123456789012345678901234567", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("12345678901234567890123456789012345678901234567890", guid));
+    public void testVersionModifiedGuid() throws Exception {
+        final String versionModifier = "v1";
+
+        assertEquals(SIMPLE_TEST_BUNDLE_ENCASS_GUID, getVersionModifiedEncapsulatedAssertionGuid(null, SIMPLE_TEST_BUNDLE_ENCASS_GUID));
+        assertEquals(SIMPLE_TEST_BUNDLE_ENCASS_GUID, getVersionModifiedEncapsulatedAssertionGuid("", SIMPLE_TEST_BUNDLE_ENCASS_GUID));
+
+        // verify we can deterministically compute the a version modified guid: first 128 bits (16 bytes) of SHA-256( prefix + original_guid )
+        final MessageDigest md = MessageDigest.getInstance("SHA-256");
+        assertEquals(HexUtils.hexDump(md.digest((versionModifier + SIMPLE_TEST_BUNDLE_ENCASS_GUID).getBytes(UTF8)), 0, 16), getVersionModifiedEncapsulatedAssertionGuid(versionModifier, SIMPLE_TEST_BUNDLE_ENCASS_GUID));
     }
 }

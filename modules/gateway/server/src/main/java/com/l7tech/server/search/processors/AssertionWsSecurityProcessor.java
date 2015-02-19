@@ -38,12 +38,12 @@ public class AssertionWsSecurityProcessor implements DependencyProcessor<WsSecur
         if (certificate != null) {
             dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.list(DependencyFinder.FindResults.create(certificate,null))));
         }else{
-            if(assertion.getRecipientTrustedCertificateGoid() == null) {
-                dependencies.add(new BrokenDependency(
-                        new EntityHeader((String) null, EntityType.TRUSTED_CERT, assertion.getRecipientTrustedCertificateName(), null)));
-            }else{
+            if(assertion.getRecipientTrustedCertificateGoid() != null){
                 dependencies.add(new BrokenDependency(
                         new EntityHeader(assertion.getRecipientTrustedCertificateGoid(), EntityType.TRUSTED_CERT, assertion.getRecipientTrustedCertificateName(), null)));
+            }else if(assertion.getRecipientTrustedCertificateName() != null) {
+                dependencies.add(new BrokenDependency(
+                        new EntityHeader((String) null, EntityType.TRUSTED_CERT, assertion.getRecipientTrustedCertificateName(), null)));
             }
         }
         return dependencies;

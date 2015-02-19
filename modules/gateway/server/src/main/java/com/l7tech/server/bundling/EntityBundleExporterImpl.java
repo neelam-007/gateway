@@ -1,15 +1,26 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.FederatedUser;
+import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.policy.AssertionAccess;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -30,6 +41,15 @@ import java.util.*;
  * The bundle exporter will export an entity bundle from this gateway.
  */
 public class EntityBundleExporterImpl implements EntityBundleExporter {
+    //DEFAULTS and options
+    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
+    public static final String DefaultMappingActionOption = "DefaultMappingAction";
+    public static final String DefaultMapByOption = "DefaultMapBy";
+    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    public static final String ServiceUsed = "ServiceUsed"; // service id used to access this exporter
+    private static final String IncludeRequestFolder = "false";
+    private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
+    private static final String DefaultMapBy = "ID";
     @Inject
     private DependencyAnalyzer dependencyAnalyzer;
     @Inject
@@ -37,14 +57,22 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     @Inject
     private MappingInstructionsBuilder mappingInstructionsBuilder;
 
-    //DEFAULTS and options
-    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
-    private static final String IncludeRequestFolder = "false";
-    public static final String DefaultMappingActionOption = "DefaultMappingAction";
-    private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
-    public static final String DefaultMapByOption = "DefaultMapBy";
-    private static final String DefaultMapBy = "ID";
-    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    /**
+     * Builder the dependency analyzer options from the bundleExportProperties
+     *
+     * @param bundleExportProperties The bundle export properties
+     * @return The dependency analyzer options.
+     */
+    @NotNull
+    private static Map<String, Object> buildDependencyAnalyzerOptions(@NotNull final Properties bundleExportProperties) {
+        final CollectionUtils.MapBuilder<String, Object> optionBuilder = CollectionUtils.MapBuilder.builder();
+        if (bundleExportProperties.containsKey(IgnoredEntityIdsOption)) {
+            optionBuilder.put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(bundleExportProperties.getProperty(IgnoredEntityIdsOption).split(",")));
+        }
+        // do not need assertion dependency results for building export bundle
+        optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
+        return optionBuilder.map();
+    }
 
     /**
      * Exports a bundle given a list of entity headers to export. This will find all the dependencies needed to import
@@ -113,30 +141,37 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 }
 
                 addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity);
-                addEntities(entity, entityContainers);
+                addEntities(bundleExportProperties, entity, entityContainers);
             }
         }
 
-        return new EntityBundle(entityContainers, mappings);
+        return new EntityBundle(entityContainers, mappings, dependencySearchResults);
     }
 
     /**
      * This will add an entity to the entity containers list, properly creating the entity container containing the
      * entity
      *
-     * @param entity           The entity to add to the list
-     * @param entityContainers The entity containers list
+     * @param bundleExportProperties The bundling properties
+     * @param entity                 The entity to add to the list
+     * @param entityContainers       The entity containers list
      * @throws FindException
      */
-    private void addEntities(@NotNull final Entity entity, @NotNull final List<EntityContainer> entityContainers) throws FindException {
+    private void addEntities(@NotNull final Properties bundleExportProperties, @NotNull final Entity entity, @NotNull final List<EntityContainer> entityContainers) throws FindException {
         if (entity instanceof JmsEndpoint) {
             final JmsEndpoint endpoint = (JmsEndpoint) entity;
             final Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(), EntityType.JMS_CONNECTION, null, null));
             if (connection == null)
                 throw new FindException("Cannot find associated jms connection for jms endpoint: " + endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint, (JmsConnection) connection));
-        } else if (entity instanceof SsgKeyEntry) {
-            // not include private key entity info in bundle
+        } else if (entity instanceof SsgKeyEntry && (!bundleExportProperties.containsKey("EncryptSecrets") || !Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets")))) {
+            // not include private key entity info in bundle unless EncryptSecrets is true
+        } else if (entity instanceof InterfaceTag) {
+            entityContainers.add(new InterfaceTagContainer((InterfaceTag) entity));
+        } else if (entity instanceof AssertionAccess) {
+            entityContainers.add(new AssertionAccessContainer((AssertionAccess) entity));
+        } else if (entity instanceof VirtualGroup) {
+            // not include Federated Virtual Groups
         } else {
             entityContainers.add(new EntityContainer<>(entity));
         }
@@ -167,19 +202,102 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             }
         }
 
+        final boolean secretsEncrypted = bundleExportProperties.containsKey("EncryptSecrets") &&  Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets"));
         final EntityMappingInstructions mapping;
-        if (entity instanceof SsgKeyEntry ||
-                entity instanceof IdentityProviderConfig ||
-                entity instanceof Identity ||
-                entity instanceof Role ||
-                entity instanceof SecurePassword ||
-                (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID))) {
+        if (entity instanceof InternalUser){
+            if(((InternalUser) entity).getGoid().equals(new Goid(0,3)))
+            {
+                // Only use existing for IIP and ADMIN user
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+            }else if(secretsEncrypted){
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        false,
+                        false);
+            }else{
+                // users with no secrets are incomplete, should force to use existing
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+            }
+        }else if (entity instanceof IdentityProviderConfig && IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.equals(((IdentityProviderConfig) entity).getGoid())){
+            // only map only for non internal and non federated identity
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+        }else if (entity instanceof Identity && !(entity instanceof InternalGroup || entity instanceof FederatedUser || entity instanceof FederatedGroup || entity instanceof VirtualGroup)){
+            // only map only for non internal and non federated identity
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+        }else if((entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
+                //private keys and secure passwords should only be map only if EncryptSecrets is not specified.
+                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && !secretsEncrypted) ||
+                entity instanceof VirtualGroup) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     null,
                     EntityMappingInstructions.MappingAction.NewOrExisting,
                     true,
+                    false);
+        } else if (entity instanceof Role && !((Role)entity).isUserCreated()){
+            if(((Role)entity).getEntityGoid() != null && ((Role)entity).getEntityType() != null) {
+                // These are auto generated roles for managing specific entities. Map them with the MAP_BY_ROLE_ENTITY option, and set fail on new to true
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY),
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        true,
+                        false);
+            } else {
+                // These are other built in roles. They should fail on new.
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        true,
+                        false);
+            }
+        } else if(entity instanceof SsgConnector && isDefaultListenPortName(((SsgConnector) entity).getName()) ) {
+            //make the default listen ports map by name
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    true,
+                    false);
+        } else if(entity instanceof PublishedService && entity.getId().equals(bundleExportProperties.getProperty(ServiceUsed)) ) {
+            //make the service used to access this exporter(restman) map by name, fail on new
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    true,
+                    false);
+        } else if(entity instanceof ClusterProperty || entity instanceof AssertionAccess) {
+            //make cluster properties and assertion access map by name by default
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    false,
                     false);
         } else {
             //create the default mapping instructions
@@ -200,17 +318,15 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     }
 
     /**
-     * Builder the dependency analyzer options from the bundleExportProperties
-     *
-     * @param bundleExportProperties The bundle export properties
-     * @return The dependency analyzer options.
+     * Returns true if the name given is a name for a default listen port.
+     * @param name The name to test
+     * @return True is this is a name for a default listen port, false otherwise.
      */
-    @NotNull
-    private static Map<String, Object> buildDependencyAnalyzerOptions(@NotNull final Properties bundleExportProperties) {
-        final CollectionUtils.MapBuilder<String, Object> optionBuilder = CollectionUtils.MapBuilder.builder();
-        if (bundleExportProperties.containsKey(IgnoredEntityIdsOption)) {
-            optionBuilder.put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(bundleExportProperties.getProperty(IgnoredEntityIdsOption).split(",")));
-        }
-        return optionBuilder.map();
+    private boolean isDefaultListenPortName(final String name) {
+        return name != null && (
+                "Default HTTP (8080)".equals(name) ||
+                        "Default HTTPS (8443)".equals(name) ||
+                        "Default HTTPS (9443)".equals(name) ||
+                        "Node HTTPS (2124)".equals(name));
     }
 }

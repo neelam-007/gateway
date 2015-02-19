@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.jose4j"
+		module="jose4j"
+		revision="0.3.9"
+		status="release"
+		publication="20141125112850"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jose4j" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

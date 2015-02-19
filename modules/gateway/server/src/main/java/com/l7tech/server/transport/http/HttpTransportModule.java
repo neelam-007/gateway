@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
@@ -59,9 +60,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
-import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP;
-import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -80,6 +80,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     public static final String CONNECTOR_ATTR_TRANSPORT_MODULE_ID = "httpTransportModuleInstanceId";
     public static final String CONNECTOR_ATTR_CONNECTOR_OID = "ssgConnectorOid";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
+    public static final String CONFIG_PROP_CONCURRENCY_WARNING_REPEAT_DELAY_SEC = "io.httpConcurrencyWarning.repeatDelay";
 
     private static final AtomicLong nextInstanceId = new AtomicLong(1L);
     private static final Map<Long, Reference<HttpTransportModule>> instancesById =
@@ -94,10 +95,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicInteger sharedThreadPoolConcurrency = new AtomicInteger();
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
     private final Map<Goid, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, Connector>>();
+    private final Map<Goid, AtomicInteger> connectorPoolConcurrency = new ConcurrentHashMap<>();
+    private final Map<Goid, Integer> connectorConcurrencyWarningThreshold = new ConcurrentHashMap<>();
+    private final AtomicLong lastConcurrencyWarningTime = new AtomicLong();
     private final Set<SsgConnectorActivationListener> endpointListeners;
 
     private Embedded embedded;
@@ -815,7 +820,19 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
-        activeConnectors.put(connector.getGoid(), new Pair<SsgConnector, Connector>(connector, c));
+        activeConnectors.put(connector.getGoid(), new Pair<>(connector, c));
+
+        int poolSize = connector.getIntProperty( PROP_THREAD_POOL_SIZE, 0 );
+        AtomicInteger poolCounter = poolSize == 0 ? sharedThreadPoolConcurrency : new AtomicInteger();
+        connectorPoolConcurrency.put( connector.getGoid(), poolCounter );
+
+        int warningThreshold = connector.getIntProperty( PROP_CONCURRENCY_WARNING_THRESHOLD, 0 );
+        if ( warningThreshold > 0 ) {
+            connectorConcurrencyWarningThreshold.put( connector.getGoid(), warningThreshold );
+        } else {
+            connectorConcurrencyWarningThreshold.remove( connector.getGoid() );
+        }
+
         embedded.addConnector(c);
         try {
             auditStart( connector.getScheme(), describe( connector ) );
@@ -1005,6 +1022,53 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         String desc = got == null ? null : got.left == null ? null : " (port " + got.left.getPort() + ")";
         logger.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorGoid + desc + " because it cannot be opened with its current configuration");
         removeConnector(connectorGoid);
+    }
+
+    public int incrementConcurrencyForConnector( Goid connectorGoid ) {
+        AtomicInteger counter = connectorPoolConcurrency.get( connectorGoid );
+        if ( null == counter )
+            counter = sharedThreadPoolConcurrency;
+
+        int concurrency = counter.incrementAndGet();
+
+        Integer warningThreshold = connectorConcurrencyWarningThreshold.get( connectorGoid );
+        if ( warningThreshold != null && concurrency >= warningThreshold )
+            maybeFireConcurrencyWarning( connectorGoid, concurrency, warningThreshold );
+
+        return concurrency;
+    }
+
+    private void maybeFireConcurrencyWarning( Goid connectorGoid, int concurrency, int warningThreshold ) {
+        int repeatDelay = ConfigFactory.getIntProperty( CONFIG_PROP_CONCURRENCY_WARNING_REPEAT_DELAY_SEC, 60 );
+        long now = System.currentTimeMillis();
+        long last = lastConcurrencyWarningTime.get();
+        long millisSinceLast = now - last;
+        if ( millisSinceLast < ( 1000L * repeatDelay ) ) {
+            logger.finer( "Suppressing repeated connector concurrency warning audit" );
+            return;
+        }
+
+        if ( last == lastConcurrencyWarningTime.getAndSet( now ) ) {
+            final TransportEvent event = new TransportEvent(
+                    this,
+                    component,
+                    null,
+                    Level.INFO,
+                    "Concurrency Exceeded",
+                    "Listener concurrency exceeded: " + concurrency );
+
+            auditTransportEvent( event,
+                    SystemMessages.CONNECTOR_CONCURRENCY_WARNING,
+                    new String[] { connectorGoid.toString(), String.valueOf( concurrency ) },
+                    null );
+        }
+    }
+
+    public int decrementConcurrencyForConnector( Goid connectorGoid ) {
+        AtomicInteger counter = connectorPoolConcurrency.get( connectorGoid );
+        if ( null == counter )
+            counter = sharedThreadPoolConcurrency;
+        return counter.decrementAndGet();
     }
 
     public static final class WebappClassLoaderEx extends WebappClassLoader {

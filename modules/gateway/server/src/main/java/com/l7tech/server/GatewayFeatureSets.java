@@ -84,6 +84,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
     public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
     public static final String SERVICE_ENCAPSULATED_ASSERTION = "service:EncapsulatedAssertion"; // Ability to use encapsulated assertions
+    public static final String SERVICE_CASSANDRA = "service:Cassandra"; // Ability to configure Cassandra connections
 
     // Constants for flag names
     public static final String FLAG_PERMAFIPS = "flag:FipsModeAlways";
@@ -91,6 +92,7 @@ public class GatewayFeatureSets {
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_PUBLISH_INTERNAL_WIZARD = "ui:PublishInternalWizard";
+    public static final String UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD = "ui:PublishWsdlQueryHandlerWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
@@ -99,7 +101,9 @@ public class GatewayFeatureSets {
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
+    public static final String UI_MANAGE_POLICY_BACKED_SERVICES = "ui:ManagePolicyBackedServices";
     public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
+    public static final String UI_MANAGE_CASSANDRA_CONNECTIONS = "ui:ManageCassandraConnections";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
@@ -279,6 +283,11 @@ public class GatewayFeatureSets {
             ui(UI_MANAGE_ENCAPSULATED_ASSERTIONS, "Ability to use Manage Encapsulated Assertions GUI"),
             srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions"));
 
+        GatewayFeatureSet polback =
+        fsr("set:polback", "Enable Policy-Backed Services support",
+            "Enables Gateway to create and use policy-backed services such as key-value stores.",
+            ui(UI_MANAGE_POLICY_BACKED_SERVICES, "Ability to use Manage Policy-Backed Services GUI"));
+
         GatewayFeatureSet seczones =
         fsr("set:seczones", "Enable Security Zones support",
             "Enables Gateway to create and use RBAC security zones.",
@@ -315,6 +324,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
         GatewayFeatureSet uiPublishInternalWizard = ui(UI_PUBLISH_INTERNAL_WIZARD, "Enable the SSM Publish Internal Service Wizard");
+        GatewayFeatureSet uiPublishWsdlQueryHandlerWizard = ui(UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD, "Enable the SSM Publish Wsdl Query Handler Service Wizard");
         GatewayFeatureSet uiWsdlCreateWizard = ui(UI_WSDL_CREATE_WIZARD, "Enable the SSM WSDL Create Wizard");
         GatewayFeatureSet uiAuditWindow = ui(UI_AUDIT_WINDOW, "Enable the SSM Audit Window");
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
@@ -322,6 +332,12 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiLogSinksDialog = ui(UI_MANAGE_LOG_SINKS, "Enable the SSM Log Sinks Dialog");
         GatewayFeatureSet uiAuditSinkDialog = ui(UI_MANAGE_AUDIT_SINK, "Enable the SSM Audit Sink Dialog");
         GatewayFeatureSet uiEmailListenersDialog = ui(UI_MANAGE_EMAIL_LISTENERS, "Enable the SSM Email Listeners Dialog");
+
+        GatewayFeatureSet cassandraConnections = fsr("set:Cassandra",
+                "Enable Cassandra support",
+                "Enables Gateway to create and use Cassandra connections.",
+                ui(UI_MANAGE_CASSANDRA_CONNECTIONS, "Enable the Manage Cassandra Connections Dialog"),
+                srv(SERVICE_CASSANDRA, "Ability to manage Cassandra connections"));
 
         GatewayFeatureSet flagPermaFips = flag(FLAG_PERMAFIPS, "FIPS mode is always required.");
 
@@ -820,6 +836,14 @@ public class GatewayFeatureSets {
                         mass("assertion:JwtDecode"),
                         mass("assertion:JwtEncode"));
 
+        GatewayFeatureSet jwtAssertion =
+                fsr("set:Jwt:Assertions",
+                        "Assertions to enable JWT functionality.",
+                        mass("assertion:EncodeJsonWebToken"),
+                        mass("assertion:DecodeJsonWebToken"),
+                        mass("assertion:CreateJsonWebKey")
+                );
+
         GatewayFeatureSet openIDConnectAssertions =
                 fsr("set:OpenIDConnect:Assertions",
                         "Assertions to enable OpenIDConnect functionality, including policy dependencies",
@@ -860,7 +884,12 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet retrieveServiceWsdlAssertion = fsr("set:RetrieveServiceWsdl:Assertions",
                 "Assertions to enable service WSDL retrieval functionality.",
-                mass("assertion:RetrieveServiceWsdl"));
+                mass("assertion:RetrieveServiceWsdl"),
+                uiPublishWsdlQueryHandlerWizard);
+
+        GatewayFeatureSet cassandraAssertions = fsr("set:Cassandra:Assertions",
+                "The necessary assertions to support Cassandra functionality",
+                mass("assertion:CassandraQuery"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -902,6 +931,7 @@ public class GatewayFeatureSets {
             fs(uiDs),
             fs(customDs),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
@@ -958,6 +988,7 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(esmAssertions),
             fs(samlpAssertions),
@@ -973,6 +1004,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -987,6 +1020,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
             fs(retrieveServiceWsdlAssertion),
+            fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
@@ -1013,6 +1047,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(ssb),
             fs(modularAssertions),
@@ -1041,6 +1076,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -1054,6 +1091,7 @@ public class GatewayFeatureSets {
             fs(csrfProtectionAssertion),
             fs(radiusAssertions),
             fs(retrieveServiceWsdlAssertion),
+            fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONTROL, "CloudSpan CloudControl",
@@ -1086,6 +1124,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(ssb),
             fs(modularAssertions),
@@ -1110,6 +1149,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -1155,12 +1196,15 @@ public class GatewayFeatureSets {
                 mass("assertion:SetSamlStatus"),
                 mass("assertion:ValidateCertificate"),
                 fs(encass),
+                fs(polback),
                 fs(seczones),
                 fs(modularAssertions),
                 fs(oAuthInstaller),
                 fs(oAuthValidationAssertions),
                 fs(jsonSchemaAssertion),
                 fs(jsonDocumentStructureAssertion),
+                fs(cassandraConnections),
+                fs(cassandraAssertions),
                 fs(oDataValidationAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
@@ -1178,7 +1222,8 @@ public class GatewayFeatureSets {
                 fs(siteMinderAssertions),
                 fs(sophosAssertions),
                 fs(csrfProtectionAssertion),
-                fs(retrieveServiceWsdlAssertion));
+                fs(retrieveServiceWsdlAssertion),
+                fs(jwtAssertion));
 
         /**
          * ### FEATURE PACK DEFINITIONS BEGIN ###

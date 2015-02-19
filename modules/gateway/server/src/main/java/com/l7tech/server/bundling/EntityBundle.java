@@ -1,6 +1,7 @@
 package com.l7tech.server.bundling;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -20,15 +21,17 @@ public class EntityBundle {
     //the entities map. It is used to store the entities and quickly retrieve them by their ids.
     @NotNull
     private final Map<Pair<String, EntityType>, EntityContainer> idEntityMap;
+    private final List<DependencySearchResults> dependencySearchResults;
 
     /**
      * Creates a new Entity bundle with the given entity containers and mapping instructions
-     *
-     * @param entities            The entity containers that are part of this bundle
+     *  @param entities            The entity containers that are part of this bundle
      * @param mappingInstructions The mapping instructions.
+     * @param dependencySearchResults  The dependency analysis results used to create bundle
      */
-    public EntityBundle(@NotNull final Collection<EntityContainer> entities, @NotNull final List<EntityMappingInstructions> mappingInstructions) {
+    public EntityBundle(@NotNull final Collection<EntityContainer> entities, @NotNull final List<EntityMappingInstructions> mappingInstructions, @NotNull final List<DependencySearchResults> dependencySearchResults) {
         this.mappingInstructions = mappingInstructions;
+        this.dependencySearchResults = dependencySearchResults;
 
         //build entity map so that entities can be quickly retrieved. Use a pair of id and type as the key because it is possible for some id's to collide (Goid(0,2) for example)
         idEntityMap = Functions.toMap(entities, new Functions.Unary<Pair<Pair<String, EntityType>, EntityContainer>, EntityContainer>() {
@@ -57,6 +60,15 @@ public class EntityBundle {
     @NotNull
     public List<EntityMappingInstructions> getMappingInstructions() {
         return mappingInstructions;
+    }
+
+    /**
+     * The list of dependency search results
+     *
+     * @return The list of dependency search results in the bundle
+     */
+    public List<DependencySearchResults> getDependencySearchResults() {
+        return dependencySearchResults;
     }
 
     /**

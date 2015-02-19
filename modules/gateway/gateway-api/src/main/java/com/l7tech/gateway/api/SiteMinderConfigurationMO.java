@@ -1,14 +1,17 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.AttributeExtensibleType;
 import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import com.l7tech.util.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
+import javax.xml.namespace.QName;
 import java.util.Map;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
@@ -16,8 +19,8 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 /**
  * The SiteMinderConfigurationMO object represents a Siteminder configuration.
  */
-@XmlRootElement(name="SiteMinderConfiguration")
-@XmlType(name="SiteMinderConfigurationType", propOrder={"nameValue", "addressValue", "hostnameValue", "hostConfigurationValue", "userNameValue", "passwordIdValue", "enabledValue", "fipsModeValue", "ipCheckValue", "updateSsoTokenValue", "clusterThresholdValue", "nonClusterFailoverValue", "secretValue", "properties", "extension", "extensions"})
+@XmlRootElement(name = "SiteMinderConfiguration")
+@XmlType(name = "SiteMinderConfigurationType", propOrder = {"nameValue", "addressValue", "hostnameValue", "hostConfigurationValue", "userNameValue", "passwordIdValue", "enabledValue", "fipsModeValue", "ipCheckValue", "updateSsoTokenValue", "clusterThresholdValue", "nonClusterFailoverValue", "secretValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "siteMinderConfigurations")
 public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject {
 
@@ -26,7 +29,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     /**
      * Get the name for the Siteminder configuration (case insensitive, required)
      *
-     * @return  The name of the Siteminder configuration (may be null)
+     * @return The name of the Siteminder configuration (may be null)
      */
     public String getName() {
         return get(this.name);
@@ -79,6 +82,19 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.secret = set(this.secret, secret);
     }
 
+    public void setEncryptedSecret(@NotNull final String encryptedSecret, @NotNull final String bundleKey) {
+        this.secret = new AttributeExtensibleType.AttributeExtensibleString();
+        this.secret.setValue(encryptedSecret);
+        this.secret.setAttributeExtensions(CollectionUtils.<QName, Object>mapBuilder().put(new QName("bundleKey"), bundleKey).map());
+    }
+
+    public String getSecretBundleKey() {
+        if (this.secret != null && this.secret.getAttributeExtensions() != null) {
+            return (String) this.secret.getAttributeExtensions().get(new QName("bundleKey"));
+        }
+        return null;
+    }
+
     /**
      * Get the hostname for the Siteminder configuration (required)
      *
@@ -117,7 +133,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
 
     /**
      * Get the user name for the Siteminder configuration.
-     *
+     * <p/>
      * return the usename or null
      */
     public String getUserName() {
@@ -225,17 +241,17 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
 
     /**
      * Get the FIPs mode
-     *
+     * <p/>
      * <p>Fips mode values:
      * <ul>
-     *   <li>0 = Unset</li>
-     *   <li>1 = COMPAT</li>
-     *   <li>2 = MIGRATE</li>
-     *   <li>3 = ONLY</li>
+     * <li>0 = Unset</li>
+     * <li>1 = COMPAT</li>
+     * <li>2 = MIGRATE</li>
+     * <li>3 = ONLY</li>
      * </ul>
      * </p>
      *
-     * @return  The FIPs mode value, default is 0
+     * @return The FIPs mode value, default is 0
      */
     public int getFipsMode() {
         return get(this.fipsMode, 0);
@@ -244,7 +260,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     /**
      * Set the FIPs mode
      *
-     * @param fipsMode  The FIPs mode value
+     * @param fipsMode The FIPs mode value
      */
     public void setFipsMode(int fipsMode) {
         this.fipsMode = set(this.fipsMode, fipsMode);
@@ -253,7 +269,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     /**
      * Gets the cluster threshold
      *
-     * @return  The cluster threshold, default is 50
+     * @return The cluster threshold, default is 50
      */
     public int getClusterThreshold() {
         return get(this.clusterThreshold, 50);
@@ -270,23 +286,24 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
 
     /**
      * Get the properties for this siteminder configuration
-     *
+     * <p/>
      * <p>The following cluster settings properties are supported:
      * <ul>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.address = 123.101.1.222 </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.authentication.port = 4442 </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.authorization.port = 4443  </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.accounting.port = 4441  </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.min = 1  </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.max = 3 </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.step = 1 </li>
-     *   <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.timeout = 75  </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.address = 123.101.1.222 </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.authentication.port = 4442 </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.authorization.port = 4443  </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.accounting.port = 4441  </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.min = 1  </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.max = 3 </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.connection.step = 1 </li>
+     * <li>&lt;agent_id&gt;.server.&lt;cluster_seq&gt;.&lt;server_number&gt;.timeout = 75  </li>
      * </ul>
      * </p>
+     *
      * @return The properties (may be null)
      */
-    @XmlElement(name="Properties")
-    @XmlJavaTypeAdapter( PropertiesMapType.PropertiesMapTypeAdapter.class)
+    @XmlElement(name = "Properties")
+    @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
     public Map<String, String> getProperties() {
         return properties;
     }
@@ -302,7 +319,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
 
     //- PROTECTED
 
-    @XmlElement(name="Name",required=true)
+    @XmlElement(name = "Name", required = true)
     protected AttributeExtensibleString getNameValue() {
         return name;
     }
@@ -312,8 +329,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
 
-
-    @XmlElement(name="Address",required=true)
+    @XmlElement(name = "Address", required = true)
     protected AttributeExtensibleString getAddressValue() {
         return address;
     }
@@ -322,7 +338,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.address = address;
     }
 
-    @XmlElement(name="Secret")
+    @XmlElement(name = "Secret")
     protected AttributeExtensibleString getSecretValue() {
         return secret;
     }
@@ -331,7 +347,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.secret = secret;
     }
 
-    @XmlElement(name="Hostname",required=true)
+    @XmlElement(name = "Hostname", required = true)
     protected AttributeExtensibleString getHostnameValue() {
         return hostname;
     }
@@ -340,7 +356,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.hostname = hostname;
     }
 
-    @XmlElement(name="HostConfiguration")
+    @XmlElement(name = "HostConfiguration")
     protected AttributeExtensibleString getHostConfigurationValue() {
         return hostConfiguration;
     }
@@ -349,7 +365,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.hostConfiguration = hostConfiguration;
     }
 
-    @XmlElement(name="UserName")
+    @XmlElement(name = "UserName")
     protected AttributeExtensibleString getUserNameValue() {
         return userName;
     }
@@ -358,7 +374,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.userName = userName;
     }
 
-    @XmlElement(name="PasswordId")
+    @XmlElement(name = "PasswordId")
     protected AttributeExtensibleString getPasswordIdValue() {
         return passwordId;
     }
@@ -367,7 +383,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.passwordId = passwordOid;
     }
 
-    @XmlElement(name="IpCheck",required=true)
+    @XmlElement(name = "IpCheck", required = true)
     protected AttributeExtensibleBoolean getIpCheckValue() {
         return ipCheck;
     }
@@ -376,7 +392,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.ipCheck = ipCheck;
     }
 
-    @XmlElement(name="UpdateSsoToken",required=true)
+    @XmlElement(name = "UpdateSsoToken", required = true)
     protected AttributeExtensibleBoolean getUpdateSsoTokenValue() {
         return updateSsoToken;
     }
@@ -385,7 +401,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.updateSsoToken = updateSsoToken;
     }
 
-    @XmlElement(name="Enabled",required=true)
+    @XmlElement(name = "Enabled", required = true)
     protected AttributeExtensibleBoolean getEnabledValue() {
         return enabled;
     }
@@ -394,7 +410,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.enabled = enabled;
     }
 
-    @XmlElement(name="NonClusterFailover",required=true)
+    @XmlElement(name = "NonClusterFailover", required = true)
     protected AttributeExtensibleBoolean getNonClusterFailoverValue() {
         return nonClusterFailover;
     }
@@ -403,7 +419,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.nonClusterFailover = nonClusterFailover;
     }
 
-    @XmlElement(name="FipsMode")
+    @XmlElement(name = "FipsMode")
     protected AttributeExtensibleInteger getFipsModeValue() {
         return fipsMode;
     }
@@ -412,7 +428,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.fipsMode = fipsMode;
     }
 
-    @XmlElement(name="ClusterThreshold")
+    @XmlElement(name = "ClusterThreshold")
     protected AttributeExtensibleInteger getClusterThresholdValue() {
         return clusterThreshold;
     }

@@ -65,6 +65,31 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp implemen
     /** Flag to indicate if debug tracing is allowed into the encapsulated assertion backing policy. */
     public static final String PROP_ALLOW_TRACING = "allowTracing";
 
+    /**
+     * Optional template for displaying a custom node label in the policy tree.  Template may include
+     * variables:
+     * <pre>
+     *   ${meta.name} - base name of assertion
+     *   ${in.FOO.value} - value of input variable named FOO, if known at design time, otherwise empty string
+     *   ${in.FOO.label} - GUI label for input variable named FOO, or just the name ("FOO" in this case) if no GUI label set
+     *   ${in.FOO.type} - Data type for input variable named FOO
+     *   ${in.0.value} - value of first argument, if known at design time, otherwise empty string
+     *   ${in.1.name} - name of second argument, if known at design time, otherwise empty string
+     *   ${in.2.label} - GUI label of third argument, if known at design time, otherwise empty string
+     *   ${in.3.type} - Data type of third argument
+     * </pre>
+     */
+    public static final String PROP_POLICY_NODE_NAME_TEMPLATE = "policyNodeNameTemplate";
+
+    /** Name of a registered policy-backed service interface, or null. */
+    public static final String PROP_SERVICE_INTERFACE = "serviceInterface";
+
+    /** Name of a method in a registered policy-backed service interface, or null. */
+    public static final String PROP_SERVICE_METHOD = "serviceMethod";
+
+    /** The string "true" if this encapsulated assertion config was created on the fly as a service method descriptor, and should not be persisted. */
+    public static final String PROP_EPHEMERAL = "ephemeral";
+
     private String guid;
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();

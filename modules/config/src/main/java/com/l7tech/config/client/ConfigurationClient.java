@@ -4,6 +4,8 @@ import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.options.OptionSet;
+import com.l7tech.util.ExceptionUtils;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,6 +70,20 @@ public class ConfigurationClient extends Interaction {
                 } else if (COMMAND_SHOW.equals(command)) {
                     doShow(optionSet, configBeans, false, true);
                     promptContinue();
+                } else if (COMMAND_HEADLESS.equals(command)) {
+                    // Run a headless session
+                    store = doHeadless( optionSet, configBeans );
+
+                    try {
+                        if ( store ) {
+                            provider.storeConfiguration( configBeans.values() );
+                            return true;
+                        }
+                    } catch ( ConfigurationException e ) {
+                        System.err.println( "ERROR: " + ExceptionUtils.getMessage( e ) );
+                        e.printStackTrace( System.err );
+                    }
+                    return false;
                 }
 
                 if (store) {
@@ -94,8 +110,15 @@ public class ConfigurationClient extends Interaction {
         }
 
         return success;
-    }    
-        
+    }
+
+    private boolean doHeadless( OptionSet optionSet, Map<String, ConfigurationBean> configBeans ) throws IOException {
+        Interaction wizard = new HeadlessInteraction( optionSet, configBeans );
+        boolean success = wizard.doInteraction();
+        wizard.close();
+        return success;
+    }
+
     public static String getDefaultCommand() {
         return COMMAND_AUTO;
     }
@@ -128,7 +151,8 @@ public class ConfigurationClient extends Interaction {
     private static final String COMMAND_WIZARD = "wizard";
     private static final String COMMAND_EDIT = "edit";
     private static final String COMMAND_SHOW = "show";
-    private static final Collection COMMANDS = Collections.unmodifiableCollection(Arrays.asList( COMMAND_AUTO, COMMAND_WIZARD, COMMAND_EDIT, COMMAND_SHOW ));   
+    private static final String COMMAND_HEADLESS = "headless";
+    private static final Collection COMMANDS = Collections.unmodifiableCollection(Arrays.asList( COMMAND_AUTO, COMMAND_WIZARD, COMMAND_EDIT, COMMAND_SHOW, COMMAND_HEADLESS ));
     
     private final ConfigurationBeanProvider provider;
     private final OptionInitializer optionInit;

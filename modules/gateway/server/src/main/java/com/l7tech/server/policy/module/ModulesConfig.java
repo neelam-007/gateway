@@ -28,7 +28,7 @@ public interface ModulesConfig {
     File getModuleDir();
 
     /**
-     * @return modules allowed file extension (e.g. jar, aar etc.)
+     * @return Read-only {@link List list} containing allowed modules file extension(s) (e.g. jar, aar etc.)
      */
     List<String> getModulesExt();
 

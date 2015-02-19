@@ -1,6 +1,7 @@
 package com.l7tech.gateway.rest;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.message.Header;
 import com.l7tech.util.ExceptionUtils;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -20,6 +21,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -60,16 +62,26 @@ public class RestHandler {
      * @param body            The request body input stream
      * @param securityContext The security context that this call is made in. The principle user should be set.
      * @param properties      These are properties that will be set in the Jersey request.
+     * @param headers         The request headers
      * @return Returns a container response containing the jersey response.
      * @throws PrivilegedActionException
      * @throws RequestProcessingException
      */
-    public ContainerResponse handle(@Nullable final String requesterHost, @NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, @Nullable final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
+    public ContainerResponse handle(@Nullable final String requesterHost, @NotNull final URI baseUri, @NotNull final URI uri,
+                                    @NotNull final String httpMethod, @Nullable final String contentType, @NotNull final InputStream body,
+                                    @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream,
+                                    @Nullable Map<String, Object> properties, @NotNull final Collection<Header> headers) throws PrivilegedActionException, RequestProcessingException {
         // Build the Jersey Container Request
         final ContainerRequest request = new ContainerRequest(baseUri, URI.create(baseUri.toString() + uri.toString()), httpMethod, securityContext, properties == null ? new MapPropertiesDelegate() : new MapPropertiesDelegate(properties));
         //Set the content type header.
         if (contentType != null) {
             request.header(HttpHeaders.CONTENT_TYPE, contentType);
+        }
+        for (final Header header : headers) {
+            // avoid duplicate content-type headers
+            if (!header.getKey().equalsIgnoreCase(HttpHeaders.CONTENT_TYPE) || contentType == null) {
+                request.header(header.getKey(), header.getValue());
+            }
         }
         //Set the request body
         request.setEntityStream(body);

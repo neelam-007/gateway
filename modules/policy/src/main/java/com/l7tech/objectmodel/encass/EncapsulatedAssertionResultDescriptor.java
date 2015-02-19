@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.encass;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.policy.variable.DataType;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -55,7 +56,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     }
 
     /**
-     * @return the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
+     * @return the data type of this result, as a name of a value of String.
      */
     @Column(name="result_type")
     @XmlElement(name = "ResultType")
@@ -64,11 +65,18 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     }
 
     /**
-     * @param resultType the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
+     * @param resultType the data type of this result, as a name of a value of String.
      */
     public void setResultType(String resultType) {
         checkLocked();
         this.resultType = resultType;
+    }
+
+    /**
+     * @return a DataType instance for the current result type.  Null if not set, and UNKNOWN if not recognized.
+     */
+    public DataType dataType() {
+        return DataType.forName( getResultType() );
     }
 
     /**

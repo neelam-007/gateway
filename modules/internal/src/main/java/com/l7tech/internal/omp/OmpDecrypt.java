@@ -6,6 +6,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ObfuscatedFileMasterPasswordFinder;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -42,7 +43,7 @@ public class OmpDecrypt {
         new PropertiesDecryptor(new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
             @Override
             public byte[] findMasterPasswordBytes() {
-                return masterPassphrase;
+                return Arrays.copyOf( masterPassphrase, masterPassphrase.length );
             }
         })).decryptEncryptedPasswords(properties);
 

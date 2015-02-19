@@ -63,6 +63,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     JDBC_CONNECTION("JDBC Connection", true, true),
 
+    CASSANDRA_CONFIGURATION("Cassandra Connection", true, true),
+
     SITEMINDER_CONFIGURATION("CA Single Sign-On Configuration", true, true),
 
     EMAIL_LISTENER("Email Listener", true, true),
@@ -98,6 +100,9 @@ public enum EntityType implements Comparable<EntityType> {
     SECURITY_ZONE("Security Zone", "Security Zones", true, true),
     CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, false),
     LICENSE_DOCUMENT("License Document", false, false),
+    POLICY_BACKED_SERVICE("Policy Backed Service", true, true),
+    SERVER_MODULE_FILE("Server Module File", "Server Module Files", true, false),
+    INTERFACE_TAG("Interface Tag", "Interface Tags", false, false),
     SOLUTION_KIT("Solution Kit", false, false),
     ;
 

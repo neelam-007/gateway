@@ -28,14 +28,32 @@ public class PropertiesMapType {
        for(Map.Entry<String,Object> entry : map.entrySet()) {
             this.entry.add(new PropertiesMapEntryType(entry));
         }
+        //sort the properties in the properties map by name
+        Collections.sort(this.entry, new Comparator<PropertiesMapEntryType>() {
+            @Override
+            public int compare(PropertiesMapEntryType entry1, PropertiesMapEntryType entry2) {
+                return entry1.getKey().compareTo(entry2.getKey());
+            }
+        });
     }
 
     public Map<String,Object> toMap() {
         Map<String,Object> map = new HashMap<String,Object>();
         for (PropertiesMapEntryType jaxbEntry : entry) {
-            map.put(jaxbEntry.getKey(), jaxbEntry.getValue());
+            map.put(jaxbEntry.getKey(), getValue(jaxbEntry));
         }
         return map;
+    }
+
+    private Object getValue(PropertiesMapEntryType propertyMapEntryType) {
+        //if it has attribute extensions convert it to an AttributeExtensible object
+        if(propertyMapEntryType.getPropertyValue().getAttributeExtensions() != null && !propertyMapEntryType.getPropertyValue().getAttributeExtensions().isEmpty() && propertyMapEntryType.getPropertyValue() instanceof StringValue){
+            AttributeExtensibleType.AttributeExtensibleString attributeExtensibleString = new AttributeExtensibleType.AttributeExtensibleString();
+            attributeExtensibleString.setValue((String)propertyMapEntryType.getPropertyValue().getValue());
+            attributeExtensibleString.setAttributeExtensions(propertyMapEntryType.getPropertyValue().getAttributeExtensions());
+            return attributeExtensibleString;
+        }
+        return propertyMapEntryType.getValue();
     }
 
     @XmlElement(name="Property")
@@ -136,7 +154,7 @@ public class PropertiesMapType {
         }
 
         @XmlAnyAttribute
-        protected Map<QName, Object> getAttributeExtensions() {
+        public Map<QName, Object> getAttributeExtensions() {
             return attributeExtensions;
         }
 
@@ -175,6 +193,11 @@ public class PropertiesMapType {
 
         public StringValue( final String value ) {
             super( value );
+        }
+
+        public StringValue( final String value, final Map<QName, Object> attributeExtensions) {
+            super( value );
+            setAttributeExtensions(attributeExtensions);
         }
 
         @XmlValue
@@ -329,8 +352,11 @@ public class PropertiesMapType {
             propertyValue = (PropertyValue<T>)new LongValue( (Long) value );
         } else if ( value instanceof Date ) {
             propertyValue = (PropertyValue<T>)new DateValue( (Date) value );
+        } else if ( value instanceof AttributeExtensibleType.AttributeExtensibleString) {
+            propertyValue = (PropertyValue<T>)new StringValue( ((AttributeExtensibleType.AttributeExtensibleString) value).getValue() );
+            propertyValue.setAttributeExtensions(((AttributeExtensibleType.AttributeExtensibleString) value).getAttributeExtensions());
         } else {
-            propertyValue = new ObjectValue<T>( value );
+            propertyValue = new ObjectValue<>( value );
         }
 
         return propertyValue;

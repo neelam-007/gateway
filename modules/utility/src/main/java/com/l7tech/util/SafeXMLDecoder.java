@@ -31,10 +31,31 @@ import java.beans.ExceptionListener;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.lang.reflect.*;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+/* Based in part on sources from the Apache Harmony project.  The Apache source
+ * file header is included below:
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * An XMLDecoder that is very strict about the constructors and methods it will invoke.
@@ -930,6 +951,7 @@ public class SafeXMLDecoder implements Closeable {
 
 class SafeStatement {
     private static final Object[] EMPTY_ARRAY = new Object[0];
+    private static final Logger logger = Logger.getLogger(SafeStatement.class.getName());
 
     private final ClassFilter classFilter;
 
@@ -1110,27 +1132,15 @@ class SafeStatement {
                 if (!classFilter.permitMethod(method))
                     throw new SafeXMLDecoder.MethodNotPermittedException(method);
                 if (iterator.hasNext()) {
-                    PrivilegedAction<Object> action = new PrivilegedAction<Object>() {
-
-                        public Object run() {
-                            try {
-                                method.setAccessible(true);
-                                return (method.invoke(iterator));
-                            } catch (Exception e) {
-                                // ignore
-                            }
-                            return null;
-                        }
-
-                    };
-                    result = action.run();
+                    setMethodAccessible(method);
+                    result = method.invoke(iterator);
                 }
             } else {
                 Method method = findMethod(theTarget.getClass(), theMethodName,
                     theArguments, false);
                 if (!classFilter.permitMethod(method))
                     throw new SafeXMLDecoder.MethodNotPermittedException(method);
-                method.setAccessible(true);
+                setMethodAccessible(method);
                 result = method.invoke(theTarget, theArguments);
             }
         } catch (InvocationTargetException ite) {
@@ -1138,6 +1148,24 @@ class SafeStatement {
             throw (t != null) && (t instanceof Exception) ? (Exception) t : ite;
         }
         return result;
+    }
+
+    /**
+     * Utility function for setting the {@code accessible flag} to {@code true} with asserted privileges.
+     */
+    private static void setMethodAccessible(@NotNull final Method method) {
+        try {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    method.setAccessible(true);
+                    return null;
+                }
+            });
+        } catch (final Exception e) {
+            // if any unchecked exception is propagated through AccessController#doPrivileged log it.
+            logger.log(Level.WARNING, "Failed to set method \"" + method.getName() + "\" accessible flag to true: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     @SuppressWarnings("MismatchedReadAndWriteOfArray")

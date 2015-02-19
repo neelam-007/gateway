@@ -10,10 +10,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Ws
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfigParams;
@@ -87,7 +84,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public String call() throws ResourceFactory.InvalidResourceException {
                 try {
-                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource, null);
                     final Policy newPolicy = newPolicyContainer.getEntity();
                     newPolicy.setVersion(0);
                     //generate a new Guid if none is set.
@@ -113,6 +110,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                         clusterPropertyManager.putProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID, newPolicy.getGuid());
                     }
 
+                    policyManager.createRoles(newPolicy);
+
                     return savedId;
                 } catch (ObjectModelException ome) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create policy: " + ome.getMessage());
@@ -132,7 +131,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public void call() throws ResourceFactory.ResourceFactoryException {
                 try {
-                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource, null);
                     final Policy newPolicy = newPolicyContainer.getEntity();
                     final Policy oldPolicy = policyManager.findByPrimaryKey(Goid.parseGoid(id));
                     if (oldPolicy == null) {

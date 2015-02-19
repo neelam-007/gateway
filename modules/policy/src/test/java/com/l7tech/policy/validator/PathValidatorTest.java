@@ -23,7 +23,7 @@ public class PathValidatorTest {
 
     @Before
     public void setup() {
-        context = new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, (Wsdl) null, false, null);
+        context = new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, null, (Wsdl) null, false, null);
         validationResult = new PolicyValidatorResult();
         license = new AssertionLicense() {
             @Override

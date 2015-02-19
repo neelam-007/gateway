@@ -1,0 +1,247 @@
+diff -rupN TOMCAT_6_0_41-ORIG/java/javax/servlet/http/Cookie.java TOMCAT_6_0_41/java/javax/servlet/http/Cookie.java
+--- TOMCAT_6_0_41-ORIG/java/javax/servlet/http/Cookie.java	2015-01-21 14:09:21.169553859 -0800
++++ TOMCAT_6_0_41/java/javax/servlet/http/Cookie.java	2014-10-29 11:15:51.845355035 -0700
+@@ -84,11 +84,12 @@ public class Cookie implements Cloneable
+     private String comment;	// ;Comment=VALUE ... describes cookie's use
+ 				// ;Discard ... implied by maxAge < 0
+     private String domain;	// ;Domain=VALUE ... domain that sees cookie
++    private boolean httpOnly;
+     private int maxAge = -1;	// ;Max-Age=VALUE ... cookies auto-expire
+     private String path;	// ;Path=VALUE ... URLs that see the cookie
+     private boolean secure;	// ;Secure ... e.g. use SSL
+     private int version = 0;	// ;Version=1 ... means RFC 2109++ style
+-    
++
+     
+ 
+     /**
+@@ -231,8 +232,13 @@ public class Cookie implements Cloneable
+ 	return domain;
+     }
+ 
++    public boolean isHttpOnly() {
++        return httpOnly;
++    }
+ 
+-
++    public void setHttpOnly(final boolean httpOnly) {
++        this.httpOnly = httpOnly;
++    }
+ 
+     /**
+      * Sets the maximum age of the cookie in seconds.
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/Globals.java TOMCAT_6_0_41/java/org/apache/catalina/Globals.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/Globals.java	2015-01-21 14:09:16.212985065 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/Globals.java	2015-01-21 15:57:00.071966728 -0800
+@@ -381,4 +381,10 @@ public final class Globals {
+      */
+     public static final String JASPER_XML_BLOCK_EXTERNAL_INIT_PARAM =
+             "org.apache.jasper.XML_BLOCK_EXTERNAL";
++
++    /**
++     * Constent to represent request attribute for the ssl protocol negoatiated.
++     *
++     */
++    public static final String L7_SSLPROTOCOL_KEY =  "com.l7tech.servlet.request.sslprotocol";
+ }
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Connector.java TOMCAT_6_0_41/java/org/apache/catalina/connector/Connector.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Connector.java	2015-01-21 14:09:12.226397780 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/connector/Connector.java	2014-10-29 11:15:51.845355035 -0700
+@@ -129,6 +129,11 @@ public class Connector
+      */
+     protected boolean xpoweredBy = false;
+ 
++    /*
++    * Is trim the space between the ; and charset in content type header
++    */
++    protected boolean trimContentType = true;
++
+ 
+     /**
+      * Descriptive information about this Connector implementation.
+@@ -966,6 +971,14 @@ public class Connector
+         setProperty("xpoweredBy", String.valueOf(xpoweredBy));
+     }
+ 
++    public boolean isTrimContentType() {
++        return trimContentType;
++    }
++
++    public void setTrimContentType(boolean trimContentType) {
++        this.trimContentType = trimContentType;
++    }
++
+     /**
+      * Enable the use of IP-based virtual hosting.
+      *
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/CoyoteAdapter.java TOMCAT_6_0_41/java/org/apache/catalina/connector/CoyoteAdapter.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/CoyoteAdapter.java	2015-01-21 14:09:11.729741003 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/connector/CoyoteAdapter.java	2014-10-29 11:15:51.845355035 -0700
+@@ -252,6 +252,8 @@ public class CoyoteAdapter implements Ad
+     	                org.apache.coyote.Response res)
+         throws Exception {
+ 
++        res.setConnector(connector);
++
+         Request request = (Request) req.getNote(ADAPTER_NOTES);
+         Response response = (Response) res.getNote(ADAPTER_NOTES);
+ 
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Request.java TOMCAT_6_0_41/java/org/apache/catalina/connector/Request.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Request.java	2015-01-21 14:09:12.226397780 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/connector/Request.java	2015-01-21 16:09:58.086523681 -0800
+@@ -954,6 +954,10 @@ public class Request
+             if(attr != null) {
+                 attributes.put(Globals.SSL_SESSION_ID_ATTR, attr);
+             }
++            attr = coyoteRequest.getAttribute(Globals.L7_SSLPROTOCOL_KEY);
++            if(attr != null) {
++                attributes.put(Globals.L7_SSLPROTOCOL_KEY, attr);
++            }
+             attr = attributes.get(name);
+             sslAttributesParsed = true;
+         }
+@@ -968,7 +972,8 @@ public class Request
+         return Globals.CERTIFICATES_ATTR.equals(name) ||
+             Globals.CIPHER_SUITE_ATTR.equals(name) ||
+             Globals.KEY_SIZE_ATTR.equals(name)  ||
+-            Globals.SSL_SESSION_ID_ATTR.equals(name);
++            Globals.SSL_SESSION_ID_ATTR.equals(name) ||
++            Globals.L7_SSLPROTOCOL_KEY.equals(name);
+     }
+ 
+     /**
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Response.java TOMCAT_6_0_41/java/org/apache/catalina/connector/Response.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/connector/Response.java	2015-01-21 14:09:11.686408532 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/connector/Response.java	2014-10-29 11:15:51.845355035 -0700
+@@ -1017,7 +1017,7 @@ public class Response
+      * @param cookie Cookie to be added
+      */
+     public void addCookieInternal(final Cookie cookie) {
+-        addCookieInternal(cookie, false);
++        addCookieInternal(cookie, cookie.isHttpOnly());
+     }
+ 
+     /**
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/catalina/core/StandardContextValve.java TOMCAT_6_0_41/java/org/apache/catalina/core/StandardContextValve.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/catalina/core/StandardContextValve.java	2015-01-21 14:09:14.239691024 -0800
++++ TOMCAT_6_0_41/java/org/apache/catalina/core/StandardContextValve.java	2014-10-29 11:15:51.845355035 -0700
+@@ -114,16 +114,6 @@ final class StandardContextValve
+     public final void invoke(Request request, Response response)
+         throws IOException, ServletException {
+ 
+-        // Disallow any direct access to resources under WEB-INF or META-INF
+-        MessageBytes requestPathMB = request.getRequestPathMB();
+-        if ((requestPathMB.startsWithIgnoreCase("/META-INF/", 0))
+-            || (requestPathMB.equalsIgnoreCase("/META-INF"))
+-            || (requestPathMB.startsWithIgnoreCase("/WEB-INF/", 0))
+-            || (requestPathMB.equalsIgnoreCase("/WEB-INF"))) {
+-            notFound(response);
+-            return;
+-        }
+-
+         // Wait if we are reloading
+         boolean reloaded = false;
+         while (context.getPaused()) {
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/coyote/Response.java TOMCAT_6_0_41/java/org/apache/coyote/Response.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/coyote/Response.java	2015-01-21 14:09:18.602937644 -0800
++++ TOMCAT_6_0_41/java/org/apache/coyote/Response.java	2014-10-29 11:15:51.842021768 -0700
+@@ -21,6 +21,7 @@ import java.io.IOException;
+ import java.io.StringReader;
+ import java.util.Locale;
+ 
++import org.apache.catalina.connector.Connector;
+ import org.apache.tomcat.util.buf.ByteChunk;
+ import org.apache.tomcat.util.http.MimeHeaders;
+ import org.apache.tomcat.util.http.parser.HttpParser;
+@@ -92,6 +93,9 @@ public final class Response {
+     protected boolean commited = false;
+ 
+ 
++    protected Connector connector;
++
++
+     /**
+      * Action hook.
+      */
+@@ -229,6 +233,13 @@ public final class Response {
+         this.commited = v;
+     }
+ 
++    public Connector getConnector() {
++        return connector;
++    }
++
++    public void setConnector(Connector connector) {
++        this.connector = connector;
++    }
+ 
+     // -----------------Error State --------------------
+ 
+@@ -496,7 +507,11 @@ public final class Response {
+         if (ret != null
+             && characterEncoding != null
+             && charsetSet) {
+-            ret = ret + ";charset=" + characterEncoding;
++            if (connector != null && !connector.isTrimContentType()) {
++            ret = ret + "; charset=" + characterEncoding;
++            } else {
++                ret = ret + ";charset=" + characterEncoding;
++            }
+         }
+ 
+         return ret;
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/coyote/http11/Http11Processor.java TOMCAT_6_0_41/java/org/apache/coyote/http11/Http11Processor.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/coyote/http11/Http11Processor.java	2015-01-21 14:09:19.019596121 -0800
++++ TOMCAT_6_0_41/java/org/apache/coyote/http11/Http11Processor.java	2015-01-21 15:57:00.065300193 -0800
+@@ -1044,6 +1044,9 @@ public class Http11Processor implements
+                     if (sslO != null)
+                         request.setAttribute
+                             (SSLSupport.SESSION_ID_KEY, sslO);
++                    sslO = sslSupport.getProtocol();
++                    if (sslO != null)
++                        request.setAttribute(SSLSupport.L7_SSLPROTOCOL_KEY, sslO);
+                 }
+             } catch (Exception e) {
+                 log.warn(sm.getString("http11processor.socket.ssl"), e);
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/tomcat/util/net/SSLSupport.java TOMCAT_6_0_41/java/org/apache/tomcat/util/net/SSLSupport.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/tomcat/util/net/SSLSupport.java	2015-01-21 14:09:09.763113496 -0800
++++ TOMCAT_6_0_41/java/org/apache/tomcat/util/net/SSLSupport.java	2015-01-21 14:06:12.296647931 -0800
+@@ -49,6 +49,12 @@ public interface SSLSupport {
+     public static final String SESSION_ID_KEY = "javax.servlet.request.ssl_session";
+ 
+     /**
++     * This Request attributed added to support the return the SSL/TLS protocol used
++     * to negotiate the SSL Session.
++     */
++    public static final String L7_SSLPROTOCOL_KEY = "com.l7tech.servlet.request.sslprotocol";
++
++    /**
+      * A mapping table to determine the number of effective bits in the key
+      * when using a cipher suite containing the specified cipher name.  The
+      * underlying data came from the TLS Specification (RFC 2246), Appendix C.
+@@ -125,6 +131,7 @@ public interface SSLSupport {
+         }
+     
+     }
+-    
++
++    public String getProtocol();
+ }
+ 
+diff -rupN TOMCAT_6_0_41-ORIG/java/org/apache/tomcat/util/net/jsse/JSSESupport.java TOMCAT_6_0_41/java/org/apache/tomcat/util/net/jsse/JSSESupport.java
+--- TOMCAT_6_0_41-ORIG/java/org/apache/tomcat/util/net/jsse/JSSESupport.java	2015-01-21 14:09:10.053107722 -0800
++++ TOMCAT_6_0_41/java/org/apache/tomcat/util/net/jsse/JSSESupport.java	2015-01-21 14:07:43.031507352 -0800
+@@ -265,5 +265,13 @@ class JSSESupport implements SSLSupport
+         }
+     }
+ 
++    /**
++     * Added to support request attribute supporting SSL/TLS negotiation protocol
++     * returned on request.
++     */
++    public String getProtocol() {
++	return session == null ? null : session.getProtocol();
++    }
++
+ }
+ 

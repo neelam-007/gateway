@@ -1,7 +1,9 @@
 package com.l7tech.server.search.objects;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +45,11 @@ public class DependentEntity extends DependentObject {
         DependentEntity that = (DependentEntity) o;
 
         if (!entityHeader.equals(that.entityHeader)) return false;
+
+        //If the goids are both default check that the names are the same. And fail if the names are different.
+        if(Goid.isDefault(entityHeader.getGoid())
+                && Goid.isDefault(that.entityHeader.getGoid())
+                && !StringUtils.equals(entityHeader.getName(), that.entityHeader.getName())) return false;
 
         return true;
     }

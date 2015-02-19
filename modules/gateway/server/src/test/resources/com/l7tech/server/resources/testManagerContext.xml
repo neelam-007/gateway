@@ -25,6 +25,13 @@
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
+
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterNodeId"/>
+    </bean>
+
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
         <property name="rbacServices">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">

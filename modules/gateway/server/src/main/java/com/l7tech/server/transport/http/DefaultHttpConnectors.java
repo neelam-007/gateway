@@ -34,8 +34,7 @@ public class DefaultHttpConnectors {
     private static final String RSA_128 = "TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA";
 
     // Weaker/older cipher suites for RSA server certs.  Needed in order to support older/non-Mozilla web browsers.
-    // We have to draw a line somewhere: we won't (by default) enable any suites that use DES or MD5
-    private static final String RSA_RC4 = "SSL_RSA_WITH_RC4_128_SHA";
+    // We have to draw a line somewhere: we won't (by default) enable any suites that use DES or MD5 or RC4
     private static final String RSA_3DES = "SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
 
     // Strong cipher suites for ECC server certs.  We omit the _ECDH_ECDSA_ suites for now for two reasons:
@@ -45,11 +44,11 @@ public class DefaultHttpConnectors {
     private static final String ECC_128 = "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA";
 
     private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
-    private static final String RSA_ECC_3DES_RC4 = TextUtils.join(",", RSA_ECC, RSA_3DES, RSA_RC4).toString();
+    private static final String RSA_ECC_3DES = TextUtils.join(",", RSA_ECC, RSA_3DES ).toString();
 
     static final String defaultHttpEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTP_ENDPOINTS, "MESSAGE_INPUT, POLICYDISCO, PING, STS, WSDLPROXY, SNMPQUERY" ); // Other two built-in endpoints (CSRHANDLER and PASSWD) are not available for HTTP protocol.
     static final String defaultHttpsEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTPS_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS" );
-    static final String defaultListenerStrongCiphers = ConfigFactory.getProperty( PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4 );
+    static final String defaultListenerStrongCiphers = ConfigFactory.getProperty( PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES );
     static final String defaultInternodeStrongCiphers = ConfigFactory.getProperty( PROP_INIT_INTERNODE_CIPHERS, RSA_ECC );
     static final String defaultInternodePoolSize = ConfigFactory.getProperty( PROP_INIT_INTERNODE_POOLSIZE, "10" );
 

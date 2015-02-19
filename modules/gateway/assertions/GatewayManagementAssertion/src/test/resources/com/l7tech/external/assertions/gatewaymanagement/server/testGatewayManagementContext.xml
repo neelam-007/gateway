@@ -2,11 +2,11 @@
 <!--
     Test application context for the Gateway Management assertion
 -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:tx="http://www.springframework.org/schema/tx"
+<beans xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util" xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
@@ -39,6 +39,8 @@
 
     <bean id="revocationCheckPolicyManager" class="com.l7tech.server.identity.cert.TestRevocationCheckPolicyManager"/>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
+
     <bean id="gatewayExternalReferenceFinder" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
         <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
         <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
@@ -60,6 +62,7 @@
         <constructor-arg index="17" ref="roleManager" />
         <constructor-arg index="18" ref="securePasswordManager" />
         <constructor-arg index="19" ref="customKeyValueStoreManager" />
+        <constructor-arg index="20" ref="cassandraEntityManager" />
     </bean>
 
     <bean id="transactionManager" class="com.l7tech.server.PlatformTransactionManagerStub"/>
@@ -320,5 +323,8 @@
                 <ref bean="genericEntityManager"/>
             </list>
         </constructor-arg>
+    </bean>
+    <bean id="secretsEncryptorFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptorFactory">
+        <constructor-arg index="0" value="password"/>
     </bean>
 </beans>

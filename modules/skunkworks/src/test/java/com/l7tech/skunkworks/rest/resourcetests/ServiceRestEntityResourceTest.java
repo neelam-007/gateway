@@ -143,6 +143,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         service.setFolder(rootFolder);
         service.setSoap(true);
         service.setDisabled(false);
+        service.setInternal(true);
         service.getPolicy().setGuid(UUID.randomUUID().toString());
         service.setSoapVersion(SoapVersion.SOAP_1_2);
         service.setWsdlUrl("http://wsdlUrl");
@@ -395,6 +396,26 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
 
         serviceMOs.add(serviceMO);
 
+        //create a service without specifying a folder. should use root by default SSG-8808
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(getGoid().toString());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName("My New Service");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId(rootFolder.getId());
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("internal", true).map());
+        serviceMO.setServiceDetail(serviceDetail);
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(POLICY);
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        serviceMOs.add(serviceMO);
+
+
         return serviceMOs;
     }
 
@@ -628,10 +649,10 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
 
             if(managedObject.getServiceDetail().getProperties() != null) {
                 Assert.assertEquals(entity.isSoap() ? SoapVersion.UNKNOWN.equals(entity.getSoapVersion()) ? "unspecified" : entity.getSoapVersion().getVersionNumber() : null, managedObject.getServiceDetail().getProperties().get("soapVersion"));
-                Assert.assertEquals(entity.isInternal(), managedObject.getServiceDetail().getProperties().get("internal"));
-                Assert.assertEquals(entity.isSoap(), managedObject.getServiceDetail().getProperties().get("soap"));
-                Assert.assertEquals(entity.isWssProcessingEnabled(), managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled"));
-                Assert.assertEquals(entity.isTracingEnabled(), managedObject.getServiceDetail().getProperties().get("tracingEnabled"));
+                Assert.assertEquals(entity.isInternal(), managedObject.getServiceDetail().getProperties().get("internal") == null ? false : managedObject.getServiceDetail().getProperties().get("internal"));
+                Assert.assertEquals(entity.isSoap(), managedObject.getServiceDetail().getProperties().get("soap") == null ? false : managedObject.getServiceDetail().getProperties().get("soap"));
+                Assert.assertEquals(entity.isWssProcessingEnabled(), managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled") == null ? true : managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled"));
+                Assert.assertEquals(entity.isTracingEnabled(), managedObject.getServiceDetail().getProperties().get("tracingEnabled") == null ? false : managedObject.getServiceDetail().getProperties().get("tracingEnabled"));
             }
 
             if(managedObject.getServiceDetail().getServiceMappings() != null) {

@@ -37,7 +37,7 @@ public abstract class Reference<R> {
         this.type = type;
     }
 
-    @XmlElement(name = "Name", required = true)
+    @XmlElement(name = "Name")
     public String getName() {
         return name;
     }

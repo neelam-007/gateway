@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.EntityManagerResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -38,7 +39,7 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
 
     @NotNull
     @Override
-    public EntityContainer<PublishedService> convertFromMO(@NotNull ServiceMO serviceMO,boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<PublishedService> convertFromMO(@NotNull ServiceMO serviceMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         final EntityManagerResourceFactory.EntityBag<PublishedService> entityBag =  factory.fromResourceAsBag(serviceMO, strict);
         if(!(entityBag instanceof ServiceResourceFactory.ServiceEntityBag)) {
             throw new IllegalStateException("Expected a ServiceEntityBag but got: " + entityBag.getClass() + ". This should not have happened!");
@@ -50,7 +51,6 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
         }
 
         final Policy policy = service.getPolicy();
-        service.setInternal(false);
 
         if (policy != null) {
             if (policy.getGuid() == null) {

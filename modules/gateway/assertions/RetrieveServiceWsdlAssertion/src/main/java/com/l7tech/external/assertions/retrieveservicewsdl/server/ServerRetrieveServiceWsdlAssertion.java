@@ -23,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.WsdlUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -63,8 +64,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         // parse service goid
@@ -91,18 +91,23 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private Document retrieveWsdlDependencyDocument(PolicyEnforcementContext context, Map<String, Object> vars,
-                                                    PublishedService service, URL endpointUrl) throws IOException {
+                                                    PublishedService service, URL endpointUrl) {
         Document document = null;
 
         // get service document goid
         Goid serviceDocumentGoid;
 
-        if (null == assertion.getServiceDocumentId()) {
+        if (StringUtils.isBlank(assertion.getServiceDocumentId())) {
             logAndAudit(RETRIEVE_WSDL_NO_SERVICE_DOCUMENT_ID);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
         String serviceDocumentIdString = ExpandVariables.process(assertion.getServiceDocumentId(), vars, getAudit(), true);
+
+        if (StringUtils.isBlank(serviceDocumentIdString)) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_ID_BLANK);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
 
         try {
             serviceDocumentGoid = Goid.parseGoid(serviceDocumentIdString);
@@ -122,10 +127,11 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
 
         for (ServiceDocument dependency : dependencyDocuments) {
-            if (dependency.getServiceId().equals(serviceDocumentGoid)) {
+            if (dependency.getGoid().equals(serviceDocumentGoid)) {
                 try {
                     document = parseDocument(dependency.getUri(), dependency.getContents());
-                } catch (SAXException e) {
+                    break;
+                } catch (IOException | SAXException e) {
                     logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT,
                             new String[]{ExceptionUtils.getMessage(e)}, getDebugException(e));
                     throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
@@ -134,7 +140,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         if (null == document) {
-            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND);
+            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND, serviceDocumentIdString);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
@@ -156,13 +162,14 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return document;
     }
 
-    private Document retrieveWsdlDocument(PolicyEnforcementContext context, PublishedService service, URL endpointUrl) throws IOException {
+    private Document retrieveWsdlDocument(PolicyEnforcementContext context,
+                                          PublishedService service, URL endpointUrl) {
         Document document;
 
         // parse service WSDL xml
         try {
             document = parseDocument(service.getWsdlUrl(), service.getWsdlXml());
-        } catch (SAXException e) {
+        } catch (IOException | SAXException e) {
             logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_WSDL,
                     new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
@@ -196,7 +203,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         String proxyUri;
 
         try {
-            String wsdlHandlerServiceRoutingUri = getRoutingUri(context.getService());
+            String wsdlHandlerServiceRoutingUri = SecureSpanConstants.SERVICE_FILE + context.getService().getId();
 
             proxyUri = new URI(context.getRequest().getHttpRequestKnob().getRequestUrl())
                     .resolve(wsdlHandlerServiceRoutingUri).toString();
@@ -211,7 +218,12 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private PublishedService getService(Map<String, Object> vars) {
-        String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true); // TODO jwilliams: add check for null or empty result?
+        String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true);
+
+        if (StringUtils.isBlank(serviceIdString)) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_ID_BLANK);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
 
         Goid serviceGoid;
 
@@ -246,7 +258,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         String protocol = getProtocol(context);
         String host = getHost(vars);
         int port = getPort(vars);
-        String path = getRoutingUri(service);
+        String path = getEndpointRoutingUri(service);
 
         try {
             endpointUrl = new URL(protocol, host, port, path);
@@ -283,7 +295,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
             }
         }
 
-        if (null == protocol || protocol.isEmpty()) {
+        if (StringUtils.isBlank(protocol)) {
             logAndAudit(RETRIEVE_WSDL_NO_PROTOCOL);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -294,7 +306,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     private String getHost(Map<String, Object> vars) {
         final String host = ExpandVariables.process(assertion.getHost(), vars, getAudit(), true);
 
-        if (null == host || host.isEmpty()) {
+        if (StringUtils.isBlank(host)) {
             logAndAudit(RETRIEVE_WSDL_NO_HOSTNAME);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -305,7 +317,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     private int getPort(Map<String, Object> vars) {
         final String portString = ExpandVariables.process(assertion.getPort(), vars, getAudit(), true);
 
-        if (portString.isEmpty()) {
+        if (StringUtils.isBlank(portString)) {
             logAndAudit(RETRIEVE_WSDL_NO_PORT);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -328,8 +340,14 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return port;
     }
 
-    private String getRoutingUri(PublishedService service) { // TODO jwilliams: change this back to use the routing URI if available
-        return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+    private String getEndpointRoutingUri(PublishedService service) {
+        String routingUri = service.getRoutingUri();
+
+        if (routingUri == null || routingUri.length() < 1) {
+            return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+        } else {
+            return routingUri;
+        }
     }
 
     private Message getTargetMessage(PolicyEnforcementContext context) {
@@ -357,7 +375,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         WsdlUtil.rewriteReferences(service.getId(), service.getWsdlUrl(),
-                wsdlDoc, dependencies, wsdlProxyUri, errorHandler);
+                wsdlDoc, dependencies, wsdlProxyUri, errorHandler, false);
     }
 
     private Collection<ServiceDocument> getImportedDocumentsToProxy(PublishedService service) {

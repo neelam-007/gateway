@@ -131,6 +131,11 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
+    public void deleteWithoutValidation(Policy policy) throws DeleteException {
+        policyManager.deleteWithoutValidation(policy);
+    }
+
+    @Override
     public Policy getCachedEntity(Goid o, int maxAge) throws FindException {
         return policyManager.getCachedEntity(o, maxAge);
     }

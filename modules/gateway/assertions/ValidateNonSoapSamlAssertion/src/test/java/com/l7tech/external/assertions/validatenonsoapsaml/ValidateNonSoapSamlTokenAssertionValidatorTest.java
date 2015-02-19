@@ -23,7 +23,7 @@ public class ValidateNonSoapSamlTokenAssertionValidatorTest {
         assertion = new ValidateNonSoapSamlTokenAssertion();
         validator = new ValidateNonSoapSamlTokenAssertionValidator(assertion);
         path = new AssertionPath(new Assertion[]{assertion});
-        validationContext = new PolicyValidationContext(PolicyType.PRIVATE_SERVICE, null, (Wsdl) null, false, null);
+        validationContext = new PolicyValidationContext(PolicyType.PRIVATE_SERVICE, null, null, (Wsdl) null, false, null);
         validatorResult = new PolicyValidatorResult();
     }
 

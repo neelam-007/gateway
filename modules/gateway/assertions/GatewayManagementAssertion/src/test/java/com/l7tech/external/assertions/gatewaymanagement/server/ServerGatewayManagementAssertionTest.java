@@ -40,12 +40,14 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditRecordManagerStub;
 import com.l7tech.server.bundling.EntityBundleExporterStub;
 import com.l7tech.server.bundling.EntityBundleImporterStub;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -65,6 +67,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
@@ -84,6 +87,7 @@ import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.server.uddi.UDDIServiceControlManagerStub;
+import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ResourceClassLoader;
 import com.l7tech.test.BugId;
@@ -5572,7 +5576,15 @@ public class ServerGatewayManagementAssertionTest {
         assAccess2.setName(GatewayManagementAssertion.class.getName());
         assAccess2.setSecurityZone(securityZone2);
         applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
-        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", new AssertionRegistryStub());
+        final AssertionRegistryStub assertionRegistryStub = new AssertionRegistryStub();
+        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", assertionRegistryStub);
+
+        applicationContext.getBeanFactory().registerSingleton( "wspReader", new WspReader(assertionRegistryStub));
+        final TestLicenseManager testLicenseManager = new TestLicenseManager();
+        applicationContext.getBeanFactory().registerSingleton( "licenseManager", testLicenseManager);
+        final ApplicationContextInjector applicationContextInjector = new ApplicationContextInjector();
+        applicationContext.getBeanFactory().registerSingleton( "injector", applicationContextInjector);
+        applicationContext.getBeanFactory().registerSingleton( "policyFactory", new ServerPolicyFactory(testLicenseManager, applicationContextInjector));
 
         // policy alias
         final PolicyAlias pAlias1 = new PolicyAlias(testPolicy1,testFolder);
@@ -5600,6 +5612,7 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
         applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
+        applicationContext.getBeanFactory().registerSingleton("cassandraEntityManager", new CassandraConnectionEntityManagerStub());
 
         applicationContext.refresh();
 

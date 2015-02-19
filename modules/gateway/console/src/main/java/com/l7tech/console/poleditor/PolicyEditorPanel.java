@@ -23,6 +23,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -118,6 +119,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final TopComponents topComponents = TopComponents.getInstance();
     private NumberedPolicyTreePane policyTreePane;
     private boolean messageAreaVisible = false;
+    private boolean inputsAndOutputsVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
     private SecureAction saveAndActivateAction;
@@ -139,8 +141,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
+    private JSplitPane topSplitPane;
+    private InputAndOutputVariablesPanel inputsAndOutputsPanel = null;
     private SecureAction hideShowCommentsAction;
     private MigrateNamespacesAction migrateNamespacesAction;
+    private Long latestPolicyVersionNumber = null;
 
     public interface PolicyEditorSubject {
         /**
@@ -335,7 +340,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), policy.getInternalSubTag(), wsdlLocator, soap, soapVersion);
+                    pvc.setInterfaceDescription( getPolicyNode().getInterfaceDescription() );
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
@@ -406,6 +412,53 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setMessageAreaVisible(preferences.isPolicyMessageAreaVisible());
     }
 
+    private InputAndOutputVariablesPanel getInputsAndOutputsPanel() {
+        if ( inputsAndOutputsPanel != null )
+            return inputsAndOutputsPanel;
+
+        inputsAndOutputsPanel = new InputAndOutputVariablesPanel( );
+
+        if ( subject != null && subject.getPolicyNode() != null ) {
+            EntityWithPolicyNode ewpn = subject.getPolicyNode();
+            EncapsulatedAssertionConfig interfaceDesc = ewpn.getInterfaceDescription();
+            if ( interfaceDesc != null ) {
+                inputsAndOutputsPanel.setInputs( interfaceDesc.getArgumentDescriptors() );
+                inputsAndOutputsPanel.setOutputs( interfaceDesc.getResultDescriptors() );
+                inputsAndOutputsPanel.setInterfaceTitle( interfaceDesc.getName() );
+            }
+        }
+
+        return inputsAndOutputsPanel;
+    }
+
+    public void setPolicyInputsAndOutputsVisible( boolean b ) {
+        inputsAndOutputsVisible = b;
+
+        InputAndOutputVariablesPanel p = getInputsAndOutputsPanel();
+
+        p.setVisible( b );
+
+        final JComponent pane = getInputsAndOutputsPanel();
+        if ( b ) {
+            topSplitPane.add( pane, "top" );
+            topSplitPane.setDividerSize( 10 );
+        } else {
+            topSplitPane.remove( pane );
+            topSplitPane.setDividerSize( 0 );
+
+        }
+
+        SplitPaneUI sui = topSplitPane.getUI();
+        if ( sui instanceof BasicSplitPaneUI ) {
+            BasicSplitPaneUI bsui = (BasicSplitPaneUI) sui;
+            bsui.getDivider().setVisible( b );
+        }
+    }
+
+    public boolean isInputsAndOutputsVisible() {
+        return inputsAndOutputsVisible;
+    }
+
     private JPanel getFindPanel(){
         if(searchForm != null) return searchForm.getSearchPanel();
 
@@ -431,11 +484,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (splitPane != null) return splitPane;
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setBorder(null);
+        topSplitPane = new JSplitPane( JSplitPane.VERTICAL_SPLIT );
+        Utilities.deuglifySplitPane( topSplitPane );
+
+        topSplitPane.setResizeWeight( 0.1 );
+        topSplitPane.add( getInputsAndOutputsPanel() );
+        topSplitPane.add( getPolicyTreePane() );
 
         JPanel containerPanel = new JPanel();
         containerPanel.setLayout(new BorderLayout());
         containerPanel.add(getFindPanel(), BorderLayout.NORTH);
-        containerPanel.add(getPolicyTreePane(), BorderLayout.CENTER);
+        containerPanel.add( topSplitPane, BorderLayout.CENTER);
+
+        setPolicyInputsAndOutputsVisible( !inputsAndOutputsPanel.isEmpty() && preferences.isPolicyInputsAndOutputsVisible() );
 
         final Action findAction = new AbstractAction() {
             @Override
@@ -644,15 +705,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getVersionNumber();
     }
 
-    private long getLatestVersionNumber() {
+    private void invalidateCachedInfo() {
+        latestPolicyVersionNumber = null;
+    }
+
+    @Nullable
+    private Long getLatestVersionNumberCached() {
+        if ( latestPolicyVersionNumber != null ) {
+            return latestPolicyVersionNumber;
+        } else {
+            return getLatestVersionNumber();
+        }
+    }
+
+    @Nullable
+    private Long getLatestVersionNumber() {
+        latestPolicyVersionNumber = null;
         final Goid policyGoid;
         try {
             policyGoid = subject.getPolicyNode().getPolicy().getGoid();
         } catch (final FindException e) {
             throw new RuntimeException(e);
         }
-        final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyGoid);
-        return latest.getOrdinal();
+        try {
+            final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy( policyGoid );
+            return latestPolicyVersionNumber = latest.getOrdinal();
+        } catch ( RuntimeException e ) {
+            log.log( Level.WARNING, "Unable to look up latest policy revision number: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            return null;
+        }
     }
 
     public boolean isVersionActive() {
@@ -669,7 +750,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public String getDisplayName() {
-        return PolicyRevisionUtils.getDisplayName(subjectName, getVersionNumber(), getLatestVersionNumber(), isVersionActive());
+        return PolicyRevisionUtils.getDisplayName(subjectName, getVersionNumber(), getLatestVersionNumberCached(), isVersionActive());
     }
 
     /** updates the policy name, tab name etc */
@@ -860,6 +941,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         private JButton buttonSaveAndActivate;
         private JButton buttonSaveOnly;
         private JButton buttonValidate;
+        private JButton toggleInputsOutputsButton;
+
         private final boolean enableUddi;
 
         PolicyEditToolBar(boolean enableUddi) {
@@ -939,6 +1022,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             displayAssertionNumsBtn.setAction(getShowAssertionLineNumbersAction(displayAssertionNumsBtn));
             displayAssertionNumsBtn.setDisplayedMnemonicIndex(15);
             add(displayAssertionNumsBtn);
+
+            toggleInputsOutputsButton = createToggleInputsAndOutputsButton();
+            if ( TopComponents.getInstance().isApplet() ) {
+                add( toggleInputsOutputsButton );
+            }
         }
 
         public void setSaveButtonsEnabled(boolean enabled) {
@@ -946,6 +1034,58 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             buttonSaveAndActivate.getAction().setEnabled(enabled);
             buttonSaveOnly.setEnabled(enabled);
             buttonSaveOnly.getAction().setEnabled(enabled);
+        }
+
+        public void updateToggleInputsAndOutputsButton() {
+            String label = isInputsAndOutputsVisible() ?
+                    "Hide Inputs and Outputs" :
+                    "Show Inputs and Outputs";
+
+            String iconName = isInputsAndOutputsVisible() ?
+                    "com/l7tech/console/resources/RedCrossSign16.gif" :
+                    "com/l7tech/console/resources/star16.gif";
+
+            toggleInputsOutputsButton.setText(label);
+            toggleInputsOutputsButton.setToolTipText(label);
+            toggleInputsOutputsButton.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconName)));
+        }
+
+        /**
+         * Create/get an action to toggle the visibility of the Inputs and Outputs panel in the policy editor panel.
+         */
+        private JButton createToggleInputsAndOutputsButton() {
+            Action togglePolicyInputsAndOutputs = new SecureAction(null) {
+                @Override
+                protected void performAction() {
+                    // toggle visibility
+                    setPolicyInputsAndOutputsVisible(!isInputsAndOutputsVisible());
+
+                    // update button
+                    updateToggleInputsAndOutputsButton();
+                }
+
+                @Override
+                public String getName() {
+                    return isInputsAndOutputsVisible() ?
+                            "Hide Inputs and Outputs" :
+                            "Show Inputs and Outputs";
+                }
+
+                @Override
+                protected String iconResource() {
+                    return isInputsAndOutputsVisible() ?
+                            "com/l7tech/console/resources/RedCrossSign16.gif" :
+                            "com/l7tech/console/resources/star16.gif";
+                }
+            };
+
+            togglePolicyInputsAndOutputs.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_U);
+            togglePolicyInputsAndOutputs.putValue(Action.ACCELERATOR_KEY,
+                    KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.ALT_DOWN_MASK));
+
+            togglePolicyInputsAndOutputs.setEnabled(null != getPolicyNode().getInterfaceDescription());
+
+            return new JButton(togglePolicyInputsAndOutputs);
         }
     }
 
@@ -976,6 +1116,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final SoapVersion soapVersion;
         final PolicyType type;
         final String internalTag;
+        final String internalSubTag;
         final PublishedService service;
         final HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
         final Set<PolicyValidatorResult.Warning> extraWarnings = new LinkedHashSet<PolicyValidatorResult.Warning>();
@@ -1014,12 +1155,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 soapVersion = null;
                 type = getPolicyNode().getPolicy().getType();
                 internalTag = getPolicyNode().getPolicy().getInternalTag();
+                internalSubTag = getPolicyNode().getPolicy().getInternalSubTag();
             } else {
                 wsdlLocator = service.wsdlLocator();
                 soap = service.isSoap();
                 soapVersion = service.getSoapVersion();
                 type = PolicyType.PRIVATE_SERVICE;
                 internalTag = null;
+                internalSubTag = null;
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't parse policy or WSDL", e);
@@ -1034,7 +1177,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdlLocator, soap, soapVersion);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, internalSubTag, wsdlLocator, soap, soapVersion);
+                    pvc.setInterfaceDescription( getPolicyNode().getInterfaceDescription() );
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
@@ -1624,11 +1768,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
          * Update the policy editor panel such as enabling save buttons and updating tab titles.
          */
         private void updatePolicyEditorPanel() {
+            // This will also call updateHeadings()
             enableButtonSave();
-
-            // If the policy tree node is changed, it means the policy is changed.
-            // Update the tab title by adding an asterisk if unsaved changes occur.
-            PolicyEditorPanel.this.updateHeadings();
         }
 
         private void enableButtonSave() {
@@ -1691,6 +1832,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (child == subject.getPolicyNode()) {
                     log.fine("Service or Policy node deleted, disabling save controls");
                     policyEditorToolbar.setSaveButtonsEnabled(false);
+                    invalidateCachedInfo();
                 }
             }
         }
@@ -1721,6 +1863,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   validatePolicy();
               } else if (TAB_TITLE_CHANGE_PROPERTY.equals(evt.getPropertyName())) {
                   subjectName = (String) evt.getNewValue();
+                  invalidateCachedInfo();
                   updateHeadings();
               }
           }
@@ -1854,7 +1997,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private void saveUnsavedPolicyChanges(ContainerEvent e) throws ContainerVetoException {
         if (! isUnsavedChanges()) return;
 
-        if (!TopComponents.getInstance().isConnectionLost()) {
+
+        boolean connectionLost = TopComponents.getInstance().isConnectionLost();
+        if ( !connectionLost && getLatestVersionNumber() == null ) {
+            String saveOption = "Save Policy";
+            String discardOption = "Discard Policy";
+            Object[] options = new String[] { saveOption, discardOption };
+
+            int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                    "<html><center><b>Policy Deleted on Server.  Do you want to save changes for" +
+                            "<br>'" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "'<br>" +
+                            "to service policy file?</b></center></html>",
+                    "Save Service Policy",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    options,
+                    saveOption);
+            if (answer != 1)
+                getSimpleExportAction().actionPerformed(null);
+        } else if (!connectionLost ) {
             int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                 "<html><center><b>Do you want to save changes to service policy " +
                     "for<br> '" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "' ?</b><br>The changed policy will not be activated.</center></html>",
@@ -1968,6 +2130,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 xml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
                             }
                             super.performAction(xml, includedFragments);
+                            invalidateCachedInfo();
 
                             if(getFragmentNameGuidMap() != null && !getFragmentNameGuidMap().isEmpty()) {
                                 try {

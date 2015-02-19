@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.jdbcquery.server;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -37,20 +38,13 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
  * @see com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion
  */
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
+    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
+    private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
+
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
     private final Config config;
-    private final static String EMPTY_STRING = "";
-    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
-    private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
-    private final static String XML_RESULT_COL_OPEN = "<L7j:col ";
-    private final static String XML_RESULT_COL_CLOSE = "</L7j:col>";
-    private final static String XML_RESULT_ROW_OPEN = "<L7j:row>";
-    private final static String XML_RESULT_ROW_CLOSE = "</L7j:row>";
-    private final static String XML_CDATA_TAG_OPEN = "<![CDATA[";
-    private final static String XML_CDATA_TAG_CLOSE = "]]>";
-    private final static String XML_NULL_VALUE = XML_CDATA_TAG_OPEN + "NULL" + XML_CDATA_TAG_CLOSE;//are special entry to null values
 
     public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -147,13 +141,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                     return AssertionStatus.FAILED;
                 }
                 if (assertion.isGenerateXmlResult()) {
-                    buildXmlResultString((Map<String, List<Object>>) result, xmlResult);
+                    JdbcUtil.buildXmlResultString((Map<String, List<Object>>) result, xmlResult);
                 }
             } else if (result instanceof List) {
                 List<SqlRowSet> listOfRowSet = (List<SqlRowSet>) result;
                 int affectedRows = 0;
                 if (listOfRowSet.size() == 1) {
-                    affectedRows = setContextVariables(listOfRowSet.get(0), context, EMPTY_STRING);
+                    affectedRows = setContextVariables(listOfRowSet.get(0), context, JdbcUtil.EMPTY_STRING);
                     if (assertion.isGenerateXmlResult()) {
                         buildXmlResultString(0, listOfRowSet.get(0), xmlResult);
                     }
@@ -202,12 +196,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         resultSet.first();
         final StringBuilder records = new StringBuilder();
         while (resultSet.next() && row < maxRecords) {
-            records.append(XML_RESULT_ROW_OPEN);
+            records.append(JdbcUtil.XML_RESULT_ROW_OPEN);
             SqlRowSetMetaData metaData = resultSet.getMetaData();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 Object value = resultSet.getObject(columnName);
-                String colType = EMPTY_STRING;
+                String colType = JdbcUtil.EMPTY_STRING;
                 if (value != null) {
                     if (value instanceof byte[]) {
                         colType = "type=\"java.lang.byte[]\"";
@@ -221,15 +215,15 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                         colType = "type=\"" + value.getClass().getName() + "\"";
                     }
                 }
-                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
+                records.append(JdbcUtil.XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
                 if (value != null) {
-                    records.append(handleSpecialXmlChar(value));
+                    records.append(JdbcUtil.handleSpecialXmlChar(value));
                 } else {
-                    records.append(XML_NULL_VALUE);
+                    records.append(JdbcUtil.XML_NULL_VALUE);
                 }
-                records.append(XML_RESULT_COL_CLOSE);
+                records.append(JdbcUtil.XML_RESULT_COL_CLOSE);
             }
-            records.append(XML_RESULT_ROW_CLOSE);
+            records.append(JdbcUtil.XML_RESULT_ROW_CLOSE);
         }
         if (resultSetNumber > 0) {
             xmlResult.append("<resultSet" + resultSetNumber + ">");
@@ -251,69 +245,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             sb.append(String.format("%02X ", b));
         }
         return  sb.toString();
-    }
-
-    /**
-     * process standard SQL select results
-     */
-    void buildXmlResultString(Map<String, List<Object>> resultSet, final StringBuilder xmlResult) {
-        int row = 0;
-        //try to check how many rows we need
-        for (String columnName : resultSet.keySet()) {
-            if (resultSet.get(columnName) != null) {
-                row = resultSet.get(columnName).toArray().length;
-                break;
-            }
-        }
-        StringBuilder records = new StringBuilder();
-        for (int i = 0; i < row; i++) {
-            records.append(XML_RESULT_ROW_OPEN);
-            for (String columnName : resultSet.keySet()) {
-                List list = resultSet.get(columnName);
-                Object value = null;
-                if (list != null && i < list.size()) {
-                    value = resultSet.get(columnName).get(i);
-                }
-                String colType = EMPTY_STRING;
-                if (value != null) {
-                    if (value instanceof byte[]) {
-                        colType = "type=\"java.lang.byte[]\"";
-                        StringBuilder sb = new StringBuilder();
-                        for (byte b : (byte[]) value) {
-                            sb.append(String.format("%02X ", b));
-                        }
-                        value = sb.toString();
-                    } else {
-                        colType = "type=\"" + value.getClass().getName() + "\"";
-                    }
-                }
-                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
-                if (value != null) {
-                    records.append(handleSpecialXmlChar(value));
-                } else {
-                    records.append(XML_NULL_VALUE);
-                }
-                records.append(XML_RESULT_COL_CLOSE);
-            }
-            records.append(XML_RESULT_ROW_CLOSE);
-        }
-        xmlResult.append(records);
-    }
-
-    Object handleSpecialXmlChar(final Object inputObj) {
-        if (inputObj instanceof String) {
-            String inputStr = inputObj.toString();
-            if (!inputStr.startsWith(XML_CDATA_TAG_OPEN) && (inputStr.indexOf('>') >= 0 || inputStr.indexOf('<') >= 0 || inputStr.indexOf('&') >= 0)) {
-                StringBuilder sb = new StringBuilder(XML_CDATA_TAG_OPEN);
-                sb.append(inputStr);
-                sb.append(XML_CDATA_TAG_CLOSE);
-                return sb.toString();
-            } else {
-                return inputStr;
-            }
-        } else {
-            return inputObj;
-        }
     }
 
     /**

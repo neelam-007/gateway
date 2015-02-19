@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.custom;
 
+import com.l7tech.gateway.common.module.ServerModuleFileChecker;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
@@ -16,7 +17,7 @@ import java.util.Collection;
  * the runtime.
  */
 @Administrative
-public interface CustomAssertionsRegistrar {
+public interface CustomAssertionsRegistrar extends ServerModuleFileChecker {
 
     /**
      * Get the class bytes for a CustomAssertion class.

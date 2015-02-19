@@ -25,6 +25,19 @@ public abstract class BundleImportException extends Exception {
     }
 
     /**
+     * Create a new bundle import exception.
+     *
+     * @param mapping The mapping instructions that are incorrect
+     * @param message The error message
+     * @param t       The associated error with this mapping exception
+     */
+    public BundleImportException(@NotNull final EntityMappingInstructions mapping, @NotNull final String message, @NotNull final Throwable t) {
+        super(message, t);
+        this.mapping = mapping;
+    }
+
+
+    /**
      * Returns the incorrect mapping instructions
      *
      * @return The incorrect mapping instructions

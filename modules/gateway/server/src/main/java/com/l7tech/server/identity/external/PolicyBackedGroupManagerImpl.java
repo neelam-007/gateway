@@ -21,7 +21,7 @@ public class PolicyBackedGroupManagerImpl implements PolicyBackedGroupManager {
     }
 
     @Override
-    public void delete(VirtualPolicyGroup group) throws DeleteException, ObjectNotFoundException {
+    public void delete(VirtualPolicyGroup group) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
@@ -52,6 +52,11 @@ public class PolicyBackedGroupManagerImpl implements PolicyBackedGroupManager {
 
     @Override
     public String save(VirtualPolicyGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String save(Goid id, VirtualPolicyGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
         throw new UnsupportedOperationException();
     }
 

@@ -52,7 +52,7 @@ public abstract class WsmanInstaller extends BaseInstaller {
 
     @NotNull
     @Override
-    protected BaseGatewayManagementInvoker getManagementClient() {
+    public BaseGatewayManagementInvoker getManagementClient() {
         return wsmanInvoker;
     }
 }

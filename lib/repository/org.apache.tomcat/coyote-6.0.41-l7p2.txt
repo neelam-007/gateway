@@ -1,0 +1,22 @@
+This patch is for tomcat-6.0.41 and can be found at http://svn.apache.org/repos/asf/tomcat/tc6.0.x/tags/TOMCAT_6_0_41.
+
+As of this change it contains the cumulative changes to tomcat-6.0.41 for the following two items:
+
+================================================================================
+1  BUG - SSG-9059 Icefish: Upgrade Tomcat from 6.0.35 to 6.0.41
+   -------------------------------------------------------------------------
+
+This patch includes changes from coyote-6.0.35-l7p1.patch and coyote-6.0.35-l7p2.patch.
+================================================================================
+
+
+
+================================================================================
+2  Enhancement SSG-7041 Expose SSL/TLS version negotiated as context variable
+   -------------------------------------------------------------------------
+
+This patch includes the above changes AND the changes necessary to expose the SSL/TLS
+protocol version that was negotiated over the current connection.
+================================================================================
+
+

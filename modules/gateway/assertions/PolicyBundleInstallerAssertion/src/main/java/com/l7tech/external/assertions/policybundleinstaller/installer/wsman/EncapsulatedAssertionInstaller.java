@@ -13,6 +13,7 @@ import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -28,14 +29,18 @@ import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 
-import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.ENCAPSULATED_ASSERTION;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
+import static com.l7tech.util.Charsets.UTF8;
 import static java.util.logging.Level.WARNING;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Install Encapsulated Assertion.
@@ -52,7 +57,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
     public void dryRunInstall(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent,
                               @NotNull final Map<String, String> policyIdsNames,
                               @NotNull final Map<String, String> conflictingPolicyIdsNames)
-            throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+            throws PolicyBundleInstaller.InstallationException, InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
         checkInterrupted();
         final BundleInfo bundleInfo = context.getBundleInfo();
         final Document encapsulatedAssertionEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), ENCAPSULATED_ASSERTION, true);
@@ -66,9 +71,10 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                 final String prefix = context.getInstallationPrefix();
                 String encapsulatedAssertionName = GatewayManagementDocumentUtilities.getEntityName(encapsulatedAssertionElm);
                 String encapsulatedAssertionGuid = GatewayManagementDocumentUtilities.getEntityGuid(encapsulatedAssertionElm);
+
                 if (isValidVersionModifier(prefix)) {
                     encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
-                    encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
+                    encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                 }
 
                 try {
@@ -113,6 +119,9 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
     public void install(@NotNull final String subFolder, @NotNull Map<String, String> oldToNewPolicyId)
             throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
         final Document encapsulatedAssertionBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, ENCAPSULATED_ASSERTION, true);
+        if (encapsulatedAssertionBundle == null) {
+            logger.info("No encapsulated assertion item found in folder: " + subFolder);
+        }
         install(encapsulatedAssertionBundle, oldToNewPolicyId);
     }
 
@@ -128,12 +137,14 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
     protected static void updatePolicyDoc(@NotNull final Element policyResourceElmWritable,
                                    @NotNull final Document policyDocumentFromResource,
-                                   @Nullable final String prefix) throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException {
+                                   @Nullable final String prefix)
+            throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException, PolicyBundleInstaller.InstallationException {
+
         // update encapsulated assertion name with prefix
         if (isValidVersionModifier(prefix)) {
             List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
             for (Element encapsulatedAssertion : encapsulatedAssertions) {
-                encapsulatedAssertion.setAttribute("stringValue", getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
+                encapsulatedAssertion.setAttribute("stringValue", getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
             }
 
             encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
@@ -179,7 +190,8 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
      * @throws InterruptedException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
      */
-    private void installEncapsulatedAssertions(@NotNull final Document encapsulatedAssertionEnum, @NotNull Map<String, String> oldToNewPolicyId) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+    private void installEncapsulatedAssertions(@NotNull final Document encapsulatedAssertionEnum, @NotNull Map<String, String> oldToNewPolicyId)
+            throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse, PolicyBundleInstaller.InstallationException {
 
         // retrieve all encapsulated assertion elements from the enumeration
         final List<Element> enumEncapsulatedAssertionElms = GatewayManagementDocumentUtilities.getEntityElements(encapsulatedAssertionEnum.getDocumentElement(), "EncapsulatedAssertion");
@@ -213,7 +225,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                         encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
                         DomUtils.setTextContent(nameElementWritable, encapsulatedAssertionName);
 
-                        encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
+                        encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                         DomUtils.setTextContent(guidElementWritable, encapsulatedAssertionGuid);
                     }
 
@@ -235,7 +247,21 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
         }
     }
 
-    public static String getPrefixedEncapsulatedAssertionGuid(@Nullable String prefix, @NotNull String guid) {
-        return prefix == null ? guid : (prefix + guid).substring(0, guid.length());
+    /**
+     * Deterministically version modify the GUID by getting the first 128 bits (16 bytes) of SHA-256( version modifier + original_guid ).
+     */
+    public static String getVersionModifiedEncapsulatedAssertionGuid(@Nullable final String versionModifier, @NotNull final String guid) throws PolicyBundleInstaller.InstallationException {
+        if (isEmpty(versionModifier)) {
+            logger.info("Call to version modify Encapsulated Assertion GUID contains empty version modifier.");
+            return guid;
+        } else {
+            try {
+                final MessageDigest md = MessageDigest.getInstance("SHA-256");
+                return HexUtils.hexDump(md.digest((versionModifier + guid).getBytes(UTF8)), 0, 16);
+            }  catch (NoSuchAlgorithmException e) {
+                throw new PolicyBundleInstaller.InstallationException("Could not version modify Encapsulated Assertion GUID: " + guid +
+                        ", version modifier: " + versionModifier, e);
+            }
+        }
     }
 }

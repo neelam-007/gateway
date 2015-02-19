@@ -85,7 +85,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         final String serviceID = PublishedServiceAliasResource.getServiceReference().getId();
         try {
             service = serviceResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR,serviceID) );
-            if (isRootFolder(service.getFolder()) ? isRootFolder(parentFolder.some()) : service.getFolder().equals(parentFolder.some()))
+            if (isRootFolder(service.getFolder()) ? isRootFolder(parentFolder.some()) : service.getFolder().equals(parentFolder.some()) && strict)
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original service");
         } catch (NullPointerException | ResourceNotFoundException e) {
             if(strict)
@@ -97,7 +97,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         // policy alias referencing same policy cannot be in same folder
         try{
             PublishedServiceAlias checkAlias = serviceAliasManager.findAliasByEntityAndFolder(toInternalId(serviceID), parentFolder.some().getGoid());
-            if( checkAlias != null )
+            if (checkAlias != null && strict)
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of service " + service.getName() + " already exists in folder " + parentFolder.some().getName());
         } catch (FindException | InvalidResourceSelectors e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");

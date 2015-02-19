@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.gateway.api.Item;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,23 +27,25 @@ public interface APITransformer<M, E> {
      * Converts a gateway object to it equivalent api object
      *
      * @param e The gateway object
+     * @param secretsEncryptor   To encrypt passwords. Null to not include password
      * @return The api object representing the gateway object
      */
     @NotNull
-    public M convertToMO(@NotNull E e);
+    public M convertToMO(@NotNull E e, SecretsEncryptor secretsEncryptor);
 
     /**
      * Converts the api object to its equivalent gateway object. This is the same as calling {@link
-     * #convertFromMO(Object, boolean)} with strict true.
+     * #convertFromMO(Object, boolean, com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor)} with strict true.
      * <p/>
      * If the api object contains a reference to an entity the referenced entity must exist in the gateway otherwise an
      * exception is thrown
      *
      * @param m The api object to convert
+     * @param secretsEncryptor To decrypt passwords.
      * @return Returns the gateway object represented by the given api object.
      */
     @NotNull
-    public E convertFromMO(@NotNull M m) throws ResourceFactory.InvalidResourceException;
+    public E convertFromMO(@NotNull M m, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to its equivalent gateway object.
@@ -54,10 +57,11 @@ public interface APITransformer<M, E> {
      * @param m      The api object to convert
      * @param strict If true this will throw an exception if a referenced object cannot be found. Otherwise it creates a
      *               dummy reference object
+     * @param secretsEncryptor
      * @return Returns the gateway object represented by the given api object.
      */
     @NotNull
-    public E convertFromMO(@NotNull M m, boolean strict) throws ResourceFactory.InvalidResourceException;
+    public E convertFromMO(@NotNull M m, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to an item properly populating all the item properties except links.

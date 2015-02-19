@@ -21,6 +21,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import org.apache.commons.codec.binary.Base32;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,6 +32,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.*;
 
 /**
@@ -98,6 +101,12 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 break;
             case BASE64_DECODE:
                 transformer = new Base64DecodingTransformer( encodeDecodeContext );
+                break;
+            case BASE32_ENCODE:
+                transformer = new Base32EncodingTransformer( encodeDecodeContext );
+                break;
+            case BASE32_DECODE:
+                transformer = new Base32DecodingTransformer( encodeDecodeContext );
                 break;
             case HEX_ENCODE:
                 transformer = new HexEncodingTransformer( encodeDecodeContext );
@@ -228,8 +237,10 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             if ( source instanceof Message ) {
                 final Pair<Charset,byte[]> firstPartEncodingAndContent = getMessageFirstPart( (Message) source, true );
                 text = new String( firstPartEncodingAndContent.right, firstPartEncodingAndContent.left );
-            } else if ( source instanceof String ) {
-                text = (String) source;
+            } else if ( source instanceof CharSequence ) {
+                text = source.toString();
+            } else if ( source instanceof byte[] ) {
+                text = new String( (byte[])source, encodeDecodeContext.getInputEncoding() );
             } else {
                 encodeDecodeContext.audit( AssertionMessages.ENCODE_DECODE_IN_TYPE, (source==null ? "<NULL>" : source.getClass().getName()), "text" );
                 throw new AssertionStatusException( AssertionStatus.FALSIFIED );
@@ -273,8 +284,10 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 } catch ( CertificateEncodingException e ) {
                     throw encodeDecodeContext.fail( "certificate error - " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
                 }
-            } else if ( source instanceof String ) {
-                data = ((String) source).getBytes( encodeDecodeContext.getInputEncoding() );
+            } else if ( source instanceof CharSequence ) {
+                data = source.toString().getBytes( encodeDecodeContext.getInputEncoding() );
+            } else if ( source instanceof byte[] ) {
+                data = (byte[]) source;
             } else if (source instanceof PartInfo) {
                 data = getPartInfoBody((PartInfo) source, false).right;
             } else {
@@ -383,6 +396,63 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             }
             final byte[] decoded = HexUtils.decodeBase64( data, true );
             return buildBinaryOutput( decoded );
+        }
+    }
+
+    private static class Base32EncodingTransformer extends EncodeDecodeTransformer {
+        Base32EncodingTransformer( final EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( final Object source ) {
+            final byte[] data = getBinaryInput( source );
+            final String encoded = new Base32().encodeAsString( data );
+            return buildTextOutput( encoded );
+        }
+    }
+
+    private static class Base32DecodingTransformer extends EncodeDecodeTransformer {
+        private static final Pattern STRICT_PATTERN = Pattern.compile( "^[ABCDEFGHIJKLMNOPQRSTUVWXYZ234567 \t\r\n]*([= \t\r\n]*)$" );
+
+        Base32DecodingTransformer( final EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( final Object source ) {
+            final String data = getTextInput( source ).trim();
+            // if there is padding nothing must be trailing it
+            if ( isStrict() ) {
+                Matcher matcher = STRICT_PATTERN.matcher( data );
+                if ( !matcher.matches() ||
+                        !isValidBase32PaddingLength( stripws( matcher.group( 1 ) ).length() ) ||
+                        stripws( data ).length() % 8 != 0 )  {
+                    audit( AssertionMessages.ENCODE_DECODE_STRICT, null );
+                    throw new AssertionStatusException( AssertionStatus.FALSIFIED );
+                }
+            }
+            final byte[] decoded = new Base32().decode( data );
+            return buildBinaryOutput( decoded );
+        }
+
+        private static final Pattern PATTERN_STRIP_WS = Pattern.compile( "[\t\r\n ]" );
+
+        private static String stripws( String s ) {
+            return PATTERN_STRIP_WS.matcher( s ).replaceAll( "" );
+        }
+
+        private static boolean isValidBase32PaddingLength( int length ) {
+            switch ( length ) {
+                case 0:
+                case 6:
+                case 4:
+                case 3:
+                case 1:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 

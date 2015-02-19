@@ -346,6 +346,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                         FeatureLicense license = createFeatureLicense(document);
                         featureLicenses.add(license);
                     } catch (InvalidLicenseException e) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+
                         fireEvent("Invalid license", SystemMessages.LICENSE_INVALID);
 
                         // an invalid LicenseDocument has been found - include it as such in the CompositeLicense
@@ -358,6 +362,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateLicenseExpiry(license);
                     } catch (InvalidLicenseException e) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+
                         fireEvent("Expired license",
                                 SystemMessages.LICENSE_EXPIRED, Long.toString(license.getId()));
                         expiredLicenses.put(license.getId(), license);
@@ -367,6 +375,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateLicenseStart(license);
                     } catch (InvalidLicenseException e) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+
                         fireEvent("Invalid license",
                                 SystemMessages.LICENSE_NOT_YET_VALID, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);
@@ -376,6 +388,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateIssuer(license);
                     } catch (InvalidLicenseException e) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+
                         fireEvent("Invalid license",
                                 SystemMessages.LICENSE_INVALID_ISSUER, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);
@@ -385,6 +401,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateProduct(license);
                     } catch (InvalidLicenseException e) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+
                         fireEvent("Invalid license",
                                 SystemMessages.LICENSE_INVALID_PRODUCT, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);

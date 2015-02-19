@@ -179,7 +179,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
                     // Tomcats JSSESupport adds an (unnecessary) listener that we
                     // will ignore for now.
                     //
-                    // TODO [jdk7] remove this method once the JDK bug is fixed (7u2?)
+                    // TODO [jdk7] remove this method once the JDK bug is fixed (JDK 8 now, apparently)
                     logger.fine("Ignoring SSL handshake listener");
                 }
 

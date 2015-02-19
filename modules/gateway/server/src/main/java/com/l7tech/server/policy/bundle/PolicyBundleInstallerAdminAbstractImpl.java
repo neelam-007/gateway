@@ -5,7 +5,9 @@ import com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
@@ -58,8 +60,10 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     private final ApplicationEventPublisher appEventPublisher;
     private final Map<String, JobContext> taskToJobContext = new ConcurrentHashMap<>();
     private final BundleResolver bundleResolver;
+    @Nullable
+    private UserBean authenticatedUser;
 
-    protected final ExecutorService executorService;   // TODO make private once create database moved? (OAuthInstallerImpl to here)
+    protected final ExecutorService executorService;
     protected boolean checkingAssertionExistenceRequired = true;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
@@ -148,8 +152,10 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     private BundleResolver newBundleResolver(@NotNull final List<Pair<BundleInfo, String>> bundleInfosFromJar, @NotNull final Class callingClass) throws BundleResolverException, UnknownBundleException, InvalidBundleException {
         BundleResolver bundleResolver = new BundleResolverImpl(bundleInfosFromJar, callingClass);
         final List<BundleInfo> bundleInfoResultList = bundleResolver.getResultList();
-        for (BundleInfo bundleInfoResult : bundleInfoResultList) {
-            BundleUtils.findReferences(bundleInfoResult, bundleResolver);
+        for (BundleInfo bundleInfo : bundleInfoResultList) {
+            BundleUtils.findReferences(bundleInfo, bundleResolver);
+            bundleInfo.setHasActiveVersionMigrationBundleFile(BundleUtils.hasActiveVersionMigrationBundleFile(bundleInfo, bundleResolver));
+            bundleInfo.setHasWsmanFile(BundleUtils.hasWsmanFile(bundleInfo, bundleResolver));
         }
         return bundleResolver;
     }
@@ -201,9 +207,22 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
         return bundleResolver.getResultList();
     }
 
+    @Override
+    public void setAuthenticatedUser(@Nullable UserBean authenticatedUser) {
+        this.authenticatedUser = authenticatedUser;
+    }
+
     @NotNull
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
                                                          @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                         @Nullable final String installationPrefix) {
+        return dryRunInstall(componentIds, bundleMappings, Folder.ROOT_FOLDER_ID, installationPrefix);
+    }
+
+    @NotNull
+    public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
+                                                         @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                         @NotNull final Goid folderGoid,
                                                          @Nullable final String installationPrefix) {
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -213,7 +232,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             @Override
             public PolicyBundleDryRunResult call() throws Exception {
                 try {
-                    return doDryRunInstall(taskIdentifier, componentIds, bundleMappings, installationPrefix);
+                    return doDryRunInstall(taskIdentifier, componentIds, bundleMappings, folderGoid, installationPrefix);
                 } catch (PolicyBundleInstallerException e) {
                     final DetailedAdminEvent problemEvent = new DetailedAdminEvent(this, "Problem during pre installation check of the " + getInstallerName(), Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(newAuditDetailInstallError(e)));
@@ -243,7 +262,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                     @NotNull final Goid folderGoid,
                                     @NotNull final Map<String, BundleMapping> bundleMappings,
                                     @Nullable final String installationPrefix,
-                                    @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                    @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException {
 
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -253,7 +272,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<>(doInstall(taskIdentifier, componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundleOverrides));
+                    return new ArrayList<>(doInstall(taskIdentifier, componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundlesOverrides));
                 } catch(PolicyBundleInstallerException e) {
                     final DetailedAdminEvent problemEvent = new DetailedAdminEvent(this, "Problem during installation of the " + getInstallerName(), Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(newAuditDetailInstallError(e)));
@@ -274,12 +293,14 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     protected PolicyBundleDryRunResult doDryRunInstall(@NotNull final String taskIdentifier,
                                                        @NotNull final Collection<String> componentIds,
                                                        @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                       @NotNull final Goid folderGoid,
                                                        @Nullable final String installationPrefix) throws PolicyBundleInstallerException {
         final DetailedAdminEvent startedEvent = new DetailedAdminEvent(this, MessageFormat.format(PRE_INSTALLATION_MESSAGE, getInstallerName(), "started"), Level.INFO);
         appEventPublisher.publishEvent(startedEvent);
 
         final HashMap<String, Map<PolicyBundleDryRunResult.DryRunItem, List<String>>> bundleToConflicts = new HashMap<>();
         Map<String, List<MigrationDryRunResult>> migrationResultsMap = new HashMap<>();
+        Map<String, String> componentIdToBundleXmlMap = new HashMap<>();
         final Set<String> processedComponents = new HashSet<>();
 
         outer:
@@ -294,10 +315,11 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
                     final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired);
+                            bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, null, null);
 
-                    final DryRunInstallPolicyBundleEvent dryRunEvent =
-                            new DryRunInstallPolicyBundleEvent(bundleMappings, context, getPolicyBundleInstallerCallback(prefixToUse));
+                    final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(bundleMappings, context);
+                    dryRunEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));
+                    dryRunEvent.setAuthenticatedUser(authenticatedUser);
                     jobContext.currentEvent = dryRunEvent;
 
                     appEventPublisher.publishEvent(dryRunEvent);
@@ -398,6 +420,8 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                         appEventPublisher.publishEvent(problemEvent);
                     }
                     processedComponents.add(bundleId);
+
+                    componentIdToBundleXmlMap.putAll(dryRunEvent.getComponentIdToBundleXmlMap());
                 }
             }
         }
@@ -412,7 +436,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             appEventPublisher.publishEvent(cancelledEvent);
         }
 
-        return new PolicyBundleDryRunResult(bundleToConflicts, migrationResultsMap.size() > 0 ? migrationResultsMap : null);
+        return new PolicyBundleDryRunResult(bundleToConflicts, migrationResultsMap.size() > 0 ? migrationResultsMap : null, componentIdToBundleXmlMap);
     }
 
     public static boolean validateEventProcessed(PolicyBundleInstallerEvent bundleInstallerEvent) throws PolicyBundleInstallerException {
@@ -441,7 +465,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                 // unexpected exception
                 logger.warning("Exception type: " + processingException.getClass().getName());
                 logger.warning("Unexpected error during installation: " + ExceptionUtils.getMessage(processingException));
-                throw new PolicyBundleInstallerException(processingException);
+                throw new PolicyBundleInstallerException(processingException.getMessage());
             } else {
                 throw new PolicyBundleInstallerException(processingException);
             }
@@ -455,7 +479,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                      @NotNull final Goid folderGoid,
                                      @NotNull Map<String, BundleMapping> bundleMappings,
                                      @Nullable final String installationPrefix,
-                                     @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                     @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException {
 
         // When installing more than one bundle, allow for optimization of not trying to recreate items already created.
         // final Map<String, Object> contextMap = new HashMap<>();
@@ -472,6 +496,12 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
             try {
                 final Set<String> processedComponents = new HashSet<>();
+
+                // Define a map to hold entity id mappings for one entity mapping to other entity.
+                // Each map entry is (sourceId, targetId), which implies that one entity with sourceId wil be mapping to a new entity with targetId.
+                // This map will be used by MigrationBundleInstaller to search if an entity has been replaced by other entity in some installed bundle components.
+                // This is related for fixing bug SSM-5035, https://jira.l7tech.com:8443/browse/SSM-5035
+                final Map<String, String> migrationSourceAndTargetIdsMapping = new Hashtable<>();
                 //iterate through all the bundle names to install
                 outer:
                 for (String bundleId : componentIds) {
@@ -485,9 +515,12 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, migrationBundleOverrides);
+                                bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired,
+                                migrationBundlesOverrides == null? null : migrationBundlesOverrides.get(bundleId), migrationSourceAndTargetIdsMapping);
                             final InstallPolicyBundleEvent installEvent =
-                                    new InstallPolicyBundleEvent(this, context, getPolicyBundleInstallerCallback(prefixToUse));
+                                    new InstallPolicyBundleEvent(this, context);
+                            installEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));
+                            installEvent.setAuthenticatedUser(authenticatedUser);
                             jobContext.currentEvent = installEvent;
 
                             appEventPublisher.publishEvent(installEvent);

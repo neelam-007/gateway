@@ -113,10 +113,17 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 %dir /opt/SecureSpan/Appliance/config/logs 
 /opt/SecureSpan/Appliance/config/*.properties
 
+
 # SSG config user files
 %defattr(0644,ssgconfig,ssgconfig,0700)
 /home/ssgconfig
 %attr(0750,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
+
+# for .bash_profile file in /etc/skel_ssg/ directory
+%defattr(0755,root,root)
+/etc/skel_ssg
+%attr(0644,root,root) /etc/skel_ssg/.bash_profile
+
 
 # Appliance migration configuration
 %config(noreplace) %attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest

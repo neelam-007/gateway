@@ -357,7 +357,20 @@ public abstract class TransportModule extends LifecycleBean {
             "State Changed",
             "Listener state changed");
 
-        event.setAuditDetails(Arrays.asList(new AuditDetail(msg, params, e)));
+        auditTransportEvent( event, msg, params, e );
+    }
+
+    /**
+     * Immediately emit a system audit record triggered by the specified transport event.
+     * Also sends the detail message to the log sinks.
+     *
+     * @param event TransportEvent.  Required.
+     * @param msg detail message.  Required.
+     * @param params detail params. May be null or empty.
+     * @param e  exception.  May be null.
+     */
+    protected void auditTransportEvent( @NotNull TransportEvent event, @NotNull AuditDetailMessage msg, @Nullable String[] params, @Nullable Throwable e ) {
+        event.setAuditDetails( Arrays.asList( new AuditDetail( msg, params, e ) ));
         getApplicationContext().publishEvent(event);
     }
 }

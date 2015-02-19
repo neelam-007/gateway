@@ -88,7 +88,7 @@ public class PasswordEncoder {
         md.update( salt.getBytes( ISO8859 ) );
         md.update( "q8sN-j>s<lktAK=z2DcF9".getBytes( ISO8859 ) );  // This our built-in hardcoded secret
         byte[] bytes = md.digest();
-        return new SecretKeySpec( bytes, 0, 32, "AES" );
+        return new SecretKeySpec( bytes, 0, 16, "AES" );
     }
 
     private static byte[] generateIv( String salt ) throws NoSuchAlgorithmException, UnsupportedEncodingException {

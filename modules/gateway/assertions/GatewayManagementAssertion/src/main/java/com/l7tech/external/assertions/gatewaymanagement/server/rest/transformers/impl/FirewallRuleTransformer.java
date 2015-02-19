@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
@@ -9,7 +10,6 @@ import com.l7tech.server.bundling.EntityContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,13 +25,18 @@ public class FirewallRuleTransformer implements EntityAPITransformer<FirewallRul
 
     @NotNull
     @Override
-    public FirewallRuleMO convertToMO(@NotNull EntityContainer<SsgFirewallRule> userEntityContainer) {
-        return convertToMO(userEntityContainer.getEntity());
+    public FirewallRuleMO convertToMO(@NotNull EntityContainer<SsgFirewallRule> userEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(userEntityContainer.getEntity(), secretsEncryptor);
+    }
+
+    @NotNull
+    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule ssgFirewallRule) {
+        return convertToMO(ssgFirewallRule, null);
     }
 
     @NotNull
     @Override
-    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule firewallRule) {
+    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule firewallRule,  SecretsEncryptor secretsEncryptor) {
         FirewallRuleMO firewallRuleMO = ManagedObjectFactory.createFirewallRuleMO();
         firewallRuleMO.setId(firewallRule.getId());
         firewallRuleMO.setVersion(firewallRule.getVersion());
@@ -50,13 +55,13 @@ public class FirewallRuleTransformer implements EntityAPITransformer<FirewallRul
 
     @NotNull
     @Override
-    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(firewallRuleMO,true);
+    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(firewallRuleMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         SsgFirewallRule firewallRule = new SsgFirewallRule();
         firewallRule.setId(firewallRuleMO.getId());
         if(firewallRuleMO.getVersion()!=null) {

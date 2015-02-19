@@ -1339,6 +1339,46 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_INVALID_SERVICE_DOCUMENT_ID = m(10712, Level.WARNING, "Invalid Service Document ID: {0}");
     public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND = m(10713, Level.WARNING, "Could not find Service Document with ID: {0}");
     public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
+    public static final M RETRIEVE_WSDL_SERVICE_ID_BLANK = m(10715, Level.WARNING, "Service ID is empty.");
+    public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_ID_BLANK = m(10716, Level.WARNING, "Service Document ID is empty.");
 
+    public static final M JWT_MISSING_SOURCE_PAYLOAD = m(10800, Level.WARNING, "Source payload is required.");
+    public static final M JWT_MISSING_HEADERS = m(10801, Level.WARNING, "Assertion was instructed to {0} headers, but no headers were found.");
+    public static final M JWT_PRIVATE_KEY_NOT_FOUND = m(10802, Level.WARNING, "Could not find the specified private key.");
+    public static final M JWT_KEYSTORE_ERROR = m(10803, Level.WARNING, "Could not access keystore to find the specified key.");
+    public static final M JWT_KEY_RECOVERY_ERROR = m(10804, Level.WARNING, "Could not recover private key.");
+    public static final M JWT_JOSE_ERROR = m(10805, Level.WARNING, "JOSE Error: {0}");
+    public static final M JWT_SOURCE_HEADERS_ERROR = m(10806, Level.WARNING, "Invalid header found: {0}");
+    public static final M JWT_INVALID_KEY = m(10807, Level.WARNING, "Invalid Key: The given key {0} is not valid for use with {1}.");
+
+    public static final M JWT_INVALID_KEY_USAGE = m(10808, Level.WARNING, "{0}");
+
+    public static final M JWT_MISSING_JWS_HMAC_SECRET = m(10810, Level.WARNING, "Key is required when using creating MAC.");
+    public static final M JWT_MISSING_JWS_PRIVATE_KEY = m(10811, Level.WARNING, "Private Key is required when using creating a digitial signature.");
+    public static final M JWT_MISSING_JWS_KID = m(10812, Level.WARNING, "Key ID is required for retrieval of key from a JSON Web Key Set.");
+    public static final M JWT_JWS_KEY_ERROR = m(10813, Level.WARNING, "Could not find signing key for JWS operation.");
+
+    public static final M JWT_JWE_KEY_ERROR = m(10820, Level.WARNING, "Could not find encryption key for JWE operation.");
+    public static final M JWT_JWE_PUBLIC_KEY_ERROR = m(10821, Level.WARNING, "Could not get the public key as specified.");
+
+    public static final M JWT_DECODE_ERROR = m(10830, Level.WARNING, "Source payload is neither JWS or JWE.");
+    public static final M JWT_DECODE_INVALID_TYPE = m(10831, Level.WARNING, "Can not decode JWE using a secret, please reconfigure the assertion to use a Recipient key or JWK/JWKS.");
+    public static final M JWT_INVALID_ALGORITHM = m(10832, Level.WARNING, "Invalid algorithm: {0}");
+    public static final M JWT_DECODE_MISSING_SECRET = m(10833, Level.WARNING, "Missing secret to verify JWS signature.");
+    public static final M JWT_GENERAL_DECODE_ERROR = m(10834, Level.WARNING, "Error decoding: {0}");
+
+    public static final M JWT_JWK_ERROR = m(10840, Level.WARNING, "Error creating JWKS: {0}");
+    public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of {0}");
+
+    // CassandraQuery Assertion
+    public static final M CASSANDRA_CONNECTION_CANNOT_CONNECT = m(10900, Level.WARNING, "Connection to Cassandra cluster associated with connection {0} not available due to {1}");
+    public static final M CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE = m(10901, Level.FINE, "Cassandra Connection Manager: {0}");
+    public static final M CASSANDRA_CONNECTION_DISABLED = m(10902, Level.INFO, "The Gateway would not connect via disabled Cassandra connection {0}");
+    public static final M CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED = m(10903, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to: {0}");
+    public static final M CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED = m(10904, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to no query results via a connection {0}");
+    public static final M CASSANDRA_CANNOT_REMOVE_CONNECTION = m(10905, Level.WARNING, "Unable to remove Cassandra connection due to: {0}");
+
+    public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
+

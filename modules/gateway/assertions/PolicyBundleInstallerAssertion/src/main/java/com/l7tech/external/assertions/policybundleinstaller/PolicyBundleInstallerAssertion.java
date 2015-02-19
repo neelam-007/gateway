@@ -22,6 +22,7 @@ public class PolicyBundleInstallerAssertion extends Assertion {
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerLifecycle");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/policybundleinstaller/console/rectangle_lines_up_arrow.png");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

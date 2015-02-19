@@ -13,6 +13,8 @@ import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.polback.PolicyBackedServiceRegistry;
+import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
@@ -23,7 +25,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 
@@ -43,6 +46,10 @@ public class PolicyAdminImplTest {
     private PolicyAssertionRbacChecker policyChecker;
     @Mock
     private IdentityProviderFactory identityProviderFactory;
+    @Mock
+    private PolicyBackedServiceRegistry policyBackedServiceRegistry;
+    @Mock
+    private ServiceTemplateManager serviceTemplateManager;
 
     @Before
     public void setup() {
@@ -51,6 +58,8 @@ public class PolicyAdminImplTest {
                 .put("policyChecker", policyChecker)
                 .put("encapsulatedAssertionConfigManager", encassConfigManager)
                 .put("identityProviderFactory", identityProviderFactory)
+                .put("serviceTemplateManager", serviceTemplateManager)
+                .put("policyBackedServiceRegistry", policyBackedServiceRegistry)
                 .unmodifiableMap(),
                 false);
     }

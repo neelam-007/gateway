@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.gateway.common.admin.*;
@@ -124,6 +125,12 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JdbcAdmin getJdbcConnectionAdmin();
+
+    /**
+     * @return the Cassandra connection manager
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    abstract public CassandraConnectionManagerAdmin getCassandraConnectionAdmin();
 
     /**
      *
@@ -258,6 +265,12 @@ public abstract class Registry {
     public abstract EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin();
 
     /**
+     * @return the policy backed service admin interface.
+     * @throws IllegalStateException if the admin context is not present
+     */
+    public abstract PolicyBackedServiceAdmin getPolicyBackedServiceAdmin();
+
+    /**
      * Get the {@link CustomKeyValueStoreAdmin} interface implementation.
      *
      * @return the custom key value store admin interface implementation. Never null.
@@ -359,6 +372,12 @@ public abstract class Registry {
 
         @Override
         public JdbcAdmin getJdbcConnectionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+
+        @Override
+        public CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
@@ -468,6 +487,11 @@ public abstract class Registry {
 
         @Override
         public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public PolicyBackedServiceAdmin getPolicyBackedServiceAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

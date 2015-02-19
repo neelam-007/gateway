@@ -1,10 +1,10 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.Either;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
@@ -21,6 +21,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+
 /**
  * Context for use with policy validation.
  *
@@ -31,12 +34,14 @@ public class PolicyValidationContext implements Serializable {
 
     private final @NotNull PolicyType policyType;
     private final @Nullable String policyInternalTag;
+    private final @Nullable String policyInternalSubTag;
     private final @Nullable SerializableWSDLLocator wsdlLocator;
     private final boolean soap;
     private final @Nullable SoapVersion soapVersion;
     private transient Map<Assertion,AssertionValidator> validatorMap = new HashMap<Assertion,AssertionValidator>();
     private transient Either<WSDLException,Wsdl> wsdl;
     private Set<String> permittedAssertionClasses;
+    private @Nullable EncapsulatedAssertionConfig interfaceDescription;
 
     private Map<String, String> registeredCustomAssertionFeatureSets = new HashMap<>();
 
@@ -48,13 +53,15 @@ public class PolicyValidationContext implements Serializable {
      *
      * @param policyType   policy type.  Generally required.
      * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
+     * @param policyInternalSubTag policy internal sub tag, if applicable and available.  May be null.
      * @param wsdl  policy WSDL, if a soap policy and if available.  May be null.
      * @param soap  true if this is known to be a SOAP policy
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
-    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable String policyInternalSubTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
+        this.policyInternalSubTag = policyInternalSubTag;
         this.wsdlLocator = null;
         this.wsdl = wsdl == null ? null : Either.<WSDLException,Wsdl>right(wsdl);
         this.soap = soap;
@@ -64,13 +71,15 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @param policyType   policy type.  Generally required.
      * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
+     * @param policyInternalSubTag policy internal sub tag, if applicable and available.  May be null.
      * @param wsdlLocator  policy WSDLLocator, if a soap policy and if available.  May be null.
      * @param soap  true if this is known to be a SOAP policy
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
-    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable SerializableWSDLLocator wsdlLocator, boolean soap, @Nullable SoapVersion soapVersion) {
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable String policyInternalSubTag, @Nullable SerializableWSDLLocator wsdlLocator, boolean soap, @Nullable SoapVersion soapVersion) {
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
+        this.policyInternalSubTag = policyInternalSubTag;
         this.wsdlLocator = wsdlLocator;
         this.soap = soap;
         this.soapVersion = soapVersion;
@@ -90,6 +99,14 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public String getPolicyInternalTag() {
         return policyInternalTag;
+    }
+
+    /**
+     * @return the policy internal sub tag name if applicable and available, otherwise null.
+     */
+    @Nullable
+    public String getPolicyInternalSubTag() {
+        return policyInternalSubTag;
     }
 
     /**
@@ -141,6 +158,30 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public Set<String> getPermittedAssertionClasses() {
         return permittedAssertionClasses;
+    }
+
+    /**
+     * Get the description of the interface implemented by this policy, if any.
+     *
+     * @return a (possibly-ephemeral) EncapsulatedAssertion instance describing the interface
+     *         implemented by this policy, or null if the policy does not implement an interface.
+     */
+    @Nullable
+    public EncapsulatedAssertionConfig getInterfaceDescription() {
+        return interfaceDescription;
+    }
+
+    /**
+     * Set the interface description, if any, for the policy being validated.
+     * <p/>
+     * If an interface description is provided, its Input variables will show as already set before
+     * the policy starts, and its Output variables will show as being used once the policy finishes.
+     *
+     * @param interfaceDescription a (possibly-ephemeral) EncapsulatedAssertion instance describing the interface
+     *                             implemented by this policy, or null if the policy does not implement an interface.
+     */
+    public void setInterfaceDescription( @Nullable EncapsulatedAssertionConfig interfaceDescription ) {
+        this.interfaceDescription = interfaceDescription;
     }
 
     /**

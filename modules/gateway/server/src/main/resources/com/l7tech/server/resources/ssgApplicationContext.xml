@@ -564,6 +564,7 @@
     <!-- Database password encryption, for reading passwords from cluster-wide sources ie cluster properties -->
     <bean id="dbPasswordEncryption" class="com.l7tech.util.MasterPasswordManager">
         <constructor-arg ref="clusterSharedKey"/>
+        <constructor-arg value="true"/>
     </bean>
 
     <!-- Current cluster shared key, as raw byte array -->
@@ -1288,6 +1289,7 @@
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
+        <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -1693,6 +1695,7 @@
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="policyBackedServiceManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="passwordPolicyManger"/>
@@ -1712,6 +1715,8 @@
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
+                <ref bean="serverModuleFileManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1773,6 +1778,7 @@
             </bean>
         </property>
         <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="serverModuleFileManager" ref="serverModuleFileManager"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
@@ -1932,6 +1938,18 @@
     </bean>
 
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>
+
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
+    <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerImpl">
+        <constructor-arg ref="cassandraEntityManager"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="securePasswordManager" />
+        <constructor-arg ref="trustManager" />
+        <constructor-arg ref="secureRandom" />
+    </bean>
+
+    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerImpl"/>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
@@ -2105,6 +2123,20 @@
     <bean id="trustedEsmUserManager" class="com.l7tech.server.TrustedEsmUserManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterNodeId"/>
+    </bean>
+
+    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListenerStageOneImpl">
+        <constructor-arg index="0" ref="applicationEventProxy"/>
+        <constructor-arg index="1" ref="serverModuleFileManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+        <constructor-arg index="3" ref="serverConfig"/>
+        <constructor-arg index="4" ref="assertionRegistry"/>
+        <constructor-arg index="5" ref="customAssertionRegistrar"/>
+    </bean>
+
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
 
     <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
@@ -2276,6 +2308,8 @@
                 <ref bean="securityZoneManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="cassandraEntityManager"/>
+                <ref bean="serverModuleFileManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -2288,6 +2322,7 @@
         <constructor-arg ref="resourceEntryManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="jdbcConnectionManager"/>
+        <constructor-arg ref="cassandraEntityManager"/>
     </bean>
 
     <bean id="serviceExternalEntityHeaderEnhancer"
@@ -2333,12 +2368,18 @@
     <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerImpl" parent="hibernateBean">
+    </bean>
+
     <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerImpl">
         <constructor-arg ref="auditFactory"/>
+    </bean>
+
+    <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
@@ -2616,6 +2657,14 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/></key>
                     <bean class="com.l7tech.server.search.processors.SsgKeyEntryDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.RBAC_ROLE"/></key>
+                    <bean class="com.l7tech.server.search.processors.RoleDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>

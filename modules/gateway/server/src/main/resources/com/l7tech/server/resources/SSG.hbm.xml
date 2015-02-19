@@ -75,7 +75,8 @@
         <property name="type" column="policy_type" type="policy_type"/>
         <property name="xml" column="`xml`" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
-        <property name="internalTag" column="internal_tag" type="string" length="64"/>
+        <property name="internalTag" column="internal_tag" type="string" length="255"/>
+        <property name="internalSubTag" column="internal_sub_tag" type="string" length="255"/>
 
         <many-to-one name="folder" column="folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>

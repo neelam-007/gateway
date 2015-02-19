@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -30,8 +31,14 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return "DEPENDENCY";
     }
 
+
     @NotNull
     @Override
+    public DependencyListMO convertToMO(@NotNull DependencySearchResults dependencySearchResults, SecretsEncryptor secretsEncryptor) {
+        return convertToMO(dependencySearchResults);
+    }
+
+    @NotNull
     public DependencyListMO convertToMO(@NotNull DependencySearchResults dependencySearchResults) {
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
@@ -50,21 +57,24 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return dependencyAnalysisMO;
     }
 
+
     @NotNull
-    public DependencyListMO convertToMO(@NotNull List<DependencySearchResults> dependencySearchResultsList) {
-        DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
+    public DependencyListMO convertToMO(@NotNull final List<DependencySearchResults> dependencySearchResultsList) {
+        return convertToMO(dependencySearchResultsList, false);
+    }
+
+    @NotNull
+    public DependencyListMO convertToMO(@NotNull final List<DependencySearchResults> dependencySearchResultsList, boolean includeRootNode) {
+        final DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         if(dependencySearchResultsList.isEmpty()){
             return dependencyAnalysisMO;
         }
-//        dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
-//        dependencyAnalysisMO.setSearchObjectItem(toDependencyManagedObject(dependencySearchResultsList.get(0).getDependent(), dependencySearchResultsList.get(0).getDependencies()));
-        List<Dependency> dependencyList = new ArrayList<>();
-        for (DependencySearchResults results : dependencySearchResultsList){
-            dependencyList.addAll(DependencySearchResultsUtils.flattenDependencySearchResults(results, false));
-        }
+
+        final List<Dependency> dependencyList = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResultsList, includeRootNode);
+
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
-        for(Dependency dependency: dependencyList){
+        for(final Dependency dependency: dependencyList){
             if(dependency instanceof BrokenDependency){
                 dependencyAnalysisMO.getMissingDependencies().add(toManagedObject(dependency));
             }else{
@@ -77,13 +87,13 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
     @NotNull
     @Override
-    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(dependencyListMO, true);
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(dependencyListMO, true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         throw new UnsupportedOperationException("Converting DependencyListMO to an internal DependencySearchResults is not supported.");
     }
 

@@ -88,41 +88,41 @@ public abstract class MigrationTestBase {
 
     protected void assertOkCreatedResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(201, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 201, response.getStatus());
         Assert.assertNotNull(response.getBody());
     }
 
     protected void assertOkResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 200, response.getStatus());
     }
 
     protected void assertNotFoundResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(404, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 404, response.getStatus());
     }
 
-    protected void assertOkDeleteResponse(RestResponse response) {
+    protected void assertOkEmptyResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(204, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 204, response.getStatus());
     }
 
     protected void assertConflictResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(409, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 409, response.getStatus());
     }
 
     protected void cleanupAll(Item<Mappings> mappings) throws Exception {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
         for (Mapping mapping : reverseMappingsList) {
-            if(mapping.getErrorType() == null && !Mapping.ActionTaken.Ignored.equals(mapping.getActionTaken()) &&
+            if(mapping.getErrorType() == null && !Mapping.ActionTaken.Ignored.equals(mapping.getActionTaken()) && !Mapping.ActionTaken.Deleted.equals(mapping.getActionTaken()) &&
                     ( mapping.getTargetId().length()!=16 || !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId())))
                     && mapping.getActionTaken()== Mapping.ActionTaken.CreatedNew){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
-                assertOkDeleteResponse(response);
+                assertOkEmptyResponse(response);
             }
         }
     }
@@ -140,11 +140,15 @@ public abstract class MigrationTestBase {
 
     protected void validate(Item<Mappings> mappings) throws Exception {
         for (Mapping mapping : mappings.getContent().getMappings()) {
-            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore){
+            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore && mapping.getActionTaken() != Mapping.ActionTaken.Ignored && !("INTERFACE_TAG".equals(mapping.getType()) && "742a7604-699c-368a-a19a-0ddd73085575".equals(mapping.getSrcId()))){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
-                assertOkResponse(response);
+                if(mapping.getActionTaken() == Mapping.ActionTaken.Deleted && !"ASSERTION_ACCESS".equals(mapping.getType())){
+                    assertNotFoundResponse(response);
+                } else {
+                    assertOkResponse(response);
+                }
             }
         }
     }
@@ -165,6 +169,16 @@ public abstract class MigrationTestBase {
             @Override
             public Boolean call(DependencyMO dependency) {
                 return id.equals(dependency.getId());
+            }
+        });
+        return dependencyMO;
+    }
+
+    protected DependencyMO getDependencyByName(List<DependencyMO> dependencies, final String name){
+        final DependencyMO dependencyMO = Functions.grepFirst(dependencies, new Functions.Unary<Boolean, DependencyMO>() {
+            @Override
+            public Boolean call(DependencyMO dependency) {
+                return name.equals(dependency.getName());
             }
         });
         return dependencyMO;

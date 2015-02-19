@@ -3,6 +3,7 @@ package com.l7tech.console.panels.bundles;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -16,6 +17,7 @@ import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.InvalidResource;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetNotFound;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.UniqueKeyConflict;
 import static com.l7tech.objectmodel.EntityType.JDBC_CONNECTION;
 
 /**
@@ -45,6 +47,11 @@ public class BundleConflictComponent extends JPanel {
     private JPanel existingEntityTitlePanel;
     private JPanel entityNotFoundTitlePanel;
     private JPanel resolutionErrorTitlePanel;
+    private JPanel deletedEntityTitlePanel;
+    private JPanel deletedEntityPanel;
+    private JButton selectAllExistingButton;
+    private JButton selectAllUpdateButton;
+    private JButton selectAllCreateButton;
 
     final private Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions;
 
@@ -60,7 +67,14 @@ public class BundleConflictComponent extends JPanel {
         // hide actionable title panels if there's no actionable content
         existingEntityTitlePanel.setVisible(existingEntityPanel.getComponentCount() > 0);
         entityNotFoundTitlePanel.setVisible(entityNotFoundPanel.getComponentCount() > 0);
+        deletedEntityTitlePanel.setVisible(deletedEntityPanel.getComponentCount() > 0);
         resolutionErrorTitlePanel.setVisible(resolutionErrorPanel.getComponentCount() > 0);
+
+        if (existingEntityTitlePanel.isVisible()) {
+            Utilities.buttonToLink(selectAllExistingButton);
+            Utilities.buttonToLink(selectAllUpdateButton);
+            Utilities.buttonToLink(selectAllCreateButton);
+        }
 
         // initialize to not show infoOnlyConflictPanel (until one of the info-only list below is not empty)
         infoOnlyConflictPanel.setVisible(false);
@@ -104,6 +118,9 @@ public class BundleConflictComponent extends JPanel {
 
         entityNotFoundPanel = new JPanel();
         entityNotFoundPanel.setLayout(new BoxLayout(entityNotFoundPanel, BoxLayout.Y_AXIS));
+
+        deletedEntityPanel = new JPanel();
+        deletedEntityPanel.setLayout(new BoxLayout(deletedEntityPanel, BoxLayout.Y_AXIS));
 
         resolutionErrorPanel = new JPanel();
         resolutionErrorPanel.setLayout(new BoxLayout(resolutionErrorPanel, BoxLayout.Y_AXIS));
@@ -162,14 +179,16 @@ public class BundleConflictComponent extends JPanel {
                         case TargetNotFound:
                             entityNotFoundPanel.add(targetDetail.getContentPane());
                             break;
+                        case EntityDeleted:
+                            deletedEntityPanel.add(targetDetail.getContentPane());
+                            break;
                         default:
-                            resolutionErrorPanel.add(new JLabel(migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() +
-                                    ", srcId=" + migrationErrorMapping.getSrcId() + ", " + migrationErrorMapping.getErrorMessage()));
+                            resolutionErrorPanel.add(new JLabel(migrationErrorMapping.getErrorMessage()));
                             break;
                     }
                 }
 
-                targetDetail.addMigrationError(migrationErrorMapping.getName(), migrationErrorMapping.getSrcId(), migrationErrorMapping.getPolicyResourceXml());
+                targetDetail.addMigrationError(migrationErrorMapping.getName(), migrationErrorMapping.getSrcId(), migrationErrorMapping.getPolicyResourceXml(), new JButton[]{selectAllExistingButton, selectAllUpdateButton, selectAllCreateButton});
             } catch (Exception e) {
                 logger.warning(ExceptionUtils.getMessage(e));
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),

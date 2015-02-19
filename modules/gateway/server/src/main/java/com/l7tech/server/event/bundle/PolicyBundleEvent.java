@@ -1,5 +1,7 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.server.policy.bundle.BundleUtils;
+
 public abstract class PolicyBundleEvent extends GatewayManagementRequestEvent {
     public PolicyBundleEvent(final Object source) {
         super(source);
@@ -15,6 +17,5 @@ public abstract class PolicyBundleEvent extends GatewayManagementRequestEvent {
 
     // - PRIVATE
 
-    private final static String BUNDLE_VERSION_SEPT_12 = "http://ns.l7tech.com/2012/09/policy-bundle";
-    protected String policyBundleVersionNs = BUNDLE_VERSION_SEPT_12;
+    protected String policyBundleVersionNs = BundleUtils.NS_BUNDLE;
 }

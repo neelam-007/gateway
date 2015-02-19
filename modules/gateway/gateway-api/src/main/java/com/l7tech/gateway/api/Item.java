@@ -24,6 +24,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = ActiveConnectorMO.class),
             @XmlElementRef(type = AssertionSecurityZoneMO.class),
             @XmlElementRef(type = TrustedCertificateMO.class),
+            @XmlElementRef(type = CassandraConnectionMO.class),
             @XmlElementRef(type = ClusterPropertyMO.class),
             @XmlElementRef(type = CustomKeyValueStoreMO.class),
             @XmlElementRef(type = ResourceDocumentMO.class),
@@ -58,7 +59,8 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = ItemsList.class),
             @XmlElementRef(type = Bundle.class),
             @XmlElementRef(type = UserMO.class),
-            @XmlElementRef(type = GroupMO.class)
+            @XmlElementRef(type = GroupMO.class),
+            @XmlElementRef(type = CertificateData.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "Resource", required = false)

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -149,6 +150,7 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
                 try {
                     E entity = convertFromMO(resource);
                     rbacAccessService.validatePermitted(entity, OperationType.CREATE);
+                    RestResourceFactoryUtils.validate(entity, Collections.<String, String>emptyMap());
 
                     beforeCreateEntity(entity);
                     Goid id = getEntityManager().save(entity);
@@ -179,6 +181,7 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
                 try {
                     E entity = convertFromMO(resource);
                     rbacAccessService.validatePermitted(entity, OperationType.CREATE);
+                    RestResourceFactoryUtils.validate(entity, Collections.<String, String>emptyMap());
 
                     Goid goid = Goid.parseGoid(id);
 
@@ -218,6 +221,7 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
                     updateEntity.setVersion(optional(oldEntity.getVersion()).orSome(VERSION_NOT_PRESENT));
 
                     rbacAccessService.validatePermitted(updateEntity, OperationType.UPDATE);
+                    RestResourceFactoryUtils.validate(updateEntity, Collections.<String, String>emptyMap());
 
                     beforeUpdateEntity(updateEntity);
                     getEntityManager().update(updateEntity);

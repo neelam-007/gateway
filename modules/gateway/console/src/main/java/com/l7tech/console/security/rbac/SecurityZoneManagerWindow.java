@@ -108,15 +108,16 @@ public class SecurityZoneManagerWindow extends JDialog {
         });
         ecc.setEntityDeleter(new EntityDeleter<SecurityZone>() {
             @Override
-            public void deleteEntity(SecurityZone entity) throws DeleteException {
+            public void deleteEntity(@NotNull SecurityZone entity) throws DeleteException {
                 Registry.getDefault().getRbacAdmin().deleteSecurityZone(entity);
                 flushCachedZones();
                 refreshTrees(entity);
                 loadModifiableEntityTypes();
             }
-
+        });
+        ecc.setEntityDeleteConfirmer( new EntityDeleteConfirmer<SecurityZone>() {
             @Override
-            public void displayDeleteDialog(final SecurityZone zone, final Functions.UnaryVoid<SecurityZone> afterDeleteListener) {
+            public void displayDeleteDialog( @NotNull final SecurityZone zone, @NotNull final Functions.UnaryVoid<SecurityZone> afterDeleteListener ) {
                 final Integer maxNameChars = Integer.valueOf(RESOURCES.getString(DELETE_CONFIRMATION_NAME_MAX_CHARS));
                 final String displayName = TextUtils.truncateStringAtEnd(zone.getName(), maxNameChars);
                 final String confirmation = RESOURCES.getString(DELETE_CONFIRMATION_PROERPTY);
@@ -141,8 +142,6 @@ public class SecurityZoneManagerWindow extends JDialog {
                             }
                         });
             }
-
-
         });
         ecc.setEntitySaver(new EntitySaver<SecurityZone>() {
             @Override

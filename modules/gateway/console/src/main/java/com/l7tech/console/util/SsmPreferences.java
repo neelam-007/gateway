@@ -78,6 +78,11 @@ public interface SsmPreferences {
      * toolbars property (icons, text, icons and text)
      */
     String POLICY_MSG_AREA_VISIBLE = "policy.msg.area.visible";
+    /**
+     * Policy editor panel "inputs and outputs" pane, which shows tables of input and output variables
+     * when editing the backing policy of an encapsulated assertion or a policy backed service
+     */
+    String POLICY_INPUTS_AND_OUTPUTS_VISIBLE = "policy.inputsAndOutputs.visible";
     // Screen size last time the app was started up
     String LAST_SCREEN_SIZE_WIDTH = "last.screen.size.width";
     String LAST_SCREEN_SIZE_HEIGHT = "last.screen.size.height";
@@ -351,11 +356,25 @@ public interface SsmPreferences {
     boolean isPolicyMessageAreaVisible();
 
     /**
+     * Returns the policy inputs and outputs panel visible property value.
+     *
+     * @return the policy inputs and outputs panel visible property value.
+     */
+    boolean isPolicyInputsAndOutputsVisible();
+
+    /**
      * Set the policy messages visible property value.
      *
      * @param b the shortcut bar visible
      */
     void setPolicyMessageAreaVisible(boolean b);
+
+    /**
+     * Set the policy editor inputs and outputs panel visible property value.
+     *
+     * @param b the policy editor inputs and outputs panel visible property value.
+     */
+    void setPolicyInputsAndOutputsVisible( boolean b );
 
     /**
      * prints this property list out to the specified output

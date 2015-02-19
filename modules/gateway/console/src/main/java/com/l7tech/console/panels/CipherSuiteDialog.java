@@ -89,7 +89,7 @@ public class CipherSuiteDialog extends JDialog {
         final CipherSuiteDialog dlg = new CipherSuiteDialog(owner, title, modalityType, cipherSuiteList, readOnly);
         dlg.setModal(true);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {

@@ -195,9 +195,15 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
 
             switch (column) {
                 case ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX:
-                    // Special note: the ordinal is used to determine the sequence of the logs as the timestamp's resolution is not adequate to resolve the order (ms).
-                    elementA = new Integer(((AssociatedLog) a).getOrdinal());
-                    elementB = new Integer(((AssociatedLog) b).getOrdinal());
+                    // Special note: the ordinal plus the time is used to determine the sequence of the logs as the timestamp's resolution is not adequate to resolve the order (ms).
+
+                    if(new Long(((AssociatedLog) a).getTimeStamp()).equals(new Long(((AssociatedLog) b).getTimeStamp()))){
+                        elementA = new Integer(((AssociatedLog) a).getOrdinal());
+                        elementB = new Integer(((AssociatedLog) b).getOrdinal());
+                    }else {
+                        elementA = new Long(((AssociatedLog) a).getTimeStamp());
+                        elementB = new Long(((AssociatedLog) b).getTimeStamp());
+                    }
                     break;
 
                 case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
@@ -245,6 +251,8 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 if (ascending) {
                     if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementA).compareTo((Integer) elementB);
+                    } else if (elementA instanceof Long && elementB instanceof Long) {
+                        return ((Long) elementA).compareTo((Long) elementB);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
@@ -254,6 +262,8 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 } else {
                      if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementB).compareTo((Integer) elementA);
+                    } else if (elementA instanceof Long && elementB instanceof Long) {
+                        return ((Long) elementB).compareTo((Long) elementA);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {

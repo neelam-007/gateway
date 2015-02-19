@@ -414,7 +414,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         WsdlUtil.rewriteReferences(service.getId(), service.getWsdlUrl(),
-                wsdlDoc, dependencies, wsdlProxyUri, errorHandler);
+                wsdlDoc, dependencies, wsdlProxyUri, errorHandler, true);
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {

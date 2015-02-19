@@ -73,7 +73,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
 
     @RbacAttribute
     @NotNull
-    @Size(min=1,max=128)
+    @Size(min=0,max=128)
     @Column(name="address",nullable=true)
     public String getAddress() {
         return address;
@@ -187,7 +187,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.clusterThreshold = clusterThreshold;
     }
 
-    @Size(min=1,max=256)
+    @Size(min=0,max=256)
     @Column(name="host_configuration")
     public String getHostConfiguration() {
         return hostConfiguration;
@@ -207,7 +207,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     }
 
     @RbacAttribute
-    @Size(min=1,max=256)
+    @Size(min=0,max=256)
     @Column(name="user_name")
     public String getUserName() {
         return userName;

@@ -156,6 +156,8 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
     public enum TransformType {
         BASE64_ENCODE("Base64 Encode", true, false, false, false),
         BASE64_DECODE("Base64 Decode", false, true, true, false),
+        BASE32_ENCODE("Base32 Encode", true, false, false, false),
+        BASE32_DECODE("Base32 Decode", false, true, true, false),
         HEX_ENCODE("Base16 Encode", true, false, false, false),
         HEX_DECODE("Base16 Decode",  false, true, true, false),
         URL_ENCODE("URL Encode", false, false, false, true),

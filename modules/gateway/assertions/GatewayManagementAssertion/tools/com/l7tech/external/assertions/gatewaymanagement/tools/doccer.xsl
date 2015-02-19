@@ -162,6 +162,19 @@
                                     <xsl:apply-templates select="wadl:request/wadl:param[@style='query']"/>
                                 </table>
                             </xsl:if>
+                            <xsl:if test="wadl:request/wadl:param[@style='header']">
+                                <table class="params-table" cellpadding="0" cellspacing="0">
+                                    <caption>Header Parameters</caption>
+                                    <tr>
+                                        <th>Param</th>
+                                        <th>Type</th>
+                                        <th>Default</th>
+                                        <th>Since</th>
+                                        <th>Description</th>
+                                    </tr>
+                                    <xsl:apply-templates select="wadl:request/wadl:param[@style='header']"/>
+                                </table>
+                            </xsl:if>
                         </xsl:if>
                         <xsl:apply-templates select="wadl:request/wadl:representation"/>
                     </div>
@@ -231,12 +244,12 @@
                     <xsl:value-of select="substring-after(@type,':')"/>
                 </xsl:if>
             </td>
-            <xsl:if test="@style='query'">
+            <xsl:if test="@style='query' or @style='header'">
                 <td>
                     <xsl:value-of select="@default"/>
                 </td>
             </xsl:if>
-            <xsl:if test="@style='query'">
+            <xsl:if test="@style='query' or @style='header'">
                 <td>
                     <xsl:value-of select="wadl:doc[@title='since']" disable-output-escaping="yes"/>
                 </td>

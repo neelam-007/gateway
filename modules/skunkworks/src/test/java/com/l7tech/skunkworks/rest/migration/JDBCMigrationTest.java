@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -114,13 +115,13 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -226,7 +227,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -285,7 +286,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -369,7 +370,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -431,7 +432,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -492,7 +493,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -553,7 +554,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -636,7 +637,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -699,7 +700,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -784,7 +785,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -845,7 +846,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -908,7 +909,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -997,7 +998,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1087,7 +1088,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1178,7 +1179,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1272,7 +1273,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1367,7 +1368,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1462,7 +1463,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1555,7 +1556,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1649,7 +1650,172 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the JDBC on the target
+        JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+        jdbcConnectionMO.setName(jdbcConnectionItem.getContent().getName() + "Updated");
+        jdbcConnectionMO.setEnabled(false);
+        jdbcConnectionMO.setDriverClass(jdbcConnectionItem.getContent().getDriverClass());
+        jdbcConnectionMO.setJdbcUrl(jdbcConnectionItem.getContent().getJdbcUrl());
+        jdbcConnectionMO.setConnectionProperties(jdbcConnectionItem.getContent().getConnectionProperties());
+        RestResponse response = getTargetEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
+
+        assertOkCreatedResponse(response);
+        Item<JDBCConnectionMO> jdbcConnectionCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        jdbcConnectionMO.setId(jdbcConnectionCreated.getId());
+        jdbcConnectionCreated.setContent(jdbcConnectionMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(jdbcConnectionCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(jdbcConnectionCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(jdbcConnectionCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(jdbcConnectionCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(jdbcConnectionCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("jdbcConnections/"+jdbcConnectionCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+    }
+
+    @Test
+    public void testImportNewEncryptSecrets() throws Exception {
+        Item<JDBCConnectionMO> jdbcConnectionItem2 = null;
+        Item<PolicyMO> policyItem2 = null;
+
+        RestResponse response;
+        try {
+            //create jdbc connection;
+            JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+            jdbcConnectionMO.setName("MyJDBCConnection2");
+            jdbcConnectionMO.setEnabled(false);
+            jdbcConnectionMO.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
+            jdbcConnectionMO.setJdbcUrl("jdbcUrl");
+            jdbcConnectionMO.setConnectionProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("password", "password")
+                    .put("user", "jdbcUserName")
+                    .map());
+            response = getSourceEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
+
+            assertOkCreatedResponse(response);
+
+            jdbcConnectionItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            jdbcConnectionItem2.setContent(jdbcConnectionMO);
+
+            //create policy;
+            PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+            PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyMO.setPolicyDetail(policyDetail);
+            policyDetail.setName("MyPolicy2");
+            policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+            policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+            policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("soap", false)
+                    .map());
+            ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+            policyMO.setResourceSets(Arrays.asList(resourceSet));
+            resourceSet.setTag("policy");
+            Resource resource = ManagedObjectFactory.createResource();
+            resourceSet.setResources(Arrays.asList(resource));
+            resource.setType("policy");
+            resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:JdbcQuery>\n" +
+                    "            <L7p:ConnectionName stringValue=\"MyJDBCConnection2\"/>\n" +
+                    "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
+                    "            <L7p:SqlQuery stringValue=\"select * from test;\"/>\n" +
+                    "        </L7p:JdbcQuery>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+
+            response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+            assertOkCreatedResponse(response);
+
+            policyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            policyItem2.setContent(policyMO);
+
+
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem2.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy, jdbcConnection", 2, bundleItem.getContent().getReferences().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(jdbcConnectionItem2.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem2.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+            response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getSourceEnvironment().processRequest("policies/" + policyItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+
     }
 }

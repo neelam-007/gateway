@@ -248,12 +248,30 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
         if (ec.getProperties() != null)
             er.setProperties(ec.getProperties());
         final List<EncapsulatedAssertionMO.EncapsulatedArgument> args = getEncapsulatedArgumentsList(ec);
-        if (args != null)
+        if (args != null) {
+            //sort the arguments by ordinal, or name if the ordinals match
+            Collections.sort(args, new Comparator<EncapsulatedAssertionMO.EncapsulatedArgument>() {
+                @Override
+                public int compare(EncapsulatedAssertionMO.EncapsulatedArgument arg1, EncapsulatedAssertionMO.EncapsulatedArgument arg2) {
+                    return (arg1.getOrdinal() < arg2.getOrdinal()) ? -1 : ((arg1.getOrdinal() == arg2.getOrdinal()) ? arg1.getArgumentName().compareTo(arg2.getArgumentName()) : 1);
+                }
+            });
             er.setEncapsulatedArguments(args);
+        }
         final List<EncapsulatedAssertionMO.EncapsulatedResult> results = getEncapsulatedResultsList(ec);
-        if (results != null)
+        if (results != null) {
+            //sort the results by their name.
+            Collections.sort(results, new Comparator<EncapsulatedAssertionMO.EncapsulatedResult>() {
+                @Override
+                public int compare(EncapsulatedAssertionMO.EncapsulatedResult result1, EncapsulatedAssertionMO.EncapsulatedResult result2) {
+                    return result1.getResultName().compareTo(result2.getResultName());
+                }
+            });
             er.setEncapsulatedResults(results);
-        er.setPolicyReference(new ManagedObjectReference(PolicyMO.class, ec.getPolicy().getId()));
+        }
+        if (ec.getPolicy() != null) {
+            er.setPolicyReference(new ManagedObjectReference(PolicyMO.class, ec.getPolicy().getId()));
+        }
 
         //handle SecurityZone
         doSecurityZoneAsResource( er, ec );

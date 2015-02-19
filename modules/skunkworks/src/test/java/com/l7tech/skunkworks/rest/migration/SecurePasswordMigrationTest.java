@@ -5,12 +5,15 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.HexUtils;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -22,10 +25,12 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -112,10 +117,10 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("policies/" , HttpMethod.GET, null, "");
         response = getTargetEnvironment().processRequest("passwords/" , HttpMethod.GET, null, "");
@@ -259,7 +264,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -348,7 +353,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -400,7 +405,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -557,7 +562,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -644,7 +649,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -732,7 +737,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -855,7 +860,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -979,7 +984,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1104,7 +1109,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1225,7 +1230,191 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
+        }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the secure password on the target
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("TargetPassword");
+        storedPasswordMO.setPassword("targetpassword");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", false)
+                .put("type", "Password")
+                .map());
+        RestResponse response = getTargetEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+
+        assertOkCreatedResponse(response);
+        Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        storedPasswordMO.setId(passwordCreated.getId());
+        passwordCreated.setContent(storedPasswordMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(passwordCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(passwordCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(passwordCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(passwordCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(passwordCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+    }
+
+    @Test
+    public void testImportSecretsNew() throws Exception {
+        //create another secure password to export;
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("SourcePassword2");
+        storedPasswordMO.setPassword("password");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", false)
+                .put("type", "Password")
+                .map());
+        RestResponse response = getSourceEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+        assertOkCreatedResponse(response);
+        Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("SourcePolicy2");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:FtpRoutingAssertion>\n" +
+                        "            <L7p:Arguments stringValue=\"Args\"/>\n" +
+                        "            <L7p:CredentialsSource credentialsSource=\"specified\"/>\n" +
+                        "            <L7p:Directory stringValue=\"Dir\"/>\n" +
+                        "            <L7p:DownloadedContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+                        "            <L7p:FileNameSource fileNameSource=\"argument\"/>\n" +
+                        "            <L7p:FtpMethod ftpCommand=\"RETR\"/>\n" +
+                        "            <L7p:HostName stringValue=\"myHost\"/>\n" +
+                        "            <L7p:PasswordGoid goidValue=\""+passwordCreated.getId()+"\"/>\n" +
+                        "            <L7p:ResponseTarget MessageTarget=\"included\">\n" +
+                        "                <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "            </L7p:ResponseTarget>\n" +
+                        "            <L7p:Security security=\"ftp\"/>\n" +
+                        "            <L7p:UserName stringValue=\"myUser\"/>\n" +
+                        "        </L7p:FtpRoutingAssertion>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        resource.setContent(policyXml);
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkCreatedResponse(response);
+        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        try {
+
+            Map<String, String> passphraseHeader = CollectionUtils.<String, String>mapBuilder().put("L7-key-passphrase", HexUtils.encodeBase64("password".getBytes(Charsets.UTF8))).map();
+
+            response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "encryptSecrets=true", HttpMethod.GET, null, "", passphraseHeader);
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 4 items. 2 policy, and 2 secure password", 4, bundleItem.getContent().getReferences().size());
+
+            //verify the secure password MO to contains a password.
+            StoredPasswordMO passwordMO = ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent());
+            assertNotNull(passwordMO.getPassword());
+            assertNotNull(passwordMO.getPasswordBundleKey());
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()), passphraseHeader);
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 5 mappings after the import",5, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            Mapping password2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), password2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, password2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, password2Mapping.getActionTaken());
+            Assert.assertEquals(passwordCreated.getId(), password2Mapping.getSrcId());
+            Assert.assertEquals(password2Mapping.getSrcId(), password2Mapping.getTargetId());
+
+            Mapping policy2Mapping = mappings.getContent().getMappings().get(4);
+            Assert.assertEquals(EntityType.POLICY.toString(), policy2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policy2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policy2Mapping.getActionTaken());
+            Assert.assertEquals(policyCreated.getId(), policy2Mapping.getSrcId());
+            Assert.assertEquals(policy2Mapping.getSrcId(), policy2Mapping.getTargetId());
+
+            validate(mappings);
+        }finally{
+            response = getSourceEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
+            assertOkEmptyResponse(response);
+            response = getSourceEnvironment().processRequest("policies/"+policyCreated.getId(), HttpMethod.DELETE, null,"");
+            assertOkEmptyResponse(response);
+
         }
     }
 }

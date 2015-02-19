@@ -1,9 +1,11 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -41,6 +43,70 @@ import static org.junit.Assert.*;
 public class ManagedObjectTest {
 
     //- PUBLIC
+
+    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/04/gateway-management";
+    // Managed objects added in rev 2 of the API, these won't work with a rev 1 schema
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS_2 = list(
+            InterfaceTagMO.class,
+            ListenPortMO.class,
+            PrivateKeyCreationContext.class,
+            PrivateKeyExportContext.class,
+            PrivateKeyExportResult.class,
+            PrivateKeyGenerateCsrContext.class,
+            PrivateKeyGenerateCsrResult.class,
+            PrivateKeyImportContext.class,
+            PrivateKeySpecialPurposeContext.class,
+            RevocationCheckingPolicyMO.class,
+            StoredPasswordMO.class
+    );
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = list(
+            ClusterPropertyMO.class,
+            FolderMO.class,
+            IdentityProviderMO.class,
+            InterfaceTagMO.class,
+            JDBCConnectionMO.class,
+            JMSDestinationMO.class,
+            ListenPortMO.class,
+            PolicyExportResult.class,
+            PolicyImportContext.class,
+            PolicyImportResult.class,
+            PolicyMO.class,
+            PolicyValidationContext.class,
+            PolicyValidationResult.class,
+            PrivateKeyCreationContext.class,
+            PrivateKeyExportContext.class,
+            PrivateKeyExportResult.class,
+            PrivateKeyGenerateCsrContext.class,
+            PrivateKeyGenerateCsrResult.class,
+            PrivateKeyImportContext.class,
+            PrivateKeySpecialPurposeContext.class,
+            PrivateKeyMO.class,
+            ResourceDocumentMO.class,
+            RevocationCheckingPolicyMO.class,
+            ServiceMO.class,
+            StoredPasswordMO.class,
+            TrustedCertificateMO.class
+    );
+    private static final String CERT_BOB_PEM =
+                "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
+                "MQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENB\n" +
+                "MB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FT\n" +
+                "SVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANC\n" +
+                "b2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8Ck\n" +
+                "SU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNU\n" +
+                "JCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVN\n" +
+                "BR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAq\n" +
+                "MCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1Ud\n" +
+                "DwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0j\n" +
+                "BBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiV\n" +
+                "Gv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVts\n" +
+                "ucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuW\n" +
+                "EIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7\n" +
+                "TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS\n" +
+                "4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9\n" +
+                "OHw6fC+3hkqolFd5CVI=";
+    private JAXBContext context;
+    private boolean debug = false;
 
     @Before
     public void init() throws Exception {
@@ -219,7 +285,7 @@ public class ManagedObjectTest {
         assertEquals("version", Integer.valueOf( 0 ), roundTripped.getVersion());
         assertNotNull("details", roundTripped.getJmsDestinationDetail());
         assertNotNull("connection", roundTripped.getJmsConnection());
-        
+
         assertEquals("details id", "1", roundTripped.getJmsDestinationDetail().getId());
         assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsDestinationDetail().getVersion());
         assertEquals("details enabled", true, roundTripped.getJmsDestinationDetail().isEnabled());
@@ -330,7 +396,7 @@ public class ManagedObjectTest {
         final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag( "policy" );
         resourceSet.setResources( Collections.singletonList(resource) );
-        
+
         final PolicyMO policy = ManagedObjectFactory.createPolicy();
         policy.setId( "pol1" );
         policy.setGuid( "e0913198-afbc-44f4-84e4-699ab38256c4" );
@@ -483,6 +549,7 @@ public class ManagedObjectTest {
         assertArrayEquals( "pkcs12Data", new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 }, roundTripped.getPkcs12Data() );
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
     }
+
     @Test
     public void testPrivateKeySpecialPurposeRequestSerialization() throws Exception {
         final PrivateKeySpecialPurposeContext privateKeySpecialPurposeRequest = new PrivateKeySpecialPurposeContext();
@@ -626,6 +693,51 @@ public class ManagedObjectTest {
         assertEquals("version", (Integer)Integer.MAX_VALUE, roundTripped.getVersion());
         assertEquals("name", "test", roundTripped.getName());
         assertEquals("properties", Collections.<String,Object>singletonMap( "lastUpdated", updated ), roundTripped.getProperties());
+    }
+    
+    @Test
+    public void testStoredPasswordCompatiblePre83Marshalling() throws Exception {
+        // tests that
+        final String xml =
+                "<l7:StoredPassword id=\"7160eb7213c92e2e5df2690897ac67a9\" version=\"1\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:Name>test</l7:Name>\n" +
+                        "    <l7:Password>password</l7:Password>\n" +
+                        "    <l7:Properties>\n" +
+                        "        <l7:Property key=\"description\">\n" +
+                        "            <l7:StringValue>password</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"lastUpdated\">\n" +
+                        "            <l7:DateValue>2015-01-07T12:22:52.906-08:00</l7:DateValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"type\">\n" +
+                        "            <l7:StringValue>Password</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "    </l7:Properties>\n" +
+                        "</l7:StoredPassword>";
+
+        final StoredPasswordMO storedPassword = ManagedObjectFactory.read(xml,StoredPasswordMO.class);
+
+        assertEquals("id","7160eb7213c92e2e5df2690897ac67a9", storedPassword.getId());
+        assertEquals("version",1, storedPassword.getVersion().intValue());
+        assertEquals("password","password", storedPassword.getPassword());
+        assertEquals("password key",null, storedPassword.getPasswordBundleKey());
+        assertEquals("name", "test", storedPassword.getName());
+    }
+
+    @Test
+    public void testStorePasswordWithEncryptedPassword() throws Exception {
+        final StoredPasswordMO storedPassword = ManagedObjectFactory.createStoredPassword();
+        storedPassword.setPassword("pass","key");
+        storedPassword.setName("name");
+        storedPassword.setVersion(3);
+        storedPassword.setProperties(CollectionUtils.<String,Object>mapBuilder().put("key","value").map());
+        StoredPasswordMO passwordRoundtrip = ManagedObjectFactory.read(ManagedObjectFactory.write(storedPassword),StoredPasswordMO.class);
+
+        Assert.assertEquals("id", storedPassword.getId(), passwordRoundtrip.getId());
+        Assert.assertEquals("version", storedPassword.getVersion().intValue(), passwordRoundtrip.getVersion().intValue());
+        Assert.assertEquals("password", storedPassword.getPassword(), passwordRoundtrip.getPassword());
+        Assert.assertEquals("password key", storedPassword.getPasswordBundleKey(), passwordRoundtrip.getPasswordBundleKey());
+        Assert.assertEquals("name", storedPassword.getName(), passwordRoundtrip.getName());
     }
 
     @Test
@@ -835,7 +947,7 @@ public class ManagedObjectTest {
         assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
         assertNull( "resource set[0] resources[0] source url", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getSourceUrl() );
     }
-    
+
     @Test
     public void testPolicyValidationResultSerialization() throws Exception {
         final List<PolicyValidationResult.PolicyValidationMessage> messages = new ArrayList<PolicyValidationResult.PolicyValidationMessage>();
@@ -996,7 +1108,7 @@ public class ManagedObjectTest {
         trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData() );
         trustedCertificate.getCertificateData().setEncoded( new byte[]{ (byte) 0 } );
         trustedCertificate.setProperties( properties );
-        
+
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
@@ -1019,6 +1131,8 @@ public class ManagedObjectTest {
     public void testUnmarshalFull() throws Exception {
         testUnmarshal("full");
     }
+
+    //- PRIVATE
 
     @Test
     public void testUnmarshalMinimal() throws Exception {
@@ -1121,76 +1235,6 @@ public class ManagedObjectTest {
     public void testTestMetadata() {
         assertTrue( "All v2 managed objects must be in the main list", MANAGED_OBJECTS.containsAll( MANAGED_OBJECTS_2 ) );
     }
-
-    //- PRIVATE
-
-    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/04/gateway-management";
-
-    // Managed objects added in rev 2 of the API, these won't work with a rev 1 schema
-    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS_2 = list(
-            InterfaceTagMO.class,
-            ListenPortMO.class,
-            PrivateKeyCreationContext.class,
-            PrivateKeyExportContext.class,
-            PrivateKeyExportResult.class,
-            PrivateKeyGenerateCsrContext.class,
-            PrivateKeyGenerateCsrResult.class,
-            PrivateKeyImportContext.class,
-            PrivateKeySpecialPurposeContext.class,
-            RevocationCheckingPolicyMO.class,
-            StoredPasswordMO.class
-    );
-
-    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = list(
-            ClusterPropertyMO.class,
-            FolderMO.class,
-            IdentityProviderMO.class,
-            InterfaceTagMO.class,
-            JDBCConnectionMO.class,
-            JMSDestinationMO.class,
-            ListenPortMO.class,
-            PolicyExportResult.class,
-            PolicyImportContext.class,
-            PolicyImportResult.class,
-            PolicyMO.class,
-            PolicyValidationContext.class,
-            PolicyValidationResult.class,
-            PrivateKeyCreationContext.class,
-            PrivateKeyExportContext.class,
-            PrivateKeyExportResult.class,
-            PrivateKeyGenerateCsrContext.class,
-            PrivateKeyGenerateCsrResult.class,
-            PrivateKeyImportContext.class,
-            PrivateKeySpecialPurposeContext.class,
-            PrivateKeyMO.class,
-            ResourceDocumentMO.class,
-            RevocationCheckingPolicyMO.class,
-            ServiceMO.class,
-            StoredPasswordMO.class,
-            TrustedCertificateMO.class
-    );
-
-    private static final String CERT_BOB_PEM =
-                "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
-                "MQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENB\n" +
-                "MB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FT\n" +
-                "SVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANC\n" +
-                "b2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8Ck\n" +
-                "SU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNU\n" +
-                "JCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVN\n" +
-                "BR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAq\n" +
-                "MCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1Ud\n" +
-                "DwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0j\n" +
-                "BBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiV\n" +
-                "Gv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVts\n" +
-                "ucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuW\n" +
-                "EIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7\n" +
-                "TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS\n" +
-                "4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9\n" +
-                "OHw6fC+3hkqolFd5CVI=";
-
-    private JAXBContext context;
-    private boolean debug = false;
 
     private Collection<Class<?>> getJAXBTypes() throws Exception {
         final Collection<Class<?>> typeClasses = new ArrayList<Class<?>>();

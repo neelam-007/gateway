@@ -244,6 +244,19 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         super.delete(policy);
     }
 
+    /**
+     * This will delete without validating the policy usages in the policy cache.
+     * This is used in the bundle imported because the cache while within a transaction.
+     * DO NOT USE unless you have a good reason for it.
+     *
+     * @param policy The policy to delete.
+     * @throws DeleteException
+     */
+    @Override
+    public void deleteWithoutValidation(final Policy policy) throws DeleteException {
+        super.delete(policy);
+    }
+
     @Override
     @Transactional(readOnly=true)
     public Collection<PolicyHeader> findHeadersByType(final PolicyType type) throws FindException {

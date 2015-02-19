@@ -728,7 +728,7 @@
             <param name="idea.configwiz.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.pcconfig.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Controller&quot;"/>
             <param name="idea.client.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.manager.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.manager.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.console.remoteInvocationTracing=true"/>
             <param name="idea.controller.home" expression="${dev.deploy.dir}/Controller"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
@@ -3026,6 +3026,7 @@
                 <mkdir dir="@{dir}/etc/profile.d"/>
                 <mkdir dir="@{dir}/etc/snmp"/>
                 <mkdir dir="@{dir}/etc/sysconfig"/>
+                <mkdir dir="@{dir}/etc/skel_ssg"/>
                 <mkdir dir="@{dir}/${install.src.app.bin}" />
                 <mkdir dir="@{dir}/${install.src.app.etc}" />
                 <mkdir dir="@{dir}/${install.src.app.firewall}" />
@@ -3035,7 +3036,7 @@
                 <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
                 <mkdir dir="@{dir}/${install.src.app.ssgprofile}"/>
                 <mkdir dir="@{dir}/${install.src.app.configdir}"/>
-                <mkdir dir="@{dir}/${install.src.app.configlogs}"/>
+                <mkdir dir="@{dir}/${install.src.app.configlogs}"/>                
                 <!--<mkdir dir="@{dir}/${install.src.app.scaconfig}"/>-->
 
                 <!--copy the system config wizard -->
@@ -3062,6 +3063,7 @@
                 <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
                 <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
                 <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
+                <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/etc/skel_ssg/.bash_profile"/>
 
                 <copy todir="@{dir}/${install.src.app.libexec}">
                     <fileset dir="${src.root}/etc/appliance">
@@ -3202,6 +3204,8 @@
                 <mkdir dir="@{dir}/${install.src.ssg.liquibase}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
+                <mkdir dir="@{dir}/${install.src.ssg.modstaging.modular}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.modstaging.custom}"/>
 
                 <!--copy the config wizard -->
                 <copy todir="@{dir}/${install.src.ssg.configwizard}">
@@ -3222,6 +3226,20 @@
                 <!-- Copy bundled modular assertions -->
                 <copy todir="@{dir}/${install.src.ssg.aarmods}">
                     <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
+                </copy>
+
+                <!-- Copy prebuilt modular assertions -->
+                <copy todir="@{dir}/${install.src.ssg.aarmods}" flatten="true">
+                    <fileset dir="${src.root}/lib/prebuilt/modass" includes="**/*.aar" excludes="*-client-*.aar"/>
+                </copy>
+
+                <!-- Copy prebuilt custom assertions -->
+                <copy todir="@{dir}/${install.src.ssg.calibs}" flatten="true">
+                    <fileset dir="${src.root}/lib/prebuilt/customassertions">
+                        <include name="**/*.jar"/>
+                        <include name="**/*.properties"/>
+                    </fileset>
+
                 </copy>
 
                 <!-- Copy modified / new files -->

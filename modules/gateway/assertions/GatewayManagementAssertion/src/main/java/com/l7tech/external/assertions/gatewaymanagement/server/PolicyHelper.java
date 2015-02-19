@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -36,6 +37,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.globalresources.HttpConfigurationManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
@@ -228,6 +230,7 @@ public class PolicyHelper {
         // Get request values
         PolicyType policyType = getPolicyType( policyValidationContext.getPolicyType() );
         String policyInternalTag = null;
+        String policyInternalSubTag = null;
         boolean soap = isSoap( policyValidationContext.getProperties() );
         SoapVersion soapVersion = soap ? getSoapVersion( policyValidationContext.getProperties() ) : null;
         final Map<String, ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( policyValidationContext.getResourceSets() );
@@ -245,6 +248,7 @@ public class PolicyHelper {
             }
             policyType = policy.getType();
             policyInternalTag = policy.getInternalTag();
+            policyInternalSubTag = policy.getInternalSubTag();
             soap = policy.isSoap();
             wsdl = resolver.resolveWsdl();
             soapVersion = resolver.resolveSoapVersion();
@@ -253,7 +257,9 @@ public class PolicyHelper {
         // Run the validator
         final PolicyValidatorResult result;
         try {
-            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, wsdl, soap, soapVersion), licenseManager );
+            com.l7tech.policy.validator.PolicyValidationContext pvc = new com.l7tech.policy.validator.PolicyValidationContext( policyType, policyInternalTag, policyInternalSubTag, wsdl, soap, soapVersion );
+            // TODO pvc.setInterfaceDescription( ...use interface desc passed-in or looked up in DB... );  // so Input vars don't show warnings for "used without being set" etc.
+            result = policyValidator.validate( assertion, pvc, licenseManager );
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new ResourceFactory.ResourceAccessException(e);
@@ -374,6 +380,7 @@ public class PolicyHelper {
         private final RoleManager roleManager;
         private final SecurePasswordManager securePasswordManager;
         private final CustomKeyValueStoreManager customKeyValueStoreManager;
+        private final CassandraConnectionEntityManager cassandraEntityManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -394,7 +401,8 @@ public class PolicyHelper {
                                                final HttpConfigurationManager httpConfigurationManager,
                                                final RoleManager roleManager,
                                                final SecurePasswordManager securePasswordManager,
-                                               final CustomKeyValueStoreManager customKeyValueStoreManager) {
+                                               final CustomKeyValueStoreManager customKeyValueStoreManager,
+                                               final CassandraConnectionEntityManager cassandraEntityManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -415,6 +423,7 @@ public class PolicyHelper {
             this.roleManager = roleManager;
             this.securePasswordManager = securePasswordManager;
             this.customKeyValueStoreManager = customKeyValueStoreManager;
+            this.cassandraEntityManager = cassandraEntityManager;
         }
 
         private User getUser() {
@@ -525,6 +534,11 @@ public class PolicyHelper {
         @Override
         public JdbcConnection getJdbcConnection( final String name ) throws FindException {
             return filter( jdbcConnectionManager.findByUniqueName( name ) );
+        }
+
+        @Override
+        public CassandraConnection getCassandraConnection(final String name) throws FindException {
+            return filter(cassandraEntityManager.findByUniqueName(name));
         }
 
         @Override

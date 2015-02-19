@@ -158,7 +158,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
         }
 
         @Override
-        protected <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException {
+        protected <OUT> Future<OUT> mutateKeystore(final boolean useCurrentThread, Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException {
             OUT out;
             try {
                 out = mutator.call();

@@ -2,40 +2,57 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.policy.GenericEntity;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.*;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.audit.AuditsCollector;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.AuditsCollector;
 import com.l7tech.server.bundling.exceptions.BundleImportException;
 import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.PolicyAliasManager;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.processors.DependencyProcessorUtils;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.service.AliasManager;
+import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
@@ -48,7 +65,12 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,9 +97,25 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     @Inject
     private ServiceManager serviceManager;
     @Inject
+    private RoleManager roleManager;
+    @Inject
     private PolicyVersionManager policyVersionManager;
     @Inject
     private AuditContextFactory auditContextFactory;
+    @Inject
+    private SsgKeyStoreManager keyStoreManager;
+    @Inject
+    private SsgKeyStoreManager ssgKeyStoreManager;
+    @Inject
+    private ServiceAliasManager serviceAliasManager;
+    @Inject
+    private PolicyAliasManager policyAliasManager;
+    @Inject
+    private ClusterPropertyManager clusterPropertyManager;
+    @Inject
+    private ClientCertManager clientCertManager;
+    @Inject
+    private PolicyCache policyCache;
 
 
     /**
@@ -104,7 +142,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         List<EntityMappingResult> results =  AuditContextUtils.doWithAuditsCollector(collector, new Functions.Nullary<List<EntityMappingResult>>() {
             @Override
             public List<EntityMappingResult> call(){
-                return doImportBundle(bundle, test, activate, versionComment);
+                List<EntityMappingResult> results =  doImportBundle(bundle, test, activate, versionComment);
+                return results;
             }
         });
 
@@ -125,6 +164,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return Functions.exists(results, new Functions.Unary<Boolean, EntityMappingResult>() {
             @Override
             public Boolean call(EntityMappingResult mapping) {
+                //noinspection ThrowableResultOfMethodCallIgnored
                 return mapping.getException() != null;
             }
         });
@@ -138,23 +178,30 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return tt.execute(new TransactionCallback<List<EntityMappingResult>>() {
             @Override
             public List<EntityMappingResult> doInTransaction(final TransactionStatus transactionStatus) {
+                logger.log(Level.FINEST, "Importing Bundle. # Mappings: " + bundle.getMappingInstructions().size());
                 //This is the list of mappings to return.
                 final List<EntityMappingResult> mappingsRtn = new ArrayList<>(bundle.getMappingInstructions().size());
                 //This is a map of entities in the entity bundle to entities that are updated or created on the gateway.
                 final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 //loop through each mapping instruction to perform the action.
+                final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
+                //keeps track of policies deleted so far
+                final Set<Goid> deletedPolicyIds = new HashSet<>();
+                int progressCounter = 1;
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
+                    logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
+
                     //Get the entity that this mapping is for from the bundle
-                    final EntityContainer entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
+                    final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
                     try {
-                        //Find an existing entity to map it to.
+                        //Find an existing entity to map it to only if we are not ignoring this mapping.
                         @Nullable
-                        final Entity existingEntity = locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), resourceMapping);
+                        final Entity existingEntity = EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction()) ? null : locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), resourceMapping);
                         @NotNull
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
                             //Use the existing entity
-                            if (mapping.shouldFailOnExisting()) {
+                            if (mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                                 mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
@@ -173,41 +220,63 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
                                         //SSG-9047 This is always create new so in the case that there is an existing entity and the GUID's match we need to generate a new GUID for the newly imported entity.
                                         final boolean resetGuid = entity != null && entity.getEntity() instanceof GuidEntity && ((GuidEntity) entity.getEntity()).getGuid() != null && ((GuidEntity) entity.getEntity()).getGuid().equals(((GuidEntity) existingEntity).getGuid());
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment, resetGuid);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment, resetGuid, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
                                     case Ignore:
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader());
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
+                                        break;
+                                    case Delete:
+                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
                                         break;
                                     default:
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, "Unknown mapping action " + mapping.getMappingAction()));
                                 }
                             }
                         } else {
-                            if (mapping.shouldFailOnNew()) {
-                                mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target."));
+                            if (mapping.shouldFailOnNew() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
+                                mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
                             } else {
                                 switch (mapping.getMappingAction()) {
                                     case NewOrExisting:
-                                    case NewOrUpdate:
-                                    case AlwaysCreateNew: {
+                                    case NewOrUpdate: {
                                         //Create a new entity based on the one in the bundle
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getGoid(), mapping, resourceMapping, null, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
+                                                //use the target id if specified, otherwise use the source id
+                                                mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType()) && mapping.getTargetMapping().getTargetID() != null ? mapping.getTargetMapping().getTargetID() : mapping.getSourceEntityHeader().getStrId(),
+                                                mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
+                                        break;
+                                    }
+                                    case AlwaysCreateNew: {
+                                        String id = entity.getEntity().getId();
+                                        //Create a new entity based on the one in the bundle with a different id if one with same id exists
+                                        if(entityCrud.find(new EntityHeader(entity.getEntity().getId(), (EntityType)entity.getId().right, null, null)) != null){
+                                            id = null;
+                                        }
+
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
+                                                id,
+                                                mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
                                     case Ignore:
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader());
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
+                                        break;
+                                    case Delete:
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     default:
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, "Unknown mapping action " + mapping.getMappingAction()));
@@ -215,20 +284,60 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         }
                         mappingsRtn.add(mappingResult);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
                         transactionStatus.setRollbackOnly();
                     }
                 }
 
-                //need to process generic entities at the end so that cyclical dependencies can be properly replaced
-                replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
+                // Do not attempt these post bundle import tasks if the bundle import fail. It will create misleading error messages in the bundle results.
+                if (!containsErrors(mappingsRtn)) {
+                    //need to process generic entities at the end so that cyclical dependencies can be properly replaced
+                    replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
 
-                //need to process revocation check policies again at the end so that cyclical dependencies can be properly replaced
-                replaceRevocationCheckingPolicyDependencies(mappingsRtn, resourceMapping);
+                    //need to process revocation check policies again at the end so that cyclical dependencies can be properly replaced
+                    replaceRevocationCheckingPolicyDependencies(mappingsRtn, resourceMapping);
 
-                // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
-                replacePolicyDependencies(mappingsRtn, resourceMapping);
+                    // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
+                    replacePolicyDependencies(mappingsRtn, resourceMapping);
+                }
+
+                // if no test/errors do private key operations
+                if(!test && !containsErrors(mappingsRtn)){
+                    final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                    tt.setReadOnly(false);
+                    tt.execute(new TransactionCallback<Void>() {
+                        @Override
+                        public Void doInTransaction(final TransactionStatus transactionStatus) {
+                                for(final EntityHeader header : cachedPrivateKeyOperations.keySet()){
+                                    // update mapping
+                                    EntityMappingResult mapping = Functions.grepFirst(mappingsRtn, new Functions.Unary<Boolean, EntityMappingResult>() {
+                                        @Override
+                                        public Boolean call(EntityMappingResult entityMappingResult) {
+                                            return entityMappingResult.getSourceEntityHeader().equals(header);
+                                        }
+                                    });
+                                    if(mapping == null) {
+                                        //this shouldn't really happen.
+                                        throw new IllegalStateException("Could not find mapping result for " + header.toStringVerbose());
+                                    }
+                                    try {
+                                        try{
+                                            cachedPrivateKeyOperations.get(header).call();
+                                        } finally {
+                                            //flush the transaction so that any error get thrown now.
+                                            transactionStatus.flush();
+                                        }
+                                    } catch (Throwable e) {
+                                        mapping.makeExceptional(e);
+                                        transactionStatus.setRollbackOnly();
+                                    }
+                                }
+                            return null;
+                        }
+                    });
+                }
+
 
                 if (test || containsErrors(mappingsRtn)) {
                     transactionStatus.setRollbackOnly();
@@ -236,6 +345,167 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return mappingsRtn;
             }
         });
+    }
+
+    /**
+     * Returns an entity container form the entity bundle using the given mapping
+     *
+     * @param mapping The mapping to find the entity container for
+     * @param bundle  The bundle to find the entity container in
+     * @return The entity container for this mapping. Or null if there isn't one in the bundle.
+     */
+    //TODO: This is shared with BundleTransformer need to make it common
+    @Nullable
+    private EntityContainer getEntityContainerFromBundle(@NotNull final EntityMappingInstructions mapping, @NotNull final EntityBundle bundle) {
+        final String id;
+        if (EntityType.ASSERTION_ACCESS.equals(mapping.getSourceEntityHeader().getType())) {
+            id = mapping.getSourceEntityHeader().getName();
+        } else {
+            id = mapping.getSourceEntityHeader().getStrId();
+        }
+        return id == null ? null : bundle.getEntity(id, mapping.getSourceEntityHeader().getType());
+    }
+
+    /**
+     * This will attempt to delete the given entity from the gateway.
+     *
+     * @param entity The entity to delete
+     * @param deletedPolicyIds policies deleted so far.
+     * @return The entity header of the deleted entity
+     * @throws DeleteException This is thrown if there was an error attempting to delete the entity
+     */
+    private EntityHeader deleteEntity(@NotNull final Entity entity, @NotNull final EntityMappingInstructions mapping,
+                                      @NotNull final Map<EntityHeader, Callable<String>> cachedPrivateKeyOperations, @NotNull final Set<Goid> deletedPolicyIds) throws IncorrectMappingInstructionsException, DeleteException {
+        // Create the manage entity within a transaction so that it can be flushed after it is created.
+        // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
+        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+        tt.setReadOnly(false);
+        final Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader> headerOrException = tt.execute(new TransactionCallback<Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader>>() {
+            @Override
+            public Either<Either<DeleteException, IncorrectMappingInstructionsException>, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
+                try {
+                    try {
+                        if (EntityType.SSG_KEY_ENTRY == EntityType.findTypeByEntity(entity.getClass())) {
+                            // check entity exists
+                            final int sepIndex = entity.getId().indexOf(":");
+                            if (sepIndex < 0) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot delete private key. Invalid key id: " + entity.getId() + ". Expected id with format: <keystoreId>:<alias>")));
+                            }
+                            final String keyStoreId = entity.getId().substring(0, sepIndex);
+                            final String keyAlias = entity.getId().substring(sepIndex + 1);
+                            final SsgKeyFinder keyStore;
+                            try {
+                                keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
+                                if (!keyStore.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE))
+                                    return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot delete from hardware keystore via migration: " + keyStore.getType())));
+                            } catch (FindException | KeyStoreException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find keystore with id: " + keyStoreId, e)));
+                            }
+
+                            cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
+                                @Override
+                                public String call() throws Exception {
+                                    //need to specially handle deletion of ssg key entries
+                                    try {
+                                        keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
+                                        return null;
+                                    } catch (KeyStoreException e) {
+                                        throw new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias, e);
+                                    }
+                                }
+                            });
+
+                        } else if (entity instanceof Identity) {
+                            //need to specially handle deletion of identity entities
+                            final Goid providerId = ((Identity) entity).getProviderId();
+                            final IdentityProvider identityProvider;
+                            try {
+                                identityProvider = identityProviderFactory.getProvider(providerId);
+                            } catch (FindException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find identity provider with id: " + providerId, e)));
+                            }
+                            try {
+                                if (entity instanceof Group) {
+                                    identityProvider.getGroupManager().delete((Group) entity);
+                                } else if (entity instanceof User) {
+                                    identityProvider.getUserManager().delete((User) entity);
+                                }
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(e));
+                            }
+                        } else if (entity instanceof InterfaceTag) {
+                            try {
+                                final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
+
+                                final Set<InterfaceTag> interfaceTags = new HashSet<>();
+                                if (interfaceTagsClusterProperty != null) {
+                                    interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
+
+                                    //remove the existing interface tag from the list (returns all but the existing)
+                                    Set<InterfaceTag> interfaceTagsWithoutExisting = new HashSet<>(Functions.grep(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
+                                        @Override
+                                        public Boolean call(InterfaceTag interfaceTagExisting) {
+                                            return !(((InterfaceTag) entity).getName()).equals(interfaceTagExisting.getName());
+                                        }
+                                    }));
+                                    //resaves the interface tags with the existing removed.
+                                    clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTagsWithoutExisting));
+                                }
+                            } catch (ObjectModelException | ParseException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find interface tag: " + ((InterfaceTag) entity).getName(), e)));
+                            }
+                        } else if (entity instanceof Role && !((Role) entity).isUserCreated()) {
+                            return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete system role '" + ((Role) entity).getName() + "' with Id " + entity.getId())));
+                        } else if (entity instanceof Folder && Goid.equals(Folder.ROOT_FOLDER_ID, ((Folder) entity).getGoid())) {
+                            return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Cannot delete the root folder")));
+                        } else if (entity instanceof Policy) {
+                            //validate that it is not used by things that have not been deleted.
+                            final Set<Policy> usages = policyCache.findUsages(((Policy) entity).getGoid());
+                            final Policy policyUsed = Functions.grepFirst(usages, new Functions.Unary<Boolean, Policy>() {
+                                @Override
+                                public Boolean call(Policy policy) {
+                                    return !deletedPolicyIds.contains(policy.getGoid());
+                                }
+                            });
+                            if(policyUsed != null){
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete policy, it is being used by: " + EntityHeaderUtils.fromEntity(policyUsed).toStringVerbose())));
+                            }
+                            try {
+                                policyManager.deleteWithoutValidation((Policy) entity);
+                                deletedPolicyIds.add(((Policy) entity).getGoid());
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete policy", e)));
+                            }
+                        } else if (entity instanceof PublishedService) {
+                            try {
+                                serviceManager.delete((PublishedService) entity);
+                                deletedPolicyIds.add(((PublishedService) entity).getPolicy().getGoid());
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete service", e)));
+                            }
+                        } else {
+                            try {
+                                entityCrud.delete(entity);
+                            } catch (DeleteException e) {
+                                return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete entity", e)));
+                            }
+                        }
+                    } finally {
+                        transactionStatus.flush();
+                    }
+                } catch (DataIntegrityViolationException e) {
+                    return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>right(new IncorrectMappingInstructionsException(mapping, "Could not delete entity. Mappings are likely out of order", e)));
+                }
+                return Either.right(EntityHeaderUtils.fromEntity(entity));
+            }
+        });
+        if (headerOrException.isRight()) {
+            return headerOrException.right();
+        } else if (headerOrException.left().isLeft()) {
+            throw headerOrException.left().left();
+        } else {
+            throw headerOrException.left().right();
+        }
     }
 
     /**
@@ -249,13 +519,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             //only process the mapping if the action taken was updated or created and the entity is a generic entity.
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.GENERIC))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             //get the existing generic entity.
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
@@ -270,14 +540,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, false);
                             //update the generic entity.
                             entityCrud.update(existingEntity);
-                        } catch (Exception e) {
+
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {
@@ -298,13 +568,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             //only process the mapping if the action taken was updated or created and the entity is a generic entity.
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.REVOCATION_CHECK_POLICY))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             //get the existing generic entity.
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
@@ -325,14 +595,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             existingPolicy.setRevocationCheckItems(tempPolicy.getRevocationCheckItems());
                             entityCrud.update(existingPolicy);
 
-                        } catch (Exception e) {
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {
@@ -348,13 +617,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         for (final EntityMappingResult results : mappingsRtn) {
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
                             if(existingEntity == null) {
@@ -395,15 +664,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 policy.setXml(oldPolicyXml);
                             }
 
-
-                        } catch (Exception e) {
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {
@@ -462,19 +729,20 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      */
     @NotNull
     private EntityHeader createOrUpdateResource(@Nullable final EntityContainer entityContainer,
-                                                @Nullable final Goid id,
+                                                @Nullable final String id,
                                                 @NotNull final EntityMappingInstructions mapping,
                                                 @NotNull final Map<EntityHeader, EntityHeader> resourceMapping,
                                                 @Nullable final Entity existingEntity,
                                                 final boolean activate,
                                                 @Nullable final String versionComment,
-                                                final boolean resetGuid) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
+                                                final boolean resetGuid,
+                                                @NotNull final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
         if (entityContainer == null) {
             throw new IncorrectMappingInstructionsException(mapping, "Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
         }
 
         //validate that the id is the same as the existing entity id if the existing entity is specified.
-        if (existingEntity != null && (id == null || !existingEntity.getId().equals(id.toString()))) {
+        if (existingEntity != null && (id == null || !existingEntity.getId().equals(id))) {
             throw new IllegalStateException("The specified id must match the id of the existing entity if an existing entity is given");
         }
 
@@ -513,7 +781,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         }
 
         //create/save dependent entities
-        beforeCreateOrUpdateEntities(entityContainer, existingEntity, resourceMapping);
+        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType())) ? id : null, resourceMapping);
 
         //validate the entity. This should check the entity annotations and see if it contains valid data.
         validate(entityContainer);
@@ -522,15 +790,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
-        final Either<ObjectModelException, Goid> idOrException = tt.execute(new TransactionCallback<Either<ObjectModelException, Goid>>() {
+        final Option<ObjectModelException> possibleException = tt.execute(new TransactionCallback<Option<ObjectModelException>>() {
             @Override
-            public Either<ObjectModelException, Goid> doInTransaction(final TransactionStatus transactionStatus) {
-                @NotNull
-                final Goid importedID;
+            public Option<ObjectModelException> doInTransaction(final TransactionStatus transactionStatus) {
                 try {
                     try {
                         //need to process policies and published services specially in order to handle versioning and activation.
                         if (entityContainer.getEntity() instanceof Policy || entityContainer.getEntity() instanceof PublishedService) {
+                            @Nullable final Goid goid = id == null ? null : Goid.parseGoid(id);
                             //get the policy for versioning.
                             final Policy policy;
                             if (entityContainer.getEntity() instanceof Policy) {
@@ -542,13 +809,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             if (!activate && existingEntity != null) {
                                 //if activate is false and we are updating an existing entity. We need to update the policy or service with its existing xml and then create a new policy version with the new xml
                                 final String existingXML = (entityContainer.getEntity() instanceof Policy) ? ((Policy) existingEntity).getXml() : ((PublishedService) existingEntity).getPolicy().getXml();
-                                policyOrService.setGoid(id);
+                                policyOrService.setGoid(goid);
                                 policyOrService.setVersion(((PersistentEntity) existingEntity).getVersion());
                                 final String newXML = policy.getXml();
                                 policy.setXml(existingXML);
                                 //update the policy or service but leave the old xml. Note this should not create a new policy version since the xml will not have changed.
                                 entityCrud.update(policyOrService);
-                                importedID = policyOrService.getGoid();
                                 policy.setXml(newXML);
                                 //create a policy checkpoint with the new xml
                                 policyVersionManager.checkpointPolicy(policy, false, versionComment, false);
@@ -556,51 +822,184 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 if(policyOrService instanceof PublishedService){
                                     if(existingEntity == null){
                                         if(id == null) {
-                                            importedID = serviceManager.save((PublishedService) policyOrService);
+                                            serviceManager.save((PublishedService) policyOrService);
                                         }else{
-                                            serviceManager.save(id,(PublishedService) policyOrService);
-                                            importedID = id;
+                                            serviceManager.save(goid,(PublishedService) policyOrService);
                                         }
+                                        //create the roles for the service
+                                        serviceManager.createRoles((PublishedService) policyOrService);
                                     }else {
-                                        policyOrService.setGoid(id);
+                                        policyOrService.setGoid(goid);
                                         policyOrService.setVersion(((PublishedService) existingEntity).getVersion());
                                         serviceManager.update((PublishedService) policyOrService);
-                                        importedID = policyOrService.getGoid();
                                     }
                                 }else{
                                     if(existingEntity == null){
                                         if(id == null) {
-                                            importedID = policyManager.save((Policy) policyOrService);
+                                            policyManager.save((Policy) policyOrService);
                                         }else{
-                                            policyManager.save(id,(Policy) policyOrService);
-                                            importedID = id;
+                                            policyManager.save(goid,(Policy) policyOrService);
                                         }
+                                        //create the roles for the policy
+                                        policyManager.createRoles((Policy) policyOrService);
                                     }else {
-                                        policyOrService.setGoid(id);
+                                        policyOrService.setGoid(goid);
                                         policyOrService.setVersion(((Policy) existingEntity).getVersion());
                                         policyManager.update((Policy) policyOrService);
-                                        importedID = policyOrService.getGoid();
                                     }
                                 }
                                 policyVersionManager.checkpointPolicy(policy, true, versionComment, existingEntity == null);
                             }
+                        } else if (entityContainer.getEntity() instanceof SsgKeyEntry) {
+                            final SsgKeyEntry ssgKeyEntry = (SsgKeyEntry) entityContainer.getEntity();
+                            if(existingEntity == null) {
+                                final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeyEntry.getKeystoreId());
+                                if(!keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)){
+                                    throw new ObjectModelException("Cannot update hardware keystore via migration: " + keyFinder.getType());
+                                }
+
+                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+                                cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
+                                    @Override
+                                    public String call() throws Exception {
+                                        final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, false);
+                                        if (!futureSuccess.get()) {
+                                            throw new ObjectModelException("Error attempting to save a private key: " + ssgKeyEntry.getId());
+                                        }
+                                        return null;
+                                    }
+                                });
+
+                            } else {
+                                final SsgKeyEntry existingSsgKeyEntry = (SsgKeyEntry) existingEntity;
+                                final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(existingSsgKeyEntry.getKeystoreId());
+                                if(!keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)){
+                                    throw new ObjectModelException("Cannot update hardware keystore via migration: " + keyFinder.getType());
+                                }
+                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+
+                                //should use the alias of the existing mapped key
+                                ssgKeyEntry.setAlias(existingSsgKeyEntry.getAlias());
+                                // reset the metadata
+                                if(ssgKeyEntry.getKeyMetadata()!=null) {
+                                    ssgKeyEntry.getKeyMetadata().setAlias(existingSsgKeyEntry.getAlias());
+                                }
+
+                                cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
+                                    @Override
+                                    public String call() throws Exception  {
+                                        final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, true);
+                                        if (!futureSuccess.get()) {
+                                            throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
+                                        }
+                                        return null;
+                                    }
+                                });
+                            }
+                        } else if (entityContainer.getEntity() instanceof Identity) {
+                            //need to specially handle deletion of identity entities
+                            final Goid providerId = ((Identity) entityContainer.getEntity()).getProviderId();
+                            IdentityProvider identityProvider;
+                            try {
+                                identityProvider = identityProviderFactory.getProvider(providerId);
+                            } catch (FindException e) {
+                                identityProvider = null;
+                            }
+                            if(identityProvider == null){
+                                throw new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + " with id: " + entityContainer.getEntity().getId() + ". Message: Could not find identity provider with id: " + providerId);
+                            }
+                            if (entityContainer.getEntity() instanceof GroupBean) {
+                                final GroupManager groupManager = identityProvider.getGroupManager();
+                                if(existingEntity == null) {
+                                    final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
+                                    final String groupId = groupManager.save(id == null ? null : Goid.parseGoid(id), group, null);
+                                    ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(groupId);
+                                } else {
+                                    final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
+                                    groupBean.setUniqueIdentifier(existingEntity.getId());
+                                    final Group group = groupManager.reify(groupBean);
+                                    if (group instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
+                                        //need to set the version to the existing user version so it can update properly
+                                        ((PersistentEntity) group).setVersion(((PersistentEntity) existingEntity).getVersion());
+                                    }
+                                    groupManager.update(group);
+                                }
+                            } else if (entityContainer.getEntity() instanceof UserBean) {
+                                final UserManager userManager = identityProvider.getUserManager();
+                                if(existingEntity == null) {
+                                    final User user = userManager.reify((UserBean) entityContainer.getEntity());
+                                    final String userId = userManager.save(id == null ? null : Goid.parseGoid(id), user, null);
+                                    ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(userId);
+                                } else {
+                                    final UserBean userBean = (UserBean) entityContainer.getEntity();
+                                    userBean.setUniqueIdentifier(existingEntity.getId());
+
+                                    final User user = userManager.reify(userBean);
+                                    if(user instanceof InternalUser && existingEntity instanceof InternalUser){
+                                        ((InternalUser) user).setPasswordChangesHistory(((InternalUser) existingEntity).getPasswordChangesHistory());
+                                    }
+                                    if (user instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
+                                        //need to set the version to the existing user version so it can update properly
+                                        ((PersistentEntity) user).setVersion(((PersistentEntity) existingEntity).getVersion());
+                                    }
+                                    userManager.update(user);
+                                }
+                            } else {
+                                throw new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + " with id: " + entityContainer.getEntity().getId() + ". Message: Unexpected Identity type, should be either a UserBean or GroupBean");
+                            }
+                        } else if (entityContainer.getEntity() instanceof IdentityProviderConfig && ((IdentityProviderConfig)entityContainer.getEntity()).getTypeVal() == IdentityProviderType.INTERNAL.toVal()){
+                            // make sure internal identity provider is admin enabled
+                            ((IdentityProviderConfig)entityContainer.getEntity()).setAdminEnabled(true);
+                            saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
+                        } else if (entityContainer.getEntity() instanceof InterfaceTag) {
+                            final InterfaceTag interfaceTag = (InterfaceTag) entityContainer.getEntity();
+                            //get the interfaceTags
+                            final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
+                            final Set<InterfaceTag> interfaceTags = new HashSet<>();
+                            if (interfaceTagsClusterProperty != null) {
+                                interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
+                                //find the interface tag to update, or an existing one with the same name
+                                InterfaceTag interfaceTagExisting = Functions.grepFirst(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
+                                    @Override
+                                    public Boolean call(InterfaceTag interfaceTagExisting) {
+                                        return (id != null ? id : interfaceTag.getName()).equals(interfaceTagExisting.getName());
+                                    }
+                                });
+                                if (interfaceTagExisting != null) {
+                                    if (existingEntity == null) {
+                                        //In this case were were expecting to create a new interface tag but this is not possible since one with the same name already exists.
+                                        throw new DuplicateObjectException("Attempting to save a new interface tag but one with the same name already exists. Interface tag name: " + interfaceTag.getName());
+                                    }
+                                    //update the ip patterns
+                                    interfaceTagExisting.setIpPatterns(interfaceTag.getIpPatterns());
+                                } else {
+                                    interfaceTags.add(interfaceTag);
+                                }
+                            } else {
+                                //creates a new interface tag collection (will create a new cluster property)
+                                interfaceTags.add(interfaceTag);
+                            }
+                            clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTags));
                         } else {
-                            importedID = saveOrUpdateEntity(entityContainer, id, existingEntity);
+                            saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
                         }
                     } catch (ObjectModelException e) {
-                        return Either.left(e);
+                        return Option.some(e);
+                    } finally {
+                        //flush the newly created object so that it can be found by the entity managers later.
+                        transactionStatus.flush();
                     }
-                    //flush the newly created object so that it can be found by the entity managers later.
-                    transactionStatus.flush();
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-                    return Either.left(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass(), e));
+                    return Option.some(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + ". Message: " + ExceptionUtils.getMessage(e), e));
                 }
-                return Either.right(importedID);
+                return Option.none();
             }
         });
         //throw the exception if there was one attempting to save the entity.
-        Eithers.extract(idOrException);
+        if(possibleException.isSome()){
+            throw possibleException.some();
+        }
 
         afterCreateOrUpdateEntities(entityContainer, existingEntity == null);
 
@@ -617,7 +1016,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     /**
      * This will save or updated a entity
      *
-     * @param entityContainer The entity to save of update.
+     * @param entity The entity to save of update.
      * @param id              The id of the entity to save or update.
      * @param existingEntity  The existing entity if one exists.
      * @return Return the id that the entity was saved with or the id of the entity that was updated
@@ -625,24 +1024,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws UpdateException
      */
     @NotNull
-    private Goid saveOrUpdateEntity(@NotNull final EntityContainer entityContainer, @Nullable final Goid id, @Nullable final Entity existingEntity) throws SaveException, UpdateException {
+    private Goid saveOrUpdateEntity(@NotNull final Entity entity, @Nullable final Goid id, @Nullable final Entity existingEntity) throws SaveException, UpdateException {
         @NotNull
         final Goid importedID;
         if (existingEntity == null) {
             //save a new entity
             if (id == null) {
-                importedID = (Goid) entityCrud.save(entityContainer.getEntity());
+                importedID = (Goid) entityCrud.save(entity);
             } else {
-                entityCrud.save(id, entityContainer.getEntity());
+                entityCrud.save(id, entity);
                 importedID = id;
             }
         } else {
             //existing entity is not null so this will be an update
-            if (entityContainer.getEntity() instanceof PersistentEntity) {
-                ((PersistentEntity) entityContainer.getEntity()).setGoid(id);
-                ((PersistentEntity) entityContainer.getEntity()).setVersion(((PersistentEntity) existingEntity).getVersion());
+            if (entity instanceof PersistentEntity) {
+                ((PersistentEntity) entity).setGoid(id);
+                ((PersistentEntity) entity).setVersion(((PersistentEntity) existingEntity).getVersion());
             }
-            entityCrud.update(entityContainer.getEntity());
+            entityCrud.update(entity);
             //this will not be null if the existing entity is specified
             //noinspection ConstantConditions
             importedID = id;
@@ -660,7 +1059,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param replacementMap  The replacement map is a map of EntityHeaders to replace.
      * @throws ObjectModelException
      */
-    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
+    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @Nullable final String targetId, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
         if (entityContainer instanceof JmsContainer) {
             final JmsContainer jmsContainer = ((JmsContainer) entityContainer);
             //need to replace jms connection dependencies
@@ -673,6 +1072,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //need to update the existing jms connection
                 final JmsEndpoint existingEndpoint = (JmsEndpoint) existingEntity;
                 jmsContainer.getJmsConnection().setGoid(existingEndpoint.getConnectionGoid());
+                final JmsConnection existingConnection = entityCrud.find(JmsConnection.class, existingEndpoint.getConnectionGoid());
+                if(existingConnection != null) {
+                    jmsContainer.getJmsConnection().setVersion(existingConnection.getVersion());
+                }
                 entityCrud.update(jmsContainer.getJmsConnection());
                 jmsContainer.getJmsEndpoint().setConnectionGoid(existingEndpoint.getConnectionGoid());
             } else {
@@ -699,6 +1102,56 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Policy policyFound = policyManager.findByPrimaryKey(encassPolicy.getGoid());
                 encassConfig.setPolicy(policyFound);
             }
+        } else if (entityContainer.getEntity() instanceof Role && !((Role) entityContainer.getEntity()).isUserCreated()) {
+            //if this is not a user created role copy the permissions for the target to updating role
+            if(existingEntity != null){
+                //set the role permissions to those of the target role
+                final Set<Permission> permissions = ((Role)entityContainer.getEntity()).getPermissions();
+                permissions.clear();
+                for(final Permission permission : ((Role)existingEntity).getPermissions()){
+                    permissions.add(permission);
+                }
+
+                //if this is the admin role we need to add the admin tag
+                if(Role.Tag.ADMIN.equals(((Role) existingEntity).getTag())){
+                    ((Role) entityContainer.getEntity()).setTag(Role.Tag.ADMIN);
+                }
+            } else {
+                // TODO somehow reuse logic in RbacRoleResourceFactory
+                // this is a new role, must be 'userCreated'
+                ((Role) entityContainer.getEntity()).setUserCreated(true);
+            }
+        } else if (entityContainer.getEntity() instanceof Alias) {
+            //need to check that the alias will not be created in the same folder as the policy or service it is aliasing. Or that is it is created in a folder that already has an alias for that policy or service.
+            //this checks if it is to be created in a folder with the aliased service or policy
+            final EntityHeader serviceOrPolicyHeader = entityCrud.findHeader(entityContainer.getEntity() instanceof PublishedServiceAlias ? EntityType.SERVICE : EntityType.POLICY, ((Alias) entityContainer.getEntity()).getEntityGoid());
+            if (serviceOrPolicyHeader instanceof OrganizationHeader) {
+                if (Goid.equals(((OrganizationHeader) serviceOrPolicyHeader).getFolderId(), ((Alias) entityContainer.getEntity()).getFolder().getGoid())) {
+                    throw new DuplicateObjectException("Cannot create alias in the same folder as the aliased policy or service");
+                }
+            } else if (serviceOrPolicyHeader == null) {
+                final String serviceOrPolicy = entityContainer.getEntity() instanceof PublishedServiceAlias ? "service" : "policy";
+                //note this needs to be a ConstraintViolationException and not a FindException so the the proper mapping is returned. If it is a FindException the mapping error type for the alias is TargetNotFound but we actually want InvalidResource
+                throw new ConstraintViolationException("Could not find the " + serviceOrPolicy + " for alias. " + serviceOrPolicy + " id: " + ((Alias) entityContainer.getEntity()).getEntityGoid());
+            } else {
+                throw new IllegalStateException("A policy or service header is expected to be an OrganizationHeader but it was not. Header: " + serviceOrPolicyHeader);
+            }
+
+            // This checks if it is to be created in a folder with another alias for the same service or policy
+            final AliasManager aliasManager = entityContainer.getEntity() instanceof PublishedServiceAlias ? serviceAliasManager : policyAliasManager;
+            final Alias checkAlias = aliasManager.findAliasByEntityAndFolder(((Alias) entityContainer.getEntity()).getEntityGoid(), ((Alias) entityContainer.getEntity()).getFolder().getGoid());
+            if (checkAlias != null && (existingEntity == null || !StringUtils.equals(existingEntity.getId(), checkAlias.getId()))) {
+                throw new DuplicateObjectException("Cannot create alias in the same folder as an alias for the same aliased policy or service");
+            }
+        } else if (entityContainer.getEntity() instanceof SsgKeyEntry && targetId != null) {
+            //need to replace the alias and keystore id if a target id is specified
+            final SsgKeyEntry ssgKeyEntry = ((SsgKeyEntry) entityContainer.getEntity());
+            final String[] keyParts = targetId.split(":");
+            if(keyParts.length != 2 || keyParts[1] == null || keyParts[1].isEmpty() || keyParts[0] == null) {
+                throw new IllegalStateException("An id for a private key is not valid: " + targetId);
+            }
+            ssgKeyEntry.setAlias(keyParts[1]);
+            ssgKeyEntry.setKeystoreId(Goid.parseGoid(keyParts[0]));
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
         if(entityContainer.getEntity() instanceof HasFolder && existingEntity != null) {
@@ -725,6 +1178,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else {
                 //this should never happen
                 throw new IllegalStateException("A GuidEntity entity was mapped to an entity that is not GuidEntity: " + existingEntity.getClass());
+            }
+        }
+        //if this is a user and the existing entity exists then preserve the existing entity login
+        if(entityContainer.getEntity() instanceof UserBean && existingEntity != null ) {
+            if(existingEntity instanceof User){
+                ((UserBean) entityContainer.getEntity()).setLogin(((User) existingEntity).getLogin());
+                if(existingEntity instanceof InternalUser) {
+                    //for internal users the name and login should match
+                    ((UserBean) entityContainer.getEntity()).setName(((User) existingEntity).getName());
+                }
+            } else {
+                //this should never happen
+                throw new IllegalStateException("A User entity was mapped to an entity that is not User: " + existingEntity.getClass());
             }
         }
     }
@@ -757,6 +1223,34 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 serviceDocument.setServiceId(((PublishedServiceContainer) entityContainer).getPublishedService().getGoid());
                 entityCrud.save(serviceDocument);
             }
+        } else if (entityContainer instanceof UserContainer && ((UserContainer) entityContainer).getCertificate() != null) {
+            //remove the old user cert if any. This needs to be done in a different transaction so that it can be flushed before the new cert is added. If it is not a stale update exception is thrown
+            final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+            tt.setReadOnly(false);
+            final Option<ObjectModelException> possibleException = tt.execute(new TransactionCallback<Option<ObjectModelException>>() {
+                @Override
+                public Option<ObjectModelException> doInTransaction(final TransactionStatus transactionStatus) {
+                    try {
+                        //remove the old cert if any
+                        try {
+                            clientCertManager.revokeUserCert(((UserContainer) entityContainer).getEntity());
+                        } catch (ObjectModelException e) {
+                            return Option.optional(e);
+                        }
+                        return Option.none();
+                    } finally {
+                        transactionStatus.flush();
+                    }
+                }
+            });
+            //throw the exception if there was one attempting to remove the old cert.
+            if(possibleException.isSome()){
+                throw possibleException.some();
+            }
+
+            //set the certificate on the user.
+            final X509Certificate x509Certificate = ((UserContainer) entityContainer).getCertificate();
+            clientCertManager.recordNewUserCert(((UserContainer) entityContainer).getEntity(), x509Certificate , false);
         }
     }
 
@@ -890,6 +1384,33 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         } else {
                             return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping for an Identity: " + mapping.getTargetMapping().getType() + ". Only id and name are supported"));
                         }
+                    } else if((EntityType.USER.equals(mapping.getSourceEntityHeader().getType()) || EntityType.GROUP.equals(mapping.getSourceEntityHeader().getType()))
+                            && entity == null && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
+                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Given a user or group mapping without the associated user or group item reference"));
+                    } else if (EntityType.RBAC_ROLE.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(mapping.getTargetMapping().getType())) {
+                        if(entity == null){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role is not in the bundle"));
+                        } else if(((Role) entity).isUserCreated()){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role is a user created role. Can only map auto created roles this way"));
+                        } else if(((Role) entity).getEntityGoid() == null || ((Role) entity).getEntityType() == null){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role does not specify both the entity type and id"));
+                        } else {
+                            try {
+                                resource = findExistingRole((Role)entity, resourceMapping);
+                            } catch (Exception e) {
+                                return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error finding auto generated role to map to: " + ExceptionUtils.getMessage(e)));
+                            }
+                        }
+                    } else if (EntityType.SSG_KEY_ENTRY.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.NAME.equals(mapping.getTargetMapping().getType())) {
+                        if(entity == null) {
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a private key by it's name but the private key is not in the bundle"));
+                        } else {
+                            try {
+                                resource = keyStoreManager.lookupKeyByKeyAlias(mappingTarget, ((SsgKeyEntry)entity).getKeystoreId());
+                            } catch (KeyStoreException e) {
+                                return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error looking up private key. Message: " + ExceptionUtils.getMessageWithCause(e)));
+                            }
+                        }
                     } else {
                         if (mapping.getTargetMapping() != null) {
                             switch (mapping.getTargetMapping().getType()) {
@@ -922,6 +1443,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     break;
                                 }
+                                case MAP_BY_ROLE_ENTITY: {
+                                    return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping by role entity but the source entity is not appropriate. The source entity should be a role that is not user created and specifies both entity id and entity type" ));
+                                }
                                 default: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping: " + mapping.getTargetMapping().getType() + ". Only id, name, and guid are supported"));
                                 }
@@ -938,6 +1462,49 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
             }
         })).toNull();
+    }
+
+    /**
+     * This will locate an existing role by looking at the given roles entity goid and entity type, finding the mapped entity and finding the same role associated to that mapped entity
+     * @param role Thr role to find the existing role for
+     * @param resourceMapping The mapped entities
+     * @return The existing mapped role. Or null if one cant be found
+     * @throws FindException
+     */
+    @Nullable
+    private Entity findExistingRole(@NotNull final Role role, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws FindException {
+        if(role.getEntityGoid() != null && role.getEntityType() != null){
+            //find if this is a manage or view role
+            final String rolePrefix;
+            if(role.getName().startsWith(RbacAdmin.ROLE_NAME_PREFIX_READ)){
+                rolePrefix = RbacAdmin.ROLE_NAME_PREFIX_READ;
+            } else if(role.getName().startsWith(RbacAdmin.ROLE_NAME_PREFIX)){
+                rolePrefix = RbacAdmin.ROLE_NAME_PREFIX;
+            } else {
+                rolePrefix = null;
+            }
+
+            if(rolePrefix != null) {
+                //Build the header for the roles role.
+                final EntityHeader roleEntityHeader = new EntityHeader(role.getEntityGoid(), role.getEntityType(), null, null);
+                // find if the role entity has been mapped.
+                EntityHeader mappedRoleEntity = DependencyProcessorUtils.findMappedHeader(resourceMapping, roleEntityHeader);
+                //if there wasn't a mapped header then use the original header. This could be because the id's didn't change.
+                if (mappedRoleEntity == null) {
+                    mappedRoleEntity = roleEntityHeader;
+                }
+                //find all roles for this entity.
+                final Collection<Role> roles = roleManager.findEntitySpecificRoles(mappedRoleEntity.getType(), mappedRoleEntity.getGoid());
+                if (roles != null && !roles.isEmpty()) {
+                    for (Role possibleRole : roles) {
+                        if(possibleRole.getName().startsWith(rolePrefix)){
+                            return possibleRole;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -967,9 +1534,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.GUID.equals(type) && mapping.getSourceEntityHeader() instanceof GuidEntityHeader && ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid() != null) {
                 // mapping by guid so get the target guid from the source.
                 targetMapTo = ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid();
+            } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
+                // set the target mapping to the id of the role, this should be the default.
+                targetMapTo = mapping.getSourceEntityHeader().getStrId();
             } else {
                 //cannot find a target id.
-                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to.");
+                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to");
             }
         }
         return targetMapTo;

@@ -371,6 +371,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
         oldEntity.setName( newEntity.getName() );
         oldEntity.setSoap( newEntity.isSoap() );
         oldEntity.setInternalTag( newEntity.getInternalTag() );
+        oldEntity.setInternalSubTag( newEntity.getInternalSubTag() );
         oldEntity.setXml( newEntity.getXml() );
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }

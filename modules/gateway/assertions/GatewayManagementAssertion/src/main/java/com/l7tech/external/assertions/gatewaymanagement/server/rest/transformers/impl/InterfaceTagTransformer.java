@@ -2,12 +2,14 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.InterfaceTagMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.bundling.InterfaceTagContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -34,26 +36,31 @@ public class InterfaceTagTransformer implements EntityAPITransformer<InterfaceTa
 
     @NotNull
     @Override
-    public InterfaceTagMO convertToMO(@NotNull EntityContainer<InterfaceTag> interfaceTagContainer) {
-        return convertToMO(interfaceTagContainer.getEntity());
+    public InterfaceTagMO convertToMO(@NotNull EntityContainer<InterfaceTag> interfaceTagContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(interfaceTagContainer.getEntity(), secretsEncryptor);
+    }
+
+    @NotNull
+    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e) {
+        return convertToMO(e,null);
     }
 
     @NotNull
     @Override
-    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e) {
+    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e,  SecretsEncryptor secretsEncryptor) {
         return factory.internalAsResource(e);
     }
 
     @NotNull
     @Override
-    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO interfaceTagMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(interfaceTagMO,true);
+    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO interfaceTagMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(interfaceTagMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
-        return new EntityContainer<>(factory.internalFromResource(m).left);
+    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO m, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return new InterfaceTagContainer(factory.internalFromResource(m).left);
     }
 
     @NotNull

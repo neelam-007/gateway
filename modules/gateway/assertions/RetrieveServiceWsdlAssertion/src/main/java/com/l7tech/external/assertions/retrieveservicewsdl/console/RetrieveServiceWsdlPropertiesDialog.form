@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.retrieveservicewsdl.console.RetrieveServiceWsdlPropertiesDialog">
-  <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+  <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="571" height="412"/>
+      <xy x="48" y="54" width="561" height="412"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -12,7 +12,7 @@
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
-            <preferred-size width="500" height="-1"/>
+            <preferred-size width="550" height="-1"/>
           </grid>
         </constraints>
         <properties/>
@@ -93,7 +93,10 @@
           <grid id="6abdc" binding="protocolVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <minimum-size width="150" height="-1"/>
+                <preferred-size width="150" height="-1"/>
+              </grid>
             </constraints>
             <properties>
               <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolVariableToolTip"/>
@@ -107,7 +110,7 @@
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
-            <preferred-size width="500" height="-1"/>
+            <preferred-size width="550" height="-1"/>
           </grid>
         </constraints>
         <properties/>
@@ -138,6 +141,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdToolTip"/>
             </properties>
           </component>
           <component id="e5e85" class="javax.swing.JTextField" binding="serviceDocumentIdTextField">
@@ -146,7 +150,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdToolTip"/>
+            </properties>
           </component>
           <component id="2443d" class="javax.swing.JRadioButton" binding="wsdlRadioButton">
             <constraints>
@@ -154,6 +160,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="wsdlRadioButtonLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="retrieveWsdlOptionToolTip"/>
             </properties>
           </component>
           <component id="60b2c" class="javax.swing.JRadioButton" binding="dependencyRadioButton">
@@ -162,6 +169,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="dependencyRadioButtonLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="retrieveDependencyOptionToolTip"/>
             </properties>
           </component>
         </children>
@@ -170,7 +178,7 @@
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
-            <preferred-size width="500" height="-1"/>
+            <preferred-size width="550" height="-1"/>
           </grid>
         </constraints>
         <properties/>
@@ -220,15 +228,12 @@
           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
-      <hspacer id="a6f2b">
-        <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </hspacer>
       <grid id="6eb98" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="550" height="-1"/>
+          </grid>
         </constraints>
         <properties/>
         <border type="etched" title-resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" title-key="dependenciesSectionTitle"/>

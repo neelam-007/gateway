@@ -115,8 +115,8 @@ public class SampleMessageResource extends RestEntityResource<SampleMessageMO, S
     private String convertSort(String sort) {
         if (sort == null) return null;
         switch (sort) {
-            case "protocol":
-                return "scheme";
+            case "service.id":
+                return "serviceGoid";
             default:
                 return sort;
         }

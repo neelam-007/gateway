@@ -66,7 +66,13 @@ public @interface Dependency {
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
         CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
         RBAC_ROLE(EntityType.RBAC_ROLE),
-        EMAIL_LISTENER(EntityType.EMAIL_LISTENER);
+        EMAIL_LISTENER(EntityType.EMAIL_LISTENER),
+        FIREWALL_RULE(EntityType.FIREWALL_RULE),
+        SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE),
+        CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION),
+        HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION),
+        ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
+        INTERFACE_TAG(EntityType.INTERFACE_TAG);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;
@@ -87,6 +93,20 @@ public @interface Dependency {
                 }
             }
             throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
+        }
+
+        /**
+         * Finds if the given entity type is mapped to a dependency type
+         * @param entityType The entity type to check a dependency type for
+         * @return Returns true if the entity type has an associated dependency type. Returns false otherwise.
+         */
+        public static boolean hasDependencyType(@NotNull final EntityType entityType) {
+            for(final DependencyType dependencyType : DependencyType.values()){
+                if(entityType.equals(dependencyType.getEntityType())){
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

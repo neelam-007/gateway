@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.external.assertions.policybundleinstaller.installer.restman.MigrationBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.*;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
@@ -73,20 +74,23 @@ public class PolicyBundleInstaller {
          migrationBundleInstaller.setPolicyBundleInstallerCallback(policyBundleInstallerCallback);
     }
 
+    public void setAuthenticatedUser(@Nullable final UserBean authenticatedUser) {
+        folderInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        policyInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        encapsulatedAssertionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        serviceInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        trustedCertificateInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        jdbcConnectionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        assertionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        migrationBundleInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+    }
+
     /**
      * Dry run the installation looking for conflicts. Any conflicts found are updated in the dry run event.
-     *
-     * @param dryRunEvent event used to capture any conflicts.
-     *
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.BundleResolverException
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.UnknownBundleException
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
-     * @throws InterruptedException
-     * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
-     * @throws PolicyBundleInstallerCallback.CallbackException
      */
     public void dryRunInstallBundle(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
-            throws BundleResolver.BundleResolverException,
+            throws PolicyBundleInstaller.InstallationException,
+            BundleResolver.BundleResolverException,
             BundleResolver.UnknownBundleException,
             BundleResolver.InvalidBundleException,
             InterruptedException,
@@ -95,14 +99,19 @@ public class PolicyBundleInstaller {
 
         logger.fine("Conflict checking bundle: " + context.getBundleInfo().getId());
 
-        assertionInstaller.dryRunInstall(dryRunEvent);
-        final Map<String, String> conflictingPolicyIdsNames = new HashMap<>();
-        final Map<String, String> policyIdsNames =  policyInstaller.dryRunInstall(dryRunEvent, conflictingPolicyIdsNames);
-        encapsulatedAssertionInstaller.dryRunInstall(dryRunEvent, policyIdsNames, conflictingPolicyIdsNames);
-        serviceInstaller.dryRunInstall(dryRunEvent);
-        trustedCertificateInstaller.dryRunInstall(dryRunEvent);
-        jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
-        migrationBundleInstaller.dryRunInstall(dryRunEvent);
+        if (context.getBundleInfo().hasWsmanFile()) {
+            assertionInstaller.dryRunInstall(dryRunEvent);
+            final Map<String, String> conflictingPolicyIdsNames = new HashMap<>();
+            final Map<String, String> policyIdsNames =  policyInstaller.dryRunInstall(dryRunEvent, conflictingPolicyIdsNames);
+            encapsulatedAssertionInstaller.dryRunInstall(dryRunEvent, policyIdsNames, conflictingPolicyIdsNames);
+            serviceInstaller.dryRunInstall(dryRunEvent);
+            trustedCertificateInstaller.dryRunInstall(dryRunEvent);
+            jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
+        } else if (context.getBundleInfo().hasActiveVersionMigrationBundleFile()) {
+            migrationBundleInstaller.dryRunInstall(dryRunEvent);
+        } else {
+            logger.info("Bundle contains no expected XML files for restman/wsman.");
+        }
 
         logger.fine("Finished conflict checking bundle: " + context.getBundleInfo());
     }
@@ -126,18 +135,27 @@ public class PolicyBundleInstaller {
         final Map<String, String> oldToNewPolicyIds = new HashMap<>();
         final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
 
-        // install from prerequisites first
-        for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
-            policyInstaller.install(prerequisiteFolder, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
-            encapsulatedAssertionInstaller.install(prerequisiteFolder, oldToNewPolicyIds);
-            migrationBundleInstaller.install(prerequisiteFolder);
-        }
+        if (context.getBundleInfo().hasWsmanFile()) {
+            // install from prerequisites first
+            for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
+                policyInstaller.install(prerequisiteFolder, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
+                encapsulatedAssertionInstaller.install(prerequisiteFolder, oldToNewPolicyIds);
+            }
 
-        policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
-        encapsulatedAssertionInstaller.install(oldToNewPolicyIds);
-        serviceInstaller.install(oldToNewFolderIds, oldToNewPolicyGuids, policyInstaller);
-        trustedCertificateInstaller.install();
-        migrationBundleInstaller.install();
+            policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
+            encapsulatedAssertionInstaller.install(oldToNewPolicyIds);
+            serviceInstaller.install(oldToNewFolderIds, oldToNewPolicyGuids, policyInstaller);
+            trustedCertificateInstaller.install();
+        } else if (context.getBundleInfo().hasActiveVersionMigrationBundleFile()) {
+            // install from prerequisites first
+            for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
+                migrationBundleInstaller.install(prerequisiteFolder);
+            }
+
+            migrationBundleInstaller.install();
+        } else {
+            logger.info("Bundle contains no expected XML files for restman/wsman.");
+        }
 
         logger.info("Finished installing bundle: " + context.getBundleInfo());
     }

@@ -5,6 +5,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
 
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,7 +33,7 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
         lunaPinEncryption = new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
             @Override
             public byte[] findMasterPasswordBytes() {
-                return clusterPassphrase;
+                return Arrays.copyOf( clusterPassphrase, clusterPassphrase.length );
             }
         });
     }

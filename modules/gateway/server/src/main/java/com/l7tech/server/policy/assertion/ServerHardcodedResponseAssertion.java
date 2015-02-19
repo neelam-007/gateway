@@ -2,8 +2,10 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
@@ -20,11 +22,15 @@ import com.l7tech.util.ConversionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Option;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.logging.Level;
@@ -40,6 +46,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
     private final ContentTypeHeader contentType; // content type if static, else null
     private final boolean earlyResponse;
     private final String[] variablesUsed;
+    private final String singleVariableExpression;
 
     public ServerHardcodedResponseAssertion(final HardcodedResponseAssertion ass,
                                             final ApplicationContext springContext)
@@ -72,9 +79,11 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         if (this.contentType != null && Syntax.getReferencedNames(responseBody).length == 0) {
             this.message = null;
             this.messageBytesNoVar = responseBody.getBytes(contentType.getEncoding());
+            this.singleVariableExpression = null;
         } else {
             this.message = responseBody;
             this.messageBytesNoVar = null;
+            this.singleVariableExpression = Syntax.getSingleVariableReferenced( responseBody );
         }
 
         this.earlyResponse = ass.isEarlyResponse();
@@ -96,6 +105,8 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
 
 
         final ContentTypeHeader contentType = getResponseContentType(variableMap);
+
+        // TODO support use of stashManagerFactory to avoid buffering enormous messages in memory when copying binary messages
         final byte[] bytes = getResponseContent(variableMap, contentType);
 
         final Integer status;
@@ -189,15 +200,48 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
     }
 
     private byte[] getResponseContent(final Map<String, Object> variableMap,
-                                      final ContentTypeHeader contentType) {
-        final byte[] bytes;
+                                      final ContentTypeHeader contentType) throws IOException {
+        byte[] bytes = null;
         if (message != null) {
             String msg = message;
-            msg = ExpandVariables.process(msg, variableMap, getAudit());
-            bytes = msg.getBytes(contentType.getEncoding());
+
+            if ( null != singleVariableExpression ) {
+                Object value = ExpandVariables.processSingleVariableAsObject( msg, variableMap, getAudit() );
+                try {
+                    bytes = getBytesFromBinaryObject( value );
+                } catch ( NoSuchPartException e ) {
+                    logAndAudit( AssertionMessages.NO_SUCH_PART, singleVariableExpression, e.getWhatWasMissing() );
+                    throw new AssertionStatusException( AssertionStatus.SERVER_ERROR, e );
+                }
+            }
+
+            if ( null == bytes ) {
+                msg = ExpandVariables.process( msg, variableMap, getAudit() );
+                bytes = msg.getBytes( contentType.getEncoding() );
+            }
         } else {
             bytes = this.messageBytesNoVar;
         }
         return bytes;
     }
+
+    @Nullable
+    private static byte[] getBytesFromBinaryObject( @Nullable Object value ) throws IOException, NoSuchPartException {
+        // For now we will support copying of Message and PartInfo
+        // TODO intiialize target message using stash manager factory to avoid storing huge copied message in RAM
+        if ( value instanceof Message ) {
+            Message messValue = (Message) value;
+            try ( InputStream is = messValue.getMimeKnob().getEntireMessageBodyAsInputStream( false ) ) {
+                return IOUtils.slurpStream( is );
+            }
+        } else if ( value instanceof PartInfo ) {
+            PartInfo partInfo = (PartInfo) value;
+            try ( InputStream is = partInfo.getInputStream( false ) ) {
+                return IOUtils.slurpStream( is );
+            }
+        }
+
+        return null;
+    }
+
 }

@@ -1,0 +1,5 @@
+<project name="layer7-cassandra" default="compile">
+    <property name="module.package.root" value="com/ca/datasources/cassandra"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

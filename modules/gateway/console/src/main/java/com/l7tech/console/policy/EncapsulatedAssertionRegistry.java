@@ -4,7 +4,6 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -84,6 +83,28 @@ public class EncapsulatedAssertionRegistry {
      */
     public Collection<EncapsulatedAssertionConfig> getRegisteredEncapsulatedAssertionConfigurations() {
         return Collections.unmodifiableCollection(configs.values());
+    }
+
+    /**
+     * Find any encass configs currently cached in the local registry that are tagged as using the specified
+     * policy GUID for their backing policy.
+     *
+     * @param policyGuid GUID of policy to search for.  Required.
+     * @return all currently-cached encass configs that declare they use this policy GUID for their backing policy.
+     *         May be empty but never null.
+     */
+    @NotNull
+    public Collection<EncapsulatedAssertionConfig> findRegisteredConfigsByPolicyGuid( @NotNull String policyGuid ) {
+        Collection<EncapsulatedAssertionConfig> found = new ArrayList<>();
+
+        for ( EncapsulatedAssertionConfig config : configs.values() ) {
+            String configPolicyGuid = config.getProperty( EncapsulatedAssertionConfig.PROP_POLICY_GUID );
+            if ( configPolicyGuid != null && configPolicyGuid.equals( policyGuid ) ) {
+                found.add( config );
+            }
+        }
+
+        return found;
     }
 
     public void notifyEncapsulatedAssertionsChanged() {

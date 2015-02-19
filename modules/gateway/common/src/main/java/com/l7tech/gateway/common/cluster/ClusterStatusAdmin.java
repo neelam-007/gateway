@@ -7,6 +7,9 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.module.ServerModuleConfig;
+import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -16,6 +19,7 @@ import com.l7tech.util.Either;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITY;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 
@@ -134,6 +136,16 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     @Administrative(licensed=false)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String getSelfNodeName();
+
+    /**
+     * Convince method for getting the node that handles the admin request.
+     *
+     * @return {@link ClusterNodeInfo}  The node that handles the admin request.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types = EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITY)
+    @Administrative(licensed=false)
+    ClusterNodeInfo getSelfNode();
 
     /**
      * get cluster wide properties
@@ -620,6 +632,114 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
      */
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     FailoverStrategy[] getAllFailoverStrategies();
+
+    /**
+     * Retrieve all the server module files, with databytes omitted.
+     * <p/>
+     * To download the databytes for a module, use {@link #findServerModuleFileById} passing true for
+     * the second parameter.
+     *
+     * @return A collection of all ServerModuleFile entities visible to the current admin user.
+     *         Each returned {@link ServerModuleFile} instance will have a {@code null} data field.
+     * @throws FindException if there is a problem reading the database
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = FIND_ENTITIES )
+    List<ServerModuleFile> findAllServerModuleFiles() throws FindException;
+
+
+    /**
+     * Retrieves changes in list of {@link ServerModuleFile}'s, with databytes omitted.
+     * <p/>
+     * To download the databytes for a module, use {@link #findServerModuleFileById} passing true for
+     * the second parameter.
+     *
+     * @param oldVersionID  version ID from previous retrieval
+     * @return collection changes; never {@code null}
+     * @throws FindException if there was a problem accessing the requested information
+     * @see CollectionUpdate
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Administrative(licensed=false, background = true)
+    CollectionUpdate<ServerModuleFile> getServerModuleFileUpdate(int oldVersionID) throws FindException;
+
+    /**
+     * Find a server module file, optionally downloading its data bytes.
+     *
+     * @param moduleGoid ID of ServerModuleFile to read.  Required.
+     * @param includeDataBytes true to include databytes.  false to return a ServerModuleFile databytes field nulled out
+     * @return the requested ServerModuleFile, or null if it is not found.
+     * @throws FindException if there is a problem reading the database
+     */
+    @Nullable
+    @Transactional(readOnly = true)
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = FIND_ENTITY )
+    ServerModuleFile findServerModuleFileById(@NotNull Goid moduleGoid, boolean includeDataBytes) throws FindException;
+
+    /**
+     * Save a new or updated ServerModuleFile, uploading new databytes if the databytes field is non-null.
+     * <p/>
+     * If this method succeeds, the new or updated ServerModuleFile has been written to the database.
+     * The module will soon be installed and activated on cluster nodes that have module installation enabled,
+     * provided the module file is valid, compatible with the Gateway version, enabled by the Gateway license,
+     * and (for an update to an existing CUSTOM_ASSERTION module) the node has dynamic updates of custom assertions enabled
+     * and the custom assertion enables this capability.
+     * <p/>
+     * If this is a new ServerModuleFile, a non-null databytes field must be included.
+     * For an update to an existing ServerModuleFile, the databytes field may be omitted, in which case
+     * the existing databytes value will be kept.
+     *
+     * @param moduleFile module file, optionally including its databytes.  Required.
+     * @return the ID of the saved or updated module.  Never null.
+     * @throws FindException if there is a problem reading from the database
+     * @throws SaveException if a new entity cannot be saved
+     * @throws UpdateException if an existing entity cannot be updated
+     */
+    @NotNull
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = SAVE_OR_UPDATE )
+    Goid saveServerModuleFile( @NotNull ServerModuleFile moduleFile ) throws FindException, SaveException, UpdateException;
+
+    /**
+     * Delete a ServerModuleFile.
+     * <p/>
+     * If this method succeeds, the module file is removed from the database.
+     * The module will soon be uninstalled from cluster nodes that have module installation enabled.
+     * The uninstallation may not fully take effect until nodes are restarted (this depends on how the module code is
+     * written and, for modules of type CUSTOM_ASSERTION, whether the node has dynamic updates of custom
+     * assertions enabled and whether the custom assertion enables this property).
+     *
+     * @param id ID of module to delete.  Required.
+     * @throws DeleteException if module can't be deleted, or DB error updating.
+     */
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = DELETE_BY_ID )
+    void deleteServerModuleFile( @NotNull Goid id ) throws DeleteException;
+
+    /**
+     * Get the {@link ServerModuleFileState state} of the current node.
+     * <p/>
+     * {@link ServerModuleFile} contains a list os states from all nodes in the cluster.
+     * This method is a convenience method for getting the module state, if any, for the current cluster node.
+     * This method will loop through the {@link ServerModuleFile#states states} list finding the state belonging to this node,
+     * this means that there are not going to be calls made into the DB.
+     *
+     * @param moduleFile    the module file, holding the states.  Required.
+     * @return the {@link ServerModuleFileState state} for the current cluster node, or {@code null} is there is no state for this node.
+     */
+    @Nullable
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Secured(types = EntityType.SERVER_MODULE_FILE, stereotype = GET_PROPERTY_OF_ENTITY)
+    ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull final ServerModuleFile moduleFile);
+
+    /**
+     * Get server module configurations.
+     * @return Server configuration properties about custom and modular assertion setup.
+     */
+    @NotNull
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
+    public ServerModuleConfig getServerModuleConfig();
 
     /**
      * Query for this capability to see if hardware XPath acceleration is available.

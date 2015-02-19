@@ -308,6 +308,8 @@ public abstract class ExternalReference {
                     references.add(PrivateKeyReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(JdbcConnectionReference.class))) {
                     references.add(JdbcConnectionReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(CassandraConnectionReference.class))) {
+                    references.add(CassandraConnectionReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(StoredPasswordReference.class))) {
                     references.add(StoredPasswordReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(CustomKeyValueReference.class))) {

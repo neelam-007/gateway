@@ -41,6 +41,23 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     private int keystoreVersion = -1;
     private long lastLoaded = 0;
 
+    private ScaSsgKeyStore(Goid id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+        super(keyAccessFilter, metadataManager);
+        if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
+            throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
+        if (kem == null)
+            throw new IllegalArgumentException("KeystoreFileManager is required");
+        try {
+            this.scaManager = new ScaManager();
+        } catch (ScaException e) {
+            throw new KeyStoreException("Unable to create ScaSsgKeyStore: ScaManager initialization failed: " + ExceptionUtils.getMessage(e), e);
+        }
+        this.id = id;
+        this.name = name;
+        this.kem = kem;
+        this.password = password;
+    }
+
     /**
      * Get the global ScaSsgKeyStore instance, creating it if necessary.
      * All parameters are ignored once the global instance is created.
@@ -58,23 +75,6 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         if (INSTANCE != null)
             return INSTANCE;
         return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter, metadataManager);
-    }
-
-    private ScaSsgKeyStore(Goid id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
-        super(keyAccessFilter, metadataManager);
-        if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
-            throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
-        if (kem == null)
-            throw new IllegalArgumentException("KeystoreFileManager is required");
-        try {
-            this.scaManager = new ScaManager();
-        } catch (ScaException e) {
-            throw new KeyStoreException("Unable to create ScaSsgKeyStore: ScaManager initialization failed: " + ExceptionUtils.getMessage(e), e);
-        }
-        this.id = id;
-        this.name = name;
-        this.kem = kem;
-        this.password = password;
     }
 
     @Override
@@ -169,8 +169,8 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     }
 
     @Override
-    protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
-        return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
+    protected <OUT> Future<OUT> mutateKeystore(final boolean useCurrentThread,final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
+        return submitMutation(useCurrentThread, AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
             @Override
             public OUT call() throws Exception {
 

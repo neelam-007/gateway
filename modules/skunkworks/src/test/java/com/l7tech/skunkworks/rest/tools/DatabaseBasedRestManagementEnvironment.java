@@ -1,6 +1,6 @@
 package com.l7tech.skunkworks.rest.tools;
 
-import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
@@ -9,23 +9,26 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.whichmodule.GenericEntityManagerDemoAssertion;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.http.DefaultHttpConnectors;
+import com.l7tech.util.*;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +40,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.io.IOException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,18 +54,17 @@ import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
  * in order to populate the modules dir.
  */
 public class DatabaseBasedRestManagementEnvironment {
-    private static final Logger logger = Logger.getLogger(DatabaseBasedRestManagementEnvironment.class.getName());
-
     public static final String FATAL_EXCEPTION = "FatalException";
     public static final String SERVER_STARTED = "ServerStarted";
     public static final String EXIT = "EXIT";
     public static final String PROCESS = "PROCESS";
-
+    private static final Logger logger = Logger.getLogger(DatabaseBasedRestManagementEnvironment.class.getName());
     private ClassPathXmlApplicationContext applicationContext;
     private ServerRESTGatewayManagementAssertion restManagementAssertion;
 
-    public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException {
+    public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException, SaveException, IOException {
         SyspropUtil.setProperty("com.l7tech.server.logDirectory", this.getClass().getResource("/gateway/logs").getPath());
+        SyspropUtil.setProperty("com.l7tech.server.configDirectory", this.getClass().getResource("/gateway/config").getPath());
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "modules/skunkworks/build/modules");
@@ -84,9 +84,21 @@ public class DatabaseBasedRestManagementEnvironment {
         assertionRegistry.registerAssertion(RESTGatewayManagementAssertion.class);
         assertionRegistry.registerAssertion(GenericEntityManagerDemoAssertion.class);
 
-        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
         applicationContext.start();
-        getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new Started(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new LicenseChangeEvent(this, Level.FINE, "LicenseEvent", "Event Message"));
+
+        //need to create the default http connectors
+        SsgConnectorManager ssgConnectorManager = applicationContext.getBean(SsgConnectorManager.class);
+        Collection<SsgConnector> defaultConnectors = DefaultHttpConnectors.getDefaultConnectors();
+        for (SsgConnector connector : defaultConnectors) {
+            ssgConnectorManager.save(connector);
+        }
+
+        //This will force the default ssl key to be created
+        DefaultKey defaultKey = applicationContext.getBean(DefaultKey.class);
+        defaultKey.getSslInfo();
     }
 
     /**
@@ -119,7 +131,7 @@ public class DatabaseBasedRestManagementEnvironment {
                     });
                     RestRequest request = (RestRequest) SerializationUtils.deserialize(ArrayUtils.toPrimitive(requestBytes.toArray(new Byte[requestBytes.size()])));
                     try {
-                        RestResponse restResponse = databaseBasedRestManagementEnvironment.processRequest(request.getUri(), request.getQueryString(), request.getMethod(), request.getContentType(), request.getBody());
+                        RestResponse restResponse = databaseBasedRestManagementEnvironment.processRequest(request.getUri(), request.getQueryString(), request.getMethod(), request.getContentType(), request.getBody(), request.getHeaders());
                         byte[] bytes = SerializationUtils.serialize(restResponse);
                         System.out.println(Arrays.toString(bytes));
                     } catch (Exception e) {
@@ -140,18 +152,22 @@ public class DatabaseBasedRestManagementEnvironment {
     }
 
     public RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
-        return processRequest(uri, null, method, contentType, body);
+        return processRequest(uri, null, method, contentType, body, null);
     }
 
-    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body) throws Exception {
+    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body)  throws Exception {
+        return processRequest(uri,queryString,method,contentType,body,null);
+    }
+
+    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body, @Nullable Map<String, String> headers)  throws Exception {
         // fake user authentication
         UserBean admin = new UserBean("admin");
         admin.setUniqueIdentifier(new Goid(0, 3).toString());
         admin.setProviderId(new Goid(0, -2));
-        return processRequest(uri, queryString, method, contentType, body, admin);
+        return processRequest(uri, queryString, method, contentType, body, headers, admin);
     }
 
-    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body, @NotNull User user) throws Exception {
+    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body, @Nullable Map<String, String> requestHeaders, @NotNull User user) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body == null ? new byte[0] : body.getBytes("utf-8"));
@@ -172,10 +188,18 @@ public class DatabaseBasedRestManagementEnvironment {
         httpServletRequest.setServerName("127.0.0.1");
         httpServletRequest.setRequestURI("/restman/1.0/" + uri);
         httpServletRequest.setQueryString(queryString);
-        httpServletRequest.setContent( body == null ? new byte[0] : body.getBytes("utf-8"));
+        httpServletRequest.setContent(body == null ? new byte[0] : body.getBytes("utf-8"));
+
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
         request.attachHttpRequestKnob(reqKnob);
+        if(requestHeaders!=null) {
+            HeadersKnob headersKnob = new HeadersKnobSupport();
+            for(String headerKey: requestHeaders.keySet()){
+                headersKnob.addHeader(headerKey, requestHeaders.get(headerKey), HeadersKnob.HEADER_TYPE_HTTP);
+            }
+            request.attachKnob(HeadersKnob.class, headersKnob);
+        }
 
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(httpServletResponse);
         response.attachHttpResponseKnob(respKnob);

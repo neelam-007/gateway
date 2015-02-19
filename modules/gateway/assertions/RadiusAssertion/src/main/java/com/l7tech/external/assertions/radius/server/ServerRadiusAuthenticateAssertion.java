@@ -17,8 +17,8 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.RadiusAuthenticationContext;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.HexUtils;
 import net.jradius.client.RadiusClient;
+import net.jradius.client.auth.RadiusAuthenticator;
 import net.jradius.dictionary.Attr_UserName;
 import net.jradius.dictionary.Attr_UserPassword;
 import net.jradius.exception.RadiusException;
@@ -28,17 +28,12 @@ import net.jradius.packet.AccessRequest;
 import net.jradius.packet.RadiusPacket;
 import net.jradius.packet.attribute.AttributeList;
 import net.jradius.packet.attribute.RadiusAttribute;
-import net.jradius.packet.attribute.value.AttributeValue;
-import net.jradius.packet.attribute.value.DateValue;
-import net.jradius.packet.attribute.value.IntegerValue;
-import net.jradius.packet.attribute.value.StringValue;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.util.Date;
 import java.util.Map;
 
 /**
@@ -55,6 +50,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
     private static final int SECRET_NOT_FOUND = -4;
     private static final int CONFIGURATION_ERROR = -5;
     public static final int DEFAULT_RETRIES = 0;
+    private static final int CHALLENGE_OCCURRED = -6;
 
     private final String reasonCode;
     private final String[] variablesUsed;
@@ -78,38 +74,45 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
             return AssertionStatus.AUTH_REQUIRED;
         }
 
+        RadiusAuthenticationContext radiusAuthenticationContext = new RadiusAuthenticationContext();
+
         try {
-            if (authenticate(context, credentials, variableMap)) {
-                context.setVariable(reasonCode, SUCCESS);
+            boolean succeed = authenticate(credentials, variableMap, radiusAuthenticationContext);
+            context.setVariable(assertion.getPrefix(), radiusAuthenticationContext);
+
+            if (succeed) {
+                context.setVariable(reasonCode, radiusAuthenticationContext.getReasonCode());
                 return AssertionStatus.NONE;
             } else {
+                context.setVariable(reasonCode, radiusAuthenticationContext.getReasonCode());
                 logAndAudit(AssertionMessages.RADIUS_AUTH_AUTHENTICATION_FAILED, credentials.getLogin());
                 return AssertionStatus.AUTH_FAILED;
             }
         } catch (UnknownHostException e) {
-            context.setVariable(reasonCode, UNKNOWN_HOST);
+            radiusAuthenticationContext.setReasonCode(UNKNOWN_HOST);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, "Unknown host " + e.getMessage());
         } catch (TimeoutException e) {
-            context.setVariable(reasonCode, RADIUS_SERVER_TIMEOUT);
+            radiusAuthenticationContext.setReasonCode(RADIUS_SERVER_TIMEOUT);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());
         } catch (RadiusException e) {
-            context.setVariable(reasonCode, RADIUS_SERVER_ERROR);
+            radiusAuthenticationContext.setReasonCode(RADIUS_SERVER_ERROR);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());
         } catch (FindException e) {
-            context.setVariable(reasonCode, SECRET_NOT_FOUND);
+            radiusAuthenticationContext.setReasonCode(SECRET_NOT_FOUND);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());
         } catch (ParseException e) {
-            context.setVariable(reasonCode, CONFIGURATION_ERROR);
+            radiusAuthenticationContext.setReasonCode(CONFIGURATION_ERROR);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());
         }
-        return AssertionStatus.AUTH_FAILED;
 
+        context.setVariable(reasonCode, radiusAuthenticationContext.getReasonCode());
+        return AssertionStatus.AUTH_FAILED;
     }
 
     /**
      * Retrieve the LoginCredential from the context. If no credential is found, return null.
      *
-     * @param context The PolicyEnforementContext
+     * @param context The PolicyEnforcementContext
      * @return The LoginCredential or null if not found from the context.
      */
     LoginCredentials getLoginCredentials(final PolicyEnforcementContext context) throws AssertionStatusException {
@@ -124,13 +127,14 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
     /**
      * Authenticate against Radius server
      *
-     *
      * @param credentials The Login Credential.
      * @return true when success authenticate, false when authenticate failed.
      * @throws IOException
      * @throws RadiusException
      */
-    private boolean authenticate(PolicyEnforcementContext ctx, LoginCredentials credentials, Map<String, Object> variableMap) throws IOException, RadiusException, FindException, ParseException {
+    private boolean authenticate(LoginCredentials credentials, Map<String, Object> variableMap,
+                                 RadiusAuthenticationContext radiusAuthenticationContext)
+            throws IOException, RadiusException, FindException, ParseException {
 
         String host = ExpandVariables.process(assertion.getHost(), variableMap, getAudit());
         int authPort = RadiusUtils.parseIntValue(ExpandVariables.process(assertion.getAuthPort(), variableMap, getAudit()));
@@ -142,21 +146,46 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
         String secret = getSharedSecret();
 
         try {
+            radiusClient = getRadiusClient(authPort, acctPort, timeout, inetAddress, secret);
             AttributeList attributeList = new AttributeList();
-            for (Map.Entry<String, String> entry : assertion.getAttributes().entrySet() ) {
-                String value = ExpandVariables.process(entry.getValue(), variableMap, getAudit());
-                attributeList.add(RadiusUtils.newAttribute(entry.getKey(), value));
+            for (Map.Entry<String, String> entry : assertion.getAttributes().entrySet()) {
+                if (entry.getKey().equals("State")) {
+                    byte[] value = ExpandVariables.process(entry.getValue(), variableMap, getAudit()).getBytes();
+                    attributeList.add(RadiusUtils.newAttribute(entry.getKey(), value));
+
+                } else {
+                    String value = ExpandVariables.process(entry.getValue(), variableMap, getAudit());
+                    attributeList.add(RadiusUtils.newAttribute(entry.getKey(), value));
+                }
+
             }
 
             //Setting the password
             attributeList.add(new Attr_UserName(credentials.getLogin()));
             attributeList.add(new Attr_UserPassword(new String(credentials.getCredentials())));
 
-            radiusClient = getRadiusClient(authPort, acctPort, timeout, inetAddress, secret);
             AccessRequest request = new AccessRequest(radiusClient, attributeList);
-            RadiusPacket replyPacket = radiusClient.authenticate(request, RadiusClient.getAuthProtocol(assertion.getAuthenticator()), DEFAULT_RETRIES);
-            //store RadiusAuthenticationContext in a context variable
-            ctx.setVariable(assertion.getPrefix(), createRadiusAuthenticationContext(replyPacket));
+
+            RadiusPacket replyPacket = null;
+            RadiusAuthenticator authenticator = RadiusClient.getAuthProtocol(assertion.getAuthenticator());
+            if (authenticator.getAuthName().equals("pap")) {
+                // We only want to inject our Authenticator if the Gateway is configured to use 'pap'
+                authenticator = new PAPAuthenticationWithAC();
+            }
+
+            try {
+                replyPacket = radiusClient.authenticate(request, authenticator, DEFAULT_RETRIES);
+                setRadiusAuthenticationContext(replyPacket, radiusAuthenticationContext);
+                radiusAuthenticationContext.setReasonCode(SUCCESS);
+            } catch (RadiusExceptionWithAttributes e) {
+                AttributeList challengeAttributes = e.getListOfAttributes();
+                if (null != challengeAttributes && null != challengeAttributes.getAttributeList()) {
+                    for (RadiusAttribute challengeAttribute : challengeAttributes.getAttributeList()) {
+                        radiusAuthenticationContext.addRadiusAttribute(challengeAttribute.getAttributeName(), RadiusUtils.extractAttributeValue(challengeAttribute));
+                    }
+                    radiusAuthenticationContext.setReasonCode(CHALLENGE_OCCURRED);
+                }
+            }
 
             return (replyPacket instanceof AccessAccept);
 
@@ -181,32 +210,19 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
     }
 
     /**
-     * creates RadiusAuthentication context out of reply packet
-     * @param replyPacket  RadiusPacket
-     * @return  RadiusAuthenticationContext
+     * Sets RadiusAuthentication context out of reply packet
+     *
+     * @param replyPacket RadiusPacket
+     * @param radiusAuthenticationContext Radius authentication context
      */
-    RadiusAuthenticationContext createRadiusAuthenticationContext(RadiusPacket replyPacket) {
-        AttributeList replyPacketAttributes = replyPacket.getAttributes();
-        RadiusAuthenticationContext radiusAuthenticationContext = new RadiusAuthenticationContext();
-        for(RadiusAttribute replyAttribute: replyPacketAttributes.getAttributeList()) {
-            Object value = null;
-            AttributeValue valueObject = replyAttribute.getValue();
-            if(valueObject instanceof DateValue){
-                value = new Date(((DateValue) valueObject).getValue());
+    private void setRadiusAuthenticationContext(RadiusPacket replyPacket, RadiusAuthenticationContext radiusAuthenticationContext) {
+        if (null != replyPacket) {
+            AttributeList replyPacketAttributes = replyPacket.getAttributes();
+            for (RadiusAttribute replyAttribute : replyPacketAttributes.getAttributeList()) {
+                radiusAuthenticationContext.addRadiusAttribute(replyAttribute.getAttributeName(), RadiusUtils.extractAttributeValue(replyAttribute));
             }
-            else if(valueObject instanceof IntegerValue) {
-                value = new Integer(((IntegerValue) valueObject).getValue().intValue());
-            }
-            else if(valueObject instanceof StringValue) {
-               value = new String(valueObject.getBytes());
-            }
-            else {
-                value = HexUtils.encodeBase64(valueObject.getBytes(), true);
-            }
-
-            radiusAuthenticationContext.addRadiusAttribute(replyAttribute.getAttributeName(), value);
         }
-        return radiusAuthenticationContext;
     }
+
 
 }

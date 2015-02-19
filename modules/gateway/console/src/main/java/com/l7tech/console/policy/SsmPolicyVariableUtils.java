@@ -1,6 +1,10 @@
 package com.l7tech.console.policy;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
@@ -30,7 +34,7 @@ public class SsmPolicyVariableUtils {
      * @see com.l7tech.policy.variable.VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf( final Assertion assertion ) {
-        return PolicyVariableUtils.getVariablesSetByPredecessors(assertion, getSsmAssertionTranslator(), true);
+        return PolicyVariableUtils.getVariablesSetByPredecessors(assertion, getSsmAssertionTranslator(), getCurrentInterfaceDesc(), true);
     }
 
     /**
@@ -46,7 +50,21 @@ public class SsmPolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors( final Assertion assertion ) {
-        return PolicyVariableUtils.getVariablesSetByPredecessors(assertion, getSsmAssertionTranslator(), false);
+        return PolicyVariableUtils.getVariablesSetByPredecessors(assertion, getSsmAssertionTranslator(), getCurrentInterfaceDesc(), false);
+    }
+
+    private static EncapsulatedAssertionConfig getCurrentInterfaceDesc() {
+        EncapsulatedAssertionConfig ret = null;
+
+        PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
+        if ( null != pep ) {
+            EntityWithPolicyNode node = pep.getPolicyNode();
+            if ( null != node ) {
+                ret = node.getInterfaceDescription();
+            }
+        }
+
+        return ret;
     }
 
     /**

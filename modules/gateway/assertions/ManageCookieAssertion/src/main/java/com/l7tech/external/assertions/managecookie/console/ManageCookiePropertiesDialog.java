@@ -136,8 +136,8 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         maybeSetAttribute(assertion, EXPIRES, (JTextFieldDateTimeEditor) expiresChooser.getDateEditor(), originalExpires);
         maybeSetAttribute(assertion, VERSION, versionTextField, originalVersion);
         maybeSetAttribute(assertion, COMMENT, commentTextField, originalComment);
-        maybeSetAttribute(assertion, SECURE, secureCheckBox.isSelected() ? "true" : null, originalSecure);
-        maybeSetAttribute(assertion, HTTP_ONLY, httpOnlyCheckBox.isSelected() ? "true" : null, originalHttpOnly);
+        maybeSetAttribute(assertion, SECURE, secureCheckBox.isSelected() ? "true" : "false", originalSecure);
+        maybeSetAttribute(assertion, HTTP_ONLY, httpOnlyCheckBox.isSelected() ? "true" : "false", originalHttpOnly);
         assertion.getCookieCriteria().clear();
         setCriteriaIfNotBlank(assertion, NAME, nameMatchTextField, nameRegexCheckBox);
         setCriteriaIfNotBlank(assertion, DOMAIN, domainMatchTextField, domainRegexCheckBox);

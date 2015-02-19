@@ -43,7 +43,6 @@ public class SsgKeyEntryDependencyProcessor extends DefaultDependencyProcessor<S
             public boolean equals(Object o) {
                 if (this == o) return true;
                 if (o == null || getClass() != o.getClass()) return false;
-                if (!super.equals(o)) return false;
 
                 DependentEntity that = (DependentEntity) o;
 

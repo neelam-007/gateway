@@ -3,14 +3,12 @@ package com.l7tech.server.policy.bundle.ssgman.restman;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -20,6 +18,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
@@ -32,9 +31,11 @@ public class RestmanMessage {
     public static final String MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING = "FailOnExisting";
     public static final String MAPPING_ACTION_PROP_KEY_FAIL_ON_NEW = "FailOnNew";
     public static final String MAPPING_ACTION_ATTRIBUTE = "action";
+    public static final String MAPPING_ACTION_TAKEN_ATTRIBUTE = "actionTaken";
     public static final String MAPPING_ERROR_TYPE_ATTRIBUTE = "errorType";
     public static final String MAPPING_TYPE_ATTRIBUTE = "type";
     public static final String MAPPING_SRC_ID_ATTRIBUTE = "srcId";
+    public static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
 
     private static final String NS_L7 = "l7";
     private static final String NODE_NAME_L7_ERROR = NS_L7 + ":Error";
@@ -42,8 +43,13 @@ public class RestmanMessage {
     private static final String NODE_NAME_PROPERTY = "Property";
     private static final String NODE_NAME_BOOLEAN_VALUE = "BooleanValue";
     private static final String XMLNS_L7 = "xmlns:" + NS_L7;
-    private static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
     private static final String NODE_ATTRIBUTE_NAME_KEY = "key";
+    private static final String ROOT_FOLDER_ID = Folder.ROOT_FOLDER_ID.toHexString();
+
+    private static final String ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE =
+        "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"NewOrExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"/1.0/folders/0000000000000000ffffffffffffec76\" targetId=\"{0}\" type=\"FOLDER\">\n" +
+        "     <l7:Properties><l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>\n" +
+        "</l7:Mapping>\n";
 
     private List<Element> mappingErrors;
     private List<Element> bundles;
@@ -109,6 +115,59 @@ public class RestmanMessage {
     }
 
     /**
+     * Get more user-friendly Restman mapping error messages.
+     */
+    public String getAllMappingErrorsDetail(Functions.Unary<String, String> getEntityName) throws IOException {
+        if (mappingErrors == null) {
+            loadMappingErrors();
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for (Element mappingError : mappingErrors) {
+            sb.append(getSingleMappingErrorDetail(mappingError, getEntityName.call(mappingError.getAttribute("srcId"))));
+        }
+
+        return sb.toString();
+    }
+
+    public static String getSingleMappingErrorDetail(Element mappingError, String entityName) {
+        final StringBuilder sb = new StringBuilder();
+        String errorType = mappingError.getAttribute("errorType");
+        String srcId = mappingError.getAttribute("srcId");
+
+        sb.append(errorType);
+        sb.append(": type=").append(mappingError.getAttribute("type"));
+        sb.append(", name=").append(entityName);
+        sb.append(", ");
+        if ("UniqueKeyConflict".equals(errorType)) {
+            sb.append("already exists");
+        } else {
+            sb.append("srcId=").append(srcId);
+            sb.append(", ");
+
+            StringBuilder errorMessage = new StringBuilder();
+            for (Element mapping: XpathUtil.findElements(mappingError, "l7:Properties/l7:Property/l7:StringValue", getNamespaceMap())) {
+                if (errorMessage.length() > 0) errorMessage.append(" ");
+                errorMessage.append(DomUtils.getTextValue(mapping));
+            }
+
+            if ("InvalidResource".equals(errorType)) {
+                String particularErrorMessage = "Cannot add or update a child row: a foreign key constraint fails";
+                if (errorMessage.toString().startsWith(particularErrorMessage)) {
+                    sb.append(particularErrorMessage).append(" in database");
+                } else {
+                    sb.append(errorMessage.toString());
+                }
+            } else {
+                sb.append(errorMessage.toString());
+            }
+        }
+        sb.append(System.getProperty("line.separator"));
+
+        return sb.toString();
+    }
+
+    /**
      * Get Restman mapping error(s) as list of Elements.
      */
     public List<Element> getMappingErrors() throws IOException {
@@ -123,7 +182,7 @@ public class RestmanMessage {
      * Get Restman mapping(s) as list of Elements.
      */
     public List<Element> getMappings() throws IOException {
-        if (mappings == null) {
+        if (mappings == null || mappings.isEmpty()) {
             loadMappings();
         }
 
@@ -156,6 +215,16 @@ public class RestmanMessage {
             loadBundleReferenceItems();
         }
         return bundleReferenceItems;
+    }
+
+    public boolean hasRootFolderItem() {
+        final List<Element> rootNodeIds = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + ROOT_FOLDER_ID + "']//l7:Id", getNamespaceMap());
+        return rootNodeIds.size() == 1;
+    }
+
+    public boolean hasRootFolderMapping() {
+        final List<Element> rootNodeMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@srcId='" + ROOT_FOLDER_ID + "']", getNamespaceMap());
+        return rootNodeMappings.size() == 1;
     }
 
     public static Element setL7XmlNs(@NotNull final Element element) {
@@ -199,6 +268,35 @@ public class RestmanMessage {
         }
     }
 
+    public String getEntityName(@NotNull final String id) {
+        final List<Element> names = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Name", getNamespaceMap());
+
+        if (names.size() > 0) {
+            String entityName = DomUtils.getTextValue(names.get(0));
+            if (StringUtils.isEmpty(entityName))
+                return "N/A";
+            else
+                return entityName.trim();
+        } else {
+            return "N/A";
+        }
+    }
+
+    public String getEntityType(@NotNull final String srcId) {
+        final List<Element> srcIdMappings = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + srcId + "\"]", getNamespaceMap());
+
+        // There should only be one action mapping per scrId  in a restman message
+        if (srcIdMappings.size() > 0) {
+            String entityType = srcIdMappings.get(0).getAttribute("type");
+            if (StringUtils.isEmpty(entityType))
+                return null;
+            else
+                return entityType.trim();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Get a set of Folder mappings with "FailOnNew" property with value of "true". The set contains the entity srcUri.
      */
@@ -209,7 +307,7 @@ public class RestmanMessage {
 
         Set<String> result = new HashSet<>();
         for (Element mappingEle : mappings) {
-            if (!"0000000000000000ffffffffffffec76".equals(mappingEle.getAttribute("srcId")) &&
+            if (!ROOT_FOLDER_ID.equals(mappingEle.getAttribute("srcId")) &&
                 "FOLDER".equals(mappingEle.getAttribute("type")) &&
                 "NewOrExisting".equals(mappingEle.getAttribute("action"))) {
                 List<Element> propertiesEleList = DomUtils.findChildElementsByName(mappingEle, MGMT_VERSION_NAMESPACE, NODE_NAME_PROPERTIES);
@@ -318,6 +416,40 @@ public class RestmanMessage {
         }
     }
 
+    public void setRootFolderMappingTargetId(String targetFolderId) {
+        if (ROOT_FOLDER_ID.equals(targetFolderId)) return;
+
+        final List<Element> rootFolderMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + ROOT_FOLDER_ID + "\"]", getNamespaceMap());
+
+        // there should only be one action mapping per id in a restman message
+        if (rootFolderMappings.size() > 0) {
+            Element rootFolderMapping = rootFolderMappings.get(0);
+            rootFolderMapping.setAttribute(MAPPING_TARGET_ID_ATTRIBUTE, targetFolderId);
+        }
+    }
+
+    public void addRootFolderMapping(String targetFolderId) {
+        if (ROOT_FOLDER_ID.equals(targetFolderId)) return;
+
+        final String mappingStr = MessageFormat.format(ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE, targetFolderId);
+
+        Element newMappingElement;
+        try {
+            newMappingElement = XmlUtil.stringToDocument(mappingStr).getDocumentElement();
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+        newMappingElement = (Element) document.importNode(newMappingElement,  true);
+
+        final List<Element> mappingsElements = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
+        if (mappingsElements.size() != 1) return;
+
+        final Element mappingsElement = mappingsElements.get(0);
+        final Element firstMappingElement = DomUtils.findFirstChildElement(mappingsElement);
+
+        mappingsElement.insertBefore(newMappingElement, firstMappingElement);
+    }
+
     /**
      * Get an entity's mapping action and properties.
      */
@@ -350,6 +482,13 @@ public class RestmanMessage {
 
     protected void loadMappings() {
         mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Item/l7:Resource/l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());
+
+        // Try this case, where the message is a restman result message.
+        if (mappings.isEmpty()) {
+            mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Item/l7:Resource/l7:Mappings/l7:Mapping", getNamespaceMap());
+        }
+
+        // Try one more time
         if (mappings.isEmpty()) {
             // l7:Bundle is root node for Restman request
             mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());

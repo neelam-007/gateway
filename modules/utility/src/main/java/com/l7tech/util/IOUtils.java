@@ -1,9 +1,14 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -502,6 +507,52 @@ public class IOUtils {
             return total;
         } finally {
             BufferPool.returnBuffer(buf);
+        }
+    }
+
+    /**
+     * Interpret the specified byte array as characters according to the specified character set
+     * in a way that does not produce any strings nor leave any (additional) residue on the heap
+     * (aside from the original byte array and the returned char array, either or both of which can be cleared
+     * by the caller when they are no longer needed.)
+     *
+     * @param charset character set to use for decoding, eg. Charsets.UTF8.  Required.
+     * @param bytes bytes to decode.  Required.
+     * @return the decoded character array.  Never null.  May be empty.
+     */
+    @NotNull
+    public static char[] decodeCharacters( final @NotNull Charset charset, final @NotNull byte[] bytes ) {
+        ByteBuffer bb = ByteBuffer.wrap( bytes );
+        CharBuffer cb = null;
+        try {
+            cb = charset.decode( bb );
+            return Arrays.copyOfRange( cb.array(), cb.position(), cb.limit() );
+        } finally {
+            if ( cb != null )
+                Arrays.fill( cb.array(), (char) 0 );
+        }
+    }
+
+    /**
+     * Encode the specified character array into a new byte array according to the specified character set
+     * in a way that does not produce any strings nor leave any (additional) residue on the heap
+     * (aside from the original char array and the returned byte array, either or both of which can be cleared
+     * by the caller when they are no longer needed.)
+     *
+     * @param charset character set to use for encoding, eg. Charsets.UTF8.  Required.
+     * @param chars characters to encode.  Required.
+     * @return the encoded byte array.  Never null.  May be empty.
+     */
+    @NotNull
+    public static byte[] encodeCharacters( final @NotNull Charset charset, final @NotNull char[] chars ) {
+        CharBuffer cb = CharBuffer.wrap( chars );
+        ByteBuffer bb = null;
+        try {
+            bb = charset.encode( cb );
+            return Arrays.copyOfRange( bb.array(), bb.position(), bb.limit() );
+        } finally {
+            if ( bb != null )
+                Arrays.fill( bb.array(), (byte) 0 );
         }
     }
 }

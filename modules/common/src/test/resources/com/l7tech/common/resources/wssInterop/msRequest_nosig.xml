@@ -1,0 +1,48 @@
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+    <s:Header>
+      <k:EncryptedHeader u:Id="_2" xmlns:k="http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        <e:EncryptedData xmlns:e="http://www.w3.org/2001/04/xmlenc#">
+          <e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"></e:EncryptionMethod>
+          <e:CipherData>
+            <e:CipherValue>vphJ8E5yKo47NuXS5opqUTeTR64o+K4fj4MEt8evD61YKwqnZi5qVHgptJ0Hszp7Xvz2qOPYdbfoGTvgwPSxAbHS2qzI32DgMtGcuy0SNwVkIGEcLWkMM0bvCc/kuOjG/brnIyDrWefgeUC1MPuusB7CX2uPDidqP4bgkjjYJ8K8mmupx3jzJHXfuLZBGxMSCjH07E0rEWMIVpl/XHDHPILtLQD4wR0D7uUhGyaXsY9gn/CaZ+LdU/36ZW01yL+u5o17/mWroS18JuSEa7io88AVZYIYnt8QL6DSP8FSGbw9/o4Hh5a6lpfiMQ0Zmgs2</e:CipherValue>
+          </e:CipherData>
+        </e:EncryptedData>
+      </k:EncryptedHeader>
+      <o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+        <u:Timestamp u:Id="uuid-e85e62c9-c411-463d-8c1d-4bbffe0c4dbf-2" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+          <u:Created>2005-07-29T00:08:08.061Z</u:Created>
+          <u:Expires>2005-07-29T00:23:08.061Z</u:Expires>
+        </u:Timestamp>
+        <e:EncryptedKey Id="uuid-e85e62c9-c411-463d-8c1d-4bbffe0c4dbf-1" xmlns:e="http://www.w3.org/2001/04/xmlenc#">
+          <e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"></e:EncryptionMethod>
+          <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+            <o:SecurityTokenReference>
+              <o:KeyIdentifier ValueType="http://docs.oasis-open.org/wss/2004/xx/oasis-2004xx-wss-x509-token-profile-1.1#X509ThumbprintSHA1">NQM0IBvuplAtETQvk+6gn8C13wE=</o:KeyIdentifier>
+            </o:SecurityTokenReference>
+          </KeyInfo>
+          <e:CipherData>
+            <e:CipherValue>p6iFnvDeatcZKjLOupsmVLI6MuHI9tovgwH5shLyDB7jq3uFUcELMoV5+8U0/ZGh4D6xiLotb9uqMXxmXK3RyyOiX2DuZmA5Z40Cb6PeVn1ciochu1R16B6pLPK0YyoUB6nK+gifEbPKAJQs38dDv/PJ7rAkdAuAwc6rOp8gNio=</e:CipherValue>
+          </e:CipherData>
+          <e:ReferenceList>
+            <e:DataReference URI="#_2"></e:DataReference>
+            <e:DataReference URI="#_3"></e:DataReference>
+            <e:DataReference URI="#_4"></e:DataReference>
+          </e:ReferenceList>
+        </e:EncryptedKey>
+        <e:EncryptedData Id="_4" Type="http://www.w3.org/2001/04/xmlenc#Element" xmlns:e="http://www.w3.org/2001/04/xmlenc#">
+          <e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"></e:EncryptionMethod>
+          <e:CipherData>
+            <e:CipherValue>7ts+5e4u5QL7VTRkY8KTeAC+1UIU1Ry/Nd11oQztArVqj/MUJrfFF+nW5u55ys8PkLU/C5HTgOe9clkpQwU++Jz3apNENVtQ+nUkKinH7T0CIaYKn85j3cJTffJQ6X85SydFM73KiLBeSPHDAiJNsV7ZXLn7K8aiayc0YVw3BjuK3MpfeYzhWZRT2dVga2rNMEQtyNBp1+e33Uwl612q+nkFf6W5JWrhQ8pJ7qjAb7sVTEQXwRq9MT6voNizU+Z+f8PJvqsZe+s4feKdYRPaaeC+9bY4xV6NGdReBSyxGQyG9Se+uucSpu58e3w7qIxsjqhD8i4qIdDTkdVpR7FurapClIP+ivxl9ExUNM5/NedYWZffhJ4wpWeBM5t30LJ5Ut8BtUM0sE5Sjx1z7zGqGYWEXajtJH2W7J3jxvaPk2Rt9qEjXen7O65zCmnZpen8J7grMB8bPIe3pX+0bFn/bA==</e:CipherValue>
+          </e:CipherData>
+        </e:EncryptedData>
+      </o:Security>
+    </s:Header>
+    <s:Body u:Id="_1">
+      <e:EncryptedData Id="_3" Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns:e="http://www.w3.org/2001/04/xmlenc#">
+        <e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"></e:EncryptionMethod>
+        <e:CipherData>
+          <e:CipherValue>Y0o6lqkqj7NqKECVOm94KhwXqutyxPM7I68hum4jXj7YffG/NlXApVZYr0OcNuBKnhSgkCi1wh9o7EEiMdp14lIsP9zGVumRWPlsKebePWY=</e:CipherValue>
+        </e:CipherData>
+      </e:EncryptedData>
+    </s:Body>
+  </s:Envelope>

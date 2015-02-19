@@ -208,6 +208,11 @@ public interface ServerConfigParams {
     String PARAM_IO_JMS_CONSUMER_CONNECTIONS = "ioJmsConsumerConnections";
     String PARAM_IO_HTTP_ALLOW_BACKSLASH = "io.httpAllowBackslash";
 
+    String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST = "cassandra.maxSimultaneousRequestsPerHostThreshold";
+    String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";
+    String PARAM_CASSANDRA_KEEP_ALIVE = "cassandra.keepAlive";
+    String PARAM_CASSANDRA_FETCH_SIZE = "cassandra.fetchSize.defaultValue";
+
     // Adding custom assertions system properties
     String PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE = "custom.assertions.file";
     String PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY = "custom.assertions.modules";
@@ -215,4 +220,9 @@ public interface ServerConfigParams {
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE = "custom.assertions.rescan.enable";
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS = "custom.assertions.rescan.millis";
     String PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE = "custom.assertions.scan.disable";
+
+    // Server ModuleFile Manager
+    String PARAM_SERVER_MODULE_FILE_STAGING_FOLDER = "serverModuleFile.staging.folder";
+    String PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
+    String PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = "serverModuleFile.upload.maxSize";
 }

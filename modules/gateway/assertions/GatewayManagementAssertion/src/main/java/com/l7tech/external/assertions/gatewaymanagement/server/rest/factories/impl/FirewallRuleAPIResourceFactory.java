@@ -36,7 +36,7 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
 
     @Override
     protected SsgFirewallRule convertFromMO(FirewallRuleMO resource) throws ResourceFactory.InvalidResourceException {
-        return transformer.convertFromMO(resource).getEntity();
+        return transformer.convertFromMO(resource, null).getEntity();
     }
 
     @Override
@@ -52,6 +52,11 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     @Override
     protected void beforeUpdateEntity(final SsgFirewallRule entity) throws ObjectModelException {
         super.beforeUpdateEntity(entity);
+
+        // make sure ordinals starts at 1
+        if(entity.getOrdinal() < 1){
+            entity.setOrdinal(1);
+        }
 
         // make ordinals sequential and reorder other rules
         final List<SsgFirewallRule> rules = getOrderedFirewallRules();
@@ -83,6 +88,11 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     @Override
     protected void beforeCreateEntity(final SsgFirewallRule entity) throws ObjectModelException {
         super.beforeCreateEntity(entity);
+
+        // make sure ordinals starts at 1
+        if(entity.getOrdinal() < 1){
+            entity.setOrdinal(1);
+        }
 
         // make ordinals sequential and reorder other rules
         final List<SsgFirewallRule> rules = getOrderedFirewallRules();

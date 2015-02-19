@@ -840,7 +840,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return ssgKeyEntry;
     }
 
-    private X509Certificate[] toCertificateArray( final List<CertificateData> certificateChain ) throws InvalidResourceException {
+    public X509Certificate[] toCertificateArray( final List<CertificateData> certificateChain ) throws InvalidResourceException {
         List<X509Certificate> certificates = new ArrayList<X509Certificate>();
 
         for ( final CertificateData certificateData : certificateChain ) {

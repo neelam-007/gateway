@@ -2,15 +2,18 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.module.ServerModuleConfig;
+import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,6 +142,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Override
     public String getSelfNodeName() {
         return "No name from test stub";
+    }
+
+    @Override
+    public ClusterNodeInfo getSelfNode() {
+        return null;
     }
 
     @Override
@@ -320,6 +328,45 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Override
     public FailoverStrategy[] getAllFailoverStrategies() {
         return FailoverStrategyFactory.getFailoverStrategyNames();
+    }
+
+    @NotNull
+    @Override
+    public List<ServerModuleFile> findAllServerModuleFiles() throws FindException {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CollectionUpdate<ServerModuleFile> getServerModuleFileUpdate(int oldVersionID) throws FindException {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public ServerModuleFile findServerModuleFileById( @NotNull Goid moduleGoid, boolean includeDatabytes ) throws FindException {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public Goid saveServerModuleFile( @NotNull ServerModuleFile moduleFile ) throws FindException, SaveException, UpdateException {
+        throw new SaveException( "not supported by stub" );
+    }
+
+    @Override
+    public void deleteServerModuleFile( @NotNull Goid id ) {
+    }
+
+    @Nullable
+    @Override
+    public ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull ServerModuleFile module) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public ServerModuleConfig getServerModuleConfig() {
+        return new ServerModuleConfig();
     }
 
     @Override

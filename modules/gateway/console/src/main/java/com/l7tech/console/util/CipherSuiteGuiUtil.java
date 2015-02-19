@@ -177,13 +177,15 @@ public final class CipherSuiteGuiUtil {
     /**
      * Check if the specified cipher suite should be checked by default in newly created listen ports.
      * <p/>
-     * Currently we enable by default any cipher suite that is visible in the GUI.
+     * Currently we enable by default any cipher suite that is visible in the GUI as long as it isn't RC4 or DES based.
      *
      * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
      * @return true if this cipher suite should be checked by default in the UI.
      */
     public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
-        return cipherSuiteShouldBeVisible(cipherSuiteName);
+        return cipherSuiteShouldBeVisible(cipherSuiteName) &&
+                !cipherSuiteName.contains( "_WITH_RC4_" ) &&
+                !cipherSuiteName.contains( "_WITH_DES_" );
     }
 
     /**

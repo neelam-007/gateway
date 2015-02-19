@@ -106,7 +106,8 @@ public class RoleManagerWindow extends JDialog {
             public void deleteEntity(@NotNull final Role entity) throws DeleteException {
                 Registry.getDefault().getRbacAdmin().deleteRole(entity);
             }
-
+        });
+        crudController.setEntityDeleteConfirmer( new EntityDeleteConfirmer<Role>() {
             @Override
             public void displayDeleteDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoid<Role> afterDeleteListener) {
                 final Integer nameMaxChars = Integer.valueOf(RESOURCES.getString(DELETE_CONFIRMATION_NAME_MAX_CHARS));

@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
 *
@@ -41,12 +42,16 @@ import static org.junit.Assert.*;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class IdProviderMigrationTest extends RestEntityTestBase {
     private static final Logger logger = Logger.getLogger(IdProviderMigrationTest.class.getName());
-
+    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
     private Policy policy = new Policy(PolicyType.INTERNAL, "Policy", "", false);
     private LdapIdentityProviderConfig ldap;
     private IdentityProviderConfigManager identityProviderConfigManager;
-    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
     private PolicyManager policyManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -78,11 +83,6 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         policy.setXml(policyXml);
         policy.setGuid(UUID.randomUUID().toString());
         policy.setGoid(policyManager.save(policy));
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
     }
 
     @After
@@ -246,6 +246,42 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
 
 
     }
+
+    @BugId("SSG-10547")
+    @Test
+    public void getLdapEncryptedPasswordBundleTest() throws Exception{
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:Authentication>\n" +
+                        "            <L7p:IdentityProviderOid goidValue=\""+ ldap.getId() +"\"/>\n" +
+                        "        </L7p:Authentication>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+
+        // update policy to use LDAP provider
+        policy.setXml(policyXml);
+        policyManager.update(policy);
+
+        RestResponse response =
+                getDatabaseBasedRestManagementEnvironment().processRequest("bundle/policy/" + policy.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET,null,"");
+        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        assertEquals(200, response.getStatus());
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        assertEquals("The bundle should have 2 items A policy", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 mapping. Root folder, a policy, an id provider", 3, bundleItem.getContent().getMappings().size());
+
+        Item ldapItem = bundleItem.getContent().getReferences().get(0);
+        assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), ldapItem.getType());
+        assertNotNull(((IdentityProviderMO) ldapItem.getContent()).getLdapIdentityProviderDetail().getBindPassword());
+        assertNotNull(((IdentityProviderMO) ldapItem.getContent()).getLdapIdentityProviderDetail().getBindPasswordBundleKey());
+
+
+    }
+
     protected String objectToString(Object object) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         final StreamResult result = new StreamResult(bout);

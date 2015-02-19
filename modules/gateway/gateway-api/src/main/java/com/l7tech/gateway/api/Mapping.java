@@ -25,11 +25,11 @@ public class Mapping {
     private Map<String, Object> properties;
 
     public static enum Action {
-        NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore
+        NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore, Delete
     }
 
     public static enum ActionTaken {
-        UsedExisting, CreatedNew, UpdatedExisting, Ignored
+        UsedExisting, CreatedNew, UpdatedExisting, Ignored, Deleted
     }
 
     public static enum ErrorType {

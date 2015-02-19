@@ -43,6 +43,7 @@ public interface OAuthInstallerAdmin extends PolicyBundleInstallerAdmin {
     @NotNull
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
     JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
+                                                  @NotNull Goid folderGoid,
                                                   @NotNull Map<String, BundleMapping> bundleMappings,
                                                   @Nullable String installationPrefix,
                                                   boolean integrateApiPortal);
