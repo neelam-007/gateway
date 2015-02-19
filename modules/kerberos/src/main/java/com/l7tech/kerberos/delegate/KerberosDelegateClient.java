@@ -385,7 +385,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service on behalf of a user.
      * @throws KerberosException
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final Object kerberosTicket)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final Object kerberosTicket, final PrincipalName userPrincipalName)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -406,7 +406,7 @@ public class KerberosDelegateClient extends KerberosClient {
                 krbSubject = kerberosSubject;
             }
 
-            ticket = getKerberosProxyServiceTicket(servicePrincipalName, null, krbSubject, kerberosTicket);
+            ticket = getKerberosProxyServiceTicket(servicePrincipalName, userPrincipalName, krbSubject, kerberosTicket);
 
             if (ticket != null && cacheSubject == null) {
                 ticketCache.add(ticketCacheKey, krbSubject, loginContext, ticket);
@@ -434,7 +434,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return a service ticket that can be used to call the target service
      * @throws KerberosException when the kerberos authentication or service ticket provisioning fails
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final Object additionalTicket)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final Object additionalTicket, PrincipalName clientPrincipalName)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -462,7 +462,7 @@ public class KerberosDelegateClient extends KerberosClient {
                 krbSubject = cacheSubject;
             }
 
-            ticket = getKerberosProxyServiceTicket(servicePrincipalName, null, krbSubject, additionalTicket);
+            ticket = getKerberosProxyServiceTicket(servicePrincipalName, clientPrincipalName, krbSubject, additionalTicket);
 
             // create a new cache entry
             if (ticket != null && cacheSubject == null)
@@ -500,11 +500,11 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return a service ticket that can be used to call the target service
      * @throws KerberosException when the kerberos authentication or service ticket provisioning fails
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final String behalfOf)
+    public KerberosServiceTicket getKerberosProxyServiceTicketWithCredentials(final String servicePrincipalName, final String accountName, final String accountPasswd, final String behalfOf)
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(servicePrincipalName, accountName, accountPasswd, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket());
+            return getKerberosProxyServiceTicket(servicePrincipalName, accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket(), getPrincipalName(behalfOf, null));
 
         } catch (Exception e) {
             throw new KerberosException(e);
@@ -521,11 +521,11 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service ticket on behalf of a user.
      * @throws KerberosException When fail to obtain the service ticket on behalf of the user.
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final String behalfOf)
+    public KerberosServiceTicket getKerberosProxyServiceTicketWithKeytab(final String servicePrincipalName, final String keyTabPrincipal, final String behalfOf)
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(keyTabPrincipal, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket());
+            return getKerberosProxyServiceTicket(servicePrincipalName, keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket(), getPrincipalName(behalfOf, null));
 
         } catch (Exception e) {
             throw new KerberosException(e);
@@ -553,10 +553,6 @@ public class KerberosDelegateClient extends KerberosClient {
                 KerberosTicket s4u2SelfServiceTicket = getS4U2SelfTicket(tgt, ssgPrincipal, behalfOf, userRealm);
 
                 Credentials s4u2SelfCred = Krb5Util.ticketToCreds(s4u2SelfServiceTicket);
-
-//                PrincipalName clientPrincipalName = getPrincipalName(behalfOf, userRealm);
-//                Credentials s4u2SelfCred = Credentials.acquireS4U2selfCreds(clientPrincipalName, Krb5Util.ticketToCreds(tgt));//Krb5Util.ticketToCreds(s4u2SelfServiceTicket);
-//                KerberosTicket s4u2SelfServiceTicket = Krb5Util.credsToTicket(s4u2SelfCred);
 
                 KrbApReq apReq = new KrbApReq(s4u2SelfCred, false, false, false, null);
 
@@ -679,7 +675,7 @@ public class KerberosDelegateClient extends KerberosClient {
         return kerberosTicket;
     }
 
-    private PrincipalName getPrincipalName(String user, String userRealm) throws RealmException {
+    public PrincipalName getPrincipalName(String user, String userRealm) throws RealmException {
         PrincipalName clientPrincipalName;
         if (userRealm != null) {
             clientPrincipalName = new PrincipalName(user, userRealm);
@@ -715,30 +711,6 @@ public class KerberosDelegateClient extends KerberosClient {
      *
      * @param tgt The TGT
      * @param servicePrincipalName The target service principal name
-     * @param additionalTicket The forwardable service ticket
-     * @return The service ticket as Credentials on behalf of the user
-     * @throws KrbException
-     * @throws IOException
-     */
-    protected KerberosTicket getS4U2ProxyTicket(KerberosTicket tgt, String servicePrincipalName, KerberosTicket additionalTicket) throws KrbException, IOException {
-        PrincipalName sname = new PrincipalName(servicePrincipalName);
-
-        KerberosTicket kerberosTicket = cacheManager.getKerberosTicket(sname, additionalTicket);
-        if (kerberosTicket == null) {
-            Ticket[] tickets = new Ticket[] {new Ticket(additionalTicket.getEncoded())};
-            DelegateKrbTgsReq req = new DelegateKrbTgsReq(Krb5Util.ticketToCreds(tgt), sname, tickets);
-            kerberosTicket = Krb5Util.credsToTicket(req.getCreds());
-            cacheManager.store(sname, additionalTicket, kerberosTicket);
-        }
-        return kerberosTicket;
-
-    }
-
-    /**
-     * Populate the TGS_REQ message, send to KDC, and retrieve the Service Ticket
-     *
-     * @param tgt The TGT
-     * @param servicePrincipalName The target service principal name
      * @param o The forwardable service ticket
      * @return The service ticket as Credentials on behalf of the user
      * @throws KrbException
@@ -748,32 +720,22 @@ public class KerberosDelegateClient extends KerberosClient {
         KerberosTicket kerberosTicket = null;
         Ticket serviceTicket = null;
         PrincipalName sname = new PrincipalName(servicePrincipalName);
-        //TODO: unify the approach and implement cache for constrained proxy
+        //Detect ticket type and convert it accordingly
         if(o instanceof KerberosTicket) {
-            KerberosTicket additionalTicket = (KerberosTicket) o;
-            kerberosTicket = cacheManager.getKerberosTicket(sname, additionalTicket);
-            if (kerberosTicket != null) {
-                return kerberosTicket;
-            }
             serviceTicket = new Ticket(((KerberosTicket)o).getEncoded());
-//            return getS4U2ProxyTicket(tgt, servicePrincipalName, (KerberosTicket) o);
         }
         else if (o instanceof Ticket) {
-            //this is the case of constrained proxy
-//            PrincipalName sname = new PrincipalName(servicePrincipalName);
             serviceTicket = (Ticket)o;
-//            Ticket[] tickets = new Ticket[] {serviceTicket};
-//            DelegateKrbTgsReq req = new DelegateKrbTgsReq(Krb5Util.ticketToCreds(tgt), sname, tickets);
-//            return Krb5Util.credsToTicket(req.getCreds());
         }
-        Credentials credentials = Credentials.acquireS4U2proxyCreds(servicePrincipalName, serviceTicket, clientPrincipal, Krb5Util.ticketToCreds(tgt));
-        kerberosTicket = Krb5Util.credsToTicket(credentials);
+        kerberosTicket = cacheManager.getKerberosTicket(sname, o);
+        if (kerberosTicket == null) {
+            Credentials credentials = Credentials.acquireS4U2proxyCreds(servicePrincipalName, serviceTicket, clientPrincipal, Krb5Util.ticketToCreds(tgt));
+            kerberosTicket = Krb5Util.credsToTicket(credentials);
 
-        if(serviceTicket == null) throw new KrbException("Invalid Kerberos ticket type");
-
-        if(o instanceof KerberosTicket) {
-            cacheManager.store(sname, (KerberosTicket) o, kerberosTicket);
+            if(serviceTicket == null) throw new KrbException("Invalid Kerberos ticket type");
+            cacheManager.store(sname, o, kerberosTicket);
         }
+
         return kerberosTicket;
     }
 

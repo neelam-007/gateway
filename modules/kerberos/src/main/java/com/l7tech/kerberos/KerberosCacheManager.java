@@ -10,6 +10,7 @@ import org.jboss.cache.config.EvictionConfig;
 import org.jboss.cache.config.EvictionRegionConfig;
 import org.jboss.cache.eviction.ExpirationAlgorithmConfig;
 import sun.security.krb5.PrincipalName;
+import sun.security.krb5.internal.Ticket;
 
 import javax.security.auth.kerberos.KerberosTicket;
 import java.util.concurrent.TimeUnit;
@@ -85,27 +86,35 @@ public class KerberosCacheManager {
     /**
      * Store the kerberos ticket to the cache.
      *
-     * @param kerberosTicket The kerberos Ticket
+     * @param principalName principal name
+     * @param ticket The kerberos Ticket
+     * @param additionalTicket delegated ticket
      */
-    public void store(PrincipalName principalName, KerberosTicket kerberosTicket, KerberosTicket additionalTicket) {
-
+    public void store(PrincipalName principalName, Object ticket, KerberosTicket additionalTicket) {
         if (eac.getTimeToLive() != 0) {
-            Key key = new Key(principalName, kerberosTicket);
+            Key key = new Key(principalName, (ticket instanceof KerberosTicket? ticket : new TicketWrapper((Ticket)ticket)));
             Fqn fqn = Fqn.fromElements(key);
-
-            if ((eac.getTimeToLive() < 0 ) || (kerberosTicket.getEndTime().getTime() - System.currentTimeMillis() < eac.getTimeToLive())) {
-                cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, kerberosTicket.getEndTime().getTime());
-            } else {
-                cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, System.currentTimeMillis() + eac.getTimeToLive());
+            if(ticket instanceof KerberosTicket) {
+                KerberosTicket kerberosTicket = (KerberosTicket) ticket;
+                if ((eac.getTimeToLive() < 0) || (kerberosTicket.getEndTime().getTime() - System.currentTimeMillis() < eac.getTimeToLive())) {
+                    cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, kerberosTicket.getEndTime().getTime());
+                } else {
+                    cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, System.currentTimeMillis() + eac.getTimeToLive());
+                }
+                cache.put(fqn, KERBEROS_TICKET, additionalTicket);
             }
-            cache.put(fqn, KERBEROS_TICKET, additionalTicket);
+            else if(ticket instanceof Ticket){
+                //there is no expiration time on the Ticket so use our values instead
+                cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, System.currentTimeMillis() + eac.getTimeToLive());
+                cache.put(fqn, KERBEROS_TICKET, additionalTicket);
+            }
         }
     }
 
-    public KerberosTicket getKerberosTicket(PrincipalName principalName, KerberosTicket kerberosTicket) {
-        Key key = new Key(principalName, kerberosTicket);
+    public KerberosTicket getKerberosTicket(PrincipalName principalName, Object kerberosTicket) {
+        Key key = new Key(principalName, (kerberosTicket instanceof KerberosTicket? kerberosTicket : new TicketWrapper((Ticket)kerberosTicket)));
         Fqn fqn = Fqn.fromElements(key);
-        KerberosTicket ticket = (KerberosTicket) cache.get(fqn, KERBEROS_TICKET);
+        KerberosTicket ticket = (KerberosTicket) cache.get(fqn,  KERBEROS_TICKET);
         if (ticket != null && isExpired(ticket.getEndTime().getTime())) {
             return null;
         } else {
@@ -123,9 +132,9 @@ public class KerberosCacheManager {
 
     private static class Key {
         private PrincipalName principalName;
-        private KerberosTicket ticket;
+        private Object ticket;
 
-        private Key(PrincipalName principalName, KerberosTicket ticket) {
+        private Key(PrincipalName principalName, Object ticket) {
             this.principalName = principalName;
             this.ticket = ticket;
         }
