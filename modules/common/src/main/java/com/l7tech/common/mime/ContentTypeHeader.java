@@ -1,9 +1,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.UncheckedIOException;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +32,9 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String PROP_ALWAYS_VALIDATE = "com.l7tech.common.mime.alwaysValidateContentType";
     public static final boolean ALWAYS_VALIDATE = ConfigFactory.getBooleanProperty( PROP_ALWAYS_VALIDATE, false );
 
+    public static final String PROP_DEFAULT_ENCODING = "com.l7tech.common.mime.defaultEncoding";
+    public static final String DEFAULT_ENCODING_STRING = ConfigFactory.getProperty( PROP_DEFAULT_ENCODING, "ISO-8859-1" );  // See RFC2616 s3.7.1
+
     /** Special instance (null object) that represents the lack of a content type header, where supported.  Where not supported, acts like application/octet-stream. */
     public static final ContentTypeHeader NONE;
 
@@ -42,13 +43,27 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final ContentTypeHeader SOAP_1_2_DEFAULT; // application/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
-    public static final ContentTypeHeader APPLICATION_JSON; // appliacation//json; charset=UTF-8
+    public static final ContentTypeHeader APPLICATION_JSON; // application/json; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
-    public static final Charset DEFAULT_HTTP_ENCODING = Charsets.ISO8859; // See RFC2616 s3.7.1
+    public static final Charset DEFAULT_HTTP_ENCODING = findDefaultHttpEncoding();
 
     private static final Pattern QUICK_CONTENT_TYPE_PARSER =
             Pattern.compile("^\\s*([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)(\\s*)/(\\s*)([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)\\s*(;.*?)?\\s*$", Pattern.DOTALL);
+
+    private static Charset findDefaultHttpEncoding() {
+        Charset charset = Charsets.ISO8859; // See RFC2616 s3.7.1
+
+        try {
+            if ( DEFAULT_ENCODING_STRING.length() > 0 )
+                charset = Charset.forName( DEFAULT_ENCODING_STRING );
+        } catch ( UnsupportedCharsetException e ) {
+            logger.log( Level.WARNING, "Unsupported default encoding: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            // Fallthrough and leave as ISO-8859-1
+        }
+
+        return charset;
+    }
 
     /**
      * AtomicReference to the list of configured textual content types. Usages do not need to synchronize.
