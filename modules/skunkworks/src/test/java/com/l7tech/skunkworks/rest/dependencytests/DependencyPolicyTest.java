@@ -52,6 +52,10 @@ public class DependencyPolicyTest extends DependencyTestBase {
     private SecurityZoneManager securityZoneManager;
     private PolicyCacheImpl policyCache;
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -135,11 +139,6 @@ public class DependencyPolicyTest extends DependencyTestBase {
         policyAlias = new PolicyAlias(policy, folder2);
         policyAlias.setSecurityZone(securityZone1);
         policyAliasManager.save(policyAlias);
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
     }
 
     @After
@@ -273,10 +272,10 @@ public class DependencyPolicyTest extends DependencyTestBase {
     @Test
     public void policyTest() throws Exception {
 
-        TestDependency("policies/", policy.getId(), new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestDependency("policies/", policy.getId(), new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -307,10 +306,10 @@ public class DependencyPolicyTest extends DependencyTestBase {
     @Test
     public void folderServiceAliasTest() throws Exception {
 
-        TestDependency("folders/", folder2.getId(), new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestDependency("folders/", folder2.getId(), new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -362,10 +361,10 @@ public class DependencyPolicyTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(policyXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(policyXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0, dependencyAnalysisMO.getDependencies().size());

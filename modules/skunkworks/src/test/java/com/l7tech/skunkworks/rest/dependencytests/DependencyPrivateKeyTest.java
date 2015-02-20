@@ -3,6 +3,9 @@ package com.l7tech.skunkworks.rest.dependencytests;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.SpecialKeyType;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -13,6 +16,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.PrivateKeyAdminHelper;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -34,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -42,27 +47,30 @@ import static org.junit.Assert.assertNotNull;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyPrivateKeyTest extends DependencyTestBase {
     private static final Logger logger = Logger.getLogger(DependencyPrivateKeyTest.class.getName());
-
-    private SsgKeyStoreManager keyStoreManager;
     private final SecurityZone securityZone = new SecurityZone();
-    private SsgActiveConnectorManager ssgActiveConnectorManager;
     private final SsgActiveConnector activeConnector = new SsgActiveConnector();
     private final JmsConnection jmsConnection =  new JmsConnection();
     private final JmsEndpoint jmsEndpoint =  new JmsEndpoint();
     private final JmsConnection jmsConnection1 =  new JmsConnection();
     private final JmsEndpoint jmsEndpoint1 =  new JmsEndpoint();
+    private SsgKeyStoreManager keyStoreManager;
+    private SsgActiveConnectorManager ssgActiveConnectorManager;
     private SecurityZoneManager securityZoneManager;
     private JmsEndpointManager jmsEndpointManager;
     private JmsConnectionManager jmsConnectionManager;
     private DefaultKey defaultKey;
     private ApplicationEventPublisher applicationEventPublisher;
-
+    
     private String keyAlias = "alice";
     private Goid defaultKeystoreId = new Goid(0, 2);
 
-
     private String brokenKeyAlias = "brokenKeyAlias";
     private Goid brokenKeystoreId = new Goid(2, 0);
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -74,7 +82,7 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
         applicationEventPublisher = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("applicationEventProxy", ApplicationEventPublisher.class);
         jmsConnectionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("jmsConnectionManager", JmsConnectionManager.class);
         jmsEndpointManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("jmsEndpointManager", JmsEndpointManager.class);
-
+        
         //create security zone
         securityZone.setName("Test security zone");
         securityZone.setPermittedEntityTypes(CollectionUtils.set(EntityType.ANY));
@@ -169,11 +177,6 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
         jmsEndpointManager.save(jmsEndpoint1);
     }
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
-    }
-
     @After
     public void after() throws Exception {
         super.after();
@@ -211,10 +214,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -265,10 +268,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -316,10 +319,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -364,10 +367,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -404,10 +407,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -449,10 +452,10 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -474,5 +477,318 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
 
             }
         });
+    }
+
+    @Test
+    public void addWssSecurityTokenDefaultKey() throws Exception {
+
+    
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AddWssSecurityToken/>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = dependencyAnalysisMO.getDependencies().get(0);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKey.getSslInfo().getId(), keyDep.getId());
+                assertEquals(defaultKey.getSslInfo().getName(), keyDep.getName());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+        
+    }
+
+    @Test
+    public void createSamlTokenAssertionDefaultKey() throws Exception {
+  
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:SamlIssuer/>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = dependencyAnalysisMO.getDependencies().get(0);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKey.getSslInfo().getId(), keyDep.getId());
+                assertEquals(defaultKey.getSslInfo().getName(), keyDep.getName());
+                
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+        
+    }
+
+    @Test
+    public void addWssSecurityTokenCustomKey() throws Exception {
+
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AddWssSecurityToken>\n" +
+                        "            <L7p:KeyAlias stringValue=\""+keyAlias+"\"/>\n" +
+                        "            <L7p:NonDefaultKeystoreId goidValue=\"00000000000000000000000000000002\"/>\n" +
+                        "            <L7p:UsesDefaultKeyStore booleanValue=\"false\"/>\n" +
+                        "        </L7p:AddWssSecurityToken>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getId());
+                assertEquals(keyAlias, keyDep.getName());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+
+    }
+
+    @Test
+    public void createSamlTokenAssertionCustomKey() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:SamlIssuer>\n" +
+                        "            <L7p:KeyAlias stringValue=\""+keyAlias+"\"/>\n" +
+                        "            <L7p:NonDefaultKeystoreId goidValue=\"00000000000000000000000000000002\"/>\n" +
+                        "            <L7p:UsesDefaultKeyStore booleanValue=\"false\"/>\n" +
+                        "        </L7p:SamlIssuer>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getId());
+                assertEquals(keyAlias, keyDep.getName());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+
+    }
+
+    @Test
+    public void httpRoutingAssertionDefaultKey() throws Exception {
+   
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:HttpRoutingAssertion>\n" +
+                        "            <L7p:ProtectedServiceUrl stringValue=\"https://here\"/>\n" +
+                        "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:RequestHeaderRules>\n" +
+                        "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                        "            </L7p:RequestParamRules>\n" +
+                        "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:ResponseHeaderRules>\n" +
+                        "            <L7p:SamlAssertionVersion intValue=\"2\"/>\n" +
+                        "        </L7p:HttpRoutingAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = dependencyAnalysisMO.getDependencies().get(0);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKey.getSslInfo().getId(), keyDep.getId());
+                assertEquals(defaultKey.getSslInfo().getName(), keyDep.getName());
+                
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+       
+    }
+
+    @Test
+    public void httpRoutingAssertionNoKey() throws Exception {
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:HttpRoutingAssertion>\n" +
+                        "            <L7p:KeyAlias stringValue=\"test\"/>\n" +
+                        "            <L7p:NonDefaultKeystoreId goidValue=\"00000000000000000000000000000002\"/>\n" +
+                        "            <L7p:ProtectedServiceUrl stringValue=\"https://here\"/>\n" +
+                        "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:RequestHeaderRules>\n" +
+                        "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                        "            </L7p:RequestParamRules>\n" +
+                        "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:ResponseHeaderRules>\n" +
+                        "            <L7p:SamlAssertionVersion intValue=\"2\"/>\n" +
+                        "            <L7p:UsesNoKey booleanValue=\"true\"/>\n" +
+                        "        </L7p:HttpRoutingAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+    }
+
+
+    @Test
+    public void httpRoutingAssertionCustomKey() throws Exception {
+
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:HttpRoutingAssertion>\n" +
+                        "            <L7p:KeyAlias stringValue=\""+keyAlias+"\"/>\n" +
+                        "            <L7p:NonDefaultKeystoreId goidValue=\"00000000000000000000000000000002\"/>\n" +
+                        "            <L7p:ProtectedServiceUrl stringValue=\"https://here\"/>\n" +
+                        "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:RequestHeaderRules>\n" +
+                        "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                        "            </L7p:RequestParamRules>\n" +
+                        "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:ResponseHeaderRules>\n" +
+                        "            <L7p:SamlAssertionVersion intValue=\"2\"/>\n" +
+                        "            <L7p:UsesDefaultKeyStore booleanValue=\"false\"/>\n" +
+                        "        </L7p:HttpRoutingAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getId());
+                assertEquals(keyAlias, keyDep.getName());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(0, dependencyAnalysisMO.getMissingDependencies().size());
+            }
+        });
+
     }
 }

@@ -33,17 +33,21 @@ import static org.junit.Assert.assertNotNull;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyTrustedCertTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyTrustedCertTest.class.getName());
-
+    private final SecurityZone securityZone =  new SecurityZone();
     private TrustedCert trustedCert = new TrustedCert();
     private TrustedCert trustedCertWithRevocationPolicy = new TrustedCert();
     private TrustedCert trustedCertRevCheckSigner = new TrustedCert();
     private TrustedCert trustedCertWithRevocationPolicySigner = new TrustedCert();
     private RevocationCheckPolicy revocationCheckPolicy = new RevocationCheckPolicy();
     private RevocationCheckPolicy revocationCheckPolicyWithSigner = new RevocationCheckPolicy();
-    private final SecurityZone securityZone =  new SecurityZone();
     private TrustedCertManager trustedCertManager;
     private RevocationCheckPolicyManager revocationCheckPolicyManager;
     private SecurityZoneManager securityZoneManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -108,11 +112,6 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
 
     }
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
-    }
-
     @After
     public void after() throws Exception {
         super.after();
@@ -139,10 +138,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -167,10 +166,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -196,10 +195,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -224,10 +223,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -251,10 +250,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1, dependencyAnalysisMO.getDependencies().size());
@@ -279,10 +278,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -308,10 +307,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -336,10 +335,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -365,10 +364,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
@@ -425,13 +424,13 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep, trustedCert);
@@ -460,10 +459,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(3,dependencyAnalysisMO.getDependencies().size());
@@ -503,10 +502,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(3,dependencyAnalysisMO.getDependencies().size());
@@ -544,10 +543,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0,dependencyAnalysisMO.getDependencies().size());
@@ -578,10 +577,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0,dependencyAnalysisMO.getDependencies().size());
@@ -605,10 +604,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0,dependencyAnalysisMO.getDependencies().size());

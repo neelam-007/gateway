@@ -24,10 +24,14 @@ import static org.junit.Assert.assertNull;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyClusterPropertyTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyClusterPropertyTest.class.getName());
-
+    private static final String clusterPropName = "testClusterProp";
     private final ClusterProperty clusterProperty =  new ClusterProperty();
     private ClusterPropertyManager clusterPropertyManager;
-    private static final String clusterPropName = "testClusterProp";
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -40,11 +44,6 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
         clusterProperty.setValue("propValue");
         clusterPropertyManager.save(clusterProperty);
 
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
     }
 
     @After
@@ -67,10 +66,10 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -94,10 +93,10 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNull(getDependency(dependencyItem.getContent(),EntityType.CLUSTER_PROPERTY));
             }
         });
@@ -118,10 +117,10 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0, dependencyAnalysisMO.getDependencies().size());

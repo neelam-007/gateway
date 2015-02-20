@@ -28,6 +28,11 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
     private GenericEntityManager genericEntityManager;
     private GenericEntity genericEntity;
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
+
     @Before
     public void before() throws Exception {
         super.before();
@@ -41,11 +46,6 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
         genericEntity.setValueXml("<?xml version=\"1.0\" encoding=\"UTF-8\"?> <java version=\"1.7.0_60\" class=\"java.beans.XMLDecoder\"> <object class=\"com.l7tech.external.assertions.whichmodule.DemoGenericEntity\"> <void property=\"age\"> <int>24</int> </void> <void property=\"name\"> <string>Source Entity</string> </void> <void property=\"playsTrombone\"> <boolean>true</boolean> </void> <void property=\"valueXml\"> <string></string> </void> </object> </java>");
         genericEntityManager.save(genericEntity);
 
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
     }
 
     @After
@@ -69,10 +69,10 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -101,10 +101,10 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0,dependencyAnalysisMO.getDependencies().size());

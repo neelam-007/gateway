@@ -36,6 +36,19 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
     protected List<Goid> policyGoids = new ArrayList<Goid>();
     protected PolicyVersionManager policyVersionManager;
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+    }
+
+    public static DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
+        return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
+            @Override
+            public boolean evaluate(Object o) {
+                return ((DependencyMO)o).getId().equals(id);
+            }
+        });
+    }
+
     @Before
     public void before() throws Exception {
         policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
@@ -43,10 +56,6 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         policyVersionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyVersionManager", PolicyVersionManager.class);
 
         rootFolder = folderManager.findRootFolder();
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
     }
 
     @After
@@ -73,7 +82,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         Assert.assertEquals(204, response.getStatus());
     }
 
-    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyListMO>> verify) throws Exception{
+    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoidThrows<Item<DependencyListMO>, Exception> verify) throws Exception{
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -113,7 +122,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
 
     }
 
-    protected void TestDependency(String resourceURI, String id, Functions.UnaryVoid<Item<DependencyListMO>> verify) throws Exception{
+    protected void TestDependency(String resourceURI, String id, Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception> verify) throws Exception{
 
          //  get dependency
         RestResponse depResponse = getDatabaseBasedRestManagementEnvironment().processRequest( resourceURI + id + "/dependencies", HttpMethod.GET, null, "");
@@ -130,15 +139,6 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
             @Override
             public boolean evaluate(Object o) {
                 return ((DependencyMO)o).getType().equals(type.toString());
-            }
-        });
-    }
-
-    public static DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
-        return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
-            @Override
-            public boolean evaluate(Object o) {
-                return ((DependencyMO)o).getId().equals(id);
             }
         });
     }

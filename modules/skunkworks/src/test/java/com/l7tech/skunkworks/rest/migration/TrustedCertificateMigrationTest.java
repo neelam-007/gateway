@@ -880,7 +880,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
             Mapping certMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
@@ -888,7 +888,14 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             Assert.assertEquals(trustedCertItem.getId(), certMapping.getSrcId());
             Assert.assertEquals(trustedCertificateMO.getId(), certMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, keyMapping.getActionTaken());
+            Assert.assertEquals(new Goid(0,2).toString() + ":"+ "SSL", keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -910,7 +917,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);

@@ -39,6 +39,10 @@ public class DependencyEncassTest extends DependencyTestBase{
     private EncapsulatedAssertionConfigManager encassConfigManager;
     private SecurityZoneManager securityZoneManager;
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -76,11 +80,6 @@ public class DependencyEncassTest extends DependencyTestBase{
         encassConfigManager.save(encassConfig);
     }
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
-    }
-
     @After
     public void after() throws Exception {
         super.after();
@@ -105,10 +104,10 @@ public class DependencyEncassTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -156,10 +155,10 @@ public class DependencyEncassTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0, dependencyAnalysisMO.getDependencies().size());
@@ -194,10 +193,10 @@ public class DependencyEncassTest extends DependencyTestBase{
         policy.setXml(assXml);
         policyManager.update(policy);
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
