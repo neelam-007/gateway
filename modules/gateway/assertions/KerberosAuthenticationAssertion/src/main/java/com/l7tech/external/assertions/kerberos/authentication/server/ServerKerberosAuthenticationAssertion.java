@@ -196,7 +196,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(realm);
                     // construct the ticket from the delegated ticket
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), new PrincipalName(kst.getClientPrincipalName()), svcPrincipal, serviceTicket);
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, serviceTicket,new PrincipalName(kst.getClientPrincipalName()));
                 }
                 else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
