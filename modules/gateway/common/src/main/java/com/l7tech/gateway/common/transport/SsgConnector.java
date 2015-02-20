@@ -4,10 +4,9 @@ import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
-import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.GoidUpgradeMapper;
@@ -16,6 +15,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import javax.validation.constraints.Max;
@@ -443,9 +443,6 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
      * @param key  the name of the property to get
      * @return the requested property, or null if it is not set
      */
-    @Dependencies({
-            @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID)
-    })
     public String getProperty(String key) {
         return properties.get(key);
     }
@@ -676,6 +673,16 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
             logger.log(Level.WARNING, "Ignoring invalid port range settings for connector goid #" + getGoid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         }
+    }
+
+    @Dependency(type = Dependency.DependencyType.SERVICE, methodReturnType = Dependency.MethodReturnType.GOID)
+    @Transient
+    public Goid getHardwiredServiceId(){
+        return getGoidProperty(EntityType.SERVICE, PROP_HARDWIRED_SERVICE_ID, null);
+    }
+
+    public void setHardwiredServiceId(@Nullable Goid id){
+        putProperty(PROP_HARDWIRED_SERVICE_ID, id == null ? null : id.toString());
     }
 
     @Override

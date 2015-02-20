@@ -31,7 +31,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
      */
     @Inject
     @Named("assertionDependencyProcessorRegistry")
-    private DependencyProcessorRegistry<Assertion> assertionProcessorRegistry;
+    private DependencyProcessorRegistry<Assertion> assertionDependencyProcessorRegistry;
 
     private final DefaultAssertionDependencyProcessor<Assertion> defaultAssertionDependencyProcessor;
 
@@ -44,7 +44,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
     public List<Dependency> findDependencies(@NotNull final A assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         final List<com.l7tech.server.search.objects.Dependency> dependencies = defaultAssertionDependencyProcessor.findDependencies(assertion, finder);
 
-        final DependencyProcessor<Assertion> assertionProcessor = assertionProcessorRegistry.get(assertion.getClass().getName());
+        final DependencyProcessor<Assertion> assertionProcessor = assertionDependencyProcessorRegistry.get(assertion.getClass().getName());
         if (assertionProcessor != null) {
             //noinspection unchecked
             dependencies.addAll(CollectionUtils.subtract(assertionProcessor.findDependencies(assertion, finder), dependencies));
@@ -75,7 +75,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
         if(!replaceAssertionsDependencies) return;
 
         defaultAssertionDependencyProcessor.replaceDependencies(assertion, replacementMap, finder, replaceAssertionsDependencies);
-        final DependencyProcessor<Assertion> assertionProcessor = assertionProcessorRegistry.get(assertion.getClass().getName());
+        final DependencyProcessor<Assertion> assertionProcessor = assertionDependencyProcessorRegistry.get(assertion.getClass().getName());
         if (assertionProcessor != null) {
             //noinspection unchecked
             assertionProcessor.replaceDependencies(assertion, replacementMap, finder, replaceAssertionsDependencies);

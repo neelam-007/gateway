@@ -884,12 +884,104 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             Assert.assertEquals(Mapping.Action.NewOrExisting, targetCassandraMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, targetCassandraMapping.getActionTaken());
             Assert.assertEquals(cassandraConnectionMOItem.getId(), targetCassandraMapping.getSrcId());
-            Assert.assertEquals(cassandraConnectionMOItem.getId(), targetCassandraMapping.getSrcId());
+            Assert.assertEquals(cassandraConnectionMOItem.getId(), targetCassandraMapping.getTargetId());
         } finally {
             if (cassandraConnectionMOItem != null) {
                 RestResponse response = getSourceEnvironment().processRequest("cassandraConnections/" + cassandraConnectionMOItem.getId(), HttpMethod.DELETE, null, "");
                 assertOkEmptyResponse(response);
                 getTargetEnvironment().processRequest("cassandraConnections/" + cassandraConnectionMOItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    @Test
+    public void testFullGatewayExportIncludesConnectorWithHardwiredServiceId() throws Exception {
+        Item<ListenPortMO> listenPortMOMOItem = null;
+        Item<ServiceMO> service = null;
+        Item<ServiceMO> serviceTarget = null;
+        try {
+            service = createService(getSourceEnvironment(), EmptyServiceXML);
+            serviceTarget = createService(getTargetEnvironment(), EmptyServiceXML);
+
+            ListenPortMO listenPortMO = ManagedObjectFactory.createListenPort();
+            listenPortMO.setName("ConnectorWithHardwiredServiceId");
+            listenPortMO.setTargetServiceId(service.getId());
+            listenPortMO.setEnabled(false);
+            listenPortMO.setProtocol("http");
+            listenPortMO.setInterface("ConnectorWithHardwiredServiceId");
+            listenPortMO.setPort(5555);
+            listenPortMO.setEnabledFeatures(Arrays.asList("Published service message input"));
+            listenPortMOMOItem = createConnector(getSourceEnvironment(), listenPortMO);
+
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true&defaultAction=NewOrUpdate", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Mapping cassandraSourceMapping = getMapping(bundleItem.getContent().getMappings(), listenPortMOMOItem.getId());
+            Assert.assertNotNull(cassandraSourceMapping);
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            Mapping targetConnectorMapping = getMapping(mappings.getContent().getMappings(), listenPortMOMOItem.getId());
+            Assert.assertEquals(EntityType.SSG_CONNECTOR.toString(), targetConnectorMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, targetConnectorMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, targetConnectorMapping.getActionTaken());
+            Assert.assertEquals(listenPortMOMOItem.getId(), targetConnectorMapping.getSrcId());
+            Assert.assertEquals(listenPortMOMOItem.getId(), targetConnectorMapping.getTargetId());
+
+            getMapping(bundleItem.getContent().getMappings(), service.getId()).setTargetId(serviceTarget.getId());
+
+            //import the bundle again
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            targetConnectorMapping = getMapping(mappings.getContent().getMappings(), listenPortMOMOItem.getId());
+            Assert.assertEquals(EntityType.SSG_CONNECTOR.toString(), targetConnectorMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, targetConnectorMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, targetConnectorMapping.getActionTaken());
+            Assert.assertEquals(listenPortMOMOItem.getId(), targetConnectorMapping.getSrcId());
+            Assert.assertEquals(listenPortMOMOItem.getId(), targetConnectorMapping.getTargetId());
+
+            Mapping serviceMapping = getMapping(mappings.getContent().getMappings(), service.getId());
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceMapping.getActionTaken());
+            Assert.assertEquals(service.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceTarget.getId(), serviceMapping.getTargetId());
+
+            //verify the connector is correct
+            response = getTargetEnvironment().processRequest("listenPorts/" + listenPortMOMOItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<ListenPortMO> migratedListenPort = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(serviceTarget.getId(), migratedListenPort.getContent().getTargetServiceId());
+
+        } finally {
+            if (service != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + service.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("services/" + service.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (serviceTarget != null) {
+                RestResponse response = getTargetEnvironment().processRequest("services/" + serviceTarget.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (listenPortMOMOItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("listenPorts/" + listenPortMOMOItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("listenPorts/" + listenPortMOMOItem.getId(), HttpMethod.DELETE, null, "");
             }
         }
     }
@@ -917,6 +1009,18 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         cassandraConnectionItem.setContent(cassandraConnectionMO);
         cassandraConnectionMO.setId(cassandraConnectionItem.getId());
         return cassandraConnectionItem;
+    }
+
+    private Item<ListenPortMO> createConnector(JVMDatabaseBasedRestManagementEnvironment environment, ListenPortMO listenPortMO) throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("listenPorts", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(listenPortMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<ListenPortMO> connectorItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        connectorItem.setContent(listenPortMO);
+        listenPortMO.setId(connectorItem.getId());
+        return connectorItem;
     }
 
     private Goid newRandomID() {
