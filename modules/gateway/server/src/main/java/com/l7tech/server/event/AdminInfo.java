@@ -7,6 +7,7 @@ import com.l7tech.identity.User;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.EntityType;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
@@ -28,11 +29,12 @@ public class AdminInfo {
     public static final String LOCALHOST_IP = InetAddressUtil.getLocalHostAddress();
     public static final String LOCALHOST_SUBJECT = "localsystem";
 
-    public AdminInfo(String login, String id, Goid ipOid, String ip, Subject subject) {
+    private AdminInfo(String login, String id, Goid ipOid, String ip, @Nullable User user, Subject subject) {
         this.ip = ip;
         this.id = id;
         this.identityProviderOid = ipOid;
         this.login = login;
+        this.user = user;
         this.subject = subject;
     }
 
@@ -40,6 +42,8 @@ public class AdminInfo {
     public final String id;
     public final Goid identityProviderOid;
     public final String ip;
+    @Nullable
+    public final User user;
     private final Subject subject;
 
     /**
@@ -68,12 +72,13 @@ public class AdminInfo {
             address = LOCALHOST_IP;
             login = LOCALHOST_SUBJECT;
         }
+        User u = null;
         if (clientSubject != null) {
             Set principals = clientSubject.getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 Principal p = (Principal)principals.iterator().next();
                 if (p instanceof User) {
-                    User u = (User) p;
+                    u = (User) p;
                     login = u.getLogin();
                     uniqueId = u.getId();
                     providerOid = u.getProviderId();
@@ -86,7 +91,7 @@ public class AdminInfo {
         if (uniqueId == null) uniqueId = "principal:"+login;
         if (address == null) address = LOCALHOST_IP;
 
-        return new AdminInfo(login, uniqueId, providerOid, address, clientSubject);
+        return new AdminInfo(login, uniqueId, providerOid, address, u, clientSubject);
     }
 
     /**

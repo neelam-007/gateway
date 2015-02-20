@@ -10,7 +10,9 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -233,6 +235,53 @@ public class HexUtilsTest {
         HexUtils.asciiAppend( out, text16, 0, text16.length );
         assertEquals( "HEX lower no seperator", "...... ..t.e.x.t\".", out.toString() );
     }
+
+    private byte[] b( String s ) {
+        try {
+            return s.getBytes( "UTF-8" );
+        } catch ( UnsupportedEncodingException e ) {
+            throw new RuntimeException( e );
+        }
+    }
+
+    @Test
+    public void testBase64url() throws Exception {
+        assertEquals( "", HexUtils.encodeBase64Url( b( "" ) ) );
+        assertEquals( "YQ", HexUtils.encodeBase64Url( b( "a" ) ) );
+        assertEquals( "YXNkZg", HexUtils.encodeBase64Url( b( "asdf" ) ) );
+        assertEquals( "b2l1aHBvaXVoZWg5MjhoYXNiMzlyYg", HexUtils.encodeBase64Url( b( "oiuhpoiuheh928hasb39rb" ) ) );
+        assertEquals( "YWl1Z2FsZWlyZ2hhZWlydWdoYWVybGl1Z2hhZWxyaXVnYWVyZ2l1aGFlcmlndWFoYWU",
+                HexUtils.encodeBase64Url( b( "aiugaleirghaeirughaerliughaelriugaergiuhaeriguahae" ) ) );
+    }
+
+    @Test
+    public void testUnbase64url() throws Exception {
+        assertTrue( Arrays.equals( b( "" ), HexUtils.decodeBase64Url( "" ) ) );
+        assertTrue( Arrays.equals( b( "a" ), HexUtils.decodeBase64Url( "YQ" ) ) );
+        assertTrue( Arrays.equals( b( "asdf" ), HexUtils.decodeBase64Url( "YXNkZg" ) ) );
+        assertTrue( Arrays.equals( b( "oiuhpoiuheh928hasb39rb" ), HexUtils.decodeBase64Url( "b2l1aHBvaXVoZWg5MjhoYXNiMzlyYg" ) ) );
+        assertTrue( Arrays.equals( b( "aiugaleirghaeirughaerliughaelriugaergiuhaeriguahae" ),
+                HexUtils.decodeBase64Url( "YWl1Z2FsZWlyZ2hhZWlydWdoYWVybGl1Z2hhZWxyaXVnYWVyZ2l1aGFlcmlndWFoYWU" ) ) );
+    }
+
+    @Test
+    public void testBase64UrlRoundTrip() throws Exception {
+        Random r = new Random( 483L );
+
+        for ( int i = 0; i < 5000; ++i ) {
+            int len = r.nextInt( 200 );
+            byte[] b = new byte[ len ];
+            r.nextBytes( b );
+            byte[] out =
+                    HexUtils.decodeBase64Url(
+                            HexUtils.encodeBase64Url(
+                                    HexUtils.decodeBase64Url(
+                                            HexUtils.encodeBase64Url( b ) ) ) );
+            assertEquals( "Length mismatch for " + HexUtils.encodeBase64( b ), b.length, out.length );
+            assertTrue( Arrays.equals( b, out ) );
+        }
+    }
+
 
     public static final String COMPLEX_SUBSTRING = "0d0a2d2d2d2d3d5f7e344b2d596358445e75";
     public static final String COMPLEX_SUPERSTRING = "5468697320707265616d626c652073686f756c642062652069676e6" +
