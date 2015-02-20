@@ -97,6 +97,8 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     CassandraConnectionDependencyProcessor cassandraConnectionDependencyProcessor = new CassandraConnectionDependencyProcessor();
     @InjectMocks
+    HttpConfigurationDependencyProcessor httpConfigurationDependencyProcessor = new HttpConfigurationDependencyProcessor();
+    @InjectMocks
     SsgKeyEntryDependencyProcessor ssgKeyEntryDependencyProcessor = new SsgKeyEntryDependencyProcessor();
 
     @Spy
@@ -112,6 +114,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
             .put(Dependency.DependencyType.JMS_ENDPOINT, jdbcDependencyProcessor)
             .put(Dependency.DependencyType.CASSANDRA_CONNECTION, cassandraConnectionDependencyProcessor)
+            .put(Dependency.DependencyType.HTTP_CONFIGURATION, httpConfigurationDependencyProcessor)
             .put(Dependency.DependencyType.SSG_PRIVATE_KEY, ssgKeyEntryDependencyProcessor)
             .map());
 

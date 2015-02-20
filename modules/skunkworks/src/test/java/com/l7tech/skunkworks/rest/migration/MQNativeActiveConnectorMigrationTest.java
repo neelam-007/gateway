@@ -27,19 +27,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
 * This will test migration using the rest api from one gateway to another.
 */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(ActiveConnectorMigrationTest.class.getName());
+public class MQNativeActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(MQNativeActiveConnectorMigrationTest.class.getName());
 
     private Item<PolicyMO> policyItem;
     private Item<StoredPasswordMO> securePasswordItem;
     private Item<ActiveConnectorMO> mqNativeItem;
     private Item<Mappings> mappingsToClean;
+    private Item<PrivateKeyMO> privateKeyItem;
 
     @Before
     public void before() throws Exception {
@@ -58,6 +60,20 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         securePasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         securePasswordItem.setContent(storedPasswordMO);
 
+        // create private key
+        PrivateKeyCreationContext createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        createPrivateKey.setDn("CN=srcAlias");
+        createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        response = getSourceEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":srcAlias", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+        assertOkCreatedResponse(response);
+        privateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        response = getSourceEnvironment().processRequest("privateKeys/"+ privateKeyItem.getId(), HttpMethod.GET,null,"");
+        assertOkResponse(response);
+        privateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
         //create mq connector;
         ActiveConnectorMO activeConnectorMO = ManagedObjectFactory.createActiveConnector();
         activeConnectorMO.setName("MyMQConfig");
@@ -69,6 +85,10 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
                 .put("MqNativeSecurePasswordOid", securePasswordItem.getId())
                 .put("MqNativePort", "1234")
                 .put("MqNativeHostName", "host")
+                .put("MqNativeIsSslEnabled", "true")
+                .put("MqNativeIsSslKeystoreUsed", "true")
+                .put("MqNativeSslKeystoreAlias", privateKeyItem.getContent().getAlias())
+                .put("MqNativeSslKeystoreId", privateKeyItem.getContent().getKeystoreId())
                 .map());
         response = getSourceEnvironment().processRequest("activeConnectors", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(activeConnectorMO)));
@@ -134,22 +154,21 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
+
+        response = getSourceEnvironment().processRequest("privateKeys/"+ privateKeyItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkEmptyResponse(response);
     }
 
     @Test
     public void testImportNew() throws Exception {
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connection and secure password", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. Root folder,a policy, active connection and secure password", 4, bundleItem.getContent().getMappings().size());
-
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+        Assert.assertEquals("The bundle should have 4 items. A policy, active connection and secure password and private key", 4, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 5 mappings. Root folder,a policy, active connection and secure password and private key", 5, bundleItem.getContent().getMappings().size());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -160,29 +179,41 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = getMapping(mappings.getContent().getMappings(), securePasswordItem.getId());
+        assertNotNull(passwordMapping);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
         Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
         Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
+        Mapping privateKeyMapping = getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+        assertNotNull(privateKeyMapping);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+        Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+        Mapping mqMapping = getMapping(mappings.getContent().getMappings(), mqNativeItem.getId());
+        assertNotNull(mqMapping);
         Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
         Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
 
-        Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+        Mapping rootFolderMapping = getMapping(mappings.getContent().getMappings(), Folder.ROOT_FOLDER_ID.toString());
+        assertNotNull(rootFolderMapping);
         Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
         Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
         Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(3);
+        Mapping policyMapping = getMapping(mappings.getContent().getMappings(), policyItem.getId());
+        assertNotNull(policyMapping);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -215,17 +246,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle","encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 mappings. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector, private key and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 mappings. Root folder, a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+            // change private key to not fail on new
+            getMapping(bundleItem.getContent().getMappings(), privateKeyItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -236,7 +266,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -244,21 +274,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -315,19 +352,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder, a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the mq connector to the existing one
-            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+            bundleItem.getContent().getMappings().get(2).setTargetId(activeConnectorMO.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -339,7 +373,8 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
+
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -347,21 +382,29 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -419,18 +462,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder, a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the mq connector to the existing one
             bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -442,8 +483,8 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
             assertEquals(409, response.getStatus());
             Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
-            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+            assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(2).getErrorType());
+            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(2).<String>getProperty("ErrorMessage").contains("must be unique"));
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/" + mqCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
@@ -454,21 +495,17 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
     public void testMqAlwaysCreateNew() throws Exception{
 
         //get the bundle
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
         assertOkResponse(response);
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 5 items. Root folder, a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
         //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
-        bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
-
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+        bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.AlwaysCreateNew);
+        bundleItem.getContent().getMappings().get(2).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
 
         //import the bundle
         logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -480,7 +517,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -488,21 +525,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
         Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
+        Mapping keyMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+        Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+        Mapping mqMapping = mappings.getContent().getMappings().get(2);
         Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
         Assert.assertEquals(Mapping.Action.AlwaysCreateNew, mqMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getTargetId());
 
-        Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
         Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
         Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(3);
+        Mapping policyMapping = mappings.getContent().getMappings().get(4);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -524,7 +568,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(3, policyDependencies.size());
 
         DependencyMO mqDependency = getDependency(policyDependencies,mqNativeItem.getId());
         Assert.assertNotNull(mqDependency);
@@ -556,19 +600,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder, a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the mq connector to the existing one
-            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrUpdate);
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -580,7 +621,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -588,21 +629,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -624,7 +672,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
             DependencyMO mqDependency = getDependency(policyDependencies, mqNativeItem.getId());
             Assert.assertNotNull(mqDependency);
@@ -659,20 +707,17 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder,a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the mq connector to the existing one
-            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrUpdate);
+            bundleItem.getContent().getMappings().get(2).setTargetId(activeConnectorMO.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -684,7 +729,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -692,21 +737,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -728,7 +780,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
             DependencyMO mqDependency = getDependency(policyDependencies, activeConnectorMO.getId());
             Assert.assertNotNull(mqDependency);
@@ -763,21 +815,18 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder,a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the mq connector to the existing one
-            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrExisting);
-            bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", activeConnectorMO.getName()).map());
-            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
-            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(2).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", activeConnectorMO.getName()).map());
+            bundleItem.getContent().getMappings().get(2).setTargetId(activeConnectorMO.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -789,7 +838,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -797,21 +846,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -866,20 +922,18 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         try{
             //get the bundle
-            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            response = getSourceEnvironment().processRequest("bundle", "encryptSecrets=true&encryptUsingClusterPassphrase=true&policy=" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 4 items. A policy, active connector and secure password", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. Root folder,a policy, active connector, private key and secure password", 5, bundleItem.getContent().getMappings().size());
 
             //update the bundle mapping to map the password to the existing one
             bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
             bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
             bundleItem.getContent().getMappings().get(0).setTargetId(passwordMO.getId());
-            //change the secure password MO to contain a password.
-            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -891,7 +945,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
             Mapping passwordMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -899,21 +953,28 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
             Assert.assertEquals(passwordMO.getId(), passwordMapping.getTargetId());
 
-            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Mapping keyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, keyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, keyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), keyMapping.getSrcId());
+            Assert.assertEquals(keyMapping.getSrcId(), keyMapping.getTargetId());
+
+            Mapping mqMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
             Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
             Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
 
-            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
             Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
             Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -935,7 +996,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
             DependencyMO mqDependency = getDependency(policyDependencies, mqNativeItem.getId());
             Assert.assertNotNull(mqDependency);
