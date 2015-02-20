@@ -134,7 +134,8 @@ public class EntityPropertiesHelperTest {
                 // Serialization should not break if a new enum type is added.
                 // Old clients that do not expect to see "Identity Provider" will likely throw an error saying unknown type.
                 // for example The GMC will output: 'cvc-enumeration-valid: Value 'New Type Unknown' is not facet-valid with respect to enumeration '[Include, Internal, Global, Identity Provider]'. It must be a value from the enumeration.'
-                "Identity Provider");
+                "Identity Provider",
+                "Service Operation");
 
         //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( ImportedPolicyReferenceType.class,
