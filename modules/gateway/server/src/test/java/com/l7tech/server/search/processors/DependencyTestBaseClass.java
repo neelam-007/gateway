@@ -3,6 +3,8 @@ package com.l7tech.server.search.processors;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
@@ -15,6 +17,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.search.DependencyProcessorRegistry;
@@ -60,10 +63,10 @@ public abstract class DependencyTestBaseClass {
     DependencyProcessorRegistry dependencyProcessorRegistry;
 
     @Spy
-    protected DependencyProcessorRegistry ssgConnectorDependencyProcessorRegistry;
+    protected DependencyProcessorRegistry<SsgConnector> ssgConnectorDependencyProcessorRegistry;
 
     @Spy
-    protected DependencyProcessorRegistry ssgActiveConnectorDependencyProcessorRegistry;
+    protected DependencyProcessorRegistry<SsgActiveConnector> ssgActiveConnectorDependencyProcessorRegistry;
 
     @Spy
     DependencyProcessorRegistry assertionDependencyProcessorRegistry;
@@ -95,6 +98,8 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor();
     @InjectMocks
+    SsgActiveConnectorDependencyProcessor ssgActiveConnectorDependencyProcessor = new SsgActiveConnectorDependencyProcessor();
+    @InjectMocks
     CassandraConnectionDependencyProcessor cassandraConnectionDependencyProcessor = new CassandraConnectionDependencyProcessor();
     @InjectMocks
     HttpConfigurationDependencyProcessor httpConfigurationDependencyProcessor = new HttpConfigurationDependencyProcessor();
@@ -112,6 +117,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
+            .put(Dependency.DependencyType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorDependencyProcessor)
             .put(Dependency.DependencyType.JMS_ENDPOINT, jdbcDependencyProcessor)
             .put(Dependency.DependencyType.CASSANDRA_CONNECTION, cassandraConnectionDependencyProcessor)
             .put(Dependency.DependencyType.HTTP_CONFIGURATION, httpConfigurationDependencyProcessor)
@@ -133,6 +139,8 @@ public abstract class DependencyTestBaseClass {
         defaultSslKey = SsgKeyEntry.createDummyEntityForAuditing(defaultKeystoreId, "defaultSslKey");
         Mockito.when(defaultKey.getSslInfo()).thenReturn(defaultSslKey);
         Mockito.when(keyStoreManager.findByPrimaryKey(defaultSslKey.getKeystoreId())).thenReturn(ssgKeyFinder);
+        EntityHeader ssgActiveConnectorHeader = EntityHeaderUtils.fromEntity(defaultSslKey);
+        mockEntity(defaultSslKey, ssgActiveConnectorHeader);
     }
 
     @After

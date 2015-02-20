@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Created by vkazakov on 2/18/2015.
+ * This is used to return the default ssl key when it is used by the http configuration
  */
 public class HttpConfigurationDependencyProcessor extends DefaultDependencyProcessor<HttpConfiguration> {
 
@@ -33,7 +33,7 @@ public class HttpConfigurationDependencyProcessor extends DefaultDependencyProce
             try {
                 defaultSslKeyEntry = defaultKey.getSslInfo();
             } catch (IOException e) {
-                throw new FindException("Could got det Default ssl Key", e);
+                throw new FindException("Could not get Default ssl Key", e);
             }
             final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(defaultSslKeyEntry, EntityHeaderUtils.fromEntity(defaultSslKeyEntry)));
             dependencies.add(dependency);

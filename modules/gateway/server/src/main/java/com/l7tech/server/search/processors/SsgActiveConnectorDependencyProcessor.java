@@ -26,7 +26,7 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
 
     @Inject
     @Named("ssgActiveConnectorDependencyProcessorRegistry")
-    private DependencyProcessorRegistry<SsgActiveConnector> processorRegistry;
+    private DependencyProcessorRegistry<SsgActiveConnector> ssgActiveConnectorDependencyProcessorRegistry;
 
     @Override
     @NotNull
@@ -35,7 +35,7 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
         final List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        final DependencyProcessor<SsgActiveConnector> processor = processorRegistry.get(activeConnector.getType());
+        final DependencyProcessor<SsgActiveConnector> processor = ssgActiveConnectorDependencyProcessorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(CollectionUtils.subtract(processor.findDependencies(activeConnector, finder), dependencies));
@@ -49,7 +49,7 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
         super.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        final DependencyProcessor<SsgActiveConnector> processor = processorRegistry.get(activeConnector.getType());
+        final DependencyProcessor<SsgActiveConnector> processor = ssgActiveConnectorDependencyProcessorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             processor.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
