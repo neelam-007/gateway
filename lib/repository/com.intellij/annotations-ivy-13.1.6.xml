@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.intellij"
 		module="annotations"
-		revision="11.1.2"
+		revision="13.1.6"
 		status="release"
-		publication="20120517115309"
+		publication="20120517115310"
 		default="true"
 	/>
 	<configurations>

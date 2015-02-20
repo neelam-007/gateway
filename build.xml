@@ -1620,7 +1620,7 @@
         <!--
           The build will fail if any of these JARS are missing.
         -->
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/annotations-11.1.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/annotations-13.1.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/antlr-2.7.7-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/aopalliance-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/apache-harmony-asn1-0.1.jar"/>
