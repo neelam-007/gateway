@@ -18,6 +18,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -81,6 +82,10 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
         try {
             final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+            if ( null == user )
+                throw new IllegalStateException( "An authenticated user is required but not present" );
+            if ( null == context.getService() && !assertion.getTarget().equals(TargetMessageType.OTHER) )
+                throw new IllegalStateException( "A resolved service is required unless a message variable is targeted" );
 
             Map<String, Object> varMap =  context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
@@ -88,7 +93,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             final URI uri = getURI(context, varMap, message, assertion);
             final URI baseUri = getBaseURI(context, message, assertion);
             //The service ID should always be a constant.
-            final String serviceId = context.getService().getId();
+            final String serviceId = context.getService() == null ? null : context.getService().getId();
             final HttpMethod action = getAction(varMap, message, assertion);
             final String contentType = getContentType( message);
 
@@ -193,7 +198,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             String baseURI = context.getService().getRoutingUri();
             Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
             Matcher matcher = pattern.matcher(requestURI);
-            if (matcher.matches())
+            if ( matcher.matches() && matcher.groupCount() > 0 )
                 uri = matcher.group(1);
             else
                 throw new IllegalArgumentException("Could not calculate uri");
@@ -234,7 +239,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             errorRseponse = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         }
 
-        getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, exception.getMessage());
+        getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[] { exception.getMessage() }, ExceptionUtils.getDebugException( exception ) );
         return errorRseponse;
     }
 }
