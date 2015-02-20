@@ -409,6 +409,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case INTERNAL:
             case GLOBAL_FRAGMENT:
             case IDENTITY_PROVIDER_POLICY:
+            case POLICY_BACKED_OPERATION:
                 policy = entity;
                 break;
         }

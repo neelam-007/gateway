@@ -79,6 +79,13 @@ public class PolicyResourceFactoryTest {
         assertEquals(PolicyType.POLICY_BACKED_OPERATION, policy.getType());
     }
 
+    @BugId("SSG-10853")
+    @Test
+    public void filterEntityPolicyBackedService() {
+        final Policy policyBackedServicePolicy = new Policy(PolicyType.POLICY_BACKED_OPERATION, "test", "", false);
+        assertEquals(policyBackedServicePolicy, factory.filterEntity(policyBackedServicePolicy));
+    }
+
     private PolicyMO createPolicyMO() {
         final PolicyMO mo = ManagedObjectFactory.createPolicy();
         final PolicyDetail detail = ManagedObjectFactory.createPolicyDetail();
