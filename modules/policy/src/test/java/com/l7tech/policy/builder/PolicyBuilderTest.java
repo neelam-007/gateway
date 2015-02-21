@@ -15,6 +15,11 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
+/**
+ * For some of the tests the xml is broken up for result validation because the order of the element might change if the
+ * underlying HashSet/HashMap order changes. Sometimes it happens with different JDK versions.
+ */
+
 public class PolicyBuilderTest {
     private PolicyBuilder builder;
 

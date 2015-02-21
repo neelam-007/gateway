@@ -83,7 +83,9 @@ public class WspReaderTest {
         log.info("Parsing policy: " + xmlA);
         Assertion policyB = wspReader.parseStrictly(xmlA, INCLUDE_DISABLED);
         String xmlB = WspWriter.getPolicyXml(policyB);
-        assertEquals(xmlA, xmlB);
+        // Removing the base64 node from CustomAssertion because the value might change if it's underlying HashSet/HashMap order changes, which happens in JDK 8.
+        assertEquals(xmlA.replaceAll("<L7p:base64SerializedValue>.*</L7p:base64SerializedValue>", ""),
+                xmlB.replaceAll("<L7p:base64SerializedValue>.*</L7p:base64SerializedValue>", ""));
     }
 
     @Test

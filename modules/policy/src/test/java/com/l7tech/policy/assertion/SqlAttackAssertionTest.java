@@ -18,23 +18,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class SqlAttackAssertionTest {
 
-    // Current policy xml (Icefish)
-    private static final String CURRENT_POLICY_XML =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <L7p:SqlAttackProtection>\n" +
-            "        <L7p:IncludeBody booleanValue=\"false\"/>\n" +
-            "        <L7p:IncludeUrlPath booleanValue=\"true\"/>\n" +
-            "        <L7p:IncludeUrlQueryString booleanValue=\"true\"/>\n" +
-            "        <L7p:Protections stringSetValue=\"included\">\n" +
-            "            <L7p:item stringValue=\"MsSql\"/>\n" +
-            "            <L7p:item stringValue=\"SqlMetaText\"/>\n" +
-            "            <L7p:item stringValue=\"OraSql\"/>\n" +
-            "            <L7p:item stringValue=\"SqlMeta\"/>\n" +
-            "        </L7p:Protections>\n" +
-            "    </L7p:SqlAttackProtection>\n" +
-            "</wsp:Policy>\n";
-
     // Goatfish policy xml
     private static final String GOATFISH_POLICY_XML =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -58,15 +41,41 @@ public class SqlAttackAssertionTest {
      */
     @Test
     public void testSerialization() throws Exception {
+        // The xml is broken up for result validation because the order of the element might change if the
+        // underlying HashSet/HashMap order changes, which happens in JDK 8.
+
+        // Current policy xml (Icefish)
+        final String expectedStart =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <L7p:SqlAttackProtection>\n" +
+                        "        <L7p:IncludeBody booleanValue=\"false\"/>\n" +
+                        "        <L7p:IncludeUrlPath booleanValue=\"true\"/>\n" +
+                        "        <L7p:IncludeUrlQueryString booleanValue=\"true\"/>\n" +
+                        "        <L7p:Protections stringSetValue=\"included\">\n";
+        final String expectedStr1 =
+                        "            <L7p:item stringValue=\"MsSql\"/>\n";
+        final String expectedStr2 =
+                        "            <L7p:item stringValue=\"SqlMetaText\"/>\n";
+        final String expectedStr3 =
+                        "            <L7p:item stringValue=\"OraSql\"/>\n";
+        final String expectedStr4 =
+                        "            <L7p:item stringValue=\"SqlMeta\"/>\n";
+        final String expectedEnd =
+                        "        </L7p:Protections>\n" +
+                        "    </L7p:SqlAttackProtection>\n" +
+                        "</wsp:Policy>\n";
+
         AssertionRegistry registry = new AssertionRegistry();
         registry.registerAssertion(SqlAttackAssertion.class);
 
         WspReader wspReader = new WspReader(registry);
 
-        SqlAttackAssertion assertion =
-                (SqlAttackAssertion) wspReader.parseStrictly(CURRENT_POLICY_XML, WspReader.INCLUDE_DISABLED);
-
-        assertEquals(CURRENT_POLICY_XML, WspWriter.getPolicyXml(assertion));
+        SqlAttackAssertion assertion = (SqlAttackAssertion) wspReader.parseStrictly(
+                expectedStart + expectedStr1 + expectedStr2 + expectedStr3 + expectedStr4 + expectedEnd, WspReader.INCLUDE_DISABLED);
+        final String result = WspWriter.getPolicyXml(assertion);
+        assertTrue(result.startsWith(expectedStart) && result.contains(expectedStr1) && result.contains(expectedStr2)
+                && result.contains(expectedStr3) && result.contains(expectedStr4) && result.endsWith(expectedEnd));
     }
 
     /**
