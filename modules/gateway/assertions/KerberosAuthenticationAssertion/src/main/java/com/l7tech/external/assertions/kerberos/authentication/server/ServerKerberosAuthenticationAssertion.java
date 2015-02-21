@@ -63,7 +63,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        AssertionStatus status = AssertionStatus.NONE;
         KerberosDelegateClient delegateClient = new KerberosDelegateClient();
         AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         if (authContext.getCredentials().size() < 1 && authContext.getLastAuthenticatedUser() == null) {
@@ -196,12 +195,12 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(realm);
                     // construct the ticket from the delegated ticket
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, serviceTicket,new PrincipalName(kst.getClientPrincipalName()));
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), new PrincipalName(kst.getClientPrincipalName()), svcPrincipal, serviceTicket);
                 }
                 else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                     String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, serviceTicket, new PrincipalName(kst.getClientPrincipalName()));
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), new PrincipalName(kst.getClientPrincipalName()), userPrincipal.getName(), plaintextPassword, serviceTicket);
                 }
             }
 

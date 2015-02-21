@@ -2,10 +2,6 @@ package com.l7tech.kerberos.delegate;
 
 import com.l7tech.kerberos.*;
 import com.l7tech.kerberos.referral.ReferralKrbTgsReq;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.*;
@@ -43,10 +39,6 @@ public class KerberosDelegateClient extends KerberosClient {
         KerberosTicketRepository.Key ticketCacheKey = null;
         Subject cacheSubject = null;
         try {
-            final Oid kerberos5Oid = getKerberos5Oid();
-            final GSSManager manager = GSSManager.getInstance();
-            final GSSName clientName = manager.createName(accountName, GSSName.NT_USER_NAME, kerberos5Oid);
-
             // check for a cached service ticket
             ticketCacheKey = ticketCache.generateKey(servicePrincipalName, KerberosTicketRepository.KeyType.CREDENTIAL, accountName, accountPasswd);
 
@@ -75,8 +67,6 @@ public class KerberosDelegateClient extends KerberosClient {
             throw new KerberosConfigException("Unable to login using gateway configured account.", le);
         } catch (SecurityException se) {
             throw new KerberosConfigException("Kerberos configuration error.", se);
-        } catch (GSSException gsse) {
-            throw new KerberosConfigException("Error creating Kerberos Service Ticket.", gsse);
         } catch (PrivilegedActionException pae) {
 
             // if we used cached credentials, discard it
@@ -237,10 +227,6 @@ public class KerberosDelegateClient extends KerberosClient {
         KerberosTicketRepository.Key ticketCacheKey = null;
         Subject cacheSubject = null;
         try {
-            final Oid kerberos5Oid = getKerberos5Oid();
-            final GSSManager manager = GSSManager.getInstance();
-            final GSSName clientName = manager.createName(accountName, GSSName.NT_USER_NAME, kerberos5Oid);
-
             // check for a cached service ticket
             ticketCacheKey = ticketCache.generateKey(servicePrincipal, KerberosTicketRepository.KeyType.CREDENTIAL, accountName, accountPasswd);
 
@@ -272,8 +258,6 @@ public class KerberosDelegateClient extends KerberosClient {
             throw new KerberosConfigException("Unable to login using gateway configured account.", le);
         } catch (SecurityException se) {
             throw new KerberosConfigException("Kerberos configuration error.", se);
-        } catch (GSSException gsse) {
-            throw new KerberosConfigException("Error creating Kerberos Service Ticket.", gsse);
         } catch (PrivilegedActionException pae) {
 
             // if we used cached credentials, discard it
@@ -385,7 +369,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service on behalf of a user.
      * @throws KerberosException
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final Object kerberosTicket, final PrincipalName userPrincipalName)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final PrincipalName userPrincipalName, final String keyTabPrincipal, final Object kerberosTicket)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -434,7 +418,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return a service ticket that can be used to call the target service
      * @throws KerberosException when the kerberos authentication or service ticket provisioning fails
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final Object additionalTicket, PrincipalName clientPrincipalName)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, PrincipalName clientPrincipalName, final String accountName, final String accountPasswd, final Object additionalTicket)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -442,11 +426,6 @@ public class KerberosDelegateClient extends KerberosClient {
         Subject cacheSubject = null;
 
         try {
-
-            final Oid kerberos5Oid = getKerberos5Oid();
-            final GSSManager manager = GSSManager.getInstance();
-            final GSSName clientName = manager.createName(accountName, GSSName.NT_USER_NAME, kerberos5Oid);
-
             // check for a cached service ticket
             ticketCacheKey = ticketCache.generateKey(servicePrincipalName, KerberosTicketRepository.KeyType.CREDENTIAL, accountName, accountPasswd);
 
@@ -471,8 +450,6 @@ public class KerberosDelegateClient extends KerberosClient {
             throw new KerberosConfigException("Unable to login using gateway configured account.", le);
         } catch (SecurityException se) {
             throw new KerberosConfigException("Kerberos configuration error.", se);
-        } catch (GSSException gsse) {
-            throw new KerberosConfigException("Error creating Kerberos Service Ticket.", gsse);
         } catch (PrivilegedActionException pae) {
 
             // if we used cached credentials, discard it
@@ -504,7 +481,7 @@ public class KerberosDelegateClient extends KerberosClient {
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(servicePrincipalName, accountName, accountPasswd, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket(), getPrincipalName(behalfOf, null));
+            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, null), accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket());
 
         } catch (Exception e) {
             throw new KerberosException(e);
@@ -525,7 +502,7 @@ public class KerberosDelegateClient extends KerberosClient {
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(keyTabPrincipal, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket(), getPrincipalName(behalfOf, null));
+            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, null), keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket());
 
         } catch (Exception e) {
             throw new KerberosException(e);
@@ -588,7 +565,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @param clientPrincipal
      *@param subject          The logon subject, a forwardable tgt should included in the subject.
      * @param additionalTicket    The user service ticket.   @return The Delegated service ticket for the target service on behalf of a user.
-     * @throws KerberosException
+     * @throws PrivilegedActionException
      */
     private KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipal, final PrincipalName clientPrincipal, final Subject subject, final Object additionalTicket) throws PrivilegedActionException {
 

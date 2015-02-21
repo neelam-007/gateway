@@ -160,7 +160,7 @@ public class KerberosDelegateClientTest {
         KerberosDelegateClient client = new KerberosDelegateClient();
         KerberosServiceTicket s4uSelfServiceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
 
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket(), new PrincipalName("awitrisna@L7TECH.DEV"));
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", new PrincipalName("awitrisna@L7TECH.DEV"), "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket());
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
 
@@ -169,7 +169,7 @@ public class KerberosDelegateClientTest {
         setupMock("L7TECH.DEV");
         KerberosServiceTicket s4uSelfServiceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
 
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket(), new PrincipalName("awitrisna@L7TECH.DEV"));
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", new PrincipalName("awitrisna@L7TECH.DEV"), "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket());
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
 
