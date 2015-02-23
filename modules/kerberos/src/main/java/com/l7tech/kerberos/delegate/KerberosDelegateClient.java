@@ -477,11 +477,11 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return a service ticket that can be used to call the target service
      * @throws KerberosException when the kerberos authentication or service ticket provisioning fails
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicketWithCredentials(final String servicePrincipalName, final String accountName, final String accountPasswd, final String behalfOf)
+    public KerberosServiceTicket getKerberosProxyServiceTicketWithCredentials(final String servicePrincipalName, final String accountName, final String accountPasswd, final String behalfOf, final String realm)
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(servicePrincipalName, accountName, accountPasswd, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, null), accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket());
+            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, realm), accountName, accountPasswd, s4uSelfServiceTicket.getDelegatedKerberosTicket());
 
         } catch (Exception e) {
             throw new KerberosException(e);
@@ -498,11 +498,11 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service ticket on behalf of a user.
      * @throws KerberosException When fail to obtain the service ticket on behalf of the user.
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicketWithKeytab(final String servicePrincipalName, final String keyTabPrincipal, final String behalfOf)
+    public KerberosServiceTicket getKerberosProxyServiceTicketWithKeytab(final String servicePrincipalName, final String keyTabPrincipal, final String behalfOf, final String realm)
             throws KerberosException {
         try {
             KerberosServiceTicket s4uSelfServiceTicket = getKerberosSelfServiceTicket(keyTabPrincipal, behalfOf);
-            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, null), keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket());
+            return getKerberosProxyServiceTicket(servicePrincipalName, getPrincipalName(behalfOf, realm), keyTabPrincipal, s4uSelfServiceTicket.getDelegatedKerberosTicket());
 
         } catch (Exception e) {
             throw new KerberosException(e);

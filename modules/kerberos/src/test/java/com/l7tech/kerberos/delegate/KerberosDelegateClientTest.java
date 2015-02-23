@@ -143,14 +143,14 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2Proxy() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
-        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithKeytab("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "kerb");
+        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithKeytab("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "kerb", "KWORLD.KPMG.COM");
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
 
     @Test
     public void testS4U2ProxyMock() throws Exception {
         setupMock("L7TECH.DEV");
-        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithKeytab("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
+        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithKeytab("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna", "L7TECH.DEV");
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
 
@@ -177,14 +177,14 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2ProxyWithUserNamePassword() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicketWithCredentials("http/test2008.l7tech.dev@L7TECH.DEV", "ssg5test@L7TECH.DEV", "7layer]", "awitrisna");
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicketWithCredentials("http/test2008.l7tech.dev@L7TECH.DEV", "ssg5test@L7TECH.DEV", "7layer]", "awitrisna", "L7TECH.DEV");
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
 
     @Test
     public void testS4U2ProxyWithUserNamePasswordMock() throws Exception {
         setupMock("L7TECH.DEV");
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicketWithCredentials("http/test2008.l7tech.dev@L7TECH.DEV", "ssg5test@L7TECH.DEV", "7layer]", "awitrisna");
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicketWithCredentials("http/test2008.l7tech.dev@L7TECH.DEV", "ssg5test@L7TECH.DEV", "7layer]", "awitrisna", "L7TECH.DEV");
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
     

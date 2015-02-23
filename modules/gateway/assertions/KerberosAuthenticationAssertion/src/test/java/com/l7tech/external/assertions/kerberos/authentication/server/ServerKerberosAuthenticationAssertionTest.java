@@ -209,7 +209,7 @@ public class ServerKerberosAuthenticationAssertionTest {
         when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
 
         KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
-        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin())).thenReturn(testTicket);
+        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin(),  assertion.getRealm())).thenReturn(testTicket);
 
         Map<String,Object> variableMap = new HashMap<String, Object>();
 
@@ -242,7 +242,7 @@ public class ServerKerberosAuthenticationAssertionTest {
         Map<String,Object> variableMap = new HashMap<String, Object>();
 
         KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
-        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin())).thenReturn(testTicket);
+        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin(), assertion.getRealm())).thenReturn(testTicket);
 
 
         assertEquals(AssertionStatus.FALSIFIED, fixture.doCheckRequest(mockAuthenticationContext, mockDelegateClient, variableMap));
@@ -293,7 +293,7 @@ public class ServerKerberosAuthenticationAssertionTest {
         when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
 
         KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
-        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin())).thenReturn(testTicket);
+        when(mockDelegateClient.getKerberosProxyServiceTicketWithKeytab(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), user.getLogin(),  assertion.getRealm())).thenReturn(testTicket);
     }
 
     private static class TestServerKerberosAuthenticationAssertion extends ServerKerberosAuthenticationAssertion {
