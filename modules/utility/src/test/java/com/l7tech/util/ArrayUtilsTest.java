@@ -291,7 +291,7 @@ public class ArrayUtilsTest {
         //    time difference for short arrays (nanos): 6080000 (7.745222929936306%)
         //    time difference for long arrays (nanos): 3327000 (0.27223876493446875%)
 
-        assertTrue( "Expected below 200% difference for short arrays, was " + diffPercentS, diffPercentS < 200 );
+        assertTrue( "Expected below 400% difference for short arrays, was " + diffPercentS, diffPercentS < 400 );
         assertTrue( "Expected below 200% difference for long arrays, was " + diffPercentL, diffPercentL < 200 );
     }
 
