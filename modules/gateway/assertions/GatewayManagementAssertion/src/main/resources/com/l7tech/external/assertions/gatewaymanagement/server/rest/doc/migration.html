@@ -740,11 +740,7 @@
     </div>
     <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
     <h3>Supporting Large Migrations</h3>
-    <p>In order to support large migrations you may need to increase the maximum message size that the target Gateway can accept. In order to do that either:</p>
-    <ul>
-        <li>Edit the <span class="italicize">io.xmlPartMaxBytes</span> cluster property to increase the maximum message size that can be accepted by the Gateway.</li>
-        <li>Or, override the maximum message size in the listening port properties.</li>
-    </ul>
+    <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
     <h3>Migration Example</h3>
     <p>For an example migration work-flow see:</p>
     <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration-example.html">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration-example.html</a></p>

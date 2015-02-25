@@ -9,8 +9,7 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocu
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -239,9 +238,30 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         authenticationAssertion.setIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         final AllAssertion basic = new AllAssertion(Arrays.asList(new SslAssertion(), new HttpBasic()));
         final OneOrMoreAssertion mutualOrBasic = new OneOrMoreAssertion(Arrays.asList(new SslAssertion(true), basic));
+
+        //Returning error is the message size limit is exceeded
+        //Adds the Limit Message Size assertion (SSG-10893)
+        final RequestSizeLimit requestSizeLimit = new RequestSizeLimit();
+        requestSizeLimit.setLimit("${gateway.restman.request.message.maxSize}");
+        //The response to return if the message size is too large
+        final CustomizeErrorResponseAssertion customizeErrorResponseAssertion = new CustomizeErrorResponseAssertion();
+        customizeErrorResponseAssertion.setContentType("application/xml; charset=UTF-8");
+        customizeErrorResponseAssertion.setHttpStatus("400");
+        customizeErrorResponseAssertion.setContent( "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                                                    "<l7:Error xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                                                    "    <l7:Type>InvalidRequest</l7:Type>\n" +
+                                                    "    <l7:Detail>the specified maximum data size limit would be exceeded</l7:Detail>\n" +
+                                                    "</l7:Error>");
+        final AllAssertion returnErrorMessageAndStop = new AllAssertion(Arrays.asList(customizeErrorResponseAssertion, new FalseAssertion()));
+        final OneOrMoreAssertion checkMessageSize = new OneOrMoreAssertion(Arrays.asList(
+                new CommentAssertion("Check the request message size. If the maximum message size needs to be increased change the 'restman.request.message.maxSize' cluster property"),
+                requestSizeLimit,
+                returnErrorMessageAndStop));
+
         final Assertion allAss = new AllAssertion(Arrays.asList(
                 mutualOrBasic,
                 authenticationAssertion,
+                checkMessageSize,
                 new RESTGatewayManagementAssertion()
         ));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

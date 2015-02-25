@@ -28,6 +28,26 @@ public class GatewayManagementModuleLifecycleTest {
             "        <L7p:Authentication>\n" +
             "            <L7p:IdentityProviderOid goidValue=\"0000000000000000fffffffffffffffe\"/>\n" +
             "        </L7p:Authentication>\n" +
+            "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+            "            <L7p:CommentAssertion>\n" +
+            "                <L7p:Comment stringValue=\"Check the request message size. If the maximum message size needs to be increased change the 'restman.request.message.maxSize' cluster property\"/>\n" +
+            "            </L7p:CommentAssertion>\n" +
+            "            <L7p:RequestSizeLimit>\n" +
+            "                <L7p:Limit stringValue=\"${gateway.restman.request.message.maxSize}\"/>\n" +
+            "            </L7p:RequestSizeLimit>\n" +
+            "            <wsp:All wsp:Usage=\"Required\">\n" +
+            "                <L7p:CustomizeErrorResponse>\n" +
+            "                    <L7p:Content stringValueReference=\"inline\"><![CDATA[<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+            "<l7:Error xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "    <l7:Type>InvalidRequest</l7:Type>\n" +
+            "    <l7:Detail>the specified maximum data size limit would be exceeded</l7:Detail>\n" +
+            "</l7:Error>]]></L7p:Content>\n" +
+            "                    <L7p:ContentType stringValue=\"application/xml; charset=UTF-8\"/>\n" +
+            "                    <L7p:HttpStatus stringValue=\"400\"/>\n" +
+            "                </L7p:CustomizeErrorResponse>\n" +
+            "                <L7p:FalseAssertion/>\n" +
+            "            </wsp:All>\n" +
+            "        </wsp:OneOrMore>\n" +
             "        <L7p:RESTGatewayManagement/>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>\n";
