@@ -54,20 +54,18 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
     public ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
                                                 final ApplicationContext applicationContext) throws PolicyAssertionException {
-        this(assertion, applicationContext, "gatewayManagementContext.xml");
-    }
-
-    protected ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
-                                                   final ApplicationContext context,
-                                                   final String assertionContextResource) throws PolicyAssertionException {
         super(assertion);
-        assertionContext = buildContext(context, assertionContextResource);
+        this.assertionContext = GatewayManagementApplicationContext.getAssertionApplicationContext(applicationContext);
         restAgent = assertionContext.getBean("restAgent", RestAgent.class);
     }
 
-    private static ApplicationContext buildContext(final ApplicationContext context,
-                                                   final String assertionContextResource) {
-        return new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, context);
+    // for tests to provide custom assertion context, this context will not be shared
+    ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
+                                         final ApplicationContext applicationContext,
+                                         final String assertionContextResource) throws PolicyAssertionException {
+        super(assertion);
+        assertionContext = new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, applicationContext);
+        restAgent = assertionContext.getBean("restAgent", RestAgent.class);
     }
 
     protected ApplicationContext getAssertionContext(){return assertionContext;}
