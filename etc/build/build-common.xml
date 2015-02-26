@@ -69,14 +69,15 @@
       Classpath for Jasper Reports compiler
     -->
     <path id="jasperreports.classpath">
-        <file file="${src.root}/lib/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
+        <file file="${src.root}/lib/repository/net.sf.jasperreports/jasperreports-6.0.3.jar"/>
         <file file="${src.root}/lib/repository/jfree/jcommon-1.0.17.jar"/>
         <file file="${src.root}/lib/repository/jfree/jfreechart-1.0.14.jar"/>
-        <file file="${src.root}/lib/repository/org.eclipse.jdt.core.compiler/ecj-3.5.1.jar"/>
-        <file file="${src.root}/lib/repository/commons-digester/commons-digester-1.8.1.jar"/>
+        <file file="${src.root}/lib/repository/org.eclipse.jdt.core.compiler/ecj-4.3.1.jar"/>
+        <file file="${src.root}/lib/repository/commons-digester/commons-digester-2.1.jar"/>
         <file file="${src.root}/lib/repository/commons-collections/commons-collections-3.2.1.jar"/>
         <file file="${src.root}/lib/repository/commons-logging/commons-logging-1.1.1.jar"/>
-        <file file="${src.root}/lib/repository/commons-beanutils/commons-beanutils-1.8.3.jar"/>
+        <file file="${src.root}/lib/repository/commons-beanutils/commons-beanutils-1.9.0.jar"/>
+        <file file="${src.root}/lib/repository/com.itextpdf/itextpdf-5.5.0.jar"/>
     </path>
 
     <target name="task-init">
@@ -451,15 +452,10 @@
             <path refid="lib.test.path.id"/>
         </path>
     </target>
-    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile,compile-test-scala">
+    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile">
         <module-javac srcdir="${src.test.java.dir}" destdir="${classes.test.dir}">
             <classpath refid="full.test.path.id"/>
         </module-javac>
-    </target>
-    <target name="compile-test-scala" if="module.tests.scala.available" depends="compile-test-init,compile">
-        <module-scalac srcdir="${src.test.scala.dir};${src.test.java.dir}" destdir="${classes.test.dir}">
-            <classpath refid="full.test.path.id"/>
-        </module-scalac>
     </target>
     <target name="compile-test-forms" if="module.tests.available" unless="module.skip.forms" depends="compile-test-init, compile-test-java">
         <module-javac2 srcdir="${src.test.java.dir}" destdir="${classes.test.dir}" classpathref="full.test.path.id"/>

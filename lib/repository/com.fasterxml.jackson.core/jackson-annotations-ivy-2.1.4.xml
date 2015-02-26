@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="com.fasterxml.jackson.core"
+		module="jackson-annotations"
+		revision="2.1.4"
+		status="release"
+		publication="20150224104340"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jackson-annotations" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

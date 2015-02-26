@@ -1,23 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
-    <info organisation="com.l7tech"
-          module="layer7-gateway-reporting"
-          status="integration"
-          e:title="Gateway"
-            >
-    </info>
-    <configurations>
-        <include file="../../../etc/build/ivyconfigurations.xml"/>
-    </configurations>
-    <publications>
-        <artifact name="layer7-gateway-reporting" type="jar" ext="jar" conf="master"/>
-    </publications>
-    <dependencies>
-        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
-        <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>
-        <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
+<info organisation="com.l7tech"
+      module="layer7-gateway-reporting"
+      status="integration"
+      e:title="Gateway"
+        >
+</info>
+<configurations>
+    <include file="../../../etc/build/ivyconfigurations.xml"/>
+</configurations>
+<publications>
+    <artifact name="layer7-gateway-reporting" type="jar" ext="jar" conf="master"/>
+</publications>
+<dependencies>
+    <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+    <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>
+    <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
 
-        <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
-        <dependency org="org.eclipse.jdt.core.compiler" name="ecj" rev="3.5.1" force="true" conf="core"/>
-    </dependencies>
+    <dependency org="net.sf.jasperreports" name="jasperreports" rev="6.0.3" force="true" conf="core"/>
+    <dependency org="org.eclipse.jdt.core.compiler" name="ecj" rev="4.3.1" force="true" conf="core"/>
+    <dependency org="jfree" name="jcommon" rev="1.0.17" force="true" conf="core">
+        <exclude org="gnujaxp" module="gnujaxp" name="*" type="*" ext="*" conf="" matcher="exact"/>
+    </dependency>
+    <dependency org="jfree" name="jfreechart" rev="1.0.14" force="true" conf="core">
+        <exclude org="gnujaxp" module="gnujaxp" name="*" type="*" ext="*" conf="" matcher="exact"/>
+    </dependency>
+    <dependency org="commons-digester" name="commons-digester" rev="2.1" force="true" conf="core"/>
+    <dependency org="commons-beanutils" name="commons-beanutils" rev="1.9.0" force="true" conf="core"/>
+    <dependency org="com.itextpdf" name="itextpdf" rev="5.5.0" force="true" conf="core"/>
+</dependencies>
 </ivy-module>

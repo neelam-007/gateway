@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="commons-digester"
+		module="commons-digester"
+		revision="2.1"
+		status="release"
+		publication="20150224103426"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="commons-digester" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

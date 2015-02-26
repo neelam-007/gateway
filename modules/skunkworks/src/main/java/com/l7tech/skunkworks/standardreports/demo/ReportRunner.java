@@ -11,18 +11,18 @@ import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperExportManager;
 
-import java.util.Properties;
+import java.util.Map;
 import java.sql.Connection;
 
 /**
  * Runs a report and converts it to pdf and html for demo purposes.
  */
 public class ReportRunner {
-    private final Properties prop;
+    private final Map prop;
     private final String outputDirectory;
     private final String compiledReportDirectory;
 
-    public ReportRunner(String compiledReportDirectory, String outputDirectory, Properties prop){
+    public ReportRunner(String compiledReportDirectory, String outputDirectory, Map prop){
         this.compiledReportDirectory = compiledReportDirectory;
         this.outputDirectory = outputDirectory;
         this.prop = prop;
