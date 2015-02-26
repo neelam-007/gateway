@@ -530,6 +530,9 @@
               <!-- This property is used to specify the build type. For example nightly or daily
               Example: -Dbuild.type="nightly" -->
               <propertyref name="build.type"/>
+              <!-- This is used to set the random generator. On tests we use /dev/urandom otherwise the tests will block waiting for entropy.
+               Example: run tests with: -Djava.security.egd=file:/dev/./urandom-->
+              <propertyref name="java.security.egd"/>
             </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">
