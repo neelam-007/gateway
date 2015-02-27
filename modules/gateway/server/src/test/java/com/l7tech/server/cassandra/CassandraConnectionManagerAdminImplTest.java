@@ -139,17 +139,20 @@ public class CassandraConnectionManagerAdminImplTest {
 
     @Test
     public void testTestCassandraConnection() throws Exception {
-        fixture.testCassandraConnection(connOne);
+        assertEquals("", fixture.testConnection(connOne));
         verify(mockCassandraConnectionManager, times(1)).testConnection(connOne);
     }
 
     @Test
     public void testTestCassandraQuery() throws Exception {
-        CassandraConnectionHolder mockConnectionHolder = new CassandraConnectionHolderImpl(connOne, mockCluster, mockSession);
+        final CassandraConnectionHolder mockConnectionHolder = new CassandraConnectionHolderImpl(connOne, mockCluster, mockSession);
         when(mockCassandraConnectionManager.getConnection("one")).thenReturn(mockConnectionHolder);
         final String query = "select * from table";
-        fixture.testCassandraQuery("one", query, 0);
+
+        assertEquals("", fixture.testQuery("one", query, 0));
         verify(mockCassandraConnectionManager, times(1)).getConnection("one");
         verify(mockCassandraQueryManager, times(1)).testQuery(mockSession, query, 0);
+
     }
+
 }
