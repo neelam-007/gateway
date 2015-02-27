@@ -2,12 +2,16 @@ package com.l7tech.external.assertions.portalbootstrap.console;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.portalbootstrap.PortalBootstrapExtensionInterface;
+import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
@@ -30,6 +34,8 @@ public class EnrollWithPortalDialog extends JDialog {
         setContentPane( contentPanel );
 
         Utilities.attachDefaultContextMenu( enrollmentUrlField );
+        Utilities.setEscKeyStrokeDisposes( this );
+        getRootPane().setDefaultButton( enrollButton );
 
         cancelButton.addActionListener( new ActionListener() {
             @Override
@@ -43,9 +49,11 @@ public class EnrollWithPortalDialog extends JDialog {
             public void actionPerformed( ActionEvent ae ) {
                 final String urlText = enrollmentUrlField.getText();
 
-                // TODO better URL checks
                 if ( urlText.length() < 1 ) {
                     showError( "Enrollment URL is required." );
+                    return;
+                } else if ( !looksLikeEnrollmentUrl( urlText ) ) {
+                    showError( "Enrollment URL is not valid." );
                     return;
                 }
 
@@ -53,7 +61,7 @@ public class EnrollWithPortalDialog extends JDialog {
                 try {
                     url = new URL( urlText );
                 } catch ( Exception e ) {
-                    logger.log( Level.FINE, "bad url" , e );
+                    logger.log( Level.FINE, "bad url", e );
                     showError( "Invalid enrollment URL." );
                     return;
                 }
@@ -68,7 +76,7 @@ public class EnrollWithPortalDialog extends JDialog {
                             public void reportResult( int option ) {
                                 if ( JOptionPane.OK_OPTION == option ) {
                                     PortalBootstrapExtensionInterface portalboot =
-                                        Registry.getDefault().getExtensionInterface( PortalBootstrapExtensionInterface.class, null );
+                                            Registry.getDefault().getExtensionInterface( PortalBootstrapExtensionInterface.class, null );
                                     try {
                                         portalboot.enrollWithPortal( urlText );
                                         DialogDisplayer.showMessageDialog( EnrollWithPortalDialog.this,
@@ -78,7 +86,7 @@ public class EnrollWithPortalDialog extends JDialog {
                                                     public void run() {
                                                         EnrollWithPortalDialog.this.dispose();
                                                     }
-                                                }  );
+                                                } );
                                     } catch ( Exception e ) {
                                         String msg = "Unable to enroll: " + ExceptionUtils.getMessage( e );
                                         logger.log( Level.WARNING, msg, e );
@@ -89,6 +97,40 @@ public class EnrollWithPortalDialog extends JDialog {
                         } );
             }
         } );
+    }
+
+    @Override
+    public void setVisible( boolean b ) {
+        if ( b && !isVisible() ) {
+            prefillUrlFromClipboard();
+        }
+        super.setVisible( b );
+    }
+
+    private void prefillUrlFromClipboard() {
+        try {
+            Clipboard clip = ClipboardActions.getClipboard();
+            if ( null == clip )
+                return;
+            Transferable transferable = clip.getContents( null );
+            if ( null == transferable )
+                return;
+            if ( !transferable.isDataFlavorSupported( DataFlavor.stringFlavor ) )
+                return;
+            String contents = (String) transferable.getTransferData( DataFlavor.stringFlavor );
+            if ( !looksLikeEnrollmentUrl( contents ) )
+                return;
+            enrollmentUrlField.setText( contents );
+            enrollmentUrlField.setCaretPosition( 0 );
+
+        } catch ( Exception e ) {
+            logger.log( Level.INFO, "Unable to read clipboard: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+
+    }
+
+    private boolean looksLikeEnrollmentUrl( String contents ) {
+        return contents.matches( "^https://.*?\\?.*?sckh=.*$" );
     }
 
     private void showError( String s ) {

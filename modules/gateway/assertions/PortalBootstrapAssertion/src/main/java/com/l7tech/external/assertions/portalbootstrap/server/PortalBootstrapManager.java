@@ -101,7 +101,7 @@ public class PortalBootstrapManager {
             throw new IOException( "Enrollment URL does not contain a server certificate key hash (sckh) parameter" );
 
         String sckh = pinMatcher.group( 1 );
-        final byte[] pinBytes = HexUtils.decodeBase64Url( sckh );
+        final byte[] pinBytes = decodeBase64Url( sckh );
 
         X509TrustManager tm = new X509TrustManager() {
             @Override
@@ -137,6 +137,7 @@ public class PortalBootstrapManager {
         }
 
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+        connection.setRequestMethod( "POST" );
         connection.setSSLSocketFactory( socketFactory );
         byte[] bundleBytes = IOUtils.slurpStream( connection.getInputStream() );
 
@@ -194,4 +195,29 @@ public class PortalBootstrapManager {
             ResourceUtils.closeQuietly( sph );
         }
     }
+
+
+    // TODO  -- this is inlined from HexUtil for compatibility with Javelin, whose HexUtils didn't have this method
+    private static byte[] decodeBase64Url( String encoded ) throws IOException {
+        int npad = encoded.length() % 4;
+        final String pad;
+        switch ( npad ) {
+            case 0:
+                pad = "";
+                break;
+            case 1:
+                // Not actually possible/valid
+                pad = "===";
+                break;
+            case 2:
+                pad = "==";
+                break;
+            default:
+                pad = "=";
+                break;
+        }
+
+        return HexUtils.decodeBase64( encoded.replace( '-', '+' ).replace( '_', '/' ) + pad );
+    }
+
 }
