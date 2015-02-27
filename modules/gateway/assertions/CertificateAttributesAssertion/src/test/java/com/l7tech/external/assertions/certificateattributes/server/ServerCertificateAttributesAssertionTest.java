@@ -15,6 +15,8 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
+
+import com.l7tech.util.HexUtils;
 import org.junit.*;
 
 import java.security.cert.X509Certificate;
@@ -52,6 +54,8 @@ public class ServerCertificateAttributesAssertionTest {
         assertEquals("marketing", expand(context, "${certificate.subject.dn.ou}"));
         assertEquals("canada", expand(context, "${certificate.subject.dn.c}"));
         assertEquals("123 mystreet", expand(context, "${certificate.subject.dn.street}"));
+        assertEquals( HexUtils.encodeBase64( cert.getPublicKey().getEncoded(), true ),
+                expand(context, "${certificate.subjectPublicKey}"));
     }
 
     @Test
