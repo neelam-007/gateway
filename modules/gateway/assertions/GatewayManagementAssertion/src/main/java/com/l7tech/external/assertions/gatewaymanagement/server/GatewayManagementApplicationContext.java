@@ -11,7 +11,7 @@ import java.util.Map;
 public class GatewayManagementApplicationContext {
 
 
-    public static ApplicationContext getAssertionApplicationContext(ApplicationContext parentSpring) {
+    public static synchronized ApplicationContext getAssertionApplicationContext(ApplicationContext parentSpring) {
         if (applicationContextMap.containsKey(parentSpring) ) {
             return applicationContextMap.get(parentSpring);
         }
