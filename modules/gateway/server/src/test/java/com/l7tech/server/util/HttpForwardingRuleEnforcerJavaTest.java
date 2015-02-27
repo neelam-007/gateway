@@ -25,7 +25,11 @@ import java.net.URL;
 import java.util.*;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static com.l7tech.server.util.HttpForwardingRuleEnforcer.Param;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class HttpForwardingRuleEnforcerJavaTest {
     private static final String TARGET_DOMAIN = "localhost";
@@ -810,6 +814,131 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals("hasPathAndDomain", cCookie.getCookieValue());
         assertEquals("cookieDomain", cCookie.getDomain());
         assertEquals("/cookiePath", cCookie.getPath());
+    }
+
+    /**
+     * Expect all request parameters forwarded if the source message is not via HTTP
+     */
+    @Test
+    public void testHandleRequestParameters_SourceMessageNotViaHttp_ParametersNotForwarded() throws IOException {
+        List<Param> params = HttpForwardingRuleEnforcer
+                .handleRequestParameters(context, request, ruleSet, audit, null, new String[0]);
+
+        assertNull(params);
+    }
+
+    /**
+     * Expect request parameters not forwarded if the source message is not a form post.
+     */
+    @Test
+    public void testHandleRequestParameters_SourceMessageIsNotFormPost_ParametersNotForwarded() throws IOException {
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+
+        List<Param> params = HttpForwardingRuleEnforcer
+                .handleRequestParameters(context, request, ruleSet, audit, null, new String[0]);
+
+        assertNull(params);
+    }
+
+    /**
+     * Expect request parameters all forwarded if the rule set is "forward all".
+     */
+    @Test
+    public void testHandleRequestParameters_RuleSetForwardAllEnabled_AllParametersForwarded() throws IOException {
+        HttpServletRequestKnob httpServletRequestKnob = mock(HttpServletRequestKnob.class);
+
+        Map<String, String[]> requestBodyParameterMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBodyParameterMap.put("foo", new String[] {"bar"});
+        requestBodyParameterMap.put("baz", new String[] {"qux"});
+
+        request.attachHttpRequestKnob(httpServletRequestKnob);
+
+        when(httpServletRequestKnob.getRequestBodyParameterMap()).thenReturn(requestBodyParameterMap);
+        when(httpServletRequestKnob.getHeaderValues(eq("content-type")))
+                .thenReturn(new String[]{ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED.toString()});
+
+        List<Param> params = HttpForwardingRuleEnforcer
+                .handleRequestParameters(context, request, ruleSet, audit, null, new String[0]);
+
+        assertNotNull(params);
+        assertEquals(2, params.size());
+
+        assertEquals("baz", params.get(0).name);
+        assertEquals("qux", params.get(0).value);
+        assertEquals("foo", params.get(1).name);
+        assertEquals("bar", params.get(1).value);
+    }
+
+    /**
+     * Expect request parameter to be customized and forwarded if rule set is not "forward all" and includes
+     * customized value rule.
+     */
+    @Test
+    public void testHandleRequestParameters_RuleUsesCustomizedValue_ParameterCustomizedForwarded() throws IOException {
+        HttpServletRequestKnob httpServletRequestKnob = mock(HttpServletRequestKnob.class);
+
+        Map<String, String[]> requestBodyParameterMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBodyParameterMap.put("foo", new String[] {"bar"});
+
+        request.attachHttpRequestKnob(httpServletRequestKnob);
+
+        when(httpServletRequestKnob.getRequestBodyParameterMap()).thenReturn(requestBodyParameterMap);
+        when(httpServletRequestKnob.getHeaderValues(eq("content-type")))
+                .thenReturn(new String[] {ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED.toString()});
+
+        // add context variable
+        String fooVar = "custom";
+        String fooVal = "pub";
+
+        context.setVariable(fooVar, fooVal);
+
+        // add customization rule - "bar" value will be changed to context variable value
+        rules.add(new HttpPassthroughRule("foo", true, "${" + fooVar + "}"));
+
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+
+        List<Param> params = HttpForwardingRuleEnforcer
+                .handleRequestParameters(context, request, ruleSet, audit, null, new String[]{fooVar});
+
+        assertNotNull(params);
+        assertEquals(1, params.size());
+
+        assertEquals("foo", params.get(0).name);
+        assertEquals(fooVal, params.get(0).value);
+    }
+
+    /**
+     * Expect only request parameters specified in rules to be forwarded when rule set is not "forward all".
+     */
+    @Test
+    public void testHandleRequestParameters_RulesSpecifySubsetOfParams_ParamSubsetForwarded() throws IOException {
+        HttpServletRequestKnob httpServletRequestKnob = mock(HttpServletRequestKnob.class);
+
+        Map<String, String[]> requestBodyParameterMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBodyParameterMap.put("foo", new String[] {"bar"});
+        requestBodyParameterMap.put("baz", new String[] {"qux"});
+
+        request.attachHttpRequestKnob(httpServletRequestKnob);
+
+        when(httpServletRequestKnob.getRequestBodyParameterMap()).thenReturn(requestBodyParameterMap);
+        when(httpServletRequestKnob.getHeaderValues(eq("content-type")))
+                .thenReturn(new String[] {ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED.toString()});
+
+        // add forwarding rule for only one parameter
+        rules.add(new HttpPassthroughRule("foo", false, null));
+
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+
+        List<Param> params = HttpForwardingRuleEnforcer
+                .handleRequestParameters(context, request, ruleSet, audit, null, new String[0]);
+
+        assertNotNull(params);
+        assertEquals(1, params.size());
+
+        assertEquals("foo", params.get(0).name);
+        assertEquals("bar", params.get(0).value);
     }
 
     private Map<String, HttpCookie> createCookiesMap(final Message message) {
