@@ -79,8 +79,8 @@ public abstract class CollectionUpdateConsumer<T, E extends Exception> {
         } else {
             throw new RuntimeException("Internal Error: Don't know where this old version ID come from: " + update.getOldVersionID());
         }
-
-        data.removeAll(removed);
+        //JDK8 does not allow null reference to be removed although it worked fine in JDK7 when the collection is null and the array list is empty
+        if(removed != null) data.removeAll(removed);
         data.addAll(added);
         _oldVersionID = update.getNewVersionID();
         return new Pair<Collection<T>, Collection<T>>(added, removed);

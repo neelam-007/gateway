@@ -14,6 +14,7 @@ import javax.mail.MessagingException;
 import javax.mail.Transport;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.internet.MimeMessage;
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.net.Socket;
@@ -197,6 +198,20 @@ public class EmailUtils {
         @Override
         public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
             return new Socket(inetAddress, i, inetAddress1, i1);
+        }
+
+        /**
+         * New method in JDK8: Creates a server mode Socket layered over an existing connected socket, and is able to read
+         * data which has already been consumed/removed from the Socket's underlying InputStream.
+         * @param s
+         * @param consumed
+         * @param autoClose
+         * @return  ssl socket
+         * @throws IOException
+         */
+        @Override
+        public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException {
+            return sslFactory.createSocket(s, consumed, autoClose);
         }
     }
 }

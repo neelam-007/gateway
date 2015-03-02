@@ -8,6 +8,7 @@ import com.l7tech.util.ResourceUtils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -95,6 +96,14 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
                                       final int localPort ) throws IOException {
         Socket socket = getSocketFactory().createSocket(address, port, localAddress, localPort);
         return doNotifyCreated( socket, null, address, port, localAddress, localPort );
+    }
+
+    @Override
+    public final Socket createSocket( final Socket s,
+                                      final InputStream consumed,
+                                      final boolean autoClose) throws IOException {
+        Socket socket = getSocketFactory().createSocket(s, consumed, autoClose);
+        return doNotifyCreated(socket, null, null, -1, null, -1);
     }
 
     //- PROTECTED

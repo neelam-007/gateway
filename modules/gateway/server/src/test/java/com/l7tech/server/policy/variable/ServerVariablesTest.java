@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Level;
@@ -317,7 +318,14 @@ public class ServerVariablesTest {
         headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
 
         // ensure the values returned for each name are the most recently set ones
-        expandAndCheck(context, "${request.jms.allpropertyvalues}", "fuz:buz, foo:baz");
+        final String varName = "${request.jms.allpropertyvalues}";
+        String[] usedVars = Syntax.getReferencedNames(varName);
+        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
+        List values =ExpandVariables.processNoFormat(varName, vars, auditor);
+        assertEquals(2, values.size());
+        assertTrue(values.contains("fuz:buz"));
+        assertTrue(values.contains("foo:baz"));
+        assertFalse(values.contains("foo:bar"));
     }
 
     /**
@@ -333,8 +341,14 @@ public class ServerVariablesTest {
         headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
 
-        // ensure the values returned for each name are the most recently set ones
-        expandAndCheck(context, "${response.jms.allpropertyvalues}", "fuz:buz, foo:baz");
+        final String varName = "${response.jms.allpropertyvalues}";
+        String[] usedVars = Syntax.getReferencedNames(varName);
+        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
+        List values =ExpandVariables.processNoFormat(varName, vars, auditor);
+        assertEquals(2, values.size());
+        assertTrue(values.contains("fuz:buz"));
+        assertTrue(values.contains("foo:baz"));
+        assertFalse(values.contains("foo:bar"));
     }
 
     /**
