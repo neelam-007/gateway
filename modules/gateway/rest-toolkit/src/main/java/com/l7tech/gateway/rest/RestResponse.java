@@ -32,7 +32,7 @@ public class RestResponse {
      * @param status      The response http status
      * @param headers     The response headers.
      */
-    RestResponse(InputStream inputStream, String contentType, int status, MultivaluedMap<String, Object> headers) {
+    public RestResponse(InputStream inputStream, String contentType, int status, MultivaluedMap<String, Object> headers) {
         this.inputStream = inputStream;
         this.contentType = contentType;
         this.status = status;

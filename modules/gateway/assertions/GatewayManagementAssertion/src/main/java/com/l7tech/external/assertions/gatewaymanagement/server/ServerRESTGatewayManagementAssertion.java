@@ -68,6 +68,16 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         restAgent = assertionContext.getBean("restAgent", RestAgent.class);
     }
 
+    ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
+                                         final ApplicationContext assertionContext,
+                                         final StashManagerFactory stashManagerFactory,
+                                         final RestAgent restAgent) {
+        super(assertion);
+        this.assertionContext = assertionContext;
+        this.stashManagerFactory = stashManagerFactory;
+        this.restAgent = restAgent;
+    }
+
     protected ApplicationContext getAssertionContext(){return assertionContext;}
 
     @Override
@@ -125,8 +135,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
             for(String header : managementResponse.getHeaders().keySet()){
-                //Don't set the content-length header. See bug: SSG-7824
-                if(header.equals("Content-Length")) {
+                //Don't set the content-length or content-type header. See bug: SSG-7824, SSG-10685
+                if(header.equals("Content-Length") || header.equalsIgnoreCase("Content-Type")) {
                     continue;
                 }
                 for(Object value : managementResponse.getHeaders().get(header)){
