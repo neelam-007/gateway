@@ -75,7 +75,7 @@ public class PolicyBundleInstallerAbstractServerAssertionTest {
     private final String wsmanBundleId = "33b16742-d62d-4095-8f8d-4db707e9ad50";
     @Mock
     private BundleInfo wsmanBundleInfo;
-    final HashMap<String, BundleInfo> availableComponents = new HashMap<>(2);
+    final HashMap<String, BundleInfo> availableComponents = new LinkedHashMap<>(2);
 
     @Before
     public void setup() {
