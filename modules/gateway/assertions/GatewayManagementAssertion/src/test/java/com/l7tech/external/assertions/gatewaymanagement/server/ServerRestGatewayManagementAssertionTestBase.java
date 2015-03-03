@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
@@ -50,6 +51,7 @@ import java.util.*;
 public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     protected static ClassPathXmlApplicationContext applicationContext;
+    protected static ClassPathXmlApplicationContext assertionContext;
     @InjectMocks
     protected ServerRESTGatewayManagementAssertion restManagementAssertion;
     //- PRIVATE
@@ -61,7 +63,8 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     @Before
     public void before() throws Exception {
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml");
+        RestAgent restAgent = assertionContext.getBean("restAgent", RestAgent.class);
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), assertionContext, stashManagerFactory, restAgent);
 
         MockitoAnnotations.initMocks(this);
     }
@@ -76,6 +79,9 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
         identityProviderConfig = TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG;
+
+        assertionContext = new ClassPathXmlApplicationContext(new String[]{"testGatewayManagementContext.xml"}, ServerRESTGatewayManagementAssertion.class, applicationContext);
+
     }
 
     protected static IdentityProviderConfig provider(final Goid oid, final IdentityProviderType type, final String name, String... props) {
@@ -113,6 +119,10 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
     }
 
     protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body, Map<String,Object> contextVariables) throws Exception {
+        return processRequest(uri, null, method, contentType, body, contextVariables, restManagementAssertion);
+    }
+
+    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body, Map<String,Object> contextVariables, ServerRESTGatewayManagementAssertion serverRESTGatewayManagementAssertion) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body.getBytes("utf-8"));
@@ -159,7 +169,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
                 context.setVariable(key,contextVariables.get(key));
             }
 
-            AssertionStatus assertionStatus = restManagementAssertion.checkRequest(context);
+            AssertionStatus assertionStatus = serverRESTGatewayManagementAssertion.checkRequest(context);
 
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);

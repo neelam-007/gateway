@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdminStub;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.identity.UserBean;
@@ -79,6 +80,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -255,7 +257,9 @@ public class ServerGatewayManagementAssertionTestBase {
         managementAssertion = new ServerGatewayManagementAssertion(
                 new GatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
 
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml" );
+        ClassPathXmlApplicationContext assertionContext = new ClassPathXmlApplicationContext(new String[]{"testGatewayManagementContext.xml"}, ServerRESTGatewayManagementAssertion.class, applicationContext);
+        RestAgent restAgent = assertionContext.getBean("restAgent", RestAgent.class);
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), assertionContext, new ServerRestGatewayManagementAssertionTestBase.TestStashManagerFactory(), restAgent);
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 

@@ -2,7 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.RevocationCheckingPolicyMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
@@ -24,7 +27,6 @@ import java.util.Collection;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
 
 /**
  *
@@ -43,7 +45,7 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
     @Before
     public void before() throws Exception {
         super.before();
-        revocationCheckPolicyManager = restManagementAssertion.getAssertionContext().getBean("revocationCheckPolicyManager", TestRevocationCheckPolicyManager.class);
+        revocationCheckPolicyManager = assertionContext.getBean("revocationCheckPolicyManager", TestRevocationCheckPolicyManager.class);
         revocationCheckPolicy.setGoid(new Goid(0, 1234L));
         revocationCheckPolicy.setName("Test MQ Config 1");
         revocationCheckPolicy.setContinueOnServerUnavailable(false);

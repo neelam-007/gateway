@@ -21,7 +21,6 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
@@ -61,14 +60,6 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
     // for tests to provide custom assertion context, this context will not be shared
     ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
-                                         final ApplicationContext applicationContext,
-                                         final String assertionContextResource) throws PolicyAssertionException {
-        super(assertion);
-        assertionContext = new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, applicationContext);
-        restAgent = assertionContext.getBean("restAgent", RestAgent.class);
-    }
-
-    ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
                                          final ApplicationContext assertionContext,
                                          final StashManagerFactory stashManagerFactory,
                                          final RestAgent restAgent) {
@@ -77,8 +68,6 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         this.stashManagerFactory = stashManagerFactory;
         this.restAgent = restAgent;
     }
-
-    protected ApplicationContext getAssertionContext(){return assertionContext;}
 
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
