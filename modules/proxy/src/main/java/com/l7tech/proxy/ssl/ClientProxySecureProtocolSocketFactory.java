@@ -9,6 +9,7 @@ package com.l7tech.proxy.ssl;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -69,6 +70,20 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory {
 
     public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
         return configSocket((SSLSocket) socketFactory().createSocket(inetAddress, i));
+    }
+
+    /**
+     * New method in JDK8: Creates a server mode Socket layered over an existing connected socket, and is able to read
+     * data which has already been consumed/removed from the Socket's underlying InputStream.
+     * @param s Socket
+     * @param consumed InputStream
+     * @param autoClose boolean
+     * @return  ssl socket
+     * @throws IOException
+     */
+    @Override
+    public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException{
+        return configSocket((SSLSocket) socketFactory().createSocket(s, consumed, autoClose));
     }
 
     private SSLSocket configSocket(SSLSocket s) {

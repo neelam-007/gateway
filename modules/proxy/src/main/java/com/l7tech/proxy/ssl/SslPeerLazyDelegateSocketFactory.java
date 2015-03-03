@@ -1,5 +1,6 @@
 package com.l7tech.proxy.ssl;
 
+import java.io.InputStream;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -70,6 +71,21 @@ public class SslPeerLazyDelegateSocketFactory extends SSLSocketFactory {
     public Socket createSocket() throws IOException {
         checkInit();
         return delegate.createSocket();
+    }
+
+    /**
+     * New method in JDK8: Creates a server mode Socket layered over an existing connected socket, and is able to read
+     * data which has already been consumed/removed from the Socket's underlying InputStream.
+     * @param s Socket
+     * @param consumed InputStream
+     * @param autoClose boolean
+     * @return  ssl socket
+     * @throws IOException
+     */
+    @Override
+    public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException {
+        checkInit();
+        return delegate.createSocket(s, consumed, autoClose);
     }
 
     //- PRIVATE
