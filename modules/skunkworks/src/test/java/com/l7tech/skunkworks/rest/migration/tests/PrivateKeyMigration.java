@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -39,8 +39,8 @@ import static org.junit.Assert.assertEquals;
  * This will test migration using the rest api from one gateway to another.
  */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(PrivateKeyMigrationTest.class.getName());
+public class PrivateKeyMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(PrivateKeyMigration.class.getName());
 
     private Item<PolicyMO> policyItem;
     private Item<PrivateKeyMO> privateKeyItem;

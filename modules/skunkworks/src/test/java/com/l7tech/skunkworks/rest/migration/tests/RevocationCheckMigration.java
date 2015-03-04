@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -34,8 +34,8 @@ import java.util.logging.Logger;
  *
  */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class RevocationCheckMigrationTest extends MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(RevocationCheckMigrationTest.class.getName());
+public class RevocationCheckMigration extends MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(RevocationCheckMigration.class.getName());
 
     private Item<PolicyMO> policyItem;
     private Item<TrustedCertificateMO> trustedCertItem;

@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -26,8 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class PolicyIncludeFragmentMigrationTest extends MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(PolicyIncludeFragmentMigrationTest.class.getName());
+public class PolicyIncludeFragmentMigration extends MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(PolicyIncludeFragmentMigration.class.getName());
 
     private Item<ServiceMO> serviceItem;
     private Item<PolicyMO> policyItem1;

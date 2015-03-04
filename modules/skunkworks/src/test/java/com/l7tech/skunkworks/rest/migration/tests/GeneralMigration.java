@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -30,8 +30,8 @@ import java.util.logging.Logger;
 * This will test migration using the rest api from one gateway to another.
 */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class GeneralMigrationTest extends MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(GeneralMigrationTest.class.getName());
+public class GeneralMigration extends MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(GeneralMigration.class.getName());
 
     @Before
     public void before() throws Exception {

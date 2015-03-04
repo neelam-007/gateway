@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -39,8 +39,8 @@ import static org.junit.Assert.assertNotNull;
  * This will test migration using the rest api from one gateway to another.
  */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(FullGatewayMigrationTest.class.getName());
+public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(FullGatewayMigration.class.getName());
 
     private Item<IdentityProviderMO> internalIDProviderItem;
     private String EmptyServiceXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

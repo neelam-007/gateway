@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -25,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(SecurityZoneMigrationTest.class.getName());
+public class SecurityZoneMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(SecurityZoneMigration.class.getName());
     private Item<SecurityZoneMO> securityZoneItem;
 
     private Item<Mappings> mappingsToClean;

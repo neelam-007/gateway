@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -24,8 +24,8 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(TransactionRollbackTest.class.getName());
+public class TransactionRollback extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(TransactionRollback.class.getName());
 
     private Item<PolicyMO> policyItem;
     private Item<StoredPasswordMO> securePasswordItem;

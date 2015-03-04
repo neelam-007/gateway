@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -38,8 +38,8 @@ import static org.junit.Assert.assertTrue;
 * This will test migration using the rest api from one gateway to another.
 */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(SecurePasswordMigrationTest.class.getName());
+public class SecurePasswordMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(SecurePasswordMigration.class.getName());
 
     private Item<PolicyMO> policyItem;
     private Item<StoredPasswordMO> securePasswordItem;

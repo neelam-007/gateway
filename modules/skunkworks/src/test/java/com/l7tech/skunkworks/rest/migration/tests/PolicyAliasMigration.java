@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest.migration;
+package com.l7tech.skunkworks.rest.migration.tests;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -29,17 +29,17 @@ import java.util.logging.Logger;
  * This will test migration using the rest api from one gateway to another.
  */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class ServiceAliasMigrationTest extends MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(ServiceAliasMigrationTest.class.getName());
+public class PolicyAliasMigration extends MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(PolicyAliasMigration.class.getName());
 
-    private Item<ServiceMO> serviceItem;
+    private Item<PolicyMO> policyItem;
     private Item<FolderMO> folderItem;
-    private Item<ServiceAliasMO> serviceAliasItem;
+    private Item<PolicyAliasMO> policyAliasItem;
     private Item<Mappings> mappingsToClean;
 
     @Before
     public void before() throws Exception {
-        //create service
+        //create policy
         final String assXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -50,20 +50,14 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        ServiceMO serviceMO = ManagedObjectFactory.createService();
-        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
-        serviceMO.setServiceDetail(serviceDetail);
-        serviceDetail.setName("Source Service");
-        serviceDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
-        ServiceDetail.HttpMapping serviceMapping = ManagedObjectFactory.createHttpMapping();
-        serviceMapping.setUrlPattern("/srcService");
-        serviceMapping.setVerbs(Arrays.asList("POST"));
-        ServiceDetail.SoapMapping soapMapping = ManagedObjectFactory.createSoapMapping();
-        soapMapping.setLax(false);
-        serviceDetail.setServiceMappings(Arrays.asList(serviceMapping,soapMapping));
-        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("soap", true)
-                .put("soapVersion", "1.2")
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("Source Policy");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
                 .map());
         ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
         policyResourceSet.setTag("policy");
@@ -71,23 +65,15 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         policyResourceSet.setResources(Arrays.asList(policyResource));
         policyResource.setType("policy");
         policyResource.setContent(assXml );
-        ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
-        wsdlResourceSet.setTag("wsdl");
-        wsdlResourceSet.setRootUrl("http://localhost:8080/test.wsdl");
-        Resource wsdlResource = ManagedObjectFactory.createResource();
-        wsdlResourceSet.setResources(Arrays.asList(wsdlResource));
-        wsdlResource.setType("wsdl");
-        wsdlResource.setSourceUrl("http://localhost:8080/test.wsdl");
-        wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
-        serviceMO.setResourceSets(Arrays.asList(policyResourceSet,wsdlResourceSet));
+        policyMO.setResourceSets(Arrays.asList(policyResourceSet));
 
-        RestResponse response = getSourceEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+        RestResponse response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
 
         assertOkCreatedResponse(response);
 
-        serviceItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        serviceItem.setContent(serviceMO);
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItem.setContent(policyMO);
 
         //create folder item
         FolderMO parentFolderMO = ManagedObjectFactory.createFolder();
@@ -100,15 +86,15 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         folderItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         folderItem.setContent(parentFolderMO);
 
-        // create service alias
-        ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
-        serviceAliasMO.setFolderId(folderItem.getId());
-        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, serviceItem.getId()));
-        response = getSourceEnvironment().processRequest("serviceAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceAliasMO)));
+        // create policy alias
+        PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setFolderId(folderItem.getId());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyItem.getId()));
+        response = getSourceEnvironment().processRequest("policyAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyAliasMO)));
         assertOkCreatedResponse(response);
-        serviceAliasItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        serviceAliasItem.setContent(serviceAliasMO);
+        policyAliasItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyAliasItem.setContent(policyAliasMO);
     }
 
     @After
@@ -119,10 +105,10 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         RestResponse response;
 
-        response = getSourceEnvironment().processRequest("serviceAliases/" + serviceAliasItem.getId(), HttpMethod.DELETE, null, "");
+        response = getSourceEnvironment().processRequest("policyAliases/" + policyAliasItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
 
-        response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
+        response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
@@ -137,8 +123,8 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 item. A service, folder, and service alias", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a service, and a service alias", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -164,19 +150,19 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-        Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
 
         validate(mappings);
     }
@@ -189,8 +175,8 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 item. A service, folder, and service alias", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a service, and a service alias", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -216,19 +202,19 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-        Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
 
         validate(mappings);
 
@@ -255,19 +241,19 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-        Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
+        policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
 
         validate(mappings);
     }
@@ -280,8 +266,8 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 item. A service, folder, and service alias", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a service, and a service alias", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -307,19 +293,19 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-        Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
 
         validate(mappings);
 
@@ -346,19 +332,19 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-        Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
+        policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+        Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
 
         validate(mappings);
     }
@@ -371,11 +357,11 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 item. A service, folder, and service alias", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a service, and a service alias", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
 
         //don't migrate the alias
-        getMapping(bundleItem.getContent().getMappings(), serviceAliasItem.getId()).setAction(Mapping.Action.Ignore);
+        getMapping(bundleItem.getContent().getMappings(), policyAliasItem.getId()).setAction(Mapping.Action.Ignore);
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -401,35 +387,34 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.Ignore, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.Ignored, serviceAliasMapping.getActionTaken());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.Ignore, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, policyAliasMapping.getActionTaken());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
 
         validate(mappings);
 
-        // create an alias for the service
-        ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
-        serviceAliasMO.setFolderId(folderItem.getId());
-        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, serviceItem.getId()));
-        response = getTargetEnvironment().processRequest("serviceAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceAliasMO)));
+        // create policy alias
+        PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setFolderId(folderItem.getId());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyItem.getId()));
+        response = getTargetEnvironment().processRequest("policyAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyAliasMO)));
         assertOkCreatedResponse(response);
-        Item<ServiceAliasMO> serviceAliasTargetItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        serviceAliasMO.setId(serviceAliasTargetItem.getId());
-        serviceAliasTargetItem.setContent(serviceAliasMO);
+        Item<PolicyAliasMO> policyAliasTargetItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyAliasTargetItem.setContent(policyAliasMO);
 
         try {
             //don't ignore the alias
-            getMapping(bundleItem.getContent().getMappings(), serviceAliasItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+            getMapping(bundleItem.getContent().getMappings(), policyAliasItem.getId()).setAction(Mapping.Action.NewOrUpdate);
 
             //import the bundle again
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -454,30 +439,31 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
             Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
             Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-            serviceMapping = mappings.getContent().getMappings().get(2);
-            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-            Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
-            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceMapping.getActionTaken());
-            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+            policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            serviceAliasMapping = mappings.getContent().getMappings().get(3);
-            Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-            Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceAliasMapping.getAction());
-            Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, serviceAliasMapping.getErrorType());
-            Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
+            policyAliasMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, policyAliasMapping.getAction());
+            Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, policyAliasMapping.getErrorType());
+            Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
 
             validate(mappings);
         } finally {
-            response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasTargetItem.getId(), HttpMethod.DELETE, null, "");
+            response = getTargetEnvironment().processRequest("policyAliases/" + policyAliasTargetItem.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
         }
     }
 
     @Test
-    public void testImportNewMapAliasToBeInFolderWithAliasForSameService() throws Exception {
+    public void testImportNewMapAliasToBeInFolderWithAliasForSamePolicy() throws Exception {
+
         Item<FolderMO> folderItem2 = null;
-        Item<ServiceAliasMO> serviceAliasItem2 = null;
+        Item<PolicyAliasMO> policyAliasItem2 = null;
         RestResponse response;
         try {
             //create folder item
@@ -491,15 +477,15 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
             folderItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             folderItem2.setContent(parentFolderMO);
 
-            // create service alias
-            ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
-            serviceAliasMO.setFolderId(folderItem2.getId());
-            serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, serviceItem.getId()));
-            response = getSourceEnvironment().processRequest("serviceAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                    XmlUtil.nodeToString(ManagedObjectFactory.write(serviceAliasMO)));
+            // create policy alias
+            PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+            policyAliasMO.setFolderId(folderItem2.getId());
+            policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyItem.getId()));
+            response = getSourceEnvironment().processRequest("policyAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(policyAliasMO)));
             assertOkCreatedResponse(response);
-            serviceAliasItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            serviceAliasItem2.setContent(serviceAliasMO);
+            policyAliasItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            policyAliasItem2.setContent(policyAliasMO);
 
             response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), HttpMethod.GET, null, "");
             logger.log(Level.INFO, response.toString());
@@ -507,10 +493,10 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 5 item. A service, 2 folders, and 2 service aliases", 5, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals("The bundle should have 6 mappings. 3 folders, a service, and 2 service aliases", 6, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals("The bundle should have 5 item. A policy, 2 folders, and 2 policy policy", 5, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 6 mappings. 3 folders, a policy, and 2 policy policy", 6, bundleItem.getContent().getMappings().size());
 
-            //map the alias folder to the other alias folder containing the alias service
+            //map the alias folder to the other alias folder containing the alias policy
             Mapping aliasFolderMapping = getMapping(bundleItem.getContent().getMappings(), folderItem.getId());
             aliasFolderMapping.setTargetId(folderItem2.getId());
 
@@ -546,23 +532,23 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
             Assert.assertEquals(folderItem2.getId(), folder2Mapping.getSrcId());
             Assert.assertEquals(folderItem2.getId(), folder2Mapping.getTargetId());
 
-            Mapping serviceMapping = getMapping(mappings.getContent().getMappings(), serviceItem.getId());
-            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
-            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+            Mapping policyMapping = getMapping(mappings.getContent().getMappings(), policyItem.getId());
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            Mapping serviceAliasMapping = getMapping(mappings.getContent().getMappings(), serviceAliasItem.getId());
-            Mapping serviceAlias2Mapping = getMapping(mappings.getContent().getMappings(), serviceAliasItem2.getId());
+            Mapping policyAliasMapping = getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
+            Mapping policyAlias2Mapping = getMapping(mappings.getContent().getMappings(), policyAliasItem2.getId());
 
-            Assert.assertTrue("at least one of the service aliases need to have errored because it was attempted to be created in a folder with the other (the second one should error)", serviceAliasMapping.getErrorType() != null || serviceAlias2Mapping.getErrorType() != null);
+            Assert.assertTrue("at least one of the policy aliases need to have errored because it was attempted to be created in a folder with the other (the second one should error)", policyAliasMapping.getErrorType() != null || policyAlias2Mapping.getErrorType() != null);
 
         } finally {
             mappingsToClean = null;
 
-            if(serviceAliasItem2 != null) {
-                response = getSourceEnvironment().processRequest("serviceAliases/" + serviceAliasItem2.getId(), HttpMethod.DELETE, null, "");
+            if(policyAliasItem2 != null) {
+                response = getSourceEnvironment().processRequest("policyAliases/" + policyAliasItem2.getId(), HttpMethod.DELETE, null, "");
                 assertOkEmptyResponse(response);
             }
             if(folderItem2 != null) {
@@ -573,7 +559,7 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
     }
 
     @Test
-    public void testImportNewMapAliasToBeInFolderWithService() throws Exception {
+    public void testImportNewMapAliasToBeInFolderWithPolicy() throws Exception {
         mappingsToClean = null;
 
         RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), HttpMethod.GET, null, "");
@@ -582,11 +568,11 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 item. A service, folder, and service alias", 3, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a service, and a service alias", 4, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, folder, and policy alias", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. 2 folders, a policy, and a policy alias", 4, bundleItem.getContent().getMappings().size());
 
 
-        //map the alias folder to the root folder containing the alias service
+        //map the alias folder to the root folder containing the alias policy
         Mapping aliasFolderMapping = getMapping(bundleItem.getContent().getMappings(), folderItem.getId());
         aliasFolderMapping.setTargetId(Folder.ROOT_FOLDER_ID.toString());
 
@@ -613,18 +599,18 @@ public class ServiceAliasMigrationTest extends MigrationTestBase {
         Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), folderMapping.getTargetId());
 
-        Mapping serviceMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
-        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
-        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
-        Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceAliasMapping.getAction());
-        Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, serviceAliasMapping.getErrorType());
-        Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
+        Mapping policyAliasMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
+        Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, policyAliasMapping.getErrorType());
+        Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
 
     }
 }
