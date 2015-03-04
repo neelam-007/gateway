@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ public interface SsgKeyFinder extends NamedEntity {
      * @throws KeyStoreException if there is a problem reading the underlying key store.
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
+    @NotNull
     SsgKeyEntry getCertificateChain(String alias) throws ObjectNotFoundException, KeyStoreException;
 
     /**

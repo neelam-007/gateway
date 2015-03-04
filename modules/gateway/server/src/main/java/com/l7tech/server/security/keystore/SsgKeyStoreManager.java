@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,5 +55,6 @@ public interface SsgKeyStoreManager {
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
     @Transactional(readOnly=true)
+    @NotNull
     SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException;
 }
