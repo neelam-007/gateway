@@ -16,6 +16,7 @@ import static com.l7tech.gateway.common.security.PrivateKeySecured.ReturnCheck.N
 /**
  * A test interface, whose only implementations are mocks, for testing the {@link PrivateKeyRbacInterceptor}.
  */
+@SuppressWarnings("unused")
 public interface KeyRbacTestInterface {
     /** A test method that lacks a @PrivateKeySecured annotation */
     void lacksAnnotation();
