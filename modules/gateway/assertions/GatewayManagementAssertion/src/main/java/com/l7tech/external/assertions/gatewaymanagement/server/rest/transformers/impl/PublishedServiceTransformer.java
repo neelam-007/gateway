@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.UUID;
 
 @Component
@@ -25,6 +26,7 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
 
     @Override
     @Inject
+    @Named("serviceResourceFactory")
     protected void setFactory(ServiceResourceFactory factory) {
         super.factory = factory;
     }

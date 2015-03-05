@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class SiteMinderConfigurationTransformer extends APIResourceWsmanBaseTransformer<SiteMinderConfigurationMO, SiteMinderConfiguration,EntityHeader, SiteMinderConfigurationResourceFactory> {
 
     @Override
     @Inject
+    @Named("siteMinderConfigurationResourceFactory")
     protected void setFactory(SiteMinderConfigurationResourceFactory factory) {
         super.factory = factory;
     }

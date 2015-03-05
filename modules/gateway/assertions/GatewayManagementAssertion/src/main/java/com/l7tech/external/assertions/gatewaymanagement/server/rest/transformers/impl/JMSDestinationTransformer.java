@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.Iterator;
 
 @Component
@@ -22,6 +23,7 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
 
     @Override
     @Inject
+    @Named("jmsDestinationResourceFactory")
     protected void setFactory(JMSDestinationResourceFactory factory) {
         super.factory = factory;
     }

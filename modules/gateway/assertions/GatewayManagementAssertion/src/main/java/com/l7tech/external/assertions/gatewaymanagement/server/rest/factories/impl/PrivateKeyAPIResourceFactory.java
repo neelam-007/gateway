@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
 
 /**
@@ -25,6 +26,7 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
 
     @Override
     @Inject
+    @Named("privateKeyResourceFactory")
     public void setFactory(PrivateKeyResourceFactory factory) {
         super.factory = factory;
     }

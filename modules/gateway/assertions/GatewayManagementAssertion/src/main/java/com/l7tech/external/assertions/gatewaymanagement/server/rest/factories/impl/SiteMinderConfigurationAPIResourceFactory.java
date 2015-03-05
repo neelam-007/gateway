@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -25,6 +26,7 @@ public class SiteMinderConfigurationAPIResourceFactory extends WsmanBaseResource
 
     @Override
     @Inject
+    @Named("siteMinderConfigurationResourceFactory")
     public void setFactory(SiteMinderConfigurationResourceFactory factory) {
         super.factory = factory;
     }

@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class SecurityZoneTransformer extends APIResourceWsmanBaseTransformer<SecurityZoneMO, SecurityZone, EntityHeader, SecurityZoneResourceFactory> {
 
     @Override
     @Inject
+    @Named("securityZoneResourceFactory")
     protected void setFactory(SecurityZoneResourceFactory factory) {
         super.factory = factory;
     }

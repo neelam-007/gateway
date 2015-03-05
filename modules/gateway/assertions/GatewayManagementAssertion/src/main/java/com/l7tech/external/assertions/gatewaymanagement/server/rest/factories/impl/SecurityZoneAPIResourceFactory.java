@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -25,6 +26,7 @@ public class SecurityZoneAPIResourceFactory extends WsmanBaseResourceFactory<Sec
 
     @Override
     @Inject
+    @Named("securityZoneResourceFactory")
     public void setFactory(SecurityZoneResourceFactory factory) {
         super.factory = factory;
     }

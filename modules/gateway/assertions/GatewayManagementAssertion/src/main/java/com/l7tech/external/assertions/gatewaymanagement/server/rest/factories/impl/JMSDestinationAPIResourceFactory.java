@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -25,6 +26,7 @@ public class JMSDestinationAPIResourceFactory extends WsmanBaseResourceFactory<J
 
     @Override
     @Inject
+    @Named("jmsDestinationResourceFactory")
     public void setFactory(JMSDestinationResourceFactory factory) {
         super.factory = factory;
     }

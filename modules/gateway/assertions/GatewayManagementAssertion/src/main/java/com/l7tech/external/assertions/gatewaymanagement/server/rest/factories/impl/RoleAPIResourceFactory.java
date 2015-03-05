@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * This was created: 11/18/13 as 11:58 AM
@@ -30,6 +31,7 @@ public class RoleAPIResourceFactory extends WsmanBaseResourceFactory<RbacRoleMO,
 
     @Override
     @Inject
+    @Named("rbacRoleResourceFactory")
     public void setFactory(RbacRoleResourceFactory factory) {
         super.factory = factory;
     }

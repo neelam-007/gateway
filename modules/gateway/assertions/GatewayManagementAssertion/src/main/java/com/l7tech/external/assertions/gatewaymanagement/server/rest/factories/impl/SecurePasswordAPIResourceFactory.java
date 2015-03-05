@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * The secure password rest resources factory
@@ -25,6 +26,7 @@ public class SecurePasswordAPIResourceFactory extends WsmanBaseResourceFactory<S
 
     @Override
     @Inject
+    @Named("securePasswordResourceFactory")
     public void setFactory(SecurePasswordResourceFactory factory) {
         super.factory = factory;
     }

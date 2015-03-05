@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class CustomKeyValueStoreTransformer extends APIResourceWsmanBaseTransformer<CustomKeyValueStoreMO, CustomKeyValueStore, EntityHeader,CustomKeyValueStoreResourceFactory> {
 
     @Override
     @Inject
+    @Named("customKeyValueStoreResourceFactory")
     protected void setFactory(CustomKeyValueStoreResourceFactory factory) {
         super.factory = factory;
     }

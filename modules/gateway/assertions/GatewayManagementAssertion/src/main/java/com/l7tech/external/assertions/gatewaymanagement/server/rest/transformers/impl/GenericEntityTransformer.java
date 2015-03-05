@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class GenericEntityTransformer extends APIResourceWsmanBaseTransformer<GenericEntityMO, GenericEntity, GenericEntityHeader,GenericEntityResourceFactory> {
 
     @Override
     @Inject
+    @Named("genericEntityResourceFactory")
     protected void setFactory(GenericEntityResourceFactory factory) {
         super.factory = factory;
     }

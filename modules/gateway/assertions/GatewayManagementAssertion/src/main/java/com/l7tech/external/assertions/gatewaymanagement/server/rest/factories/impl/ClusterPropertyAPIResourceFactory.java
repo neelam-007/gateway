@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -26,6 +27,7 @@ public class ClusterPropertyAPIResourceFactory extends WsmanBaseResourceFactory<
 
     @Override
     @Inject
+    @Named("clusterPropertyResourceFactory")
     public void setFactory(ClusterPropertyResourceFactory factory) {
         super.factory = factory;
     }

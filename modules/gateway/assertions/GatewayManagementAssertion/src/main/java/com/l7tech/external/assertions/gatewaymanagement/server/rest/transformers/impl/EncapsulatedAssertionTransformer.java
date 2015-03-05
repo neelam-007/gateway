@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.UUID;
 
 @Component
@@ -23,6 +24,7 @@ public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransf
 
     @Override
     @Inject
+    @Named("encapsulatedAssertionResourceFactory")
     protected void setFactory(EncapsulatedAssertionResourceFactory factory) {
         super.factory = factory;
     }

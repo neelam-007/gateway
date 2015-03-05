@@ -12,12 +12,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class SecurePasswordTransformer extends APIResourceWsmanBaseTransformer<StoredPasswordMO, SecurePassword,EntityHeader, SecurePasswordResourceFactory> {
 
     @Override
     @Inject
+    @Named("securePasswordResourceFactory")
     protected void setFactory(SecurePasswordResourceFactory factory) {
         super.factory = factory;
     }

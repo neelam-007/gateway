@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ public class AssertionSecurityZoneAPIResourceFactory extends WsmanBaseResourceFa
 
     @Override
     @Inject
+    @Named("assertionSecurityZoneResourceFactory")
     public void setFactory(AssertionSecurityZoneResourceFactory factory) {
         super.factory = factory;
     }

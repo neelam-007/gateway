@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class EmailListenerTransformer extends APIResourceWsmanBaseTransformer<EmailListenerMO, EmailListener, EntityHeader, EmailListenerResourceFactory> {
 
     @Override
     @Inject
+    @Named("emailListenerResourceFactory")
     protected void setFactory(EmailListenerResourceFactory factory) {
         super.factory = factory;
     }

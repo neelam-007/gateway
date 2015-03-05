@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class IdentityProviderTransformer extends APIResourceWsmanBaseTransformer<IdentityProviderMO, IdentityProviderConfig,EntityHeader, IdentityProviderResourceFactory> {
 
     @Override
     @Inject
+    @Named("identityProviderResourceFactory")
     protected void setFactory(IdentityProviderResourceFactory factory) {
         super.factory = factory;
     }

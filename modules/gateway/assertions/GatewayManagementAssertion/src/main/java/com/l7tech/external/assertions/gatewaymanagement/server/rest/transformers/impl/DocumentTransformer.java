@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class DocumentTransformer extends APIResourceWsmanBaseTransformer<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader, DocumentResourceFactory> {
 
     @Override
     @Inject
+    @Named("documentResourceFactory")
     protected void setFactory(DocumentResourceFactory factory) {
         super.factory = factory;
     }

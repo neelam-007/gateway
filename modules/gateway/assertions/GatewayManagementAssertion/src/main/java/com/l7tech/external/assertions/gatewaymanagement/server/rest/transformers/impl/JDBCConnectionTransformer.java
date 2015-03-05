@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<JDBCConnectionMO, JdbcConnection, EntityHeader, JDBCConnectionResourceFactory> {
 
     @Override
     @Inject
+    @Named("jdbcConnectionResourceFactory")
     protected void setFactory(JDBCConnectionResourceFactory factory) {
         super.factory = factory;
     }
