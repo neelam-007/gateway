@@ -41,7 +41,6 @@
         <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.20" force="true" conf="core"/>
         <dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
-        <dependency org="org.scala-lang" name="scala-library" rev="2.11.5" force="true" conf="core"/>
         <dependency org="org.specs2" name="specs2_2.9.1" rev="1.5" force="true" conf="test"/>
         <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
         <dependency org="org.scribe" name="scribe" rev="1.3.1" force="true" conf="core"/>
