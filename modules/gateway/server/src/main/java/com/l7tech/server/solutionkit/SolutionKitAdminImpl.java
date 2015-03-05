@@ -1,12 +1,15 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.util.Background;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -20,6 +23,8 @@ import static com.l7tech.server.event.AdminInfo.find;
 public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements SolutionKitAdmin {
     @Inject
     private SolutionKitManager solutionKitManager;
+    @Inject
+    private LicenseManager licenseManager;
 
     public SolutionKitAdminImpl() {
     }
@@ -37,11 +42,15 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public JobId<String> testInstall(@NotNull final String bundle) {
+    public JobId<String> testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
         final FutureTask<String> task =
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
+                    final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+                    if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
+                        throw new SolutionKitException(solutionKit.getName() + " is unlicensed.");
+                    }
                     boolean isTest = true;
                     //noinspection ConstantConditions
                     return solutionKitManager.installBundle(bundle, isTest);

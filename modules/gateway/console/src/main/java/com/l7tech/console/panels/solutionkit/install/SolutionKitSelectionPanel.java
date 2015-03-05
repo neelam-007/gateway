@@ -1,9 +1,12 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -16,6 +19,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -45,6 +49,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JButton selectAllButton;
     private JButton clearAllButton;
     private JTable solutionKitsTable;
+    private JButton licenseInstallButton;
 
     private SelectableTableModel<SolutionKit> solutionKitsModel;
 
@@ -85,6 +90,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
         this.settings = settings;
+        refreshTableButtons();
     }
 
     @Override
@@ -104,11 +110,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         String bundle = settings.getBundleAsString(solutionKit);
         try {
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
-                solutionKitAdmin,
-                this.getOwner(),
-                "Testing Solution Kit",
-                "The gateway is testing selected solution kit(s)",
-                solutionKitAdmin.testInstall(bundle));
+                    solutionKitAdmin,
+                    this.getOwner(),
+                    "Testing Solution Kit",
+                    "The gateway is testing selected solution kit(s)",
+                    solutionKitAdmin.testInstall(solutionKit, bundle));
 
             if (result.isLeft()) {
                 errorMessage = result.left();
@@ -152,6 +158,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
+        licenseInstallButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onLicenseInstall();
+            }
+        });
+
         solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
             column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
                 @Override
@@ -162,7 +175,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             column("Name", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
-                    return solutionKit.getName();
+                    final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+                    if (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet)) {
+                        return solutionKit.getName();
+                    } else {
+                        return solutionKit.getName() + " (Unlicensed)";
+                    }
                 }
             }),
             column("Version", 50, 100, 500, new Functions.Unary<String, SolutionKit>() {
@@ -190,5 +208,20 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         setLayout(new BorderLayout());
         add(mainPanel);
+    }
+
+    private void onLicenseInstall() {
+        final Frame mainWindow = TopComponents.getInstance().getTopParent();
+        ManageLicensesDialog dlg = new ManageLicensesDialog(mainWindow);
+        dlg.setLicenseXmlToInstall(settings.getLoadedLicenseXml());
+
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        dlg.setModal(true);
+        DialogDisplayer.display(dlg);
+    }
+
+    private void refreshTableButtons() {
+        licenseInstallButton.setEnabled(!StringUtils.isEmpty(settings.getLoadedLicenseXml()));
     }
 }

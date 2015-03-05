@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
-
 import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
 import java.util.*;
@@ -22,6 +21,7 @@ public class SolutionKitsConfig {
     private static final Logger logger = Logger.getLogger(SolutionKitsConfig.class.getName());
 
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
+    private String loadedLicenseXml;
     private Set<SolutionKit> selected = new HashSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
@@ -96,5 +96,13 @@ public class SolutionKitsConfig {
 
     public void setResolvedEntityIds(@NotNull Map<SolutionKit, Map<String, String>> resolvedEntityIds) {
         this.resolvedEntityIds = resolvedEntityIds;
+    }
+
+    public String getLoadedLicenseXml() {
+        return loadedLicenseXml;
+    }
+
+    public void setLoadedLicenseXml(String loadedLicenseXml) {
+        this.loadedLicenseXml = loadedLicenseXml;
     }
 }

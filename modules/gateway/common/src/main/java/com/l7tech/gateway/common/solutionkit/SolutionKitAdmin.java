@@ -47,13 +47,14 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Test installation for the given bundle.
      *
+     * @param solutionKit the solution kit to test
      * @param bundle the bundle XML to test
      * @return the resulting mapping XML
      */
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
-    JobId<String> testInstall(@NotNull String bundle);
+    JobId<String> testInstall(@NotNull SolutionKit solutionKit, @NotNull String bundle);
 
     /**
      * Install the given solution kit.

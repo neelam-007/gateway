@@ -11,6 +11,7 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -23,8 +24,12 @@ import javax.xml.transform.dom.DOMSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -42,6 +47,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
     private static final String SK_NS = "http://ns.l7tech.com/2010/04/gateway-management";
     private static final String SK_FILENAME = "SolutionKit.xml";
+    private static final String SK_LICENSE_FILENAME = "License.xml";
     private static final String SK_ELE_ROOT = "SolutionKit";
     private static final String SK_ELE_ID = "Id";
     private static final String SK_ELE_VERSION = "Version";
@@ -52,6 +58,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String SK_ELE_CUSTOM_UI = "CustomUI";
     private static final String SK_ELE_CUSTOM_CALLBACK = "CustomCallback";
     private static final String SK_ELE_DEPENDENCIES = "Dependencies";
+    private static final String SK_ELE_FEATURE_SET = "FeatureSet";
     private static final String SK_ELE_BUNDLE = "Bundle";
 
     private JPanel mainPanel;
@@ -59,6 +66,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private JButton fileButton;
 
     private final Map<SolutionKit, Bundle> loaded = new HashMap<>();
+    private String loadedLicenseXml;
 
     public SolutionKitLoadPanel() {
         super(null);
@@ -88,11 +96,13 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         loaded.clear();
+        loadedLicenseXml = null;
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setLoadedSolutionKits(loaded);
+        settings.setLoadedLicenseXml(loadedLicenseXml);
     }
 
     @Override
@@ -117,10 +127,17 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    if (SK_FILENAME.equals(new File(entry.getName()).getName())) {
-                        loadSolutionKitXml(zis);
-                    } else {
-                        logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
+                    final String fileName = new File(entry.getName()).getName();
+                    switch (fileName) {
+                        case SK_FILENAME:
+                            loadSolutionKitXml(zis);
+                            break;
+                        case SK_LICENSE_FILENAME:
+                            loadLicenseXml(zis);
+                            break;
+                        default:
+                            logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
+                            break;
                     }
                 } else {
                     logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
@@ -130,6 +147,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             }
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
             loaded.clear();
+            loadedLicenseXml = null;
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -197,6 +215,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
         solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
 
+        final Element featureSetElement = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
+        if (featureSetElement != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetElement));
+        }
+
         Element bundleEle = DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_BUNDLE);
         if (bundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "l7") == null) {
             bundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + "l7", SK_NS);
@@ -205,5 +228,12 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         source.setNode(bundleEle);
         Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, source, true);
         loaded.put(solutionKit, bundle);
+    }
+
+    private void loadLicenseXml(final ZipInputStream zis) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException {
+        // we keep the first license encountered
+        if (StringUtils.isEmpty(loadedLicenseXml)) {
+            loadedLicenseXml = XmlUtil.nodeToString(XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis))));
+        }
     }
 }

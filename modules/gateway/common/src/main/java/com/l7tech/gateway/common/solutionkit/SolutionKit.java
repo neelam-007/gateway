@@ -30,6 +30,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
 
     public static final String SK_PROP_DESC_KEY = "Description";
     public static final String SK_PROP_TIMESTAMP_KEY = "TimeStamp";
+    public static final String SK_PROP_FEATURE_SET_KEY = "FeatureSet";
 
     private String sk_guid;
     private String sk_version;
@@ -71,15 +72,13 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         if (installXmlProperties == null) {
             Map<String, String> properties = installProperties;
             if (properties == null) return null;
-            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
-            try {
+            try (PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream()) {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(properties);
                 xe.close();
                 installXmlProperties = baos.toString(INSTALL_PROPERTIES_ENCODING);
-            } finally {
-                baos.close();
             }
+
         }
         return installXmlProperties;
     }
