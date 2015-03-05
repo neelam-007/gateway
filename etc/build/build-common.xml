@@ -18,10 +18,8 @@
     <property name="deps.dir" value="${build.dir}/dependency"/>
     <property name="deps.alt.dir" value="${build.dir}/dependency/alt"/>
     <property name="src.main.java.dir" value="${basedir}/src/main/java"/>
-    <property name="src.main.scala.dir" value="${basedir}/src/main/scala"/>
     <property name="src.main.res.dir" value="${basedir}/src/main/resources"/>
     <property name="src.test.java.dir" value="${basedir}/src/test/java"/>
-    <property name="src.test.scala.dir" value="${basedir}/src/test/scala"/>
     <property name="src.test.res.dir" value="${basedir}/src/test/resources"/>
     <property name="report.dir" value="${build.dir}/reports"/>
     <property name="report.test.dir" value="${build.dir}/reports/tests"/>
@@ -337,10 +335,8 @@
 
         <!-- Determine available sources -->
         <available file="${src.main.java.dir}" type="dir" property="module.source.available"/>
-        <available file="${src.main.scala.dir}" type="dir" property="module.source.scala.available"/>
         <available file="${src.main.res.dir}" type="dir" property="module.resources.available"/>
         <available file="${src.test.java.dir}" type="dir" property="module.tests.available"/>
-        <available file="${src.test.scala.dir}" type="dir" property="module.tests.scala.available"/>
         <available file="${src.test.res.dir}" type="dir" property="module.testresources.available"/>
     </target>
 
@@ -387,21 +383,9 @@
             </and>
         </condition>
         <fail if="module.invalid.properties">Invalid source found, this module should not have properties files in the java source tree.${line.separator}${toString:module.properties.source.filepath}</fail>
-        <path id="module.scala.source.filepath">
-            <fileset dir="${src.main.java.dir}">
-                <include name="**/*.scala"/>
-            </fileset>
-        </path>
-        <condition property="module.invalid.scala">
-            <resourcecount refid="module.scala.source.filepath" when="greater" count="0" />
-        </condition>
-        <fail if="module.invalid.scala">Invalid source found, scala files must not be in the java source tree.${line.separator}${toString:module.scala.source.filepath}</fail>
     </target>
-    <target name="compile-main-java" if="module.source.available" depends="compile-main-init, compile-main-scala">
+    <target name="compile-main-java" if="module.source.available" depends="compile-main-init">
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
-    </target>
-    <target name="compile-main-scala" if="module.source.scala.available" depends="compile-main-init">
-        <module-scalac srcdir="${src.main.scala.dir};${src.main.java.dir}" destdir="${classes.main.dir}"/>
     </target>
     <target name="compile-main-forms" if="module.source.available" unless="module.skip.forms" depends="compile-main-init, compile-main-java">
         <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
@@ -680,12 +664,9 @@
             <param name="build" expression="${basedir}/build.xml"/>
             <param name="source" expression="${module.source.available}"/>
             <param name="tests" expression="${module.tests.available}"/>
-            <param name="source.scala" expression="${module.source.scala.available}"/>
-            <param name="tests.scala" expression="${module.tests.scala.available}"/>
             <param name="source.resources" expression="${module.resources.available}"/>
             <param name="test.resources" expression="${module.testresources.available}"/>
             <param name="build.output" expression="${module.build.output}"/>
-            <param name="idea.scala" expression="${idea.scala}" if="idea.scala"/>
             <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>

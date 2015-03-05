@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class InterfaceTagTransformer implements EntityAPITransformer<InterfaceTagMO, InterfaceTag> {
@@ -24,6 +25,7 @@ public class InterfaceTagTransformer implements EntityAPITransformer<InterfaceTa
     protected InterfaceTagResourceFactory factory;
 
     @Inject
+    @Named("interfaceTagResourceFactory")
     protected void setFactory(InterfaceTagResourceFactory factory) {
         this.factory = factory;
     }

@@ -4,7 +4,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -15,8 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import javax.inject.Named;
 import java.text.ParseException;
 
 @Component
@@ -27,6 +28,7 @@ public class SecurePasswordTransformer extends APIResourceWsmanBaseTransformer<S
 
     @Override
     @Inject
+    @Named("securePasswordResourceFactory")
     protected void setFactory(SecurePasswordResourceFactory factory) {
         super.factory = factory;
     }

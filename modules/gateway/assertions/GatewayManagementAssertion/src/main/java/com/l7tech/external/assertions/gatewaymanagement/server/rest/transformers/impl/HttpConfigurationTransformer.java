@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class HttpConfigurationTransformer extends APIResourceWsmanBaseTransformer<HttpConfigurationMO, HttpConfiguration, EntityHeader, HttpConfigurationResourceFactory> {
 
     @Override
     @Inject
+    @Named("httpConfigurationResourceFactory")
     protected void setFactory(HttpConfigurationResourceFactory factory) {
         super.factory = factory;
     }

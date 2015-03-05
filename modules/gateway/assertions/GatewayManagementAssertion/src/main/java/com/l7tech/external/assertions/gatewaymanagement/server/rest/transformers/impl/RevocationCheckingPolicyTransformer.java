@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class RevocationCheckingPolicyTransformer extends APIResourceWsmanBaseTransformer<RevocationCheckingPolicyMO, RevocationCheckPolicy,EntityHeader, RevocationCheckingPolicyResourceFactory> {
 
     @Override
     @Inject
+    @Named("revocationCheckingPolicyResourceFactory")
     protected void setFactory(RevocationCheckingPolicyResourceFactory factory) {
         super.factory = factory;
     }

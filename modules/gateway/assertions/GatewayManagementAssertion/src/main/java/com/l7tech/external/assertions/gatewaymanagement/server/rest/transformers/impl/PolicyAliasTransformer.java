@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<PolicyAliasMO, PolicyAlias, AliasHeader<Policy>, PolicyAliasResourceFactory> {
@@ -23,6 +24,7 @@ public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<Poli
 
     @Override
     @Inject
+    @Named("policyAliasResourceFactory")
     protected void setFactory(PolicyAliasResourceFactory factory) {
         super.factory = factory;
     }

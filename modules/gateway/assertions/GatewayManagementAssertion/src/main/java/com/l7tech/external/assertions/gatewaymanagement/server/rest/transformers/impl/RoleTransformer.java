@@ -14,12 +14,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class RoleTransformer extends APIResourceWsmanBaseTransformer<RbacRoleMO, Role,EntityHeader, RbacRoleResourceFactory> {
 
     @Override
     @Inject
+    @Named("rbacRoleResourceFactory")
     protected void setFactory(RbacRoleResourceFactory factory) {
         super.factory = factory;
     }

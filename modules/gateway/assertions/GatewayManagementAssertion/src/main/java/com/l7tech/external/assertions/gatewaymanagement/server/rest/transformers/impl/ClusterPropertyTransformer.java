@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class ClusterPropertyTransformer extends APIResourceWsmanBaseTransformer<ClusterPropertyMO, ClusterProperty, EntityHeader, ClusterPropertyResourceFactory> {
 
     @Override
     @Inject
+    @Named("clusterPropertyResourceFactory")
     protected void setFactory(ClusterPropertyResourceFactory factory) {
         super.factory = factory;
     }

@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class ListenPortTransformer extends APIResourceWsmanBaseTransformer<ListenPortMO, SsgConnector, EntityHeader, ListenPortResourceFactory> {
 
     @Override
     @Inject
+    @Named("listenPortResourceFactory")
     protected void setFactory(ListenPortResourceFactory factory) {
         super.factory = factory;
     }

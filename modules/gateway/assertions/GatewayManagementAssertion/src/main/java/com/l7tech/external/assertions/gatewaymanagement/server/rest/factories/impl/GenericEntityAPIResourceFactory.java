@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -25,6 +26,7 @@ public class GenericEntityAPIResourceFactory extends WsmanBaseResourceFactory<Ge
 
     @Override
     @Inject
+    @Named("genericEntityResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory factory) {
         super.factory = factory;
     }

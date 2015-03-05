@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +25,7 @@ public class SiteMinderConfigurationTransformer extends APIResourceWsmanBaseTran
     private static final Logger logger = Logger.getLogger(SiteMinderConfigurationTransformer.class.getName());
     @Override
     @Inject
+    @Named("siteMinderConfigurationResourceFactory")
     protected void setFactory(SiteMinderConfigurationResourceFactory factory) {
         super.factory = factory;
     }

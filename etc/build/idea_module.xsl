@@ -9,12 +9,9 @@
     <xsl:param name="modulemeta"/> <!-- Javadoc URLs etc for libraries -->
     <xsl:param name="source">false</xsl:param>
     <xsl:param name="tests">false</xsl:param>
-    <xsl:param name="source.scala">false</xsl:param>
-    <xsl:param name="tests.scala">false</xsl:param>
     <xsl:param name="source.resources">false</xsl:param>
     <xsl:param name="test.resources">false</xsl:param>
     <xsl:param name="build.output">false</xsl:param>
-    <xsl:param name="idea.scala">false</xsl:param>
     <xsl:param name="scope"/><!-- default scope for library dependencies -->
 
     <!-- Global settings -->
@@ -27,21 +24,6 @@
 
     <!-- Process the main module component -->
     <xsl:template match="/module/component[@name = 'NewModuleRootManager']">
-        <!-- Add Scala facet first if required and enabled -->
-        <xsl:if test="'true' = $idea.scala and ('true' = $source.scala or 'true' = $tests.scala) and not(/module/component[@name = 'FacetManager']/facet[@type = 'scala'])">
-          <component name="FacetManager">
-            <facet type="scala" name="Scala">
-              <configuration>
-                <option name="compilerLibraryLevel" value="Project" />
-                <option name="compilerLibraryName" value="scala-compiler" />
-                <option name="explainTypeErrors" value="true" />
-                <option name="uncheckedWarnings" value="true" />
-                <option name="vmOptions" value="-Xss1m -server -XX:MaxPermSize=256m" />
-              </configuration>
-            </facet>
-          </component>
-        </xsl:if>
-
         <!-- copy existing -->
         <xsl:copy>
             <xsl:if test="$build-properties/property[@name = 'module.compile.source']">
@@ -64,17 +46,11 @@
                 <xsl:if test="'true' = $source">
                   <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
                 </xsl:if>
-                <xsl:if test="'true' = $idea.scala and 'true' = $source.scala">
-                  <sourceFolder url="file://$MODULE_DIR$/src/main/scala" isTestSource="false" />
-                </xsl:if>
                 <xsl:if test="'true' = $source.resources">
                   <sourceFolder url="file://$MODULE_DIR$/src/main/resources" isTestSource="false" />
                 </xsl:if>
                 <xsl:if test="'true' = $tests">
                   <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
-                </xsl:if>
-                <xsl:if test="'true' = $idea.scala and 'true' = $tests.scala">
-                  <sourceFolder url="file://$MODULE_DIR$/src/test/scala" isTestSource="true" />
                 </xsl:if>
                 <xsl:if test="'true' = $test.resources">
                     <sourceFolder url="file://$MODULE_DIR$/src/test/resources" isTestSource="true" />

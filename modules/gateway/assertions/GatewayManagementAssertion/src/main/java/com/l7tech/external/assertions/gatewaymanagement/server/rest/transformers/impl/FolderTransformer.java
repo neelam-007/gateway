@@ -11,12 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class FolderTransformer extends APIResourceWsmanBaseTransformer<FolderMO, Folder,FolderHeader, FolderResourceFactory> {
 
     @Override
     @Inject
+    @Named("folderResourceFactory")
     protected void setFactory(FolderResourceFactory factory) {
         super.factory = factory;
     }

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * This was created: 11/18/13 as 11:58 AM
@@ -27,6 +28,7 @@ public class JDBCConnectionAPIResourceFactory extends WsmanBaseResourceFactory<J
 
     @Override
     @Inject
+    @Named("jdbcConnectionResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory factory) {
         super.factory = factory;
     }
