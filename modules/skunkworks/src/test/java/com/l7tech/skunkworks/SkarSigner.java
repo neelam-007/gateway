@@ -4,19 +4,15 @@ import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.TeeInputStream;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.util.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 
 import java.io.*;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -45,13 +41,21 @@ public class SkarSigner {
             byte[] digestBytes = dis.getMessageDigest().digest();
             String digest = HexUtils.hexDump( digestBytes );
 
-            zos.putNextEntry( new ZipEntry( "signature.xml" ) );
-            Document xml = XmlUtil.stringAsDocument( "<sig><digest>" + digest + "</digest></sig>" );
-            Element doc = xml.getDocumentElement();
+            zos.putNextEntry( new ZipEntry( "signature.properties" ) );
+            Properties props = new Properties();
 
-            Element sig = DsigUtil.createEnvelopedSignature( doc, signingCert, signingKey, null, signingCert.getSubjectDN().getName(), "SHA-1" );
-            doc.appendChild( sig );
-            XmlUtil.nodeToOutputStream( doc, zos );
+            String keyAlg = signingKey.getAlgorithm().toUpperCase();
+            String sigAlg = "SHA512with"  + ( "EC".equals( keyAlg )  ? "ECDSA" : keyAlg );
+            Signature signature = Signature.getInstance( sigAlg );
+            signature.initSign( signingKey );
+            signature.update( digestBytes );
+            byte[] signatureBytes = signature.sign();
+
+            props.setProperty( "digest", digest );
+            props.setProperty( "signature", HexUtils.encodeBase64( signatureBytes ) );
+            props.setProperty( "cert", HexUtils.encodeBase64( signingCert.getEncoded() ) );
+
+            props.store( zos, "Signature" );
         }
     }
 
@@ -73,21 +77,31 @@ public class SkarSigner {
         byte[] computedDigest = dis.getMessageDigest().digest();
 
         ZipEntry sigEntry = zis.getNextEntry();
-        if ( sigEntry.isDirectory() || !"signature.xml".equals( sigEntry.getName() ) )
-            throw new IOException( "Second zip entry is not a plain file named signature.xml" );
+        if ( sigEntry.isDirectory() || !"signature.properties".equals( sigEntry.getName() ) )
+            throw new IOException( "Second zip entry is not a plain file named signature.properties" );
 
-        Document xml = XmlUtil.parse( zis );
-        Element doc = xml.getDocumentElement();
-        Element digestEl = DomUtils.findExactlyOneChildElementByName( doc, "digest" );
-        byte[] signedDigest = HexUtils.unHexDump( digestEl.getTextContent() );
+        Properties props = new Properties();
+        props.load( zis );
+
+        byte[] signedDigest = HexUtils.unHexDump( (String) props.get( "digest") );
         if ( !Arrays.equals( computedDigest, signedDigest ) )
             throw new IOException( "Digest of signed.dat does not match value from signature.xml" );
 
-        Element sig = DomUtils.findExactlyOneChildElementByName( doc, SoapConstants.DIGSIG_URI, "Signature" );
-        X509Certificate signerCert = DsigUtil.checkSimpleEnvelopedSignature( sig, new SimpleSecurityTokenResolver( trustedSigners ) );
+        byte[] signatureValue = HexUtils.decodeBase64( (String) props.get( "signature" ) );
+        X509Certificate signingCert = CertUtils.decodeCert( HexUtils.decodeBase64( (String) props.get( "cert" ) ) );
+
+        PublicKey verifyKey = signingCert.getPublicKey();
+        String keyAlg = verifyKey.getAlgorithm().toUpperCase();
+        String sigAlg = "SHA512with"  + ( "EC".equals( keyAlg )  ? "ECDSA" : keyAlg );
+        Signature signature = Signature.getInstance( sigAlg );
+        signature.initVerify( signingCert );
+        signature.update( computedDigest );
+        if ( !signature.verify( signatureValue ) )
+            throw new IOException( "Signature not verified" );
+
         boolean foundMatch = false;
         for ( X509Certificate certificate : trustedSigners ) {
-            if ( CertUtils.certsAreEqual( certificate, signerCert ) ) {
+            if ( CertUtils.certsAreEqual( certificate, signingCert ) ) {
                 foundMatch = true;
                 break;
             }
@@ -107,7 +121,7 @@ public class SkarSigner {
 
         new FileOutputStream( "SkarSigner_test.zip" ).write( baos.toByteArray() );
 
-        verifyZip( new X509Certificate[] { key.left }, new FileInputStream( "SkarSigner_test.zip" ) );
+        verifyZip( new X509Certificate[] { key.left }, new ByteArrayInputStream( baos.toByteArray() ) );
 
         System.out.println( "Signature verified successfully" );
     }
