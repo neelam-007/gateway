@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import static org.junit.Assert.*;
@@ -50,6 +51,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
     private static Method checkArgOpCreateWithKeyEntry;
     private static Method checkArgOpReadWithKeyEntry;
     private static Method checkArgOpDeleteWithKeyEntry;
+    private static Method deleteWithStrangeArgOrder;
 
     private final PrivateKeyRbacInterceptor interceptor = new PrivateKeyRbacInterceptor();
 
@@ -86,6 +88,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
         checkArgOpCreateWithKeyEntry = TEST_INTERFACE_CLASS.getMethod("checkArgOpCreateWithKeyEntry", SsgKeyEntry.class);
         checkArgOpReadWithKeyEntry = TEST_INTERFACE_CLASS.getMethod("checkArgOpReadWithKeyEntry", SsgKeyEntry.class);
         checkArgOpDeleteWithKeyEntry = TEST_INTERFACE_CLASS.getMethod("checkArgOpDeleteWithKeyEntry", SsgKeyEntry.class);
+        deleteWithStrangeArgOrder = TEST_INTERFACE_CLASS.getMethod("deleteWithStrangeArgumentOrder", Object.class, String.class, Object.class, Goid.class, Object.class);
     }
 
     @Before
@@ -107,7 +110,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * fail if invoked without a user
      */
     @Test
-    public void testInvoke_InterceptorInvokedWithoutUser_IllegalStateExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_InterceptorInvokedWithoutUser_IllegalStateExceptionThrown() throws Throwable {
         interceptor.user = null;
 
         try {
@@ -122,7 +125,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * fail if invoked without rbacServices
      */
     @Test
-    public void testInvoke_InterceptorInvokedWithoutRbacServices_IllegalStateExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_InterceptorInvokedWithoutRbacServices_IllegalStateExceptionThrown() throws Throwable {
         interceptor.rbacServices = null;
 
         try {
@@ -137,7 +140,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * fail if invoked without ssgKeyStoreManager
      */
     @Test
-    public void testInvoke_InterceptorInvokedWithoutKeystoreManager_IllegalStateExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_InterceptorInvokedWithoutKeystoreManager_IllegalStateExceptionThrown() throws Throwable {
         interceptor.ssgKeyStoreManager = null;
 
         try {
@@ -152,7 +155,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * fail if invoked method lacks @PrivateKeySecured annotation
      */
     @Test
-    public void testInvoke_MethodLacksPrivateKeySecuredAnnotation_IllegalStateExceptionThrown() throws Throwable {
+    public void testLacksAnnotation_MethodLacksPrivateKeySecuredAnnotation_IllegalStateExceptionThrown() throws Throwable {
         Method lacksAnnotation = TEST_INTERFACE_CLASS.getMethod("lacksAnnotation");
 
         try {
@@ -167,7 +170,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * Fail the operation arguments pre-check when given invalid keystore Goid.
      */
     @Test
-    public void testInvoke_KeystoreGoidOperationArgumentInvalid_IllegalArgumentExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_KeystoreGoidOperationArgumentInvalid_IllegalArgumentExceptionThrown() throws Throwable {
         mockOperationPermittedForAllNonMockedKeyEntries(UPDATE);
 
         try {
@@ -184,7 +187,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * Fail the operation arguments pre-check when the specified keystore does not exist.
      */
     @Test
-    public void testInvoke_KeystoreGoidSpecifiedDoesNotExist_ObjectNotFoundExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_KeystoreGoidSpecifiedDoesNotExist_ObjectNotFoundExceptionThrown() throws Throwable {
         mockOperationPermittedForAllNonMockedKeyEntries(UPDATE);
 
         when(ssgKeyStoreManager.findByPrimaryKey(any(Goid.class))).thenThrow(new ObjectNotFoundException("No SsgKeyFinder available on this node with id=NNN"));
@@ -201,7 +204,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * Fail the operation arguments pre-check when the specified key alias does not exist in specified keystore.
      */
     @Test
-    public void testInvoke_KeystoreAliasDoesNotExistInKeystore_ObjectNotFoundThrown() throws Throwable {
+    public void testUpdateKeyEntry_KeystoreAliasDoesNotExistInKeystore_ObjectNotFoundThrown() throws Throwable {
         when(ssgKeyStoreManager.findByPrimaryKey(any(Goid.class))).thenReturn(keystore);
         when(keystore.getCertificateChain(anyString())).thenThrow(new ObjectNotFoundException("Keystore BLAH " +
                 "does not contain any certificate chain entry with alias FOO"));
@@ -221,7 +224,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * pass CHECK_ARG_OPERATION precheck if permitted for user
      */
     @Test
-    public void testInvoke_UpdateOperationArgumentsValidAndUserPermitted_UpdateSucceeds() throws Throwable {
+    public void testUpdateKeyEntry_UpdateOperationArgumentsValidAndUserPermitted_UpdateSucceeds() throws Throwable {
         mockKeyLookupSuccess();
         mockOperationPermittedForEntity(UPDATE, keystore);
         mockOperationPermittedForEntity(UPDATE, keyEntry);
@@ -240,7 +243,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * fail CHECK_ARG_OPERATION precheck if not permitted for user with keystore
      */
     @Test
-    public void testInvoke_UserNotPermittedWithKeystore_PermissionDeniedExceptionThrown() throws Throwable {
+    public void testUpdateKeyEntry_UserNotPermittedWithKeystore_PermissionDeniedExceptionThrown() throws Throwable {
         mockKeyLookupSuccess();
 
         when(rbacServices.isPermittedForEntity(eq(user), eq(keyEntry), eq(UPDATE), isNull(String.class))).thenReturn(true);
@@ -259,7 +262,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * pass CHECK_ARG_OPERATION precheck that requires creating a dummy entity to check
      */
     @Test
-    public void testInvoke_DummyEntityRequiredForPreChecksForCreateOperation_CreateSucceeds() throws Throwable {
+    public void testCreateKeyEntry_DummyEntityRequiredForPreChecksForCreateOperation_CreateSucceeds() throws Throwable {
         mockKeyLookupSuccess();
 
         when(rbacServices.isPermittedForEntity(any(User.class), any(SsgKeyEntry.class), any(OperationType.class),
@@ -281,7 +284,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * coverage of checkPermittedForKeystore() with wildcard keystore ID
      */
     @Test
-    public void testInvoke_DummyRequiredAndGivenWildcardKeystoreIdAndNoKeystoreUpdatePermission_CreateSucceeds() throws Throwable {
+    public void testCreateKeyEntry_DummyRequiredAndGivenWildcardKeystoreIdAndNoKeystoreUpdatePermission_CreateSucceeds() throws Throwable {
         mockKeyLookupSuccess();
 
         when(rbacServices.isPermittedForEntity(any(User.class), any(SsgKeyEntry.class), eq(CREATE),
@@ -307,7 +310,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * coverage of checkPermittedForKeystore() with wildcard keystore ID
      */
     @Test
-    public void testInvoke_DummyRequiredAndGivenWildcardKeystoreIdWithKeystoreUpdatePermission_CreateSucceeds() throws Throwable {
+    public void testCreateKeyEntry_DummyRequiredAndGivenWildcardKeystoreIdWithKeystoreUpdatePermission_CreateSucceeds() throws Throwable {
         mockKeyLookupSuccess();
         mockOperationPermittedForEntityType(UPDATE, EntityType.SSG_KEYSTORE);
 
@@ -328,17 +331,14 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * keystore ID and key alias
      */
     @Test
-    public void testInvoke_GivenUnusualArgumentOrderForLocatingKeytoreIdAndKeyAlias_Success() throws Throwable {
+    public void testDeleteWithStrangeArgumentOrder_GivenUnusualOrderForKeytoreIdAndKeyAlias_Success() throws Throwable {
         mockKeyLookupSuccess();
         mockOperationPermittedForEntity(UPDATE, keystore);
         mockOperationPermittedForEntity(DELETE, keyEntry);
 
-        Method delWithStrangeArgOrder = TEST_INTERFACE_CLASS.getMethod("deleteWithStrangeArgumentOrder",
-                Object.class, String.class, Object.class, Goid.class, Object.class);
-
         when(testInterface.deleteWithStrangeArgumentOrder(isNull(), eq(KEY_ALIAS), isNull(), eq(KEYSTORE_ID), isNull())).thenReturn(true);
 
-        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(delWithStrangeArgOrder,
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(deleteWithStrangeArgOrder,
                 null, KEY_ALIAS, null, KEYSTORE_ID, null));
 
         assertTrue((Boolean) result);
@@ -352,17 +352,15 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * permission not present
      */
     @Test
-    public void testInvoke_GivenUnusualArgumentOrderMissingUpdateKeystorePermission_PermissionDeniedExceptionThrown() throws Throwable {
+    public void testDeleteWithStrangeArgumentOrder_MissingUpdateKeystorePermission_PermissionDeniedExceptionThrown() throws Throwable {
         mockKeyLookupSuccess();
         mockOperationPermittedForEntity(DELETE, keyEntry);
-
-        Method delWithStrangeArgOrder = TEST_INTERFACE_CLASS.getMethod("deleteWithStrangeArgumentOrder",
-                Object.class, String.class, Object.class, Goid.class, Object.class);
 
         when(testInterface.deleteWithStrangeArgumentOrder(isNull(), eq(KEY_ALIAS), isNull(), eq(KEYSTORE_ID), isNull())).thenReturn(true);
 
         try {
-            interceptor.invoke(new TestReflectiveMethodInvocation(delWithStrangeArgOrder, null, KEY_ALIAS, null, KEYSTORE_ID, null));
+            interceptor.invoke(new TestReflectiveMethodInvocation(deleteWithStrangeArgOrder,
+                    null, KEY_ALIAS, null, KEYSTORE_ID, null));
             fail("Expected PermissionDeniedException.");
         } catch (PermissionDeniedException e) {
             assertEquals("Permission denied: Update SSG_KEYSTORE", e.getMessage());
@@ -377,17 +375,15 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * permission not present
      */
     @Test
-    public void testInvoke_GivenUnusualArgumentOrderMissingDeleteKeyEntryPermission_PermissionDeniedExceptionThrown() throws Throwable {
+    public void testDeleteWithStrangeArgumentOrder_MissingDeleteKeyEntryPermission_PermissionDeniedExceptionThrown() throws Throwable {
         mockKeyLookupSuccess();
         mockOperationPermittedForEntity(UPDATE, keystore);
-
-        Method delWithStrangeArgOrder = TEST_INTERFACE_CLASS.getMethod("deleteWithStrangeArgumentOrder",
-                Object.class, String.class, Object.class, Goid.class, Object.class);
 
         when(testInterface.deleteWithStrangeArgumentOrder(isNull(), eq(KEY_ALIAS), isNull(), eq(KEYSTORE_ID), isNull())).thenReturn(true);
 
         try {
-            interceptor.invoke(new TestReflectiveMethodInvocation(delWithStrangeArgOrder, null, KEY_ALIAS, null, KEYSTORE_ID, null));
+            interceptor.invoke(new TestReflectiveMethodInvocation(deleteWithStrangeArgOrder,
+                    null, KEY_ALIAS, null, KEYSTORE_ID, null));
             fail("Expected PermissionDeniedException.");
         } catch (PermissionDeniedException e) {
             assertEquals("Permission denied: Delete null", e.getMessage());
@@ -1007,10 +1003,340 @@ public class PrivateKeyRbacInterceptorJavaTest {
     }
 
     /**
+     * pass CHECK_ARG_OPERATION pre check for DELETE and key entry in arg
+     */
+    @Test
+    public void testCheckArgOpDeleteWithKeyEntry_PermissionsGranted_Success() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(DELETE, keyEntry);
+        mockOperationPermittedForEntity(UPDATE, keystore);
+
+        when(testInterface.checkArgOpDeleteWithKeyEntry(keyEntry)).thenReturn(true);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpDeleteWithKeyEntry, keyEntry));
+
+        assertTrue((Boolean) result);
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, DELETE, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for DELETE and key entry in arg if DELETE permission denied
+     */
+    @Test
+    public void testCheckArgOpDeleteWithKeyEntry_NoDeletePermission_PermissionDeniedExceptionThrown() throws Throwable {
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpDeleteWithKeyEntry, keyEntry));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Delete null", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, DELETE, null);
+        verify(rbacServices, never()).isPermittedForEntity(user, keystore, UPDATE, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for DELETE and key entry in arg if UPDATE permission denied for keystore
+     */
+    @Test
+    public void testCheckArgOpDeleteWithKeyEntry_NoUpdatePermissionForKeystore_PermissionDeniedExceptionThrown() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(DELETE, keyEntry);
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpDeleteWithKeyEntry, keyEntry));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Update SSG_KEYSTORE", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, DELETE, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for DELETE and key entry in arg if keystore lookup fails
+     */
+    @Test
+    public void testCheckArgOpDeleteWithKeyEntry_KeystoreLookupFailure_ObjectNotFoundExceptionThrown() throws Throwable {
+        mockOperationPermittedForEntity(DELETE, keyEntry);
+
+        when(ssgKeyStoreManager.findByPrimaryKey(KEYSTORE_ID)).thenThrow(new ObjectNotFoundException("key store not found"));
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpDeleteWithKeyEntry, keyEntry));
+            fail("Expected ObjectNotFoundException.");
+        } catch (ObjectNotFoundException e) {
+            assertEquals("key store not found", e.getMessage());
+        }
+
+        verify(ssgKeyStoreManager).findByPrimaryKey(KEYSTORE_ID);
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, DELETE, null);
+        verify(rbacServices, never()).isPermittedForEntity(user, keystore, UPDATE, null);
+    }
+
+    /**
+     * pass CHECK_ARG_OPERATION pre check for READ and key entry in arg
+     */
+    @Test
+    public void testCheckArgOpReadWithKeyEntry_PermissionsGranted_Success() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        when(testInterface.checkArgOpReadWithKeyEntry(keyEntry)).thenReturn(true);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpReadWithKeyEntry, keyEntry));
+
+        assertTrue((Boolean) result);
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for READ and key entry in arg if READ permission denied
+     */
+    @Test
+    public void testCheckArgOpReadWithKeyEntry_NoReadPermission_PermissionDeniedExceptionThrown() throws Throwable {
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpReadWithKeyEntry, keyEntry));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Read null", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, never()).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for READ and key entry in arg if UPDATE permission denied for keystore
+     */
+    @Test
+    public void testCheckArgOpReadWithKeyEntry_NoUpdatePermissionForKeystore_PermissionDeniedExceptionThrown() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpReadWithKeyEntry, keyEntry));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Read SSG_KEYSTORE", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * fail CHECK_ARG_OPERATION pre check for READ and key entry in arg if keystore lookup fails
+     */
+    @Test
+    public void testCheckArgOpReadWithKeyEntry_KeystoreLookupFailure_ObjectNotFoundExceptionThrown() throws Throwable {
+        mockOperationPermittedForEntity(READ, keyEntry);
+
+        when(ssgKeyStoreManager.findByPrimaryKey(KEYSTORE_ID)).thenThrow(new ObjectNotFoundException("key store not found"));
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(checkArgOpReadWithKeyEntry, keyEntry));
+            fail("Expected ObjectNotFoundException.");
+        } catch (ObjectNotFoundException e) {
+            assertEquals("key store not found", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, never()).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * fail multiple prechecks if even one fails
+     */
+    @Test
+    public void testReadAttributeFromKeyEntry_NoPermissionToUpdateKeystore_PermissionDeniedExceptionThrown() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method readAttributeFromKeyEntry = TEST_INTERFACE_CLASS.getMethod("readAttributeFromKeyEntry", Goid.class, String.class);
+
+        when(testInterface.readAttributeFromKeyEntry(KEYSTORE_ID, KEY_ALIAS)).thenReturn(true);
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(readAttributeFromKeyEntry, KEYSTORE_ID, KEY_ALIAS));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Update SSG_KEYSTORE (assign special key purpose [update all])", e.getMessage());
+        }
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+        verify(rbacServices).isPermittedForAnyEntityOfType(user, UPDATE, EntityType.SSG_KEYSTORE);
+    }
+
+    /**
+     * pass return check if permission is granted
+     */
+    @Test
+    public void testFindAllKeyEntries_PermissionGranted_Success() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method findAllKeyEntries = TEST_INTERFACE_CLASS.getMethod("findAllKeyEntries");
+
+        List<SsgKeyEntry> ssgKeyEntryList = Arrays.asList(keyEntry, keyEntry, keyEntry);
+
+        when(testInterface.findAllKeyEntries()).thenReturn(ssgKeyEntryList);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findAllKeyEntries));
+
+        assertEquals(ssgKeyEntryList, result);
+
+        verify(rbacServices, times(3)).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, times(3)).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * fail return check if permission is withheld for even a single element of a returned list
+     */
+    @Test
+    public void testFindAllKeyEntries_NoPermissionForOneElementInReturnedList_PermissionDeniedExceptionThrown() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method findAllKeyEntries = TEST_INTERFACE_CLASS.getMethod("findAllKeyEntries");
+
+        List<SsgKeyEntry> ssgKeyEntryList = Arrays.asList(keyEntry, keyEntry, makeMockKeyEntry(new Goid(0, 3453), "foo"));
+
+        when(testInterface.findAllKeyEntries()).thenReturn(ssgKeyEntryList);
+
+        try {
+            interceptor.invoke(new TestReflectiveMethodInvocation(findAllKeyEntries));
+            fail("Expected PermissionDeniedException.");
+        } catch (PermissionDeniedException e) {
+            assertEquals("Permission denied: Read SSG_KEY_ENTRY", e.getMessage());
+        }
+
+        verify(rbacServices, times(2)).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, times(2)).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * pass return filter if permission is granted
+     */
+    @Test
+    public void testFindAllKeyEntriesFilter_PermissionGranted_Success() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method findAllKeyEntriesFilter = TEST_INTERFACE_CLASS.getMethod("findAllKeyEntriesFilter");
+
+        List<SsgKeyEntry> ssgKeyEntryList = Arrays.asList(keyEntry, keyEntry, keyEntry);
+
+        when(testInterface.findAllKeyEntriesFilter()).thenReturn(ssgKeyEntryList);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findAllKeyEntriesFilter));
+
+        assertEquals(ssgKeyEntryList, result);
+
+        verify(rbacServices, times(3)).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, times(3)).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * pass return filter with filtered results if permission is withheld an element of the returned list
+     */
+    @Test
+    public void testFindAllKeyEntriesFilter_NoPermissionForOneElementInReturnedList_KeyEntriesSubsetReturned() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method findAllKeyEntriesFilter = TEST_INTERFACE_CLASS.getMethod("findAllKeyEntriesFilter");
+
+        List<SsgKeyEntry> ssgKeyEntryList = Arrays.asList(keyEntry, keyEntry, makeMockKeyEntry(KEYSTORE_ID, "foo"));
+
+        when(testInterface.findAllKeyEntriesFilter()).thenReturn(ssgKeyEntryList);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findAllKeyEntriesFilter));
+
+        assertEquals(Arrays.asList(keyEntry, keyEntry), result);
+
+        verify(rbacServices, times(2)).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices, times(3)).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * pass return check (single entity) if permission is granted
+     */
+    @Test
+    public void testFindKeyEntry_PermissionGranted_Success() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry);
+        mockOperationPermittedForEntity(READ, keystore);
+
+        Method findKeyEntry = TEST_INTERFACE_CLASS.getMethod("findKeyEntry", Goid.class, String.class);
+
+        when(testInterface.findKeyEntry(KEYSTORE_ID, KEY_ALIAS)).thenReturn(keyEntry);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findKeyEntry, KEYSTORE_ID, KEY_ALIAS));
+
+        assertEquals(keyEntry, result);
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * pass return filter (single entity) with null result if permission is withheld for the returned entity itself
+     */
+    @Test
+    public void testFindKeyEntryFilter_NoReadPermissionForKeyEntry_NullReturned() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keystore); // only keystore permission granted
+
+        Method findKeyEntryFilter = TEST_INTERFACE_CLASS.getMethod("findKeyEntryFilter", Goid.class, String.class);
+
+        when(testInterface.findKeyEntryFilter(KEYSTORE_ID, KEY_ALIAS)).thenReturn(keyEntry);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findKeyEntryFilter, KEYSTORE_ID, KEY_ALIAS));
+
+        assertEquals(null, result);
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
+     * pass return filter (single entity) with null result if permission is withheld for the returned entity's keystore
+     */
+    @Test
+    public void testFindKeyEntryFilter_NoReadPermissionForKeystore_NullReturned() throws Throwable {
+        mockKeyLookupSuccess();
+        mockOperationPermittedForEntity(READ, keyEntry); // only key entry permission granted
+
+        Method findKeyEntryFilter = TEST_INTERFACE_CLASS.getMethod("findKeyEntryFilter", Goid.class, String.class);
+
+        when(testInterface.findKeyEntryFilter(KEYSTORE_ID, KEY_ALIAS)).thenReturn(keyEntry);
+
+        Object result = interceptor.invoke(new TestReflectiveMethodInvocation(findKeyEntryFilter, KEYSTORE_ID, KEY_ALIAS));
+
+        assertEquals(null, result);
+
+        verify(rbacServices).isPermittedForEntity(user, keyEntry, READ, null);
+        verify(rbacServices).isPermittedForEntity(user, keystore, READ, null);
+    }
+
+    /**
      * return check for method that returns a list that contains at least one thing that isn't a key entry
      */
     @Test
-    public void testInvoke_AtLeastOneMethodReturnValueNotSsgKeyEntry_IllegalStateExceptionThrown() throws Throwable {
+    public void testFindUnrelatedStuff_AtLeastOneMethodReturnValueNotSsgKeyEntry_IllegalStateExceptionThrown() throws Throwable {
         Method findUnrelatedStuff = TEST_INTERFACE_CLASS.getMethod("findUnrelatedStuff");
 
         when(testInterface.findUnrelatedStuff()).thenReturn(Arrays.asList("foo", keyEntry, new Object()));
@@ -1022,7 +1348,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
             assertEquals("Unable to filter return type for method findUnrelatedStuff: List", e.getMessage());
         }
 
-        verify(rbacServices, never()).isPermittedForEntity(any(User.class), any(Entity.class), any(OperationType.class), anyString());
+        verifyZeroInteractions(rbacServices);
     }
 
     /**
@@ -1053,7 +1379,7 @@ public class PrivateKeyRbacInterceptorJavaTest {
      * Configure rbacServices mock to return true when queried about the specified permission for all
      * non-mocked SsgKeyEntry instances.
      *
-     * N.B. The old Scala implementation of this test relied on mocked instances not matching "haveClass":
+     * N.B. The old Scala implementation of this worked by stipulating that instances not match "haveClass":
      * rbacServices.isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(op), org.mockito.Matchers.eq(null)) returns true
      *
      * Using only Mockito this type of matching seems to be unavailable, so we will specify that the permissions
