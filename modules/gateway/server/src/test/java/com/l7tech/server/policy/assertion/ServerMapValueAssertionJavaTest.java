@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 public class ServerMapValueAssertionJavaTest {
 
-    private static NameValuePair[] mappings = new NameValuePair[]{
+    private static NameValuePair[] MAPPINGS = new NameValuePair[]{
             new NameValuePair("cat", "/catthing"),
             new NameValuePair("dog", "/${dog}thing"),
             new NameValuePair("fanc(y|ie)", "/${0}thing/${1}"),
@@ -45,7 +45,7 @@ public class ServerMapValueAssertionJavaTest {
         assertion = new MapValueAssertion();
         assertion.setInputExpr("${in}");
         assertion.setOutputVar("out");
-        assertion.setMappings(mappings);
+        assertion.setMappings(MAPPINGS);
 
         serverAssertion = new ServerMapValueAssertion(assertion);
 
@@ -63,9 +63,8 @@ public class ServerMapValueAssertionJavaTest {
      */
     @Test
     public void testCheckRequest_InputMatchesMapping_MatchAuditedAndValueSetToOutputVariable() throws Exception {
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals("/catthing", pec.getVariable("out"));
 
         // PATTERN_NOT_MATCHED won't be audited because the very first pattern in the list gets matched
@@ -81,9 +80,7 @@ public class ServerMapValueAssertionJavaTest {
     public void testCheckRequest_InputNotMatchedToMapping_NoMatchAuditedAndAssertionFails() throws Exception {
         pec.setVariable("in", "nothingWillMatchThis");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
-
-        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
         try {
             pec.getVariable("out");
@@ -105,9 +102,7 @@ public class ServerMapValueAssertionJavaTest {
         assertion.setMappings(null);
         serverAssertion = new ServerMapValueAssertion(assertion, audit.factory());
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
-
-        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
         try {
             pec.getVariable("out");
@@ -128,9 +123,8 @@ public class ServerMapValueAssertionJavaTest {
     public void testCheckRequest_InputMatchesMappingWithContextVariable_MatchAuditedAndValueSetToOutputVariable() throws Exception {
         pec.setVariable("in", "dog");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals("/dawgthing", pec.getVariable("out"));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_MATCHED));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_NOT_MATCHED));
@@ -144,9 +138,8 @@ public class ServerMapValueAssertionJavaTest {
     public void testCheckRequest_InputMatchesMappingWithRegexPseudoVars_MatchAuditedAndValueSetToOutputVariable() throws Exception {
         pec.setVariable("in", "fancie");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals("/fanciething/ie", pec.getVariable("out"));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_MATCHED));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_NOT_MATCHED));
@@ -161,9 +154,8 @@ public class ServerMapValueAssertionJavaTest {
         pec.setVariable("in", "patzarfwithvar");
         pec.setVariable("patvar", "zarf");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals("/patvar", pec.getVariable("out"));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_MATCHED));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_NOT_MATCHED));
@@ -178,9 +170,7 @@ public class ServerMapValueAssertionJavaTest {
         pec.setVariable("in", "patzarffwithvar");
         pec.setVariable("patvar", "zarf");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
-
-        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
         try {
             pec.getVariable("out");
@@ -202,9 +192,8 @@ public class ServerMapValueAssertionJavaTest {
         pec.setVariable("in", "pata|bwithvar");
         pec.setVariable("patvar", "a|b");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals("/patvar", pec.getVariable("out"));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_MATCHED));
         assertTrue(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_NOT_MATCHED));
@@ -219,9 +208,7 @@ public class ServerMapValueAssertionJavaTest {
         pec.setVariable("in", "patawithvar");
         pec.setVariable("patvar", "a|b");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
-
-        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
         try {
             pec.getVariable("out");
@@ -243,9 +230,8 @@ public class ServerMapValueAssertionJavaTest {
     public void testCheckRequest_InputExpressionNull_MisconfigurationAuditedAndAssertionFails() throws Exception {
         assertion.setInputExpr(null);
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.SERVER_ERROR, status);
         assertTrue(audit.isAuditPresent(AssertionMessages.ASSERTION_MISCONFIGURED));
         assertFalse(audit.isAuditPresent(AssertionMessages.MAP_VALUE_PATTERN_MATCHED));
         assertFalse(audit.isAuditPresent(AssertionMessages.MAP_VALUE_NO_PATTERNS_MATCHED));

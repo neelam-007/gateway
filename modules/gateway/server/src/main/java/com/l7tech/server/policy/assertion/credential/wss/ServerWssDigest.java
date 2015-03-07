@@ -167,7 +167,7 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
     }
 
     private Collection<UsernameToken> getUsernameTokens(ProcessorResult pr) {
-        List<UsernameToken> ret = new ArrayList<UsernameToken>();
+        List<UsernameToken> ret = new ArrayList<>();
 
         for (XmlSecurityToken token : pr.getXmlSecurityTokens()) {
             if (token instanceof UsernameToken) {

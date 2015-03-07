@@ -82,9 +82,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
      */
     @Test
     public void testCheckRequest_NoCertificateForName_LookupFailureAuditedAndAssertionFalsified() throws Exception {
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FALSIFIED, status);
         assertEquals(2, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NOTFOUND));
@@ -97,9 +96,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
     public void testCheckRequest_CertificatePresentForName_CertificateSetToVariable() throws Exception {
         when(cache.findByName(CERTIFICATE_NAME_ALICE)).thenReturn(Collections.singleton(trustedCert));
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertEquals(aliceCert, pec.getVariable("certificates"));
@@ -117,9 +115,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(cache.findByName(CERTIFICATE_NAME_ALICE)).thenReturn(CollectionUtils.set(trustedCert, trustedCertBob));
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
 
@@ -141,9 +138,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(securityTokenResolver.lookup(thumbprint)).thenReturn(aliceCert);
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertEquals(aliceCert, pec.getVariable("certificates"));
@@ -162,9 +158,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(securityTokenResolver.lookupBySki(ski)).thenReturn(aliceCert);
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertEquals(aliceCert, pec.getVariable("certificates"));
@@ -183,9 +178,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(securityTokenResolver.lookupByKeyName(subjectDn)).thenReturn(aliceCert);
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertEquals(aliceCert, pec.getVariable("certificates"));
@@ -206,9 +200,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerDn), new BigInteger(serialNumber))).thenReturn(aliceCert);
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.NONE, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertEquals(aliceCert, pec.getVariable("certificates"));
@@ -226,9 +219,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
 
         when(cache.findByName(CERTIFICATE_NAME_ALICE)).thenReturn(CollectionUtils.set(trustedCert, trustedCertBob));
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FALSIFIED, status);
         assertEquals(2, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_MULTIPLE));
@@ -241,9 +233,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
     public void testCheckRequest_FindExceptionOnCertificateLookup_LookupErrorAuditedAndAssertionFails() throws Exception {
         when(cache.findByName(CERTIFICATE_NAME_ALICE)).thenThrow(new FindException());
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FAILED, status);
         assertEquals(2, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_ERROR));
@@ -258,9 +249,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
         assertion.setLookupType(LookupTrustedCertificateAssertion.LookupType.CERT_SUBJECT_DN);
         assertion.setCertSubjectDn("malformed");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FAILED, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_ERROR));
     }
@@ -275,9 +265,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
         assertion.setCertIssuerDn("malformed");
         assertion.setCertSerialNumber("8473");
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FAILED, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_ERROR));
     }
@@ -292,9 +281,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
         assertion.setCertIssuerDn("cn=blah");
         assertion.setCertSerialNumber("234324 234"); // malformed
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FAILED, status);
         assertEquals(1, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_ERROR));
     }
@@ -307,9 +295,8 @@ public class ServerLookupTrustedCertificateAssertionJavaTest {
     public void testCheckRequest_FindExceptionWithCauseThrown_StackTraceNotAuditedByDefaultAndAssertionFails() throws Exception {
         when(cache.findByName(CERTIFICATE_NAME_ALICE)).thenThrow(new FindException("fail", new RuntimeException("cause")));
 
-        AssertionStatus status = serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(pec));
 
-        assertEquals(AssertionStatus.FAILED, status);
         assertEquals(2, audit.getAuditCount());
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_NAME));
         assertTrue(audit.isAuditPresent(AssertionMessages.CERT_ANY_LOOKUP_ERROR));
