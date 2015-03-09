@@ -92,6 +92,10 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
         return iterator().hasNext();
     }
 
+    public int getAuditCount() {
+        return audits.size();
+    }
+
     /**
      * Get an AuditFactory that always returns this Audit instance.
      *
