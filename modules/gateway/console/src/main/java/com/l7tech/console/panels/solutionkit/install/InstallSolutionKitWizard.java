@@ -105,6 +105,10 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         }
     }
 
+    protected void clickButtonNext() {
+        super.getButtonNext().doClick();
+    }
+
     /**
      * Display a error dialog.
      * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundle API), then

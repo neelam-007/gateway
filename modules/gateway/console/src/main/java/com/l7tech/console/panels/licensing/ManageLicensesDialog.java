@@ -7,9 +7,7 @@ import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.licensing.CompositeLicense;
-import com.l7tech.gateway.common.licensing.FeatureLicense;
-import com.l7tech.gateway.common.licensing.LicenseDocument;
+import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -67,7 +65,6 @@ public class ManageLicensesDialog extends JDialog {
     private JTable licenseTable;
     private JPanel rootPanel;
     private SimpleTableModel<LicenseTableRow> licenseTableModel;
-    private String licenseXmlToInstall = null;
 
     private boolean disconnectManagerOnClose = false;
     private ClusterStatusAdmin admin = Registry.getDefault().getClusterStatusAdmin();
@@ -75,10 +72,6 @@ public class ManageLicensesDialog extends JDialog {
     public ManageLicensesDialog(Window owner) {
         super(owner);
         init();
-    }
-
-    public void setLicenseXmlToInstall(String licenseXml) {
-        this.licenseXmlToInstall = licenseXml;
     }
 
     private void init() {
@@ -111,13 +104,6 @@ public class ManageLicensesDialog extends JDialog {
             @Override
             public void windowClosing(WindowEvent e) {
                 onClose();
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-                if (licenseXmlToInstall != null ) {
-                    installLicense();
-                }
             }
         });
 
@@ -198,36 +184,34 @@ public class ManageLicensesDialog extends JDialog {
             }
         }
 
-        // prompt for license if not already set
-        if (licenseXmlToInstall == null) {
-            try (InputStream is = getLicenseInputStream()) {
-                if (null == is) // user cancelled, or there was an error reading the file
-                    return;
+        String licenseXml;
 
-                licenseXmlToInstall = XmlUtil.nodeToString(XmlUtil.parse(is));
-            } catch (IOException e) {
-                DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                        MessageFormat.format(RESOURCES.getString("dialog.install.error.read.io.message"),
-                                ExceptionUtils.getMessage(e)),
-                        RESOURCES.getString("dialog.install.error.read.title"),
-                        JOptionPane.ERROR_MESSAGE, null);
+        try (InputStream is = getLicenseInputStream()) {
+            if (null == is) // user cancelled, or there was an error reading the file
                 return;
-            } catch (SAXException e) {
-                DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                        MessageFormat.format(RESOURCES.getString("dialog.install.error.read.parsing.message"),
-                                ExceptionUtils.getMessage(e)),
-                        RESOURCES.getString("dialog.install.error.read.title"),
-                        JOptionPane.ERROR_MESSAGE, null);
-                return;
-            }
+
+            licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
+        } catch (IOException e) {
+            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.read.io.message"),
+                            ExceptionUtils.getMessage(e)),
+                    RESOURCES.getString("dialog.install.error.read.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
+            return;
+        } catch (SAXException e) {
+            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.read.parsing.message"),
+                            ExceptionUtils.getMessage(e)),
+                    RESOURCES.getString("dialog.install.error.read.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
+            return;
         }
 
         FeatureLicense newLicense;
 
         try {
             // create the FeatureLicense from the license file xml
-            newLicense = admin.createLicense(new LicenseDocument(licenseXmlToInstall));
-            licenseXmlToInstall = null;
+            newLicense = admin.createLicense(new LicenseDocument(licenseXml));
 
             // check if the license is valid
             admin.validateLicense(newLicense);

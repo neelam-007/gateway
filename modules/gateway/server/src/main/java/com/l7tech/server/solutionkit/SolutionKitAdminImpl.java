@@ -49,7 +49,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                 public String call() throws Exception {
                     final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
                     if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
-                        throw new SolutionKitException(solutionKit.getName() + " is unlicensed.");
+                        throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set is " + featureSet);
                     }
                     boolean isTest = true;
                     //noinspection ConstantConditions

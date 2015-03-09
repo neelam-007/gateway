@@ -40,7 +40,7 @@ import static com.l7tech.gui.util.TableUtil.column;
 /**
  * Wizard panel which allows the user to select component(s) within a solution kit to install.
  */
-public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig> {
+public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig>  {
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());
     private static final String STEP_LABEL = "Select Solution Kit";
     private static final String STEP_DESC = "Select solution kit(s) to install.";
@@ -56,6 +56,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
+    private boolean disableAutoNext = false;
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -90,7 +91,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
         this.settings = settings;
-        refreshTableButtons();
     }
 
     @Override
@@ -141,6 +141,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         return success;
     }
 
+    @Override
+    public void notifyActive() {
+        // auto next step the wizard for solution kit with single item
+        if (solutionKitsModel.getRowCount() == 1) {
+            solutionKitsModel.select(0);
+            if (!disableAutoNext && owner instanceof InstallSolutionKitWizard) {
+                ((InstallSolutionKitWizard) owner).clickButtonNext();
+            }
+        }
+        disableAutoNext = true;
+    }
+
     private void initialize() {
         Utilities.buttonToLink(selectAllButton);
         selectAllButton.addActionListener(new ActionListener() {
@@ -158,6 +170,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
+        licenseInstallButton.setEnabled(true);
         licenseInstallButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -213,15 +226,9 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private void onLicenseInstall() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
         ManageLicensesDialog dlg = new ManageLicensesDialog(mainWindow);
-        dlg.setLicenseXmlToInstall(settings.getLoadedLicenseXml());
-
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         dlg.setModal(true);
         DialogDisplayer.display(dlg);
-    }
-
-    private void refreshTableButtons() {
-        licenseInstallButton.setEnabled(!StringUtils.isEmpty(settings.getLoadedLicenseXml()));
     }
 }

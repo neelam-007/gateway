@@ -102,7 +102,6 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setLoadedSolutionKits(loaded);
-        settings.setLoadedLicenseXml(loadedLicenseXml);
     }
 
     @Override
