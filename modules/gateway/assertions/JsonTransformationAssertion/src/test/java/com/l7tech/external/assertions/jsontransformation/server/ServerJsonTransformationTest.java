@@ -13,6 +13,8 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Charsets;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Assert;
@@ -36,14 +38,7 @@ import static org.junit.Assert.assertEquals;
  * @noinspection FieldCanBeLocal
  */
 public class ServerJsonTransformationTest {
-    private static final String EXPECTED_UGLY_JSON = "{\"menu\":{\"id\":\"file\",\"popup\":{\"menuitem\":" +
-            "[{\"value\":\"New\",\"onclick\":\"CreateNewDoc()\"},{\"value\":\"Open\",\"onclick\":\"OpenDoc()\"}," +
-            "{\"value\":\"Close\",\"onclick\":\"CloseDoc()\"}]},\"value\":\"File\"}}";
-
-    private static final String EXPECTED_UGLY_XML = "<test><menu><id>file</id><popup><menuitem><value>New</value" +
-            "><onclick>CreateNewDoc()</onclick></menuitem><menuitem><value>Open</value><onclick>OpenDoc()</onclick>" +
-            "</menuitem><menuitem><value>Close</value><onclick>CloseDoc()</onclick></menuitem></popup><value>File" +
-            "</value></menu></test>";
+    private static final String EXPECTED_UGLY_JSON = "{\"menu\":{\"popup\":{\"menuitem\":[{\"onclick\":\"CreateNewDoc()\",\"value\":\"New\"},{\"onclick\":\"OpenDoc()\",\"value\":\"Open\"},{\"onclick\":\"CloseDoc()\",\"value\":\"Close\"}]},\"id\":\"file\",\"value\":\"File\"}}";
 
     private static final String SOAP_XML = "<soapenv:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
             "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
@@ -82,7 +77,7 @@ public class ServerJsonTransformationTest {
     private static final Map<String, String> EXPECTED_XML_NAMESPACES;
 
     static {
-        Map<String, String> m = new HashMap<String, String>();
+        Map<String, String> m = new HashMap<>();
         m.put("xmlns:soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
         m.put("xmlns:urn", "http://hugh:8081/axis/services/urn:EchoAttachmentsService");
         m.put("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
@@ -90,12 +85,10 @@ public class ServerJsonTransformationTest {
         EXPECTED_XML_NAMESPACES = Collections.unmodifiableMap(m);
     }
 
-    private static final String EXPECTED_JSON_ROUNDTRIP = "{root={menu={id=file, popup={menuitem=[{value=New, onclick=CreateNewDoc()}, {value=Open, onclick=OpenDoc()}, {value=Close, onclick=CloseDoc()}]}, value=File}}}";
+    private static final String EXPECTED_JSON_ROUNDTRIP = "{\"root\" : {\"menu\" : {\"id\" : \"file\", \"popup\" : {\"menuitem\" : [{\"value\" : \"New\", \"onclick\" : \"CreateNewDoc()\"}, {\"value\" : \"Open\", \"onclick\" : \"OpenDoc()\"}, {\"value\" : \"Close\", \"onclick\" : \"CloseDoc()\"}]}, \"value\" : \"File\"}}}";
 
     private String xmlStr;
     private String jsonStr;
-    private Map<Object, Object> objectMap;
-    private StashManager stashManager;
 
     private static final String TEST_XHTML_STRING = "<ul>\n" +
             "<li style=\"color:red\">First Item</li>\n" +
@@ -129,8 +122,6 @@ public class ServerJsonTransformationTest {
                 "    ]\n" +
                 "  }\n" +
                 "}}";
-
-        objectMap = new HashMap<Object, Object>();
     }
 
     private PolicyEnforcementContext getContext() {
@@ -203,9 +194,13 @@ public class ServerJsonTransformationTest {
         result = sjta1.checkRequest(context);
         Assert.assertEquals( result, AssertionStatus.NONE );
 
+        //get expected JSON object
+        JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
+        JSONObject expectedJson = (JSONObject)parser.parse(EXPECTED_JSON_ROUNDTRIP);
+
         Object outputObj = context.getVariable("target");
-        Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
-        Assert.assertEquals( EXPECTED_JSON_ROUNDTRIP, mapObj.toString() );
+        JSONObject actualJson = new JSONObject((Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject());
+        Assert.assertEquals(expectedJson, actualJson);
     }
 
     private void assertJsonData(Map jsonMap) {

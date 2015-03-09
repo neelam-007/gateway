@@ -15,5 +15,6 @@
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
         <dependency org="json" name="json-java" rev="1.0-l7p2" force="true" conf="core"/>
+        <dependency org="net.minidev" name="json-smart" rev="1.1" force="true" conf="test"/>
 	</dependencies>
 </ivy-module>
