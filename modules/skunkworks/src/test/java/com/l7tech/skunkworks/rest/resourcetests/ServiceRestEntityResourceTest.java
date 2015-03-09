@@ -132,6 +132,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         service.setSoap(true);
         service.setDisabled(true);
         service.getPolicy().setGuid(UUID.randomUUID().toString());
+        service.putProperty("myProperty", "myPropertyValue");
         serviceManager.save(service);
         policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
         publishedServices.add(service);
@@ -148,6 +149,8 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         service.setSoapVersion(SoapVersion.SOAP_1_2);
         service.setWsdlUrl("http://wsdlUrl");
         service.setWsdlXml(WSDL_XML);
+        service.putProperty("myProperty", "myPropertyValue");
+        service.putProperty("myProperty2", "myPropertyValue2");
         serviceManager.save(service);
         policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
         publishedServices.add(service);
@@ -379,6 +382,8 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         policyResourceSet.setResources(Arrays.asList(policyResource));
         serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
 
+        serviceMOs.add(serviceMO);
+
         //create a service without specifying a folder. should use root by default SSG-8808
         serviceMO = ManagedObjectFactory.createService();
         serviceMO.setId(getGoid().toString());
@@ -404,6 +409,25 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         serviceDetail.setEnabled(false);
         serviceDetail.setFolderId(rootFolder.getId());
         serviceDetail.setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("internal", true).map());
+        serviceMO.setServiceDetail(serviceDetail);
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(POLICY);
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        serviceMOs.add(serviceMO);
+
+        //create a service with properties
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(getGoid().toString());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName("My New Service");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId(rootFolder.getId());
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("createPropertyKey", "createPropertyValue").map());
         serviceMO.setServiceDetail(serviceDetail);
         policyResourceSet = ManagedObjectFactory.createResourceSet();
         policyResource = ManagedObjectFactory.createResource();
@@ -453,6 +477,26 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         serviceDetail.setFolderId(publishedService.getFolder().getId());
         serviceMO.setServiceDetail(serviceDetail);
         serviceMO.setVersion(publishedService.getVersion() + 1);
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(publishedService.getPolicy().getXml());
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        serviceMOs.add(serviceMO);
+
+        //update property Value
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(publishedService.getId());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName(publishedService.getName() + "Updated");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId(publishedService.getFolder().getId());
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("createPropertyKey", "createPropertyValue").map());
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceMO.setVersion(publishedService.getVersion() + 2);
         policyResourceSet = ManagedObjectFactory.createResourceSet();
         policyResource = ManagedObjectFactory.createResource();
         policyResourceSet.setTag("policy");
@@ -653,6 +697,10 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
                 Assert.assertEquals(entity.isSoap(), managedObject.getServiceDetail().getProperties().get("soap") == null ? false : managedObject.getServiceDetail().getProperties().get("soap"));
                 Assert.assertEquals(entity.isWssProcessingEnabled(), managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled") == null ? true : managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled"));
                 Assert.assertEquals(entity.isTracingEnabled(), managedObject.getServiceDetail().getProperties().get("tracingEnabled") == null ? false : managedObject.getServiceDetail().getProperties().get("tracingEnabled"));
+
+                for(String key : entity.getPropertyNames()){
+                    Assert.assertEquals(entity.getProperty(key), managedObject.getServiceDetail().getProperties().get("property." + key));
+                }
             }
 
             if(managedObject.getServiceDetail().getServiceMappings() != null) {

@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.rbac.RbacAttribute;
+import com.l7tech.objectmodel.JaxbMapType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.PersistentEntityUtil;
@@ -12,13 +12,20 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Functions.TernaryThrows;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.hibernate.annotations.*;
+import org.hibernate.annotations.Parameter;
+import org.jetbrains.annotations.Nullable;
 
-import javax.persistence.Transient;
+import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -29,7 +36,9 @@ import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +60,9 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
+@Entity
+@Proxy(lazy=false)
+@Table(name="published_service")
 public class PublishedService extends ZoneableNamedEntityImp implements Flushable, HasFolder {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
@@ -115,6 +127,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         return super.getId();
     }
 
+    @Transient
     @RbacAttribute
     @Size(min = 1, max = 255)
     @Override
@@ -145,6 +158,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      */
     @RbacAttribute
     @Size(max=4096)
+    @Column(name="wsdl_url")
     public String getWsdlUrl() {
         if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
         return _wsdlUrl;
@@ -174,6 +188,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      */
     @NotNull(groups=SoapValidationGroup.class, message="WSDL is required for SOAP services")
     @Size(max=5242880)
+    @Column(name="wsdl_xml")
     public String getWsdlXml() {
         return _wsdlXml;
     }
@@ -219,6 +234,8 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         return ret;
     }
 
+    @Column(name="soap_version")
+    @Type(type = "com.l7tech.server.util.GenericEnumUserType", parameters = {@Parameter(name = "enumClass", value = "com.l7tech.xml.soap.SoapVersion")})
     public synchronized SoapVersion getSoapVersion() {
         if (_soapVersion == null)
  	 	    try {
@@ -243,6 +260,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      *
      * @return the base URI from the WSDL, or null
      */
+    @Transient
     @RbacAttribute
     public String getBaseURI() {
          if (_wsdlUrl == null) return null;
@@ -370,6 +388,8 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
 
     @Valid
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "policy_goid")
     public Policy getPolicy() {
         return policy;
     }
@@ -383,6 +403,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     }
 
     @RbacAttribute
+    @Column(name="disabled")
     public boolean isDisabled() {
         return _disabled;
     }
@@ -423,6 +444,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @return true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
     @RbacAttribute
+    @Column(name="soap")
     public boolean isSoap() {
         return soap;
     }
@@ -447,6 +469,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @return true if this service is an internal service.
      */
     @RbacAttribute
+    @Column(name="internal")
     public boolean isInternal() {
         return internal;
     }
@@ -491,6 +514,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
             @Pattern(regexp="/.+")
     } )
     @RbacAttribute
+    @Column(name="routing_uri")
     public String getRoutingUri() {
         return routingUri;
     }
@@ -513,6 +537,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      */
     @RbacAttribute
     @Size(max=4096)
+    @Column(name="default_routing_url")
     public String getDefaultRoutingUrl() {
         return defaultRoutingUrl;
     }
@@ -528,6 +553,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @param method the method to check.  Must not be null.
      * @return true iff. the specified method is in the set of allowed methods for this published service.
      */
+    @Transient
     public boolean isMethodAllowed(HttpMethod method) {
         return httpMethods.contains(method);
     }
@@ -539,6 +565,8 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @deprecated only meant for serialization (by Hibernate and JAXB)
      */
     @Deprecated
+    @Column(name="http_methods" )
+    @Type(type = "com.l7tech.server.util.GenericEnumSetUserType", parameters = {@Parameter(name = "enumClass", value = "com.l7tech.common.http.HttpMethod")})
     public Set<HttpMethod>getHttpMethods() {
         return httpMethods;
     }
@@ -548,6 +576,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      *
      * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
      */
+    @Transient
     public Set<HttpMethod>getHttpMethodsReadOnly() {
         return Collections.unmodifiableSet(httpMethods);
     }
@@ -575,6 +604,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @see #parsedWsdl
      * @throws com.l7tech.gateway.common.service.PublishedService.ServiceException if unable to parse WSDL to check multipart flag
      */
+    @Transient
     public boolean isMultipart() throws ServiceException {
         if (multipart == null) {
             try {
@@ -595,6 +625,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         return multipart;
     }
 
+    @Column(name="lax_resolution")
     public boolean isLaxResolution() {
         return laxResolution;
     }
@@ -604,6 +635,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         this.laxResolution = laxResolution;
     }
 
+    @Column(name="wss_processing")
     public boolean isWssProcessingEnabled() {
         return wssProcessingEnabled;
     }
@@ -613,6 +645,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         this.wssProcessingEnabled = wssProcessingEnabled;
     }
 
+    @Column(name="tracing")
     public boolean isTracingEnabled() {
         return tracingEnabled;
     }
@@ -625,6 +658,8 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.ASSERTION)
     @Dependency(isDependency = false)
+    @ManyToOne
+    @JoinColumn(name = "folder_goid")
     public Folder getFolder() {
         return folder;
     }
@@ -686,6 +721,56 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      */
     public interface SoapValidationGroup {}
 
+    @Fetch(FetchMode.SUBSELECT)
+    @ElementCollection(fetch= FetchType.EAGER)
+    @JoinTable(name="published_service_property", joinColumns=@JoinColumn(name="published_service_goid", referencedColumnName="goid"))
+    @MapKeyColumn(name="name",length=128)
+    @Column(name="value", nullable=false, length=32672)
+    @XmlElement(name = "Properties")
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    protected Map<String,String> getProperties() {
+        return properties;
+    }
+
+    protected void setProperties(final Map<String,String> properties) {
+        checkLocked();
+        this.properties = properties;
+    }
+
+    @org.jetbrains.annotations.NotNull
+    @Transient
+    public Set<String> getPropertyNames() {
+        return new HashSet<>(properties.keySet());
+    }
+
+    /**
+     * Get an arbitrary property for this service.
+     *
+     * @param key name of property.  Required.
+     * @return property value, or null if not set.
+     */
+    @Nullable
+    @Transient
+    public String getProperty(@NotNull final String key){
+        return properties.get(key);
+    }
+
+    /**
+     * Set an arbitrary property for this service.
+     *
+     * @param key name of property.  Required.
+     * @param value value of property.  May not be null.
+     */
+    public void putProperty(@NotNull String key, @NotNull String value) {
+        checkLocked();
+        properties.put(key, value);
+    }
+
+    public String removeProperty(@NotNull String propertyName) {
+        checkLocked();
+        return properties.remove(propertyName);
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -702,6 +787,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     private boolean wssProcessingEnabled = true;
     private boolean tracingEnabled = false;
     private Folder folder;
+    private Map<String,String> properties = new HashMap<>();
 
     private transient WsdlStrategy wsdlStrategy;
     private final AtomicReference<Wsdl> _parsedWsdl = new AtomicReference<Wsdl>(null);

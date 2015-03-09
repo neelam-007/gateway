@@ -197,6 +197,9 @@
 
                 <!-- Cassandra Connection -->
                 <value>com.l7tech.gateway.common.cassandra.CassandraConnection</value>
+
+                <!-- Service Entities -->
+                <value>com.l7tech.gateway.common.service.PublishedService</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

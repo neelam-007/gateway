@@ -15,43 +15,7 @@
         <param name="enumClass">com.l7tech.gateway.common.service.ServiceState</param>
     </typedef>
 
-    <typedef class="com.l7tech.server.util.GenericEnumSetUserType" name="http_methods_type">
-        <param name="enumClass">com.l7tech.common.http.HttpMethod</param>
-    </typedef>
-
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="soap_version_type">
-        <param name="enumClass">com.l7tech.xml.soap.SoapVersion</param>
-    </typedef>
-
     <typedef class="com.l7tech.server.util.GoidType" name="goid"/>
-
-    <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
-        <id name="goid" column="goid" type="goid">
-            <generator class="layer7-goid-generator"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" column="name" type="string"/>
-        <property name="wsdlUrl" column="wsdl_url" type="string"/>
-        <property name="wsdlXml" column="wsdl_xml" type="text"/>
-        <property name="disabled" column="disabled" type="boolean"/>
-        <property name="soap" column="soap" type="boolean"/>
-        <property name="internal" column="internal" type="boolean"/>
-        <property name="routingUri" column="routing_uri" type="string"/>
-        <property name="defaultRoutingUrl" column="default_routing_url" type="string"/>
-        <property name="httpMethods" column="http_methods" type="http_methods_type"/>
-        <property name="laxResolution" column="lax_resolution" type="boolean"/>
-        <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>
-        <property name="tracingEnabled" column="tracing" type="boolean"/>
-        <property name="soapVersion" column="soap_version" type="soap_version_type"/>
-
-        <many-to-one class="com.l7tech.policy.Policy"
-                     name="policy" lazy="false" column="policy_goid" unique="true" cascade="persist,merge,save-update,delete"/>
-
-        <many-to-one name="folder" column="folder_goid"/>
-        <many-to-one name="securityZone" column="security_zone_goid"/>
-    </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">
         <id name="goid" column="goid" type="goid">
