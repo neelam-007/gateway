@@ -79,13 +79,6 @@
                 <!--<artifact pattern="http://repository.jboss.com/nexus/content/groups/public-jboss/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>-->
             <!--</url>-->
 
-            <!--
-              Scala tools, specs2
-            <url name="scala-tools" m2compatible="true" checksums="md5,sha1">
-                <artifact pattern="http://scala-tools.org/repo-releases/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-            </url>
-            -->
-
             <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
         </chain>
     </resolvers>

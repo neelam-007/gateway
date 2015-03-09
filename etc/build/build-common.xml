@@ -18,10 +18,8 @@
     <property name="deps.dir" value="${build.dir}/dependency"/>
     <property name="deps.alt.dir" value="${build.dir}/dependency/alt"/>
     <property name="src.main.java.dir" value="${basedir}/src/main/java"/>
-    <property name="src.main.scala.dir" value="${basedir}/src/main/scala"/>
     <property name="src.main.res.dir" value="${basedir}/src/main/resources"/>
     <property name="src.test.java.dir" value="${basedir}/src/test/java"/>
-    <property name="src.test.scala.dir" value="${basedir}/src/test/scala"/>
     <property name="src.test.res.dir" value="${basedir}/src/test/resources"/>
     <property name="report.dir" value="${build.dir}/reports"/>
     <property name="report.test.dir" value="${build.dir}/reports/tests"/>
@@ -115,32 +113,6 @@
                 <compilerarg value="-Xlint:-path" compiler="modern"/>
                 <classpath refid="lib.path.id"/>
             </javac>
-        </presetdef>
-
-        <!--
-          Task definition for scalac
-        -->
-        <taskdef resource="scala/tools/ant/antlib.xml">
-            <classpath>
-                <pathelement location="${src.root}/lib/tools/scala-compiler.jar"/>
-                <fileset dir="${src.root}/lib/repository/org.scala-lang">
-                    <include name="scala-library-*.jar"/>
-                </fileset>
-            </classpath>
-        </taskdef>
-
-        <!--
-          Modules SCALAC definition with some presets
-        -->
-        <presetdef name="module-scalac">
-            <scalac
-                   deprecation="on"
-                   logging="none"
-                   target="jvm-1.5"
-                   excludes="${module.compile.excludes}"
-                    >
-                <classpath refid="lib.path.id"/>
-            </scalac>
         </presetdef>
 
         <!--
@@ -361,10 +333,8 @@
 
         <!-- Determine available sources -->
         <available file="${src.main.java.dir}" type="dir" property="module.source.available"/>
-        <available file="${src.main.scala.dir}" type="dir" property="module.source.scala.available"/>
         <available file="${src.main.res.dir}" type="dir" property="module.resources.available"/>
         <available file="${src.test.java.dir}" type="dir" property="module.tests.available"/>
-        <available file="${src.test.scala.dir}" type="dir" property="module.tests.scala.available"/>
         <available file="${src.test.res.dir}" type="dir" property="module.testresources.available"/>
     </target>
 
@@ -411,21 +381,9 @@
             </and>
         </condition>
         <fail if="module.invalid.properties">Invalid source found, this module should not have properties files in the java source tree.${line.separator}${toString:module.properties.source.filepath}</fail>
-        <path id="module.scala.source.filepath">
-            <fileset dir="${src.main.java.dir}">
-                <include name="**/*.scala"/>
-            </fileset>
-        </path>
-        <condition property="module.invalid.scala">
-            <resourcecount refid="module.scala.source.filepath" when="greater" count="0" />
-        </condition>
-        <fail if="module.invalid.scala">Invalid source found, scala files must not be in the java source tree.${line.separator}${toString:module.scala.source.filepath}</fail>
     </target>
-    <target name="compile-main-java" if="module.source.available" depends="compile-main-init, compile-main-scala">
+    <target name="compile-main-java" if="module.source.available" depends="compile-main-init">
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
-    </target>
-    <target name="compile-main-scala" if="module.source.scala.available" depends="compile-main-init">
-        <module-scalac srcdir="${src.main.scala.dir};${src.main.java.dir}" destdir="${classes.main.dir}"/>
     </target>
     <target name="compile-main-forms" if="module.source.available" unless="module.skip.forms" depends="compile-main-init, compile-main-java">
         <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
@@ -476,15 +434,10 @@
             <path refid="lib.test.path.id"/>
         </path>
     </target>
-    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile,compile-test-scala">
+    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile">
         <module-javac srcdir="${src.test.java.dir}" destdir="${classes.test.dir}">
             <classpath refid="full.test.path.id"/>
         </module-javac>
-    </target>
-    <target name="compile-test-scala" if="module.tests.scala.available" depends="compile-test-init,compile">
-        <module-scalac srcdir="${src.test.scala.dir};${src.test.java.dir}" destdir="${classes.test.dir}">
-            <classpath refid="full.test.path.id"/>
-        </module-scalac>
     </target>
     <target name="compile-test-forms" if="module.tests.available" unless="module.skip.forms" depends="compile-test-init, compile-test-java">
         <module-javac2 srcdir="${src.test.java.dir}" destdir="${classes.test.dir}" classpathref="full.test.path.id"/>
@@ -709,12 +662,9 @@
             <param name="build" expression="${basedir}/build.xml"/>
             <param name="source" expression="${module.source.available}"/>
             <param name="tests" expression="${module.tests.available}"/>
-            <param name="source.scala" expression="${module.source.scala.available}"/>
-            <param name="tests.scala" expression="${module.tests.scala.available}"/>
             <param name="source.resources" expression="${module.resources.available}"/>
             <param name="test.resources" expression="${module.testresources.available}"/>
             <param name="build.output" expression="${module.build.output}"/>
-            <param name="idea.scala" expression="${idea.scala}" if="idea.scala"/>
             <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>

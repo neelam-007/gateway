@@ -656,14 +656,6 @@
         <!-- Clean cache -->
         <delete dir="${build.dir}/ivy"/>
 
-        <!-- detect scala version -->
-        <pathconvert property="idea.scala.version">
-            <mapper type="regexp" from=".*[/\\]scala-library-(.*)\.jar" to="\1"/>
-            <fileset dir="${src.root}/lib/repository/org.scala-lang">
-                <include name="scala-library-*.jar"/>
-            </fileset>
-        </pathconvert>
-
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
 
@@ -705,8 +697,6 @@
             <param name="idea.ant.integration" expression="${idea.ant.integration}" if="idea.ant.integration"/>
             <param name="idea.javac.out" expression="${idea.javac.out}" if="idea.javac.out"/>
             <param name="idea.jdk" expression="${idea.jdk}" if="idea.jdk"/>
-            <param name="idea.scala" expression="${idea.scala}" if="idea.scala"/>
-            <param name="idea.scala.version" expression="${idea.scala.version}" if="idea.scala.version"/>
         </xslt>
         <move file="UneasyRooster.ipr.tmp" tofile="UneasyRooster.ipr" overwrite="true"/>
 

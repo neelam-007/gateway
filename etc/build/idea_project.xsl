@@ -8,8 +8,6 @@
     <xsl:param name="datalibs"/> <!-- file containing ivy module dependencies -->
     <xsl:param name="projectmeta"/> <!-- Javadoc URLs etc for libraries -->    
     <xsl:param name="idea.jdk">1.7</xsl:param>
-    <xsl:param name="idea.scala">false</xsl:param>
-    <xsl:param name="idea.scala.version">2.9.1</xsl:param>
     <xsl:param name="idea.javac.out">idea-classes</xsl:param>
     <xsl:param name="idea.ant.integration">true</xsl:param>
 
@@ -48,17 +46,6 @@
                 <xsl:copy>
                     <xsl:apply-templates select="@*"/>
 
-                    <xsl:if test="'true' = $idea.scala">
-                      <library name="scala-compiler">
-                        <CLASSES>
-                          <root url="jar://$PROJECT_DIR$/lib/tools/scala-compiler.jar!/" />
-                          <root url="jar://$PROJECT_DIR$/lib/repository/org.scala-lang/scala-library-{$idea.scala.version}.jar!/" />
-                        </CLASSES>
-                        <JAVADOC />
-                        <SOURCES />
-                      </library>
-                    </xsl:if>
-
                     <xsl:for-each select="$module-libs/module[artifact/@type = 'jar']">
                       <xsl:variable name="module-name" select="concat(@organisation, '.', @name, '.', @rev)"/>
                       <xsl:choose>
@@ -88,18 +75,7 @@
             <xsl:otherwise>
                 <!-- If there are no modules then use whatever is currently in the library table -->
                 <xsl:copy>
-                    <xsl:apply-templates select="*[@name != 'scala-compiler']|@*|text()|processing-instruction()|comment()"/>
-                    <!-- Add Scala compiler if enabled-->
-                    <xsl:if test="'true' = $idea.scala">
-                      <library name="scala-compiler">
-                        <CLASSES>
-                          <root url="jar://$PROJECT_DIR$/lib/tools/scala-compiler.jar!/" />
-                          <root url="jar://$PROJECT_DIR$/lib/repository/org.scala-lang/scala-library-{$idea.scala.version}.jar!/" />
-                        </CLASSES>
-                        <JAVADOC />
-                        <SOURCES />
-                      </library>
-                    </xsl:if>
+                    <xsl:apply-templates select="*|@*|text()|processing-instruction()|comment()"/>
                 </xsl:copy>
             </xsl:otherwise>
         </xsl:choose>
