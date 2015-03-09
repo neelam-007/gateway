@@ -42,9 +42,7 @@ public class IdProviderReference extends ExternalReference {
         IdentityProviderConfig config = null;
         try {
             config = finder.findIdentityProviderConfigByID(providerId);
-        } catch (RuntimeException e) {
-            logger.log(Level.WARNING, "error finding id provider config", e);
-        } catch (FindException e) {
+        } catch (RuntimeException | FindException e) {
             logger.log(Level.WARNING, "error finding id provider config", e);
         }
 
@@ -164,9 +162,7 @@ public class IdProviderReference extends ExternalReference {
         IdentityProviderConfig configOnThisSystem = null;
         try {
             configOnThisSystem = getFinder().findIdentityProviderConfigByID(getProviderId());
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "error getting id provider config", e);
-        } catch (RuntimeException e) {
+        } catch (FindException | RuntimeException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
         }
         if (configOnThisSystem != null && (configOnThisSystem.getName().equals(getProviderName()) || getProviderName()==null)) {
@@ -379,9 +375,7 @@ public class IdProviderReference extends ExternalReference {
                 MemberOfGroup mog = (MemberOfGroup) a;
                 localizeLoginOrIdForSpecificGroup(mog);
             }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "problem getting identity", e);
-        } catch (RuntimeException e) {
+        } catch (FindException | RuntimeException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
         }
     }
