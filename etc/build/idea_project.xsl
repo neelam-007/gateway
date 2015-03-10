@@ -75,7 +75,7 @@
             <xsl:otherwise>
                 <!-- If there are no modules then use whatever is currently in the library table -->
                 <xsl:copy>
-                    <xsl:apply-templates select="*[@name != 'scala-compiler']|@*|text()|processing-instruction()|comment()"/>
+                    <xsl:apply-templates select="*|@*|text()|processing-instruction()|comment()"/>
                 </xsl:copy>
             </xsl:otherwise>
         </xsl:choose>

@@ -9,8 +9,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import scala.actors.threadpool.Arrays;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class TrustedCertCacheJavaTest {
     @SuppressWarnings("unchecked")
     public void setUp() {
         trustedCert = new TrustedCert();
-        trustedCertList = Arrays.<TrustedCert>asList(new TrustedCert[] {trustedCert, new TrustedCert()});
+        trustedCertList = Arrays.asList(trustedCert, new TrustedCert());
         trustedCertCache = new TrustedCertCacheImpl(trustedCertManager);
     }
 
