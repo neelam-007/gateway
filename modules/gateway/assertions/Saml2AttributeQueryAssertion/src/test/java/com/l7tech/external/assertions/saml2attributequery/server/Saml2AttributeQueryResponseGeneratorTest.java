@@ -140,19 +140,24 @@ public class Saml2AttributeQueryResponseGeneratorTest {
         assertEquals(2, statement.getAttributeOrEncryptedAttribute().size());
         assertTrue(statement.getAttributeOrEncryptedAttribute().get(0) instanceof AttributeType);
         assertTrue(statement.getAttributeOrEncryptedAttribute().get(1) instanceof AttributeType);
-
-        AttributeType attribute = (AttributeType)statement.getAttributeOrEncryptedAttribute().get(0);
-        assertEquals(BASIC_NAME_FORMAT, attribute.getNameFormat());
-        assertEquals("urn:oid:cn", attribute.getName());
-        assertEquals(1, attribute.getAttributeValue().size());
-        assertEquals("Common name", attribute.getAttributeValue().get(0));
-
-        attribute = (AttributeType)statement.getAttributeOrEncryptedAttribute().get(1);
-        assertEquals(BASIC_NAME_FORMAT, attribute.getNameFormat());
-        assertEquals("urn:oid:givenName", attribute.getName());
-        assertEquals(2, attribute.getAttributeValue().size());
-        assertEquals("first given name", attribute.getAttributeValue().get(0));
-        assertEquals("second given name", attribute.getAttributeValue().get(1));
+        //assert attributes
+        for(Object attr : statement.getAttributeOrEncryptedAttribute()) {
+            AttributeType attribute = (AttributeType) attr;
+            assertEquals(BASIC_NAME_FORMAT, attribute.getNameFormat());
+            if("urn:oid:cn".equals(attribute.getName())) {
+                assertEquals(1, attribute.getAttributeValue().size());
+                assertEquals("Common name", attribute.getAttributeValue().get(0));
+            }
+            else if("urn:oid:givenName".equals(attribute.getName())) {
+                attribute = (AttributeType) attr;
+                assertEquals(2, attribute.getAttributeValue().size());
+                assertEquals("first given name", attribute.getAttributeValue().get(0));
+                assertEquals("second given name", attribute.getAttributeValue().get(1));
+            }
+            else {
+                fail("Unexpected attribute found: " + attribute.getName());
+            }
+        }
     }
 
     @Test

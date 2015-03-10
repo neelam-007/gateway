@@ -211,11 +211,11 @@ public class ServerSplitAssertionTest {
 
         final Object variable = context.getVariable("output");
         List<String> coll = (List<String>) variable;
-        Assert.assertEquals("Wrong number of elements found", 14L, (long) coll.size() );
-        Assert.assertEquals("First character should be the empty string", "", coll.get(0));
+        //Java8 does not generate an empty element as a first character
+        Assert.assertEquals("Wrong number of elements found", 13L, (long) coll.size() );
 
-        for(int i = 1; i < value.length(); i++){
-            Assert.assertEquals("Wrong value found", String.valueOf(value.charAt(i - 1)), coll.get(i));
+        for(int i = 0; i < value.length(); i++){
+            Assert.assertEquals("Wrong value found", String.valueOf(value.charAt(i)), coll.get(i));
         }
    }
 
