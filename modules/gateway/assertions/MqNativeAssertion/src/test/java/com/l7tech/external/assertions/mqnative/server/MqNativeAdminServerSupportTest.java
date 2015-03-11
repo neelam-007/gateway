@@ -2,11 +2,9 @@ package com.l7tech.external.assertions.mqnative.server;
 
 
 import com.ibm.mq.MQException;
-import com.ibm.mq.MQQueueManager;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
-import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,38 +23,33 @@ public class MqNativeAdminServerSupportTest extends AbstractJUnit4SpringContextT
 
     @Mock
     private ApplicationContext context;
-    @Mock
-    private SsgActiveConnector connector;
-    @Mock
-    private MQQueueManager queueManager;
+
     @Mock
     private MQException exception;
 
-    private ServerConfig serverConfig;
+    private MqNativeAdminServerSupport mqNativeAdminServerSupport;
 
     @Before
     public void setup() {
-          serverConfig = ApplicationContexts.getTestApplicationContext().getBean("serverConfig", ServerConfig.class);
+        mqNativeAdminServerSupport = MqNativeAdminServerSupport.getInstance(context);
     }
 
     @Test
     public void getInstanceTest() throws MqNativeAdmin.MqNativeTestException {
+        ServerConfig serverConfig = ServerConfig.getInstance();
 
-        MqNativeAdminServerSupport mqNativeAdminServerSupport = MqNativeAdminServerSupport.getInstance(context);
+        when(context.getBean("serverConfig", ServerConfig.class)).thenReturn(serverConfig);
 
-        when(context.getBean("serverConfig",ServerConfig.class)).thenReturn(serverConfig);
-
-        assertTrue(mqNativeAdminServerSupport instanceof MqNativeAdminServerSupport);
+        assertTrue(mqNativeAdminServerSupport != null);
 
         mqNativeAdminServerSupport.init(context);
-        assertEquals(mqNativeAdminServerSupport.getDefaultMqMessageMaxBytes(),2621440L);
+
+        assertEquals(Long.parseLong(serverConfig.getProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES)),
+                mqNativeAdminServerSupport.getDefaultMqMessageMaxBytes());
     }
 
     @Test
     public void testMessageDetail() {
-
-        MqNativeAdminServerSupport mqNativeAdminServerSupport = MqNativeAdminServerSupport.getInstance(context);
-
         when(exception.getReason()).thenReturn(MQRC_CONNECTION_BROKEN)
                                    .thenReturn(MQRC_NOT_AUTHORIZED)
                                    .thenReturn(MQRC_Q_MGR_NAME_ERROR)
