@@ -32,6 +32,7 @@ import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -190,7 +191,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
     }
 
     @Test
-    public void addConnector() throws ListenerException, MqNativeConfigException, FindException, ParseException {
+    public void addSingleConnector() throws ListenerException, MqNativeConfigException, FindException, ParseException {
         mqNativeModule.setApplicationContext(ApplicationContexts.getTestApplicationContext());
 
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
@@ -221,12 +222,40 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqNativeModule.addConnector(ssgActiveConnector);
         Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
+    }
+
+    @Ignore
+    @Test
+    public void addMultipleConnectorsConcurrently() throws ListenerException, MqNativeConfigException, FindException, ParseException {
+        mqNativeModule.setApplicationContext(ApplicationContexts.getTestApplicationContext());
+
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME)).thenReturn(targetQueueName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE)).thenReturn(replyType.toString());
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME)).thenReturn(hostName);
+        when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, -1)).thenReturn(port);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL)).thenReturn(channel);
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)).thenReturn(isQueueCredentialRequired);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID)).thenReturn(userId);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, "-1L")).thenReturn(securePasswordGoid.toHexString());
+
+        when(securePassword.getEncodedPassword()).thenReturn(encryptedPassword);
+
+        when(securePasswordManager.findByPrimaryKey(securePasswordGoid)).thenReturn(securePassword);
+        when(securePasswordManager.decryptPassword(encryptedPassword)).thenReturn(password);
+
+        serverConfig.putProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, "10s");
+        serverConfig.putProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, "5s");
+
+        when(ssgActiveConnector.getName()).thenReturn("Test SSG Active Connector");
+        when(ssgActiveConnector.getGoid()).thenReturn(new Goid(0,999999999L));
 
         // test multiple concurrent listener create
-        numberOfListenersToCreate = 20;
+        int numberOfListenersToCreate = 20;
         when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
         mqNativeModule.addConnector(ssgActiveConnector);
-        activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
+        Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
     }
 
