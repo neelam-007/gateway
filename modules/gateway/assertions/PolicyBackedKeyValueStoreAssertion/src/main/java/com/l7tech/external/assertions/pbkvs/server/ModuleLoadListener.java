@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.pbkvs.server;
 
+import com.l7tech.objectmodel.polback.InvokeAsync;
 import com.l7tech.objectmodel.polback.KeyValueStore;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -18,5 +19,6 @@ public class ModuleLoadListener {
     public static synchronized void onModuleLoaded( @NotNull ApplicationContext context ) {
         PolicyBackedServiceRegistry pbsreg = context.getBean( "policyBackedServiceRegistry", PolicyBackedServiceRegistry.class );
         pbsreg.registerPolicyBackedServiceTemplate( KeyValueStore.class );
+        pbsreg.registerPolicyBackedServiceTemplate(InvokeAsync.class);
     }
 }

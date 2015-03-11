@@ -155,4 +155,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
     </bean>
 
+    <bean name="/WorkQueueAdmin" parent="httpInvokerParent">
+        <property name="service" ref="workQueueAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin"/>
+    </bean>
+
 </beans>

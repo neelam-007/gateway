@@ -338,5 +338,8 @@
         <L7p:RaiseError>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RaiseError>
+        <L7p:InvokePolicyAsync>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:InvokePolicyAsync>
     </wsp:OneOrMore>
 </wsp:Policy>

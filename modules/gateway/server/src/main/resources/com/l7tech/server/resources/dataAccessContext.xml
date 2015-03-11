@@ -200,6 +200,8 @@
 
                 <!-- Service Entities -->
                 <value>com.l7tech.gateway.common.service.PublishedService</value>
+
+                <value>com.l7tech.gateway.common.workqueue.WorkQueue</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

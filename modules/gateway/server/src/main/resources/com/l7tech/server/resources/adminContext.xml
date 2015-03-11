@@ -519,5 +519,10 @@
 
     </bean>
 
+    <bean id="workQueueAdmin" class="com.l7tech.server.workqueue.WorkQueueManagerAdminImpl">
+        <constructor-arg ref="workQueueEntityManager"/>
+        <constructor-arg ref="rbacServices"/>
+        <constructor-arg ref="workQueueExecutorManager"/>
+    </bean>
 
 </beans>

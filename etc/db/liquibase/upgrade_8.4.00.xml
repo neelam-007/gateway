@@ -25,4 +25,90 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="add_work_queue_table" author="gateway">
+        <createTable tableName="work_queue">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_queue_size" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="thread_pool_max" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reject_policy" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+	<changeSet id="create-index-work-queue-name" author="gateway">
+        <createIndex indexName="index_work_queue_name" tableName="work_queue" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="add-fk-work-queue-security-zone" author="gateway">
+        <addForeignKeyConstraint baseTableName="work_queue" baseColumnNames="security_zone_goid"
+                                 constraintName="work_queue_security_zone" referencedTableName="security_zone"
+                                 referencedColumnNames="goid" onDelete="SET NULL" onUpdate="NO ACTION"/>
+    </changeSet>
+	<changeSet id="create-manage-work-queue-role" author="gateway">
+        <comment>Manage Work Queue</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Work Queue"/>
+            <column name="tag"/>
+            <column name="entity_type" value="WORK_QUEUE"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete work queues."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1701)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="WORK_QUEUE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1702)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="WORK_QUEUE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1703)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="WORK_QUEUE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1704)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="WORK_QUEUE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1705)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1700)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

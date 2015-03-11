@@ -175,6 +175,7 @@
                 <L7p:LookupTrustedCertificate/>
                 <L7p:MapValue/>
                 <L7p:RaiseError/>
+                <L7p:InvokePolicyAsync/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

@@ -218,6 +218,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
     private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
+    private ManageWorkQueuesAction manageWorkQueuesAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1082,6 +1083,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageEncapsulatedAssertionsAction());
             menu.add(getSiteMinderConfigurationAction());
             menu.add(getManageServerModuleFilesAction());
+            menu.add(getManageWorkQueuesAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2379,6 +2381,14 @@ public class MainWindow extends JFrame implements SheetHolder {
             disableUntilLogin( manageServerModuleFilesAction );
         }
         return manageServerModuleFilesAction;
+    }
+
+    private Action getManageWorkQueuesAction() {
+        if (manageWorkQueuesAction == null) {
+            manageWorkQueuesAction = new ManageWorkQueuesAction();
+            disableUntilLogin(manageWorkQueuesAction);
+        }
+        return manageWorkQueuesAction;
     }
 
     private Action getManageSecurityZonesAction() {

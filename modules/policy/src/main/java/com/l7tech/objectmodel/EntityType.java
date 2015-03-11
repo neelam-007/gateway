@@ -75,6 +75,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     SERVICE_TEMPLATE("Service Template", true, true),
 
+    WORK_QUEUE("Work Queue", true, true),
+
     TRUSTED_ESM("Trusted ESM", true, true),
     TRUSTED_ESM_USER("Trusted ESM User", true, true),
 
