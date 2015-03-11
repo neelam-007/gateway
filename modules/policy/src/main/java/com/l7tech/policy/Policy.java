@@ -17,11 +17,12 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import org.hibernate.annotations.*;
 import org.jetbrains.annotations.Nullable;
 
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
+import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -41,6 +42,9 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @XmlRootElement
+@Entity
+@Proxy(lazy=false)
+@Table(name="policy")
 public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFolder, PartiallyZoneableEntity, GuidEntity {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
@@ -120,6 +124,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      * @return the {@link Assertion} at the root of the policy. May be null.
      * @throws IOException if the policy cannot be deserialized
      */
+    @Transient
     public synchronized @Nullable Assertion getAssertion() throws IOException {
         if (xml == null || xml.length() == 0) {
             logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", getGoid(), _name));
@@ -156,6 +161,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         assertion = null;
     }
 
+    @Transient
     @RbacAttribute
     @Size(min = 1, max = 255)
     @Override
@@ -166,6 +172,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     @NotNull
     @Size(min=1,max=5242880)
     @Migration(resolver = PropertyResolver.Type.POLICY)
+    @Column(name="`xml`")
     public String getXml() {
         return xml;
     }
@@ -180,6 +187,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     @RbacAttribute
     @NotNull
     @Size(min=36,max=36)
+    @Column(name="guid")
     public String getGuid() {
         return guid;
     }
@@ -190,6 +198,8 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
 
     @RbacAttribute
     @NotNull
+    @Column(name="policy_type")
+    @Type(type = "com.l7tech.server.util.GenericEnumUserType", parameters = {@org.hibernate.annotations.Parameter(name = "enumClass", value = "com.l7tech.policy.PolicyType")})
     public PolicyType getType() {
         return type;
     }
@@ -200,6 +210,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     }
 
     @RbacAttribute
+    @Column(name="soap")
     public boolean isSoap() {
         return soap;
     }
@@ -224,6 +235,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      * @return true if this policy is currently disabled.  To reenable it, set a different policy xml.
      */
     @RbacAttribute
+    @Transient
     public boolean isDisabled() {
         String pxml = getXml();
         return pxml == null || pxml.trim().equals(DISABLED_POLICY_XML); // trim() currently not optional
@@ -236,6 +248,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      *
      * @return the version ordinal, or zero if not set.
      */
+    @Transient
     public long getVersionOrdinal() {
         return versionOrdinal;
     }
@@ -261,6 +274,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      *
      * @return the "Version Active" flag
      */
+    @Transient
     public boolean isVersionActive() {
         return versionActive;
     }
@@ -284,6 +298,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      *
      * @return assertion visibility setting to use for subsequent policy XML parsing, or null to indicate that the then-default value ({@link #defaultVisibility}) will be used.
      */
+    @Transient
     public WspReader.Visibility getVisibility() {
         return visibility;
     }
@@ -320,6 +335,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      */
     @Size(min=1,max=255)
     @Pattern(regexp="message-received|pre-security|pre-service|post-security|post-service|message-completed", groups={GlobalPolicyValidationGroup.class})
+    @Column(name="internal_tag")
     public String getInternalTag() {
         return internalTag;
     }
@@ -340,6 +356,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      * @return the internal sub tag, or null.
      */
     @Size(min=1,max=255)
+    @Column(name="internal_sub_tag")
     public String getInternalSubTag() {
         return internalSubTag;
     }
@@ -463,6 +480,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     }
 
     @Override
+    @Transient
     public boolean isZoneable() {
         PolicyType type = getType();
         return type != null && type.isSecurityZoneable();

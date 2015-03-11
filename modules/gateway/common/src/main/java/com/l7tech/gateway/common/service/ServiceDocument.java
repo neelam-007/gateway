@@ -5,7 +5,12 @@ import com.l7tech.objectmodel.GoidAdapter;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -21,6 +26,9 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author Steve Jones
  */
 @XmlRootElement
+@Entity
+@Proxy(lazy=false)
+@Table(name="service_documents")
 public class ServiceDocument extends PersistentEntityImp {
 
     //- PUBLIC
@@ -54,6 +62,8 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE)
     @XmlJavaTypeAdapter(GoidAdapter.class)
+    @Column(name="service_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getServiceId() {
         return serviceId;
     }
@@ -78,6 +88,7 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     @NotNull
     @Size(min=1,max=32)
+    @Column(name="type")
     public String getType() {
         return type;
     }
@@ -100,6 +111,7 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     @NotNull
     @Size(min=1,max=4096)
+    @Column(name="uri")
     public String getUri() {
         return uri;
     }
@@ -122,6 +134,7 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     @NotNull
     @Size(min=1,max=32)
+    @Column(name="content_type")
     public String getContentType() {
         return contentType;
     }
@@ -142,6 +155,7 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     @NotNull
     @Size(min=1,max=5242880)
+    @Column(name="content")
     public String getContents() {
         return contents;
     }

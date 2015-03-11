@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -17,6 +18,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author darmstrong
  */
 @XmlRootElement
+@MappedSuperclass
 public abstract class Alias<ET extends PersistentEntity> extends ZoneableEntityImp implements EntityAlias {
     protected Goid entityGoid;
     private Folder folder;
@@ -40,6 +42,7 @@ public abstract class Alias<ET extends PersistentEntity> extends ZoneableEntityI
      * The GOID of the entity to which this alias refers.
      * Needs to be overridden with the proper Migration annotation.
      */
+    @Transient
     public abstract Goid getEntityGoid();
 
     @Deprecated
@@ -50,6 +53,8 @@ public abstract class Alias<ET extends PersistentEntity> extends ZoneableEntityI
     /** The folder where this alias lives. */
     @Migration(mapName = NONE, mapValue = NONE)
     @Dependency(isDependency = false)
+    @ManyToOne
+    @JoinColumn(name = "folder_goid")
     public Folder getFolder() {
         return folder;
     }
@@ -59,6 +64,13 @@ public abstract class Alias<ET extends PersistentEntity> extends ZoneableEntityI
      */
     public void setFolder(Folder folder) {
         this.folder = folder;
+    }
+
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
     }
 }
 

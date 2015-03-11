@@ -5,15 +5,21 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import org.hibernate.annotations.IndexColumn;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.*;
 import java.io.*;
-import java.util.Arrays;
-import java.text.MessageFormat;
 import java.text.FieldPosition;
+import java.text.MessageFormat;
+import java.util.Arrays;
 
 /**
  * An audit detail record.
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="audit_detail")
 public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
     private String auditGuid;
@@ -57,6 +63,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         }
     }
 
+    @ManyToOne()
+    @JoinColumn(name = "audit_goid")
     public AuditRecord getAuditRecord() {
         return auditRecord;
     }
@@ -65,24 +73,32 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.auditRecord = auditRecord;
     }
 
+    @Column(name="time")
     public long getTime() {
         return time;
     }
 
+    @Column(name="message_id")
     public int getMessageId() {
         return messageId;
     }
 
 
+    @Transient
     public String getAuditGuid() {
         return auditGuid;
     }
 
+    @Column(name="ordinal")
     public int getOrdinal() {
         return ordinal;
     }
 
     /** Can be null. */
+    @ElementCollection
+    @CollectionTable(name="audit_detail_params", joinColumns=@JoinColumn(name="audit_detail_goid"))
+    @IndexColumn(name = "position")
+    @Column(name="value")
     public String[] getParams() {
         return params;
     }
@@ -96,10 +112,12 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.auditGuid = auditGuid;
     }
 
+    @Column(name="exception_message")
     public String getException() {
         return exception;
     }
 
+    @Column(name="component_id")
     public int getComponentId() {
         return componentId;
     }

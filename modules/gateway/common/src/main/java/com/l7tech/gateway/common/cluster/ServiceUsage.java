@@ -2,7 +2,12 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.NameableEntity;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  * Bean representation of a row in the service_usage table.
@@ -16,7 +21,11 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * $Id$<br/>
  *
  */
-public class ServiceUsage extends NamedEntityImp {
+@Entity
+@Proxy(lazy=false)
+@Table(name="service_usage")
+@IdClass(ServiceUsage.ServiceUsagePK.class)
+public class ServiceUsage implements NameableEntity, Serializable {
     public static final String ATTR_SERVICE_GOID = "serviceid";
 
     /**
@@ -37,6 +46,9 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * id of the service this stat is applicable to
      */
+    @Id
+    @Column(name="serviceid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getServiceid() {
         return serviceid;
     }
@@ -51,6 +63,8 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * id of the node this stat is applicable to
      */
+    @Id
+    @Column(name="nodeid")
     public String getNodeid() {
         return nodeid;
     }
@@ -65,6 +79,7 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * the total number of requests for this service handled for this service
      */
+    @Column(name="requestnr")
     public long getRequests() {
         return requests;
     }
@@ -79,6 +94,7 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * the number of requests that were not subject to an authorization failure
      */
+    @Column(name="authorizedreqnr")
     public long getAuthorized() {
         return authorized;
     }
@@ -93,6 +109,7 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * the number of requests that were completly processed by the ssg without any error
      */
+    @Column(name="completedreqnr")
     public long getCompleted() {
         return completed;
     }
@@ -107,9 +124,21 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * Overridden so that it won't be registered as an @RbacAttribute
      */
+    @Transient
     @Override
     public String getName() {
-        return super.getName();
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    @Transient
+    public String getId() {
+        return nodeid + ":" + serviceid;
     }
 
     /**
@@ -141,7 +170,56 @@ public class ServiceUsage extends NamedEntityImp {
 
     private Goid serviceid;
     private String nodeid;
+    private String name;
     private long requests;
     private long authorized;
     private long completed;
+
+    public static class ServiceUsagePK implements Serializable {
+        private Goid serviceid;
+        private String nodeid;
+
+        public ServiceUsagePK() {}
+
+        public ServiceUsagePK(Goid serviceid, String nodeid) {
+            this.serviceid = serviceid;
+            this.nodeid = nodeid;
+        }
+
+        public Goid getServiceid() {
+            return serviceid;
+        }
+
+        public void setServiceid(Goid serviceid) {
+            this.serviceid = serviceid;
+        }
+
+        public String getNodeid() {
+            return nodeid;
+        }
+
+        public void setNodeid(String nodeid) {
+            this.nodeid = nodeid;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ServiceUsagePK that = (ServiceUsagePK) o;
+
+            if (nodeid != null ? !nodeid.equals(that.nodeid) : that.nodeid != null) return false;
+            if (serviceid != null ? !serviceid.equals(that.serviceid) : that.serviceid != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = serviceid != null ? serviceid.hashCode() : 0;
+            result = 31 * result + (nodeid != null ? nodeid.hashCode() : 0);
+            return result;
+        }
+    }
 }

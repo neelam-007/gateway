@@ -7,7 +7,12 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.rbac.RbacAttribute;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -21,6 +26,9 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="audit_admin")
 public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_CREATED = 'C';
     public static final char ACTION_UPDATED = 'U';
@@ -75,6 +83,7 @@ public class AdminAuditRecord extends AuditRecord {
      * @return the classname of the entity that this record concerns
      */
     @RbacAttribute
+    @Column(name="entity_class")
     public String getEntityClassname() {
         return entityClassname;
     }
@@ -83,6 +92,8 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the GOID of the entity that this record concerns
      * @return the GOID of the entity that this record concerns
      */
+    @Column(name="entity_id")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getEntityGoid() {
         return entityGoid;
     }
@@ -92,6 +103,7 @@ public class AdminAuditRecord extends AuditRecord {
      * @return a character indicating the type of event that generated this record.
      */
     @RbacAttribute
+    @Column(name="action")
     public char getAction() {
         return action;
     }

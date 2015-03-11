@@ -4,10 +4,17 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
 
 /**
  * Holds a sample message for a {@link PublishedService}.
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="sample_messages")
 public class SampleMessage extends ZoneableNamedEntityImp {
     public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
@@ -24,6 +31,7 @@ public class SampleMessage extends ZoneableNamedEntityImp {
     /**
      * @return the XML contents of the message
      */
+    @Column(name="`xml`")
     public String getXml() {
         return xml;
     }
@@ -31,6 +39,8 @@ public class SampleMessage extends ZoneableNamedEntityImp {
     /**
      * @return the GOID of the {@link PublishedService} to which this message belongs
      */
+    @Column(name="published_service_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getServiceGoid() {
         return serviceGoid;
     }
@@ -39,6 +49,7 @@ public class SampleMessage extends ZoneableNamedEntityImp {
      * @return the name of the operation under which this message was categorized
      */
     @RbacAttribute
+    @Column(name="operation_name")
     public String getOperationName() {
         return operationName;
     }

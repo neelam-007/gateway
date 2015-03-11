@@ -13,7 +13,6 @@ public class SchemaUpdater {
 
     public SchemaUpdater() {
         config = new AnnotationConfiguration();
-        config.addResource("com/l7tech/server/resources/SSG.hbm.xml");
         config.setProperty("hibernate.dialect", MySQLDialect.class.getName());
         config.setProperty("hibernate.connection.driver_class", Driver.class.getName());
         config.setProperty("hibernate.connection.url", "jdbc:mysql://localhost/ssg");
@@ -64,6 +63,25 @@ public class SchemaUpdater {
         config.addAnnotatedClass(com.l7tech.server.security.sharedkey.SharedKeyRecord.class);
 
         config.addAnnotatedClass(com.l7tech.server.sla.CounterRecord.class);
+
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.PublishedService.class);
+        config.addAnnotatedClass(com.l7tech.policy.Policy.class);
+        config.addAnnotatedClass(com.l7tech.policy.PolicyVersion.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.PublishedServiceAlias.class);
+        config.addAnnotatedClass(com.l7tech.policy.PolicyAlias.class);
+        config.addAnnotatedClass(com.l7tech.objectmodel.folder.Folder.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.SampleMessage.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.ServiceDocument.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.MetricsBin.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.service.MetricsBinDetail.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.cluster.ServiceUsage.class);
+
+        config.addAnnotatedClass(com.l7tech.gateway.common.audit.AuditDetail.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.audit.AuditRecord.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.audit.AdminAuditRecord.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.audit.MessageSummaryAuditRecord.class);
+        config.addAnnotatedClass(com.l7tech.gateway.common.audit.SystemAuditRecord.class);
+
     }
 
     public static void main(String[] args) {

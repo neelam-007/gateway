@@ -25,6 +25,14 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet author="gateway" id="add_version_column_to_sample_messages_table">
+        <addColumn tableName="sample_messages">
+            <column name="version" type="INT(10)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropDefaultValue tableName="sample_messages" columnName="version" />
+    </changeSet>
     <changeSet id="add_work_queue_table" author="gateway">
         <createTable tableName="work_queue">
             <column name="goid" type="${goid.type}">

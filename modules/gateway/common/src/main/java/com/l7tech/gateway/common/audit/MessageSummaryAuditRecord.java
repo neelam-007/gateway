@@ -18,9 +18,11 @@ import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.Functions;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.Nullable;
 
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
@@ -37,6 +39,9 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="audit_message")
 public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEntity {
     public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
@@ -110,6 +115,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the {@link AssertionStatus} resulting from applying the service policy to this request
      * @return the {@link AssertionStatus} resulting from applying the service policy to this request
      */
+    @Column(name="status")
     public int getStatus() {
         return status;
     }
@@ -118,11 +124,14 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the GOID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_GOID} if it could not be resolved.
      * @return the GOID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_GOID} if it could not be resolved.
      */
+    @Column(name="service_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getServiceGoid() {
         return serviceGoid;
     }
 
     @Override
+    @Column(name="request_id")
     public String getStrRequestId() {
         return super.getStrRequestId();
     }
@@ -140,6 +149,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the text of the request received from the client.
      * @return the text of the request received from the client.
      */
+    @Column(name="request_zipxml")
+    @Type(type = "com.l7tech.server.util.CompressedStringType")
     public String getRequestXml() {
         return requestXml;
     }
@@ -148,6 +159,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the text of the response sent to the client.
      * @return the text of the response sent to the client.
      */
+    @Column(name="response_zipxml")
+    @Type(type = "com.l7tech.server.util.CompressedStringType")
     public String getResponseXml() {
         return responseXml;
     }
@@ -156,6 +169,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Returns true if the request was authenticated, false otherwise
      * @return true if the request was authenticated, false otherwise
      */
+    @Column(name="authenticated")
     public boolean isAuthenticated() {
         return authenticated;
     }
@@ -164,6 +178,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the authentication type for this request (if authenticated)
      * @return the SecurityTokenType or null
      */
+    @Column(name="authenticationType")
+    @Type(type = "com.l7tech.server.util.SecurityTokenUserType")
     public SecurityTokenType getAuthenticationType() {
         return authenticationType;
     }
@@ -172,6 +188,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the length of the request received from the client, in bytes.
      * @return the length of the request, in bytes.
      */
+    @Column(name="request_length")
     public int getRequestContentLength() {
         return requestContentLength;
     }
@@ -180,6 +197,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * Gets the length of the response sent to the client, in bytes.
      * @return the length of the response, in bytes.
      */
+    @Column(name="response_length")
     public int getResponseContentLength() {
         return responseContentLength;
     }
@@ -187,6 +205,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     /**
      * @return the HTTP status code of the back-end response
      */
+    @Column(name="response_status")
     public int getResponseHttpStatus() {
         return responseHttpStatus;
     }
@@ -194,12 +213,14 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     /**
      * @return the time (in milliseconds) spent routing the request to the protected service
      */
+    @Column(name="routing_latency")
     public int getRoutingLatency() {
         return routingLatency;
     }
 
     /** @return the name of the operation the request was for if it's a SOAP service, or likely null otherwise */
     @RbacAttribute
+    @Column(name="operation_name")
     public String getOperationName() {
         if (operationName == null) {
             if (operationNameHaver != null)
@@ -208,6 +229,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         return operationName;
     }
 
+    @Column(name="mapping_values_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getMappingValuesId() {
         if ( mappingValuesId == null ) {
             if (mappingValueIdHaver != null) {
@@ -313,6 +336,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         this.securityZone = securityZone;
     }
 
+    @ManyToOne
+    @JoinColumn(name="mapping_values_goid", insertable=false, updatable=false)
     public MessageContextMappingValues getMappingValuesEntity() {
         return mappingValuesEntity;
     }
