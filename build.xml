@@ -1185,7 +1185,7 @@
         <findbugs home="${findbugs.home}"
                   output="html"
                   outputFile="${build.reports}/findbugs/index.html"
-                  jvmargs="-Xmx768m -XX:MaxPermSize=512m"
+                  jvmargs="-Xmx768m"
                   projectFile="${build.etc}/findbugs.fbp"
                   timeout="1800000">
         </findbugs>
