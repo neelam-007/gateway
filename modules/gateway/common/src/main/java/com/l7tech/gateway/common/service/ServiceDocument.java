@@ -11,6 +11,7 @@ import org.hibernate.annotations.Type;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -167,6 +168,13 @@ public class ServiceDocument extends PersistentEntityImp {
      */
     public void setContents(final String contents) {
         this.contents = contents;
+    }
+
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
     }
 
     //- PRIVATE
