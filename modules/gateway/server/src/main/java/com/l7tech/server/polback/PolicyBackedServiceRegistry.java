@@ -8,9 +8,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
-import com.l7tech.objectmodel.polback.PolicyBackedInterfaceIntrospector;
-import com.l7tech.objectmodel.polback.PolicyBackedService;
-import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
+import com.l7tech.objectmodel.polback.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -25,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  * Keeps track of registered policy-backed services and policy-backed service instances,
  * and allows server code to get interface implementations backed by the policies.
  */
-public class PolicyBackedServiceRegistry implements PostStartupApplicationListener {
+public class PolicyBackedServiceRegistry implements PostStartupApplicationListener, InitializingBean {
     private static final Logger logger = Logger.getLogger( PolicyBackedServiceRegistry.class.getName() );
 
     @Inject
@@ -537,6 +536,23 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         } finally {
             rwlock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        preregisterWellKnownInterfaces();
+    }
+
+    private void preregisterWellKnownInterfaces() {
+        // TODO find some better way/place to do this
+
+        // BackgroundTask - Used by work queues and scheduled tasks
+        registerPolicyBackedServiceTemplate( BackgroundTask.class );
+
+        // KeyValueStore - Used by add-on modules
+        // Not used by any core code yet; currently will be registered as needed by extensions that need to use it
+        // At some point will come preregistered but not yet needed.
+        //registerPolicyBackedServiceTemplate( KeyValueStore.class );
     }
 
     static class Template {
