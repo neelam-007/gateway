@@ -119,4 +119,127 @@
             <column name="entity_type" value="SECURE_PASSWORD"/>
         </insert>
     </changeSet>
+    <changeSet id="add_scheduled_task_table" author="gateway">
+        <createTable tableName="scheduled_task">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="use_one_node" type="${tinyint.type}" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="job_type" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="job_status" type="VARCHAR(128)"/>
+            <column name="execution_date" type="BIGINT(19)"/>
+            <column name="executed_date" type="BIGINT(19)"/>
+            <column name="cron_expression" type="VARCHAR(255)"/>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="create-index-scheduled_task-name" author="gateway">
+        <createIndex indexName="index_scheduled_task_name" tableName="scheduled_task" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="add-fk-scheduled_task-security-zone" author="gateway">
+        <addForeignKeyConstraint baseTableName="scheduled_task" baseColumnNames="security_zone_goid"
+                                 constraintName="scheduled_task_security_zone" referencedTableName="security_zone"
+                                 referencedColumnNames="goid" onDelete="SET NULL" onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet id="add-fk-scheduled_task-policy" author="gateway">
+        <addForeignKeyConstraint baseTableName="scheduled_task" baseColumnNames="policy_goid"
+                                 constraintName="scheduled_task_policy" referencedTableName="policy"
+                                 referencedColumnNames="goid" onDelete="NO ACTION" onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet id="create-scheduled_task-role" author="gateway">
+        <comment>Manage Scheduled Task</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Scheduled Task"/>
+            <column name="tag"/>
+            <column name="entity_type" value="SCHEDULED_TASK"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete Scheduled Task."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1751)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SCHEDULED_TASK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1752)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SCHEDULED_TASK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1753)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SCHEDULED_TASK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1754)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SCHEDULED_TASK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1755)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1756)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1757)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1756)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1757)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="Policy-Backed Service Operation Policy Fragment"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1757)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ASSERTION_ACCESS"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

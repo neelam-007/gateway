@@ -194,6 +194,9 @@
 
                 <value>com.l7tech.gateway.common.workqueue.WorkQueue</value>
 
+                <!-- Scheduled Task -->
+                <value>com.l7tech.gateway.common.task.ScheduledTask</value>
+
                 <!-- Service Entity -->
                 <value>com.l7tech.gateway.common.service.PublishedService</value>
 

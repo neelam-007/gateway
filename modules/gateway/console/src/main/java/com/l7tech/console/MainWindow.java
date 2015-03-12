@@ -199,6 +199,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurePasswordsAction manageSecurePasswordsAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
     private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
+    private ManageScheduledTasksAction manageScheduledTasksAction = null;
     private ManageCassandraConnectionAction manageCassandraConnectionAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
@@ -1071,6 +1072,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
+            menu.add(getManageScheduledTasksAction());
             menu.add(getManageSecurityZonesAction());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
@@ -2415,6 +2417,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageHttpConfigurationAction;
     }
 
+    private Action getManageScheduledTasksAction() {
+        if (manageScheduledTasksAction != null)
+            return manageScheduledTasksAction;
+
+        manageScheduledTasksAction = new ManageScheduledTasksAction();
+        disableUntilLogin(manageScheduledTasksAction);
+        return manageScheduledTasksAction;
+    }
+
     private Action getManageJdbcConnectionsAction() {
         if (manageJdbcConnectionsAction != null)
             return manageJdbcConnectionsAction;
@@ -2786,6 +2797,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
+                manageMenu.add(getManageScheduledTasksAction());
                 manageMenu.add(getManageSecurityZonesAction());
                 manageMenu.add(getManageAuditAlertOptionsMenuItem());
                 manageMenu.add(getManageClusterLicensesMenuItem());

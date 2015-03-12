@@ -41,6 +41,7 @@
                 <ref bean="siteMinderAdmin" />
                 <ref bean="customKeyValueStoreAdmin" />
                 <ref bean="debugAdmin" />
+                <ref bean="scheduledTaskAdmin" />
                 <ref bean="workQueueAdmin" />
             </list>
         </constructor-arg>
@@ -128,6 +129,11 @@
     <bean id="emailAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/EmailAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
+    </bean>
+
+    <bean id="scheduledTaskAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/ScheduledTaskAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.task.ScheduledTaskAdmin"/>
     </bean>
 
     <bean id="policyAdmin" class="com.l7tech.console.policy.InvalidatingPolicyAdmin">

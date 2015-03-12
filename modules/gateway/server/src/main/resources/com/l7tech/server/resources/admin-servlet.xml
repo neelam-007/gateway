@@ -124,6 +124,11 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
     </bean>
 
+    <bean name="/ScheduledTaskAdmin" parent="httpInvokerParent">
+        <property name="service" ref="scheduledTaskAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.task.ScheduledTaskAdmin"/>
+    </bean>
+
     <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent">
         <property name="service" ref="uddiRegistryAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>

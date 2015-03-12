@@ -1717,6 +1717,7 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="serverModuleFileManager"/>
+                <ref bean="scheduledTaskManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="workQueueEntityManager"/>
             </list>
@@ -1952,6 +1953,10 @@
     </bean>
 
     <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerImpl"/>
+
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="policyBackedServiceRegistry" />
+    </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
@@ -2312,6 +2317,7 @@
                 <ref bean="genericEntityManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
+                <ref bean="scheduledTaskManager"/>
                 <ref bean="workQueueEntityManager"/>
             </list>
         </constructor-arg>

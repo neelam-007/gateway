@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.gateway.common.spring.remoting.http.RemotingContext;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -147,6 +148,11 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public EmailAdmin getEmailAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(EmailAdmin.class);
+    }
+
+    @Override
+    public ScheduledTaskAdmin getScheduledTaskAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(ScheduledTaskAdmin.class);
     }
 
     @Override

@@ -116,6 +116,9 @@
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
         <dependency org="weblogic" name="wljmsclient" rev="10.3" force="true" conf="optional"/>
 
+        <!--Scheduled task-->
+        <dependency org="org.quartz" name="quartz" rev="2.2.1" force="true" conf="core"/>
+
         <!-- Alternative dependencies -->
         <dependency org="com.rsa" name="jcm" rev="6.1.2" force="true" conf="alternative"/>
         <dependency org="com.rsa" name="jcmFIPS" rev="6.1.2" force="true" conf="alternative"/>
