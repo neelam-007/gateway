@@ -232,6 +232,68 @@ public class PolicyBackedServiceRegistryTest {
         assertEquals( "bar", stub.get( "foo" ) );
     }
 
+    @Test
+    public void testInvokeImplementationMethodSingleMethodProxy() throws Exception {
+        registry.registerPolicyBackedServiceTemplate( TestFace.class );
+        TestFace getStub = registry.getImplementationProxyForSingleMethod(
+                TestFace.class.getMethod( "get", new Class[] { String.class } ),
+                new Goid( goidHiPolicy, goidLoCassandraGet ) );
+        TestFace putStub = registry.getImplementationProxyForSingleMethod(
+                TestFace.class.getMethod( "put", new Class[] { String.class, String.class } ),
+                new Goid( goidHiPolicy, goidLoCassandraPut ) );
+
+        when( getPolicy.checkRequest( Matchers.<PolicyEnforcementContext>any() ) ).then( new Answer<AssertionStatus>() {
+            @Override
+            public AssertionStatus answer( InvocationOnMock invocation ) throws Throwable {
+                PolicyEnforcementContext pec = (PolicyEnforcementContext) invocation.getArguments()[0];
+
+                String key = (String) pec.getVariable( "key" );
+                if ( "foo".equals( key ) ) {
+                    pec.setVariable( "value", "bar" );
+                }
+
+                return AssertionStatus.NONE;
+            }
+        } );
+
+
+        when( putPolicy.checkRequest( Matchers.<PolicyEnforcementContext>any() ) ).then( new Answer<AssertionStatus>() {
+            @Override
+            public AssertionStatus answer( InvocationOnMock invocation ) throws Throwable {
+                PolicyEnforcementContext pec = (PolicyEnforcementContext) invocation.getArguments()[0];
+
+                String key = (String) pec.getVariable( "key" );
+                String value = (String) pec.getVariable( "value" );
+
+                if ( "foo".equals( key ) && "bar".equals( value ) ) {
+                    return AssertionStatus.NONE;
+                }
+
+                return AssertionStatus.BAD_REQUEST;
+            }
+        } );
+
+        when( policyCache.getServerPolicy( new Goid( goidHiPolicy, goidLoCassandraGet ) ) ).thenReturn( getPolicy );
+        when( policyCache.getServerPolicy( new Goid( goidHiPolicy, goidLoCassandraPut ) ) ).thenReturn( putPolicy );
+
+        putStub.put( "foo", "bar" );
+        assertEquals( "bar", getStub.get( "foo" ) );
+
+        try {
+            getStub.put( "foo", "bar" );
+            fail( "stub generated only for get method not expected to additionally support put method" );
+        } catch ( UnsupportedOperationException e ) {
+            // Ok
+        }
+
+        try {
+            putStub.get( "foo" );
+            fail( "stub generated only for put method not expected to additionally support get method" );
+        } catch ( UnsupportedOperationException e ) {
+            // Ok
+        }
+    }
+
     private static PolicyBackedService newTestFaceImplementation( long goidLoService, long goidLoGet, long goidLoPut, long goidLoQuery, String baseName ) {
         return newServiceImplementation( goidLoService, baseName,
                     newOperation( goidLoGet, "get", baseName + " - get" ),
