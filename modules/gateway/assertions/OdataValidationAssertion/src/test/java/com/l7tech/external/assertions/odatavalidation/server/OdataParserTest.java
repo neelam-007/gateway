@@ -449,10 +449,16 @@ public class OdataParserTest {
     }
 
     /**
-     * In this test, the System Query Option '$filter' has been poorly formatted and should be rejected.
+     * In this test, the value of the System Query Option '$filter' includes a quoted ampersand. Parsing should
+     * succeed.
+     *
+     * NOTE: As of Apache Olingo v2.0.3 the standard query parameter extraction method has been fixed and now handles
+     * ampersands correctly, as it splits the query string before decoding it (issue OLINGO-547).
+     * Our alternative implementation - OdataParser.extractQueryParameters() - which performed the split in the correct
+     * order, has been removed. We are now using the library method RestUtil.extractAllQueryParameters().
      */
     @Test
-    public void testParseRequest_GivenPoorlyFormedFilterExpression_ParsingFails() throws Exception {
+    public void testParseRequest_GivenPoorlyFormedFilterExpression_ParsingSucceeds() throws Exception {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=Name eq 'R%26D'");
 
         assertFalse(requestInfo.isMetadataRequest());
