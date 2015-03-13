@@ -6,6 +6,7 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -22,6 +23,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -35,18 +37,22 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.util.*;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -79,6 +85,9 @@ public class PortalBootstrapManager {
 
     @Inject
     private RbacServices rbacServices;
+
+    @Inject
+    private ClusterInfoManager clusterInfoManager;
 
     private PortalBootstrapManager( ApplicationContext context ) {
         this.applicationContext = context;
@@ -121,6 +130,8 @@ public class PortalBootstrapManager {
         if ( !pinMatcher.find() )
             throw new IOException( "Enrollment URL does not contain a server certificate key hash (sckh) parameter" );
 
+        byte[] postBody = buildEnrollmentPostBody( adminUser );
+
         String sckh = pinMatcher.group( 1 );
         final byte[] pinBytes = HexUtils.decodeBase64Url( sckh );
 
@@ -143,9 +154,54 @@ public class PortalBootstrapManager {
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         connection.setRequestMethod( "POST" );
         connection.setSSLSocketFactory( socketFactory );
+        connection.setRequestProperty( "Content-Type", "application/json" );
+        connection.setDoOutput( true );
+        connection.getOutputStream().write( postBody );
         byte[] bundleBytes = IOUtils.slurpStream( connection.getInputStream() );
 
         installBundle( bundleBytes, adminUser );
+    }
+
+    private byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
+        Config config = ConfigFactory.getCachedConfig();
+        String clusterName = config.getProperty( "clusterHost", "" );
+        String buildInfo = BuildInfo.getLongBuildString();
+        String ssgVersion = BuildInfo.getProductVersion();
+
+        final Collection<ClusterNodeInfo> infos;
+        try {
+            infos = clusterInfoManager.retrieveClusterStatus();
+        } catch ( FindException e ) {
+            throw new IOException( "Unable to load cluster info: " + ExceptionUtils.getMessage( e ), e );
+        }
+
+        String nodeCount = String.valueOf( infos.size() );
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonFactory jsonFactory = new JsonFactory();
+        JsonGenerator gen = jsonFactory.createJsonGenerator( baos );
+        gen.writeStartObject();
+        gen.writeStringField( "cluster_name", clusterName );
+        gen.writeStringField( "version", ssgVersion );
+        gen.writeStringField( "build_info", buildInfo );
+        gen.writeStringField( "adminuser_providerid", adminUser.getProviderId().toString() );
+        gen.writeStringField( "adminuser_id", adminUser.getId() );
+        gen.writeStringField( "node_count", nodeCount );
+        gen.writeFieldName( "nodeInfo" );
+        gen.writeStartArray();
+        gen.flush();
+
+        for ( ClusterNodeInfo info : infos ) {
+            gen.writeStartObject();
+            gen.writeStringField( "name", info.getName() );
+            gen.writeEndObject();
+        }
+
+        gen.writeEndArray();
+        gen.writeEndObject();
+        gen.flush();
+
+        return baos.toByteArray();
     }
 
     @NotNull
