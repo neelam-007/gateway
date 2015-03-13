@@ -2812,6 +2812,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
                 manageMenu.add(getManageServerModuleFilesAction());
+                manageMenu.add(getManageWorkQueuesAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;
