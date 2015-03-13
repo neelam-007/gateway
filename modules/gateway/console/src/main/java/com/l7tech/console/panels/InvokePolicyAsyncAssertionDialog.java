@@ -5,6 +5,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.InvokePolicyAsyncAssertion;
@@ -32,6 +33,7 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
     private InputValidator inputValidator;
     private InvokePolicyAsyncAssertion assertion;
     private boolean confirmed;
+    private Collection<Policy> policies = new ArrayList<>();
 
     public InvokePolicyAsyncAssertionDialog(final Window owner, final InvokePolicyAsyncAssertion assertion) {
         super(owner, resources.getString("dialog.title.invoke.policy.async.props"), AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE);
@@ -97,7 +99,15 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
 
     private void viewToModel(final InvokePolicyAsyncAssertion assertion) {
         assertion.setWorkQueueName((String) workQueueComboBox.getSelectedItem());
-        assertion.setPolicyName((String) policyComboBox.getSelectedItem());
+        for (Policy policy : policies) {
+            if (policy.getName().equals(policyComboBox.getSelectedItem())) {
+                assertion.setPolicyName(policy.getName());
+                assertion.setPolicyGoid(policy.getGoid());
+                return;
+            }
+        }
+        // Should not happen
+        JOptionPane.showMessageDialog(this, resources.getString("message.error.find.policy"), "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void populatePolicyCombobox() {
@@ -105,8 +115,8 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
 
         try {
             DefaultComboBoxModel model = new DefaultComboBoxModel();
-            Collection<Policy> policies = Registry.getDefault().getPolicyAdmin().findPoliciesByTypeTagAndSubTag(
-                    PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.InvokeAsync", "run");
+            policies = Registry.getDefault().getPolicyAdmin().findPoliciesByTypeTagAndSubTag(
+                    PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.BackgroundTask", "run");
 
             Collections.sort((ArrayList<Policy>)policies, new Comparator<Object>() {
                 @Override
@@ -116,10 +126,10 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
             });
 
             for (Policy policy : policies) {
-                final String policyName = policy.getName();
-                model.addElement(policyName);
-                if (policyName.equals(assertion.getPolicyName())) {
-                    selectedPolicy = policyName;
+                final Goid policyGoid = policy.getGoid();
+                model.addElement(policy.getName());
+                if (policyGoid.equals(assertion.getPolicyGoid())) {
+                    selectedPolicy = policy.getName();
                 }
             }
 

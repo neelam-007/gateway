@@ -775,4 +775,21 @@
 
     <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
 
+    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
+
+    <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">
+        <constructor-arg ref="workQueueEntityManager"/>
+    </bean>
+
+    <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry" />
+
+    <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerStub" />
+
+    <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManagerStub" />
+
+    <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='clusterIDManager'/>
+        <property name="targetMethod" value="thisNodeId"/>
+    </bean>
+
 </beans>

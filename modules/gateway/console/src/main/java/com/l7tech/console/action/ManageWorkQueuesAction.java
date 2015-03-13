@@ -13,7 +13,7 @@ public class ManageWorkQueuesAction extends SecureAction {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.WorkQueueManagerDialog");
 
     public ManageWorkQueuesAction() {
-        super(new AttemptedAnyOperation(EntityType.CASSANDRA_CONFIGURATION), UI_MANAGE_CASSANDRA_CONNECTIONS);
+        super(new AttemptedAnyOperation(EntityType.WORK_QUEUE), ADMIN_FEATURESET_NAME);
     }
 
     @Override
@@ -28,8 +28,7 @@ public class ManageWorkQueuesAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        //TODO: add new icon
-        return "com/l7tech/console/resources/testAction.gif";
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
