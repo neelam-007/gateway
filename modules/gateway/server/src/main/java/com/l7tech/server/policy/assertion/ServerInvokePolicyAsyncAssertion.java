@@ -68,8 +68,9 @@ public class ServerInvokePolicyAsyncAssertion extends AbstractServerAssertion<In
 
     private void runBackgroundTask(Goid policyGoid, final String policyName) {
         final Method runMethod;
+        Class[] args = {String.class};
         try {
-            runMethod = BackgroundTask.class.getMethod("run");
+            runMethod = BackgroundTask.class.getMethod("run", args);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -91,7 +92,7 @@ public class ServerInvokePolicyAsyncAssertion extends AbstractServerAssertion<In
                 try {
 
                     // Invoke the actual policy
-                    task.run();
+                    task.run("");
                     // Policy executed successfully and evaluated to AssertionStatus.NONE
 
                 } catch (RuntimeException e) {

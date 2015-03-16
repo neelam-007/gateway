@@ -57,7 +57,7 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
             ThreadPoolExecutor threadPoolExecutor = workQueueExecutorMap.get(name);
             if (threadPoolExecutor == null) {
                 // First time being used, create a work queue and add it to the thread pool executor
-                WorkQueue entity = null;
+                WorkQueue entity;
                 try {
                     entity = workQueueEntityManager.getWorkQueueEntity(name);
                 } catch (FindException e) {
@@ -67,9 +67,7 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
                 }
 
                 if (entity == null) {
-                    auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, new String[]{
-                            name, "Work queue does not exist."
-                    });
+                    auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, name, "Work queue does not exist.");
                     return null;
                 }
 
@@ -77,6 +75,12 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
                 if (threadPoolExecutor != null) {
                     workQueueExecutorMap.put(name, threadPoolExecutor);
                 }
+            } else {
+                auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, name,
+                        String.valueOf(threadPoolExecutor.getQueue().size()),
+                        String.valueOf(threadPoolExecutor.getActiveCount()),
+                        String.valueOf(threadPoolExecutor.getPoolSize()),
+                        threadPoolExecutor.getRejectedExecutionHandler().getClass().getName());
             }
             return threadPoolExecutor;
         } finally {
@@ -93,6 +97,11 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
                 threadPoolExecutor.shutdown();
                 workQueueExecutorMap.remove(entity.getName());
                 auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_FINE, "Removed work queue executor " + entity.getName());
+                auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, entity.getName(),
+                        String.valueOf(threadPoolExecutor.getQueue().size()),
+                        String.valueOf(threadPoolExecutor.getActiveCount()),
+                        String.valueOf(threadPoolExecutor.getPoolSize()),
+                        threadPoolExecutor.getRejectedExecutionHandler().getClass().getName());
             } else {
                 auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_FINE,
                         "Work queue executor " + entity.getName() + " does not exist.");
@@ -106,7 +115,7 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
     public void removeWorkQueueExecutor(Goid goid) {
         lock.lock();
         try {
-            WorkQueue entity = null;
+            WorkQueue entity;
             try {
                 entity = workQueueEntityManager.findByPrimaryKey(goid);
                 removeWorkQueueExecutor(entity);
@@ -153,6 +162,12 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
                     auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_FINE,
                             "Work queue executor " + newEntity.getName() + " updated with new properties.");
                 }
+
+                auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, newEntity.getName(),
+                        String.valueOf(threadPoolExecutor.getQueue().size()),
+                        String.valueOf(threadPoolExecutor.getActiveCount()),
+                        String.valueOf(threadPoolExecutor.getPoolSize()),
+                        threadPoolExecutor.getRejectedExecutionHandler().getClass().getName());
             }
         } finally {
             lock.unlock();
@@ -170,15 +185,18 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
             }
 
             BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(entity.getMaxQueueSize(), true);
-            ThreadPoolExecutor workQueueExecutor = new ThreadPoolExecutor(getCalculatedCorePoolSize(entity),
+            ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(getCalculatedCorePoolSize(entity),
                     entity.getThreadPoolMax(), 5L * 60L, TimeUnit.SECONDS, queue, rejectHandler);
 
-            if (workQueueExecutor != null) {
-                workQueueExecutor.allowCoreThreadTimeOut(true);
-                workQueueExecutorMap.put(entity.getName(), workQueueExecutor);
-                auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_FINE, "Created work queue executor: " + entity.getName());
-            }
-            return workQueueExecutor;
+            threadPoolExecutor.allowCoreThreadTimeOut(true);
+            workQueueExecutorMap.put(entity.getName(), threadPoolExecutor);
+            auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_FINE, "Created work queue executor: " + entity.getName());
+            auditor.logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, entity.getName(),
+                    String.valueOf(threadPoolExecutor.getQueue().size()),
+                    String.valueOf(threadPoolExecutor.getActiveCount()),
+                    String.valueOf(threadPoolExecutor.getPoolSize()),
+                    threadPoolExecutor.getRejectedExecutionHandler().getClass().getName());
+            return threadPoolExecutor;
         } finally {
             lock.unlock();
         }

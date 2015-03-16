@@ -1383,6 +1383,7 @@ public class AssertionMessages extends Messages {
     // InvokePolicyAsync Assertion
     public static final M WORK_QUEUE_EXECUTOR_NOT_AVAIL = m(11100, Level.WARNING, "Executor associated with work queue {0} not available due to {1}");
     public static final M WORK_QUEUE_EXECUTOR_FINE = m(11101, Level.FINE, "Work Queue Executor Manager: {0}");
+    public static final M WORK_QUEUE_EXECUTOR_INFO_FINER = m(11102, Level.FINER, "Work queue name: {0}; queue size: {1}; active threads: {2}; threads in pool: {3}; reject policy: {4}.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
