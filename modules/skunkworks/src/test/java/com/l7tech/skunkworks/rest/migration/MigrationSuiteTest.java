@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * Created by vkazakov on 3/2/2015.
+ * This runs all tests that extend MigrationTestBase. Note these tests should not end in "Test" otherwise they will be run twice on the build machine
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
