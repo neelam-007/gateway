@@ -14,6 +14,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -97,6 +98,12 @@ public class WorkQueueManagerDialog extends JDialog {
         sorter.setSortsOnUpdates(true);
         queueTable.setRowSorter(sorter);
 
+        // Make integer value columns (Max Size, Max Threads) left-aligned
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(SwingConstants.LEFT);
+        queueTable.getColumnModel().getColumn(1).setCellRenderer(rightRenderer);
+        queueTable.getColumnModel().getColumn(2).setCellRenderer(rightRenderer);
+
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -124,7 +131,6 @@ public class WorkQueueManagerDialog extends JDialog {
                 doRemove();
             }
         });
-
 
         closeButton.addActionListener(new ActionListener() {
             @Override
@@ -323,6 +329,9 @@ public class WorkQueueManagerDialog extends JDialog {
     }
 
     public String getSelectedWorkQueueName() {
+        if (queueTable.getSelectedRow() < 0) {
+            return null;
+        }
         return workQueueTableModel.getRowObject(queueTable.getSelectedRow()).getName();
     }
 }

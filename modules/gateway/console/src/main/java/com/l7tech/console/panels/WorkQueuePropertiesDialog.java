@@ -26,6 +26,8 @@ public class WorkQueuePropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(WorkQueuePropertiesDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.WorkQueuePropertiesDialog");
     private static final String WINDOW_TITLE = "Work Queue Properties";
+    private static final int DEFAULT_MAX_QUEUE_SIZE = 1000;
+    private static final int DEFAULT_MAX_THREAD_POOL_SIZE = 100;
 
     private JPanel mainPanel;
     private JTextField nameTextField;
@@ -85,7 +87,7 @@ public class WorkQueuePropertiesDialog extends JDialog {
                 String errMsg = null;
                 final String max = threadPoolMaxTextField.getText().trim();
                 if (!isValidInteger(max, true, 1, 10000) && getReferencedNames(max).length == 0) {
-                    errMsg = "The value for the Thread Pool Max must be between 1 and 10000.";
+                    errMsg = "The value for the max worker threads must be between 1 and 10000.";
                 }
                 return errMsg;
             }
@@ -153,8 +155,10 @@ public class WorkQueuePropertiesDialog extends JDialog {
 
     private void modelToView() {
         nameTextField.setText(workQueue.getName());
-        maxQueueSizeTextField.setText(String.valueOf(workQueue.getMaxQueueSize()));
-        threadPoolMaxTextField.setText(String.valueOf(workQueue.getThreadPoolMax()));
+        final int queueSize = workQueue.getMaxQueueSize();
+        final int poolMax = workQueue.getThreadPoolMax();
+        maxQueueSizeTextField.setText(String.valueOf(queueSize < 1 ? DEFAULT_MAX_QUEUE_SIZE : queueSize));
+        threadPoolMaxTextField.setText(String.valueOf(poolMax < 1 ? DEFAULT_MAX_THREAD_POOL_SIZE : poolMax));
         if (workQueue.getRejectPolicy().equals(WorkQueue.REJECT_POLICY_FAIL_IMMEDIATELY)) {
             failImmediatelyRadioButton.setSelected(true);
         } else {

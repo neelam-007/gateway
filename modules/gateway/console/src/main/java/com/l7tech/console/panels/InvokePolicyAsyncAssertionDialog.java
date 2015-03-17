@@ -39,13 +39,20 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
         super(owner, resources.getString("dialog.title.invoke.policy.async.props"), AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE);
         this.assertion = assertion;
         initialize();
-        enableDisable();
     }
 
     private void initialize() {
         inputValidator = new InputValidator(this, this.getTitle());
         inputValidator.ensureComboBoxSelection(workQueueLabel.getText(), workQueueComboBox);
         inputValidator.ensureComboBoxSelection(policyToInvokeLabel.getText(), policyComboBox);
+
+        final RunOnChangeListener policyListener = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                if (policyComboBox.getSelectedIndex() != -1) {
+                    enableOrDisableOkButton();
+                }
+            }
+        });
 
         final RunOnChangeListener workQueueListener = new RunOnChangeListener(new Runnable() {
             public void run() {
@@ -77,12 +84,16 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
                 dialog.pack();
                 dialog.setVisible(true);
                 if (dialog.isClosed()) {
-                    assertion.setWorkQueueName(dialog.getSelectedWorkQueueName());
+                    if (dialog.getSelectedWorkQueueName() != null) {
+                        assertion.setWorkQueueName(dialog.getSelectedWorkQueueName());
+                    }
                     populateWorkQueueCombobox();
                 }
             }
         });
 
+        ((JTextField) policyComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(policyListener);
+        policyComboBox.addItemListener(policyListener);
         ((JTextField) workQueueComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(workQueueListener);
         workQueueComboBox.addItemListener(workQueueListener);
 
@@ -191,9 +202,6 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
     @Override
     protected void configureView() {
         enableOrDisableOkButton();
-    }
-
-    private void enableDisable() {
     }
 
     private void enableOrDisableOkButton() {

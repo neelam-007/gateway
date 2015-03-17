@@ -30,7 +30,7 @@ public class WorkQueue extends ZoneableNamedEntityImp implements Comparable {
 
     private int maxQueueSize;
     private int threadPoolMax;
-    private String rejectPolicy = REJECT_POLICY_FAIL_IMMEDIATELY;
+    private String rejectPolicy = REJECT_POLICY_WAIT_FOR_ROOM;
 
     public WorkQueue() {
         _name = "";
