@@ -167,6 +167,7 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
 
             workQueueComboBox.setModel(model);
             workQueueComboBox.setSelectedItem(selectedWorkQueue);
+            enableOrDisableOkButton();
         } catch (FindException fe) {
             JOptionPane.showMessageDialog(this, resources.getString("message.error.find.work.queues"), "Error", JOptionPane.ERROR_MESSAGE);
         }
