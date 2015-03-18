@@ -327,4 +327,6 @@
     <bean id="secretsEncryptorFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptorFactory">
         <constructor-arg index="0" value="password"/>
     </bean>
+
+    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
 </beans>
