@@ -57,11 +57,16 @@ public class ServerInvokePolicyAsyncAssertion extends AbstractServerAssertion<In
             workQueueExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
+                    logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, assertion.getWorkQueueName(),
+                            String.valueOf(workQueueExecutor.getQueue().size()),
+                            String.valueOf(workQueueExecutor.getActiveCount()),
+                            String.valueOf(workQueueExecutor.getPoolSize()),
+                            workQueueExecutor.getRejectedExecutionHandler().getClass().getName());
                     runBackgroundTask(assertion.getPolicyGoid(), assertion.getPolicyName());
                 }
             });
         } else {
-            logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, "Work queue executor does not exist.");
+            logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, assertion.getWorkQueueName(), "Work queue executor does not exist.");
         }
         return AssertionStatus.NONE;
     }
