@@ -3,8 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin;
-import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
@@ -27,7 +25,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,7 +35,7 @@ public class ScheduledTaskWindow extends JDialog {
 
     private JPanel mainPanel;
     private SimpleTableModel<ScheduledTask> scheduledPoliciesTableModel;
-    TableRowSorter<SimpleTableModel<ScheduledTask>> rowSorter;
+    private TableRowSorter<SimpleTableModel<ScheduledTask>> rowSorter;
     private JTable scheduledPoliciesTable;
     private JButton addButton;
     private JButton editButton;
@@ -46,7 +43,6 @@ public class ScheduledTaskWindow extends JDialog {
     private JButton closeButton;
     private JButton cloneButton;
 
-    private PolicyBackedServiceAdmin policyBackedServiceAdmin;
     private PolicyAdmin policyAdmin;
     private ScheduledTaskAdmin scheduledTaskAdmin;
 
@@ -55,7 +51,6 @@ public class ScheduledTaskWindow extends JDialog {
         super(parent, "Scheduled Task", true);
 
         scheduledTaskAdmin = Registry.getDefault().getScheduledTaskAdmin();
-        policyBackedServiceAdmin = Registry.getDefault().getPolicyBackedServiceAdmin();
         policyAdmin = Registry.getDefault().getPolicyAdmin();
 
         initComponents();
@@ -242,61 +237,26 @@ public class ScheduledTaskWindow extends JDialog {
     private void doAdd() {
         final ScheduledTask scheduledTask = new ScheduledTask();
         scheduledTask.setJobType(JobType.ONE_TIME);
-        final ScheduledTaskPropertiesDialog propertiesDialog = new ScheduledTaskPropertiesDialog(this, scheduledTask);
-        DialogDisplayer.display(propertiesDialog, new Runnable() {
-            @Override
-            public void run() {
-                if(propertiesDialog.isConfirmed()) {
-                    try {
-                        if(scheduledTask.getJobType().equals(JobType.ONE_TIME)){
-                            scheduledTask.setJobStatus(JobStatus.SCHEDULED);
-                            scheduledTaskAdmin.saveScheduledTask(scheduledTask);
-                            loadDocuments();
-                        }else if(scheduledTask.getJobType().equals(JobType.RECURRING)){
-                            JobStatus jobStatus = scheduledTask.getJobStatus();
-
-                            if (jobStatus.equals(JobStatus.DISABLED)){
-                                scheduledTaskAdmin.saveScheduledTask(scheduledTask);
-                            } else {
-                                scheduledTaskAdmin.saveScheduledTask(scheduledTask);
-                            }
-                            loadDocuments();
-                        }else{
-                            throw new RuntimeException("Error creating Scheduled Policy Job.");
-                        }
-                    } catch(Exception e) {
-                        JOptionPane.showMessageDialog(ScheduledTaskWindow.this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        });
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask));
     }
 
     private void doEdit(final ScheduledTask scheduledTask) {
-        ScheduledTaskPropertiesDialog dialog = new ScheduledTaskPropertiesDialog(this,scheduledTask);
-        displayEditDialog(dialog, scheduledTask);
+        displayPropertiesDialog( new ScheduledTaskPropertiesDialog(this,scheduledTask));
     }
 
     private void doClone(final ScheduledTask scheduledTask) {
         ScheduledTask scheduledTaskCopy = new ScheduledTask();
         scheduledTaskCopy.copyFrom(scheduledTask);
         EntityUtils.updateCopy(scheduledTaskCopy);
-
-        ScheduledTaskPropertiesDialog dialog = new ScheduledTaskPropertiesDialog(this,scheduledTaskCopy);
-        displayEditDialog(dialog, scheduledTaskCopy);
+        displayPropertiesDialog( new ScheduledTaskPropertiesDialog(this,scheduledTaskCopy));
     }
     
-    private void displayEditDialog(final ScheduledTaskPropertiesDialog dialog, final ScheduledTask scheduledTask){
+    private void displayPropertiesDialog(final ScheduledTaskPropertiesDialog dialog){
         DialogDisplayer.display(dialog, new Runnable() {
             @Override
             public void run() {
                 if(dialog.isConfirmed()) {
-                    try {
-                        scheduledTaskAdmin.saveScheduledTask(scheduledTask);
                         loadDocuments();
-                    } catch(Exception ue) {
-                        JOptionPane.showMessageDialog(ScheduledTaskWindow.this, ue.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
                 }
             }
         });

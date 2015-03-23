@@ -3,11 +3,9 @@ package com.l7tech.server.task;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.policy.CustomKeyValueStoreManager;
 
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by luiwy01 on 3/9/2015.
@@ -29,7 +27,12 @@ public class ScheduledTaskAdminImpl implements ScheduledTaskAdmin {
 
     @Override
     public Goid saveScheduledTask(ScheduledTask scheduledTask) throws UpdateException, SaveException {
-        return scheduledTaskManager.save(scheduledTask);
+        if (scheduledTask.getGoid() == null || Goid.isDefault(scheduledTask.getGoid())) {
+            return scheduledTaskManager.save(scheduledTask);
+        } else {
+            scheduledTaskManager.update(scheduledTask);
+            return scheduledTask.getGoid();
+        }
     }
 
     @Override

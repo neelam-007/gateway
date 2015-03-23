@@ -1,14 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.OkCancelDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.logging.Logger;
 
 
@@ -29,10 +27,8 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
     private JRadioButton otherRadioButton;
     private JTextField expressionTextField;
     private JLabel stepWidthLabel;
-    private JLabel fromLabel;
     private JLabel toLabel;
     private JLabel exactLabel;
-    private JLabel expressionLabel;
 
 
     private boolean dataLoaded = false;
@@ -65,40 +61,26 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
         buttonGroup.add(exactRadioButton);
         buttonGroup.add(otherRadioButton);
 
-        everyRadioButton.addActionListener(new ActionListener() {
+        RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable(){
             @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableTextFields();
+            public void run() {
+                enableDisableComponents();
             }
         });
-        inAStepWidthRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableTextFields();
-            }
-        });
-        inARangeRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableTextFields();
-            }
-        });
-        exactRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableTextFields();
-            }
-        });
-        otherRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableTextFields();
-            }
-        });
+        everyRadioButton.addActionListener(changeListener);
+        inAStepWidthRadioButton.addActionListener(changeListener);
+        inARangeRadioButton.addActionListener(changeListener);
+        exactRadioButton.addActionListener(changeListener);
+        otherRadioButton.addActionListener(changeListener);
+
+        stepWidthTextField.getDocument().addDocumentListener(changeListener);
+        fromTextField.getDocument().addDocumentListener(changeListener);
+        toTextField.getDocument().addDocumentListener(changeListener);
+        exactTextField.getDocument().addDocumentListener(changeListener);
+        expressionTextField.getDocument().addDocumentListener(changeListener);
 
         setRadioButtonSelection();
-
-        enableDisableTextFields();
+        enableDisableComponents();
 
         Utilities.setEscAction(this, cancelButton);
         getRootPane().setDefaultButton(okButton);
@@ -115,15 +97,6 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
-            }
-        });
-
-        this.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-                if (!dataLoaded) {
-                   // resetData();
-                }
             }
         });
 
@@ -153,70 +126,75 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
 
     private void setLabels(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval interval){
         if(interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_SECOND)){
-                stepWidthLabel.setText("Seconds:");
+                stepWidthLabel.setText("seconds");
                 everyRadioButton.setText("Every second");
-                exactLabel.setText("Second: ");
+                exactLabel.setText("second");
                 exactRadioButton.setText("At an exact second");
         } else if(interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MINUTE)){
-                stepWidthLabel.setText("Minutes:");
+                stepWidthLabel.setText("minutes");
                 everyRadioButton.setText("Every minute");
-                exactLabel.setText("Minute: ");
+                exactLabel.setText("minute");
                 exactRadioButton.setText("At an exact minute");
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_HOUR)){
-                stepWidthLabel.setText("Hours:");
+                stepWidthLabel.setText("hours");
                 everyRadioButton.setText("Every Hour");
-                exactLabel.setText("Hour: ");
+                exactLabel.setText("hour");
                 exactRadioButton.setText("At an exact hour");
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_DAY)){
-                stepWidthLabel.setText("Days:");
+                stepWidthLabel.setText("days");
                 everyRadioButton.setText("Every day");
-                exactLabel.setText("Day: ");
+                exactLabel.setText("day");
                 exactRadioButton.setText("On a day");
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MONTH)){
-                stepWidthLabel.setText("Months:");
+                stepWidthLabel.setText("months");
                 everyRadioButton.setText("Every month");
-                exactLabel.setText("Month: ");
+                exactLabel.setText("month");
                 exactRadioButton.setText("In a month");
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_WEEK)){
-                stepWidthLabel.setText("Weekdays:");
-                everyRadioButton.setText("Every weekday");
-                exactLabel.setText("Weekday: ");
-                exactRadioButton.setText("On a weekday");
+                stepWidthLabel.setText("day of the week");
+                everyRadioButton.setText("Every day of the week");
+                exactLabel.setText("day of the week");
+                exactRadioButton.setText("On a day of the week");
         }
     }
 
 
-    private void enableDisableTextFields(){
+    private void enableDisableComponents(){
         if (everyRadioButton.isSelected()){
             stepWidthTextField.setEnabled(false);
             fromTextField.setEnabled(false);
             toTextField.setEnabled(false);
             exactTextField.setEnabled(false);
             expressionTextField.setEnabled(false);
+            okButton.setEnabled(true);
         }else if (inAStepWidthRadioButton.isSelected()){
             stepWidthTextField.setEnabled(true);
             fromTextField.setEnabled(false);
             toTextField.setEnabled(false);
             exactTextField.setEnabled(false);
             expressionTextField.setEnabled(false);
+            okButton.setEnabled(stepWidthTextField.getText()!=null && !stepWidthTextField.getText().isEmpty());
         } else if (inARangeRadioButton.isSelected()){
             stepWidthTextField.setEnabled(false);
             fromTextField.setEnabled(true);
             toTextField.setEnabled(true);
             exactTextField.setEnabled(false);
             expressionTextField.setEnabled(false);
+            okButton.setEnabled(fromTextField.getText()!=null && !fromTextField.getText().isEmpty() && toTextField.getText()!=null && !toTextField.getText().isEmpty());
         } else if (exactRadioButton.isSelected()){
             stepWidthTextField.setEnabled(false);
             fromTextField.setEnabled(false);
             toTextField.setEnabled(false);
             exactTextField.setEnabled(true);
             expressionTextField.setEnabled(false);
+            okButton.setEnabled(exactTextField.getText()!=null && !exactTextField.getText().isEmpty());
         } else if (otherRadioButton.isSelected()){
             stepWidthTextField.setEnabled(false);
             fromTextField.setEnabled(false);
             toTextField.setEnabled(false);
             exactTextField.setEnabled(false);
             expressionTextField.setEnabled(true);
+            okButton.setEnabled(expressionTextField.getText()!=null && !expressionTextField.getText().isEmpty());
         }
     }
 
@@ -225,32 +203,9 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
         dispose();
     }
 
-
-    private void displayError(final String msg,
-                              String title) {
-        if (title == null) title = "Error";
-
-        final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
-        final Object messageObject;
-        if (width > 600) {
-            messageObject = Utilities.getTextDisplayComponent(msg, 600, 100, -1, -1);
-        } else {
-            messageObject = msg;
-        }
-
-        JOptionPane.showMessageDialog(
-                this,
-                messageObject,
-                title,
-                JOptionPane.ERROR_MESSAGE);
-    }
-
-
     private void ok() {
-
         try{
           setCronFragmentFromTextFields();
-
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -275,15 +230,5 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
         } else if (otherRadioButton.isSelected()){
             cronExpressionFragment = expressionTextField.getText();
         }
-    }
-
-    public void setData(ScheduledTaskEditCronIntervalDialog data) {
-    }
-
-    public void getData(ScheduledTaskEditCronIntervalDialog data) {
-    }
-
-    public boolean isModified(ScheduledTaskEditCronIntervalDialog data) {
-        return false;
     }
 }

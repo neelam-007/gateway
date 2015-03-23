@@ -1954,9 +1954,8 @@
 
     <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerImpl"/>
 
-    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="policyBackedServiceRegistry" />
-    </bean>
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
+    <bean id="scheduledTaskJobManager" class="com.l7tech.server.task.ScheduledTaskJobManager"/>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">

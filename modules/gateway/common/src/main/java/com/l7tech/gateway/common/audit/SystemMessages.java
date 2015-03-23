@@ -176,5 +176,8 @@ public class SystemMessages extends Messages {
     public static final M LICENSE_INVALID_PRODUCT   = m(2504, Level.WARNING, "License {0} is not valid for this product.");
     public static final M LICENSE_INVALID_ISSUER    = m(2505, Level.WARNING, "License {0} is not signed by a trusted issuer.");
 
+    // Scheduler
+    public static final M SCHEDULER_POLICY_ERROR    = m(2520, Level.WARNING, "Error in scheduled task policy execution: {0}");
+
     // MAX -                                      m(2999
 }
