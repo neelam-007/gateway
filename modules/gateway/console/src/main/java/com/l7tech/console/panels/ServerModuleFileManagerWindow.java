@@ -51,7 +51,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private static final String CLUSTER_PROP_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
     private static final int REFRESH_INTERVAL_MILLIS = 5000;
     private static final long WAIT_BEFORE_DISPLAY_ASYNC_OPERATION_DIALOG = 500L;
-    private static final int SIZE_COLUMN_INDEX = 4;
+    private static final int SIZE_COLUMN_INDEX = 3;
     private static final int SIZE_COLUMN_ALIGNMENT = DefaultTableCellRenderer.TRAILING;
 
     private JPanel contentPane;
@@ -194,7 +194,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 column( resources.getString("modules.column.name"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "name" ) ),
                 column( resources.getString("modules.column.file-name"), 30, 250, 99999, propFinder( ServerModuleFile.PROP_FILE_NAME ) ),
                 column( resources.getString("modules.column.type"), 30, 150, 150, propertyTransform( ServerModuleFile.class, "moduleType") ),
-                column( resources.getString("modules.column.hash"), 50, 400, 99999, propertyTransform( ServerModuleFile.class, "moduleSha256") ),
                 column( resources.getString("modules.column.size"), 20, 80, 150, dataBytesPropToLong(), Long.class ),
                 column( resources.getString("modules.column.status"), 20, 80, 150,
                         new Functions.Unary<String, ServerModuleFile>() {
