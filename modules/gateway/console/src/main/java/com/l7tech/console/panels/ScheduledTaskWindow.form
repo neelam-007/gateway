@@ -18,14 +18,18 @@
         <children>
           <scrollpane id="43f99">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="542" height="230"/>
+              </grid>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="f5d09" class="javax.swing.JTable" binding="scheduledPoliciesTable">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <preferredScrollableViewportSize width="500" height="400"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
@@ -47,7 +51,7 @@
               </component>
               <component id="33c32" class="javax.swing.JButton" binding="editButton" default-binding="true">
                 <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/panels/ScheduledTaskWindow" key="button.edit"/>
@@ -76,7 +80,7 @@
               </component>
               <component id="3aa8" class="javax.swing.JButton" binding="removeButton" default-binding="true">
                 <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/panels/ScheduledTaskWindow" key="button.remove"/>

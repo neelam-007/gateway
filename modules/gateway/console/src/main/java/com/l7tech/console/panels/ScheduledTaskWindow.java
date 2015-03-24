@@ -112,6 +112,7 @@ public class ScheduledTaskWindow extends JDialog {
         scheduledPoliciesTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         rowSorter = new TableRowSorter<>(scheduledPoliciesTableModel);
         scheduledPoliciesTable.setRowSorter(rowSorter);
+        rowSorter.toggleSortOrder(0);
 
 
         Utilities.setDoubleClickAction(scheduledPoliciesTable, editButton);
@@ -132,7 +133,7 @@ public class ScheduledTaskWindow extends JDialog {
     private SimpleTableModel<ScheduledTask> buildResourcesTableModel() {
         return TableUtil.configureTable(
                 scheduledPoliciesTable,
-                TableUtil.column(resources.getString("column.type"), 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.type"), 80, 100, 180, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(final ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
@@ -148,7 +149,7 @@ public class ScheduledTaskWindow extends JDialog {
                         return "";
                     }
                 }, String.class),
-                TableUtil.column(resources.getString("column.name"), 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.name"), 80, 110,  10000, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(final ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
@@ -157,7 +158,7 @@ public class ScheduledTaskWindow extends JDialog {
                         return "";
                     }
                 }, String.class),
-                TableUtil.column(resources.getString("column.policy"), 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.policy"), 80, 160, 10000, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
@@ -166,7 +167,7 @@ public class ScheduledTaskWindow extends JDialog {
                         return "";
                     }
                 }, String.class),
-                TableUtil.column(resources.getString("column.schedule"), 140, 160, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.schedule"), 80, 160, 10000, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
@@ -183,7 +184,7 @@ public class ScheduledTaskWindow extends JDialog {
                         return "";
                     }
                 }, String.class),
-                TableUtil.column(resources.getString("column.node"), 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.node"), 50, 80, 180, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
