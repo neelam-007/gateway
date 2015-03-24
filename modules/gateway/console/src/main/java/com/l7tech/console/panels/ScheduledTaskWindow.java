@@ -140,7 +140,7 @@ public class ScheduledTaskWindow extends JDialog {
                                 case RECURRING:
                                     return resources.getString("column.type.recurring");
                                 case ONE_TIME:
-                                    return resources.getString("column.type.once");
+                                    return resources.getString("column.type.one.time");
                                 default:
                                     return "";
                             }
