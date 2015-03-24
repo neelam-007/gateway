@@ -564,6 +564,7 @@ public final class RegistryImpl extends Registry
         siteMinderAdmin = null;
         cassandraConnectionAdmin = null;
         workQueueManagerAdmin = null;
+        scheduledTaskAdmin = null;
     }
 
 
