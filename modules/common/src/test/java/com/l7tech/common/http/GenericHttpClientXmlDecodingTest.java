@@ -301,8 +301,6 @@ public class GenericHttpClientXmlDecodingTest {
         unsupportedEncodings.add("x-JIS0208");
         unsupportedEncodings.add("x-MacDingbat");
         unsupportedEncodings.add("x-MacSymbol");
-        // Unsupported encoding not document in GenericHttpResponse, temporarily skipped to make the unit test pass.
-        unsupportedEncodings.add("IBM-930");
 
         for(String charsetName : Charset.availableCharsets().keySet()) {
             if(unsupportedEncodings.contains(charsetName)) {
