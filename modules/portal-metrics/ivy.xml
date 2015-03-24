@@ -20,6 +20,6 @@
         <!-- Test dependencies -->
         <dependency org="org.hsqldb" name="hsqldb" rev="2.2.4" force="true" conf="test"/>
         <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
-        <dependency org="junit" name="junit" rev="4.10" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.12" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

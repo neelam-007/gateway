@@ -33,6 +33,6 @@
 	</publications>
 	<dependencies>
 		<dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>

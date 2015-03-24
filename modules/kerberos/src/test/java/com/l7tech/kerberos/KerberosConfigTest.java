@@ -70,6 +70,8 @@ public class KerberosConfigTest {
         tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
         SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, tmpDir.getPath());
         KerberosUtils.inetAddress = InetAddress.getLocalHost();
+        //set kerberos files to null so that the unit tests do not interfere with each other
+        KerberosConfig.kerberosFiles = null;
     }
 
 

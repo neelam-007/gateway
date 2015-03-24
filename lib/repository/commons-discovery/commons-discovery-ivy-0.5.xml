@@ -30,6 +30,6 @@
 	</publications>
 	<dependencies>
 		<dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>

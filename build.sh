@@ -60,7 +60,7 @@ for arg in "$@" ; do
   fi
 done
 
-ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/ant-launcher.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/tools/junit-4.10.jar:$SRC_ROOT/lib/ant-junit.jar:$SRC_ROOT/lib/ant-contrib-1.0b3.jar:$SRC_ROOT/lib/ant-apache-bcel.jar:$SRC_ROOT/lib/tools/bcel-5.2.jar:$SRC_ROOT/lib/tools/ivy-2.2.0.jar:$SRC_ROOT/lib/tools/oro-2.0.8.jar"
+ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/ant-launcher.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/tools/junit-4.12.jar:$SRC_ROOT/lib/ant-junit.jar:$SRC_ROOT/lib/ant-contrib-1.0b3.jar:$SRC_ROOT/lib/ant-apache-bcel.jar:$SRC_ROOT/lib/tools/bcel-5.2.jar:$SRC_ROOT/lib/tools/ivy-2.2.0.jar:$SRC_ROOT/lib/tools/oro-2.0.8.jar"
 CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then

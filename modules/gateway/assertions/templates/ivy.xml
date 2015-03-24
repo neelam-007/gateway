@@ -33,7 +33,7 @@
         <dependency name="layer7-gateway-console" rev="latest.integration" conf="optional"/>
         <dependency org="com.intellij" name="forms_rt" rev="11.1.2" force="true" conf="optional"/>
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
-        <dependency org="junit" name="junit" rev="4.10" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.12" force="true" conf="test"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

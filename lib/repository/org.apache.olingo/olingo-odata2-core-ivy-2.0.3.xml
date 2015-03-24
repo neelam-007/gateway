@@ -18,7 +18,7 @@
 		<m:dependency.management__org.mockito__mockito-all__version>1.9.0</m:dependency.management__org.mockito__mockito-all__version>
 		<m:properties__antlr.version>3.4</m:properties__antlr.version>
 		<m:properties__sonar.skippedModules>org.apache.olingo.odata2.expr</m:properties__sonar.skippedModules>
-		<m:dependency.management__junit__junit__version>4.10</m:dependency.management__junit__junit__version>
+		<m:dependency.management__junit__junit__version>4.12</m:dependency.management__junit__junit__version>
 		<m:properties__version.javax.persistence>2.0.5</m:properties__version.javax.persistence>
 		<m:properties__gpg.useagent>true</m:properties__gpg.useagent>
 		<m:maven.plugins>org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|null__maven-jar-plugin__null|org.apache.felix__maven-bundle-plugin__null</m:maven.plugins>
@@ -34,7 +34,7 @@
 		<m:properties__project.build.sourceEncoding>UTF-8</m:properties__project.build.sourceEncoding>
 		<m:properties__joda.version>2.1</m:properties__joda.version>
 		<m:properties__version.eclipselink>2.5.1</m:properties__version.eclipselink>
-		<m:properties__junit.version>4.10</m:properties__junit.version>
+		<m:properties__junit.version>4.12</m:properties__junit.version>
 		<m:properties__javadoc.phase>package</m:properties__javadoc.phase>
 		<m:properties__httpcore.version>4.2.3</m:properties__httpcore.version>
 		<m:properties__projectsToInstrument>org.apache.olingo.odata2.api,org.apache.olingo.odata2.core,org.apache.olingo.odata2.ref</m:properties__projectsToInstrument>
@@ -62,13 +62,13 @@
 		<dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.olingo" name="olingo-odata2-testutil" rev="2.0.3" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="log4j" name="log4j" rev="1.2.17" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.mockito" name="mockito-all" rev="1.9.0" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="xmlunit" name="xmlunit" rev="1.3" force="true" conf="test->runtime(*),master(*)"/>
 		<override org="xmlunit" module="xmlunit" matcher="exact" rev="1.3"/>
 		<override org="org.mockito" module="mockito-all" matcher="exact" rev="1.9.0"/>
-		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
 	</dependencies>
 </ivy-module>
