@@ -275,8 +275,8 @@ public class ScheduledTaskWindow extends JDialog {
         ScheduledTask task = scheduledPoliciesTableModel.getRowObject(rowSorter.convertRowIndexToModel(scheduledPoliciesTable.getSelectedRow()));
         Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
         int result = JOptionPane.showOptionDialog(
-                this, MessageFormat.format(resources.getString("confirmation.remove.connection"), task.getName()),
-                resources.getString("dialog.title.remove.connection"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                this, MessageFormat.format(resources.getString("remove.connection.confirmation"), task.getName()),
+                resources.getString("remove.connection.dialog.title"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {
             try {
