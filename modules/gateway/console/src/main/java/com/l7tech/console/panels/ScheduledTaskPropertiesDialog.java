@@ -7,9 +7,10 @@ import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.BetterComboBox;
-import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -19,14 +20,16 @@ import com.l7tech.util.Functions;
 import org.quartz.CronExpression;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class ScheduledTaskPropertiesDialog extends JDialog {
@@ -40,18 +43,15 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JPanel timePanel;
     private JRadioButton oneTimeRadioButton;
     private JRadioButton recurringRadioButton;
-    private JComboBox basicComboBox;
+    private JComboBox unitComboBox;
     private JTextField minuteTextField;
     private JButton minuteEditButton;
-    private SquigglyTextField cronExpressionTextField;
     private JButton hourEditButton;
     private JButton dayEditButton;
     private JButton monthEditButton;
-    private JButton weekdayEditButton;
     private JTextField hourTextField;
     private JTextField dayTextField;
     private JTextField monthTextField;
-    private JTextField weekdayTextField;
     private JLabel minuteLabel;
     private JLabel hourLabel;
     private JLabel dayLabel;
@@ -68,7 +68,14 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JTextField nameField;
     private JRadioButton basicRadioButton;
     private JRadioButton advancedRadioButton;
-    private JRadioButton cronExpressionRadioButton;
+    private JCheckBox mondayCheckBox;
+    private JCheckBox tuesdayCheckBox;
+    private JCheckBox wednesdayCheckBox;
+    private JCheckBox thursdayCheckBox;
+    private JCheckBox fridayCheckBox;
+    private JCheckBox saturdayCheckBox;
+    private JCheckBox sundayCheckBox;
+    private JTextField intervalTextField;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
@@ -169,15 +176,35 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         timePanel.add(timeChooser, BorderLayout.CENTER);
 
         // basic
-        basicComboBox.addActionListener(new ActionListener() {
+        intervalTextField.getDocument().addDocumentListener(changeListener);
+        intervalTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisableComponents();
+            }
+        }));
+        intervalTextField.setText("1");
+        unitComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                populateTextFieldsFromCronExpression(((ScheduledTaskBasicInterval) basicComboBox.getSelectedItem()).getCronExpression());
+                try {
+                    int interval = Integer.parseInt(intervalTextField.getText());
+                    populateTextFieldsFromCronExpression(((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(interval));
+                }catch( NumberFormatException ex){
+                    // do nothing
+                }
             }
         });
 
-        basicComboBox.setModel(new DefaultComboBoxModel(ScheduledTaskBasicInterval.values()));
-        basicComboBox.setSelectedIndex(0);
+        unitComboBox.setModel(new DefaultComboBoxModel(ScheduledTaskBasicInterval.values()));
+        unitComboBox.setSelectedIndex(0);
+        try {
+            int interval = Integer.parseInt(intervalTextField.getText());
+            populateTextFieldsFromCronExpression(((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(interval));
+        }catch( NumberFormatException ex){
+            // do nothing
+        }
+
 
         //advance edit buttons
         secondEditButton.addActionListener(new ActionListener() {
@@ -204,12 +231,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 doEdit(ScheduledTaskBasicInterval.EVERY_DAY, dayTextField);
             }
         });
-        weekdayEditButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doEdit(ScheduledTaskBasicInterval.EVERY_WEEK, weekdayTextField);
-            }
-        });
         monthEditButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -221,24 +242,9 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         recurringButtonGroup = new ButtonGroup();
         recurringButtonGroup.add(basicRadioButton);
         recurringButtonGroup.add(advancedRadioButton);
-        recurringButtonGroup.add(cronExpressionRadioButton);
+        basicRadioButton.setSelected(true);
         basicRadioButton.addActionListener(changeListener);
         advancedRadioButton.addActionListener(changeListener);
-        cronExpressionRadioButton.addActionListener(changeListener);
-        cronExpressionTextField.setColumns(225);
-        TextComponentPauseListenerManager.registerPauseListener(cronExpressionTextField, new PauseListenerAdapter() {
-            @Override
-            public void textEntryPaused(JTextComponent component, long msecs) {
-                enableDisableComponents();
-                try {
-                    CronExpression.validateExpression(cronExpressionTextField.getText());
-                    cronExpressionTextField.setStraight();
-                } catch (ParseException e) {
-                    cronExpressionTextField.setSquiggly();
-
-                }
-            }
-        }, 500);
 
         // todo add tootips
         okButton.addActionListener(new ActionListener() {
@@ -265,17 +271,20 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
 
         boolean isRecurring = recurringRadioButton.isSelected();
         Utilities.setEnabled(recurringPanel, isRecurring);
-        basicComboBox.setEnabled(isRecurring && basicRadioButton.isSelected());
+        unitComboBox.setEnabled(isRecurring && basicRadioButton.isSelected());
         Utilities.setEnabled(advancedPanel, isRecurring && advancedRadioButton.isSelected());
 
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
         isOK = isOK && policyComboBox.getSelectedIndex() > -1;
         isOK = isOK && timeChooser.getDate() != null;
-        isOK = isOK && (!cronExpressionRadioButton.isSelected() || cronExpressionTextField.getText().trim().length() > 0);
+        try{
+            Integer.parseInt(intervalTextField.getText());
+        }catch(NumberFormatException e){
+            isOK = false;
+        }
+        isOK = isOK && timeChooser.getDate() != null;
         okButton.setEnabled(isOK);
-
-        cronExpressionTextField.setEnabled(cronExpressionRadioButton.isSelected());
     }
 
     private void modelToView() {
@@ -293,18 +302,18 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     }
 
     private void selectRadioButton(String cronExpression) {
-        cronExpressionTextField.setText(cronExpression);
 
         for (ScheduledTaskBasicInterval interval : ScheduledTaskBasicInterval.values()) {
-            if (cronExpression.equals(interval.getCronExpression())) {
+            if (interval.matches(cronExpression)) {
                 basicRadioButton.setSelected(true);
-                basicComboBox.setEnabled(true);
-                basicComboBox.setSelectedItem(interval);
+                intervalTextField.setText(interval.getInterval(cronExpression));
+                unitComboBox.setEnabled(true);
+                unitComboBox.setSelectedItem(interval);
+
                 return;
             }
         }
         populateTextFieldsFromCronExpression(cronExpression);
-        cronExpressionTextField.setText(cronExpression);
         advancedRadioButton.setSelected(true);
     }
 
@@ -318,7 +327,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 }
             }
         });
-        cronExpressionTextField.setText(createAdvancedCronExpression());
     }
 
 
@@ -330,7 +338,15 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         hourTextField.setText(cronFragments[ScheduledTaskBasicInterval.EVERY_HOUR.ordinal()]);
         dayTextField.setText(cronFragments[ScheduledTaskBasicInterval.EVERY_DAY.ordinal()]);
         monthTextField.setText(cronFragments[ScheduledTaskBasicInterval.EVERY_MONTH.ordinal()]);
-        weekdayTextField.setText(cronFragments[ScheduledTaskBasicInterval.EVERY_WEEK.ordinal()]);
+
+        String weekday = cronFragments[ScheduledTaskBasicInterval.EVERY_WEEK.ordinal()];
+        sundayCheckBox.setSelected(weekday.contains("1"));
+        mondayCheckBox.setSelected(weekday.contains("2"));
+        tuesdayCheckBox.setSelected(weekday.contains("3"));
+        wednesdayCheckBox.setSelected(weekday.contains("4"));
+        thursdayCheckBox.setSelected(weekday.contains("5"));
+        fridayCheckBox.setSelected(weekday.contains("6"));
+        saturdayCheckBox.setSelected(weekday.contains("7"));
     }
 
     private PolicyAdmin getPolicyAdmin() {
@@ -384,27 +400,28 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 scheduledTask.setJobStatus(JobStatus.SCHEDULED);
             }
 
+            String cronExpression;
             if (basicRadioButton.isSelected()) {
-                scheduledTask.setCronExpression(((ScheduledTaskBasicInterval) basicComboBox.getSelectedItem()).getCronExpression());
-            } else {
-                String cronExpression;
-                if (advancedRadioButton.isSelected()) {
-                    cronExpression = createAdvancedCronExpression();
-                } else {
-                    cronExpression = cronExpressionRadioButton.getText();
-                }
                 try {
-                    CronExpression.validateExpression(cronExpression);
-                    scheduledTask.setCronExpression(cronExpression);
-                } catch (ParseException e) {
-                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, e.getMessage(),
-                            "Cron Expression Error", JOptionPane.ERROR_MESSAGE, null);
+                    cronExpression = ((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(Integer.parseInt(intervalTextField.getText()));
+                }catch( NumberFormatException e){
+                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Interval "+intervalTextField.getText()+"  must be an integer. ",
+                            "Scheduled Interval Error", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
+            } else {
+                cronExpression = createAdvancedCronExpression();
+            }
+
+            try {
+                CronExpression.validateExpression(cronExpression);
+                scheduledTask.setCronExpression(cronExpression);
+            } catch (ParseException e) {
+                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Expression: " + cronExpression + "\nError: "+ e.getMessage(),
+                        "Cron Expression Error", JOptionPane.ERROR_MESSAGE, null);
+                return;
             }
         }
-
-
 
         // save the task
         try {
@@ -425,7 +442,28 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         cronFragments[ScheduledTaskBasicInterval.EVERY_HOUR.ordinal()] = hourTextField.getText();
         cronFragments[ScheduledTaskBasicInterval.EVERY_DAY.ordinal()] = dayTextField.getText();
         cronFragments[ScheduledTaskBasicInterval.EVERY_MONTH.ordinal()] = monthTextField.getText();
-        cronFragments[ScheduledTaskBasicInterval.EVERY_WEEK.ordinal()] = weekdayTextField.getText();
+
+        String dayOfweekExpression;
+        if(!mondayCheckBox.isSelected() &&
+                !tuesdayCheckBox.isSelected() &&
+                !wednesdayCheckBox.isSelected() &&
+                !thursdayCheckBox.isSelected() &&
+                !fridayCheckBox.isSelected() &&
+                !saturdayCheckBox.isSelected() &&
+                !sundayCheckBox.isSelected()){
+            dayOfweekExpression = "?";
+        }else{
+            StringBuilder weekBuilder = new StringBuilder();
+            // (1 = Sunday)
+            weekBuilder.append(sundayCheckBox.isSelected()?"1,":"");
+            weekBuilder.append(mondayCheckBox.isSelected()?"2,":"");
+            weekBuilder.append(tuesdayCheckBox.isSelected()?"3,":"");
+            weekBuilder.append(wednesdayCheckBox.isSelected()?"4,":"");
+            weekBuilder.append(thursdayCheckBox.isSelected()?"5,":"");
+            weekBuilder.append(fridayCheckBox.isSelected()?"6,":"");
+            weekBuilder.append(saturdayCheckBox.isSelected()?"7,":"");
+            dayOfweekExpression = weekBuilder.toString().substring(0,weekBuilder.toString().length()-1);
+        }
 
         StringBuilder builder = new StringBuilder();
         builder.append(cronFragments[ScheduledTaskBasicInterval.EVERY_SECOND.ordinal()])
@@ -433,7 +471,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 .append(" ").append(cronFragments[ScheduledTaskBasicInterval.EVERY_HOUR.ordinal()])
                 .append(" ").append(cronFragments[ScheduledTaskBasicInterval.EVERY_DAY.ordinal()])
                 .append(" ").append(cronFragments[ScheduledTaskBasicInterval.EVERY_MONTH.ordinal()])
-                .append(" ").append(cronFragments[ScheduledTaskBasicInterval.EVERY_WEEK.ordinal()]);
+                .append(" ").append(dayOfweekExpression);
 
         return builder.toString();
     }
@@ -447,19 +485,21 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     }
 
     protected enum ScheduledTaskBasicInterval {
-        EVERY_SECOND("Every Second", "* * * * * ?"),
-        EVERY_MINUTE("Every Minute", "0 * * * * ?"),
-        EVERY_HOUR("Every Hour", "0 0 * * * ?"),
-        EVERY_DAY("Every Day", "0 0 0 * * ?"),
-        EVERY_MONTH("Every Month", "0 0 0 1 * ?"),
-        EVERY_WEEK("Every Week", "0 0 0 ? * 1");
+        EVERY_SECOND("Second", "{0} * * * * ?", "\\*\\/\\d+ \\* \\* \\* \\* \\?"),
+        EVERY_MINUTE("Minute", "0 {0} * * * ?", "0 \\*\\/\\d+ \\* \\* \\* \\?"),
+        EVERY_HOUR("Hour", "0 0 {0} * * ?", "0 0 \\*\\/\\d+ \\* \\* \\?"),
+        EVERY_DAY("Day", "0 0 0 {0} * ?", "0 0 0 \\*\\/\\d+ \\* \\?"),
+        EVERY_MONTH("Month", "0 0 0 1 {0} ?", "0 0 0 1 \\*\\/\\d+ \\?"),
+        EVERY_WEEK("Week", "0 0 0 ? * {0}", "0 0 0 ? \\* \\*\\/\\d+");
 
         private final String name;
         private final String cronExpression;
+        private final String cronRegex;
 
-        private ScheduledTaskBasicInterval(String name, String cronExpression) {
+        private ScheduledTaskBasicInterval(String name, String cronExpression, String cronRegex) {
             this.name = name;
             this.cronExpression = cronExpression;
+            this.cronRegex = cronRegex;
         }
 
         @Override
@@ -467,9 +507,20 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             return name;
         }
 
-        public String getCronExpression() {
-            return cronExpression;
+        public String getCronExpression(int interval) {
+            return MessageFormat.format(cronExpression, "*/"+interval);
         }
 
+        public boolean matches(String cronExpression) {
+            return cronExpression.matches(cronRegex);
+        }
+
+        public String getInterval(String cronExpression) {
+            String[] fragments = cronExpression.split(" ");
+
+            Matcher matcher = Pattern.compile("\\d+").matcher(fragments[ordinal()]);
+            matcher.find();
+            return matcher.group();
+        }
     }
 }

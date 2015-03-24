@@ -22,16 +22,20 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class ScheduledTaskWindow extends JDialog {
-    private static final Logger logger = Logger.getLogger( ScheduledTaskWindow.class.getName() );
+    private static final Logger logger = Logger.getLogger(ScheduledTaskWindow.class.getName());
+
+    private static final ResourceBundle resources = ResourceBundle.getBundle(ScheduledTaskWindow.class.getName());
 
     private JPanel mainPanel;
     private SimpleTableModel<ScheduledTask> scheduledPoliciesTableModel;
@@ -48,7 +52,7 @@ public class ScheduledTaskWindow extends JDialog {
 
 
     public ScheduledTaskWindow(Frame parent) {
-        super(parent, "Scheduled Task", true);
+        super(parent, resources.getString("dialog.title"), true);
 
         scheduledTaskAdmin = Registry.getDefault().getScheduledTaskAdmin();
         policyAdmin = Registry.getDefault().getPolicyAdmin();
@@ -67,7 +71,7 @@ public class ScheduledTaskWindow extends JDialog {
         editButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(scheduledPoliciesTable.getSelectedRow() > -1) {
+                if (scheduledPoliciesTable.getSelectedRow() > -1) {
                     doEdit(scheduledPoliciesTableModel.getRowObject(rowSorter.convertRowIndexToModel(scheduledPoliciesTable.getSelectedRow())));
                 }
             }
@@ -76,7 +80,7 @@ public class ScheduledTaskWindow extends JDialog {
         cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(scheduledPoliciesTable.getSelectedRow() > -1) {
+                if (scheduledPoliciesTable.getSelectedRow() > -1) {
                     doClone(scheduledPoliciesTableModel.getRowObject(rowSorter.convertRowIndexToModel(scheduledPoliciesTable.getSelectedRow())));
                 }
             }
@@ -95,7 +99,7 @@ public class ScheduledTaskWindow extends JDialog {
             }
         });
 
-        final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
             @Override
             protected void run() {
                 enableDisableComponents();
@@ -105,7 +109,7 @@ public class ScheduledTaskWindow extends JDialog {
         scheduledPoliciesTableModel = buildResourcesTableModel();
         scheduledPoliciesTable.setModel(scheduledPoliciesTableModel);
         scheduledPoliciesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        scheduledPoliciesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
+        scheduledPoliciesTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         rowSorter = new TableRowSorter<>(scheduledPoliciesTableModel);
         scheduledPoliciesTable.setRowSorter(rowSorter);
 
@@ -120,99 +124,99 @@ public class ScheduledTaskWindow extends JDialog {
 
     private void enableDisableComponents() {
         final int[] selectedRows = scheduledPoliciesTable.getSelectedRows();
-        editButton.setEnabled( selectedRows.length == 1 );
-        cloneButton.setEnabled( selectedRows.length == 1 );
-        removeButton.setEnabled( selectedRows.length > 0 );
+        editButton.setEnabled(selectedRows.length == 1);
+        cloneButton.setEnabled(selectedRows.length == 1);
+        removeButton.setEnabled(selectedRows.length > 0);
     }
 
     private SimpleTableModel<ScheduledTask> buildResourcesTableModel() {
         return TableUtil.configureTable(
                 scheduledPoliciesTable,
-                TableUtil.column("Job Type", 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.type"), 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(final ScheduledTask scheduledTask) {
-                        if(scheduledTask != null){
-                            switch(scheduledTask.getJobType()) {
-                            case RECURRING:
-                                return "Recurring";
-                            case ONE_TIME:
-                                return "Once";
-                            default:
-                                return "";
+                        if (scheduledTask != null) {
+                            switch (scheduledTask.getJobType()) {
+                                case RECURRING:
+                                    return resources.getString("column.type.recurring");
+                                case ONE_TIME:
+                                    return resources.getString("column.type.once");
+                                default:
+                                    return "";
                             }
                         }
                         return "";
                     }
                 }, String.class),
-                TableUtil.column("Job Name", 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.name"), 80, 110, 180, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(final ScheduledTask scheduledTask) {
-                        if(scheduledTask != null){
+                        if (scheduledTask != null) {
                             return scheduledTask.getName();
                         }
                         return "";
                     }
                 }, String.class),
-                TableUtil.column("Policy Name", 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.policy"), 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
-                        if(scheduledTask != null){
+                        if (scheduledTask != null) {
                             return getPolicyName(scheduledTask);
                         }
                         return "";
                     }
                 }, String.class),
-                TableUtil.column("Schedule", 140, 160, 180, new Functions.Unary<String, ScheduledTask>() {
+                TableUtil.column(resources.getString("column.schedule"), 140, 160, 180, new Functions.Unary<String, ScheduledTask>() {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
-                        if(scheduledTask != null){
-                            switch(scheduledTask.getJobType()) {
-                            case RECURRING:
-                                return scheduledTask.getCronExpression();
-                            case ONE_TIME:
-                                DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss");
-                                return dateFormat.format(scheduledTask.getExecutionDate());
-                            default:
-                                return "";
+                        if (scheduledTask != null) {
+                            switch (scheduledTask.getJobType()) {
+                                case RECURRING:
+                                    return scheduledTask.getCronExpression();
+                                case ONE_TIME:
+                                    DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss");
+                                    return dateFormat.format(scheduledTask.getExecutionDate());
+                                default:
+                                    return "";
                             }
                         }
                         return "";
                     }
                 }, String.class),
-                TableUtil.column("Node", 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
-                            @Override
-                            public String call(ScheduledTask scheduledTask) {
-                                if(scheduledTask != null){
-                                    return scheduledTask.isUseOneNode()?"One":"All";
-                                }
-                                return "";
-                            }
-                        }, String.class),
-                TableUtil.column("Status", 80, 100, 180, new Functions.Unary<String, ScheduledTask>() {
-                        @Override
-                        public String call(ScheduledTask scheduledTask) {
-                            if(scheduledTask != null){
-                                switch(scheduledTask.getJobStatus()){
-                                    case SCHEDULED:
-                                        return "Scheduled";
-                                    case DISABLED:
-                                        return "Disabled";
-                                    case COMPLETED:
-                                        return "Completed";
-                                    default:
-                                        return "";
-                                }
-                            }
-                            return "";
+                TableUtil.column(resources.getString("column.node"), 80, 260, 10000, new Functions.Unary<String, ScheduledTask>() {
+                    @Override
+                    public String call(ScheduledTask scheduledTask) {
+                        if (scheduledTask != null) {
+                            return scheduledTask.isUseOneNode() ? resources.getString("column.node.one") : resources.getString("column.node.all");
                         }
-                    }, String.class)
+                        return "";
+                    }
+                }, String.class),
+                TableUtil.column(resources.getString("column.status"), 80, 100, 180, new Functions.Unary<String, ScheduledTask>() {
+                    @Override
+                    public String call(ScheduledTask scheduledTask) {
+                        if (scheduledTask != null) {
+                            switch (scheduledTask.getJobStatus()) {
+                                case SCHEDULED:
+                                    return resources.getString("column.status.scheduled");
+                                case DISABLED:
+                                    return resources.getString("column.status.disabled");
+                                case COMPLETED:
+                                    return resources.getString("column.status.completed");
+                                default:
+                                    return "";
+                            }
+                        }
+                        return "";
+                    }
+                }, String.class)
         );
     }
 
     private String getPolicyName(ScheduledTask scheduledTask) {
         try {
             Policy policy = policyAdmin.findPolicyByPrimaryKey(scheduledTask.getPolicyGoid());
-            if(policy!=null){
+            if (policy != null) {
                 return policy.getName();
             }
         } catch (FindException e) {
@@ -225,11 +229,11 @@ public class ScheduledTaskWindow extends JDialog {
         try {
             List<ScheduledTask> documentHeaders = new ArrayList<ScheduledTask>();
             Collection<ScheduledTask> scheduledServiceJobEntities = scheduledTaskAdmin.getAllScheduledTasks();
-            if(scheduledServiceJobEntities != null){
+            if (scheduledServiceJobEntities != null) {
                 documentHeaders.addAll(scheduledServiceJobEntities);
             }
             scheduledPoliciesTableModel.setRows(documentHeaders);
-        } catch(FindException fe) {
+        } catch (FindException fe) {
             logger.log(Level.WARNING, "Failed to load scheduled tasks.");
         }
     }
@@ -241,65 +245,50 @@ public class ScheduledTaskWindow extends JDialog {
     }
 
     private void doEdit(final ScheduledTask scheduledTask) {
-        displayPropertiesDialog( new ScheduledTaskPropertiesDialog(this,scheduledTask));
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask));
     }
 
     private void doClone(final ScheduledTask scheduledTask) {
         ScheduledTask scheduledTaskCopy = new ScheduledTask();
         scheduledTaskCopy.copyFrom(scheduledTask);
         EntityUtils.updateCopy(scheduledTaskCopy);
-        displayPropertiesDialog( new ScheduledTaskPropertiesDialog(this,scheduledTaskCopy));
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTaskCopy));
     }
-    
-    private void displayPropertiesDialog(final ScheduledTaskPropertiesDialog dialog){
+
+    private void displayPropertiesDialog(final ScheduledTaskPropertiesDialog dialog) {
         DialogDisplayer.display(dialog, new Runnable() {
             @Override
             public void run() {
-                if(dialog.isConfirmed()) {
-                        loadDocuments();
+                if (dialog.isConfirmed()) {
+                    loadDocuments();
                 }
             }
         });
-   }
+    }
 
     private void doRemove() {
-        if(scheduledPoliciesTable.getSelectedRowCount() == 0) {
+        if (scheduledPoliciesTable.getSelectedRowCount() == 0) {
             return;
         }
 
-        java.util.List<ScheduledTask> entries = new ArrayList<ScheduledTask>(scheduledPoliciesTable.getSelectedRowCount());
-        for(int row : scheduledPoliciesTable.getSelectedRows()) {
-            entries.add(scheduledPoliciesTableModel.getRowObject(rowSorter.convertRowIndexToModel(row)));
-        }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Are you sure you want to remove the selected scheduled policy jobs?");
-        for(ScheduledTask entry : entries) {
-            sb.append("\n").append("Policy: " + getPolicyName(entry))
-                    .append(" with schedule: " + (entry.getJobType().equals(JobType.ONE_TIME) ? entry.getExecutionDate() : entry.getCronExpression()));
-        }
-        if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
-                sb.toString(),
-                "Confirm Scheduled Task(s) Deletion",
-                JOptionPane.YES_NO_OPTION))
-        {
-            boolean needUpdate = false;
-            for(ScheduledTask entry : entries) {
-                try {
-                    scheduledTaskAdmin.deleteScheduledTask(entry);
-                    needUpdate = true;
-                } catch(DeleteException de) {
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "Unable to delete the following scheduled task.\n" + entry.getName(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
+        ScheduledTask task = scheduledPoliciesTableModel.getRowObject(rowSorter.convertRowIndexToModel(scheduledPoliciesTable.getSelectedRow()));
+        Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
+        int result = JOptionPane.showOptionDialog(
+                this, MessageFormat.format(resources.getString("confirmation.remove.connection"), task.getName()),
+                resources.getString("dialog.title.remove.connection"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
-            if(needUpdate) {
-               loadDocuments();
+        if (result == 0) {
+            try {
+                scheduledTaskAdmin.deleteScheduledTask(task);
+            } catch (DeleteException de) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        MessageFormat.format(resources.getString("error.delete.message"), task.getName()),
+                        resources.getString("error.dialog.title"),
+                        JOptionPane.ERROR_MESSAGE);
             }
+            loadDocuments();
         }
     }
 
