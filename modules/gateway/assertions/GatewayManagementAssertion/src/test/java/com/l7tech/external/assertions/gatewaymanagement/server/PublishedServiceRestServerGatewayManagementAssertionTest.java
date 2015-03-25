@@ -18,7 +18,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManagerStub;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
@@ -50,13 +49,14 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
     protected ServiceResourceFactory serviceResourceFactory;
 
     private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
+    private Folder testFolder;
 
     @Before
     public void before() throws Exception {
         super.before();
 
         FolderManagerStub folderManager = applicationContext.getBean("folderManager", FolderManagerStub.class);
-        Folder testFolder = new Folder("Test Folder", null);
+        testFolder = new Folder("Test Folder", null);
         folderManager.save(testFolder);
 
         policyVersionManager = applicationContext.getBean("policyVersionManager", PolicyVersionManager.class);
@@ -218,5 +218,84 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals("Status resource not found:", responseGet.getStatus(), HttpStatus.SC_NOT_FOUND);
 
+    }
+
+    @Test
+    public void getServiceWithPropertiesTest() throws Exception {
+        PublishedService publishedServiceWithProperties = new PublishedService();
+        publishedServiceWithProperties.setName("ServiceWithProperties");
+        publishedServiceWithProperties.setRoutingUri("/test");
+        publishedServiceWithProperties.setPolicy(new Policy(PolicyType.INCLUDE_FRAGMENT, "Service1 Policy", POLICY, false));
+        publishedServiceWithProperties.setFolder(testFolder);
+        publishedServiceWithProperties.setSoap(false);
+        publishedServiceWithProperties.getPolicy().setGuid(UUID.randomUUID().toString());
+        publishedServiceWithProperties.putProperty("myPropertyKey", "myPropertyValue");
+        serviceManager.save(publishedServiceWithProperties);
+        policyVersionManager.checkpointPolicy(publishedServiceWithProperties.getPolicy(), true, true);
+
+        try {
+
+            RestResponse response = processRequest(basePath + publishedServiceWithProperties.getId(), HttpMethod.GET, null, "");
+            logger.info(response.toString());
+            Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+            final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+            Item item = MarshallingUtils.unmarshal(Item.class, source);
+            ServiceMO result = (ServiceMO) item.getContent();
+
+            assertEquals("Service identifier:", publishedServiceWithProperties.getId(), result.getId());
+            assertEquals("Service name:", publishedServiceWithProperties.getName(), result.getServiceDetail().getName());
+            assertEquals("Service folder:", publishedServiceWithProperties.getFolder().getId(), result.getServiceDetail().getFolderId());
+            assertEquals("Service myPropertyKey property:", "myPropertyValue", result.getServiceDetail().getProperties().get("property.myPropertyKey"));
+        } finally {
+            serviceManager.delete(publishedServiceWithProperties);
+        }
+    }
+
+    @Test
+    public void createEntityWithPropertyTest() throws Exception {
+
+        ServiceMO createObject = serviceResourceFactory.asResource(new ServiceResourceFactory.ServiceEntityBag(publishedService, Collections.<ServiceDocument>emptySet()));
+        createObject.setId(null);
+        createObject.getServiceDetail().setName("Create Service Name");
+        createObject.getServiceDetail().getProperties().put("property.myCreatedProperty", "myCreatedPropertyValue");
+        Document request = ManagedObjectFactory.write(createObject);
+        RestResponse response = processRequest(basePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+        PublishedService createdEntity = serviceManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
+
+        assertEquals("Service name:", createObject.getServiceDetail().getName(), createdEntity.getName());
+        assertEquals("Service folder:", createObject.getServiceDetail().getFolderId(), createdEntity.getFolder().getId());
+        assertEquals("Service folder:", "myCreatedPropertyValue", createdEntity.getProperty("myCreatedProperty"));
+    }
+
+    @Test
+    public void updateEntityPropertiesTest() throws Exception {
+
+        // get
+        RestResponse responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
+        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
+        ServiceMO entityGot = (ServiceMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
+
+        // update
+        entityGot.getServiceDetail().setName("Updated Service Name");
+        entityGot.getServiceDetail().getProperties().put("property.myUpdatedProperty", "myUpdatedPropertyValue");
+        RestResponse response = processRequest(basePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
+
+        // check entity
+        PublishedService updatedEntity = serviceManager.findByPrimaryKey(new Goid(entityGot.getId()));
+
+        assertEquals("Service identifier:", updatedEntity.getId(), entityGot.getId());
+        assertEquals("Service name:", updatedEntity.getName(), entityGot.getServiceDetail().getName());
+        assertEquals("Service folder:", updatedEntity.getFolder().getId(), entityGot.getServiceDetail().getFolderId());
+        assertEquals("Service folder:", "myUpdatedPropertyValue", updatedEntity.getProperty("myUpdatedProperty"));
     }
 }

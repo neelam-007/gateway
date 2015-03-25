@@ -38,7 +38,7 @@
 		<m:properties__version.versions.plugin>1.3.1</m:properties__version.versions.plugin>
 		<m:dependency.management__org.apache.mina__mina-transport-apr__version>2.0.7</m:dependency.management__org.apache.mina__mina-transport-apr__version>
 		<m:properties__version.xbean.spring>3.11.1</m:properties__version.xbean.spring>
-		<m:dependency.management__junit__junit__version>4.10</m:dependency.management__junit__junit__version>
+		<m:dependency.management__junit__junit__version>4.12</m:dependency.management__junit__junit__version>
 		<m:properties__version.api.plugin>3.0.4</m:properties__version.api.plugin>
 		<m:properties__version.jxr.plugin>2.3</m:properties__version.jxr.plugin>
 		<m:properties__version.remote.resources.plugin>1.3</m:properties__version.remote.resources.plugin>
@@ -98,7 +98,7 @@
 		<m:properties__version.surfire.report.plugin>2.12.2</m:properties__version.surfire.report.plugin>
 		<m:properties__version.jboss.javassist>3.7.ga</m:properties__version.jboss.javassist>
 		<m:dependency.management__org.springframework__spring__exclusion_1>commons-logging__commons-logging</m:dependency.management__org.springframework__spring__exclusion_1>
-		<m:properties__version.junit>4.10</m:properties__version.junit>
+		<m:properties__version.junit>4.12</m:properties__version.junit>
 		<m:properties__version.easymock>2.5.2</m:properties__version.easymock>
 		<m:properties__version.build.helper.plugin>1.7</m:properties__version.build.helper.plugin>
 		<m:dependency.management__junit__junit__scope>test</m:dependency.management__junit__junit__scope>
@@ -134,7 +134,7 @@
 		<dependency org="org.easymock" name="easymockclassextension" rev="2.5.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.6" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 		<override org="org.easymock" module="easymock" matcher="exact" rev="2.5.2"/>
 		<override org="org.apache.mina" module="mina-integration-beans" matcher="exact" rev="2.0.7"/>
 		<override org="org.slf4j" module="jcl-over-slf4j" matcher="exact" rev="1.6.6"/>
@@ -143,7 +143,7 @@
 		<override org="ognl" module="ognl" matcher="exact" rev="3.0.5"/>
 		<override org="org.easymock" module="easymockclassextension" matcher="exact" rev="2.5.2"/>
 		<override org="org.apache.mina" module="mina-transport-apr" matcher="exact" rev="2.0.7"/>
-		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
 		<override org="com.agical.rmock" module="rmock" matcher="exact" rev="2.0.2"/>
 		<override org="org.apache.mina" module="mina-core" matcher="exact" rev="2.0.7"/>
 		<override org="org.apache.xbean" module="xbean-spring" matcher="exact" rev="3.11.1"/>
@@ -163,7 +163,7 @@
 		<override org="org.springframework" module="spring" matcher="exact" rev="2.5.6.SEC03"/>
 		<override org="org.springframework" module="spring" matcher="exact" rev="2.5.6.SEC03"/>
 		<override org="org.springframework" module="spring" matcher="exact" rev="2.5.6.SEC03"/>
-		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
 		<override org="org.springframework" module="spring" matcher="exact" rev="2.5.6.SEC03"/>
 		<override org="jboss" module="javassist" matcher="exact" rev="3.7.ga"/>
 		<override org="org.apache.mina" module="mina-filter-compression" matcher="exact" rev="2.0.7"/>

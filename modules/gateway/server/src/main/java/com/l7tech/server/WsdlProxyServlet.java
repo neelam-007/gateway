@@ -123,6 +123,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        res.setContentType( "text/plain; charset=UTF-8" );
         PublishedService ps;
         try {
             ps = getRequestedService(req);
@@ -248,14 +249,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (services.size() == 1) {
             return services.iterator().next();
         } else if ( services.isEmpty() ) {
-            final StringBuilder builder = new StringBuilder();
-            builder.append( "Parameters " );
-            if ( uriparam != null ) builder.append( "uri='" ).append( uriparam ).append( "', " );
-            if ( nsparam != null ) builder.append( "ns='" ).append( nsparam ).append( "', " );
-            if ( sactionparam != null ) builder.append( "soapaction='" ).append( sactionparam ).append( "', " );
-            builder.setLength( builder.length()-2 ); // trim last ", "
-            builder.append( " did not resolve any service." );
-            throw new FindException( builder.toString() );
+            throw new FindException( "Parameters did not resolve to any service." );
         }
 
         // could not narrow it down enough -> throw AmbiguousServiceException

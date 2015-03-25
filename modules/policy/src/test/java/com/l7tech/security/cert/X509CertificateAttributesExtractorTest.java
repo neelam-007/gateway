@@ -86,6 +86,8 @@ public class X509CertificateAttributesExtractorTest {
         assertEquals( "Subject DN", "CN=Sergiy Velichkevych, OU=CA, O=UGRID, O=people, DC=ugrid, DC=org", cae.getAttributeValue("subject") );
         assertEquals( "Subject Alternative Name Email", "serg@ugrid.org", cae.getAttributeValue("subjectAltNameEmail") );
         assertEquals( "Subject Public Key Algorithm", "RSA", cae.getAttributeValue("subjectPublicKeyAlgorithm") );
+        assertEquals( "Subject Public Key", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9jffvsc52drXepK2INEkvG+IVHXd17cO/8mdZfSOevKhMmVtdAdhD8bTtj1WIo3PpRugEQavcKCEfJqSq75e3PD+eVjjaT6K85NtXHfNsATZKpVrKUnV2bsxUuG8jrIIjLJbFHX8W+5zmVT4XlNaujY3KfOH1zM4WFQngwtsjtwIDAQAB",
+                cae.getAttributeValue( "subjectPublicKey" ) );
 
         for ( String name : cae.getSuppotedAttributeNames() ) {
             CertificateAttribute attribute = CertificateAttribute.fromString(name);

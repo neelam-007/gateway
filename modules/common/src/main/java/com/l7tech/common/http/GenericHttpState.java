@@ -13,6 +13,10 @@ public class GenericHttpState {
     public GenericHttpState() {
     }
 
+    public GenericHttpState(Object state) {
+        this.state = state;
+    }
+
     public Object getStateObject() {
         return state;
     }

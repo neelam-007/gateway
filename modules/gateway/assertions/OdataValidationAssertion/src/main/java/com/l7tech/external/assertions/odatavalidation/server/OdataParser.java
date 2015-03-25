@@ -1,16 +1,19 @@
 package com.l7tech.external.assertions.odatavalidation.server;
 
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.edm.EdmException;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
 import org.apache.olingo.odata2.api.ep.EntityProviderReadProperties;
 import org.apache.olingo.odata2.api.ep.entry.ODataEntry;
-import org.apache.olingo.odata2.api.uri.*;
+import org.apache.olingo.odata2.api.uri.PathSegment;
+import org.apache.olingo.odata2.api.uri.UriNotMatchingException;
+import org.apache.olingo.odata2.api.uri.UriParser;
+import org.apache.olingo.odata2.api.uri.UriSyntaxException;
 import org.apache.olingo.odata2.core.ODataPathSegmentImpl;
 import org.apache.olingo.odata2.core.PathInfoImpl;
+import org.apache.olingo.odata2.core.servlet.RestUtil;
 import org.apache.olingo.odata2.core.uri.UriInfoImpl;
 import org.apache.olingo.odata2.core.uri.UriParserImpl;
 
@@ -36,42 +39,34 @@ public class OdataParser {
         }
 
         UriInfoImpl uriInfo;
-        Map<String, String> queryParameters;
+        Map<String, List<String>> queryParametersMap;
+
+        /**
+         * This manual check is required because the string emptiness check is missing from the Olingo library method
+         * See Apache JIRA issue OLINGO-591
+         */
+        if (null == queryString || queryString.isEmpty()) {
+            queryParametersMap = new HashMap<>();
+        } else {
+            queryParametersMap = RestUtil.extractAllQueryParameters(queryString);
+        }
 
         List<PathSegment> odataSegments = extractPathSegments(resourcePath);
 
         try {
-            queryParameters = extractQueryParameters(queryString);
-
-            uriInfo = (UriInfoImpl) uriParser.parse(odataSegments, queryParameters);
-        } catch (UriSyntaxException | EdmException | UriNotMatchingException | IOException e) {
+            uriInfo = (UriInfoImpl) uriParser.parseAll(odataSegments, queryParametersMap);
+        } catch (UriSyntaxException | EdmException | UriNotMatchingException e) {
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);
         }
-
-        boolean foundExpand = false;
-        boolean foundSelect = false;
 
         String expandExpression = null;
         String selectExpression = null;
 
-        for (String parameter : queryParameters.keySet()) {
-            switch (parameter) {
-                case "$expand":
-                    expandExpression = queryParameters.get(parameter);
-                    foundExpand = true;
-                    break;
-                case "$select":
-                    selectExpression = queryParameters.get(parameter);
-                    foundSelect = true;
-                    break;
-                default:
-                    continue;
-            }
+        if (!uriInfo.getExpand().isEmpty())
+            expandExpression = queryParametersMap.get("$expand").get(0);
 
-            if (foundExpand && foundSelect) {
-                break;
-            }
-        }
+        if (!uriInfo.getSelect().isEmpty())
+            selectExpression = queryParametersMap.get("$select").get(0);
 
         return new OdataRequestInfo(uriInfo, expandExpression, selectExpression, odataSegments);
     }
@@ -122,11 +117,11 @@ public class OdataParser {
                 case URI50A:    // count of link to single entity
                 case URI50B:    // count of links to multiple entities
                     if (!"GET".equals(method)) {
-                        throw new OdataParsingException("HTTP method '" + method + 
+                        throw new OdataParsingException("HTTP method '" + method +
                                 "' invalid for the requested resource.");
                     }
 
-                // function imports - payload can't be validated
+                    // function imports - payload can't be validated
                 case URI10:     // function import returning single entity
                 case URI11:     // function import returning collection of complex type
                 case URI12:     // function import returning single complex property
@@ -138,7 +133,7 @@ public class OdataParser {
                 case URI9:
                     throw new OdataParsingException("Parsing of Batch Requests not supported.");
 
-                // create an entity
+                    // create an entity
                 case URI1:
                 case URI6B:
                     switch (method) {
@@ -311,34 +306,6 @@ public class OdataParser {
         pathInfo.setPrecedingPathSegment(Collections.<PathSegment>emptyList());
 
         return odataSegments;
-    }
-
-    protected static Map<String, String> extractQueryParameters(final String queryString) throws IOException, OdataParsingException {
-        Map<String, String> queryParametersMap = new HashMap<>();
-
-        if (queryString != null && !queryString.isEmpty()) {
-            // split the query string on ampersands (before decoding, to avoid problems with ampersands in values)
-            String[] queryParameters = queryString.split("\\u0026");
-
-            for (String param : queryParameters) {
-                String decodedParam = HexUtils.urlDecode(param);
-
-                int indexOfEqualsSign = decodedParam.indexOf("=");
-
-                if (indexOfEqualsSign < 0) {
-                    if(queryParametersMap.put(decodedParam, "") != null) {
-                        throw new OdataParsingException("Duplicate query parameter");
-                    }
-                } else {
-                    if(queryParametersMap.put(decodedParam.substring(0, indexOfEqualsSign),
-                            decodedParam.substring(indexOfEqualsSign + 1)) != null) {
-                        throw new OdataParsingException("Duplicate query parameter");
-                    }
-                }
-            }
-        }
-
-        return queryParametersMap;
     }
 
     public static class OdataParsingException extends Exception {

@@ -761,6 +761,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         if(params.getState()==null) {
             // use per client http state (standard behaviour)
             httpState = new BasicHttpContext();
+            params.setState(new GenericHttpState(httpState));
         }
         else {
             // use caller managed http state scoping

@@ -37,6 +37,11 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
     private SecurityZoneManager securityZoneManager;
     private ResourceEntryManager resourceEntryManager;
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
+
     @Before
     public void before() throws Exception {
         super.before();
@@ -60,11 +65,6 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
         resourceEntryManager.save(resourceEntry);
 
 
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
     }
 
     @After
@@ -91,10 +91,10 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(2,dependencyAnalysisMO.getDependencies().size());
@@ -136,10 +136,10 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>(){
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(0,dependencyAnalysisMO.getDependencies().size());

@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -285,9 +284,6 @@ public class ServerOdataValidationAssertionTest {
                     "}}";
 
     private final ContentTypeHeader ODATA_JSON = ContentTypeHeader.create("application/json");
-
-    @Inject
-    private ApplicationContext applicationContext;
 
     @Inject
     private StashManagerFactory stashManagerFactory;

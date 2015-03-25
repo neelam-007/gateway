@@ -194,7 +194,12 @@ public class PolicyDetail extends ElementExtensionSupport {
         /**
          * Identity Provider Policy
          */
-        @XmlEnumValue("Identity Provider") ID_PROVIDER
+        @XmlEnumValue("Identity Provider") ID_PROVIDER,
+
+        /**
+         * Policy-backed Service Operation
+         */
+        @XmlEnumValue("Service Operation") SERVICE_OPERATION
 
     }
 

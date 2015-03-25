@@ -6,11 +6,14 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
@@ -27,6 +30,7 @@ import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -44,22 +48,19 @@ import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_RANDOM;
  */
 public class DefaultAssertionDependencyProcessor<A extends Assertion> extends DefaultDependencyProcessor<A> implements DependencyProcessor<A> {
 
+    private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
-
     @Inject
     private ResourceEntryManager resourceEntryManager;
-
     @Inject
     private SecurePasswordManager securePasswordManager;
-
     @Inject
     private CustomKeyValueStoreManager customKeyValueStoreManager;
-
     @Inject
     private CustomAssertionsRegistrar customAssertionRegistrar;
-
-    private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
+    @Inject
+    private DefaultKey defaultKey;
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -146,7 +147,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         //Add any private keys to the assertion dependencies
         if (assertion instanceof PrivateKeyable) {
             final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
-            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
+            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && !privateKeyable.isUsesDefaultKeyStore()) {
                 SsgKeyHeader keyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
                 try {
                     final Entity keyEntry = loadEntity(keyHeader);
@@ -160,6 +161,16 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
 
                 } catch ( FindException e){
                     dependencies.add(new BrokenDependency(keyHeader));
+                }
+            }else if((!(privateKeyable instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.isUsesDefaultKeyStore()){
+                // get the default key
+                try {
+                    SsgKeyEntry keyEntry = defaultKey.getSslInfo();
+                    final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, EntityHeaderUtils.fromEntity(keyEntry)));
+                    if (dependency != null && !dependencies.contains(dependency))
+                        dependencies.add(dependency);
+                } catch ( IOException e){
+                    throw new CannotRetrieveDependenciesException(assertion.getClass(),e.getMessage());
                 }
             }
         }

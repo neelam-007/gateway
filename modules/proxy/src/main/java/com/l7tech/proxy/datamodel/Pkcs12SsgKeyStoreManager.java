@@ -329,6 +329,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             }
             FileInputStream fis = null;
             try {
+                log.info( "Attempting to open trust store from " + ssg.getTrustStoreFile().getAbsolutePath() );
                 fis = FileUtils.loadFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
                 trustStore.load(fis, TRUSTSTORE_PASSWORD);
             } catch (Exception e) {

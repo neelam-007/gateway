@@ -6,8 +6,6 @@ import java.io.Serializable;
 /**
  * Enum that specifies which type of id provider.
  *
- * <b>Note:</b> The numeric IDs assigned to these types are also used explicitly in SSG.hbm.xml at the moment.
- *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>

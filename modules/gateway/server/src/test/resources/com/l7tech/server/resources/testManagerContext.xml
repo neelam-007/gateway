@@ -135,4 +135,38 @@
     </bean>
 
     <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl" parent="hibernateBean"/>
+
+    <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="serviceAliasManager"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerImpl" parent="hibernateBean"/>
+
+    <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="serviceMetricsManager" class="com.l7tech.server.service.ServiceMetricsManagerImpl">
+        <constructor-arg ref="clusterNodeId"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="messageContextMappingKeyManager" class="com.l7tech.server.mapping.MessageContextMappingKeyManagerImpl"
+          parent="hibernateBean"/>
+    <bean id="messageContextMappingValueManager" class="com.l7tech.server.mapping.MessageContextMappingValueManagerImpl"
+          parent="hibernateBean"/>
+    <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerImpl">
+        <constructor-arg ref="messageContextMappingKeyManager"/>
+        <constructor-arg ref="messageContextMappingValueManager"/>
+    </bean>
+
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+        <constructor-arg ref="identityProviderConfigManager"/>
+    </bean>
+
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
 </beans>

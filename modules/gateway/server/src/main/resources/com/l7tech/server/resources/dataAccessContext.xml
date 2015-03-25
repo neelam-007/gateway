@@ -77,12 +77,6 @@
                 <entry key="layer7-goid-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredGOIDGenerator"/>
             </map>
         </constructor-arg>
-        <property name="mappingResources">
-            <list>
-                <value>com/l7tech/server/resources/SSG.hbm.xml</value>
-                <value>com/l7tech/server/resources/audit.hbm.xml</value>
-            </list>
-        </property>
         <property name="annotatedClasses">
             <list>
                 <!-- Transports -->
@@ -197,6 +191,43 @@
 
                 <!-- Cassandra Connection -->
                 <value>com.l7tech.gateway.common.cassandra.CassandraConnection</value>
+
+                <value>com.l7tech.gateway.common.workqueue.WorkQueue</value>
+
+                <!-- Scheduled Task -->
+                <value>com.l7tech.gateway.common.task.ScheduledTask</value>
+
+                <!-- Service Entity -->
+                <value>com.l7tech.gateway.common.service.PublishedService</value>
+
+                <!-- Policy Entity -->
+                <value>com.l7tech.policy.Policy</value>
+                <value>com.l7tech.policy.PolicyVersion</value>
+
+                <!-- Aliases-->
+                <value>com.l7tech.gateway.common.service.PublishedServiceAlias</value>
+                <value>com.l7tech.policy.PolicyAlias</value>
+
+                <!-- Folder Entity -->
+                <value>com.l7tech.objectmodel.folder.Folder</value>
+
+                <!-- Sample Message Entity -->
+                <value>com.l7tech.gateway.common.service.SampleMessage</value>
+
+                <!-- Service Document Entity -->
+                <value>com.l7tech.gateway.common.service.ServiceDocument</value>
+
+                <!-- Metrics Entities -->
+                <value>com.l7tech.gateway.common.service.MetricsBin</value>
+                <value>com.l7tech.gateway.common.service.MetricsBinDetail</value>
+                <value>com.l7tech.gateway.common.cluster.ServiceUsage</value>
+
+                <!-- Audit Entities -->
+                <value>com.l7tech.gateway.common.audit.AuditDetail</value>
+                <value>com.l7tech.gateway.common.audit.AuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

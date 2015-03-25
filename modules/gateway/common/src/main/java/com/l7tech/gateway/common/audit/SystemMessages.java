@@ -30,6 +30,8 @@ public class SystemMessages extends Messages {
 
     public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out");
 
+    public static final M BACKGROUND_TASK_RUNTIME_ERROR = m(2018, Level.WARNING, "Background task {0} failed with error ''{1}''");
+
     /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_NOT_CONFIGURED = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled).");
     /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_START          = m(2021, Level.INFO, "Starting FTP server: ''{0}''");
     /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_STOP           = m(2022, Level.INFO, "Stopping FTP server: ''{0}''");
@@ -173,6 +175,9 @@ public class SystemMessages extends Messages {
     public static final M LICENSE_NOT_YET_VALID     = m(2503, Level.WARNING, "License {0} is not yet valid.");
     public static final M LICENSE_INVALID_PRODUCT   = m(2504, Level.WARNING, "License {0} is not valid for this product.");
     public static final M LICENSE_INVALID_ISSUER    = m(2505, Level.WARNING, "License {0} is not signed by a trusted issuer.");
+
+    // Scheduler
+    public static final M SCHEDULER_POLICY_ERROR    = m(2520, Level.WARNING, "Error in scheduled task policy execution: {0}");
 
     // MAX -                                      m(2999
 }

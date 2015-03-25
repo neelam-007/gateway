@@ -76,7 +76,6 @@
         <dependency name="GenerateOAuthSignatureBaseStringAssertion" rev="latest.integration" conf="module"/>
         <dependency name="ValidateNonSoapSamlAssertion" rev="latest.integration" conf="module"/>
         <dependency name="AdaptiveLoadBalancingAssertion" rev="latest.integration" conf="module"/>
-        <dependency name="OAuthInstallerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="PolicyBundleInstallerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="ValidateCertificateAssertion" rev="latest.integration" conf="module"/>
         <dependency name="GenericIdentityManagementServiceAssertion" rev="latest.integration" conf="module"/>

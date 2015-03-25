@@ -71,9 +71,13 @@ public enum EntityType implements Comparable<EntityType> {
 
     SSG_ACTIVE_CONNECTOR("Polling Listener", true, true),
 
+    SCHEDULED_TASK("Scheduled Task", true, true),
+
     LOG_SINK("Log Sink", true, true),
 
     SERVICE_TEMPLATE("Service Template", true, true),
+
+    WORK_QUEUE("Work Queue", true, true),
 
     TRUSTED_ESM("Trusted ESM", true, true),
     TRUSTED_ESM_USER("Trusted ESM User", true, true),

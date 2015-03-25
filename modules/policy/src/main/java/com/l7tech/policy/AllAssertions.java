@@ -116,6 +116,7 @@ public class AllAssertions {
         new LookupTrustedCertificateAssertion(),
         new MapValueAssertion(),
         new RaiseErrorAssertion(),
+        new InvokePolicyAsyncAssertion(),
     };
 
 
@@ -218,5 +219,6 @@ public class AllAssertions {
         new LookupTrustedCertificateAssertion(),
         new MapValueAssertion(),
         new RaiseErrorAssertion(),
+        new InvokePolicyAsyncAssertion(),
     };
 }

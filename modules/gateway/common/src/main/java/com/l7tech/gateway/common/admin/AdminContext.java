@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
@@ -16,6 +17,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 
 public interface AdminContext {
 
@@ -148,10 +150,22 @@ public interface AdminContext {
     EmailAdmin getEmailAdmin() throws SecurityException;
 
     /**
+     * @return the scheduled task admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    ScheduledTaskAdmin getScheduledTaskAdmin() throws SecurityException;
+
+    /**
      * @return the UDDI Registry admin interface implementation.
      * @throws SecurityException on security error accessing the interface
      */
     UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException;
+
+    /**
+     * @return the work queue admin interface implementation
+     * @throws SecurityException on security error accessing the interface
+     */
+    WorkQueueManagerAdmin getWorkQueueAdmin() throws SecurityException;
 
     /**
      * Get the administrative interface of the given type.

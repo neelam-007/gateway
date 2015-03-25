@@ -2,7 +2,14 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import org.hibernate.annotations.Parameter;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -21,6 +28,9 @@ import java.util.logging.Logger;
  *
  * @author rmak
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="service_metrics")
 public class MetricsBin extends PersistentEntityImp implements Comparable {
     public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
@@ -323,18 +333,23 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     public MetricsBin() {
     }
 
+    @Column(name="nodeid")
     public String getClusterNodeId() {
         return _clusterNodeId;
     }
 
+    @Column(name="published_service_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getServiceGoid() {
         return _serviceGoid;
     }
 
+    @Column(name="resolution")
     public int getResolution() {
         return _resolution;
     }
 
+    @Transient
     public String getResolutionName() {
         return describeResolution(_resolution);
     }
@@ -353,16 +368,19 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     /** @return the nominal period interval (in milliseconds) */
+    @Column(name="interval_size")
     public int getInterval() {
         return _interval;
     }
 
     /** @return the nominal period start time (as UTC milliseconds from epoch) */
+    @Column(name="period_start")
     public long getPeriodStart() {
         return _periodStart;
     }
 
     /** @return the nominal period end time (as UTC milliseconds from epoch) */
+    @Transient
     public long getPeriodEnd() {
         return _periodStart + _interval;
     }
@@ -372,6 +390,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *
      * @return start time as UTC milliseconds from epoch
      */
+    @Column(name="start_time")
     public long getStartTime() {
         return _startTime;
     }
@@ -383,43 +402,52 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *
      * @return end time as UTC milliseconds from epoch
      */
+    @Column(name="end_time")
     public long getEndTime() {
         return _endTime;
     }
 
+    @Column(name="attempted")
     public int getNumAttemptedRequest() {
         return _numAttemptedRequest;
     }
 
+    @Column(name="authorized")
     public int getNumAuthorizedRequest() {
         return _numAuthorizedRequest;
     }
 
+    @Column(name="completed")
     public int getNumCompletedRequest() {
         return _numCompletedRequest;
     }
 
     /** @return number of successful requests in this bin */
+    @Transient
     public int getNumSuccess() {
         return _numCompletedRequest;
     }
 
     /** @return number of requests with policy violations in this bin */
+    @Transient
     public int getNumPolicyViolation() {
         return _numAttemptedRequest - _numAuthorizedRequest;
     }
 
     /** @return number of requests with routing failures in this bin */
+    @Transient
     public int getNumRoutingFailure() {
         return _numAuthorizedRequest - _numCompletedRequest;
     }
 
     /** @return number of all requests in this bin */
+    @Transient
     public int getNumTotal() {
         return _numAttemptedRequest;
     }
 
     /** @return the rate of attempted requests (in messages per second) based on actual time interval */
+    @Transient
     public double getActualAttemptedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -432,6 +460,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     /** @return the rate of authorized requests (in messages per second) based on actual time interval */
+    @Transient
     public double getActualAuthorizedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -444,6 +473,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     /** @return the rate of completed requests (in messages per second) based on actual time interval */
+    @Transient
     public double getActualCompletedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -456,55 +486,65 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     /** @return the rate of attempted requests (in messages per second) based on nominal period */
+    @Transient
     public double getNominalAttemptedRate() {
         int interval = _interval;
         return 1000.0 * _numAttemptedRequest / interval;
     }
 
     /** @return the rate of authorized requests (in messages per second) based on nominal period */
+    @Transient
     public double getNominalAuthorizedRate() {
         int interval = _interval;
         return 1000.0 * _numAuthorizedRequest / interval;
     }
 
     /** @return the rate of completed requests (in messages per second) based on nominal period */
+    @Transient
     public double getNominalCompletedRate() {
         int interval = _interval;
         return 1000.0 * _numCompletedRequest / interval;
     }
 
     /** @return the rate of successful requests (in requests per second) based on nominal period */
+    @Transient
     public double getNominalSuccessRate() {
         return 1000.0 * getNumSuccess() / _interval;
     }
 
     /** @return the rate of requests with policy violation (in requests per second) based on nominal period */
+    @Transient
     public double getNominalPolicyViolationRate() {
         return 1000.0 * getNumPolicyViolation() / _interval;
     }
 
     /** @return the rate of requests with routing failure (in requests per second) based on nominal period */
+    @Transient
     public double getNominalRoutingFailureRate() {
         return 1000.0 * getNumRoutingFailure() / _interval;
     }
 
     /** @return the rate of all requests (in requests per second) based on nominal period */
+    @Transient
     public double getNominalTotalRate() {
         return 1000.0 * getNumTotal() / _interval;
     }
 
     /** @return the minimum frontend response time (in milliseconds) of all attempted requests;
      *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
+    @Column(name="front_min")
     public Integer getMinFrontendResponseTime() {
         return _minFrontendResponseTime;
     }
 
     /** @return the maximum frontend response time (in milliseconds) of all attempted requests;
      *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
+    @Column(name="front_max")
     public Integer getMaxFrontendResponseTime() {
         return _maxFrontendResponseTime;
     }
 
+    @Column(name="front_sum")
     public long getSumFrontendResponseTime() {
         return _sumFrontendResponseTime;
     }
@@ -513,11 +553,14 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         this.serviceState = serviceState;
     }
 
+    @Column(name="service_state")
+    @Type(type = "com.l7tech.server.util.GenericEnumUserType", parameters = {@Parameter(name = "enumClass", value = "com.l7tech.gateway.common.service.ServiceState")})
     public ServiceState getServiceState() {
         return serviceState;
     }
 
     /** @return the average frontend response time (in milliseconds) of all attempted requests */
+    @Transient
     public double getAverageFrontendResponseTime() {
         int numAttemptedRequest = _numAttemptedRequest;
         long sumFrontendResponseTime = _sumFrontendResponseTime;
@@ -530,21 +573,25 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** @return the minimum backend response time (in milliseconds) of all completed requests;
      *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
+    @Column(name="back_min")
     public Integer getMinBackendResponseTime() {
         return _minBackendResponseTime;
     }
 
     /** @return the maximum backend response time (in milliseconds) of all completed requests;
      *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
+    @Column(name="back_max")
     public Integer getMaxBackendResponseTime() {
         return _maxBackendResponseTime;
     }
 
+    @Column(name="back_sum")
     public long getSumBackendResponseTime() {
         return _sumBackendResponseTime;
     }
 
     /** @return the average backend response time (in milliseconds) of all completed requests */
+    @Transient
     public double getAverageBackendResponseTime() {
         int numCompletedRequest = _numCompletedRequest;
         long sumBackendResponseTime = _sumBackendResponseTime;

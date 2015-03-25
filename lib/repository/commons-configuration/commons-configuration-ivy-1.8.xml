@@ -47,7 +47,7 @@
 		<dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="hsqldb" name="hsqldb" rev="1.7.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="dbunit" name="dbunit" rev="2.1" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="junit-addons" name="junit-addons" rev="1.4" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="mockobjects" name="mockobjects-core" rev="0.09" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="mockobjects" name="mockobjects-jdk1.4-j2ee1.3" rev="0.09" force="true" conf="test->runtime(*),master(*)"/>

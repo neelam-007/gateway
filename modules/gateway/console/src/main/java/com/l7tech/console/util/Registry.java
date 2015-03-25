@@ -13,11 +13,13 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
+import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
@@ -278,6 +280,20 @@ public abstract class Registry {
     public abstract CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin();
 
     /**
+     * @return the work queue manager
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    abstract public WorkQueueManagerAdmin getWorkQueueManagerAdmin();
+
+    /**
+     * Get the {@link ScheduledTaskAdmin} interface implementation.
+     *
+     * @return the scheduled task admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    public abstract ScheduledTaskAdmin getScheduledTaskAdmin();
+
+    /**
      * Get an EntityNameResolver which can be used to determine display names for entities and/or headers.
      *
      * @return an EntityNameResolver which can be used to determine display names for entities and/or headers.
@@ -488,6 +504,16 @@ public abstract class Registry {
 
         @Override
         public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public ScheduledTaskAdmin getScheduledTaskAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public WorkQueueManagerAdmin getWorkQueueManagerAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

@@ -96,7 +96,7 @@
         <constructor-arg ref="clientCertManager"/>
     </bean>
     <bean id="securityContextFinder" class="com.l7tech.external.assertions.xmppassertion.server.MockSecurityContextFinder" />
-    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" >
+    <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager" >
         <!-- ClusterPropertyManager -->
         <constructor-arg ref="clusterPropertyManager"/>
     </bean>

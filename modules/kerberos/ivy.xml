@@ -16,7 +16,7 @@
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
             <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
 	    <dependency org="org.jaaslounge" name="jaaslounge-decoding" rev="0.1.3" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.10" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.12" force="true" conf="test"/>
         <dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
     </dependencies>

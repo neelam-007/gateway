@@ -4,7 +4,9 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.security.rbac.RbacAttribute;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -15,6 +17,9 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * Represents a service/policy folder.
  */
 @XmlRootElement
+@Entity
+@Proxy(lazy=false)
+@Table(name="folder")
 public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     private Folder parentFolder;
     private static final int MAX_NESTING_CHECK_LEVEL = 1000;
@@ -70,6 +75,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     @RbacAttribute
     @Size(min=1,max=128)
     @Override
+    @Transient
     public String getName() {
         return super.getName();
     }
@@ -77,6 +83,8 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     @NotNull
     @Override
     @Migration(mapName = NONE, mapValue = NONE)
+    @ManyToOne
+    @JoinColumn(name="parent_folder_goid")
     public Folder getFolder() {
         return parentFolder;
     }
@@ -98,6 +106,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     /**
      * @return true if this folder is an ancestor of the targetFolder, false otherwise
      */
+    @Transient
     public boolean isParentOf(Folder targetFolder) {
         return getNesting(targetFolder) > 0;
     }
@@ -107,6 +116,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
      *          0 if the current folder is the same as the maybeChild folder, or
      *          the nesting level between the maybeChild folder and the current folder, if the current folder is an ancestor of the maybeChild folder
      */
+    @Transient
     public int getNesting(Folder maybeChild) {
         if (maybeChild == null)
             return -1;
@@ -124,6 +134,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
         return -1;
     }
 
+    @Transient
     public String getPath() {
         if (parentFolder == null) return "/";
 

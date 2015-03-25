@@ -212,7 +212,7 @@
 		<m:properties__cxf.hazelcast.version>1.9.4</m:properties__cxf.hazelcast.version>
 		<m:properties__cxf.rhino.bundle.version>1.7R2_3</m:properties__cxf.rhino.bundle.version>
 		<m:properties__cxf.server.launcher.vmargs>-ea</m:properties__cxf.server.launcher.vmargs>
-		<m:dependency.management__junit__junit__version>4.10</m:dependency.management__junit__junit__version>
+		<m:dependency.management__junit__junit__version>4.12</m:dependency.management__junit__junit__version>
 		<m:dependency.management__httpunit__httpunit__exclusion_2>xerces__xmlParserAPIs</m:dependency.management__httpunit__httpunit__exclusion_2>
 		<m:dependency.management__httpunit__httpunit__exclusion_3>jtidy__jtidy</m:dependency.management__httpunit__httpunit__exclusion_3>
 		<m:properties__cxf.servicemix.specs.version>1.9.0</m:properties__cxf.servicemix.specs.version>
@@ -353,7 +353,7 @@
 	<dependencies>
 		<dependency org="org.apache.aries.blueprint" name="org.apache.aries.blueprint.core" rev="0.3.1" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="4.2.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
-		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.easymock" name="easymock" rev="3.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-testutils" rev="2.5.11" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="xml-resolver" name="xml-resolver" rev="1.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
@@ -504,7 +504,7 @@
 		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
 		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
 		<override org="org.codehaus.woodstox" module="woodstox-core-asl" matcher="exact" rev="4.2.0"/>
-		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
 		<override org="org.codehaus.woodstox" module="woodstox-core-asl" matcher="exact" rev="4.2.0"/>
 		<override org="asm" module="asm" matcher="exact" rev="3.3.1"/>
 		<override org="org.springframework" module="spring-test" matcher="exact" rev="3.0.6.RELEASE"/>
@@ -540,7 +540,7 @@
 		<override org="wsdl4j" module="wsdl4j" matcher="exact" rev="1.6.3"/>
 		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
 		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>
-		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
 		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
 		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
 		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>

@@ -151,16 +151,22 @@ public class ManagerAppletFilter implements Filter {
         HttpServletResponse hresp = (HttpServletResponse)resp;
         HttpServletRequest hreq = (HttpServletRequest)req;
 
+        Auditor auditor = new Auditor(this, applicationContext, logger);
+
+        int status = 500;
+
+        if (!hreq.isSecure()) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
+            hresp.setStatus(status = 404);
+            hresp.sendError(404, "Request must arrive over SSL.");
+            return;
+        }
+
         if ( hreq.getCharacterEncoding() == null ) {
             hreq.setCharacterEncoding( "UTF-8" );
         }
 
-        hresp.setHeader( "X-Frame-Options", "DENY" );
-
-        Auditor auditor = new Auditor(this, applicationContext, logger);
-
         PolicyEnforcementContext context = null;
-        int status = 500;
         boolean passed = false;
         try {
             // Check if there is a ADMIN_APPLET permission.
@@ -196,6 +202,10 @@ public class ManagerAppletFilter implements Filter {
                 return;
             }
 
+            if ( ! hreq.getRequestURI().startsWith("/ssg/webadmin/help") ) {
+                hresp.setHeader("X-Frame-Options", "DENY");
+            }
+
             if (authResult != AuthResult.OK) {
                 if (isClasspathResourceRequest(hreq)) {
                     hresp.setStatus(403);
@@ -206,13 +216,6 @@ public class ManagerAppletFilter implements Filter {
                 } else {
                     filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
                 }
-                return;
-            }
-
-            if (!hreq.isSecure()) {
-                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
-                hresp.setStatus(status = 404);
-                hresp.sendError(404, "Request must arrive over SSL.");
                 return;
             }
 

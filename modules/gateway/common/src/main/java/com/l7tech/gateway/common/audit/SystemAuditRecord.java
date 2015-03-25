@@ -8,7 +8,11 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.rbac.RbacAttribute;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -19,6 +23,9 @@ import java.io.IOException;
  *
  * @author alex
  */
+@Entity
+@Proxy(lazy=false)
+@Table(name="audit_system")
 public class SystemAuditRecord extends AuditRecord {
 
     private static final long serialVersionUID = 1907760870061310459L;
@@ -53,6 +60,7 @@ public class SystemAuditRecord extends AuditRecord {
      * @see com.l7tech.gateway.common.Component#getId()
      */
     @RbacAttribute
+    @Column(name="component_id")
     public int getComponentId() {
         return componentId;
     }
@@ -66,6 +74,7 @@ public class SystemAuditRecord extends AuditRecord {
      * @return a short description of the action that was happening when the event was generated
      */
     @RbacAttribute
+    @Column(name="action")
     public String getAction() {
         return action;
     }

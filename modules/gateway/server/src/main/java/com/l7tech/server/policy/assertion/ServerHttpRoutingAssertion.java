@@ -50,6 +50,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
@@ -62,6 +63,12 @@ import java.util.zip.GZIPInputStream;
  * </ul>
  */
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
+
+    public static final String PROP_ENABLE_THREAD_LOCAL_STATE = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.threadLocalState.enable";
+    public static final boolean ENABLE_THREAD_LOCAL_STATE = SyspropUtil.getBoolean( PROP_ENABLE_THREAD_LOCAL_STATE, false );
+
+    public static final String PROP_ENABLE_STATE_POOL = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.statePool.enable";
+    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, false );
 
     //Define the failed reason code.
     public static final int HOST_NOT_FOUND = -1; // The Host can not be reached
@@ -88,6 +95,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final URL protectedServiceUrl;
     private boolean customURLList;
     private SSLContext sslContext = null;
+
+    // Only used if thread local state enabled (bad hack, prevents connections from being shared across threads)
+    private final ThreadLocal<Object> localState;
+
+    // Only used if state pool enabled (hack, reuses an existing state if there is one, otherwise makes a new one)
+    private final Queue<Object> statePool = new ConcurrentLinkedQueue<>();
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) throws PolicyAssertionException {
         super(assertion, ctx);
@@ -228,6 +241,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             maxFailoverAttempts = 1;
         }
 
+        localState = new ThreadLocal<>();
         varNames = assertion.getVariablesUsed();
     }
 
@@ -633,7 +647,28 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
+            if ( ENABLE_STATE_POOL ) {
+                Object pooledState = statePool.poll();
+                if ( pooledState != null ) {
+                    routedRequestParams.setState( new GenericHttpState( pooledState ) );
+                }
+            } else if ( ENABLE_THREAD_LOCAL_STATE && localState.get() != null ) {
+                routedRequestParams.setState(new GenericHttpState(localState.get()));
+            }
+
             routedRequest = httpClient.createRequest(method, routedRequestParams);
+
+            if ( ENABLE_STATE_POOL && routedRequestParams.getState() != null ) {
+                final Object returnState = routedRequestParams.getState().getStateObject();
+                context.runOnClose( new Runnable() {
+                    @Override
+                    public void run() {
+                        statePool.offer( returnState );
+                    }
+                } );
+            } else if ( ENABLE_THREAD_LOCAL_STATE && routedRequestParams.getState() != null ) {
+                localState.set(routedRequestParams.getState().getStateObject());
+            }
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
                     handleRequestParameters(context, requestMessage, assertion.getRequestParamRules(), getAudit(), vars, varNames);

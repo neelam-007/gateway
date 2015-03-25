@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
@@ -12,6 +13,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
@@ -31,6 +33,7 @@ import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +58,7 @@ public class MqNativeModuleLoadListener {
     private static MqNativeExternalReferenceFactory externalReferenceFactory;
 
     private static DependencyProcessorRegistry<SsgActiveConnector> processorRegistry;
+    private static DefaultKey defaultKey;
 
     /**
      * This is a complete list of cluster-wide properties used by the MQNative module.
@@ -141,35 +145,7 @@ public class MqNativeModuleLoadListener {
             // Register ExternalReferenceFactory
             registerExternalReferenceFactory(context);
 
-            // Probe for MQ native class files - not installed by default on the Gateway
-            try {
-                Class.forName("com.ibm.mq.MQException", false, MqNativeModuleLoadListener.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                // Cannot proceed with initialization
-                logger.fine("MQ Native Jars are not installed. Cannot load MQ Native Module.");
-                return;
-            }
-
-            // Instantiate the MQ native boot process
-            ThreadPoolBean pool = new ThreadPoolBean(
-                    ServerConfig.getInstance(),
-                    "MQ Native Listener Pool",
-                    MQ_LISTENER_THREAD_LIMIT_PROPERTY,
-                    MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY,
-                    25);
-            final Injector injector = context.getBean( "injector", Injector.class );
-            mqNativeListenerModule = new MqNativeModule(pool);
-            injector.inject( mqNativeListenerModule );
-            mqNativeListenerModule.setApplicationContext(context);
-
-            // Start the module
-            try {
-                // Start the MqBootProcess which will start the listeners
-                logger.log(Level.INFO, "MQNativeConnector MqNativeModuleLoadListener - starting MqNativeModuleLoadListener...");
-                mqNativeListenerModule.start();
-            } catch (LifecycleException e) {
-                logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
-            }
+            defaultKey = context.getBean( "defaultKey", DefaultKey.class );
 
             // Get the ssg connector dependency processor registry to add the mq connector dependency processor
             //noinspection unchecked
@@ -187,7 +163,17 @@ public class MqNativeModuleLoadListener {
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
                         String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
                         String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
-                        dependentEntities.addAll(finder.retrieveObjects(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEY_ENTRY, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
+                        if(keyAlias != null && keyStoreId != null ) {
+                            dependentEntities.addAll(finder.retrieveObjects(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEY_ENTRY, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
+                        } else {
+                            final SsgKeyEntry defaultSslKeyEntry;
+                            try {
+                                defaultSslKeyEntry = defaultKey.getSslInfo();
+                            } catch (IOException e) {
+                                throw new FindException("Could got get Default ssl Key", e);
+                            }
+                            dependentEntities.addAll(finder.retrieveObjects(defaultSslKeyEntry, com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY));
+                        }
                     }
                     return finder.getDependenciesFromObjects(activeConnector, finder, dependentEntities);
                 }
@@ -236,6 +222,36 @@ public class MqNativeModuleLoadListener {
                     return srcId;
                 }
             });
+
+            // Probe for MQ native class files - not installed by default on the Gateway
+            try {
+                Class.forName("com.ibm.mq.MQException", false, MqNativeModuleLoadListener.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                // Cannot proceed with initialization
+                logger.fine("MQ Native Jars are not installed. Cannot load MQ Native Module.");
+                return;
+            }
+
+            // Instantiate the MQ native boot process
+            ThreadPoolBean pool = new ThreadPoolBean(
+                    ServerConfig.getInstance(),
+                    "MQ Native Listener Pool",
+                    MQ_LISTENER_THREAD_LIMIT_PROPERTY,
+                    MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY,
+                    25);
+            final Injector injector = context.getBean( "injector", Injector.class );
+            mqNativeListenerModule = new MqNativeModule(pool);
+            injector.inject( mqNativeListenerModule );
+            mqNativeListenerModule.setApplicationContext(context);
+
+            // Start the module
+            try {
+                // Start the MqBootProcess which will start the listeners
+                logger.log(Level.INFO, "MQNativeConnector MqNativeModuleLoadListener - starting MqNativeModuleLoadListener...");
+                mqNativeListenerModule.start();
+            } catch (LifecycleException e) {
+                logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 

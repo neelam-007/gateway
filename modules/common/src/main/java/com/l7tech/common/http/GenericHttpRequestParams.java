@@ -119,6 +119,10 @@ public class GenericHttpRequestParams {
         return state;
     }
 
+    public void setState(GenericHttpState state) {
+        this.state = state;
+    }
+
     /**
      * Get the target URL of this request.
      *

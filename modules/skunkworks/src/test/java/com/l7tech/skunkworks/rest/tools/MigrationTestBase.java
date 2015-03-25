@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 @Ignore
 public abstract class MigrationTestBase {
+    //This is used to see if the test is run from a test suite. If it is it will not perform its before and after class actions
+    private static boolean runInSuite = false;
     @Rule
     public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
@@ -36,7 +38,7 @@ public abstract class MigrationTestBase {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        if (!IgnoreOnDaily.isDaily()) {
+        if (!IgnoreOnDaily.isDaily() && !runInSuite) {
             final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<Exception>());
             final CountDownLatch enviromentsStarted = new CountDownLatch(2);
             new Thread(new Runnable() {
@@ -70,11 +72,13 @@ public abstract class MigrationTestBase {
 
     @AfterClass
     public static void afterClass() {
-        if (sourceEnvironment != null) {
-            sourceEnvironment.close();
-        }
-        if (targetEnvironment != null) {
-            targetEnvironment.close();
+        if(!runInSuite) {
+            if (sourceEnvironment != null) {
+                sourceEnvironment.close();
+            }
+            if (targetEnvironment != null) {
+                targetEnvironment.close();
+            }
         }
     }
 
@@ -118,7 +122,7 @@ public abstract class MigrationTestBase {
         for (Mapping mapping : reverseMappingsList) {
             if(mapping.getErrorType() == null && !Mapping.ActionTaken.Ignored.equals(mapping.getActionTaken()) && !Mapping.ActionTaken.Deleted.equals(mapping.getActionTaken()) &&
                     ( mapping.getTargetId().length()!=16 || !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId())))
-                    && mapping.getActionTaken()== Mapping.ActionTaken.CreatedNew){
+                    && mapping.getActionTaken()== Mapping.ActionTaken.CreatedNew && !EntityType.ASSERTION_ACCESS.name().equals(mapping.getType())){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
@@ -245,5 +249,9 @@ public abstract class MigrationTestBase {
         } else {
             Assert.fail("Did not find the first (" + firstId + ") or second (" + secondId + ") id in the mapping list: " + message);
         }
+    }
+
+    public static void runInSuite(boolean runInSuite) {
+        MigrationTestBase.runInSuite = runInSuite;
     }
 }

@@ -8,8 +8,11 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlTransient;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -31,6 +34,10 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author alex
  */
+@Entity
+@Proxy(lazy=false)
+@Inheritance(strategy = InheritanceType.JOINED)
+@Table(name="audit_main")
 public abstract class AuditRecord implements NamedEntity, PersistentEntity, Serializable {
     private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
     private static AtomicLong globalSequenceNumber = new AtomicLong(0L);
@@ -109,6 +116,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return String the logging level.
      */
     @RbacAttribute
+    @Column(name="audit_level")
     public String getStrLvl() {
         return getLevel().getName();
     }
@@ -123,6 +131,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         setLevel(Level.parse(arg));
     }
 
+    @Column(name="nodeid")
     public String getNodeId() {
         return nodeId;
     }
@@ -138,6 +147,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.nodeId = nodeId;
     }
 
+    @Column(name="time")
     public long getMillis() {
         return millis;
     }
@@ -150,6 +160,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.millis = millis;
     }
 
+    @Column(name="message")
     public String getMessage() {
         return message;
     }
@@ -159,16 +170,23 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     }
 
     @Override
+    @Transient
     public String getId() {
         return Goid.toString(goid);
     }
 
     @Override
+    @Id
+    @Column(name="goid", nullable=false, updatable=false)
+    @GenericGenerator( name="generator", strategy = "layer7-goid-generator" )
+    @GeneratedValue( generator = "generator")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getGoid() {
         return goid;
     }
 
     @Override
+    @Transient
     public int getVersion() {
         return version;
     }
@@ -178,6 +196,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return the IP address of the entity that caused this AuditRecord to be created, or null if there isn't one.
      */
     @RbacAttribute
+    @Column(name="ip_address")
     public String getIpAddress() {
         return ipAddress;
     }
@@ -187,6 +206,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return the name of the service or system affected by event that generated the AuditRecord
      */
     @Override
+    @Column(name="name")
     public String getName() {
         return name;
     }
@@ -195,6 +215,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the list of {@link AuditDetail} records associated with this audit record.
      * @return the list of {@link AuditDetail} records associated with this audit record.
      */
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="auditRecord")
     public Set<AuditDetail> getDetails() {
         return details;
     }
@@ -203,6 +224,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the list of @{link AuditDetail} records associated with this audit record, ordered by ordinal
      * @return
      */
+    @Transient
     public AuditDetail[] getDetailsInOrder() {
         final List<AuditDetail> details = new ArrayList<AuditDetail>(getDetails());
         Collections.sort(details, COMPARE_BY_ORDINAL);
@@ -225,6 +247,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.name = name;
     }
 
+    @Transient
     public Level getLevel() {
         return level;
     }
@@ -237,6 +260,8 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      */
+    @Column(name = "provider_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getIdentityProviderGoid() {
         return identityProviderGoid;
     }
@@ -246,6 +271,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return the name or login of the user who was authenticated, or null if the request was not authenticated.
      */
     @RbacAttribute
+    @Column(name = "user_name")
     public String getUserName() {
         return userName;
     }
@@ -255,6 +281,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
     @RbacAttribute
+    @Column(name = "user_id")
     public String getUserId() {
         return userId;
     }
@@ -304,6 +331,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return RequestId the id of the request associated with the log.
      * @see RequestId
      */
+    @Transient
     public RequestId getReqId() {
         if (requestId == null || requestId.length() <= 0) return null;
         return new RequestId(requestId);
@@ -313,6 +341,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Get the requestId of the log record. For serialization purposes only.
      * @return String the request Id.
      */
+    @Transient
     public String getStrRequestId() {
         return requestId;
     }
@@ -337,6 +366,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      *
      * @return The transient sequence number.
      */
+    @Transient
     public long getSequenceNumber() {
         return sequenceNumber;
     }
@@ -440,6 +470,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         return baos.toString();
     }
 
+    @Column(name = "signature")
     public String getSignature() {
         return signature;
     }

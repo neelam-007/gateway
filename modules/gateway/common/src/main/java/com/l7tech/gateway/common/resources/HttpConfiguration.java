@@ -330,7 +330,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
     @Override
     @Transient
     public SsgKeyHeader[] getPrivateKeysUsed() {
-        if(getTlsKeystoreAlias() != null) {
+        if(Option.CUSTOM.equals(getTlsKeyUse()) && getTlsKeystoreAlias() != null) {
             return new SsgKeyHeader[]{new SsgKeyHeader(getTlsKeystoreGoid() + ":" + getTlsKeystoreAlias(), getTlsKeystoreGoid(), getTlsKeystoreAlias(), getTlsKeystoreAlias())};
         }
         return null;

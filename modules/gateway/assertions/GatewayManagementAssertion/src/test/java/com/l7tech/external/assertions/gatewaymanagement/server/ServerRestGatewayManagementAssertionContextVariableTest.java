@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -17,7 +18,6 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.util.CollectionUtils;
 import org.junit.*;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
@@ -42,23 +42,26 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
 
     @InjectMocks
     protected SecurePasswordResourceFactory securePasswordResourceFactory;
+    @InjectMocks
+    private ServerRESTGatewayManagementAssertion restManagementAssertionContextVariable;
 
     @Before
     public void before() throws Exception {
+        // configure the assertion
+        RESTGatewayManagementAssertion restmanAssertion = new RESTGatewayManagementAssertion();
+        restmanAssertion.setOtherTargetMessageVariable(targetVariable);
+        restmanAssertion.setTarget(TargetMessageType.OTHER);
+
+        RestAgent restAgent = assertionContext.getBean("restAgent", RestAgent.class);
+        restManagementAssertionContextVariable = new ServerRESTGatewayManagementAssertion(restmanAssertion, assertionContext, stashManagerFactory, restAgent);
+
+        super.before();
         securePasswordManagerStub = applicationContext.getBean("securePasswordManager", SecurePasswordManagerStub.class);
         securePassword.setDescription("Test password");
         securePassword.setName("Test password name");
         securePassword.setType(SecurePassword.SecurePasswordType.PASSWORD);
         securePassword.setEncodedPassword(securePasswordManagerStub.encryptPassword("password".toCharArray()));
         securePasswordManagerStub.save(securePassword);
-
-        // configure the assertion
-        RESTGatewayManagementAssertion restmanAssertion = new RESTGatewayManagementAssertion();
-        restmanAssertion.setOtherTargetMessageVariable(targetVariable);
-        restmanAssertion.setTarget(TargetMessageType.OTHER);
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(restmanAssertion, applicationContext, "testGatewayManagementContext.xml");
-
-        MockitoAnnotations.initMocks(this);
     }
 
     @After
@@ -84,7 +87,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath+ securePassword.getId())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
-        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables, restManagementAssertionContextVariable);
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -111,7 +114,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.POST.getProtocolName()).map();
 
-        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables, restManagementAssertionContextVariable);
 
         logger.log(Level.INFO, response.getBody());
 
@@ -138,7 +141,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.PUT.getProtocolName()).map();
 
 
-        RestResponse response = processRequest(securePasswordBasePath + goid.toString(),"", HttpMethod.PUT, null,"",contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath + goid.toString(),"", HttpMethod.PUT, null,"",contextVariables, restManagementAssertionContextVariable);
 
         assertEquals("Created Secure Password goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -156,7 +159,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put(targetVariable,new Message())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath + securePassword.getId())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
-        RestResponse responseGet = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables);
+        RestResponse responseGet = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables, restManagementAssertionContextVariable);
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         StoredPasswordMO entityGot = (StoredPasswordMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
@@ -171,7 +174,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
 
         // update
         entityGot.setName("Updated name");
-        RestResponse response = processRequest(securePasswordBasePath + entityGot.getId(),null, HttpMethod.PUT, null, "", contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath + entityGot.getId(),null, HttpMethod.PUT, null, "", contextVariables, restManagementAssertionContextVariable);
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created secure password goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -193,7 +196,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.DELETE.getProtocolName()).map();
 
 
-        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.DELETE, null, "", contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.DELETE, null, "", contextVariables, restManagementAssertionContextVariable);
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -209,7 +212,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
-        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.GET, null, "", contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.GET, null, "", contextVariables, restManagementAssertionContextVariable);
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -234,7 +237,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put(targetVariable,var)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
-        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables, restManagementAssertionContextVariable);
 
         Assert.assertEquals(AssertionStatus.FAILED, response.getAssertionStatus());
     }
@@ -254,7 +257,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                         .put(targetVariable,var)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath).map();
 
-        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
+        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables, restManagementAssertionContextVariable);
 
         Assert.assertEquals(AssertionStatus.FAILED, response.getAssertionStatus());
     }

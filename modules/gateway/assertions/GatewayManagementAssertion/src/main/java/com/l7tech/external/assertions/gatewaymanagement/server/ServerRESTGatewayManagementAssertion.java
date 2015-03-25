@@ -18,9 +18,9 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
@@ -53,23 +53,21 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
     public ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
                                                 final ApplicationContext applicationContext) throws PolicyAssertionException {
-        this(assertion, applicationContext, "gatewayManagementContext.xml");
-    }
-
-    protected ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
-                                                   final ApplicationContext context,
-                                                   final String assertionContextResource) throws PolicyAssertionException {
         super(assertion);
-        assertionContext = buildContext(context, assertionContextResource);
+        this.assertionContext = GatewayManagementApplicationContext.getAssertionApplicationContext(applicationContext);
         restAgent = assertionContext.getBean("restAgent", RestAgent.class);
     }
 
-    private static ApplicationContext buildContext(final ApplicationContext context,
-                                                   final String assertionContextResource) {
-        return new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, context);
+    // for tests to provide custom assertion context, this context will not be shared
+    ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
+                                         final ApplicationContext assertionContext,
+                                         final StashManagerFactory stashManagerFactory,
+                                         final RestAgent restAgent) {
+        super(assertion);
+        this.assertionContext = assertionContext;
+        this.stashManagerFactory = stashManagerFactory;
+        this.restAgent = restAgent;
     }
-
-    protected ApplicationContext getAssertionContext(){return assertionContext;}
 
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
@@ -81,6 +79,10 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
         try {
             final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+            if ( null == user )
+                throw new IllegalStateException( "An authenticated user is required but not present" );
+            if ( null == context.getService() && !assertion.getTarget().equals(TargetMessageType.OTHER) )
+                throw new IllegalStateException( "A resolved service is required unless a message variable is targeted" );
 
             Map<String, Object> varMap =  context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
@@ -88,7 +90,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             final URI uri = getURI(context, varMap, message, assertion);
             final URI baseUri = getBaseURI(context, message, assertion);
             //The service ID should always be a constant.
-            final String serviceId = context.getService().getId();
+            final String serviceId = context.getService() == null ? null : context.getService().getId();
             final HttpMethod action = getAction(varMap, message, assertion);
             final String contentType = getContentType( message);
 
@@ -122,8 +124,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
             for(String header : managementResponse.getHeaders().keySet()){
-                //Don't set the content-length header. See bug: SSG-7824
-                if(header.equals("Content-Length")) {
+                //Don't set the content-length or content-type header. See bug: SSG-7824, SSG-10685
+                if(header.equals("Content-Length") || header.equalsIgnoreCase("Content-Type")) {
                     continue;
                 }
                 for(Object value : managementResponse.getHeaders().get(header)){
@@ -193,7 +195,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             String baseURI = context.getService().getRoutingUri();
             Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
             Matcher matcher = pattern.matcher(requestURI);
-            if (matcher.matches())
+            if ( matcher.matches() && matcher.groupCount() > 0 )
                 uri = matcher.group(1);
             else
                 throw new IllegalArgumentException("Could not calculate uri");
@@ -234,7 +236,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             errorRseponse = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         }
 
-        getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, exception.getMessage());
+        getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[] { exception.getMessage() }, ExceptionUtils.getDebugException( exception ) );
         return errorRseponse;
     }
 }

@@ -2,7 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ListenPortMO;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
@@ -11,7 +14,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.transport.SsgConnectorManagerStub;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.stream.StreamSource;
@@ -31,15 +33,12 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
     private static final SsgConnector ssgConnector = new SsgConnector();
     private static SsgConnectorManagerStub ssgConnectorManagerStub;
     private static final String listenPortBasePath = "listenPorts/";
-    protected static ApplicationContext assertionContext;
 
     protected ListenPortResourceFactory listenPortResourceFactory;
 
     @Before
     public void before() throws Exception {
         super.before();
-
-        assertionContext = restManagementAssertion.getAssertionContext();
 
         ssgConnectorManagerStub = applicationContext.getBean("ssgConnectorManager", SsgConnectorManagerStub.class);
         ssgConnector.setGoid(new Goid(0, 1234L));

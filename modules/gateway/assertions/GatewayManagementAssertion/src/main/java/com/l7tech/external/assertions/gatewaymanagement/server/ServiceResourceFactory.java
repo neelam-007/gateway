@@ -230,6 +230,10 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         if ( publishedService.isSoap() ) {
             properties.put( "soapVersion", soapVersionToString(publishedService.getSoapVersion()) );
         }
+        //adding the service properties to the properties map
+        for (final String key : publishedService.getPropertyNames()) {
+            properties.put(PROPERTY_PREFIX + key, publishedService.getProperty(key));
+        }
         serviceDetail.setProperties( properties );
 
         // handle SecurityZone
@@ -305,6 +309,14 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         service.setHttpMethods( getHttpMethods( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.HttpMapping.class) ) );
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
         service.getPolicy().setXml( policyHelper.validatePolicySyntax(policyResource.getContent()) );
+        //getting the properties prefixed with properties and adding them as service properties
+        if(serviceDetail.getProperties() != null) {
+            for (final Map.Entry<String, Object> property : serviceDetail.getProperties().entrySet()) {
+                if (property.getKey().startsWith(PROPERTY_PREFIX)) {
+                    service.putProperty(property.getKey().substring(PROPERTY_PREFIX.length()), property.getValue().toString());
+                }
+            }
+        }
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
         setSoapVersion( service, getProperty(serviceDetail.getProperties(), "soapVersion", Option.<String>none(), String.class) );
         addWsdl( service, serviceDocuments, wsdlResources );
@@ -461,6 +473,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
     //- PRIVATE
 
     private static final String WSDL_IMPORT = "WSDL-IMPORT";
+    private static final String PROPERTY_PREFIX = "property.";
 
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;

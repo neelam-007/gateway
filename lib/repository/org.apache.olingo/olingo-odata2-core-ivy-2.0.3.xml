@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="org.apache.olingo"
+		module="olingo-odata2-core"
+		revision="2.0.3"
+		status="release"
+		publication="20150305013301"
+	>
+		<description homepage="" />
+		<m:properties__jax.ws.rs.version>2.0-m10</m:properties__jax.ws.rs.version>
+		<m:properties__spring.version>3.2.12.RELEASE</m:properties__spring.version>
+		<m:properties__organization.logo>http://www.apache.org/images/asf_logo_wide.gif</m:properties__organization.logo>
+		<m:properties__distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</m:properties__distMgmtSnapshotsUrl>
+		<m:properties__sourceReleaseAssemblyDescriptor>source-release</m:properties__sourceReleaseAssemblyDescriptor>
+		<m:properties__commonscodec.version>1.6</m:properties__commonscodec.version>
+		<m:dependency.management__xmlunit__xmlunit__version>1.3</m:dependency.management__xmlunit__xmlunit__version>
+		<m:properties__httpclient.version>4.2.3</m:properties__httpclient.version>
+		<m:dependency.management__org.mockito__mockito-all__version>1.9.0</m:dependency.management__org.mockito__mockito-all__version>
+		<m:properties__antlr.version>3.4</m:properties__antlr.version>
+		<m:properties__sonar.skippedModules>org.apache.olingo.odata2.expr</m:properties__sonar.skippedModules>
+		<m:dependency.management__junit__junit__version>4.12</m:dependency.management__junit__junit__version>
+		<m:properties__version.javax.persistence>2.0.5</m:properties__version.javax.persistence>
+		<m:properties__gpg.useagent>true</m:properties__gpg.useagent>
+		<m:maven.plugins>org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-remote-resources-plugin__null|org.apache.maven.plugins__maven-deploy-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-eclipse-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.codehaus.mojo__buildnumber-maven-plugin__null|null__maven-checkstyle-plugin__null|null__maven-remote-resources-plugin__null|null__maven-war-plugin__null|org.codehaus.mojo__cobertura-maven-plugin__null|null__maven-jar-plugin__null|org.apache.felix__maven-bundle-plugin__null</m:maven.plugins>
+		<m:properties__cxf.version>2.7.10</m:properties__cxf.version>
+		<m:properties__xmlunit.version>1.3</m:properties__xmlunit.version>
+		<m:properties__mockito.version>1.9.0</m:properties__mockito.version>
+		<m:properties__distMgmtSnapshotsName>Apache Development Snapshot Repository</m:properties__distMgmtSnapshotsName>
+		<m:properties__slf4j.version>1.7.1</m:properties__slf4j.version>
+		<m:properties__log4j.version>1.2.17</m:properties__log4j.version>
+		<m:properties__commonslang.version>3.1</m:properties__commonslang.version>
+		<m:properties__jetty.version>7.5.4.v20111024</m:properties__jetty.version>
+		<m:properties__gson.version>2.2.2</m:properties__gson.version>
+		<m:properties__project.build.sourceEncoding>UTF-8</m:properties__project.build.sourceEncoding>
+		<m:properties__joda.version>2.1</m:properties__joda.version>
+		<m:properties__version.eclipselink>2.5.1</m:properties__version.eclipselink>
+		<m:properties__junit.version>4.12</m:properties__junit.version>
+		<m:properties__javadoc.phase>package</m:properties__javadoc.phase>
+		<m:properties__httpcore.version>4.2.3</m:properties__httpcore.version>
+		<m:properties__projectsToInstrument>org.apache.olingo.odata2.api,org.apache.olingo.odata2.core,org.apache.olingo.odata2.ref</m:properties__projectsToInstrument>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="sources" visibility="public" description="this configuration contains the source artifact of this module, if any."/>
+		<conf name="javadoc" visibility="public" description="this configuration contains the javadoc artifact of this module, if any."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="olingo-odata2-core" type="jar" ext="jar" conf="master"/>
+		<artifact name="olingo-odata2-core" type="source" ext="jar" conf="sources" m:classifier="sources"/>
+		<artifact name="olingo-odata2-core" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
+	</publications>
+	<dependencies>
+		<dependency org="javax.servlet" name="servlet-api" rev="2.5" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="org.apache.olingo" name="olingo-odata2-api" rev="2.0.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.google.code.gson" name="gson" rev="2.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.olingo" name="olingo-odata2-testutil" rev="2.0.3" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="log4j" name="log4j" rev="1.2.17" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.1" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.mockito" name="mockito-all" rev="1.9.0" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="xmlunit" name="xmlunit" rev="1.3" force="true" conf="test->runtime(*),master(*)"/>
+		<override org="xmlunit" module="xmlunit" matcher="exact" rev="1.3"/>
+		<override org="org.mockito" module="mockito-all" matcher="exact" rev="1.9.0"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.12"/>
+	</dependencies>
+</ivy-module>

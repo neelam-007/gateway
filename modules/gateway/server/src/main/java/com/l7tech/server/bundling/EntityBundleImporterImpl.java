@@ -250,12 +250,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             } else {
                                 switch (mapping.getMappingAction()) {
                                     case NewOrExisting:
-                                    case NewOrUpdate:
-                                    case AlwaysCreateNew: {
+                                    case NewOrUpdate: {
                                         //Create a new entity based on the one in the bundle
                                         final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
                                                 //use the target id if specified, otherwise use the source id
                                                 mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType()) && mapping.getTargetMapping().getTargetID() != null ? mapping.getTargetMapping().getTargetID() : mapping.getSourceEntityHeader().getStrId(),
+                                                mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
+                                        break;
+                                    }
+                                    case AlwaysCreateNew: {
+                                        String id = entity.getEntity().getId();
+                                        //Create a new entity based on the one in the bundle with a different id if one with same id exists
+                                        if(entityCrud.find(new EntityHeader(entity.getEntity().getId(), (EntityType)entity.getId().right, null, null)) != null){
+                                            id = null;
+                                        }
+
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
+                                                id,
                                                 mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;

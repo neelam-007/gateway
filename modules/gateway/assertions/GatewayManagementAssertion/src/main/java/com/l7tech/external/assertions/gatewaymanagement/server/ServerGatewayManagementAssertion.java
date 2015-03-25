@@ -65,7 +65,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     public ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
                                              final ApplicationContext applicationContext ) throws PolicyAssertionException {
-        this( assertion, applicationContext, "gatewayManagementContext.xml", true );
+        this( assertion, applicationContext, true );
     }
 
     @Override
@@ -99,11 +99,20 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     protected ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
                                                 final ApplicationContext context,
+                                                final boolean maskContextClassLoader ) throws PolicyAssertionException {
+        super(assertion);
+        this.agent = getAgent( getAudit(), logger, assertion );
+        this.assertionContext = GatewayManagementApplicationContext.getAssertionApplicationContext(context);
+        this.maskContextClassLoader = maskContextClassLoader;
+    }
+
+    protected ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
+                                                final ApplicationContext context,
                                                 final String assertionContextResource,
                                                 final boolean maskContextClassLoader ) throws PolicyAssertionException {
         super(assertion);
         this.agent = getAgent( getAudit(), logger, assertion );
-        this.assertionContext = buildContext( context, assertionContextResource );
+        this.assertionContext = new ClassPathXmlApplicationContext(new String[] {assertionContextResource}, ServerGatewayManagementAssertion.class, context);
         this.maskContextClassLoader = maskContextClassLoader;
     }
 
@@ -114,11 +123,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     private final WSManAgent agent;
     private final ApplicationContext assertionContext;
     private final boolean maskContextClassLoader;
-
-    private static ApplicationContext buildContext( final ApplicationContext context,
-                                              final String assertionContextResource ) {
-        return new ClassPathXmlApplicationContext(new String[] {assertionContextResource}, ServerGatewayManagementAssertion.class, context);
-    }
 
     private static WSManReflectiveAgent getAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {
         WSManReflectiveAgent agent = sharedAgent.get();

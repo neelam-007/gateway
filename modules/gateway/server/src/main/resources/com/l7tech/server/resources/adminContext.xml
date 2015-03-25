@@ -519,5 +519,13 @@
 
     </bean>
 
+    <bean id="workQueueAdmin" class="com.l7tech.server.workqueue.WorkQueueManagerAdminImpl">
+        <constructor-arg ref="workQueueEntityManager"/>
+        <constructor-arg ref="rbacServices"/>
+        <constructor-arg ref="workQueueExecutorManager"/>
+    </bean>
+
+    <!-- scheduled task admin impl -->
+    <bean id="scheduledTaskAdmin" class="com.l7tech.server.task.ScheduledTaskAdminImpl"/>
 
 </beans>

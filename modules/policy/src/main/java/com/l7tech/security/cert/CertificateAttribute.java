@@ -271,6 +271,15 @@ public enum CertificateAttribute {
         }},
 
     /**
+     * The BASE64 encoded value of the subject's public key, in X.509 format (SubjectPublicKeyInfo ASN.1 structure).
+     */
+    SUBJECT_PUB_KEY("subjectPublicKey", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap( this.toString(), HexUtils.encodeBase64( certificate.getPublicKey().getEncoded(), true ) );
+        }},
+
+    /**
      * The BASE64 encoded value of the subject key identifier (SKI) extension
      * or the derived SKI if an extension is not present.
      */

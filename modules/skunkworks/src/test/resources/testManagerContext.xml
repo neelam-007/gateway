@@ -439,6 +439,10 @@
                     <bean class="com.l7tech.server.search.processors.FolderDependencyProcessor"/>
                 </entry>
                 <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.HTTP_CONFIGURATION"/></key>
+                    <bean class="com.l7tech.server.search.processors.HttpConfigurationDependencyProcessor"/>
+                </entry>
+                <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.JdbcConnectionDependencyProcessor"/>
                 </entry>
@@ -1656,4 +1660,5 @@
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
 
+    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
 </beans>

@@ -8,9 +8,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
-import com.l7tech.objectmodel.polback.PolicyBackedInterfaceIntrospector;
-import com.l7tech.objectmodel.polback.PolicyBackedService;
-import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
+import com.l7tech.objectmodel.polback.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -25,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  * Keeps track of registered policy-backed services and policy-backed service instances,
  * and allows server code to get interface implementations backed by the policies.
  */
-public class PolicyBackedServiceRegistry implements PostStartupApplicationListener {
+public class PolicyBackedServiceRegistry implements PostStartupApplicationListener, InitializingBean {
     private static final Logger logger = Logger.getLogger( PolicyBackedServiceRegistry.class.getName() );
 
     @Inject
@@ -86,6 +85,11 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         }
     }
 
+    /**
+     * Get the names of all interfaces that have been registered with this in-memory registry.
+     *
+     * @return a list of full class names of interfaces annotated with @PolicyBacked that have been registered.  May be empty but never null.
+     */
     @NotNull
     public Set<String> getPolicyBackedServiceTemplates() {
         rwlock.readLock().lock();
@@ -96,6 +100,15 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         }
     }
 
+    /**
+     * Get a list of the interface descriptions for each operation implemented by the specified annotated interface,
+     * if it has previously been registered.
+     *
+     * @param interfaceClassName full class name of an interface that is annotated with @PolicyBacked.  Required.
+     * @return zero or more EncapsulatedAssertionConfig instances, each describing context variable Input and Output mappings for a single method of the interface.
+     *         Never null.
+     * @throws ObjectNotFoundException if this interface has not been registered with this in-memory registry.
+     */
     @NotNull
     public List<EncapsulatedAssertionConfig> getTemplateOperations( @NotNull String interfaceClassName ) throws ObjectNotFoundException {
         rwlock.readLock().lock();
@@ -112,7 +125,14 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         }
     }
 
-    public void registerImplementation( @NotNull String interfaceClassName, @NotNull PolicyBackedService policyBackedService ) {
+    /**
+     * Register an implementation of a policy backed service with the in-memory registry.
+     *
+     * @param interfaceClassName name of interface class this policy backed service will implement.  Must be full classname of an interface
+     *                           annotated with @PolicyBacked.  Required.
+     * @param policyBackedService a PolicyBackedService instance with a unique Goid to identify it for subsequent use.  Required.
+     */
+    void registerImplementation( @NotNull String interfaceClassName, @NotNull PolicyBackedService policyBackedService ) {
         rwlock.writeLock().lock();
         try {
             Template template = policyBackedInterfaces.get( interfaceClassName );
@@ -151,36 +171,98 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
     }
 
     /**
+     * Get an implementation proxy for a single method, mapped directly to an implementing policy
+     * without mapping operations using a PolicyBackedService instance.
+     * <p/>
+     * When the specified method is called on the returned proxy object, the policy will be invoked using
+     * context variable input and output mappings defined by the method's @PolicyBackedMethod and @PolicyParam annotations.
+     * <p/>
+     * The Method must be a method of a registered @PolicyBacked-annotated interface class.
+     * <p/>
+     * Proxies produced by this method would typically only be useful for a single-method interface.
+     * If any method aside from the specified method is called, the proxy returned by this method
+     * will always throw UnsupportedOperationException.
+     * <p/>
+     * To get a proxy capable of mapping more than one method, use {@link #getImplementationProxy(Class, com.l7tech.objectmodel.Goid)}
+     * with the Goid of a PolicyBackedService instance (instead of the Goid of a single backing policy).
+     *
+     * @param method  a Method from a previously-registered @PolicyBacked interface class.  Required.
+     * @param policyGoid the Goid of a Policy (that must already exist in the policyCache) that will provide the method implementation.  Required.
+     * @param <T> method's declaring class
+     * @return a proxy object that will invoke the specified method by looking up the specified policy in the policy cache and executing it.
+     */
+    @NotNull
+    public <T> T getImplementationProxyForSingleMethod( final @NotNull Method method, final @NotNull Goid policyGoid ) {
+        final Template template;
+
+        rwlock.readLock().lock();
+        try {
+            String interfaceClassName = method.getDeclaringClass().getName();
+
+            template = policyBackedInterfaces.get( interfaceClassName );
+            if ( null == template )
+                throw new IllegalArgumentException( "No interface registered with class name: " + interfaceClassName );
+
+            if ( template.interfaceClass != method.getDeclaringClass() )
+                throw new IllegalArgumentException( "Registered interface with name " + interfaceClassName + " is from a different class loader than requested interface class");
+
+        } finally {
+            rwlock.readLock().unlock();
+        }
+
+        final EncapsulatedAssertionConfig templateOperation = new PolicyBackedInterfaceIntrospector().getMethodDescription( method );
+
+        //noinspection unchecked
+        return (T) Proxy.newProxyInstance( template.interfaceClass.getClassLoader(), new Class<?>[]{ template.interfaceClass }, new InvocationHandler() {
+            @Override
+            public Object invoke( Object proxy, Method invokedMethod, Object[] args ) throws Throwable {
+                if ( !invokedMethod.equals( method ) )
+                    throw new UnsupportedOperationException( "Method not supported by proxy: " + invokedMethod.getName() );
+
+                // look up encapsulated assertion by method name
+                String name = method.getName();
+
+                return invokeProxyMethod( method,
+                        args,
+                        policyGoid,
+                        name,
+                        templateOperation.getArgumentDescriptors(),
+                        templateOperation.getResultDescriptors() );
+            }
+        } );
+    }
+
+    /**
      * Get an implementation proxy for a policy backed service.
      * <p/>
      * If only a single implementation of a given service interface is registered,
      * the second argument may be null.
      *
-     * @param interfaceClass  annotated interface class.  Required.
-     * @param implementationPolicyBackedServiceGoid  Goid of implementation to use.  May be omitted if only one is registered.
+     * @param interfaceClass  a previously-registered @PolicyBacked interface class.  Required.
+     * @param policyBackedServiceGoid  Goid of implementation to use.  May be omitted if only one is registered.
      * @param <T>  interface class
      * @return a proxy object that, when invoked, runs the appropriate backing policy.  Never null.
      */
     @NotNull
-    public <T> T getImplementationProxy( @NotNull Class<T> interfaceClass, @Nullable Goid implementationPolicyBackedServiceGoid ) {
-        // TODO see if we really need to hold the read lock all the while through running the policy, which could take an arbitrarily long time
-        // Can probably release earlier if info in Template and LiveInstance are never modified (or if defensively copied)
+    public <T> T getImplementationProxy( @NotNull Class<T> interfaceClass, @Nullable Goid policyBackedServiceGoid ) {
+        final Template template;
+
         rwlock.readLock().lock();
+        PolicyBackedService ourInstance = null;
         try {
             String interfaceClassName = interfaceClass.getName();
 
-            final Template template = policyBackedInterfaces.get( interfaceClassName );
+            template = policyBackedInterfaces.get( interfaceClassName );
             if ( null == template )
                 throw new IllegalArgumentException( "No interface registered with class name: " + interfaceClassName );
 
             if ( template.interfaceClass != interfaceClass )
                 throw new IllegalArgumentException( "Registered interface with name " + interfaceClassName + " is from a different class loader than requested interface class");
 
-            PolicyBackedService ourInstance = null;
             Set<PolicyBackedService> instances = implementations.get( interfaceClassName );
             if ( instances != null ) {
                 for ( PolicyBackedService instance : instances ) {
-                    if ( implementationPolicyBackedServiceGoid == null && instance.getServiceInterfaceName().equals( interfaceClassName ) ) {
+                    if ( policyBackedServiceGoid == null && instance.getServiceInterfaceName().equals( interfaceClassName ) ) {
                         if ( ourInstance != null ) {
                             throw new IllegalStateException( "More than one implementation of interface " + interfaceClassName + " is registered; must specify implementation Goid" );
                         }
@@ -188,7 +270,7 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
                         continue;
                     }
 
-                    if ( Goid.equals( instance.getGoid(), implementationPolicyBackedServiceGoid ) ) {
+                    if ( Goid.equals( instance.getGoid(), policyBackedServiceGoid ) ) {
                         ourInstance = instance;
                         break;
                     }
@@ -196,106 +278,146 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
             }
 
             if ( null == ourInstance ) {
-                if ( implementationPolicyBackedServiceGoid == null )
+                if ( policyBackedServiceGoid == null )
                     throw new IllegalArgumentException( "No implementations of interface " + interfaceClassName + " are registered" );
 
                 throw new IllegalArgumentException( "No implementation of interface " + interfaceClassName + " with policy backed service id " +
-                        implementationPolicyBackedServiceGoid + " is registered" );
+                        policyBackedServiceGoid + " is registered" );
 
             }
-
-            final PolicyBackedService instanceImpl = ourInstance;
-
-            //noinspection unchecked
-            return (T) Proxy.newProxyInstance( interfaceClass.getClassLoader(), new Class<?>[]{ interfaceClass }, new InvocationHandler() {
-                @Override
-                public Object invoke( Object proxy, Method method, Object[] args ) throws Throwable {
-
-                    // look up encapsulated assertion by method name
-                    String name = method.getName();
-                    final String serviceName = instanceImpl.getName();
-
-                    PolicyBackedServiceOperation operation = null;
-                    Set<PolicyBackedServiceOperation> ops = instanceImpl.getOperations();
-                    for ( PolicyBackedServiceOperation op : ops ) {
-                        if ( name.equalsIgnoreCase( op.getName() ) ) {
-                            operation = op;
-                            break;
-                        }
-                    }
-
-                    if ( null == operation ) {
-                        throw new UnsupportedOperationException( "No operation for method named " + name + " configured in policy-backed service " + serviceName );
-                    }
-
-                    // convert params into input context variables
-                    EncapsulatedAssertionConfig templateOperation = null;
-                    EncapsulatedAssertionConfig[] templateOps = template.operations;
-                    for ( EncapsulatedAssertionConfig templateOp : templateOps ) {
-                        if ( name.equalsIgnoreCase( templateOp.getName() ) ) {
-                            templateOperation = templateOp;
-                            break;
-                        }
-                    }
-
-                    if ( null == templateOperation ) {
-                        throw new UnsupportedOperationException( "No operation named " + name + " configured in template for policy-backed service " + serviceName );
-                    }
-
-                    Map<String, Object> contextVariableInputs = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
-                    Set<EncapsulatedAssertionArgumentDescriptor> argDescriptors = templateOperation.getArgumentDescriptors();
-                    for ( EncapsulatedAssertionArgumentDescriptor argDescriptor : argDescriptors ) {
-                        final String argumentName = argDescriptor.getArgumentName();
-
-                        int argNumber = argDescriptor.getOrdinal() - 1;
-                        Object argValue = args[ argNumber ];
-                        Class argClass = method.getParameterTypes()[ argNumber ];
-
-                        Object contextVarValue = toContextVariableValue( argClass, argValue, argDescriptor.getArgumentType() );
-
-                        contextVariableInputs.put( argumentName, contextVarValue );
-                    }
-
-                    // invoke encapsulated assertion
-                    PolicyEnforcementContext context = null;
-                    try {
-                        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
-
-                        invokePolicyBackedOperation( context, operation, contextVariableInputs );
-
-                        // convert output context variables into return value (possibly multivalued Map)
-
-                        List<String> resultNames = new ArrayList<>();
-                        final Set<EncapsulatedAssertionResultDescriptor> resultDescriptors = templateOperation.getResultDescriptors();
-                        for ( EncapsulatedAssertionResultDescriptor resultDescriptor : resultDescriptors ) {
-                            String resultName = resultDescriptor.getResultName();
-                            resultNames.add( resultName );
-                        }
-                        Map<String, Object> resultsMap = context.getVariableMap( resultNames.toArray( new String[resultNames.size()] ), new LoggingAudit( logger ) );
-
-                        if ( resultDescriptors.size() == 0 ) {
-                            // Void method
-                            return null;
-                        } else if ( resultDescriptors.size() == 1 ) {
-                            // Single return value
-                            EncapsulatedAssertionResultDescriptor descriptor = resultDescriptors.iterator().next();
-                            return fromContextVariableValue( resultsMap.get( descriptor.getResultName() ), descriptor.getResultType(), method.getReturnType() );
-                        } else {
-                            // Return as Map
-                            return resultsMap;
-                        }
-
-                    } finally {
-                        ResourceUtils.closeQuietly( context );
-                    }
-                }
-            } );
-
         } finally {
             rwlock.readLock().unlock();
         }
+
+        // Release read lock before invoking method (since the policy might run for an arbitrarily long time)
+        // The PolicyBackedService instance shouldn't ever be modified by another thread after it is registered,
+        // and neither should the Template.
+
+        final PolicyBackedService instanceImpl = ourInstance;
+        //noinspection unchecked
+        return (T) Proxy.newProxyInstance( interfaceClass.getClassLoader(), new Class<?>[]{ interfaceClass }, new InvocationHandler() {
+            @Override
+            public Object invoke( Object proxy, Method method, Object[] args ) throws Throwable {
+
+                // look up encapsulated assertion by method name
+                String name = method.getName();
+                final String serviceName = instanceImpl.getName();
+
+                PolicyBackedServiceOperation operation = null;
+                Set<PolicyBackedServiceOperation> ops = instanceImpl.getOperations();
+                for ( PolicyBackedServiceOperation op : ops ) {
+                    if ( name.equalsIgnoreCase( op.getName() ) ) {
+                        operation = op;
+                        break;
+                    }
+                }
+
+                if ( null == operation ) {
+                    throw new UnsupportedOperationException( "No operation for method named " + name + " configured in policy-backed service " + serviceName );
+                }
+
+                // convert params into input context variables
+                EncapsulatedAssertionConfig templateOperation = null;
+                EncapsulatedAssertionConfig[] templateOps = template.operations;
+                for ( EncapsulatedAssertionConfig templateOp : templateOps ) {
+                    if ( name.equalsIgnoreCase( templateOp.getName() ) ) {
+                        templateOperation = templateOp;
+                        break;
+                    }
+                }
+
+                if ( null == templateOperation ) {
+                    throw new UnsupportedOperationException( "No operation named " + name + " configured in template for policy-backed service " + serviceName );
+                }
+
+                return invokeProxyMethod( method,
+                        args,
+                        operation.getPolicyGoid(),
+                        operation.getName(),
+                        templateOperation.getArgumentDescriptors(),
+                        templateOperation.getResultDescriptors() );
+            }
+        } );
     }
 
+    /**
+     * Invoke a method whose implementation will be a policy, creating a new policy enforcement context,
+     * translating the method arguments into input context variables according to the inputs mapping,
+     * executing the policy, then translating the output context variables into the return value according
+     * to the outputs mapping.
+     *
+     * @param method the Method that is being invoked, from a registered @PolicyBacked interface.  Required.
+     * @param args the method arguments.  Required, but may be empty.
+     * @param policyGoid the Goid of the policy that will be executed to handle the method invocation.  Required.
+     * @param operationName the user-meaningful operation name, for logging purposes.  Required.
+     * @param inputs the input mappings.  Required, but may be empty.
+     * @param outputs the output mappings.  Required, but may be empty.
+     * @return the method return value, translated according to the output mappings from variables left behind
+     *         in the policy enforcement context.
+     */
+    private Object invokeProxyMethod( @NotNull Method method,
+                                      @NotNull Object[] args,
+                                      @NotNull Goid policyGoid,
+                                      @NotNull String operationName,
+                                      @NotNull Set<EncapsulatedAssertionArgumentDescriptor> inputs,
+                                      @NotNull Set<EncapsulatedAssertionResultDescriptor> outputs )
+    {
+        Map<String, Object> contextVariableInputs = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
+        for ( EncapsulatedAssertionArgumentDescriptor argDescriptor : inputs ) {
+            final String argumentName = argDescriptor.getArgumentName();
+
+            int argNumber = argDescriptor.getOrdinal() - 1;
+            Object argValue = args[ argNumber ];
+            Class argClass = method.getParameterTypes()[ argNumber ];
+
+            Object contextVarValue = toContextVariableValue( argClass, argValue, argDescriptor.getArgumentType() );
+
+            contextVariableInputs.put( argumentName, contextVarValue );
+        }
+
+        // invoke encapsulated assertion
+        PolicyEnforcementContext context = null;
+        try {
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+
+            invokePolicyBackedOperation( context, policyGoid, operationName, contextVariableInputs );
+
+            // convert output context variables into return value (possibly multivalued Map)
+
+            List<String> resultNames = new ArrayList<>();
+            for ( EncapsulatedAssertionResultDescriptor resultDescriptor : outputs ) {
+                String resultName = resultDescriptor.getResultName();
+                resultNames.add( resultName );
+            }
+            Map<String, Object> resultsMap = context.getVariableMap( resultNames.toArray( new String[resultNames.size()] ), new LoggingAudit( logger ) );
+
+            if ( outputs.size() == 0 ) {
+                // Void method
+                return null;
+            } else if ( outputs.size() == 1 ) {
+                // Single return value
+                EncapsulatedAssertionResultDescriptor descriptor = outputs.iterator().next();
+                return fromContextVariableValue( resultsMap.get( descriptor.getResultName() ), descriptor.getResultType(), method.getReturnType() );
+            } else {
+                // Return as Map
+                return resultsMap;
+            }
+
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    /**
+     * Perform any data conversion from the data types used by the policy language back to the Java data types.
+     * <p/>
+     * For now this method does nothing.  Any un-coerceable type changes will fail inside the Proxy.
+     *
+     * @param policyValue value from context variable.  May be null.
+     * @param policyDataType Policy data type.  Required.
+     * @param returnType data type expected for method return.  Required.
+     * @return the value the method return should use.  May be null.
+     */
     @Nullable
     private Object fromContextVariableValue( @Nullable Object policyValue, @NotNull String policyDataType, @NotNull Class<?> returnType ) {
         // For now we won't attempt to do any type conversions, we will simply assert that the type is correct
@@ -303,6 +425,14 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         return policyValue;
     }
 
+    /**
+     * Convert a Java value into a context variable value.
+     *
+     * @param argClass the Java argument type from the interface.  Required.
+     * @param argValue the argument value as passed in from Java.  May be null.
+     * @param argumentType the desired Policy context variable type.  Required.
+     * @return the value to use for the input context variable corresponding to this argument.  May be null.
+     */
     @Nullable
     private Object toContextVariableValue( @NotNull Class<?> argClass, @Nullable Object argValue, @NotNull String argumentType ) {
         // For now we won't attempt to do any type conversions, we will simply assert that the type is correct
@@ -328,16 +458,18 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         throw new IllegalArgumentException( "Actual argument of type " + argValue.getClass() + " is not a valid representation of policy data type " + argumentType );
     }
 
+
+    // Look up a server policy handle, set variables in context, and call checkRequest.
     private void invokePolicyBackedOperation( @NotNull PolicyEnforcementContext context,
-                                                         @NotNull PolicyBackedServiceOperation operation,
-                                                         @NotNull Map<String, Object> contextVariableInputs )
+                                              @NotNull Goid policyGoid,
+                                              @NotNull String operationName,
+                                              @NotNull Map<String, Object> contextVariableInputs )
     {
-        final Goid policyGoid = operation.getPolicyGoid();
         try (ServerPolicyHandle sph = policyCache.getServerPolicy( policyGoid )) {
             if ( sph == null ) {
                 throw new UnsupportedOperationException(
                         MessageFormat.format( "Unable to invoke policy backed service operation {0} -- no policy with ID {1} is present in policy cache (invalid policy?)",
-                        new Object[] { operation.getName(), policyGoid } ) );
+                        new Object[] { operationName, policyGoid } ) );
             }
 
             for ( Map.Entry<String, Object> entry : contextVariableInputs.entrySet() ) {
@@ -347,13 +479,13 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
             AssertionStatus status = sph.checkRequest( context );
 
             if ( !AssertionStatus.NONE.equals( status ) ) {
-                throw new AssertionStatusException( status, "Backing policy for policy-backed operation " + operation.getName() + " failed with assertion status " + status );
+                throw new AssertionStatusException( status, "Backing policy for policy-backed operation " + operationName + " failed with assertion status " + status );
             }
 
         } catch ( RuntimeException e) {
             throw e;
         } catch ( Exception e ) {
-            throw new RuntimeException( "Exception in policy backed service operation " + operation.getName() + ": " + ExceptionUtils.getMessage(e), e );
+            throw new RuntimeException( "Exception in policy backed service operation " + operationName + ": " + ExceptionUtils.getMessage(e), e );
         }
     }
 
@@ -370,6 +502,8 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         }
     }
 
+    // Forget all currently in-memory registered PolicyBackedService interfaces and replace them with an up-to-date list
+    // loaded from the database.
     private void flushAndReRegisterAllImplementations() {
         final Collection<PolicyBackedService> serviceImplementations;
         try {
@@ -402,6 +536,23 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         } finally {
             rwlock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        preregisterWellKnownInterfaces();
+    }
+
+    private void preregisterWellKnownInterfaces() {
+        // TODO find some better way/place to do this
+
+        // BackgroundTask - Used by work queues and scheduled tasks
+        registerPolicyBackedServiceTemplate( BackgroundTask.class );
+
+        // KeyValueStore - Used by add-on modules
+        // Not used by any core code yet; currently will be registered as needed by extensions that need to use it
+        // At some point will come preregistered but not yet needed.
+        //registerPolicyBackedServiceTemplate( KeyValueStore.class );
     }
 
     static class Template {

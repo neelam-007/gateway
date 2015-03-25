@@ -32,11 +32,16 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencySiteminderConfigTest.class.getName());
 
     private final SecurityZone securityZone = new SecurityZone();
-    private SiteMinderConfigurationManager siteMinderConfigurationManager;
     private final SiteMinderConfiguration siteMinderConfiguration = new SiteMinderConfiguration();
-    private SecurityZoneManager securityZoneManager;
     private final SecurePassword securePassword =  new SecurePassword();
+    private SiteMinderConfigurationManager siteMinderConfigurationManager;
+    private SecurityZoneManager securityZoneManager;
     private SecurePasswordManager securePasswordManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        DependencyTestBase.beforeClass();
+    }
 
     @Before
     public void before() throws Exception {
@@ -72,11 +77,6 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
         siteMinderConfigurationManager.save(siteMinderConfiguration);
     }
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
-    }
-
     @After
     public void after() throws Exception {
         super.after();
@@ -103,10 +103,10 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
@@ -151,10 +151,10 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoidThrows<Item<DependencyListMO>,Exception>() {
 
             @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) throws Exception {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 

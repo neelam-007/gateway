@@ -50,6 +50,8 @@ public class Component {
     public static final Component     GW_BUNDLE_INSTALLER = new Component(  90100, "Bundle Installer", GW_SERVER);
     public static final Component     GW_BUNDLE_EXPORTER  = new Component(  90110, "Bundle Exporter", GW_SERVER);
     public static final Component     GW_SERVER_MODULE_FILE = new Component(  90120, "Server Module File Manager", GW_SERVER);
+    public static final Component     GW_WORK_QUEUE = new Component(  90130, "Work Queue", GW_SERVER);
+    public static final Component     GW_SCHEDULED_TASK   = new Component(  90140, "Scheduled Tasks", GW_SERVER);
     // TODO find a way to atomically renumber these in an SQL script or UpgradeTask, this is ridiculous
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);

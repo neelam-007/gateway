@@ -146,7 +146,7 @@ public class HexUtils {
      * @return String base64 encoding of the supplied binary data
      */
     public static String encodeBase64(byte[] binaryData) {
-        return encodeBase64(binaryData, false);
+        return encodeBase64( binaryData, false );
     }
 
     /**
@@ -161,8 +161,53 @@ public class HexUtils {
         return decodeUtf8(Base64.encodeBase64(binaryData, !isDoNotChunk)).trim();
     }
 
+    /**
+     * Encode binary data as web-safe Base-64 variant (no trailing = padding, uses dash and underscore in place of plus and slash).
+     * <p/>
+     * Be warned that the current implementation of this method is not especially efficient.
+     *
+     * @param bytes bytes to encode.  Required.
+     * @return encoded string.  Never null.
+     */
+    @NotNull
+    public static String encodeBase64Url( @NotNull byte[] bytes ) {
+        return encodeBase64( bytes ).
+                replace( '+', '-' ).
+                replace( '/', '_' ).replaceAll( "\\s|=", "" );
+    }
+
     public static byte[] decodeBase64(String s) {
         return Base64.decodeBase64(encodeUtf8(s));
+    }
+
+    /**
+     * Decode web-safe variant of Base-64 (no trailing = padding, uses dash and underscore in place of plus and slash).
+     * <p/>
+     * Be warned that the current implementation of this method is not especially efficient.
+     *
+     * @param encoded string to decode
+     * @return the decoded byte array
+     */
+    public static byte[] decodeBase64Url( String encoded ) throws IOException {
+        int npad = encoded.length() % 4;
+        final String pad;
+        switch ( npad ) {
+            case 0:
+                pad = "";
+                break;
+            case 1:
+                // Not actually possible/valid
+                pad = "===";
+                break;
+            case 2:
+                pad = "==";
+                break;
+            default:
+                pad = "=";
+                break;
+        }
+
+        return decodeBase64( encoded.replace( '-', '+' ).replace( '_', '/' ) + pad );
     }
 
     /**

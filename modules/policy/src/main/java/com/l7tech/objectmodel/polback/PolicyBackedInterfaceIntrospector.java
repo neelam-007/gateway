@@ -279,7 +279,7 @@ public class PolicyBackedInterfaceIntrospector {
      *                  or if a return type is not supported,
      *                  or if a @PolicyBackedMethod annotation is present on the method but contains an invalid result specification.
      */
-    EncapsulatedAssertionConfig getMethodDescription( @NotNull Method method ) {
+    public EncapsulatedAssertionConfig getMethodDescription( @NotNull Method method ) {
 
         EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
 

@@ -1,9 +1,8 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.UncheckedIOException;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.mail.internet.HeaderTokenizer;
@@ -33,6 +32,9 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String PROP_ALWAYS_VALIDATE = "com.l7tech.common.mime.alwaysValidateContentType";
     public static final boolean ALWAYS_VALIDATE = ConfigFactory.getBooleanProperty( PROP_ALWAYS_VALIDATE, false );
 
+    public static final String PROP_DEFAULT_ENCODING = "com.l7tech.common.mime.defaultEncoding";
+    public static final String DEFAULT_ENCODING_STRING = ConfigFactory.getProperty( PROP_DEFAULT_ENCODING, "ISO-8859-1" );  // See RFC2616 s3.7.1
+
     /** Special instance (null object) that represents the lack of a content type header, where supported.  Where not supported, acts like application/octet-stream. */
     public static final ContentTypeHeader NONE;
 
@@ -41,13 +43,27 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final ContentTypeHeader SOAP_1_2_DEFAULT; // application/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
-    public static final ContentTypeHeader APPLICATION_JSON; // appliacation//json; charset=UTF-8
+    public static final ContentTypeHeader APPLICATION_JSON; // application/json; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
-    public static final Charset DEFAULT_HTTP_ENCODING = Charsets.ISO8859; // See RFC2616 s3.7.1
+    public static final Charset DEFAULT_HTTP_ENCODING = findDefaultHttpEncoding();
 
     private static final Pattern QUICK_CONTENT_TYPE_PARSER =
             Pattern.compile("^\\s*([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)(\\s*)/(\\s*)([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)\\s*(;.*?)?\\s*$", Pattern.DOTALL);
+
+    private static Charset findDefaultHttpEncoding() {
+        Charset charset = Charsets.ISO8859; // See RFC2616 s3.7.1
+
+        try {
+            if ( DEFAULT_ENCODING_STRING.length() > 0 )
+                charset = Charset.forName( DEFAULT_ENCODING_STRING );
+        } catch ( UnsupportedCharsetException e ) {
+            logger.log( Level.WARNING, "Unsupported default encoding: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            // Fallthrough and leave as ISO-8859-1
+        }
+
+        return charset;
+    }
 
     /**
      * AtomicReference to the list of configured textual content types. Usages do not need to synchronize.
@@ -150,7 +166,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     private static ContentTypeHeader quickParse(String contentTypeHeaderValue) {
         // Quick parse without validation, does not gather parameters, returns a lazy header
-        Matcher matcher = QUICK_CONTENT_TYPE_PARSER.matcher(contentTypeHeaderValue);
+        Matcher matcher = QUICK_CONTENT_TYPE_PARSER.matcher( contentTypeHeaderValue );
         if (matcher.matches()) {
             String type = matcher.group(1);
             String ws = matcher.group(2);
@@ -170,7 +186,7 @@ public class ContentTypeHeader extends MimeHeader {
             throw new IOException("MIME Content-Type header missing or empty");
 
         final String originalValue = contentTypeHeaderValue;
-        if (contentTypeHeaderValue.endsWith(";")) {
+        if (contentTypeHeaderValue.endsWith( ";" )) {
             contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);
         }
 
@@ -324,6 +340,25 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     /**
+     * Get the default encoding to use for the specified media type when it has no charset parameter.
+     *
+     * @param type  the media type, if known.
+     * @param subtype the media subtype, if known.
+     * @return the default Charset to use for this media type and subtype when no charset parameter is present.  Never null.
+     */
+    @NotNull
+    static Charset getDefaultJavaEncodingForMediaType( @Nullable String type, @Nullable String subtype ) {
+        // TODO replace this hardcoded if/else with a configurable table of media types and their default encodings
+        if ( "application".equalsIgnoreCase( type ) && "json".equalsIgnoreCase( subtype ) ) {
+            // Default character set for application/json media type
+            return Charsets.UTF8;
+        }
+
+        // Use HTTP default charset
+        return DEFAULT_HTTP_ENCODING;
+    }
+
+    /**
      * Convert MIME charset into Java encoding.
      *
      * @return the Java Charset corresponding to the charset of this content-type header,
@@ -336,8 +371,9 @@ public class ContentTypeHeader extends MimeHeader {
             this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
-                if (logger.isLoggable(Level.FINEST)) logger.finest("No charset value found in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
-                javaEncoding = DEFAULT_HTTP_ENCODING;
+                javaEncoding = getDefaultJavaEncodingForMediaType( getType(), getSubtype() );
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest( "No charset value found in Content-Type header; using " + javaEncoding );
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
                 if ("UTF8".equalsIgnoreCase(tmp)) {
@@ -346,9 +382,12 @@ public class ContentTypeHeader extends MimeHeader {
                     try {
                         javaEncoding = Charset.forName(tmp);
                     } catch (UnsupportedCharsetException e) {
-                        if (STRICT_CHARSET) throw e;
-                        if (logger.isLoggable(Level.FINEST)) logger.finest("Unrecognized charset in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
-                        javaEncoding = DEFAULT_HTTP_ENCODING;
+                        if (STRICT_CHARSET)
+                            throw e;
+
+                        javaEncoding = getDefaultJavaEncodingForMediaType( getType(), getSubtype() );
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest( "Unrecognized charset in Content-Type header; using " + javaEncoding );
                     }
                 }
             }

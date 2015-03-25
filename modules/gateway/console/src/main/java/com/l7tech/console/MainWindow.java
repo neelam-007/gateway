@@ -199,6 +199,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurePasswordsAction manageSecurePasswordsAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
     private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
+    private ManageScheduledTasksAction manageScheduledTasksAction = null;
     private ManageCassandraConnectionAction manageCassandraConnectionAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
@@ -218,6 +219,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
     private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
+    private ManageWorkQueuesAction manageWorkQueuesAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1070,6 +1072,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
+            menu.add(getManageScheduledTasksAction());
             menu.add(getManageSecurityZonesAction());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
@@ -1082,6 +1085,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageEncapsulatedAssertionsAction());
             menu.add(getSiteMinderConfigurationAction());
             menu.add(getManageServerModuleFilesAction());
+            menu.add(getManageWorkQueuesAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2381,6 +2385,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageServerModuleFilesAction;
     }
 
+    private Action getManageWorkQueuesAction() {
+        if (manageWorkQueuesAction == null) {
+            manageWorkQueuesAction = new ManageWorkQueuesAction();
+            disableUntilLogin(manageWorkQueuesAction);
+        }
+        return manageWorkQueuesAction;
+    }
+
     private Action getManageSecurityZonesAction() {
         if (manageSecurityZonesAction == null) {
             manageSecurityZonesAction = new ManageSecurityZonesAction();
@@ -2403,6 +2415,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         manageHttpConfigurationAction = new ManageHttpConfigurationAction();
         disableUntilLogin(manageHttpConfigurationAction);
         return manageHttpConfigurationAction;
+    }
+
+    private Action getManageScheduledTasksAction() {
+        if (manageScheduledTasksAction != null)
+            return manageScheduledTasksAction;
+
+        manageScheduledTasksAction = new ManageScheduledTasksAction();
+        disableUntilLogin(manageScheduledTasksAction);
+        return manageScheduledTasksAction;
     }
 
     private Action getManageJdbcConnectionsAction() {
@@ -2776,6 +2797,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
+                manageMenu.add(getManageScheduledTasksAction());
                 manageMenu.add(getManageSecurityZonesAction());
                 manageMenu.add(getManageAuditAlertOptionsMenuItem());
                 manageMenu.add(getManageClusterLicensesMenuItem());
@@ -2790,6 +2812,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
                 manageMenu.add(getManageServerModuleFilesAction());
+                manageMenu.add(getManageWorkQueuesAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;

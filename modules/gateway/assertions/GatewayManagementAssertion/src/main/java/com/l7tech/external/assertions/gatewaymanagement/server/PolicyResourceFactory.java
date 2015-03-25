@@ -221,6 +221,9 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case IDENTITY_PROVIDER_POLICY:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.ID_PROVIDER );
                 break;
+            case POLICY_BACKED_OPERATION:
+                policyDetail.setPolicyType(PolicyDetail.PolicyType.SERVICE_OPERATION);
+                break;
             default:
                 throw new ResourceAccessException( "Access of unsupported policy type: " + policy.getType() );
         }
@@ -275,6 +278,9 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                 break;
             case ID_PROVIDER:
                 policyType = PolicyType.IDENTITY_PROVIDER_POLICY;
+                break;
+            case SERVICE_OPERATION:
+                policyType = PolicyType.POLICY_BACKED_OPERATION;
                 break;
             default:
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy type" );
@@ -403,6 +409,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case INTERNAL:
             case GLOBAL_FRAGMENT:
             case IDENTITY_PROVIDER_POLICY:
+            case POLICY_BACKED_OPERATION:
                 policy = entity;
                 break;
         }
