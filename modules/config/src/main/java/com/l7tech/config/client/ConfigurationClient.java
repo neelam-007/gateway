@@ -81,7 +81,6 @@ public class ConfigurationClient extends Interaction {
                         }
                     } catch ( ConfigurationException e ) {
                         System.err.println( "ERROR: " + ExceptionUtils.getMessage( e ) );
-                        e.printStackTrace( System.err );
                     }
                     return false;
                 }

@@ -3,6 +3,7 @@ package com.l7tech.config.client;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.options.OptionSet;
+import com.l7tech.config.client.options.OptionType;
 import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
@@ -19,6 +20,19 @@ import java.util.Set;
  */
 public class HeadlessInteraction extends ConfigurationInteraction {
 
+    //this is the option to allow for creation of the database only without other configuration files
+    private final Option dbOnlyOption = new Option() {{
+        setId("db-only");
+        setGroup("headless");
+        setType(OptionType.BOOLEAN);
+        setOrder(500);
+        setName("DB Only");
+        setConfigName("configure.dbonly");
+        setConfigValue("false");
+        setDescription("True creates database only, false will also create other configuration files.");
+        setPrompt("Only create database.");
+    }};
+
     public HeadlessInteraction( final OptionSet optionSet,
                             final Map<String,ConfigurationBean> configBeans )
     {
@@ -28,6 +42,8 @@ public class HeadlessInteraction extends ConfigurationInteraction {
                 new OutputStreamWriter( System.out ){@Override public void close() throws IOException {}},
                 optionSet,
                 configBeans );
+        //need to add a headless only config option here:
+        optionSet.getOptions().add(dbOnlyOption);
     }
 
     @Override
@@ -84,7 +100,8 @@ public class HeadlessInteraction extends ConfigurationInteraction {
                             bean.processConfigValueInput( value );
                             configBeans.put( option.getId(), bean );
                         } catch ( ParseException pe ) {
-                            throw new IOException( "Unable to parse option value for " + name + ": " + ExceptionUtils.getMessage( pe ), pe );
+                            System.err.println("Unable to parse option value for '" + name + "' value given: '" + value + "'. Message: " + ExceptionUtils.getMessage( pe ));
+                            return false;
                         }
                     }
                 }
