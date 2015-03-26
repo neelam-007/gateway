@@ -40,7 +40,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JLabel policyIdLabel;
     private BetterComboBox policyComboBox;
     private BetterComboBox nodeComboBox;
-    private JPanel timePanel;
     private JRadioButton oneTimeRadioButton;
     private JRadioButton recurringRadioButton;
     private JComboBox unitComboBox;
@@ -76,11 +75,11 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JCheckBox saturdayCheckBox;
     private JCheckBox sundayCheckBox;
     private JTextField intervalTextField;
+    private JDateTimeChooser timeChooser;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
     private boolean confirmed = false;
-    private JDateTimeChooser timeChooser;
     private DefaultComboBoxModel policyComboBoxModel;
     private PolicyAdmin policyAdmin;
 
@@ -164,15 +163,11 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         recurringRadioButton.addActionListener(changeListener);
 
         // One time date field
-        timePanel.setLayout(new BorderLayout());
-        timeChooser = new JDateTimeChooser(null, new Date(System.currentTimeMillis()), null, null);
         timeChooser.getJCalendar().setDecorationBackgroundVisible(true);
         timeChooser.getJCalendar().setDecorationBordersVisible(false);
         timeChooser.getJCalendar().setWeekOfYearVisible(false);
         timeChooser.getJCalendar().setMinSelectableDate(new Date());
-        timeChooser.setPreferredSize(new Dimension(170, 20));
-        timeChooser.getDateEditor().addPropertyChangeListener(changeListener);
-        timePanel.add(timeChooser, BorderLayout.CENTER);
+        timeChooser.addPropertyChangeListener(changeListener);
 
         // basic
         intervalTextField.getDocument().addDocumentListener(changeListener);
