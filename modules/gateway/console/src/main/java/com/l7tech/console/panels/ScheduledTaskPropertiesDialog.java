@@ -167,7 +167,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         timeChooser.getJCalendar().setDecorationBordersVisible(false);
         timeChooser.getJCalendar().setWeekOfYearVisible(false);
         timeChooser.getJCalendar().setMinSelectableDate(new Date());
-        timeChooser.addPropertyChangeListener(changeListener);
+        timeChooser.getDateEditor().addPropertyChangeListener(changeListener);
 
         // basic
         intervalTextField.getDocument().addDocumentListener(changeListener);
@@ -271,13 +271,18 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
         isOK = isOK && policyComboBox.getSelectedIndex() > -1;
-        isOK = isOK && timeChooser.getDate() != null;
-        try{
-            Integer.parseInt(intervalTextField.getText());
-        }catch(NumberFormatException e){
-            isOK = false;
+        if(isRecurring){
+            try{
+                Integer.parseInt(intervalTextField.getText());
+            }catch(NumberFormatException e){
+                isOK = false;
+            }
         }
-        isOK = isOK && timeChooser.getDate() != null;
+        else{
+            isOK = isOK && timeChooser.getDate() != null;
+        }
+
+
         okButton.setEnabled(isOK);
     }
 
