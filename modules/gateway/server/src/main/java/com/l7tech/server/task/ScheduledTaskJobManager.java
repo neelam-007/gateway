@@ -4,21 +4,22 @@ import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
-import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.quartz.*;
-import org.quartz.impl.DirectSchedulerFactory;
-import org.quartz.simpl.RAMJobStore;
+import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.listeners.TriggerListenerSupport;
 import org.quartz.simpl.SimpleThreadPool;
-import org.quartz.spi.JobStore;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,17 +42,13 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     private static final Logger logger = Logger.getLogger(ScheduledTaskJobManager.class.getName());
     @Inject
-    private ScheduledTaskManager scheduledTaskManager;
+    protected ScheduledTaskManager scheduledTaskManager;
     @Inject
-    private ClusterPropertyManager clusterPropertyManager;
-    @Inject
-    private PolicyCache policyCache;
+    private ServerConfig config;
     @Inject
     protected PolicyBackedServiceRegistry pbsReg;
-
     @Inject
     protected AuditContextFactory auditContextFactory;
-
     @Inject
     protected ApplicationContext applicationContext;
 
@@ -65,8 +63,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     protected ClusterInfoManager clusterInfoManager;
 
     private Scheduler scheduler = null;
-    private final String SCHEDULER_MAX_THREADS = "scheduler.maxthreads"; //todo add system property
-    private final String schedulerId = "L7ServiceScheduler";
+    private final int MAX_THREADS = 10;
 
     public ScheduledTaskJobManager() {
     }
@@ -92,7 +89,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                                 scheduleJob(task);
                             } catch (FindException e) {
                                 if (logger.isLoggable(Level.WARNING)) {
-                                    logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated jdbc connection #{0}", goid), e);
+                                    logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated scheduled task #{0}", goid), e);
                                 }
                             }
                             break;
@@ -111,7 +108,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
             try {
                 scheduler.shutdown();
             } catch (SchedulerException e) {
-                logger.log(Level.WARNING, "Error shutting down scheduler", e);
+                logger.log(Level.WARNING, "Failed to shutting down scheduler", e);
             }
         }
     }
@@ -123,30 +120,55 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 scheduleJob(task);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error trying to create scheduled jobs", e);
+            logger.log(Level.WARNING, "Failed to create scheduled jobs", ExceptionUtils.getDebugException(e));
         }
     }
 
     protected Scheduler getScheduler() {
         if (scheduler == null) {
             try {
-                int maxThreads;
-                try {
-                    maxThreads = Integer.parseInt(clusterPropertyManager.getProperty(SCHEDULER_MAX_THREADS));
-                } catch (NumberFormatException e) {
-                    maxThreads = 10;
-                }
+                int maxThreads = config.getIntProperty(ServerConfigParams.PARAM_SCHEDULED_TASK_MAX_THREADS, MAX_THREADS);
                 SimpleThreadPool threadPool = new SimpleThreadPool(maxThreads, Thread.NORM_PRIORITY);
                 threadPool.initialize();
-                JobStore jobStore = new RAMJobStore();
-                DirectSchedulerFactory.getInstance().createScheduler(schedulerId, schedulerId, threadPool, jobStore);
-                scheduler = DirectSchedulerFactory.getInstance().getScheduler(schedulerId);
+                Properties quartzProperties = new Properties();
+                // skip version update check
+                quartzProperties.setProperty("org.quartz.scheduler.skipUpdateCheck","true");
+                quartzProperties.setProperty("org.quartz.threadPool.threadCount", Integer.toString(maxThreads));
+                quartzProperties.setProperty("org.quartz.threadPool.threadCount", Integer.toString(maxThreads));
+                SchedulerFactory schedulerFactory = new StdSchedulerFactory(quartzProperties);
+                scheduler = schedulerFactory.getScheduler();
+
+                if(scheduler == null){
+                    logger.log(Level.WARNING, "Failed to create scheduler");
+                    return null;
+                }
+                scheduler.getListenerManager().addTriggerListener(new TriggerListenerSupport() {
+                    @Override
+                    public String getName() {
+                        return "overlap";
+                    }
+
+                    @Override
+                    public boolean vetoJobExecution(final Trigger trigger, JobExecutionContext context) {
+                        try {
+                            // veto if job is still being executed.
+                            return  Functions.exists(scheduler.getCurrentlyExecutingJobs(),new Functions.Unary<Boolean, JobExecutionContext>() {
+                                @Override
+                                public Boolean call(JobExecutionContext jobExecutionContext) {
+                                    return jobExecutionContext.getJobDetail().getKey().equals(trigger.getJobKey());
+                                }
+                            });
+                        } catch (SchedulerException e) {
+                            return false;
+                        }
+                    }
+                });
                 scheduler.start();
 
-                logger.log(Level.INFO, "Scheduler initalized");
+                logger.log(Level.INFO, "Scheduler initialized");
 
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Error trying to create scheduler", e);
+                logger.log(Level.WARNING, "Failed to create scheduler", ExceptionUtils.getDebugException(e));
             }
         }
         return scheduler;
@@ -170,21 +192,16 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
     public void scheduleOneTimeJob(ScheduledTask job) {
-        // todo only for future jobs?
         try {
             JobDetail jobDetail = getJobDetail(job);
             Trigger trigger = newTrigger().withIdentity(job.getId()).startAt(new Date(job.getExecutionDate())).build();
             getScheduler().scheduleJob(jobDetail, trigger);
-            logger.info("Policy Scheduler has scheduled one time job for policy: " + job.getPolicyGoid() + " on " + job.getExecutionDate());  // todo real date
+            logger.log(Level.INFO, "One time job scheduled for " + job.getName());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error trying to schedule one time job for policy: " + job.getPolicyGoid() + " on " + job.getExecutionDate(), e);
+            logger.log(Level.WARNING, "Fail to create one time job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
         }
-
     }
 
-    private String getPolicyName(Goid policyGoid) {
-        return policyGoid.toString();  // todo
-    }
 
     private JobDetail getJobDetail(ScheduledTask job) {
         return newJob(ScheduledServiceQuartzJob.class)
@@ -193,7 +210,6 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 .usingJobData("jobType", job.getJobType().toString())
                 .usingJobData("entityGoid", job.getId())
                 .usingJobData("policyGoid", job.getPolicyGoid().toString())
-//                .usingJobData("serviceName", job.getServiceName())
                 .build();
     }
 
@@ -202,11 +218,11 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
         JobDetail jobDetail = getJobDetail(job);
         CronTrigger cronTrigger = newTrigger().withIdentity(job.getId()).withSchedule(cronSchedule(job.getCronExpression())).build();
-        logger.log(Level.WARNING, "Policy Scheduler has scheduled recurring job for policy: " + job.getPolicyGoid() + " with schedule " + job.getCronExpression());
         try {
             getScheduler().scheduleJob(jobDetail, cronTrigger);
+            logger.log(Level.INFO, "Recurring job scheduled for " + job.getName());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error trying to schedule recurring job for policy: " + job.getPolicyGoid() + " with schedule " + job.getCronExpression());
+            logger.log(Level.WARNING, "Fail to create recurring job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
         }
 
     }
@@ -215,10 +231,10 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
         try {
             boolean deleted = getScheduler().deleteJob(JobKey.jobKey(taskGoid.toString()));
             if (deleted) {
-                logger.log(Level.INFO, "Policy Scheduler has removed job " + taskGoid.toString());
+                logger.log(Level.INFO, "Job removed for scheduled task id:" + taskGoid.toString());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error trying to remove job from Policy Scheduler with id: " + taskGoid.toString());
+            logger.log(Level.WARNING, "Failed to remove job with id: " + taskGoid.toString() , ExceptionUtils.getDebugException(e));
         }
     }
 

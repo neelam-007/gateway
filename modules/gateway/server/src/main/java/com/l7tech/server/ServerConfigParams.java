@@ -221,6 +221,9 @@ public interface ServerConfigParams {
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS = "custom.assertions.rescan.millis";
     String PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE = "custom.assertions.scan.disable";
 
+    // Scheduled Task system properties
+    String PARAM_SCHEDULED_TASK_MAX_THREADS = "scheduledTask.maxThreads";
+
     // Server ModuleFile Manager
     String PARAM_SERVER_MODULE_FILE_STAGING_FOLDER = "serverModuleFile.staging.folder";
     String PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE = "serverModuleFile.upload.enable";

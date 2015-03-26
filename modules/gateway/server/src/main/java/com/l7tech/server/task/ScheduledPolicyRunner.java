@@ -4,10 +4,16 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.task.JobStatus;
+import com.l7tech.gateway.common.task.JobType;
+import com.l7tech.gateway.common.task.ScheduledTask;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.polback.BackgroundTask;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.inject.Inject;
@@ -74,30 +80,46 @@ public class ScheduledPolicyRunner {
                 null,
                 null,
                 "run",
-                jobManager.clusterInfoManager.getSelfNodeInf().getAddress()); // todo util?
+                jobManager.clusterInfoManager.getSelfNodeInf().getAddress());
 
         jobManager.auditContextFactory.doWithNewAuditContext(auditRecord, new Runnable() {
             @Override
             public void run() {
                 try {
-                    logger.info("Scheduled policy executing");
                     // Invoke the actual policy
                     task.run(null);
                     // Policy executed successfully and evaluated to AssertionStatus.NONE
-                    logger.info("Scheduled policy executed");
-
                 } catch (RuntimeException e) {
-                    // todo handle error and audit
-                    // Policy produced non-successful assertion status, or failed or wasn't found
-                    // Handle error
-
-                    // Can add audit details to audit context if you want -- will be added to open audit record
-                    // Here's an example of how you might add an audit detail to the current audit context
-                    new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
-                            new String[]{"badness!"}, ExceptionUtils.getDebugException(e));
+                    // not audit if Policy produced non-successful assertion status
+                    if(e instanceof AssertionStatusException) {
+                        new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                                new String[]{((AssertionStatusException)e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
+                    }
+                    else{
+                        new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                                new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
+                    }
                 }
 
             }
         });
+    }
+
+    // mark one time tasks as completed
+    public void markAsCompleted(String s) {
+        try {
+            ScheduledTask task = jobManager.scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(s));
+            if (task != null) {
+                if(JobType.ONE_TIME.equals(task.getJobType())) {
+                    task.setJobStatus(JobStatus.COMPLETED);
+                    jobManager.scheduledTaskManager.update(task);
+                }
+            }else{
+                logger.warning("Failed to mark scheduled task #"+s+" as completed.");
+            }
+        } catch (FindException | UpdateException e) {
+            logger.warning("Failed to mark scheduled task #"+s+" as completed.");
+        }
+
     }
 }
