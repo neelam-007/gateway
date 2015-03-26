@@ -93,7 +93,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask) {
         super(parent, "Scheduled Task Properties");
         this.scheduledTask = scheduledTask;
-        scheduledTask.setJobStatus(JobStatus.SCHEDULED);
 
         if (scheduledTask.getExecutionDate() == 0) {
             scheduledTask.setExecutionDate(new Date().getTime());
