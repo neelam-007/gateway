@@ -321,6 +321,7 @@
                 <ref bean="serviceManager" />
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
+                <ref bean="scheduledTaskManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -329,4 +330,6 @@
     </bean>
 
     <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
+
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>
 </beans>

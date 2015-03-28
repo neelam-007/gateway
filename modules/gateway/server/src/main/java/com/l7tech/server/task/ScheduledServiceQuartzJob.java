@@ -1,7 +1,10 @@
 package com.l7tech.server.task;
 
 import com.l7tech.objectmodel.Goid;
-import org.quartz.*;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 import java.util.logging.Logger;
 
@@ -33,21 +36,15 @@ public class ScheduledServiceQuartzJob implements StatefulJob {
     public void execute(JobExecutionContext context)
             throws JobExecutionException {
 
-        Goid policyGoid = Goid.parseGoid(context.getMergedJobDataMap().getString("policyGoid"));
-        String nodeId = context.getMergedJobDataMap().getString("nodeId");
+        Goid policyGoid = Goid.parseGoid(context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID));
+        String nodeId = context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
 
-        if (nodeId.equals("All") || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
+        if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
             try {
                 ScheduledPolicyRunner.getInstance(null).runBackgroundTask(policyGoid);
             } catch (Exception e) {
                 throw new JobExecutionException(e);
-            }finally{
-                // mark one time tasks as completed
-                ScheduledPolicyRunner.getInstance(null).markAsCompleted(context.getMergedJobDataMap().getString("entityGoid"));
             }
         }
-
     }
-
-
 }

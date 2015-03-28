@@ -61,7 +61,8 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = UserMO.class),
             @XmlElementRef(type = GroupMO.class),
             @XmlElementRef(type = CertificateData.class),
-            @XmlElementRef(type = WorkQueueMO.class)
+            @XmlElementRef(type = WorkQueueMO.class),
+            @XmlElementRef(type = ScheduledTaskMO.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "Resource", required = false)

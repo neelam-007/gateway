@@ -11,7 +11,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.BetterComboBox;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.Policy;
@@ -126,11 +125,11 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             policyComboBoxModel = new DefaultComboBoxModel() {
 
             };
-            Collection<Policy> policyHeaders = getPolicyAdmin().findPoliciesByTypeTagAndSubTag(PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.BackgroundTask", "run");
-            Functions.forall(policyHeaders, new Functions.Unary<Boolean, Policy>() {
+            Collection<Policy> policies = getPolicyAdmin().findPoliciesByTypeTagAndSubTag(PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.BackgroundTask", "run");
+            Functions.forall(policies, new Functions.Unary<Boolean, Policy>() {
                 @Override
-                public Boolean call(Policy policyHeader) {
-                    policyComboBoxModel.addElement(policyHeader);
+                public Boolean call(Policy policy) {
+                    policyComboBoxModel.addElement(policy);
                     return true;
                 }
             });
@@ -289,7 +288,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private void modelToView() {
         nameField.setText(scheduledTask.getName());
         nodeComboBox.setSelectedIndex(scheduledTask.isUseOneNode() ? 1 : 0);
-        policyComboBox.setSelectedItem(getPolicyByGoid(scheduledTask.getPolicyGoid()));
+        policyComboBox.setSelectedItem(scheduledTask.getPolicy());
         if (JobType.ONE_TIME.equals(scheduledTask.getJobType())) {
             oneTimeRadioButton.setSelected(true);
             timeChooser.setDate(new Date(scheduledTask.getExecutionDate()));
@@ -355,25 +354,10 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         return policyAdmin;
     }
 
-    private Policy getPolicyByGoid(Goid goid) {
-        if (goid == null || goid.equals(Goid.DEFAULT_GOID)) {
-            return (Policy) policyComboBox.getItemAt(0);
-        }
-
-        for (int i = 0; i < policyComboBox.getItemCount(); i++) {
-            Policy policyHeader = (Policy) policyComboBox.getItemAt(i);
-            if (goid.equals(policyHeader.getGoid())) {
-                return policyHeader;
-            }
-        }
-        return null;
-    }
-
     protected void onOK() {
 
-        Goid policyGoid = ((Policy) policyComboBox.getSelectedItem()).getGoid();
         scheduledTask.setName(nameField.getText());
-        scheduledTask.setPolicyGoid(policyGoid);
+        scheduledTask.setPolicy((Policy) policyComboBox.getSelectedItem());
         scheduledTask.setUseOneNode(nodeComboBox.getSelectedItem().equals(ONE_NODE));
 
         if (oneTimeRadioButton.isSelected()) {

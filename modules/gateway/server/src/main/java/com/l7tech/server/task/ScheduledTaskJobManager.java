@@ -1,9 +1,11 @@
 package com.l7tech.server.task;
 
 import com.l7tech.gateway.common.task.JobStatus;
+import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContextFactory;
@@ -22,6 +24,7 @@ import org.quartz.listeners.TriggerListenerSupport;
 import org.quartz.simpl.SimpleThreadPool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -41,6 +44,13 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     private static final Logger logger = Logger.getLogger(ScheduledTaskJobManager.class.getName());
+    public static final String JOB_DETAIL_NODE = "node";
+    public static final String JOB_DETAIL_JOBTYPE = "jobType";
+    public static final String JOB_DETAIL_ENITTY_GOID = "entityGoid";
+    public static final String JOB_DETAIL_POLICY_GOID = "policyGoid";
+    public static final String JOB_DETAIL_NODE_ONE = "One";
+    public static final String JOB_DETAIL_NODE_ALL = "All";
+
     @Inject
     protected ScheduledTaskManager scheduledTaskManager;
     @Inject
@@ -51,7 +61,6 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     protected AuditContextFactory auditContextFactory;
     @Inject
     protected ApplicationContext applicationContext;
-
     @Inject
     @Named("clusterNodeId")
     protected String nodeId;
@@ -152,14 +161,42 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     public boolean vetoJobExecution(final Trigger trigger, JobExecutionContext context) {
                         try {
                             // veto if job is still being executed.
-                            return  Functions.exists(scheduler.getCurrentlyExecutingJobs(),new Functions.Unary<Boolean, JobExecutionContext>() {
+                            boolean veto =   Functions.exists(scheduler.getCurrentlyExecutingJobs(),new Functions.Unary<Boolean, JobExecutionContext>() {
                                 @Override
                                 public Boolean call(JobExecutionContext jobExecutionContext) {
                                     return jobExecutionContext.getJobDetail().getKey().equals(trigger.getJobKey());
                                 }
                             });
+                            if(veto){
+                                logger.log(Level.INFO,"Scheduled job #"+trigger.getJobKey()+"has been vetoed, job still currently running.");
+                            }
+                            return veto;
                         } catch (SchedulerException e) {
                             return false;
+                        }
+                    }
+
+                    @Override
+                    public void triggerComplete(Trigger trigger, JobExecutionContext context, Trigger.CompletedExecutionInstruction triggerInstructionCode) {
+                        // update one time jobs as completed
+                        String jobType = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
+                        String entityGoid = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
+                        try {
+                            if (jobType.equals(JobType.ONE_TIME.name())) {
+                                ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid));
+                                task.setJobStatus(JobStatus.COMPLETED);
+                                scheduledTaskManager.update(task);
+                            }
+                        } catch (HibernateOptimisticLockingFailureException e) {
+                            String node = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
+                            if(JOB_DETAIL_NODE_ALL.equals(node)){
+                                logger.log(Level.INFO, "Ignored HibernateOptimisticLockingFailureException for updating scheduled task as complete. " +
+                                        "\nJobStatus for one time job has most likely been updated to COMPLETED by a different node in the cluster", ExceptionUtils.getDebugException(e));
+                            }else{
+                                logger.log(Level.WARNING, "Failed to update scheduled task #" +entityGoid+" as completed.", ExceptionUtils.getDebugException(e));
+                            }
+                        } catch (UpdateException | FindException e) {
+                            logger.log(Level.WARNING, "Failed to update scheduled task #" +entityGoid+" as completed.", ExceptionUtils.getDebugException(e));
                         }
                     }
                 });
@@ -192,6 +229,8 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
     public void scheduleOneTimeJob(ScheduledTask job) {
+        if (job.getJobStatus().equals(JobStatus.COMPLETED))
+            return;
         try {
             JobDetail jobDetail = getJobDetail(job);
             Trigger trigger = newTrigger().withIdentity(job.getId()).startAt(new Date(job.getExecutionDate())).build();
@@ -206,10 +245,10 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     private JobDetail getJobDetail(ScheduledTask job) {
         return newJob(ScheduledServiceQuartzJob.class)
                 .withIdentity(job.getId())
-                .usingJobData("nodeId", job.isUseOneNode() ? "One" : "All")
-                .usingJobData("jobType", job.getJobType().toString())
-                .usingJobData("entityGoid", job.getId())
-                .usingJobData("policyGoid", job.getPolicyGoid().toString())
+                .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
+                .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
+                .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
+                .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicy().getId())
                 .build();
     }
 

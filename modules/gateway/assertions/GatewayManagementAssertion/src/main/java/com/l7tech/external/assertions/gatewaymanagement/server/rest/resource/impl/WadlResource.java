@@ -35,7 +35,7 @@ public class WadlResource {
      */
     @GET
     @Produces({"application/vnd.sun.wadl+xml"})
-    public StreamingOutput getWadl(@QueryParam("version") @DefaultValue("1.0.1") final String version) {
+    public StreamingOutput getWadl(@QueryParam("version") @DefaultValue("1.0.2") final String version) {
         final RestManVersion restManVersion = RestManVersion.fromString(version);
         if (restManVersion == null) {
             throw new WebApplicationException("Cannot read wadl resource. Unknown version: '" + version + "' expected one of: " + Functions.map(Arrays.asList(RestManVersion.values()), new Functions.Unary<String, RestManVersion>() {

@@ -785,6 +785,8 @@
 
     <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerStub" />
 
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>
+
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManagerStub" />
 
     <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

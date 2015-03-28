@@ -130,7 +130,7 @@
 
         <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.DocBuilder" classpathref="gatewaymanagementassertion.tools.path" failonerror="true">
             <arg value="${basedir}/tools/com/l7tech/external/assertions/gatewaymanagement/tools/doccer.xsl"/>
-            <arg value="${basedir}/build/etc/wadl/restAPI_1.0.1.wadl"/>
+            <arg value="${basedir}/build/etc/wadl/restAPI_1.0.2.wadl"/>
             <arg value="${basedir}/build/etc/wadl/restDoc.html"/>
         </java>
         <copy todir="${gatewayrestmanagementassertion.restDocFolder}">

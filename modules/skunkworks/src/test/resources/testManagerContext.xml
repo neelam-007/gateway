@@ -1661,4 +1661,6 @@
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
 
     <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
+
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
 </beans>

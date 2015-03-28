@@ -4,12 +4,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.task.JobStatus;
-import com.l7tech.gateway.common.task.JobType;
-import com.l7tech.gateway.common.task.ScheduledTask;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.polback.BackgroundTask;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
@@ -103,23 +98,5 @@ public class ScheduledPolicyRunner {
 
             }
         });
-    }
-
-    // mark one time tasks as completed
-    public void markAsCompleted(String s) {
-        try {
-            ScheduledTask task = jobManager.scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(s));
-            if (task != null) {
-                if(JobType.ONE_TIME.equals(task.getJobType())) {
-                    task.setJobStatus(JobStatus.COMPLETED);
-                    jobManager.scheduledTaskManager.update(task);
-                }
-            }else{
-                logger.warning("Failed to mark scheduled task #"+s+" as completed.");
-            }
-        } catch (FindException | UpdateException e) {
-            logger.warning("Failed to mark scheduled task #"+s+" as completed.");
-        }
-
     }
 }
