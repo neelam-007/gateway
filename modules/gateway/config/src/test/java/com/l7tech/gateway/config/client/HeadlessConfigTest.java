@@ -1,74 +1,49 @@
 package com.l7tech.gateway.config.client;
 
 
-import com.l7tech.config.client.ConfigurationClient;
 import com.l7tech.config.client.ConfigurationException;
-import com.l7tech.config.client.ConfigurationFactory;
-import com.l7tech.config.client.options.OptionSet;
-import com.l7tech.gateway.config.client.Main;
-import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
-import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.gateway.config.client.beans.HeadlessConfigBean;
+import com.l7tech.gateway.config.client.beans.PropertiesAccessor;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
+import junit.framework.Assert;
 import org.hamcrest.CustomMatcher;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.io.*;
-import java.util.Collection;
+import java.util.Properties;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
-@SuppressWarnings({"ConstantConditions", "unchecked"})
 @RunWith(MockitoJUnitRunner.class)
 public class HeadlessConfigTest {
-
     @Mock
-    NodeManagementApiFactory nodeManagementApiFactory;
-    @Mock
-    NodeManagementApi nodeManagementApi;
-
-
+    HeadlessConfigBean headlessConfigBean;
     private InputStream oldIn;
-
-    private PipedOutputStream configStream;
     private PipedInputStream pipedInputStream;
+    private PipedOutputStream configStream;
     private PrintWriter printWriter;
-    private OptionSet fullGatewayConfigurationOptionSet;
-    private NodeConfigurationBeanProvider nodeConfigurationBeanProvider;
     private PrintStream oldOut;
     private PipedInputStream outPipedInputStream;
     private PipedOutputStream outConfigStream;
     private PrintStream outPrintStream;
-    private PrintStream oldErr;
-    private PipedInputStream errPipedInputStream;
-    private PipedOutputStream errConfigStream;
-    private PrintStream errPrintStream;
 
     @Before
     public void before() throws IOException, ConfigurationException {
-        Mockito.when(nodeManagementApiFactory.getManagementService()).thenReturn(nodeManagementApi);
-
-        fullGatewayConfigurationOptionSet = ConfigurationFactory.newConfiguration(Main.class, "configTemplates/GatewayApplianceConfiguration.xml");
-
-        nodeConfigurationBeanProvider = new NodeConfigurationBeanProvider(nodeManagementApiFactory);
-
         oldIn = System.in;
-        oldOut = System.out;
-        oldErr = System.err;
-
         pipedInputStream = new PipedInputStream();
         configStream = new PipedOutputStream(pipedInputStream);
 
@@ -76,15 +51,11 @@ public class HeadlessConfigTest {
 
         System.setIn(pipedInputStream);
 
+        oldOut = System.out;
         outPipedInputStream = new PipedInputStream();
         outConfigStream = new PipedOutputStream(outPipedInputStream);
         outPrintStream = new PrintStream(outConfigStream);
         System.setOut(outPrintStream);
-
-        errPipedInputStream = new PipedInputStream();
-        errConfigStream = new PipedOutputStream(errPipedInputStream);
-        errPrintStream = new PrintStream(errConfigStream);
-        System.setErr(errPrintStream);
     }
 
     @After
@@ -100,19 +71,10 @@ public class HeadlessConfigTest {
         outPrintStream.close();
         outConfigStream.close();
         outPipedInputStream.close();
-
-        System.setErr(oldErr);
-
-        errPrintStream.close();
-        errConfigStream.close();
-        errPipedInputStream.close();
     }
 
     @Test
-    public void createDBAndConfigMysqlNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException {
-
-        ConfigurationClient configurationClient = new ConfigurationClient(nodeConfigurationBeanProvider, fullGatewayConfigurationOptionSet, "headless");
-
+    public void successPath() throws ConfigurationException {
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
         String pmAdminUserPassword = "pmAdminUserPassword";
@@ -127,11 +89,11 @@ public class HeadlessConfigTest {
         String databasePass = "databasePass";
         String databaseHost = "databaseHost";
         final String clusterPass = "clusterPass";
-        printWriter.println("create-db\n" +
+        printWriter.println(
                 "#Headless config create-db answers file\n" +
                 "#Fri Dec 19 16:32:59 PST 2014\n" +
                 "cluster.host=" + clusterHost + "\n" +
-                "database.failover.port=" + databaseFailoverPort + "\n" +
+                "#database.failover.port=" + databaseFailoverPort + "\n" +
                 "database.name=" + databaseName + "\n" +
                 "admin.pass=" + pmAdminUserPassword + "\n" +
                 "database.admin.user=" + databaseAdminUser + "\n" +
@@ -140,87 +102,42 @@ public class HeadlessConfigTest {
                 "node.enable=" + nodeEnabled + "\n" +
                 "admin.user=" + pmAdminUser + "\n" +
                 "database.admin.pass=" + databaseAdminPass + "\n" +
-                "database.failover.host=" + databaseFailoverHost + "\n" +
+                "#database.failover.host=" + databaseFailoverHost + "\n" +
                 "database.pass=" + databasePass + "\n" +
                 "database.host=" + databaseHost + "\n" +
-                "cluster.pass=" + clusterPass + "\n" +
-                ".");
+                "cluster.pass=" + clusterPass + "\n");
         printWriter.flush();
+        printWriter.close();
 
-        boolean success = configurationClient.doInteraction();
-        assertTrue("running configuration client was not successful", success);
+        HeadlessConfig.doHeadlessConfig(headlessConfigBean, new String[]{"create"});
 
-        DatabaseConfig expectedDatabaseConfig = new DatabaseConfig(databaseHost, databasePort, databaseName, databaseUser, databasePass);
-        expectedDatabaseConfig.setClusterType(NodeConfig.ClusterType.STANDALONE);
-        expectedDatabaseConfig.setVendor(DatabaseConfig.Vendor.MYSQL);
-        expectedDatabaseConfig.setType(DatabaseType.NODE_ALL);
-        expectedDatabaseConfig.setDatabaseAdminUsername(databaseAdminUser);
-        expectedDatabaseConfig.setDatabaseAdminPassword(databaseAdminPass);
-        Mockito.verify(nodeManagementApi).createDatabase(
-                Matchers.eq("default"),
-                Matchers.eq(expectedDatabaseConfig),
-                (Collection<String>) Matchers.argThat(contains(databaseHost)),
-                Matchers.eq(pmAdminUser),
-                Matchers.eq(pmAdminUserPassword),
-                Matchers.eq(clusterHost));
-
-        Mockito.verify(nodeManagementApi).createNode(Matchers.argThat(new CustomMatcher<NodeConfig>("Node config matches.") {
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        Mockito.verify(headlessConfigBean).configure(Mockito.eq("create"), Mockito.isNull(String.class), Mockito.argThat(new CustomMatcher<PropertiesAccessor>("PropertiesAccessor Matcher") {
             @Override
             public boolean matches(Object o) {
-                if(! (o instanceof NodeConfig)) {
+                try {
+                    return o instanceof PropertiesAccessor && properties.equals(((PropertiesAccessor) o).getProperties());
+                } catch (ConfigurationException e) {
                     return false;
                 }
-                NodeConfig nodeConfig = (NodeConfig)o;
-                return nodeEnabled.equals(nodeConfig.isEnabled()) &&
-                        clusterHost.equals(nodeConfig.getClusterHostname()) &&
-                        clusterPass.equals(nodeConfig.getClusterPassphrase());
             }
         }));
     }
 
     @Test
-    public void badOptionValue() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException {
-
-        ConfigurationClient configurationClient = new ConfigurationClient(nodeConfigurationBeanProvider, fullGatewayConfigurationOptionSet, "headless");
-
-        printWriter.println("create-db\n" +
-                "#Headless config create-db answers file\n" +
-                "#Fri Dec 19 16:32:59 PST 2014\n" +
-                "cluster.host=test.cluster.hostname\n" +
-                "database.failover.port=null\n" +
-                "database.name=ssg\n" +
-                "admin.pass=7layer\n" +
-                "database.admin.user=root\n" +
-                "database.port=blah\n" +
-                "database.user=gateway\n" +
-                "node.enable=true\n" +
-                "admin.user=admin\n" +
-                "database.admin.pass=7layer\n" +
-                "database.failover.host=null\n" +
-                "database.pass=7layer\n" +
-                "database.host=localhost\n" +
-                "cluster.pass=7layer\n" +
-                ".");
-        printWriter.flush();
-
-        boolean success = configurationClient.doInteraction();
-        assertFalse("running configuration client was successful", success);
-
-        errConfigStream.close();
-
-        StringWriter writer = new StringWriter();
-        IOUtils.copyStream(new InputStreamReader(errPipedInputStream), writer);
-        String errorMessage = writer.toString();
-
-        assertNotNull("error message should not be null", errorMessage);
-        assertThat("error message does not contain correct variable", errorMessage, containsString("database.port"));
-    }
-
-    @Test
-    public void handleDbException() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException {
-
-        ConfigurationClient configurationClient = new ConfigurationClient(nodeConfigurationBeanProvider, fullGatewayConfigurationOptionSet, "headless");
-
+    public void successPathWithSubCommand() throws ConfigurationException {
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
         String pmAdminUserPassword = "pmAdminUserPassword";
@@ -235,156 +152,139 @@ public class HeadlessConfigTest {
         String databasePass = "databasePass";
         String databaseHost = "databaseHost";
         final String clusterPass = "clusterPass";
-        printWriter.println("create-db\n" +
+        printWriter.println(
                 "#Headless config create-db answers file\n" +
-                "#Fri Dec 19 16:32:59 PST 2014\n" +
-                "cluster.host=" + clusterHost + "\n" +
-                "database.failover.port=" + databaseFailoverPort + "\n" +
-                "database.name=" + databaseName + "\n" +
-                "admin.pass=" + pmAdminUserPassword + "\n" +
-                "database.admin.user=" + databaseAdminUser + "\n" +
-                "database.port=" + databasePort + "\n" +
-                "database.user=" + databaseUser + "\n" +
-                "node.enable=" + nodeEnabled + "\n" +
-                "admin.user=" + pmAdminUser + "\n" +
-                "database.admin.pass=" + databaseAdminPass + "\n" +
-                "database.failover.host=" + databaseFailoverHost + "\n" +
-                "database.pass=" + databasePass + "\n" +
-                "database.host=" + databaseHost + "\n" +
-                "cluster.pass=" + clusterPass + "\n" +
-                ".");
+                        "#Fri Dec 19 16:32:59 PST 2014\n" +
+                        "cluster.host=" + clusterHost + "\n" +
+                        "#database.failover.port=" + databaseFailoverPort + "\n" +
+                        "database.name=" + databaseName + "\n" +
+                        "admin.pass=" + pmAdminUserPassword + "\n" +
+                        "database.admin.user=" + databaseAdminUser + "\n" +
+                        "database.port=" + databasePort + "\n" +
+                        "database.user=" + databaseUser + "\n" +
+                        "node.enable=" + nodeEnabled + "\n" +
+                        "admin.user=" + pmAdminUser + "\n" +
+                        "database.admin.pass=" + databaseAdminPass + "\n" +
+                        "#database.failover.host=" + databaseFailoverHost + "\n" +
+                        "database.pass=" + databasePass + "\n" +
+                        "database.host=" + databaseHost + "\n" +
+                        "cluster.pass=" + clusterPass + "\n");
         printWriter.flush();
+        printWriter.close();
 
-        Mockito.doThrow(NodeManagementApi.DatabaseCreationException.class).when(nodeManagementApi).createDatabase(Matchers.anyString(), Matchers.<DatabaseConfig>any(), Matchers.<Collection<String>>any(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString());
+        HeadlessConfig.doHeadlessConfig(headlessConfigBean, new String[]{"create", "help"});
 
-        boolean success = configurationClient.doInteraction();
-        assertFalse("running configuration client was successful", success);
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        Mockito.verify(headlessConfigBean).configure(Mockito.eq("create"), Mockito.eq("help"), Mockito.argThat(new CustomMatcher<PropertiesAccessor>("PropertiesAccessor Matcher") {
+            @Override
+            public boolean matches(Object o) {
+                try {
+                    return o instanceof PropertiesAccessor && properties.equals(((PropertiesAccessor) o).getProperties());
+                } catch (ConfigurationException e) {
+                    return false;
+                }
+            }
+        }));
+    }
 
-        errConfigStream.close();
+    @Test
+    public void inputStreamNotClosed() throws ConfigurationException, IOException {
+        SyspropUtil.setProperty("com.l7tech.gateway.config.client.headlessConfig.loadPropertiesTimeout", "100");
+        try {
+            final String clusterHost = "test.cluster.hostname";
+            String pmAdminUser = "pmAdminUser";
+            String pmAdminUserPassword = "pmAdminUserPassword";
+            String databaseFailoverPort = null;
+            String databaseName = "databaseName";
+            String databaseAdminUser = "databaseAdminUser";
+            int databasePort = 1234;
+            String databaseUser = "databaseUser";
+            final Boolean nodeEnabled = true;
+            String databaseAdminPass = "databaseAdminPass";
+            String databaseFailoverHost = null;
+            String databasePass = "databasePass";
+            String databaseHost = "databaseHost";
+            final String clusterPass = "clusterPass";
+            printWriter.println(
+                    "#Headless config create-db answers file\n" +
+                            "#Fri Dec 19 16:32:59 PST 2014\n" +
+                            "cluster.host=" + clusterHost + "\n" +
+                            "#database.failover.port=" + databaseFailoverPort + "\n" +
+                            "database.name=" + databaseName + "\n" +
+                            "admin.pass=" + pmAdminUserPassword + "\n" +
+                            "database.admin.user=" + databaseAdminUser + "\n" +
+                            "database.port=" + databasePort + "\n" +
+                            "database.user=" + databaseUser + "\n" +
+                            "node.enable=" + nodeEnabled + "\n" +
+                            "admin.user=" + pmAdminUser + "\n" +
+                            "database.admin.pass=" + databaseAdminPass + "\n" +
+                            "#database.failover.host=" + databaseFailoverHost + "\n" +
+                            "database.pass=" + databasePass + "\n" +
+                            "database.host=" + databaseHost + "\n" +
+                            "cluster.pass=" + clusterPass + "\n");
+            printWriter.flush();
+            //printWriter.close();
 
+            Mockito.doAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    ((PropertiesAccessor)invocationOnMock.getArguments()[2]).getProperties();
+                    return null;
+                }
+            }).when(headlessConfigBean).configure(Mockito.eq("create"), Mockito.isNull(String.class), Mockito.<PropertiesAccessor>any());
+
+            HeadlessConfig.doHeadlessConfig(headlessConfigBean, new String[]{"create"});
+
+            String out = getOutputString();
+
+            assertThat("incorrect error message: ", out, Matchers.containsString("Could not load configuration properties"));
+        } finally {
+            SyspropUtil.clearProperty("com.l7tech.gateway.config.client.headlessConfig.loadPropertiesTimeout");
+        }
+    }
+
+    @Test
+    public void noCommand() throws ConfigurationException, IOException {
+
+        Mockito.when(headlessConfigBean.getCommands()).thenReturn(CollectionUtils.set("command"));
+
+        HeadlessConfig.doHeadlessConfig(headlessConfigBean, new String[]{});
+
+        Mockito.verify(headlessConfigBean, new Times(0)).configure(Mockito.anyString(), Mockito.anyString(), Mockito.<PropertiesAccessor>any());
+
+        String out = getOutputString();
+
+        assertThat("incorrect error message: ", out, Matchers.containsString("Must specify a command"));
+    }
+
+    @Test
+    public void headlessCommandException() throws ConfigurationException, IOException {
+
+        Mockito.doThrow(new ConfigurationException("Test Exception")).when(headlessConfigBean).configure(Mockito.anyString(), Mockito.anyString(), Mockito.<PropertiesAccessor>any());
+
+        HeadlessConfig.doHeadlessConfig(headlessConfigBean, new String[]{"create"});
+
+        String out = getOutputString();
+
+        assertThat("incorrect error message", out, Matchers.containsString("Test Exception"));
+    }
+
+    private String getOutputString() throws IOException {
+        outPrintStream.close();
         StringWriter writer = new StringWriter();
-        IOUtils.copyStream(new InputStreamReader(errPipedInputStream), writer);
-        String errorMessage = writer.toString();
-
-        assertNotNull("error message should not be null", errorMessage);
-        assertThat("error message does not contain correct variable", errorMessage, containsString("Error creating database when saving configuration"));
-    }
-
-    @Test
-    public void createDBOnlyMysqlNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException {
-
-        ConfigurationClient configurationClient = new ConfigurationClient(nodeConfigurationBeanProvider, fullGatewayConfigurationOptionSet, "headless");
-
-        final String clusterHost = "test.cluster.hostname";
-        String pmAdminUser = "pmAdminUser";
-        String pmAdminUserPassword = "pmAdminUserPassword";
-        String databaseFailoverPort = null;
-        String databaseName = "databaseName";
-        String databaseAdminUser = "databaseAdminUser";
-        int databasePort = 1234;
-        String databaseUser = "databaseUser";
-        final Boolean nodeEnabled = true;
-        String databaseAdminPass = "databaseAdminPass";
-        String databaseFailoverHost = null;
-        String databasePass = "databasePass";
-        String databaseHost = "databaseHost";
-        final String clusterPass = "clusterPass";
-        final Boolean configureDBOnly = true;
-
-        printWriter.println("create-db\n" +
-                "#Headless config create-db answers file\n" +
-                "#Fri Dec 19 16:32:59 PST 2014\n" +
-                "cluster.host=" + clusterHost + "\n" +
-                "database.failover.port=" + databaseFailoverPort + "\n" +
-                "database.name=" + databaseName + "\n" +
-                "admin.pass=" + pmAdminUserPassword + "\n" +
-                "database.admin.user=" + databaseAdminUser + "\n" +
-                "database.port=" + databasePort + "\n" +
-                "database.user=" + databaseUser + "\n" +
-                "node.enable=" + nodeEnabled + "\n" +
-                "admin.user=" + pmAdminUser + "\n" +
-                "database.admin.pass=" + databaseAdminPass + "\n" +
-                "database.failover.host=" + databaseFailoverHost + "\n" +
-                "database.pass=" + databasePass + "\n" +
-                "database.host=" + databaseHost + "\n" +
-                "cluster.pass=" + clusterPass + "\n" +
-                "configure.dbonly=" + configureDBOnly + "\n" +
-                ".");
-        printWriter.flush();
-
-        boolean success = configurationClient.doInteraction();
-        assertTrue("running configuration client was not successful", success);
-
-        DatabaseConfig expectedDatabaseConfig = new DatabaseConfig(databaseHost, databasePort, databaseName, databaseUser, databasePass);
-        expectedDatabaseConfig.setClusterType(NodeConfig.ClusterType.STANDALONE);
-        expectedDatabaseConfig.setVendor(DatabaseConfig.Vendor.MYSQL);
-        expectedDatabaseConfig.setType(DatabaseType.NODE_ALL);
-        expectedDatabaseConfig.setDatabaseAdminUsername(databaseAdminUser);
-        expectedDatabaseConfig.setDatabaseAdminPassword(databaseAdminPass);
-        Mockito.verify(nodeManagementApi).createDatabase(
-                Matchers.eq("default"),
-                Matchers.eq(expectedDatabaseConfig),
-                (Collection<String>) Matchers.argThat(contains(databaseHost)),
-                Matchers.eq(pmAdminUser),
-                Matchers.eq(pmAdminUserPassword),
-                Matchers.eq(clusterHost));
-
-        Mockito.verify(nodeManagementApi, new Times(0)).createNode(Matchers.<NodeConfig>any());
-    }
-
-    @Test
-    public void createDBOnlyDerbyNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException {
-
-        ConfigurationClient configurationClient = new ConfigurationClient(nodeConfigurationBeanProvider, fullGatewayConfigurationOptionSet, "headless");
-
-        final String clusterHost = "test.cluster.hostname";
-        String pmAdminUser = "pmAdminUser";
-        String pmAdminUserPassword = "pmAdminUserPassword";
-        String databaseFailoverPort = null;
-        String databaseName = "databaseName";
-        String databaseAdminUser = "databaseAdminUser";
-        int databasePort = 1234;
-        String databaseUser = "databaseUser";
-        final Boolean nodeEnabled = true;
-        String databaseAdminPass = "databaseAdminPass";
-        String databaseFailoverHost = null;
-        String databasePass = "databasePass";
-        String databaseHost = null;
-        final String clusterPass = "clusterPass";
-        final Boolean configureDBOnly = true;
-
-        printWriter.println("create-db\n" +
-                "#Headless config create-db answers file\n" +
-                "#Fri Dec 19 16:32:59 PST 2014\n" +
-                "cluster.host=" + clusterHost + "\n" +
-                "database.failover.port=" + databaseFailoverPort + "\n" +
-                "database.name=" + databaseName + "\n" +
-                "admin.pass=" + pmAdminUserPassword + "\n" +
-                "database.admin.user=" + databaseAdminUser + "\n" +
-                "database.port=" + databasePort + "\n" +
-                "database.user=" + databaseUser + "\n" +
-                "node.enable=" + nodeEnabled + "\n" +
-                "admin.user=" + pmAdminUser + "\n" +
-                "database.admin.pass=" + databaseAdminPass + "\n" +
-                "database.failover.host=" + databaseFailoverHost + "\n" +
-                "database.pass=" + databasePass + "\n" +
-                "database.host=" + databaseHost + "\n" +
-                "cluster.pass=" + clusterPass + "\n" +
-                "configure.dbonly=" + configureDBOnly + "\n" +
-                ".");
-        printWriter.flush();
-
-        boolean success = configurationClient.doInteraction();
-        assertTrue("running configuration client was not successful", success);
-
-        Mockito.verify(nodeManagementApi).createDatabase(
-                Matchers.eq("default"),
-                Matchers.isNull(DatabaseConfig.class),
-                (Collection<String>) Matchers.argThat(empty()),
-                Matchers.eq(pmAdminUser),
-                Matchers.eq(pmAdminUserPassword),
-                Matchers.eq(clusterHost));
-
-        Mockito.verify(nodeManagementApi, new Times(0)).createNode(Matchers.<NodeConfig>any());
+        IOUtils.copyStream(new InputStreamReader(outPipedInputStream), writer);
+        return writer.toString();
     }
 }

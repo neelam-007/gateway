@@ -2362,11 +2362,17 @@
     -->
     <target name="package.configwiz" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/configwizard/lib"/>
+        <mkdir dir="${build.dir}/configwizard/bin"/>
 
         <copy todir="${build.dir}/configwizard">
             <fileset dir="${src.root}/etc">
                 <include name="ssgconfig.sh"/>
                 <include name="configlogging.properties"/>
+            </fileset>
+        </copy>
+        <copy todir="${build.dir}/configwizard/bin">
+            <fileset dir="${src.root}/etc">
+                <include name="ssgconfig-headless"/>
             </fileset>
         </copy>
 
@@ -2381,6 +2387,15 @@
                 <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
                 <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.Main"/>
+            </manifest>
+        </jar>
+
+        <jar jarfile="${build.dir}/configwizard/ConfigHeadless.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.HeadlessConfig"/>
             </manifest>
         </jar>
 

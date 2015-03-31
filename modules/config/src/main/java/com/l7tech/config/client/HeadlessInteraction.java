@@ -17,20 +17,23 @@ import java.util.Set;
 
 /**
  * Headless configuration mode that reads an answers file from STDIN.
+ *
+ * @deprecated Use the HeadlessConfig instead
  */
+@Deprecated
 public class HeadlessInteraction extends ConfigurationInteraction {
 
-    //this is the option to allow for creation of the database only without other configuration files
-    private final Option dbOnlyOption = new Option() {{
-        setId("db-only");
+    //this is the option specified if the node.properties should be created
+    private static final com.l7tech.config.client.options.Option nodeOption = new com.l7tech.config.client.options.Option() {{
+        setId("configure-node");
         setGroup("headless");
         setType(OptionType.BOOLEAN);
-        setOrder(500);
-        setName("DB Only");
-        setConfigName("configure.dbonly");
-        setConfigValue("false");
-        setDescription("True creates database only, false will also create other configuration files.");
-        setPrompt("Only create database.");
+        setOrder(501);
+        setName("Configure Node");
+        setConfigName("configure.node");
+        setConfigValue("true");
+        setDescription("True configures a new node. Setting this to false will not configure a new node");
+        setPrompt("Create database.");
     }};
 
     public HeadlessInteraction( final OptionSet optionSet,
@@ -43,7 +46,7 @@ public class HeadlessInteraction extends ConfigurationInteraction {
                 optionSet,
                 configBeans );
         //need to add a headless only config option here:
-        optionSet.getOptions().add(dbOnlyOption);
+        optionSet.getOptions().add(nodeOption);
     }
 
     @Override

@@ -181,6 +181,7 @@ echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/nciph
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/ssgconfig_launch" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/patchcli_launch" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Gateway/config/bin/ssgconfig-headless" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/viewlog" >> /etc/sudoers

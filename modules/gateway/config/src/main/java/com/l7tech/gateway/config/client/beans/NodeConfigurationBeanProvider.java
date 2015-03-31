@@ -81,8 +81,8 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                     managementService.createDatabase( config.getName(), databaseConfig.toNull(), hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
                 }
 
-                Boolean dbOnly = getOption("configure.dbonly", configuration);
-                if ( dbOnly == null || !dbOnly ) {
+                Boolean configureNode = getOption("configure.node", configuration);
+                if ( configureNode == null || configureNode ) {
                     managementService.createNode(config);
                 }
             }
