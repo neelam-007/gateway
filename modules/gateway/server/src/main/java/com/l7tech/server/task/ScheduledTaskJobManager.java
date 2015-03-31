@@ -17,14 +17,12 @@ import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.listeners.TriggerListenerSupport;
 import org.quartz.simpl.SimpleThreadPool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -157,25 +155,6 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     }
 
                     @Override
-                    public boolean vetoJobExecution(final Trigger trigger, JobExecutionContext context) {
-                        try {
-                            // veto if job is still being executed.
-                            boolean veto =   Functions.exists(scheduler.getCurrentlyExecutingJobs(),new Functions.Unary<Boolean, JobExecutionContext>() {
-                                @Override
-                                public Boolean call(JobExecutionContext jobExecutionContext) {
-                                    return jobExecutionContext.getJobDetail().getKey().equals(trigger.getJobKey());
-                                }
-                            });
-                            if(veto){
-                                logger.log(Level.INFO,"Scheduled job #"+trigger.getJobKey()+"has been vetoed, job still currently running.");
-                            }
-                            return veto;
-                        } catch (SchedulerException e) {
-                            return false;
-                        }
-                    }
-
-                    @Override
                     public void triggerComplete(Trigger trigger, JobExecutionContext context, Trigger.CompletedExecutionInstruction triggerInstructionCode) {
                         // update one time jobs as completed
                         String nodeId = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
@@ -184,17 +163,11 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                             String entityGoid = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
                             try {
                                 if (jobType.equals(JobType.ONE_TIME.name())) {
-                                    ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid));
-                                    task.setJobStatus(JobStatus.COMPLETED);
-                                    scheduledTaskManager.update(task);
-                                }
-                            } catch (HibernateOptimisticLockingFailureException e) {
-                                String node = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
-                                if (JOB_DETAIL_NODE_ALL.equals(node)) {
-                                    logger.log(Level.INFO, "Ignored HibernateOptimisticLockingFailureException for updating scheduled task as complete. " +
-                                            "\nJobStatus for one time job has most likely been updated to COMPLETED by a different node in the cluster", ExceptionUtils.getDebugException(e));
-                                } else {
-                                    logger.log(Level.WARNING, "Failed to update scheduled task #" + entityGoid + " as completed.", ExceptionUtils.getDebugException(e));
+                                    ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid),true);
+                                    if(!task.getJobStatus().equals(JobStatus.COMPLETED)) {
+                                        task.setJobStatus(JobStatus.COMPLETED);
+                                        scheduledTaskManager.update(task);
+                                    }
                                 }
                             } catch (UpdateException | FindException e) {
                                 logger.log(Level.WARNING, "Failed to update scheduled task #" + entityGoid + " as completed.", ExceptionUtils.getDebugException(e));

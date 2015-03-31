@@ -30,6 +30,8 @@ public class ScheduledPolicyRunner {
 
 
     private ScheduledTaskJobManager jobManager;
+    private Auditor auditor;
+
     public static void setInstance(ScheduledPolicyRunner serviceRunner) {
         instance = serviceRunner;
     }
@@ -64,8 +66,6 @@ public class ScheduledPolicyRunner {
         final BackgroundTask task = jobManager.pbsReg.getImplementationProxyForSingleMethod(runMethod, policyGoid);
 
         // Create an audit record in which to accumulate any audit details that appear.
-        // INFO level is OK for scheduled task probably.
-        // Work queue might want to default to FINE level, or maybe inherit level from calling policy's audit context
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO,
                 jobManager.nodeId,
                 Component.GW_SCHEDULED_TASK,
@@ -87,16 +87,24 @@ public class ScheduledPolicyRunner {
                 } catch (RuntimeException e) {
                     // not audit if Policy produced non-successful assertion status
                     if(e instanceof AssertionStatusException) {
-                        new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
-                                new String[]{((AssertionStatusException)e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
+                        getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                                new String[]{((AssertionStatusException) e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
                     }
                     else{
-                        new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                        getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
                                 new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                     }
                 }
 
             }
         });
+    }
+
+    private Auditor getAuditor(){
+        if(auditor == null)
+        {
+            auditor = new Auditor(this, jobManager.applicationContext, logger);
+        }
+        return auditor;
     }
 }

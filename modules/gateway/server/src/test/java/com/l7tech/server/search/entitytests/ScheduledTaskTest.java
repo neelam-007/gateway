@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * This was created: 6/12/13 as 4:55 PM
  *
- * @author Victor Kazakov
  */
 public class ScheduledTaskTest extends DependencyTestBaseClass {
 
