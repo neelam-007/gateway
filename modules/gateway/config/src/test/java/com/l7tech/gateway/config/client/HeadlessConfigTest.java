@@ -24,9 +24,12 @@ import org.mockito.stubbing.Answer;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HeadlessConfigTest {
@@ -40,6 +43,8 @@ public class HeadlessConfigTest {
     private PipedInputStream outPipedInputStream;
     private PipedOutputStream outConfigStream;
     private PrintStream outPrintStream;
+    private StringWriter outputWriter;
+    private CountDownLatch outputWriteLatch;
 
     @Before
     public void before() throws IOException, ConfigurationException {
@@ -56,6 +61,21 @@ public class HeadlessConfigTest {
         outConfigStream = new PipedOutputStream(outPipedInputStream);
         outPrintStream = new PrintStream(outConfigStream);
         System.setOut(outPrintStream);
+
+        outputWriteLatch = new CountDownLatch(1);
+        outputWriter = new StringWriter();
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    IOUtils.copyStream(new InputStreamReader(outPipedInputStream), outputWriter);
+                } catch (IOException e) {
+                    fail("Unexpected message reading output stream");
+                } finally {
+                    outputWriteLatch.countDown();
+                }
+            }
+        });
     }
 
     @After
@@ -250,13 +270,15 @@ public class HeadlessConfigTest {
             String out = getOutputString();
 
             assertThat("incorrect error message: ", out, Matchers.containsString("Could not load configuration properties"));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
             SyspropUtil.clearProperty("com.l7tech.gateway.config.client.headlessConfig.loadPropertiesTimeout");
         }
     }
 
     @Test
-    public void noCommand() throws ConfigurationException, IOException {
+    public void noCommand() throws ConfigurationException, IOException, InterruptedException {
 
         Mockito.when(headlessConfigBean.getCommands()).thenReturn(CollectionUtils.set("command"));
 
@@ -270,7 +292,7 @@ public class HeadlessConfigTest {
     }
 
     @Test
-    public void headlessCommandException() throws ConfigurationException, IOException {
+    public void headlessCommandException() throws ConfigurationException, IOException, InterruptedException {
 
         Mockito.doThrow(new ConfigurationException("Test Exception")).when(headlessConfigBean).configure(Mockito.anyString(), Mockito.anyString(), Mockito.<PropertiesAccessor>any());
 
@@ -281,10 +303,10 @@ public class HeadlessConfigTest {
         assertThat("incorrect error message", out, Matchers.containsString("Test Exception"));
     }
 
-    private String getOutputString() throws IOException {
+    private String getOutputString() throws IOException, InterruptedException {
+        outPrintStream.flush();
         outPrintStream.close();
-        StringWriter writer = new StringWriter();
-        IOUtils.copyStream(new InputStreamReader(outPipedInputStream), writer);
-        return writer.toString();
+        outputWriteLatch.await();
+        return outputWriter.toString();
     }
 }

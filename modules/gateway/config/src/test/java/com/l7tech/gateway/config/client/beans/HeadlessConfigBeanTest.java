@@ -26,13 +26,13 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @SuppressWarnings({"unchecked", "ConstantConditions"})
 @RunWith(MockitoJUnitRunner.class)
@@ -50,6 +50,8 @@ public class HeadlessConfigBeanTest {
     //output stream
     private PipedInputStream outPipedInputStream;
     private PrintStream outPrintStream;
+    private StringWriter outputWriter;
+    private CountDownLatch outputWriteLatch;
 
     @Before
     public void before() throws IOException, ConfigurationException {
@@ -60,6 +62,21 @@ public class HeadlessConfigBeanTest {
         outPipedInputStream = new PipedInputStream();
         PipedOutputStream outConfigStream = new PipedOutputStream(outPipedInputStream);
         outPrintStream = new PrintStream(outConfigStream);
+
+        outputWriteLatch = new CountDownLatch(1);
+        outputWriter = new StringWriter();
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    IOUtils.copyStream(new InputStreamReader(outPipedInputStream), outputWriter);
+                } catch (IOException e) {
+                    fail("Unexpected message reading output stream");
+                } finally {
+                    outputWriteLatch.countDown();
+                }
+            }
+        });
     }
 
     @After
@@ -67,7 +84,7 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
-    public void createDBAndConfigMysqlNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException {
+    public void createDBAndConfigMysqlNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
 
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
@@ -141,7 +158,7 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
-    public void createDBOnlyDerbyNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException {
+    public void createDBOnlyDerbyNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
 
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
@@ -231,7 +248,7 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
-    public void helpCommand() throws ConfigurationException, IOException {
+    public void helpCommand() throws ConfigurationException, IOException, InterruptedException {
         HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
 
         headlessConfigBean.configure("help", null, new PropertiesAccessor() {
@@ -248,7 +265,7 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
-    public void createTemplateCommand() throws ConfigurationException, IOException {
+    public void createTemplateCommand() throws ConfigurationException, IOException, InterruptedException {
         HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
 
         headlessConfigBean.configure("create", "template", new PropertiesAccessor() {
@@ -315,11 +332,11 @@ public class HeadlessConfigBeanTest {
         });
     }
 
-    private String getOutputString() throws IOException {
+    private String getOutputString() throws IOException, InterruptedException {
+        outPrintStream.flush();
         outPrintStream.close();
-        StringWriter writer = new StringWriter();
-        IOUtils.copyStream(new InputStreamReader(outPipedInputStream), writer);
-        return writer.toString();
+        outputWriteLatch.await();
+        return outputWriter.toString();
     }
 
 }

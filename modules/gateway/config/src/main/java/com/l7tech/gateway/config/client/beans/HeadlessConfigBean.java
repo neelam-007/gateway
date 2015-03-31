@@ -76,24 +76,31 @@ public class HeadlessConfigBean {
             .put(new Pair<String, String>("help", null), new Functions.UnaryVoidThrows<PropertiesAccessor, Throwable>() {
                 @Override
                 public void call(PropertiesAccessor propertiesAccessor) {
-                    printStream.println("This is a tool to headlessly configure the gateway. It takes a properties file as input on the input stream. The specific configuration is specified as an argument to this command. Possible commands are:");
-                    printStream.println(" 'create' ");
-                    printStream.println("  - Create a gateway node, including the database and the gateway node properties file.");
-                    printStream.println(" 'help' ");
-                    printStream.println("  - This shows this help file.");
-                    printStream.println("");
-                    printStream.println("Most commands will also have a sub-command, it is specified as the second command line argument. For example most commands will have a help sub-command to print out command specific help.");
-                    printStream.println("");
-                    printStream.println("Example Usages:");
-                    printStream.println("Configures a new gateway node:");
-                    printStream.println("cat create-node.properties | ssgconfig-headless create");
-                    printStream.println("");
-                    printStream.println("Print out the create command help:");
-                    printStream.println("ssgconfig-headless create help");
-                    printStream.println("");
-                    printStream.println("Prints out create command template properties:");
-                    printStream.println("ssgconfig-headless create template");
-                    printStream.flush();
+                    printStream.println(
+                            "Usage: ssgconfig-headless <command> [sub-command]\n" +
+                                    "This is a tool to headlessly configure the gateway. It takes a properties file as input on the input stream. The specific configuration is specified as an argument to this command. \n" +
+                                    "Possible commands are:\n" +
+                                    " 'create' \n" +
+                                    "   - Create a gateway node, including the database and the gateway node properties file.\n" +
+                                    " 'help' \n" +
+                                    "   - This shows this help file.\n" +
+                                    "\n" +
+                                    "Most commands will also have a sub-command, it is specified as the second command line argument. For example, most commands will have a help sub-command to print out command specific help.\n" +
+                                    "\n" +
+                                    "This tool should be run as the layer7 user. To run it so that a password is not prompted for you can add 'sudo -u layer7' before the command. See the examples below.\n" +
+                                    "\n" +
+                                    "==========Example Usages==========\n" +
+                                    "Configures a new gateway node:\n" +
+                                    "cat create-node.properties | sudo -u layer7 ssgconfig-headless create\n" +
+                                    "\n" +
+                                    "Print out the create command help:\n" +
+                                    "sudo -u layer7 ssgconfig-headless create help\n" +
+                                    "\n" +
+                                    "Prints out create command template properties:\n" +
+                                    "sudo -u layer7 ssgconfig-headless create template\n" +
+                                    "\n" +
+                                    "Remotely configure the gateway:\n" +
+                                    "cat create-node.properties | ssh ssgconfig@gatewayhost sudo -u layer7 /opt/SecureSpan/Gateway/config/bin/ssgconfig-headless create");
                 }
             })
             .put(new Pair<>("create", "template"), new Functions.UnaryVoidThrows<PropertiesAccessor, Throwable>() {
@@ -112,14 +119,12 @@ public class HeadlessConfigBean {
                             printStream.println(name + "=" + value);
                         }
                     }
-                    printStream.flush();
                 }
             })
             .put(new Pair<>("create", "help"), new Functions.UnaryVoidThrows<PropertiesAccessor, Throwable>() {
                 @Override
                 public void call(PropertiesAccessor propertiesAccessor) throws ConfigurationException {
                     printStream.println("This command will create a database and the node.properties file. Help to be completed!");
-                    printStream.flush();
                 }
             })
             .put(new Pair<String, String>("create", null), new Functions.UnaryVoidThrows<PropertiesAccessor, Throwable>() {
@@ -131,17 +136,17 @@ public class HeadlessConfigBean {
                     final Collection<ConfigurationBean> configBeans = getConfigBeans(options, propertiesAccessor.getProperties(), false);
                     //validate the config beans
                     final String databaseType = getOption("database.type", configBeans);
-                    if(!"mysql".equals(databaseType) && !"derby".equals(databaseType) ){
-                        throw new ConfigurationException("Unknown database type '"+databaseType+"'. Expected one of: 'mysql' or 'derby'");
+                    if (!"mysql".equals(databaseType) && !"derby".equals(databaseType)) {
+                        throw new ConfigurationException("Unknown database type '" + databaseType + "'. Expected one of: 'mysql' or 'derby'");
                     }
-                    if("mysql".equals(databaseType)) {
+                    if ("mysql".equals(databaseType)) {
                         checkNotNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host"));
                     } else {
                         //this means its derby
                         checkNotNull(configBeans, Arrays.asList("admin.user", "admin.pass", "cluster.host"));
                         //setting the database.host to null will configure a derby database
                         ConfigurationBean databaseHostConfigBean = getConfigBean("database.host", configBeans);
-                        if(databaseHostConfigBean != null){
+                        if (databaseHostConfigBean != null) {
                             databaseHostConfigBean.setConfigValue(null);
                         }
                     }
@@ -167,8 +172,8 @@ public class HeadlessConfigBean {
     }
 
     private void checkNotNull(Collection<ConfigurationBean> configBeans, List<String> propertiesToCheck) throws ConfigurationException {
-        for(String propertyName : propertiesToCheck){
-            if(getOption(propertyName, configBeans) == null){
+        for (String propertyName : propertiesToCheck) {
+            if (getOption(propertyName, configBeans) == null) {
                 throw new ConfigurationException("Missing configuration property: " + propertyName);
             }
         }
@@ -257,6 +262,9 @@ public class HeadlessConfigBean {
         for (final Option option : options) {
             final String name = option.getConfigName();
             final String value = getOptionValue(option, properties, includeDefaultsAndNulls);
+            if (!includeDefaultsAndNulls) {
+                validate(value, option);
+            }
             final ConfigurationBean<String> bean = new ConfigurationBean<>();
             bean.setId(option.getId());
             bean.setFormatter(option.getType().getFormat());
@@ -268,7 +276,7 @@ public class HeadlessConfigBean {
                     throw new ConfigurationException("Unable to parse option value for '" + name + "' value given: '" + value + "'. Message: " + ExceptionUtils.getMessage(pe), pe);
                 }
             }
-            if(value != null || includeDefaultsAndNulls){
+            if (value != null || includeDefaultsAndNulls) {
                 configurationBeans.add(bean);
             }
         }
@@ -300,6 +308,34 @@ public class HeadlessConfigBean {
         }
 
         return value;
+    }
+
+    /**
+     * Validates the option value. This will throw a ConfigurationException if the value is not valid
+     *
+     * @param value  The value to validate
+     * @param option The option to validate
+     * @throws ConfigurationException This is thrown if the value is not valid
+     */
+    private static void validate(final String value, final Option option) throws ConfigurationException {
+        if (option.getMinlength() != null && (value == null || value.length() < option.getMinlength())) {
+            throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Message: length too short, min length is " + option.getMinlength());
+        } else if (option.getMaxlength() != null && (value != null && value.length() > option.getMaxlength())) {
+            throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Message: length too long, max length is " + option.getMaxlength());
+        }
+
+        if ((option.getMin() != null || option.getMax() != null) && value != null) {
+            try {
+                Long numberValue = Long.parseLong(value.trim());
+                if (option.getMin() != null && numberValue < option.getMin()) {
+                    throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Message: value too small, min value is " + option.getMin());
+                } else if (option.getMax() != null && numberValue > option.getMax()) {
+                    throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Message: value too large, max value is " + option.getMax());
+                }
+            } catch (NumberFormatException nfe) {
+                throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Could not convert to number. Message: " + ExceptionUtils.getMessage(nfe), nfe);
+            }
+        }
     }
 
     //this is the option specified whether the database should be created
