@@ -1444,6 +1444,7 @@ public class WorkSpacePanel extends JPanel {
                 }
             }
             // Redraw tab title
+            ((PolicyEditorPanel) component).invalidateCachedInfo();
             ((PolicyEditorPanel) component).updateHeadings();
         }
 
