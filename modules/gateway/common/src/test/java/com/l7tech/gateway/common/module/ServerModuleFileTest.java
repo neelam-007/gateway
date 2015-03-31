@@ -233,12 +233,10 @@ public class ServerModuleFileTest {
         entity = new ServerModuleFile();
         entity.createData("test data".getBytes(Charsets.UTF8), "test sha256");
         ServerModuleFileData entityData = entity.getData();
-        assertNull("Signature Properties is nullable", entityData.getProperties());
+        assertNull("Signature Properties is nullable", entityData.getSignatureProperties());
 
         // Set signature properties
-        entityData.setProperty(ServerModuleFileData.SIGNATURE_PROP_CERT, SAMPLE_CERT);
-        entityData.setProperty(ServerModuleFileData.SIGNATURE_PROP_DIGEST, SAMPLE_DIGEST);
-        entityData.setProperty(ServerModuleFileData.SIGNATURE_PROP_SIGNATURE, SAMPLE_SIGNATURE);
+        entityData.setSignatureProperties(SAMPLE_SIGNATURE_PROPERTIES_STRING);
 
         // Verify signature properties
         assertEquals(SAMPLE_SIGNATURE_PROPERTIES_STRING, entityData.getSignatureProperties());
