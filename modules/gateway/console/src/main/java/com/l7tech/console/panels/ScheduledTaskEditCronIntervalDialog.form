@@ -30,6 +30,7 @@
                 </constraints>
                 <properties>
                   <text value="Every minute"/>
+                  <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.every"/>
                 </properties>
               </component>
               <vspacer id="b6dad">
@@ -51,6 +52,7 @@
                     </constraints>
                     <properties>
                       <text value="Every"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.step"/>
                     </properties>
                   </component>
                   <component id="86a25" class="javax.swing.JTextField" binding="stepWidthTextField">
@@ -59,7 +61,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.step"/>
+                    </properties>
                   </component>
                   <component id="404c1" class="javax.swing.JLabel" binding="stepWidthLabel">
                     <constraints>
@@ -85,6 +89,7 @@
                     </constraints>
                     <properties>
                       <text value="From"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.interval"/>
                     </properties>
                   </component>
                   <component id="89e7" class="javax.swing.JTextField" binding="fromTextField">
@@ -95,6 +100,7 @@
                     </constraints>
                     <properties>
                       <text value=""/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.from"/>
                     </properties>
                   </component>
                   <component id="1bf07" class="javax.swing.JLabel" binding="toLabel">
@@ -102,7 +108,7 @@
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="to"/>
+                      <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.to"/>
                     </properties>
                   </component>
                   <component id="717e5" class="javax.swing.JTextField" binding="toTextField">
@@ -113,6 +119,7 @@
                     </constraints>
                     <properties>
                       <text value=""/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.to"/>
                     </properties>
                   </component>
                   <component id="8e064" class="javax.swing.JLabel" binding="exactLabel">
@@ -138,7 +145,8 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="At"/>
+                      <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.radio.at"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.at"/>
                     </properties>
                   </component>
                   <component id="fdf78" class="javax.swing.JTextField" binding="exactTextField">
@@ -147,7 +155,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.exact"/>
+                    </properties>
                   </component>
                 </children>
               </grid>
@@ -164,7 +174,8 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="Expression:"/>
+                      <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.radio.expression"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.expression"/>
                     </properties>
                   </component>
                   <component id="7532" class="javax.swing.JTextField" binding="expressionTextField">
@@ -173,7 +184,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.expression"/>
+                    </properties>
                   </component>
                 </children>
               </grid>
@@ -199,7 +212,7 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Cancel"/>
+              <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.cancel"/>
             </properties>
           </component>
           <component id="ecbae" class="javax.swing.JButton" binding="okButton">
@@ -207,7 +220,7 @@
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="OK"/>
+              <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.ok"/>
             </properties>
           </component>
         </children>

@@ -7,11 +7,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 
 public class ScheduledTaskEditCronIntervalDialog extends JDialog {
     private final Logger logger = Logger.getLogger(ScheduledTaskEditCronIntervalDialog.class.getName());
+    private static final ResourceBundle resource = ResourceBundle.getBundle(ScheduledTaskEditCronIntervalDialog.class.getName());
 
     private JPanel mainPanel;
     private JButton okButton;
@@ -41,7 +43,7 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
     }
 
     public ScheduledTaskEditCronIntervalDialog(Dialog parent, ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval interval, String cronExpressionFragment) {
-        super(parent, "Edit Cron Field", true);
+        super(parent, resource.getString("dialog.title"), true);
 
         this.cronExpressionFragment = cronExpressionFragment;
 
@@ -126,35 +128,35 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
 
     private void setLabels(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval interval){
         if(interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_SECOND)){
-                stepWidthLabel.setText("seconds");
-                everyRadioButton.setText("Every second");
-                exactLabel.setText("second");
-                exactRadioButton.setText("At an exact second");
+                stepWidthLabel.setText(resource.getString("label.second.step"));
+                everyRadioButton.setText(resource.getString("label.second.every"));
+                exactLabel.setText(resource.getString("label.second.exact"));
+                exactRadioButton.setText(resource.getString("label.second.radio.exact"));
         } else if(interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MINUTE)){
-                stepWidthLabel.setText("minutes");
-                everyRadioButton.setText("Every minute");
-                exactLabel.setText("minute");
-                exactRadioButton.setText("At an exact minute");
+            stepWidthLabel.setText(resource.getString("label.minute.step"));
+            everyRadioButton.setText(resource.getString("label.minute.every"));
+            exactLabel.setText(resource.getString("label.minute.exact"));
+            exactRadioButton.setText(resource.getString("label.minute.radio.exact"));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_HOUR)){
-                stepWidthLabel.setText("hours");
-                everyRadioButton.setText("Every Hour");
-                exactLabel.setText("hour");
-                exactRadioButton.setText("At an exact hour");
+            stepWidthLabel.setText(resource.getString("label.hour.step"));
+            everyRadioButton.setText(resource.getString("label.hour.every"));
+            exactLabel.setText(resource.getString("label.hour.exact"));
+            exactRadioButton.setText(resource.getString("label.hour.radio.exact"));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_DAY)){
-                stepWidthLabel.setText("days");
-                everyRadioButton.setText("Every day");
-                exactLabel.setText("day");
-                exactRadioButton.setText("On a day");
+            stepWidthLabel.setText(resource.getString("label.day.step"));
+            everyRadioButton.setText(resource.getString("label.day.every"));
+            exactLabel.setText(resource.getString("label.day.exact"));
+            exactRadioButton.setText(resource.getString("label.day.radio.exact"));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MONTH)){
-                stepWidthLabel.setText("months");
-                everyRadioButton.setText("Every month");
-                exactLabel.setText("month");
-                exactRadioButton.setText("In a month");
+            stepWidthLabel.setText(resource.getString("label.month.step"));
+            everyRadioButton.setText(resource.getString("label.month.every"));
+            exactLabel.setText(resource.getString("label.month.exact"));
+            exactRadioButton.setText(resource.getString("label.month.radio.exact"));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_WEEK)){
-                stepWidthLabel.setText("day of the week");
-                everyRadioButton.setText("Every day of the week");
-                exactLabel.setText("day of the week");
-                exactRadioButton.setText("On a day of the week");
+            stepWidthLabel.setText(resource.getString("label.weekday.step"));
+            everyRadioButton.setText(resource.getString("label.weekday.every"));
+            exactLabel.setText(resource.getString("label.weekday.exact"));
+            exactRadioButton.setText(resource.getString("label.weekday.radio.exact"));
         }
     }
 

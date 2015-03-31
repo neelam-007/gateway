@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.task.JobStatus;
@@ -26,6 +27,7 @@ import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +35,8 @@ import java.util.regex.Pattern;
 
 public class ScheduledTaskPropertiesDialog extends JDialog {
     private final Logger logger = Logger.getLogger(ScheduledTaskPropertiesDialog.class.getName());
-    // todo use resource
+    private static final ResourceBundle resources = ResourceBundle.getBundle(ScheduledTaskPropertiesDialog.class.getName());
+
 
     private JPanel mainPanel;
     private JLabel policyIdLabel;
@@ -75,6 +78,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JCheckBox sundayCheckBox;
     private JTextField intervalTextField;
     private JDateTimeChooser timeChooser;
+    private SecurityZoneWidget securityZoneChooser;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
@@ -82,14 +86,14 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private DefaultComboBoxModel policyComboBoxModel;
     private PolicyAdmin policyAdmin;
 
-    private final String All_NODES = "All Nodes";
-    private final String ONE_NODE = "One Node";
+    private final String All_NODES = resources.getString("node.all");
+    private final String ONE_NODE = resources.getString("node.one");
     private String[] cronFragments;
 
     private ScheduledTask scheduledTask;
 
     public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask) {
-        super(parent, "Scheduled Task Properties");
+        super(parent, resources.getString("dialog.title"));
         this.scheduledTask = scheduledTask;
 
         if (scheduledTask.getExecutionDate() == 0) {
@@ -239,7 +243,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         basicRadioButton.addActionListener(changeListener);
         advancedRadioButton.addActionListener(changeListener);
 
-        // todo add tootips
+        securityZoneChooser.configure( scheduledTask);
+
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();
@@ -289,6 +294,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         nameField.setText(scheduledTask.getName());
         nodeComboBox.setSelectedIndex(scheduledTask.isUseOneNode() ? 1 : 0);
         policyComboBox.setSelectedItem(scheduledTask.getPolicy());
+        timeChooser.setDate(new Date());
         if (JobType.ONE_TIME.equals(scheduledTask.getJobType())) {
             oneTimeRadioButton.setSelected(true);
             timeChooser.setDate(new Date(scheduledTask.getExecutionDate()));
@@ -297,6 +303,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             selectRadioButton(scheduledTask.getCronExpression());
         }
         disableCheckBox.setSelected(JobStatus.DISABLED.equals(scheduledTask.getJobStatus()));
+        securityZoneChooser.configure(scheduledTask);
     }
 
     private void selectRadioButton(String cronExpression) {
@@ -316,7 +323,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     }
 
     private void doEdit(final ScheduledTaskBasicInterval scheduledTaskBasicInterval, final JTextField textField) {
-        final ScheduledTaskEditCronIntervalDialog editCronIntervalDialog = new ScheduledTaskEditCronIntervalDialog(this, scheduledTaskBasicInterval, cronFragments[scheduledTaskBasicInterval.ordinal()]);
+        final ScheduledTaskEditCronIntervalDialog editCronIntervalDialog = new ScheduledTaskEditCronIntervalDialog(this, scheduledTaskBasicInterval, textField.getText());
         DialogDisplayer.display(editCronIntervalDialog, new Runnable() {
             @Override
             public void run() {
@@ -359,6 +366,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         scheduledTask.setName(nameField.getText());
         scheduledTask.setPolicy((Policy) policyComboBox.getSelectedItem());
         scheduledTask.setUseOneNode(nodeComboBox.getSelectedItem().equals(ONE_NODE));
+        scheduledTask.setSecurityZone(securityZoneChooser.getSelectedZone());
 
         if (oneTimeRadioButton.isSelected()) {
             scheduledTask.setJobType(JobType.ONE_TIME);
@@ -368,8 +376,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             // Validate that scheduled execution date is in the future
             Date now = new Date();
             if (new Date(scheduledTask.getExecutionDate()).before(now)) {
-                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Scheduled Excecution time must be later than current time",
-                        "Scheduled Execution Date Error", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, resources.getString("error.date.message"),
+                        resources.getString("error.date.title"), JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
             scheduledTask.setJobStatus(JobStatus.SCHEDULED);
@@ -388,30 +396,35 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 try {
                     cronExpression = ((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(Integer.parseInt(intervalTextField.getText()));
                 }catch( NumberFormatException e){
-                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Interval "+intervalTextField.getText()+"  must be an integer. ",
-                            "Scheduled Interval Error", JOptionPane.ERROR_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.interval.message"),intervalTextField.getText()),
+                            resources.getString("error.interval.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
             } else {
                 cronExpression = createAdvancedCronExpression();
             }
 
-            try {
-                CronExpression.validateExpression(cronExpression);
-                scheduledTask.setCronExpression(cronExpression);
-            } catch (ParseException e) {
-                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Expression: " + cronExpression + "\nError: "+ e.getMessage(),
-                        "Cron Expression Error", JOptionPane.ERROR_MESSAGE, null);
+            if(!CronExpression.isValidExpression(cronExpression)){
+                try {
+                    CronExpression.validateExpression(cronExpression);
+                } catch (ParseException e) {
+                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this,  MessageFormat.format(resources.getString("error.cron.message.detail"),cronExpression, e.getMessage()),
+                            resources.getString("error.cron.title"), JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.cron.message"),cronExpression) ,
+                        resources.getString("error.cron.title"), JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
+            scheduledTask.setCronExpression(cronExpression);
         }
 
         // save the task
         try {
             Registry.getDefault().getScheduledTaskAdmin().saveScheduledTask(scheduledTask);
         } catch (UpdateException | SaveException e) {
-            DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, "Unable to save this Scheduled Task. " + e.getMessage(),
-                    "Scheduled Task Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.save.message"), e.getMessage()),
+                    resources.getString("error.save.title"), JOptionPane.ERROR_MESSAGE, null);
             return;
         }
         confirmed = true;
@@ -468,12 +481,12 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     }
 
     protected enum ScheduledTaskBasicInterval {
-        EVERY_SECOND("Second", "{0} * * * * ?", "\\*\\/\\d+ \\* \\* \\* \\* \\?"),
-        EVERY_MINUTE("Minute", "0 {0} * * * ?", "0 \\*\\/\\d+ \\* \\* \\* \\?"),
-        EVERY_HOUR("Hour", "0 0 {0} * * ?", "0 0 \\*\\/\\d+ \\* \\* \\?"),
-        EVERY_DAY("Day", "0 0 0 {0} * ?", "0 0 0 \\*\\/\\d+ \\* \\?"),
-        EVERY_MONTH("Month", "0 0 0 1 {0} ?", "0 0 0 1 \\*\\/\\d+ \\?"),
-        EVERY_WEEK("Week", "0 0 0 ? * {0}", "0 0 0 ? \\* \\*\\/\\d+");
+        EVERY_SECOND(resources.getString("edit.cron.second"), "{0} * * * * ?", "\\*\\/\\d+ \\* \\* \\* \\* \\?"),
+        EVERY_MINUTE(resources.getString("edit.cron.minute"), "0 {0} * * * ?", "0 \\*\\/\\d+ \\* \\* \\* \\?"),
+        EVERY_HOUR(resources.getString("edit.cron.hour"), "0 0 {0} * * ?", "0 0 \\*\\/\\d+ \\* \\* \\?"),
+        EVERY_DAY(resources.getString("edit.cron.day"), "0 0 0 {0} * ?", "0 0 0 \\*\\/\\d+ \\* \\?"),
+        EVERY_MONTH(resources.getString("edit.cron.month"), "0 0 0 1 {0} ?", "0 0 0 1 \\*\\/\\d+ \\?"),
+        EVERY_WEEK(resources.getString("edit.cron.week"), "0 0 0 ? * {0}", "0 0 0 ? \\* \\*\\/\\d+");
 
         private final String name;
         private final String cronExpression;

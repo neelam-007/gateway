@@ -143,7 +143,6 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 // skip version update check
                 quartzProperties.setProperty("org.quartz.scheduler.skipUpdateCheck","true");
                 quartzProperties.setProperty("org.quartz.threadPool.threadCount", Integer.toString(maxThreads));
-                quartzProperties.setProperty("org.quartz.threadPool.threadCount", Integer.toString(maxThreads));
                 SchedulerFactory schedulerFactory = new StdSchedulerFactory(quartzProperties);
                 scheduler = schedulerFactory.getScheduler();
 
@@ -179,24 +178,27 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     @Override
                     public void triggerComplete(Trigger trigger, JobExecutionContext context, Trigger.CompletedExecutionInstruction triggerInstructionCode) {
                         // update one time jobs as completed
-                        String jobType = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
-                        String entityGoid = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
-                        try {
-                            if (jobType.equals(JobType.ONE_TIME.name())) {
-                                ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid));
-                                task.setJobStatus(JobStatus.COMPLETED);
-                                scheduledTaskManager.update(task);
+                        String nodeId = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
+                        if(ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || clusterMaster.isMaster()) {
+                            String jobType = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
+                            String entityGoid = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
+                            try {
+                                if (jobType.equals(JobType.ONE_TIME.name())) {
+                                    ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid));
+                                    task.setJobStatus(JobStatus.COMPLETED);
+                                    scheduledTaskManager.update(task);
+                                }
+                            } catch (HibernateOptimisticLockingFailureException e) {
+                                String node = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
+                                if (JOB_DETAIL_NODE_ALL.equals(node)) {
+                                    logger.log(Level.INFO, "Ignored HibernateOptimisticLockingFailureException for updating scheduled task as complete. " +
+                                            "\nJobStatus for one time job has most likely been updated to COMPLETED by a different node in the cluster", ExceptionUtils.getDebugException(e));
+                                } else {
+                                    logger.log(Level.WARNING, "Failed to update scheduled task #" + entityGoid + " as completed.", ExceptionUtils.getDebugException(e));
+                                }
+                            } catch (UpdateException | FindException e) {
+                                logger.log(Level.WARNING, "Failed to update scheduled task #" + entityGoid + " as completed.", ExceptionUtils.getDebugException(e));
                             }
-                        } catch (HibernateOptimisticLockingFailureException e) {
-                            String node = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
-                            if(JOB_DETAIL_NODE_ALL.equals(node)){
-                                logger.log(Level.INFO, "Ignored HibernateOptimisticLockingFailureException for updating scheduled task as complete. " +
-                                        "\nJobStatus for one time job has most likely been updated to COMPLETED by a different node in the cluster", ExceptionUtils.getDebugException(e));
-                            }else{
-                                logger.log(Level.WARNING, "Failed to update scheduled task #" +entityGoid+" as completed.", ExceptionUtils.getDebugException(e));
-                            }
-                        } catch (UpdateException | FindException e) {
-                            logger.log(Level.WARNING, "Failed to update scheduled task #" +entityGoid+" as completed.", ExceptionUtils.getDebugException(e));
                         }
                     }
                 });

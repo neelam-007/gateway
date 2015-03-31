@@ -24,8 +24,6 @@ import java.util.List;
 
 /**
  * Scheduled tasks allow the Gateway to schedule policy consumption.
- *
- * Scheduled Task
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ScheduledTaskResource.scheduledTasks_URI)
@@ -48,10 +46,10 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * Creates a new Scheduled task
+     * Creates a new scheduled task
      *
-     * @param resource The Scheduled task to create
-     * @return A reference to the newly created Scheduled task
+     * @param resource The scheduled task to create
+     * @return A reference to the newly created scheduled task
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException
      */
@@ -61,10 +59,10 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * Returns a Scheduled task with the given ID.
+     * Returns a scheduled task with the given ID.
      *
-     * @param id The ID of the Scheduled task to return
-     * @return The Scheduled task.
+     * @param id The ID of the scheduled task to return
+     * @return The scheduled task.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -74,11 +72,11 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * <p>Returns a list of Scheduled tasks. Can optionally sort the resulting list in ascending or
+     * <p>Returns a list of scheduled tasks. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
      * <div class="code indent"><pre>/restman/1.0/scheduledTasks?name=MyScheduledTask</pre></div>
-     * <p>Returns Scheduled task with name "MyScheduledTask".</p>
+     * <p>Returns scheduled task with name "MyScheduledTask".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
@@ -89,7 +87,7 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
      * @param types           Job Type filter
      * @param status          Job Status filter
      * @param securityZoneIds Security zone ID filter
-     * @return A list of Scheduled tasks. If the list is empty then no Scheduled tasks were found.
+     * @return A list of scheduled tasks. If the list is empty then no scheduled tasks were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -157,11 +155,11 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * Creates or Updates an existing Scheduled task. If a Scheduled task with the given ID does not exist one
+     * Creates or Updates an existing Scheduled task. If a scheduled task with the given ID does not exist one
      * will be created, otherwise the existing one will be updated.
      *
      * @param resource Scheduled task to create or update
-     * @param id       ID of the Scheduled task to create or update
+     * @param id       ID of the scheduled task to create or update
      * @return A reference to the newly created or updated Scheduled task.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException
@@ -174,9 +172,9 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * Deletes an existing Scheduled task.
+     * Deletes an existing scheduled task.
      *
-     * @param id The ID of the Scheduled task to delete.
+     * @param id The ID of the scheduled task to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -187,10 +185,10 @@ public class ScheduledTaskResource extends RestEntityResource<ScheduledTaskMO, S
     }
 
     /**
-     * Returns a template, which is an example Scheduled task that can be used as a reference for what Scheduled task
+     * Returns a template, which is an example scheduled task that can be used as a reference for what scheduled task
      * objects should look like.
      *
-     * @return The template Scheduled task.
+     * @return The template scheduled task.
      */
     @GET
     @Path("template")
