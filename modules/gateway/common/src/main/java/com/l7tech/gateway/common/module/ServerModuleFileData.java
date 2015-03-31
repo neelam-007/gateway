@@ -1,12 +1,22 @@
 package com.l7tech.gateway.common.module;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.SafeXMLDecoder;
+import com.l7tech.util.SafeXMLDecoderBuilder;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Holds data bytes for a {@link ServerModuleFile Server Module File} that an SSM
@@ -20,12 +30,24 @@ import java.io.Serializable;
 @Table(name = "server_module_file_data")
 public class ServerModuleFileData extends PersistentEntityImp implements Serializable {
     private static final long serialVersionUID = -7525412738669913604L;
+    private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
+
+    /**
+     * Three signature property names: digest, cert, and signature.
+     */
+    public static final String SIGNATURE_PROP_DIGEST = "digest";
+    public static final String SIGNATURE_PROP_CERT = "cert";
+    public static final String SIGNATURE_PROP_SIGNATURE = "signature";
 
     /**
      * Module row bytes.
      */
     private byte[] dataBytes;
     // When adding fields, update copyFrom() method
+
+    // Store signature properties
+    private transient String xmlProperties;
+    private Map<String, String> properties;
 
     /**
      * The owning {@link ServerModuleFile Server Module File}.
@@ -87,6 +109,98 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
     }
     public void setDataBytes(final byte[] dataBytes) {
         this.dataBytes = dataBytes;
+    }
+
+    /**
+     * Returns the properties serialized as xml
+     *
+     * @return Properties as an xml string
+     */
+    @Column(name = "signature_properties", length = Integer.MAX_VALUE)
+    @Lob
+    public String getXmlProperties() {
+        if (xmlProperties == null) {
+            Map<String, String> properties = this.properties;
+            if (properties == null) return null;
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
+            try {
+                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
+                xe.writeObject(properties);
+                xe.close();
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } finally {
+                baos.close();
+            }
+        }
+        return xmlProperties;
+    }
+
+    /**
+     * Sets the properties from an xml string.
+     *
+     * @param xml The xml to set the properties from.
+     */
+    public void setXmlProperties(final String xml) {
+        if (xml != null && xml.equals(xmlProperties)) return;
+        this.xmlProperties = xml;
+        if (xml != null && xml.length() > 0) {
+            SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING))).build();
+            //noinspection unchecked
+            this.properties = (Map<String, String>) xd.readObject();
+        }
+    }
+
+    /**
+     * Gets a property for this entity
+     *
+     * @param propertyName The property whose value to retrieve
+     * @return The property value. Null if no such property exists
+     */
+    public String getProperty(final String propertyName) {
+        String propertyValue = null;
+
+        Map<String, String> properties = this.properties;
+        if (properties != null) {
+            propertyValue = properties.get(propertyName);
+        }
+
+        return propertyValue;
+    }
+
+    /**
+     * Sets a property for this entity
+     *
+     * @param propertyName  The property name
+     * @param propertyValue The property value
+     */
+    public void setProperty(final String propertyName, final String propertyValue) {
+        Map<String, String> properties = this.properties;
+        if (properties == null) {
+            properties = new HashMap<String, String>();
+            this.properties = properties;
+        }
+
+        properties.put(propertyName, propertyValue);
+
+        // invalidate cached properties
+        xmlProperties = null;
+    }
+
+    @Transient
+    public String getSignatureProperties() {
+        if (properties == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(SIGNATURE_PROP_SIGNATURE).append('=').append(properties.get(SIGNATURE_PROP_SIGNATURE)).append('\n');
+        sb.append(SIGNATURE_PROP_CERT).append('=').append(properties.get(SIGNATURE_PROP_CERT)).append('\n');
+        sb.append(SIGNATURE_PROP_DIGEST).append('=').append(properties.get(SIGNATURE_PROP_DIGEST));
+
+        return sb.toString();
+    }
+
+    @Transient
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     /**

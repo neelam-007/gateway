@@ -234,4 +234,13 @@
             <column name="entity_type" value="ASSERTION_ACCESS"/>
         </insert>
     </changeSet>
+    <changeSet author="gateway" id="server_module_files_phase_two_db_changes">
+        <comment>Update Server Module File tables for second phase</comment>
+        <addColumn tableName="server_module_file_data">
+            <column name="signature_properties" type="${mediumtext.type}"/>
+        </addColumn>
+        <update tableName="server_module_file_state">
+            <column name="state" value="REJECTED"/>
+        </update>
+    </changeSet>
 </databaseChangeLog>
