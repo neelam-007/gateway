@@ -56,7 +56,7 @@ public class ScheduledTaskTest extends DependencyTestBaseClass {
         scheduledTask.setGoid(scheduledTaskOid);
         scheduledTask.setSecurityZone(securityZone);
         scheduledTask.setName("Scheduled Task 1");
-        scheduledTask.setPolicy(policy);
+        scheduledTask.setPolicyGoid(policyGoid);
         scheduledTask.setJobType(JobType.ONE_TIME);
         scheduledTask.setJobStatus(JobStatus.COMPLETED);
         scheduledTask.setExecutionDate(System.currentTimeMillis());

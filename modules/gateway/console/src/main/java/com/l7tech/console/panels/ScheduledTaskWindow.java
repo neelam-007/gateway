@@ -13,6 +13,7 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -161,7 +162,7 @@ public class ScheduledTaskWindow extends JDialog {
                     @Override
                     public String call(ScheduledTask scheduledTask) {
                         if (scheduledTask != null) {
-                            return scheduledTask.getPolicy().getName();
+                            return getPolicyName(scheduledTask);
                         }
                         return "";
                     }
@@ -211,6 +212,18 @@ public class ScheduledTaskWindow extends JDialog {
                     }
                 }, String.class)
         );
+    }
+
+    private String getPolicyName(ScheduledTask scheduledTask) {
+        try {
+            Policy policy = policyAdmin.findPolicyByPrimaryKey(scheduledTask.getPolicyGoid());
+            if (policy != null) {
+                return policy.getName();
+            }
+        } catch (FindException e) {
+            return "";
+        }
+        return "";
     }
 
     private void loadDocuments() {

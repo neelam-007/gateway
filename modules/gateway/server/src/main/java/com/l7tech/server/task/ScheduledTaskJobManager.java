@@ -250,7 +250,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
                 .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
                 .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
-                .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicy().getId())
+                .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicyGoid().toString())
                 .build();
     }
 

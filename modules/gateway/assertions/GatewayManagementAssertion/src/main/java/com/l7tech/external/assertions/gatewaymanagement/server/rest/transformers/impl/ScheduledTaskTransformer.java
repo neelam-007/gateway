@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
@@ -54,7 +55,7 @@ public class ScheduledTaskTransformer implements EntityAPITransformer<ScheduledT
         scheduledTaskMO.setId(scheduledTask.getId());
         scheduledTaskMO.setVersion(scheduledTask.getVersion());
         scheduledTaskMO.setName(scheduledTask.getName());
-        scheduledTaskMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, scheduledTask.getPolicy().getId()));
+        scheduledTaskMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, scheduledTask.getPolicyGoid().toString()));
         scheduledTaskMO.setUseOneNode(scheduledTask.isUseOneNode());
         switch (scheduledTask.getJobType()) {
             case ONE_TIME:
@@ -104,18 +105,21 @@ public class ScheduledTaskTransformer implements EntityAPITransformer<ScheduledT
             scheduledTask.setVersion(scheduledTaskMO.getVersion());
         }
         scheduledTask.setName(scheduledTaskMO.getName());
-        try {
-            scheduledTask.setPolicy(policyManager.findByPrimaryKey(Goid.parseGoid(scheduledTaskMO.getPolicyReference().getId()))) ;
-            if(strict){
-                if(!(PolicyType.POLICY_BACKED_OPERATION.equals(scheduledTask.getPolicy().getType()) &&
-                        "com.l7tech.objectmodel.polback.BackgroundTask".equals(scheduledTask.getPolicy().getInternalTag())
-                        && "run".equals(scheduledTask.getPolicy().getInternalSubTag()))) {
+
+        scheduledTask.setPolicyGoid(Goid.parseGoid(scheduledTaskMO.getPolicyReference().getId()));
+        if(strict){
+            try {
+                Policy refPolicy = policyManager.findByPrimaryKey(scheduledTask.getPolicyGoid());
+                if(!(PolicyType.POLICY_BACKED_OPERATION.equals(refPolicy.getType()) &&
+                        "com.l7tech.objectmodel.polback.BackgroundTask".equals(refPolicy.getInternalTag())
+                        && "run".equals(refPolicy.getInternalSubTag()))) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Policy referenced must be tagged Background task");
                 }
+            } catch (FindException | IllegalArgumentException e) {
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid or unknown policy reference '" + scheduledTaskMO.getPolicyReference().getId() + "'.");
             }
-        } catch (FindException | IllegalArgumentException e) {
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid or unknown policy reference '" + scheduledTaskMO.getPolicyReference().getId() + "'.");
         }
+
         scheduledTask.setUseOneNode(scheduledTaskMO.isUseOneNode());
         switch(scheduledTaskMO.getJobType()){
             case ONE_TIME:

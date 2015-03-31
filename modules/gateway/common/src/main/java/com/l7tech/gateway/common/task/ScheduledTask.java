@@ -1,25 +1,21 @@
 package com.l7tech.gateway.common.task;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.encass.PolicyAdapter;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.policy.Policy;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,7 +29,7 @@ import java.util.TreeMap;
 @Table(name = "scheduled_task")
 public class ScheduledTask extends ZoneableNamedEntityImp {
 
-    private Policy policy;
+    private Goid policyGoid;
     private boolean useOneNode = false;
     private JobType jobType = JobType.ONE_TIME;
     private JobStatus jobStatus;
@@ -52,25 +48,19 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         return super.getName();
     }
 
-    @Valid
-    @Migration(dependency = false)
-    @ManyToOne
-    @JoinColumn(name = "policy_goid")
-    @XmlJavaTypeAdapter(PolicyAdapter.class)
-    @XmlElement (name = "Policy")
-    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.ENTITY)
+
     @NotNull
-    public Policy getPolicy() {
-        return policy;
+    @Column(name = "policy_goid", nullable = false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.GOID)
+    public Goid getPolicyGoid() {
+        return policyGoid;
     }
 
-    /**
-     * Sets the policy and the policyOid property.
-     */
-    public void setPolicy(@NotNull Policy policy) {
-        checkLocked();
-        this.policy = policy;
+    public void setPolicyGoid(Goid policyGoid) {
+        this.policyGoid = policyGoid;
     }
+
 
     @Column(name="use_one_node")
     public boolean isUseOneNode() {
@@ -195,7 +185,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     public void copyFrom(ScheduledTask other) {
         this.setGoid(other.getGoid());
         this.setName(other.getName());
-        this.setPolicy(other.getPolicy());
+        this.setPolicyGoid(other.getPolicyGoid());
         this.setUseOneNode(other.isUseOneNode());
         this.setJobType(other.getJobType());
         this.setJobStatus(other.getJobStatus());

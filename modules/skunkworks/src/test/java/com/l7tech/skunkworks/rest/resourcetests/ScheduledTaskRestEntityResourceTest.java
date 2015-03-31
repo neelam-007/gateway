@@ -96,7 +96,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
 
         ScheduledTask scheduledTask = new ScheduledTask();
         scheduledTask.setName("Scheduled Task 1");
-        scheduledTask.setPolicy(policies.get(0));
+        scheduledTask.setPolicyGoid(policies.get(0).getGoid());
         scheduledTask.setJobType(JobType.ONE_TIME);
         scheduledTask.setJobStatus(JobStatus.COMPLETED);
         scheduledTask.setExecutionDate(System.currentTimeMillis());
@@ -107,7 +107,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
 
         scheduledTask = new ScheduledTask();
         scheduledTask.setName("Scheduled Task 2");
-        scheduledTask.setPolicy(policies.get(1));
+        scheduledTask.setPolicyGoid(policies.get(1).getGoid());
         scheduledTask.setJobType(JobType.RECURRING);
         scheduledTask.setJobStatus(JobStatus.SCHEDULED);
         scheduledTask.setCronExpression("* * */5 * ?");
@@ -117,7 +117,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
 
         scheduledTask = new ScheduledTask();
         scheduledTask.setName("Scheduled Task 3");
-        scheduledTask.setPolicy(policies.get(1));
+        scheduledTask.setPolicyGoid(policies.get(1).getGoid());
         scheduledTask.setJobType(JobType.RECURRING);
         scheduledTask.setJobStatus(JobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */5 * ?");
@@ -307,7 +307,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
 
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getName());
-            Assert.assertEquals(entity.getPolicy().getId(), managedObject.getPolicyReference().getId());
+            Assert.assertEquals(entity.getPolicyGoid().toString(), managedObject.getPolicyReference().getId());
             Assert.assertEquals(entity.isUseOneNode(), managedObject.isUseOneNode().booleanValue());
             Assert.assertEquals(entity.getJobStatus().toString(), managedObject.getJobStatus().toString());
             Assert.assertEquals(entity.getJobType().toString(), managedObject.getJobType().toString());
