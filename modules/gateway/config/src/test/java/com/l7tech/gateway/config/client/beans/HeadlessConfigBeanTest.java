@@ -89,14 +89,12 @@ public class HeadlessConfigBeanTest {
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
         String pmAdminUserPassword = "pmAdminUserPassword";
-        String databaseFailoverPort = null;
         String databaseName = "databaseName";
         String databaseAdminUser = "databaseAdminUser";
         int databasePort = 1234;
         String databaseUser = "databaseUser";
         final Boolean nodeEnabled = true;
         String databaseAdminPass = "databaseAdminPass";
-        String databaseFailoverHost = null;
         String databasePass = "databasePass";
         String databaseHost = "databaseHost";
         final String clusterPass = "clusterPass";
@@ -158,24 +156,24 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
-    public void createDBOnlyDerbyNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+    public void createDBAndConfigMysqlFailoverPortButNoHost() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Missing: database.failover.host"));
 
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
         String pmAdminUserPassword = "pmAdminUserPassword";
-        String databaseFailoverPort = null;
+        int databaseFailoverPort = 12345;
         String databaseName = "databaseName";
         String databaseAdminUser = "databaseAdminUser";
         int databasePort = 1234;
         String databaseUser = "databaseUser";
         final Boolean nodeEnabled = true;
         String databaseAdminPass = "databaseAdminPass";
-        String databaseFailoverHost = null;
         String databasePass = "databasePass";
-        String databaseHost = null;
+        String databaseHost = "databaseHost";
         final String clusterPass = "clusterPass";
-        final Boolean configureNode = false;
-        String databaseType = "derby";
+        String databaseType = "mysql";
 
         final Properties properties = new Properties();
         properties.setProperty("cluster.host", clusterHost);
@@ -188,6 +186,265 @@ public class HeadlessConfigBeanTest {
         properties.setProperty("admin.user", pmAdminUser);
         properties.setProperty("database.admin.pass", databaseAdminPass);
         properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        properties.setProperty("database.failover.port", String.valueOf(databaseFailoverPort));
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
+    public void createDBAndConfigMysqlFailoverHostButNoPort() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Missing: database.failover.port"));
+
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        String databaseName = "databaseName";
+        String databaseAdminUser = "databaseAdminUser";
+        int databasePort = 1234;
+        String databaseUser = "databaseUser";
+        final Boolean nodeEnabled = true;
+        String databaseAdminPass = "databaseAdminPass";
+        String databaseFailoverHost = "failOverHost";
+        String databasePass = "databasePass";
+        String databaseHost = "databaseHost";
+        final String clusterPass = "clusterPass";
+        String databaseType = "mysql";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        properties.setProperty("database.failover.host", databaseFailoverHost);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
+    public void badDBType() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Unknown database type 'badDBType'"));
+
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        String databaseName = "databaseName";
+        String databaseAdminUser = "databaseAdminUser";
+        int databasePort = 1234;
+        String databaseUser = "databaseUser";
+        final Boolean nodeEnabled = true;
+        String databaseAdminPass = "databaseAdminPass";
+        String databaseFailoverHost = "failOverHost";
+        String databasePass = "databasePass";
+        String databaseHost = "databaseHost";
+        final String clusterPass = "clusterPass";
+        String databaseType = "badDBType";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        properties.setProperty("database.failover.host", databaseFailoverHost);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
+    public void missingDatabaseHost() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Missing configuration property 'database.host'"));
+
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        String databaseName = "databaseName";
+        String databaseAdminUser = "databaseAdminUser";
+        int databasePort = 1234;
+        String databaseUser = "databaseUser";
+        final Boolean nodeEnabled = true;
+        String databaseAdminPass = "databaseAdminPass";
+        String databaseFailoverHost = "failOverHost";
+        String databasePass = "databasePass";
+        final String clusterPass = "clusterPass";
+        String databaseType = "mysql";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        properties.setProperty("database.failover.host", databaseFailoverHost);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
+    public void derbyAndSpecifyDatabaseHost() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Found unexpected configuration property 'database.host'"));
+
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        final Boolean nodeEnabled = true;
+        final String clusterPass = "clusterPass";
+        final Boolean configureNode = false;
+        String databaseType = "derby";
+        String databaseHost = "databaseHost";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        properties.setProperty("configure.node", String.valueOf(configureNode));
+        properties.setProperty("database.host", databaseHost);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
+    public void missingConfigureNodePropertyValue() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        final Boolean nodeEnabled = true;
+        final String clusterPass = "clusterPass";
+        final String configureNode = "no";
+        String databaseType = "derby";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+        //properties.setProperty("configure.node", configureNode);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+
+        Mockito.verify(nodeManagementApi).createDatabase(
+                Matchers.eq("default"),
+                Matchers.isNull(DatabaseConfig.class),
+                (Collection<String>) Matchers.argThat(empty()),
+                Matchers.eq(pmAdminUser),
+                Matchers.eq(pmAdminUserPassword),
+                Matchers.eq(clusterHost));
+
+        Mockito.verify(nodeManagementApi).createNode(Matchers.argThat(new CustomMatcher<NodeConfig>("Node config matches.") {
+            @Override
+            public boolean matches(Object o) {
+                if(! (o instanceof NodeConfig)) {
+                    return false;
+                }
+                NodeConfig nodeConfig = (NodeConfig)o;
+                return nodeEnabled.equals(nodeConfig.isEnabled()) &&
+                        clusterHost.equals(nodeConfig.getClusterHostname()) &&
+                        clusterPass.equals(nodeConfig.getClusterPassphrase());
+            }
+        }));
+
+        assertThat("incorrect error message: ", getOutputString(), containsString("Configuration Successful"));
+    }
+
+    @Test
+    public void createDBOnlyDerbyNoFailover() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+
+        final String clusterHost = "test.cluster.hostname";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        final Boolean nodeEnabled = true;
+        final String clusterPass = "clusterPass";
+        final Boolean configureNode = false;
+        String databaseType = "derby";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
         properties.setProperty("cluster.pass", clusterPass);
         properties.setProperty("database.type", databaseType);
         properties.setProperty("configure.node", String.valueOf(configureNode));
@@ -255,11 +512,32 @@ public class HeadlessConfigBeanTest {
             @NotNull
             @Override
             public Properties getProperties() throws ConfigurationException {
+                fail("printing help should not be loading the properties");
                 return new Properties();
             }
         });
 
         String out = getOutputString();
+        System.out.println(out);
+        assertNotNull("The help should not be null", out);
+        assertTrue("The help message should not be too short", out.length() > 100);
+    }
+
+    @Test
+    public void help() throws ConfigurationException, IOException, InterruptedException {
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", "-help", new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                fail("printing help should not be loading the properties");
+                return new Properties();
+            }
+        });
+
+        String out = getOutputString();
+        System.out.println(out);
         assertNotNull("The help should not be null", out);
         assertTrue("The help message should not be too short", out.length() > 100);
     }
@@ -268,15 +546,17 @@ public class HeadlessConfigBeanTest {
     public void createTemplateCommand() throws ConfigurationException, IOException, InterruptedException {
         HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
 
-        headlessConfigBean.configure("create", "template", new PropertiesAccessor() {
+        headlessConfigBean.configure("create", "-template", new PropertiesAccessor() {
             @NotNull
             @Override
             public Properties getProperties() throws ConfigurationException {
+                fail("printing help should not be loading the properties");
                 return new Properties();
             }
         });
 
         String out = getOutputString();
+        System.out.println(out);
         assertNotNull("The template should not be null", out);
         assertTrue("The template message should not be too short", out.length() > 100);
 
@@ -295,14 +575,12 @@ public class HeadlessConfigBeanTest {
         final String clusterHost = "test.cluster.hostname";
         String pmAdminUser = "pmAdminUser";
         String pmAdminUserPassword = "pmAdminUserPassword";
-        String databaseFailoverPort = null;
         String databaseName = "databaseName";
         String databaseAdminUser = "databaseAdminUser";
         String databasePort = "abcd";
         String databaseUser = "databaseUser";
         final Boolean nodeEnabled = true;
         String databaseAdminPass = "databaseAdminPass";
-        String databaseFailoverHost = null;
         String databasePass = "databasePass";
         String databaseHost = "databaseHost";
         final String clusterPass = "clusterPass";

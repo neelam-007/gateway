@@ -287,6 +287,7 @@ public class HeadlessConfigTest {
         Mockito.verify(headlessConfigBean, new Times(0)).configure(Mockito.anyString(), Mockito.anyString(), Mockito.<PropertiesAccessor>any());
 
         String out = getOutputString();
+        oldOut.println(out);
 
         assertThat("incorrect error message: ", out, Matchers.containsString("Must specify a command"));
     }

@@ -33,7 +33,7 @@ public class HeadlessConfig {
     static int doHeadlessConfig(@NotNull final HeadlessConfigBean headlessConfigBean, String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
 
-        //tests for strong crypto (don't know if this is actually needed?)
+        //tests for strong crypto, see SSG-4916
         if (!ConfigUtils.isStrongCryptoEnabledInJvm()) {
             return handleException("The Java virtual machine does not have strong cryptography enabled.  The unlimited strength jurisdiction JCE policy files may need to be installed.");
         }
@@ -43,7 +43,7 @@ public class HeadlessConfig {
         if (args.length > 0) {
             command = args[0];
         } else {
-            return handleException("Must specify a command. One of: " + headlessConfigBean.getCommands());
+            return handleException("Error: Must specify a command. One of: " + headlessConfigBean.getCommands() + "\n" + HeadlessConfigBean.GENERIC_HELP);
         }
         //get any sub-command, this could be help or template for example
         @Nullable final String subCommand;
@@ -70,6 +70,7 @@ public class HeadlessConfig {
         final long loadPropertiesTimeoutMillis = SyspropUtil.getLong("com.l7tech.gateway.config.client.headlessConfig.loadPropertiesTimeout", 10000L);
         try {
             headlessConfigBean.configure(command, subCommand, new PropertiesAccessor() {
+                @NotNull
                 @Override
                 public Properties getProperties() throws ConfigurationException {
                     Executors.newFixedThreadPool(1).execute(loadProperties);
