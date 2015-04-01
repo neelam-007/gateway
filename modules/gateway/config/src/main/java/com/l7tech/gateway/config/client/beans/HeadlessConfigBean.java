@@ -18,11 +18,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class will configure the gateway from a properties file.
  */
 public class HeadlessConfigBean {
+    private static final Logger logger = Logger.getLogger(HeadlessConfigBean.class.getName());
 
     //The node configuration provider
     //TODO: should this be used or should a NodeManagementApi be used directly?
@@ -52,22 +55,23 @@ public class HeadlessConfigBean {
      * This will do the actual work of configuring the gateway.
      *
      * @param command    The configuration command
-     * @param subCommand The configuration sub command
+     * @param option     The configuration command option
      * @param properties The properties accessor to use to configure the gateway with
      * @throws ConfigurationException This is thrown if there was an error configuring the gateway
      */
-    public void configure(@NotNull final String command, @Nullable final String subCommand, @NotNull final PropertiesAccessor properties) throws ConfigurationException {
+    public void configure(@NotNull final String command, @Nullable final String option, @NotNull final PropertiesAccessor properties) throws ConfigurationException {
         //find the command to configure the gateway with
-        final Functions.UnaryVoidThrows<PropertiesAccessor, Throwable> commandFunction = commandMap.get(new Pair<>(command, subCommand));
+        final Functions.UnaryVoidThrows<PropertiesAccessor, Throwable> commandFunction = commandMap.get(new Pair<>(command, option));
 
         if (commandFunction == null) {
             if (!containsCommand(command)) {
                 throw new ConfigurationException("Unknown command '" + command + "'. Expected one of: " + getCommands());
             } else {
-                throw new ConfigurationException("Unknown sub-command '" + subCommand + "'. Expected one of: " + getSubCommands(command));
+                throw new ConfigurationException("Unknown command option '" + option + "'. Expected one of: " + getCommandOptions(command));
             }
         } else {
             try {
+                logger.log(Level.INFO, "Running command: " + command + (option == null ? "" : (" " + option)));
                 //call the command to configure the gateway
                 commandFunction.call(properties);
             } catch (Throwable e) {
@@ -107,11 +111,10 @@ public class HeadlessConfigBean {
                             if (option != null && option.getDescription() != null) {
                                 printStream.println("## " + option.getDescription());
                             }
-                            if (value == null) {
-                                printStream.println("#" + name + "=");
-                            } else {
-                                printStream.println(name + "=" + value);
+                            if (value == null || "database.failover.port".equals(name)) {
+                                printStream.print("#");
                             }
+                            printStream.println(name + "=" + (value == null ? "" : value));
                         }
                     }
                 }
@@ -175,6 +178,7 @@ public class HeadlessConfigBean {
                         //validate the node options
                         checkNotNull(configBeans, Arrays.asList("cluster.pass"), "The cluster password must be specified when configuring the node.");
                     }
+                    logger.log(Level.INFO, "Configuring '" + databaseType + "' database" + ((configureNode == null || configureNode) ? " and configuring node.properties" : ""));
                     provider.storeConfiguration(configBeans);
 
                     printStream.println("Configuration Successful");
@@ -287,21 +291,21 @@ public class HeadlessConfigBean {
     }
 
     /**
-     * Returns a list of sub-commands for the given command
+     * Returns a list of options for the given command
      *
-     * @param command The command to get the sub-commands for
-     * @return The sub-commands for the given command
+     * @param command The command to get the options for
+     * @return The options for the given command
      */
     @NotNull
-    private Set<String> getSubCommands(@NotNull final String command) {
+    private Set<String> getCommandOptions(@NotNull final String command) {
         //use a TreeSet so that it is ordered
-        final Set<String> subCommandSet = new TreeSet<>();
+        final Set<String> options = new TreeSet<>();
         for (final Pair<String, String> commandPair : commandMap.keySet()) {
             if (commandPair.getKey().equals(command) && commandPair.getValue() != null) {
-                subCommandSet.add(commandPair.getValue());
+                options.add(commandPair.getValue());
             }
         }
-        return subCommandSet;
+        return options;
     }
 
     /**

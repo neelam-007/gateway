@@ -45,12 +45,12 @@ public class HeadlessConfig {
         } else {
             return handleException("Error: Must specify a command. One of: " + headlessConfigBean.getCommands() + "\n" + HeadlessConfigBean.GENERIC_HELP);
         }
-        //get any sub-command, this could be help or template for example
-        @Nullable final String subCommand;
+        //get any command options, this could be help or template for example
+        @Nullable final String option;
         if (args.length > 1) {
-            subCommand = args[1];
+            option = args[1];
         } else {
-            subCommand = null;
+            option = null;
         }
 
         //read properties read it in a future so that there can be a timeout in case the input stream is not properly closed.
@@ -59,7 +59,9 @@ public class HeadlessConfig {
             public Either<Throwable, Properties> call() throws Exception {
                 final Properties properties = new Properties();
                 try {
+                    logger.log(Level.FINE, "Loading properties from Standard In");
                     properties.load(System.in);
+                    logger.log(Level.FINE, "Loaded properties from Standard In.");
                 } catch (Throwable e) {
                     return Either.left(e);
                 }
@@ -69,7 +71,7 @@ public class HeadlessConfig {
 
         final long loadPropertiesTimeoutMillis = SyspropUtil.getLong("com.l7tech.gateway.config.client.headlessConfig.loadPropertiesTimeout", 10000L);
         try {
-            headlessConfigBean.configure(command, subCommand, new PropertiesAccessor() {
+            headlessConfigBean.configure(command, option, new PropertiesAccessor() {
                 @NotNull
                 @Override
                 public Properties getProperties() throws ConfigurationException {
@@ -93,6 +95,7 @@ public class HeadlessConfig {
         } catch (ConfigurationException e) {
             return handleException(ExceptionUtils.getMessage(e), e);
         }
+        logger.log(Level.INFO, "Command successfully finished!");
         return 0;
     }
 

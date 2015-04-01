@@ -491,7 +491,7 @@ public class HeadlessConfigBeanTest {
     @Test
     public void badSubCommand() throws ConfigurationException {
         expectedException.expect(ConfigurationException.class);
-        expectedException.expectMessage(containsString("Unknown sub-command 'badSubCommand'"));
+        expectedException.expectMessage(containsString("Unknown command option 'badSubCommand'"));
 
         HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
 
