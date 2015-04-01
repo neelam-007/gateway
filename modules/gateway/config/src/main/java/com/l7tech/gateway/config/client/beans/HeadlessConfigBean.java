@@ -413,9 +413,9 @@ public class HeadlessConfigBean {
     //TODO: This could be used later to support creation of node.properties only
     private static final com.l7tech.config.client.options.Option dbOption = new com.l7tech.config.client.options.Option() {{
         setId("configure-db");
-        setGroup("headless");
+        setGroup("db");
         setType(OptionType.BOOLEAN);
-        setOrder(500);
+        setOrder(90);
         setName("Configure Database");
         setConfigName("configure.db");
         setConfigValue("true");
@@ -426,9 +426,9 @@ public class HeadlessConfigBean {
     //this is the option specified if the node.properties should be created
     private static final com.l7tech.config.client.options.Option nodeOption = new com.l7tech.config.client.options.Option() {{
         setId("configure-node");
-        setGroup("headless");
+        setGroup("node");
         setType(OptionType.BOOLEAN);
-        setOrder(501);
+        setOrder(410);
         setName("Configure Node");
         setConfigName("configure.node");
         setConfigValue("true");
@@ -439,9 +439,9 @@ public class HeadlessConfigBean {
     //this is the option specifies the database type
     private static final com.l7tech.config.client.options.Option dbTypeOption = new com.l7tech.config.client.options.Option() {{
         setId("configure-db-type");
-        setGroup("headless");
+        setGroup("db");
         setType(OptionType.TEXT);
-        setOrder(502);
+        setOrder(91);
         setName("Configure Database Type");
         setConfigName("database.type");
         setConfigValue("mysql");
