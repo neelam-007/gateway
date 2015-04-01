@@ -31,7 +31,7 @@ public class HeadlessConfigBean {
     private final PrintStream printStream;
 
     public static final String GENERIC_HELP = "Usage: Configure a new Gateway node (database, node properties) using properties (key=value pairs) from standard in.\n" +
-            "Credentials: Root or ssgconfig user. To bypass password prompting, add ‘sudo –u layer7’ before the command.\n" +
+            "Credentials: Root or ssgconfig user.\n" +
             "\n" +
             "Command syntax: ssgconfig-headless <command> [-option]\n" +
             "Commands: create [-help | -template]\n" +
@@ -128,13 +128,13 @@ public class HeadlessConfigBean {
                                     "\n" +
                                     "Examples:\n" +
                                     "Output a properties template to a file:\n" +
-                                    "sudo -u layer7 ssgconfig-headless create -template > create-node.properties\n" +
+                                    "ssgconfig-headless create -template > create-node.properties\n" +
                                     "\n" +
                                     "Configure a new Gateway node using a properties file:\n" +
-                                    "cat create-node.properties | sudo -u layer7 ssgconfig-headless create\n" +
+                                    "cat create-node.properties | ssgconfig-headless create\n" +
                                     "\n" +
                                     "Remotely configure a new Gateway node using a properties file:\n" +
-                                    "cat create-node.properties | ssh ssgconfig@gatewayhost sudo -u layer7 /opt/SecureSpan/Gateway/config/bin/ssgconfig-headless create");
+                                    "cat create-node.properties | ssh ssgconfig@gatewayhost /opt/SecureSpan/Gateway/config/bin/ssgconfig-headless create");
                 }
             })
             .put(new Pair<String, String>("create", null), new Functions.UnaryVoidThrows<PropertiesAccessor, Throwable>() {
