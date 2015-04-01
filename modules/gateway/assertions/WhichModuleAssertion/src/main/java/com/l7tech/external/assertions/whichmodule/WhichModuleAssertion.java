@@ -189,7 +189,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
 
                 context.setVariable("module.exists", Boolean.TRUE);
                 context.setVariable("module.name", module.getName());
-                context.setVariable("module.sha1", module.getSha1());
+                context.setVariable("module.digest", module.getDigest());
                 context.setVariable("module.assertions", assclasses.toString());
 
                 return AssertionStatus.NONE;

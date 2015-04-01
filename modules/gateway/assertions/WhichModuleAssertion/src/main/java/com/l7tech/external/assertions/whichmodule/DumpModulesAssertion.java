@@ -61,7 +61,7 @@ public class DumpModulesAssertion extends Assertion implements SetsVariables {
 
                 sb.append("<module>\n");
                 sb.append("    <name>").append(mod.getName()).append("</name>\n");
-                sb.append("    <sha1>").append(mod.getSha1()).append("</sha1>\n");
+                sb.append("    <digest>").append(mod.getDigest()).append("</digest>\n");
                 for (Assertion proto : mod.getAssertionPrototypes()) {
                     final AssertionMetadata meta = proto.meta();
                     sb.append("    <assertion classname=\"").append(proto.getClass().getName()).append("\">\n");

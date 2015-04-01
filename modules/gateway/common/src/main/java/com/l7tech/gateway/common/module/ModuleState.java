@@ -8,21 +8,27 @@ public enum ModuleState {
      * Indicates that the module upload process has completed.
      * Typically this state is the initial state once a module is created or its data (hash and bytes) is updated.
      */
-    @SuppressWarnings("JavadocReference") UPLOADED("Uploaded"),
+    UPLOADED("Uploaded"),
 
     /**
      * Indicates that the module is successfully copied into the staging folder.
      */
+    @Deprecated
     STAGED("Staged"),
 
     /**
      * Indicates that the module is successfully copied into the corresponding modules folder (depending on the type).
      */
+    @Deprecated
     DEPLOYED("Deployed"),
 
     /**
-     * Indicates that the OS Level Service, service on the Gateway side responsible for modules installation,
-     * rejected the module based on its native criteria.
+     * Indicates that module signature is verified, however the module could not be loaded due to errors.
+     */
+    ACCEPTED("Accepted"),
+
+    /**
+     * Indicates that the module signature was not verified and the module has been rejected.
      */
     REJECTED("Rejected"),
 

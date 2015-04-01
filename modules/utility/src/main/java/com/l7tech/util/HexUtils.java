@@ -49,14 +49,7 @@ public class HexUtils {
         final MessageDigest md = getSha1();
         final DigestInputStream digestStream = new DigestInputStream(stream, md);
         try {
-            IOUtils.copyStream(digestStream,
-                    // no need to write
-                    new OutputStream() {
-                        @Override public void write(int b) throws IOException { }
-                        @Override public void write(byte b[]) throws IOException { }
-                        @Override public void write(byte b[], int off, int len) throws IOException { }
-                    }
-            );
+            IOUtils.copyStream(digestStream, new NullOutputStream());
             return md.digest();
         } finally {
             if (closeStream) {
@@ -76,6 +69,40 @@ public class HexUtils {
             md.update(bytes);
         }
         return md.digest();
+    }
+
+    /**
+     * Calculates SHA256 digest for the specified {@code stream} and optionally close the {@code stream} when done.
+     *
+     * @param stream         An {@code InputStream} of bytes to digest.  Required and cannot be {@code null}.
+     * @param closeStream    A flag indicating whether to close the {@code stream} when done.
+     * @return digest bytes.
+     * @throws IOException if an I/O error happens while calculating digest.
+     */
+    public static byte[] getSha256Digest(@NotNull final InputStream stream, final boolean closeStream) throws IOException {
+        try {
+            final DigestInputStream dis = new DigestInputStream(stream, MessageDigest.getInstance("SHA-256"));
+            IOUtils.copyStream(dis, new NullOutputStream());
+            return dis.getMessageDigest().digest();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (closeStream) {
+                ResourceUtils.closeQuietly(stream);
+            }
+        }
+    }
+
+    /**
+     * Calculates SHA256 digest for the specified {@code stream} and automatically closes the {@code stream} when done.
+     *
+     * @param stream    An {@code InputStream} of bytes to digest.  Required and cannot be {@code null}.
+     * @return digest bytes.
+     * @throws IOException if an IO error happens while calculating digest.
+     * @see #getSha256Digest(java.io.InputStream, boolean)
+     */
+    public static byte[] getSha256Digest(@NotNull final InputStream stream) throws IOException {
+        return getSha256Digest(stream, true);
     }
 
     public static byte[] getSha256Digest(byte[] stuffToDigest) {
@@ -541,5 +568,17 @@ public class HexUtils {
         byte[] bytes = new byte[count];
         random.nextBytes(bytes);
         return bytes;
+    }
+
+    /**
+     * Utility OutputStream that ignores all output.
+     */
+    private static class NullOutputStream  extends OutputStream {
+        private NullOutputStream() { /*nothing to do*/ }
+        @Override public void close() throws IOException { /*nothing to do*/ }
+        @Override public void flush() throws IOException { /*nothing to do*/ }
+        @Override public void write(int b) throws IOException { /*nothing to do*/ }
+        @Override public void write(byte b[]) throws IOException { /*nothing to do*/ }
+        @Override public void write(byte b[], int off, int len) throws IOException { /*nothing to do*/ }
     }
 }

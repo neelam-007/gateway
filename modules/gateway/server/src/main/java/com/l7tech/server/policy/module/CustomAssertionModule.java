@@ -47,18 +47,18 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
      *
      * @param moduleName      the module filename.
      * @param modifiedTime    the module last modified timestamp.
-     * @param jarFileSha1     the module content SHA-1 checksum.
+     * @param moduleDigest    the module content checksum (currently SHA256).
      * @param classLoader     the module class loader.
      * @param descriptors     a set of descriptors associated with this module.
      * @param serviceFinder   the service finder for locating Layer 7 API Services available for assertions.
      */
     public CustomAssertionModule(final String moduleName,
                                  final long modifiedTime,
-                                 final String jarFileSha1,
+                                 final String moduleDigest,
                                  final CustomAssertionClassLoader classLoader,
                                  final Set<CustomAssertionDescriptor> descriptors,
                                  final ServiceFinder serviceFinder) {
-        super(moduleName, modifiedTime, jarFileSha1, classLoader);
+        super(moduleName, modifiedTime, moduleDigest, classLoader);
 
         this.descriptors = descriptors;
 

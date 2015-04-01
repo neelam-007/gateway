@@ -8,13 +8,20 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.admin.ServerModuleFileAdminEvent;
 import com.l7tech.util.Config;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -123,6 +130,37 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     public boolean isModuleUploadEnabled() {
         return config.getBooleanProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE, false);
     }
+
+    private static final String SQL_GET_DATA_BYTES_FOR_MODULE_GOID = "SELECT data_bytes " +
+            "FROM server_module_file module " +
+            "INNER JOIN server_module_file_data data " +
+            "ON module.data_goid = data.goid " +
+            "WHERE module.goid = ?";
+
+    @Nullable
+    @Override
+    @Transactional(readOnly=true)
+    public InputStream getModuleBytesAsStream(@NotNull final Goid goid) throws FindException {
+        try {
+            return doReadOnlyWork(new Functions.UnaryThrows<InputStream, Connection, SQLException>() {
+                @Override
+                public InputStream call(final Connection connection) throws SQLException {
+                    try (final PreparedStatement statement = connection.prepareStatement(SQL_GET_DATA_BYTES_FOR_MODULE_GOID)) {
+                        statement.setBytes(1, goid.getBytes());
+                        try (final ResultSet rs = statement.executeQuery()) {
+                            if (rs.next()) {
+                                return rs.getBinaryStream(1);
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (final SQLException e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
 
     @Override
     public Class<? extends Entity> getImpClass() {

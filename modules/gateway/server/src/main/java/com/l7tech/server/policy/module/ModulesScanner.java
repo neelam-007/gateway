@@ -1,8 +1,8 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.gateway.common.module.ModuleDigest;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,14 +154,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      * </ul>
      *
      * @param file            the file containing the module to register.  Must be an existing, readable jar-file in the modules directory.
-     * @param sha1            file SHA-1 checksum.
+     * @param digest          file checksum (currently SHA256).
      * @param lastModified    file last modified time.
      * @return an instance of {@link ModuleLoadStatus ModuleLoadStatus} containing the status of the scan.
      * @throws ModuleException if an error happens during registration process, in which case the module will be added in the
      * failed modules container {@link #failModTimes} and will be ignored until a new version of the file is dropped in the modules folder.
      */
     @NotNull
-    protected abstract ModuleLoadStatus<T> onModuleLoad(File file, String sha1, long lastModified) throws ModuleException;
+    protected abstract ModuleLoadStatus<T> onModuleLoad(File file, String digest, long lastModified) throws ModuleException;
 
     /**
      * Implement this method to provide targeted functionality for modular or custom assertions.<br/>
@@ -337,19 +337,19 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
     }
 
     /**
-     * A utility builder class for convenient way of getting Sha1 string from file object .
+     * A utility builder class for convenient way of calculating module digest (currently SHA256) string from file object .
      */
-    public static class Sha1Builder {
+    public static class DigestBuilder {
         private File file = null;
         private boolean closeFile = true; // by default close the file
 
-        public Sha1Builder file(@NotNull File file) {
+        public DigestBuilder file(@NotNull final File file) {
             this.file = file;
             return this;
         }
 
         @SuppressWarnings("UnusedDeclaration")
-        public Sha1Builder closeFile(boolean closeFile) {
+        public DigestBuilder closeFile(final boolean closeFile) {
             this.closeFile = closeFile;
             return this;
         }
@@ -358,7 +358,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
             if (file == null) {
                 throw new IllegalArgumentException("file cannot be null");
             }
-            return HexUtils.hexDump(HexUtils.getSha1Digest(new FileInputStream(file), closeFile));
+            return ModuleDigest.digest(new FileInputStream(file), closeFile);
         }
     }
 
@@ -395,7 +395,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
 
             // get the last modified timestamp
             //
-            // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar..
+            // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting digest <-> loading jar.
             // doctor's answer for now, until we find a way to get all the info from a FileDescriptor instead of a File
             long lastModified = module.lastModified();
 
@@ -422,19 +422,19 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
 
                 logger.info("Checking module with updated timestamp: " + fileName);
 
-                // verify module checksum (if not specified Sha1Builder closeFile defaults to true)
+                // verify module checksum (if not specified DigestBuilder closeFile defaults to true)
                 //
-                // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar..
+                // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting moduleDigest <-> loading jar..
                 // doctor's answer for now, until we find a way to get all the info from a FileDescriptor instead of a File
-                final String sha1 = new Sha1Builder().file(module).build();
-                if (previousModule != null && previousModule.getSha1().equals(sha1)) {
-                    logger.info("Won't reload module \"" + fileName + "\", since its SHA-1 hasn't changed");
+                final String moduleDigest = new DigestBuilder().file(module).build();
+                if (previousModule != null && previousModule.getDigest().equals(moduleDigest)) {
+                    logger.info("Won't reload module \"" + fileName + "\", since its checksum hasn't changed");
                     continue;
                 }
 
                 // load and create the new or modified module
-                //final T newModule = onModuleLoad(module, sha1, lastModified);
-                final ModuleLoadStatus loadStatus = onModuleLoad(module, sha1, lastModified);
+                //final T newModule = onModuleLoad(module, moduleDigest, lastModified);
+                final ModuleLoadStatus loadStatus = onModuleLoad(module, moduleDigest, lastModified);
 
                 // set the changes-made flag
                 changesMade = changesMade || (loadStatus.isPrevModuleUnloaded() || (loadStatus.getLoadedModule() != null));
@@ -461,6 +461,62 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
         }
 
         return changesMade;
+    }
+
+    /**
+     * Load a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest}.
+     *
+     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @throws ModuleLoadingException if an error happens while loading the {@code ServerModuleFile}.
+     */
+    public void loadServerModuleFile(@NotNull final File stagedFile, @NotNull final String moduleDigest) throws ModuleLoadingException {
+        // get the module filename
+        final String fileName = stagedFile.getName();
+        // get module last modified timestamp
+        final long lastModified = stagedFile.lastModified();
+
+        // find previous loaded module with the same name
+        final T previousModule = scannedModules.get(fileName);
+        if (previousModule != null && moduleDigest.equals(previousModule.getDigest())) {
+            logger.info("Won't reload module \"" + fileName + "\", since its checksum hasn't changed");
+            return;
+        }
+
+        try {
+            // load and create the new or modified module
+            //final T newModule = onModuleLoad(module, moduleDigest, lastModified);
+            final ModuleLoadStatus loadStatus = onModuleLoad(stagedFile, moduleDigest, lastModified);
+
+            // should we skip this module
+            if (loadStatus.getLoadedModule() == null) {
+                logger.warning("Module \"" + fileName + "\" marked as skipped, will not be loaded at this time.");
+                throw new ModuleLoadingException("Module \"" + fileName + "\" marked as skipped, will not be loaded at this time.");
+            }
+        } catch (final ModuleException e) {
+            throw new ModuleLoadingException(e);
+        }
+    }
+
+    public void unloadServerModuleFile(@NotNull final File stagedFile, @NotNull final String moduleDigest) throws ModuleLoadingException {
+        // get the module filename
+        final String fileName = stagedFile.getName();
+
+        // get the module
+        final T module = getModule(fileName);
+        if (module == null) {
+            throw new ModuleLoadingException("Cannot unload module which is not loaded; staged file-name \"" + stagedFile + "\"");
+        }
+        if (!moduleDigest.equals(module.getDigest())) {
+            throw new ModuleLoadingException("Cannot unload module as digest of loaded and staged file mismatched; staged file-name \"" + stagedFile + "\"");
+        }
+        try {
+            if (!onModuleUnload(module)) {
+                throw new ModuleLoadingException("Failed to unload module; staged file-name \"" + stagedFile + "\"");
+            }
+        } catch (final ModuleException e) {
+            throw new ModuleLoadingException(e);
+        }
     }
 
     /**

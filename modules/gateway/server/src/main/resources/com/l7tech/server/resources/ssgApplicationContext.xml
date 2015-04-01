@@ -2134,13 +2134,12 @@
         <constructor-arg index="1" ref="clusterNodeId"/>
     </bean>
 
-    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListenerStageOneImpl">
-        <constructor-arg index="0" ref="applicationEventProxy"/>
-        <constructor-arg index="1" ref="serverModuleFileManager"/>
-        <constructor-arg index="2" ref="transactionManager"/>
-        <constructor-arg index="3" ref="serverConfig"/>
-        <constructor-arg index="4" ref="assertionRegistry"/>
-        <constructor-arg index="5" ref="customAssertionRegistrar"/>
+    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListener">
+        <constructor-arg index="0" ref="serverModuleFileManager"/>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="3" ref="assertionRegistry"/>
+        <constructor-arg index="4" ref="customAssertionRegistrar"/>
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>

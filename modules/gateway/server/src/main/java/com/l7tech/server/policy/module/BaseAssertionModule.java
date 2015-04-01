@@ -11,7 +11,7 @@ public class BaseAssertionModule<T extends URLClassLoader> {
 
     protected final String name;
     protected final long modifiedTime;
-    protected final String sha1;
+    protected final String digest;
     protected final T classLoader;
 
     /**
@@ -19,12 +19,12 @@ public class BaseAssertionModule<T extends URLClassLoader> {
      *
      * @param moduleName      the module filename.
      * @param modifiedTime    the module last modified timestamp.
-     * @param jarFileSha1     the module content SHA-1 checksum.
+     * @param moduleDigest    the module content checksum (currently SHA256).
      * @param classLoader     the module class loader.
      */
     public BaseAssertionModule(final String moduleName,
                                final long modifiedTime,
-                               final String jarFileSha1,
+                               final String moduleDigest,
                                final T classLoader)
     {
         if (moduleName == null || moduleName.length() < 1) {
@@ -36,7 +36,7 @@ public class BaseAssertionModule<T extends URLClassLoader> {
 
         this.name = moduleName;
         this.modifiedTime = modifiedTime;
-        this.sha1 = jarFileSha1;
+        this.digest = moduleDigest;
         this.classLoader = classLoader;
     }
 
@@ -55,10 +55,10 @@ public class BaseAssertionModule<T extends URLClassLoader> {
     }
 
     /**
-     * @return the SHA-1 checksum of this assertion module file.
+     * @return the checksum of this assertion module file (currently SHA256).
      */
-    public String getSha1() {
-        return sha1;
+    public String getDigest() {
+        return digest;
     }
 
     /**
