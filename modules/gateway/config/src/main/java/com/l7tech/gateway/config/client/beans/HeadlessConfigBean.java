@@ -146,8 +146,8 @@ public class HeadlessConfigBean {
                     final Collection<ConfigurationBean> configBeans = getConfigBeans(options, propertiesAccessor.getProperties(), false);
                     //validate the config beans
                     final String databaseType = getOptionValue("database.type", configBeans);
-                    if (!"mysql".equals(databaseType) && !"derby".equals(databaseType)) {
-                        throw new ConfigurationException("Unknown database type '" + databaseType + "'. Expected one of: 'mysql' or 'derby'");
+                    if (!"mysql".equals(databaseType) && !"embedded".equals(databaseType)) {
+                        throw new ConfigurationException("Unknown database type '" + databaseType + "'. Expected one of: 'mysql' or 'embedded'");
                     }
                     if ("mysql".equals(databaseType)) {
                         checkNotNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring a mysql database.");
@@ -161,8 +161,8 @@ public class HeadlessConfigBean {
                         }
                     } else {
                         //this means its derby
-                        checkNotNull(configBeans, Arrays.asList("admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring a derby database.");
-                        checkNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "database.failover.host", "database.failover.port"), "This property should not be specified when configuring a derby database.");
+                        checkNotNull(configBeans, Arrays.asList("admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring an embedded database.");
+                        checkNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "database.failover.host", "database.failover.port"), "This property should not be specified when configuring an embedded database.");
                         //setting the database.host to null will configure a derby database
                         ConfigurationBean databaseHostConfigBean = getConfigBean("database.host", configBeans);
                         if (databaseHostConfigBean != null) {
@@ -445,8 +445,8 @@ public class HeadlessConfigBean {
         setName("Configure Database Type");
         setConfigName("database.type");
         setConfigValue("mysql");
-        setDescription("The database type, either 'mysql' or 'derby'");
-        setPrompt("Database type. Either 'mysql' or 'derby'");
+        setDescription("The database type, either 'mysql' or 'embedded'");
+        setPrompt("Database type. Either 'mysql' or 'embedded'");
     }};
 
     /**

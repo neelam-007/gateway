@@ -352,7 +352,7 @@ public class HeadlessConfigBeanTest {
         final Boolean nodeEnabled = true;
         final String clusterPass = "clusterPass";
         final Boolean configureNode = false;
-        String databaseType = "derby";
+        String databaseType = "embedded";
         String databaseHost = "databaseHost";
 
         final Properties properties = new Properties();
@@ -384,7 +384,7 @@ public class HeadlessConfigBeanTest {
         final Boolean nodeEnabled = true;
         final String clusterPass = "clusterPass";
         final String configureNode = "no";
-        String databaseType = "derby";
+        String databaseType = "embedded";
 
         final Properties properties = new Properties();
         properties.setProperty("cluster.host", clusterHost);
@@ -438,7 +438,7 @@ public class HeadlessConfigBeanTest {
         final Boolean nodeEnabled = true;
         final String clusterPass = "clusterPass";
         final Boolean configureNode = false;
-        String databaseType = "derby";
+        String databaseType = "embedded";
 
         final Properties properties = new Properties();
         properties.setProperty("cluster.host", clusterHost);
