@@ -199,7 +199,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
             return;
         }
 
-        this.data.setDataBytes(data.getDataBytes());
+        this.data.copyFrom(data);
     }
 
     /**
