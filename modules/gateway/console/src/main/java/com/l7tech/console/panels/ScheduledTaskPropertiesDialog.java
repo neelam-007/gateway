@@ -92,10 +92,12 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private String[] cronFragments;
 
     private ScheduledTask scheduledTask;
+    private boolean readOnly;
 
-    public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask) {
+    public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask, final boolean readOnly) {
         super(parent, resources.getString("dialog.title"));
         this.scheduledTask = scheduledTask;
+        this.readOnly = readOnly;
 
         if (scheduledTask.getExecutionDate() == 0) {
             scheduledTask.setExecutionDate(new Date().getTime());
@@ -164,6 +166,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         jobTypeButtonGroup.add(oneTimeRadioButton);
         jobTypeButtonGroup.add(recurringRadioButton);
         oneTimeRadioButton.addActionListener(changeListener);
+
         recurringRadioButton.addActionListener(changeListener);
 
         // One time date field
@@ -276,6 +279,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
         isOK = isOK && policyComboBox.getSelectedIndex() > -1;
+        isOK = isOK && !readOnly;
         if(isRecurring){
             try{
                 Integer.parseInt(intervalTextField.getText());

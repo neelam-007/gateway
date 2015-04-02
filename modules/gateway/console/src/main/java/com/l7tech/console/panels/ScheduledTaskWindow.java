@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
@@ -12,6 +14,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions;
@@ -49,7 +52,7 @@ public class ScheduledTaskWindow extends JDialog {
 
     private PolicyAdmin policyAdmin;
     private ScheduledTaskAdmin scheduledTaskAdmin;
-
+    private PermissionFlags flags;
 
     public ScheduledTaskWindow(Frame parent) {
         super(parent, resources.getString("dialog.title"), true);
@@ -61,6 +64,9 @@ public class ScheduledTaskWindow extends JDialog {
     }
 
     private void initComponents() {
+
+        flags = PermissionFlags.get(EntityType.SCHEDULED_TASK);
+
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -124,10 +130,16 @@ public class ScheduledTaskWindow extends JDialog {
     }
 
     private void enableDisableComponents() {
-        final int[] selectedRows = scheduledPoliciesTable.getSelectedRows();
-        editButton.setEnabled(selectedRows.length == 1);
-        cloneButton.setEnabled(selectedRows.length == 1);
-        removeButton.setEnabled(selectedRows.length > 0);
+        int selectedRow = scheduledPoliciesTable.getSelectedRow();
+
+        boolean editEnabled = selectedRow >= 0;
+        boolean removeEnabled = selectedRow >= 0;
+        boolean copyEnabled = selectedRow >= 0;
+
+        addButton.setEnabled(flags.canCreateSome());
+        editButton.setEnabled(editEnabled);
+        removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
+        cloneButton.setEnabled(flags.canCreateSome() && copyEnabled);
     }
 
     private SimpleTableModel<ScheduledTask> buildResourcesTableModel() {
@@ -242,18 +254,22 @@ public class ScheduledTaskWindow extends JDialog {
     private void doAdd() {
         final ScheduledTask scheduledTask = new ScheduledTask();
         scheduledTask.setJobType(JobType.ONE_TIME);
-        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask));
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask,false));
     }
 
     private void doEdit(final ScheduledTask scheduledTask) {
-        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask));
+
+        final AttemptedOperation operation = new AttemptedUpdate(EntityType.SCHEDULED_TASK, scheduledTask);
+        boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
+
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask, readOnly));
     }
 
     private void doClone(final ScheduledTask scheduledTask) {
         ScheduledTask scheduledTaskCopy = new ScheduledTask();
         scheduledTaskCopy.copyFrom(scheduledTask);
         EntityUtils.updateCopy(scheduledTaskCopy);
-        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTaskCopy));
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTaskCopy, false));
     }
 
     private void displayPropertiesDialog(final ScheduledTaskPropertiesDialog dialog) {
