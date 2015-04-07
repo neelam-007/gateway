@@ -162,6 +162,7 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="cassandraEntityManager"/>
+                <ref bean="workQueueEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -504,6 +505,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.WORK_QUEUE"/></key>
+                    <bean class="com.l7tech.server.search.processors.WorkQueueDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
@@ -686,6 +691,7 @@
                 <ref bean="genericEntityManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
+                <ref bean="workQueueEntityManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -717,6 +723,7 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
+        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -1660,7 +1667,7 @@
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
 
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
+    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl" parent="hibernateBean"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
 </beans>

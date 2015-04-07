@@ -1290,7 +1290,7 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <!--property name="workQueueEntityManager" ref="workQueueEntityManager"/-->
+        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -2678,10 +2678,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
-                <!--entry>
+                <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.WORK_QUEUE"/></key>
                     <bean class="com.l7tech.server.search.processors.WorkQueueDependencyProcessor"/>
-                </entry-->
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>

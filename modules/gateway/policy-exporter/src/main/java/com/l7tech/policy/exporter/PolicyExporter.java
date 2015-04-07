@@ -175,6 +175,10 @@ public class PolicyExporter {
                 addReference( new PrivateKeyReference( finder, keyable), refs);
             }
         }
+
+        if (assertion instanceof InvokePolicyAsyncAssertion) {
+            addReference(new WorkQueueReference(finder, (WorkQueueable) assertion), refs);
+        }
     }
 
     /**

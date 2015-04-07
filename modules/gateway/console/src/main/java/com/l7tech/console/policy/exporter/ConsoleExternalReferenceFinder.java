@@ -28,6 +28,8 @@ import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.workqueue.WorkQueue;
+import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -279,6 +281,12 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
         }
 
         return null;
+    }
+
+    @Override
+    public WorkQueue getWorkQueue(final String name) throws FindException {
+        WorkQueueManagerAdmin workQueueManagerAdmin = getAdminInterface(WorkQueueManagerAdmin.class);
+        return workQueueManagerAdmin.getWorkQueue(name);
     }
 
     @Override

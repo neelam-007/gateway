@@ -6,16 +6,15 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.Policy;
+import com.l7tech.search.Dependency;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 
 /**
  * Assertion for invoking a policy fragment asynchronously.
  */
-public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntities {
+public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntities, WorkQueueable {
 
     private static final String META_INITIALIZED = InvokePolicyAsyncAssertion.class.getName() + ".metadataInitialized";
 
@@ -58,8 +57,7 @@ public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntitie
         return meta;
     }
 
-    //@Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.WORK_QUEUE)
-    //@Dependency(type = Dependency.DependencyType.WORK_QUEUE, methodReturnType = Dependency.MethodReturnType.NAME)
+    @Dependency(type = Dependency.DependencyType.WORK_QUEUE, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getWorkQueueName() {
         return workQueueName;
     }

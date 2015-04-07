@@ -73,7 +73,8 @@ public @interface Dependency {
         HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION),
         ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
         SCHEDULED_TASK(EntityType.SCHEDULED_TASK),
-        INTERFACE_TAG(EntityType.INTERFACE_TAG);
+        INTERFACE_TAG(EntityType.INTERFACE_TAG),
+        WORK_QUEUE(EntityType.WORK_QUEUE);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

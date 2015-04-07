@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
@@ -50,6 +51,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.EntityUseUtils;
+import com.l7tech.server.workqueue.WorkQueueEntityManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -123,6 +125,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private KeyValueStore keyValueStore;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private CassandraConnectionEntityManager cassandraEntityManager;
+    private WorkQueueEntityManager workQueueEntityManager;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -671,19 +674,19 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         }
     }
 
-    private void checkCassandraConnection( final CassandraConnectionable cassandraConnectionable,
-                                        final AssertionPath ap,
-                                        final PolicyValidatorResult r ) {
-        final String name = cassandraConnectionable.getConnectionName();
+    private void checkWorkQueue(final WorkQueueable workQueueable,
+                                final AssertionPath ap,
+                                final PolicyValidatorResult r) {
+        final String name = workQueueable.getWorkQueueName();
         try {
-            CassandraConnection connection = cassandraEntityManager.getCassandraConnectionEntity( name );
-            if ( connection == null ) {
-                r.addError(new PolicyValidatorResult.Error( (Assertion)cassandraConnectionable,
-                        "Assertion refers to the " + EntityType.CASSANDRA_CONFIGURATION.getName() +" '"+name+"' which cannot be located on this system.", null));
+            WorkQueue wq = workQueueEntityManager.getWorkQueueEntity(name);
+            if (wq == null) {
+                r.addError(new PolicyValidatorResult.Error((Assertion) workQueueable,
+                        "Assertion refers to the " + EntityType.WORK_QUEUE.getName() + " '" + name + "' which cannot be located on this system.", null));
 
             }
-        } catch ( FindException e ) {
-            logger.log(Level.WARNING, "Error looking for Cassandra Connection connection: " + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error looking for work queue: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -695,6 +698,22 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if ( !isDigestEnabled ) {
             r.addWarning(new PolicyValidatorResult.Warning(httpDigestAssertion,
                     "Credentials gathered by this assertion are unlikely to be authenticated by any identity provider because no provider is currently configured to store MD5 password hashes.", null));
+        }
+    }
+
+    private void checkCassandraConnection( final CassandraConnectionable cassandraConnectionable,
+                                           final AssertionPath ap,
+                                           final PolicyValidatorResult r ) {
+        final String name = cassandraConnectionable.getConnectionName();
+        try {
+            CassandraConnection connection = cassandraEntityManager.getCassandraConnectionEntity( name );
+            if ( connection == null ) {
+                r.addError(new PolicyValidatorResult.Error( (Assertion)cassandraConnectionable,
+                        "Assertion refers to the " + EntityType.CASSANDRA_CONFIGURATION.getName() +" '"+name+"' which cannot be located on this system.", null));
+
+            }
+        } catch ( FindException e ) {
+            logger.log(Level.WARNING, "Error looking for Cassandra Connection connection: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -833,6 +852,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     public void setCustomAssertionsRegistrar(@NotNull final CustomAssertionsRegistrar customAssertionsRegistrar) {
         this.customAssertionsRegistrar = customAssertionsRegistrar;
+    }
+
+    public void setWorkQueueEntityManager(WorkQueueEntityManager workQueueEntityManager) {
+        this.workQueueEntityManager = workQueueEntityManager;
     }
 
     @Override

@@ -158,10 +158,10 @@ public class WorkQueueResource extends RestEntityResource<WorkQueueMO, WorkQueue
     @Path("template")
     public Item<WorkQueueMO> template() {
         WorkQueueMO workQueueMO = ManagedObjectFactory.createWorkQueueMO();
-        workQueueMO.setName("TemplateCassandraConnection");
+        workQueueMO.setName("TemplateWorkQueue");
         workQueueMO.setMaxQueueSize(1000);
         workQueueMO.setThreadPoolMax(100);
-        workQueueMO.setRejectPolicy("FAIL_IMMEDIATELY");
+        workQueueMO.setRejectPolicy("WAIT_FOR_ROOM");
         return super.createTemplateItem(workQueueMO);
     }
 }
