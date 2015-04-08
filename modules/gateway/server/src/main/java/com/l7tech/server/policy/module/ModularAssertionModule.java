@@ -28,8 +28,8 @@ public class ModularAssertionModule extends BaseAssertionModule<ModularAssertion
     private final Set<? extends Assertion> assertionPrototypes;
     private final Set<String> packages;
 
-    ModularAssertionModule(String moduleName, JarFile jarfile, long modifiedTime, String jarfileSha1, ModularAssertionClassLoader classLoader, Set<? extends Assertion> assertionPrototypes, Set<String> packages) {
-        super(moduleName, modifiedTime, jarfileSha1, classLoader);
+    ModularAssertionModule(String moduleName, JarFile jarfile, long modifiedTime, String moduleDigest, ModularAssertionClassLoader classLoader, Set<? extends Assertion> assertionPrototypes, Set<String> packages) {
+        super(moduleName, modifiedTime, moduleDigest, classLoader);
 
         if (jarfile == null) throw new IllegalArgumentException("jarfile required");
         if (assertionPrototypes == null || assertionPrototypes.isEmpty()) throw new IllegalArgumentException("assertionPrototypes must contain at least one prototype instance");

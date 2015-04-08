@@ -1,10 +1,10 @@
 package com.l7tech.gateway.common.custom;
 
-import com.l7tech.gateway.common.module.ServerModuleFileChecker;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.module.ServerModuleFileLoader;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 
@@ -17,7 +17,7 @@ import java.util.Collection;
  * the runtime.
  */
 @Administrative
-public interface CustomAssertionsRegistrar extends ServerModuleFileChecker {
+public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
 
     /**
      * Get the class bytes for a CustomAssertion class.

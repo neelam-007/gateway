@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.module;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.search.Dependency;
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +27,8 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
      */
     private byte[] dataBytes;
     // When adding fields, update copyFrom() method
+
+    private String signatureProperties;
 
     /**
      * The owning {@link ServerModuleFile Server Module File}.
@@ -89,6 +92,18 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
         this.dataBytes = dataBytes;
     }
 
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "signature_properties", length = Integer.MAX_VALUE)
+    public String getSignatureProperties() {
+        return signatureProperties;
+    }
+
+    public void setSignatureProperties(String signatureProperties) {
+        this.signatureProperties = signatureProperties;
+    }
+
     /**
      * Copy data from the specified {@code otherData}
      *
@@ -96,6 +111,7 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
      */
     public void copyFrom(@NotNull final ServerModuleFileData otherData) {
         setDataBytes(otherData.getDataBytes());
+        setSignatureProperties(otherData.getSignatureProperties());
     }
 
 
@@ -115,7 +131,9 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
         final String thatModuleSha256 = that.getServerModuleFile() != null ? that.getServerModuleFile().getModuleSha256() : null;
 
         // no need to compare the row bytes, sha256 is enough
-        return (moduleSha256 != null ? moduleSha256.equals(thatModuleSha256) : thatModuleSha256 == null);
+        return
+            (moduleSha256 != null ? moduleSha256.equals(thatModuleSha256) : thatModuleSha256 == null) &&
+            StringUtils.equals(getSignatureProperties(), that.getSignatureProperties());
     }
 
     @Override
@@ -127,7 +145,9 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
         // todo (tveninov): Perhaps remove the check (serverModuleFile != null), serverModuleFile shouldn't be null
         // unless hibernate somehow mess-up the entity, in which NullPointerException exception might be a better option.
         final String moduleSha256 = serverModuleFile != null ? serverModuleFile.getModuleSha256() : null;
+        final String signatureProps = getSignatureProperties();
         result = 31 * result + (moduleSha256 != null ? moduleSha256.hashCode() : 0);
+        result = 31 * result + (signatureProps != null? signatureProps.hashCode() : 0);
         return result;
     }
 }

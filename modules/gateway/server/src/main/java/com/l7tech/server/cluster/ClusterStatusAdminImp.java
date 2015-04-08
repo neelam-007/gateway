@@ -434,7 +434,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             Collection<String> assertions = new ArrayList<>();
             for (Assertion assertion : module.getAssertionPrototypes())
                 assertions.add(assertion.getClass().getName());
-            ret.add(new ModuleInfo(module.getName(), module.getSha1(), assertions));
+            ret.add(new ModuleInfo(module.getName(), module.getDigest(), assertions));
         }
         return ret;
     }

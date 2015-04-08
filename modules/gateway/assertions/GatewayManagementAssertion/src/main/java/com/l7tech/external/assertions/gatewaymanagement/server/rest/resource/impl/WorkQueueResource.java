@@ -23,7 +23,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + WorkQueueResource.workQueues_URI)
 @Singleton
-@Since(RestManVersion.VERSION_1_0_1)
+@Since(RestManVersion.VERSION_1_0_2)
 public class WorkQueueResource extends RestEntityResource<WorkQueueMO, WorkQueueAPIResourceFactory, WorkQueueTransformer> {
 
     protected static final String workQueues_URI = "workQueues";
@@ -158,10 +158,10 @@ public class WorkQueueResource extends RestEntityResource<WorkQueueMO, WorkQueue
     @Path("template")
     public Item<WorkQueueMO> template() {
         WorkQueueMO workQueueMO = ManagedObjectFactory.createWorkQueueMO();
-        workQueueMO.setName("TemplateCassandraConnection");
+        workQueueMO.setName("TemplateWorkQueue");
         workQueueMO.setMaxQueueSize(1000);
         workQueueMO.setThreadPoolMax(100);
-        workQueueMO.setRejectPolicy("FAIL_IMMEDIATELY");
+        workQueueMO.setRejectPolicy("WAIT_FOR_ROOM");
         return super.createTemplateItem(workQueueMO);
     }
 }

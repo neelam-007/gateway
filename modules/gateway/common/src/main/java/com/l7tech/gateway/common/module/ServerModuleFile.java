@@ -199,7 +199,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
             return;
         }
 
-        this.data.setDataBytes(data.getDataBytes());
+        this.data.copyFrom(data);
     }
 
     /**
@@ -368,7 +368,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      */
     @NotNull
     public static String calcBytesChecksum(@NotNull final byte[] bytes) {
-        return HexUtils.hexDump(HexUtils.getSha256Digest(bytes));
+        return ModuleDigest.digest(bytes);
     }
 
     @SuppressWarnings("RedundantIfStatement")

@@ -1,16 +1,18 @@
 package com.l7tech.server.task;
 
 import com.l7tech.objectmodel.Goid;
-import org.quartz.Job;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 import java.util.logging.Logger;
 
 /**
 * Created by luiwy01 on 3/23/2015.
 */
-public class ScheduledServiceQuartzJob implements Job {
+@DisallowConcurrentExecution
+public class ScheduledServiceQuartzJob implements StatefulJob {
 
     private static Logger logger = Logger.getLogger(ScheduledServiceQuartzJob.class.getName());
 
@@ -34,18 +36,15 @@ public class ScheduledServiceQuartzJob implements Job {
     public void execute(JobExecutionContext context)
             throws JobExecutionException {
 
-        Goid policyGoid = Goid.parseGoid(context.getJobDetail().getJobDataMap().getString("policyGoid"));
-        String nodeId = context.getJobDetail().getJobDataMap().getString("nodeId");
+        Goid policyGoid = Goid.parseGoid(context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID));
+        String nodeId = context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
 
-        if (nodeId.equals("All") || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
+        if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
             try {
                 ScheduledPolicyRunner.getInstance(null).runBackgroundTask(policyGoid);
             } catch (Exception e) {
                 throw new JobExecutionException(e);
             }
         }
-
     }
-
-
 }

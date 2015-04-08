@@ -705,7 +705,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getVersionNumber();
     }
 
-    private void invalidateCachedInfo() {
+    public void invalidateCachedInfo() {
         latestPolicyVersionNumber = null;
     }
 

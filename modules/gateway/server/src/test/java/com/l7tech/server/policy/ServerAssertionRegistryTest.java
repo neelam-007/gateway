@@ -36,9 +36,9 @@ public class ServerAssertionRegistryTest {
         IOUtils.copyStream(new RandomInputStream(2, 382733), os);
         os.close();
 
-        String hash1 =  new ModulesScanner.Sha1Builder().file(file).build();
+        String hash1 =  new ModulesScanner.DigestBuilder().file(file).build();
         log.info("First hash = " + hash1);
-        assertEquals("4a427de06d2a4973800103501f449f8dd41e787b", hash1);
+        assertEquals("a2ea5f6e5dc3e355fe8846afa10c553e7a9b62b2aab041eef5efd9128a420f6f", hash1);
 
         file.delete();
         os = new FileOutputStream(file);
@@ -46,9 +46,9 @@ public class ServerAssertionRegistryTest {
         IOUtils.copyStream(new RandomInputStream(3, 442233), os);
         os.close();
 
-        String hash2 = new ModulesScanner.Sha1Builder().file(file).build();
+        String hash2 = new ModulesScanner.DigestBuilder().file(file).build();
         log.info("Second hash = " + hash2);
-        assertEquals("552c282fabc472b6c2fabb8f21c52b748754d31c", hash2);
+        assertEquals("eb81b449fa9a4f8c850b546afce313e6bf7b8eafb92b86f9070bf74a248918e4", hash2);
 
         assertFalse(hash1.equals(hash2));
     }

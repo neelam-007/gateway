@@ -3,6 +3,7 @@ package com.l7tech.config.client;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.options.OptionSet;
+import com.l7tech.config.client.options.OptionType;
 import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
@@ -16,8 +17,24 @@ import java.util.Set;
 
 /**
  * Headless configuration mode that reads an answers file from STDIN.
+ *
+ * @deprecated Use the HeadlessConfig instead
  */
+@Deprecated
 public class HeadlessInteraction extends ConfigurationInteraction {
+
+    //this is the option specified if the node.properties should be created
+    private static final com.l7tech.config.client.options.Option nodeOption = new com.l7tech.config.client.options.Option() {{
+        setId("configure-node");
+        setGroup("headless");
+        setType(OptionType.BOOLEAN);
+        setOrder(501);
+        setName("Configure Node");
+        setConfigName("configure.node");
+        setConfigValue("true");
+        setDescription("True configures a new node. Setting this to false will not configure a new node");
+        setPrompt("Create database.");
+    }};
 
     public HeadlessInteraction( final OptionSet optionSet,
                             final Map<String,ConfigurationBean> configBeans )
@@ -28,6 +45,8 @@ public class HeadlessInteraction extends ConfigurationInteraction {
                 new OutputStreamWriter( System.out ){@Override public void close() throws IOException {}},
                 optionSet,
                 configBeans );
+        //need to add a headless only config option here:
+        optionSet.getOptions().add(nodeOption);
     }
 
     @Override
@@ -84,7 +103,8 @@ public class HeadlessInteraction extends ConfigurationInteraction {
                             bean.processConfigValueInput( value );
                             configBeans.put( option.getId(), bean );
                         } catch ( ParseException pe ) {
-                            throw new IOException( "Unable to parse option value for " + name + ": " + ExceptionUtils.getMessage( pe ), pe );
+                            System.err.println("Unable to parse option value for '" + name + "' value given: '" + value + "'. Message: " + ExceptionUtils.getMessage( pe ));
+                            return false;
                         }
                     }
                 }

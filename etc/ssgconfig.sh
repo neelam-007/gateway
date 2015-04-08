@@ -53,6 +53,9 @@ elif [ "${1}" == "-passwordReset" ] ; then
 elif [ "${1}" == "-keystoreProperty" ] ; then
   shift
   launch "ConfigKeystoreFileProperty" "$*"
+elif [ "${1}" == "-headless" ] ; then
+  shift
+  launch "ConfigHeadless" "$*"
 else
   launch "ConfigWizard" "$*" && launchRoot "ConfigClusterAddress"
 fi

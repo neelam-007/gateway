@@ -56,7 +56,7 @@ public class Main {
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
 
-        if ( !isStrongCryptoEnabledInJvm() ) {
+        if ( !ConfigUtils.isStrongCryptoEnabledInJvm() ) {
             String message = "The Java virtual machine does not have strong cryptography enabled.  The unlimited strength jurisdiction JCE policy files may need to be installed.";
             logger.warning( message );
             System.out.println( message );
@@ -141,7 +141,6 @@ public class Main {
     private static final String pcUrl = "https://" + InetAddressUtil.getLocalHostUrlAddress() + ":8765/services/nodeManagementApi";
     private static final String PROP_NODE_PROPS = "com.l7tech.server.config.nodePropsPath";
     private static final String DEFAULT_NODE_PROPS = "../node/default/etc/conf/node.properties";
-    private static final boolean PERFORM_CRYPTO_CHECK = SyspropUtil.getBoolean( "com.l7tech.gateway.config.checkStrongCryptography", true);
 
     private static int doGatewayControl( String command ) {
         NodeManagementApiFactory nodeManagementApiFactory = new NodeManagementApiFactory( pcUrl );
@@ -255,18 +254,6 @@ public class Main {
             final PrintWriter writer = console.writer();
             writer.write( "\u001b[2J\u001b[H" );
             writer.flush();
-        }
-    }
-
-    private static boolean isStrongCryptoEnabledInJvm() {
-        try {
-            return !PERFORM_CRYPTO_CHECK || JceUtil.isStrongCryptoEnabledInJvm();
-        } catch ( GeneralSecurityException e ) {
-            logger.log(
-                    Level.WARNING,
-                    "Error determining if strong cryptography is enabled: " + ExceptionUtils.getMessage( e ),
-                    ExceptionUtils.getDebugException( e ) );
-            return true;
         }
     }
 

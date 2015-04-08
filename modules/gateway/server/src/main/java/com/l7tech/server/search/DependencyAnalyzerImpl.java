@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -101,7 +102,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             PublishedServiceAlias.class,
             SsgFirewallRule.class,
             SampleMessage.class,
-            ResourceEntry.class
+            ResourceEntry.class,
+            ScheduledTask.class
     );
     @Inject
     private EntityCrud entityCrud;

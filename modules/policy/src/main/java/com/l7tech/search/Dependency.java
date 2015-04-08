@@ -72,7 +72,9 @@ public @interface Dependency {
         CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION),
         HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION),
         ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
-        INTERFACE_TAG(EntityType.INTERFACE_TAG);
+        SCHEDULED_TASK(EntityType.SCHEDULED_TASK),
+        INTERFACE_TAG(EntityType.INTERFACE_TAG),
+        WORK_QUEUE(EntityType.WORK_QUEUE);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

@@ -597,6 +597,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new ScheduledTaskMO instance.
+     *
+     * @return The new instance.
+     */
+    public static ScheduledTaskMO createScheduledTaskMO() {
+        return new ScheduledTaskMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

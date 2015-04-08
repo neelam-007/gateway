@@ -9,7 +9,8 @@ import org.jetbrains.annotations.Nullable;
 public enum RestManVersion implements Comparable<RestManVersion> {
     //Note these must be listed in proper order! Starting with the first version and ending with the last.
     VERSION_1_0(1, 0, 0),
-    VERSION_1_0_1(1, 0, 1);
+    VERSION_1_0_1(1, 0, 1),
+    VERSION_1_0_2(1, 0, 2);
 
     private final int major;
     private final int minor;

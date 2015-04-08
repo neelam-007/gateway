@@ -435,15 +435,15 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
         /** The filename of the module, ie "RateLimitAssertion-3.7.0.jar". */
         public final String moduleFilename;
 
-        /** The hex encoded SHA-1 hash of the module file, ie "75f53368f8ef850bfb89ba2adcb4eacd0534b173". */
-        public final String moduleSha1;
+        /** The hex encoded digest of the module file, currently SHA256 */
+        public final String moduleDigest;
 
         /** The assertion classnames provided by this module, ie { "com.yoyodyne.integration.layer7.SqlSelectAssertion" }. */
         public final Collection<String> assertionClasses;
 
-        public ModuleInfo(String moduleFilename, String moduleSha1, Collection<String> assertionClasses) {
+        public ModuleInfo(String moduleFilename, String moduleDigest, Collection<String> assertionClasses) {
             this.moduleFilename = moduleFilename;
-            this.moduleSha1 = moduleSha1;
+            this.moduleDigest = moduleDigest;
             this.assertionClasses = assertionClasses;
         }
     }

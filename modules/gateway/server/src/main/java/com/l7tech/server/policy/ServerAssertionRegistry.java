@@ -2,8 +2,9 @@ package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileChecker;
+import com.l7tech.gateway.common.module.ServerModuleFileLoader;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
@@ -11,8 +12,8 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.policy.module.*;
-import com.l7tech.util.*;
-import org.apache.commons.lang.StringUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -20,6 +21,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationEventMulticaster;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
  * modular ServerConfig properties in the new assertions and register them with ServerConfig.
  * @noinspection ContinueStatement,ContinueStatement
  */
-public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean, ServerModuleFileChecker {
+public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean, ServerModuleFileLoader {
     /** @noinspection FieldNameHidesFieldInSuperclass*/
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
 
@@ -314,15 +316,12 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     @Override
-    public boolean isServerModuleFileLoaded(@NotNull final ServerModuleFile moduleFile) {
-        final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
-        if (StringUtils.isNotBlank(moduleFileName)) {
-            for (final ModularAssertionModule module : assertionsScanner.getModules()) {
-                if (moduleFileName.equals(module.getName())) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    public void loadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
+        assertionsScanner.loadServerModuleFile(stagedFile, moduleEntity.getModuleSha256());
+    }
+
+    @Override
+    public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
+        assertionsScanner.unloadServerModuleFile(stagedFile, moduleEntity.getModuleSha256());
     }
 }

@@ -81,7 +81,10 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                     managementService.createDatabase( config.getName(), databaseConfig.toNull(), hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
                 }
 
-                managementService.createNode( config );
+                Boolean configureNode = getOption("configure.node", configuration);
+                if ( configureNode == null || configureNode ) {
+                    managementService.createNode(config);
+                }
             }
         } catch ( NodeManagementApi.DatabaseCreationException dce ) {
             throw new ConfigurationException( "Error creating database when saving configuration '"+dce.getMessage()+"'" );

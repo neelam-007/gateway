@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ssgconfig_launch -headless $*
+
+

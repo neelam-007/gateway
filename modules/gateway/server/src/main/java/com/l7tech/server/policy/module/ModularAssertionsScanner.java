@@ -144,7 +144,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      */
     @NotNull
     @Override
-    protected ModuleLoadStatus<ModularAssertionModule> onModuleLoad(final File file, final String sha1, long lastModified) throws ModuleException {
+    protected ModuleLoadStatus<ModularAssertionModule> onModuleLoad(final File file, final String digest, long lastModified) throws ModuleException {
         // sanity check
         if (file == null)
             throw new ModuleException("null module File supplied", new NullPointerException());
@@ -243,7 +243,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
                 protos.add(proto);
             }
 
-            final ModularAssertionModule module = new ModularAssertionModule(filename, jar, lastModified, sha1, assloader, protos, packages);
+            final ModularAssertionModule module = new ModularAssertionModule(filename, jar, lastModified, digest, assloader, protos, packages);
             previousVersion = insertModule(module);
             for (String p : packages) {
                 modulesByPackageName.put(p, module);
@@ -276,7 +276,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
 
                 for (Assertion proto : protos) {
                     String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
-                    logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ')');
+                    logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-256 " + digest + ')');
                     callbacks.registerAssertion(proto.getClass());
                 }
             } finally {

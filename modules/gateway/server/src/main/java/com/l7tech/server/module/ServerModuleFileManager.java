@@ -5,8 +5,12 @@ import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.InputStream;
 
 /**
  * Entity manager interface for {@link ServerModuleFile} entities.
@@ -55,4 +59,16 @@ public interface ServerModuleFileManager extends EntityManager<ServerModuleFile,
      * @return the value of {@link com.l7tech.server.ServerConfigParams#PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE} cluster wide property.  Default is {@code false}.
      */
     boolean isModuleUploadEnabled();
+
+    /**
+     * Retrieve module content as a stream of uninterpreted bytes. The value can then be read in chunks from the stream. <br/>
+     * Note: Current implementation of MySQL JDBC returns in-memory {@code java.io.ByteArrayInputStream}.
+     *
+     * @param goid    the module {@link Goid}.
+     * @return A {@code InputStream} that delivers the module content as a stream of uninterpreted bytes.
+     * @throws FindException if the module entity specified with the {@code goid} doesn't exist
+     * or an SQL error occurs while extracting module content.
+     */
+    @Nullable
+    InputStream getModuleBytesAsStream(Goid goid) throws FindException;
 }

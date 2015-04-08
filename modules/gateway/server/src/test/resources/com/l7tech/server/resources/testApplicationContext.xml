@@ -720,6 +720,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.WORK_QUEUE"/></key>
+                    <bean class="com.l7tech.server.search.processors.WorkQueueDependencyProcessor"/>
+                </entry>
             </map>
         </constructor-arg>
     </bean>
@@ -784,6 +788,8 @@
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry" />
 
     <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerStub" />
+
+    <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>
 
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManagerStub" />
 

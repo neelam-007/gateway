@@ -88,6 +88,7 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/*.jar
 %defattr(0555,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/*.sh
+%attr(0755,layer7,layer7) /opt/SecureSpan/Gateway/config/bin
 
 %defattr(0644,layer7,layer7,0755)
 %dir %attr(0755,root,root) /opt/SecureSpan/Gateway/config/backup

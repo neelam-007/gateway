@@ -2,6 +2,7 @@ package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
@@ -13,7 +14,11 @@ import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -184,7 +189,12 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     @Override
-    public boolean isServerModuleFileLoaded(@NotNull final ServerModuleFile moduleFile) {
-        return false;
+    public void loadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
+        // nothing to do
+    }
+
+    @Override
+    public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
+        // nothing to do
     }
 }

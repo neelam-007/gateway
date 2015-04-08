@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.task;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
-import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.*;
@@ -18,7 +17,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
-import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -50,8 +48,8 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         return super.getName();
     }
 
+
     @NotNull
-    @Size(max = 16)
     @Column(name = "policy_goid", nullable = false)
     @Type(type = "com.l7tech.server.util.GoidType")
     @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.GOID)
@@ -62,6 +60,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     public void setPolicyGoid(Goid policyGoid) {
         this.policyGoid = policyGoid;
     }
+
 
     @Column(name="use_one_node")
     public boolean isUseOneNode() {
@@ -74,7 +73,6 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
 
     @RbacAttribute
     @Column(name="job_type", nullable = false)
-    @Size(max = 128)
     @Enumerated(EnumType.STRING)
     public JobType getJobType() {
         return jobType;
@@ -85,7 +83,6 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     }
 
     @Column(name="job_status")
-    @Size(max = 128)
     @Enumerated(EnumType.STRING)
     public JobStatus getJobStatus() {
         return jobStatus;

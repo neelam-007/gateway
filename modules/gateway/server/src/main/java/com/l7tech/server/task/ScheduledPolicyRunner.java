@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.polback.BackgroundTask;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.inject.Inject;
@@ -29,6 +30,8 @@ public class ScheduledPolicyRunner {
 
 
     private ScheduledTaskJobManager jobManager;
+    private Auditor auditor;
+
     public static void setInstance(ScheduledPolicyRunner serviceRunner) {
         instance = serviceRunner;
     }
@@ -63,8 +66,6 @@ public class ScheduledPolicyRunner {
         final BackgroundTask task = jobManager.pbsReg.getImplementationProxyForSingleMethod(runMethod, policyGoid);
 
         // Create an audit record in which to accumulate any audit details that appear.
-        // INFO level is OK for scheduled task probably.
-        // Work queue might want to default to FINE level, or maybe inherit level from calling policy's audit context
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO,
                 jobManager.nodeId,
                 Component.GW_SCHEDULED_TASK,
@@ -74,30 +75,36 @@ public class ScheduledPolicyRunner {
                 null,
                 null,
                 "run",
-                jobManager.clusterInfoManager.getSelfNodeInf().getAddress()); // todo util?
+                jobManager.clusterInfoManager.getSelfNodeInf().getAddress());
 
         jobManager.auditContextFactory.doWithNewAuditContext(auditRecord, new Runnable() {
             @Override
             public void run() {
                 try {
-                    logger.info("Scheduled policy executing");
                     // Invoke the actual policy
                     task.run(null);
                     // Policy executed successfully and evaluated to AssertionStatus.NONE
-                    logger.info("Scheduled policy executed");
-
                 } catch (RuntimeException e) {
-                    // todo handle error and audit
-                    // Policy produced non-successful assertion status, or failed or wasn't found
-                    // Handle error
-
-                    // Can add audit details to audit context if you want -- will be added to open audit record
-                    // Here's an example of how you might add an audit detail to the current audit context
-                    new Auditor(this, jobManager.applicationContext, logger).logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
-                            new String[]{"badness!"}, ExceptionUtils.getDebugException(e));
+                    // not audit if Policy produced non-successful assertion status
+                    if(e instanceof AssertionStatusException) {
+                        getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                                new String[]{((AssertionStatusException) e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
+                    }
+                    else{
+                        getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
+                                new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
+                    }
                 }
 
             }
         });
+    }
+
+    private Auditor getAuditor(){
+        if(auditor == null)
+        {
+            auditor = new Auditor(this, jobManager.applicationContext, logger);
+        }
+        return auditor;
     }
 }

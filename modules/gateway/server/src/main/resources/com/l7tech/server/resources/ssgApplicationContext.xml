@@ -1290,7 +1290,7 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <!--property name="workQueueEntityManager" ref="workQueueEntityManager"/-->
+        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -2134,13 +2134,12 @@
         <constructor-arg index="1" ref="clusterNodeId"/>
     </bean>
 
-    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListenerStageOneImpl">
-        <constructor-arg index="0" ref="applicationEventProxy"/>
-        <constructor-arg index="1" ref="serverModuleFileManager"/>
-        <constructor-arg index="2" ref="transactionManager"/>
-        <constructor-arg index="3" ref="serverConfig"/>
-        <constructor-arg index="4" ref="assertionRegistry"/>
-        <constructor-arg index="5" ref="customAssertionRegistrar"/>
+    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListener">
+        <constructor-arg index="0" ref="serverModuleFileManager"/>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="3" ref="assertionRegistry"/>
+        <constructor-arg index="4" ref="customAssertionRegistrar"/>
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
@@ -2679,10 +2678,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
-                <!--entry>
+                <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.WORK_QUEUE"/></key>
                     <bean class="com.l7tech.server.search.processors.WorkQueueDependencyProcessor"/>
-                </entry-->
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
