@@ -23,7 +23,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + WorkQueueResource.workQueues_URI)
 @Singleton
-@Since(RestManVersion.VERSION_1_0_1)
+@Since(RestManVersion.VERSION_1_0_2)
 public class WorkQueueResource extends RestEntityResource<WorkQueueMO, WorkQueueAPIResourceFactory, WorkQueueTransformer> {
 
     protected static final String workQueues_URI = "workQueues";
