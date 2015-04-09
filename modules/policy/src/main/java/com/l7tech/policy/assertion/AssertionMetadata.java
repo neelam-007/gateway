@@ -697,6 +697,19 @@ public interface AssertionMetadata {
      */
     String MODULE_FILE_NAME = "moduleFileName";
 
+    /**
+     * String.  SSM only.  Module Entity Name in case when module was uploaded via Policy Manager or {@code null} otherwise.<br/>
+     * This key was introduced in SecureSpan Gateway version 8.4 (Katana).
+     */
+    String MODULE_ENTITY_NAME = "moduleEntityName";
+
+    /**
+     * String.  SSM only.  Either {@link #MODULE_ENTITY_NAME} or {@link #MODULE_FILE_NAME} depending whether the module was
+     * uploaded via Policy Manager or not, respectively.<br/>
+     * This key was introduced in SecureSpan Gateway version 8.4 (Katana).
+     */
+    String MODULE_DISPLAY_INFO = "moduleDisplayInfo";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     <T extends Assertion> Class<T> getAssertionClass();
 

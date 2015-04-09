@@ -5,7 +5,6 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
-import junit.framework.Assert;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -74,7 +73,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
     /**
      * Verifies that correct methods are called from <tt>assertionsScanner</tt> and that
      *
-     * @param onModuleLoadCalls                        expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(java.io.File, String, long) onModuleLoad} calls.
+     * @param onModuleLoadCalls                        expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(ModuleData) onModuleLoad} calls.
      *                                                 <code>null</code> if not care.
      * @param onModuleUnloadCalls                      expected number of {@link com.l7tech.server.policy.module.ModularAssertionsScanner#onModuleUnloaded(ModularAssertionModule) onModuleUnloaded}.
      *                                                 <code>null</code> if not care.
@@ -107,7 +106,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
     ) throws Exception {
         // make sure we load all our modules
         if (onModuleLoadCalls != null) {
-            Mockito.verify(assertionsScanner, Mockito.times(onModuleLoadCalls)).onModuleLoad(Mockito.<File>any(), Mockito.anyString(), Mockito.anyLong());
+            Mockito.verify(assertionsScanner, Mockito.times(onModuleLoadCalls)).onModuleLoad(Mockito.<ModuleData>any());
         }
         // make sure all modules have been registered
         if (numberOfLoadedModules != null) {
@@ -170,7 +169,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * {@link #verifyAssertionScanner(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer) verifyAssertionScanner}
      * with reduced arguments, targeted for verifying modules loading process.
      *
-     * @param onModuleLoadCalls     expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(java.io.File, String, long) onModuleLoad} calls.
+     * @param onModuleLoadCalls     expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(ModuleData) onModuleLoad} calls.
      * @param numberOfLoadedModules expected number of loaded modules (i.e. calls to {@link ScannerCallbacks#publishEvent(org.springframework.context.ApplicationEvent) publishEvent} with {@link AssertionModuleRegistrationEvent}).
      * @throws Exception
      */

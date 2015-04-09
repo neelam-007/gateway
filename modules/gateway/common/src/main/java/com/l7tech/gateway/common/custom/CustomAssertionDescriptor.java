@@ -56,6 +56,12 @@ public class CustomAssertionDescriptor {
     private Collection<Class<? extends CustomEntitySerializer>> extEntitySerializers = new ArrayList<>();
 
     /**
+     * In case the module has been uploaded using the Policy manager (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
+     * this represents the {@code ServerModuleFile} entity name.
+     */
+    private String moduleEntityName;
+
+    /**
      * Create the new extensibility holder instance with the assertion and server assertion class.
      *
      * @param name                 the assertion name
@@ -300,5 +306,19 @@ public class CustomAssertionDescriptor {
         if (extEntitySerializers != null) {
             this.extEntitySerializers = extEntitySerializers;
         }
+    }
+
+    /**
+     * Getter for {@link #moduleEntityName}.
+     */
+    public String getModuleEntityName() {
+        return moduleEntityName;
+    }
+
+    /**
+     * Setter for {@link #moduleEntityName}.
+     */
+    public void setModuleEntityName(final String moduleEntityName) {
+        this.moduleEntityName = moduleEntityName;
     }
 }

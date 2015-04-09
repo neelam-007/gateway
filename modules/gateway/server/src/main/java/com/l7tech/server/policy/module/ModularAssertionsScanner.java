@@ -140,18 +140,21 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      * Fires an AssertionModuleRegistrationEvent if the module is registered successfully.<br/>
      * By each successful module load, skipped modules container is reset via {@link #clearFailedModTimes()}.
      *
-     * @see ModulesScanner#onModuleLoad(java.io.File, String, long)
+     * @see ModulesScanner#onModuleLoad(ModuleData)
      */
     @NotNull
     @Override
-    protected ModuleLoadStatus<ModularAssertionModule> onModuleLoad(final File file, final String digest, long lastModified) throws ModuleException {
+    protected ModuleLoadStatus<ModularAssertionModule> onModuleLoad(final ModuleData moduleData) throws ModuleException {
         // sanity check
-        if (file == null)
-            throw new ModuleException("null module File supplied", new NullPointerException());
+        if (moduleData == null)
+            throw new ModuleException("moduleData cannot be null", new NullPointerException());
 
         // create module load status with default values to indicate no-changes
         final ModuleLoadStatus<ModularAssertionModule> retValue = new ModuleLoadStatus<>();
 
+        final File file = moduleData.getFile();
+        final String digest = moduleData.getDigest();
+        final long lastModified = moduleData.getLastModified();
         final String filename = file.getName();
         ModularAssertionModule previousVersion = getModule(filename);
 
@@ -244,6 +247,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
             }
 
             final ModularAssertionModule module = new ModularAssertionModule(filename, jar, lastModified, digest, assloader, protos, packages);
+            module.setEntityName(moduleData.getName());
             previousVersion = insertModule(module);
             for (String p : packages) {
                 modulesByPackageName.put(p, module);

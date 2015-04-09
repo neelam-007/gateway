@@ -132,7 +132,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 try {
                     FileUtils.delete(stagingFile);
                 } catch (final IOException ex) {
-                    logger.log(Level.WARNING, "Failed to remove temporary module file: " + stagingFile, ExceptionUtils.getDebugException(ex));
+                    logger.log(Level.WARNING, "Failed to remove staged module file: " + stagingFile, ExceptionUtils.getDebugException(ex));
                 }
             }
         }
@@ -330,9 +330,13 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             // check module signature
             verifySignature(module);
-            // update module state to ACCEPTED
-            moduleState = ModuleState.ACCEPTED;
 
+            // no exceptions => signature verified; module state is ACCEPTED
+            moduleState = ModuleState.ACCEPTED;
+            // audit module was accepted
+            logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_ACCEPTED, module);
+
+            // send module staging file to modules scanner to be loaded
             final ModuleType moduleType = module.getModuleType();
             if (ModuleType.MODULAR_ASSERTION == moduleType) {
                 modularAssertionRegistrar.loadModule(module.getStagingFile(), module);
@@ -341,8 +345,12 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             } else {
                 throw new UnsupportedModuleTypeException(moduleType);
             }
-            // finally set the module state to LOADED
+
+            // no exceptions => module loaded; module state is LOADED
             moduleState = ModuleState.LOADED;
+            // audit module was successfully loaded
+            logAndAudit(ServerModuleFileSystemEvent.Action.LOADED, module);
+
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, "Module loaded successfully; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
@@ -351,16 +359,26 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             // set the module state accordingly
             if (e instanceof ModuleRejectedException) {
                 moduleState = ModuleState.REJECTED;
+                logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_REJECTED, module);
             } else {
                 moduleState = ModuleState.ERROR;
                 moduleStateError = e.getMessage();
+                // audit installation failure
+                logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, module);
             }
+            // delete the staging file
+            module.deleteStagingFile();
+            // log the error
+            logger.log(Level.WARNING, "Error while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+        } catch (final RuntimeException e) {
+            moduleState = ModuleState.ERROR;
+            moduleStateError = e.getMessage();
             // audit installation failure
             logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, module);
             // delete the staging file
             module.deleteStagingFile();
             // log the error
-            logger.log(Level.WARNING, "Error while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.SEVERE, "Unhandled exception while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         } finally {
             // finally set the module state accordingly
             if (StringUtils.isNotBlank(moduleStateError)) {
@@ -432,7 +450,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 try {
                     FileUtils.delete(moduleFile);
                 } catch (final IOException ex) {
-                    logger.log(Level.WARNING, "Failed to remove temporary module file: " + moduleFile, ExceptionUtils.getDebugException(ex));
+                    logger.log(Level.WARNING, "Failed to remove staged module file: " + moduleFile, ExceptionUtils.getDebugException(ex));
                 }
             }
             throw new ModuleDownloadException(e);
@@ -715,7 +733,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         // get module goid
         final byte[] goidBytes = moduleFile.getGoid().getBytes();
         // byte array for random bytes
-        final byte[] rndBytes = new byte[32];
+        final byte[] rndBytes = new byte[8];
         // resulting byte array
         final byte[] bytes = new byte[goidBytes.length + rndBytes.length];
 

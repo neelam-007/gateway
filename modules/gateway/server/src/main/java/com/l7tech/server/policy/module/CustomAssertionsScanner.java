@@ -10,6 +10,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -36,14 +37,18 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     // flag indicating SSG shutdown, actually it's when the bean is destroyed.
     private boolean isShuttingDown = false;
 
-    // Acts as a cache for all modules (module names) being loaded since SSG startup.
+    // Loaded Modules Cache.
+    // Container for all custom assertions (actually their prefix from custom_assertions.properties) being loaded since SSG startup.
+    // Used for ensuring Custom Assertion Non-Dynamic modules are loaded only once.
+    // Note that this is a best effort attempt for detecting previously loaded custom assertions, and should work most of the cases.
+    //
     // Note that this is ever-growing list, therefore potentially it can consume a lot of memory,
     // though in order to become noticeable on memory imprint, hundreds of thousands perhaps millions of
     // different modules need to be loaded at some point.
     // This is highly unlikely to happen (at this point we do not have that many different modules),
     // but in case it becomes an issue then, the set below should be redesign to use RAM as well as own file,
     // similar to HybridStashManager.
-    private final Set<String> loadedModulesCache = new HashSet<>();
+    private final Set<String /* custom assertion prefix */> loadedModulesCache = new HashSet<>();
 
     /**
      * Indicates whether this is the initial scan or not (<code>true</code> by default).<br/>
@@ -215,12 +220,19 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      * Create all custom assertion descriptors from the specified module file and it's <code>ClassLoader</code>.
      *
      * @param moduleFileName    the module file name.
-     * @param classLoader       the module <code>ClassLoader</code>
+     * @param moduleEntityName  if the module has been uploaded using the Policy manager
+     *                          (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
+     *                          this represents the {@code ServerModuleFile} entity name, or {@code null} otherwise.
+     * @param classLoader       the module {@code ClassLoader}
      * @return a set of {@link com.l7tech.gateway.common.custom.CustomAssertionDescriptor} associated with the specified <tt>moduleFile</tt> and <tt>classLoader</tt>.
      * Could be empty but never never <code>null</code>.
      * @throws com.l7tech.server.policy.module.ModuleException
      */
-    private Set<CustomAssertionDescriptor> buildDescriptors(@NotNull final String moduleFileName, @NotNull final ClassLoader classLoader) throws ModuleException {
+    private Set<CustomAssertionDescriptor> buildDescriptors(
+            @NotNull final String moduleFileName,
+            @Nullable final String moduleEntityName,
+            @NotNull final ClassLoader classLoader
+    ) throws ModuleException {
         final Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         InputStream in = null;
         try {
@@ -253,7 +265,8 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                                             key.substring(0, key.indexOf(".class")),
                                             props,
                                             classLoader,
-                                            moduleFileName
+                                            moduleFileName,
+                                            moduleEntityName
                                     ));
                                 } catch (ModuleException e) {
                                     logger.log(Level.WARNING, "Creating custom assertion descriptor failed: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
@@ -287,14 +300,20 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      * @param properties        custom assertion properties container.
      * @param classLoader       custom assertion <code>ClassLoader</code>.
      * @param moduleFileName    custom assertion module filename.
+     * @param moduleEntityName  if the module has been uploaded using the Policy manager
+     *                          (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
+     *                          this represents the {@code ServerModuleFile} entity name, or {@code null} otherwise.
      * @return an {@link com.l7tech.gateway.common.custom.CustomAssertionDescriptor} object containing the custom assertion runtime information.  Never <code>null</code>.
      * @throws com.l7tech.server.policy.module.ModuleException if an error happens while creating the descriptor
      * @see com.l7tech.gateway.common.custom.CustomAssertionDescriptor
      */
-    private CustomAssertionDescriptor createDescriptor(final String baseKey,
-                                                       final Properties properties,
-                                                       final ClassLoader classLoader,
-                                                       final String moduleFileName) throws ModuleException {
+    private CustomAssertionDescriptor createDescriptor(
+            final String baseKey,
+            final Properties properties,
+            final ClassLoader classLoader,
+            final String moduleFileName,
+            final String moduleEntityName
+    ) throws ModuleException {
         final String assertionClass = (String)properties.get(baseKey + ".class");
         final String serverClass = (String) properties.get(baseKey + ".server");
 
@@ -369,6 +388,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             eh.setPaletteNodeName((String) properties.get(baseKey + ".palette.node.name"));
             eh.setPolicyNodeName((String) properties.get(baseKey + ".policy.node.name"));
             eh.setModuleFileName(moduleFileName);
+            eh.setModuleEntityName(moduleEntityName);
 
             return eh;
         } catch (ClassNotFoundException e) {
@@ -428,17 +448,20 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      * <p/>
      * Fires an AssertionModuleRegistrationEvent if the module is registered successfully.<br/>
      *
-     * @see com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(java.io.File, String, long)
+     * @see com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(ModuleData)
      */
     @NotNull
     @Override
-    protected ModuleLoadStatus<CustomAssertionModule> onModuleLoad(final File file, final String digest, long lastModified) throws ModuleException {
+    protected ModuleLoadStatus<CustomAssertionModule> onModuleLoad(final ModuleData moduleData) throws ModuleException {
         // sanity check
-        if (file == null)
-            throw new ModuleException("null module File supplied", new NullPointerException());
+        if (moduleData == null)
+            throw new ModuleException("moduleData cannot be null", new NullPointerException());
 
         // cache the file name as its used multiple times
-        final String fileName = file.getName();
+        final String fileName = moduleData.getFile().getName();
+
+        // gather the module entity name, valid if the module has been uploaded via the Policy Manager
+        final String moduleEntityName = moduleData.getName();
 
         // the left/key indicates whether a previous module was unloaded or not (Boolean)
         // right/value indicates whether the new module was loaded or not, it actually holds the newly loaded module (CustomAssertionModule).
@@ -465,7 +488,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
         try {
             // try to create custom assertion ClassLoader
             final CustomAssertionClassLoader classLoader = buildModuleClassLoader(
-                    file,
+                    moduleData.getFile(),
                     AllCustomAssertionClassLoader.class.getClassLoader(),
                     new File(modulesConfig.getModuleWorkDirectory()),
                     modulesConfig.getExpandedModuleDirId()
@@ -482,27 +505,28 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             classLoaderOnError.set(classLoader);
 
             // try to create custom assertion descriptors
-            final Set<CustomAssertionDescriptor> descriptors = buildDescriptors(fileName, classLoader);
-                if (descriptors.isEmpty()) {
-                    logger.warning("Module \"" + fileName + "\" doesn't contain any valid assertions. The module will be reloaded once modified.");
-                    // skip it
-                    retValue.setLoadedModule(null);
-                    return retValue;
-                }
+            final Set<CustomAssertionDescriptor> descriptors = buildDescriptors(fileName, moduleEntityName, classLoader);
+            if (descriptors.isEmpty()) {
+                logger.warning("Module \"" + fileName + "\" doesn't contain any valid assertions. The module will be reloaded once modified.");
+                // skip it
+                retValue.setLoadedModule(null);
+                return retValue;
+            }
 
             // create a new module.
             final CustomAssertionModule module = new CustomAssertionModule(
                     fileName,
-                    lastModified,
-                    digest,
+                    moduleData.getLastModified(),
+                    moduleData.getDigest(),
                     classLoader,
                     descriptors,
                     callbacks.getServiceFinder()
             );
+            module.setEntityName(moduleEntityName);
 
             // all assertions are going to be loaded during initial scan, so if this is not the initial load then
             // check if we can load this module i.e. if all assertions inside the module are implementing CustomDynamicLoader interface.
-            if (!isInitialScan && !module.isCustomDynamicLoader() && loadedModulesCache.contains(module.getName())) {
+            if (!isInitialScan && !module.isCustomDynamicLoader() && isModuleLoaded(descriptors)) {
                 logger.warning("Module \"" + module.getName() + "\" doesn't support dynamic loading and it was already loaded once. This version of the module will be loaded on next SSG start.");
                 // skip it
                 retValue.setLoadedModule(null);
@@ -516,7 +540,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             insertModule(module);
 
             // mark module as loaded, add it to the loaded modules cache
-            loadedModulesCache.add(module.getName());
+            cacheModule(descriptors);
 
             // set the return variable accordingly, to indicate which module was loaded.
             retValue.setLoadedModule(module);
@@ -555,6 +579,34 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
         } finally {
             // close the class loader if set
             classLoaderOnError.close();
+        }
+    }
+
+    /**
+     * Detect whether a Custom Assertion Module, identified with the specified {@code descriptors}, was previously loaded.
+     * Note that this is a best effort attempt for detecting previously loaded custom assertions, and should work most of the cases.
+     *
+     * @param descriptors    Set of {@link CustomAssertionDescriptor assertion descriptors} identifying the Custom Assertion Module.
+     * @return {@code true} if at least one iof the {@code descriptors} has been previously loaded, {@code false} otherwise.
+     */
+    private boolean isModuleLoaded(@NotNull final Set<CustomAssertionDescriptor> descriptors) {
+        for (final CustomAssertionDescriptor descriptor : descriptors) {
+            if (loadedModulesCache.contains(descriptor.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Adds the Custom Assertion Module, identified with the specified {@code descriptors}, to the loaded modules cache.
+     *
+     * @param descriptors    Set of {@link CustomAssertionDescriptor assertion descriptors} identifying the Custom Assertion Module.
+     */
+    private void cacheModule(@NotNull final Set<CustomAssertionDescriptor> descriptors) {
+        for (final CustomAssertionDescriptor descriptor : descriptors) {
+            loadedModulesCache.add(descriptor.getName());
         }
     }
 

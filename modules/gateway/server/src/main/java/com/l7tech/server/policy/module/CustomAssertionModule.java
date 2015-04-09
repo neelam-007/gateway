@@ -157,6 +157,6 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
         // unload the assertion
         onAssertionUnload();
 
-        classLoader.close();
+        getModuleClassLoader().close();
     }
 }

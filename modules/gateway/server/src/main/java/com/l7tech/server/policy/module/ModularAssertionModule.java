@@ -63,7 +63,7 @@ public class ModularAssertionModule extends BaseAssertionModule<ModularAssertion
      * @throws IOException if there was an error reading the resource
      */
     public byte[] getResourceBytes(String resourcepath, boolean hidePrivateLibraries) throws IOException {
-        return classLoader.getResourceBytes(resourcepath, hidePrivateLibraries);
+        return getModuleClassLoader().getResourceBytes(resourcepath, hidePrivateLibraries);
     }
 
     /**
@@ -140,7 +140,7 @@ public class ModularAssertionModule extends BaseAssertionModule<ModularAssertion
     @Override
     public void close() throws IOException {
         try {
-            classLoader.close();
+            getModuleClassLoader().close();
         } finally {
             jarfile.close();
         }
