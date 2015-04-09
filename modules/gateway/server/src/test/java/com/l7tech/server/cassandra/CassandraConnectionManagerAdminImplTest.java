@@ -60,7 +60,7 @@ public class CassandraConnectionManagerAdminImplTest {
         connTwo.setContactPoints("myhost2");
         connTwo.setKeyspaceName("keyspace2");
         currentUser = new InternalUser("user");
-        when(mockCassandraEntityManager.findAll()).thenReturn(Collections.unmodifiableCollection(Arrays.asList(new CassandraConnection[]{connOne, connTwo})));
+        when(mockCassandraEntityManager.findAll()).thenReturn(Collections.unmodifiableCollection(Arrays.asList(connOne, connTwo)));
         when(mockCassandraEntityManager.findByUniqueName("one")).thenReturn(connOne);
 
         fixture = spy(new CassandraConnectionManagerAdminImpl(mockCassandraEntityManager, mockRbackServices, mockCassandraConnectionManager, mockCassandraQueryManager));
@@ -81,7 +81,7 @@ public class CassandraConnectionManagerAdminImplTest {
 
     @Test
     public void testGetAllCassandraConnectionNames() throws Exception {
-       List<String> expected = Arrays.asList(new String[]{"one", "two"});
+       List<String> expected = Arrays.asList("one", "two");
        when(fixture.getCurrentUser()).thenReturn(currentUser);
        when(mockRbackServices.isPermittedForEntity(eq(currentUser), any(Entity.class), eq(OperationType.READ), isNull(String.class))).thenReturn(true);
        List<String> actual = fixture.getAllCassandraConnectionNames();
@@ -91,7 +91,7 @@ public class CassandraConnectionManagerAdminImplTest {
 
     @Test
     public void testGetOnlyPermittedCassandraConnectionNames() throws Exception {
-        List<String> expected = Arrays.asList(new String[]{"two"});
+        List<String> expected = Arrays.asList("two");
         when(fixture.getCurrentUser()).thenReturn(currentUser);
         when(mockRbackServices.isPermittedForEntity(eq(currentUser), eq(connTwo), eq(OperationType.READ), isNull(String.class))).thenReturn(true);
         List<String> actual = fixture.getAllCassandraConnectionNames();
@@ -139,16 +139,17 @@ public class CassandraConnectionManagerAdminImplTest {
 
     @Test
     public void testTestCassandraConnection() throws Exception {
-        fixture.testCassandraConnection(connOne);
+        assertEquals("", fixture.testConnection(connOne));
         verify(mockCassandraConnectionManager, times(1)).testConnection(connOne);
     }
 
     @Test
     public void testTestCassandraQuery() throws Exception {
-        CassandraConnectionHolder mockConnectionHolder = new CassandraConnectionHolderImpl(connOne, mockCluster, mockSession);
+        final CassandraConnectionHolder mockConnectionHolder = new CassandraConnectionHolderImpl(connOne, mockCluster, mockSession);
         when(mockCassandraConnectionManager.getConnection("one")).thenReturn(mockConnectionHolder);
         final String query = "select * from table";
-        fixture.testCassandraQuery("one", query, 0);
+
+        assertEquals("", fixture.testQuery("one", query, 0));
         verify(mockCassandraConnectionManager, times(1)).getConnection("one");
         verify(mockCassandraQueryManager, times(1)).testQuery(mockSession, query, 0);
     }
