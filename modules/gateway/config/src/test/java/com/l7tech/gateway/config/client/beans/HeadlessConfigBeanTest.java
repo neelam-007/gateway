@@ -8,6 +8,7 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.CustomMatcher;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
@@ -29,14 +30,14 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 @SuppressWarnings({"unchecked", "ConstantConditions"})
 @RunWith(MockitoJUnitRunner.class)
 public class HeadlessConfigBeanTest {
+    private static final String MYSQL = "mysql";
+    private static final String EMBEDDED = "embedded";
     @Mock
     NodeManagementApiFactory nodeManagementApiFactory;
     @Mock
@@ -655,6 +656,76 @@ public class HeadlessConfigBeanTest {
         });
     }
 
+    @Test
+    public void createMysqlEmptyName() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.name", MYSQL, "Missing configuration property 'database.name'");
+    }
+
+    @Test
+    public void createMysqlEmptyHost() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.host", MYSQL, "Missing configuration property 'database.host'");
+    }
+
+    @Test
+    public void createMysqlEmptyPort() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.port", MYSQL, "Unable to parse option value for 'database.port'");
+    }
+
+    @Test
+    public void createMysqlEmptyUser() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.user", MYSQL, "Missing configuration property 'database.user'");
+    }
+
+    @Test
+    public void createMysqlEmptyPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.pass", MYSQL, "Missing configuration property 'database.pass'");
+    }
+
+    @Test
+    public void createMysqlEmptyDbAdminUser() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.admin.user", MYSQL, "Missing configuration property 'database.admin.user'");
+    }
+
+    @Test
+    public void createMysqlEmptyDbAdminPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("database.admin.pass", MYSQL, "Missing configuration property 'database.admin.pass'");
+    }
+
+    @Test
+    public void createMysqlEmptyAdminUser() throws Exception {
+        testCreateWithEmptyRequiredProperty("admin.user", MYSQL, "Invalid value for option 'admin.user'");
+    }
+
+    @Test
+    public void createMysqlEmptyAdminPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("admin.pass", MYSQL, "Invalid value for option 'admin.pass'");
+    }
+
+    @Test
+    public void createMysqlEmptyClusterPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("cluster.pass", MYSQL, "Invalid value for option 'cluster.pass'");
+    }
+
+    @Test
+    public void createDerbyEmptyAdminUser() throws Exception {
+        testCreateWithEmptyRequiredProperty("admin.user", EMBEDDED, "Invalid value for option 'admin.user'");
+    }
+
+    @Test
+    public void createDerbyEmptyAdminPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("admin.pass", EMBEDDED, "Invalid value for option 'admin.pass'");
+    }
+
+    @Test
+    public void createDerbyEmptyClusterHost() throws Exception {
+        testCreateWithEmptyRequiredProperty("cluster.host", EMBEDDED, "Missing configuration property 'cluster.host'");
+    }
+
+    @Test
+    public void createDerbyEmptyClusterPassword() throws Exception {
+        testCreateWithEmptyRequiredProperty("cluster.pass", EMBEDDED, "Invalid value for option 'cluster.pass'");
+    }
+
     private String getOutputString() throws IOException, InterruptedException {
         outPrintStream.flush();
         outPrintStream.close();
@@ -662,4 +733,48 @@ public class HeadlessConfigBeanTest {
         return outputWriter.toString();
     }
 
+    private void testCreateWithEmptyRequiredProperty(final String propertyName, final String dbType, final String expectedError) throws ConfigurationException {
+        expectedException.expect(ConfigurationException.class);
+        final boolean mysql = dbType.equalsIgnoreCase("mysql");
+        expectedException.expectMessage(containsString(expectedError));
+        final Properties properties = mysql ? defaultMysqlCreateProperties() : defaultDerbyCreateProperties();
+        properties.setProperty(propertyName, StringUtils.EMPTY);
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    private Properties defaultMysqlCreateProperties() {
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", "test.cluster.hostname");
+        properties.setProperty("database.name", "databaseName");
+        properties.setProperty("admin.pass", "pmAdminUserPassword");
+        properties.setProperty("database.admin.user", "databaseAdminUser");
+        properties.setProperty("database.port", "1234");
+        properties.setProperty("database.user", "databaseUser");
+        properties.setProperty("node.enable", "true");
+        properties.setProperty("admin.user", "pmAdminUser");
+        properties.setProperty("database.admin.pass", "databaseAdminPass");
+        properties.setProperty("database.pass", "databasePass");
+        properties.setProperty("database.host", "databaseHost");
+        properties.setProperty("cluster.pass", "clusterPass");
+        properties.setProperty("database.type", MYSQL);
+        return properties;
+    }
+
+    private Properties defaultDerbyCreateProperties() {
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", "test.cluster.hostname");
+        properties.setProperty("admin.pass", "pmAdminUserPassword");
+        properties.setProperty("node.enable", "true");
+        properties.setProperty("admin.user", "pmAdminUser");
+        properties.setProperty("cluster.pass", "clusterPass");
+        properties.setProperty("database.type", EMBEDDED);
+        return properties;
+    }
 }

@@ -153,7 +153,7 @@ public class HeadlessConfigBean {
                         throw new ConfigurationException("Unknown database type '" + databaseType + "'. Expected one of: 'mysql' or 'embedded'");
                     }
                     if ("mysql".equals(databaseType)) {
-                        checkNotNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring a mysql database.");
+                        checkNotNullOrEmpty(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring a mysql database.");
                         //check that both 'database.failover.host' and 'database.failover.port' are null or that they are both not null
                         final ConfigurationBean databaseFailoverHostConfigBean = getConfigBean("database.failover.host", configBeans);
                         final Object databaseFailoverHostValue = databaseFailoverHostConfigBean == null ? null : databaseFailoverHostConfigBean.getConfigValue();
@@ -164,7 +164,7 @@ public class HeadlessConfigBean {
                         }
                     } else {
                         //this means its derby
-                        checkNotNull(configBeans, Arrays.asList("admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring an embedded database.");
+                        checkNotNullOrEmpty(configBeans, Arrays.asList("admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring an embedded database.");
                         checkNull(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "database.failover.host", "database.failover.port"), "This property should not be specified when configuring an embedded database.");
                         //setting the database.host to null will configure a derby database
                         ConfigurationBean databaseHostConfigBean = getConfigBean("database.host", configBeans);
@@ -181,7 +181,7 @@ public class HeadlessConfigBean {
                     final Boolean configureNode = getOptionValue("configure.node", configBeans);
                     if (configureNode == null || configureNode) {
                         //validate the node options
-                        checkNotNull(configBeans, Arrays.asList("cluster.pass"), "The cluster password must be specified when configuring the node.");
+                        checkNotNullOrEmpty(configBeans, Arrays.asList("cluster.pass"), "The cluster password must be specified when configuring the node.");
                     }
                     logger.log(Level.INFO, "Configuring '" + databaseType + "' database" + ((configureNode == null || configureNode) ? " and configuring node.properties" : ""));
                     provider.storeConfiguration(configBeans);
@@ -209,16 +209,17 @@ public class HeadlessConfigBean {
     }
 
     /**
-     * Throws an exception if any of the given properties to check are null
+     * Throws an exception if any of the given properties to check are null or empty
      *
      * @param configBeans       The beans to search through
      * @param propertiesToCheck The properties to check
      * @param message           The message to add to the exception message
      * @throws ConfigurationException This is thrown if and of the given property are null
      */
-    private void checkNotNull(@NotNull final Collection<ConfigurationBean> configBeans, @NotNull final List<String> propertiesToCheck, @Nullable final String message) throws ConfigurationException {
+    private void checkNotNullOrEmpty(@NotNull final Collection<ConfigurationBean> configBeans, @NotNull final List<String> propertiesToCheck, @Nullable final String message) throws ConfigurationException {
         for (String propertyName : propertiesToCheck) {
-            if (getOptionValue(propertyName, configBeans) == null) {
+            final Object optionValue = getOptionValue(propertyName, configBeans);
+            if (optionValue == null || String.valueOf(optionValue).isEmpty()) {
                 throw new ConfigurationException("Missing configuration property '" + propertyName + (message == null ? "'" : "'. Message: " + message));
             }
         }
