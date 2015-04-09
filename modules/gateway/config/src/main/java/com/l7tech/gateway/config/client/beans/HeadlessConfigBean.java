@@ -173,6 +173,11 @@ public class HeadlessConfigBean {
                             databaseHostConfigBean.setConfigValue(null);
                         }
                     }
+                    //check that the cluster.host is not empty. If it is a database will not be created.
+                    final String clusterHost = getOptionValue("cluster.host", configBeans);
+                    if(clusterHost != null && clusterHost.trim().isEmpty() ){
+                        throw new ConfigurationException("Cluster host property is specified but its value is empty. Cluster host cannot be empty.");
+                    }
                     final Boolean configureNode = getOptionValue("configure.node", configBeans);
                     if (configureNode == null || configureNode) {
                         //validate the node options
