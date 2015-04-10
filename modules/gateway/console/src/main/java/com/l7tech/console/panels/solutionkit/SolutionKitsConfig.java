@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
@@ -24,13 +25,15 @@ public class SolutionKitsConfig {
     private Set<SolutionKit> selected = new HashSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
+    @Nullable
+    private SolutionKit solutionKitToUpgrade;
 
     public SolutionKitsConfig() {
     }
 
     @NotNull
-    public Set<SolutionKit> getLoadedSolutionKits() {
-        return loaded.keySet();
+    public Map<SolutionKit, Bundle> getLoadedSolutionKits() {
+        return loaded;
     }
 
     public void setLoadedSolutionKits(@NotNull Map<SolutionKit, Bundle> loaded) {
@@ -85,6 +88,11 @@ public class SolutionKitsConfig {
     }
 
     @NotNull
+    public Map<SolutionKit, Map<String, String>> getResolvedEntityIds() {
+        return resolvedEntityIds;
+    }
+
+    @NotNull
     public Map<String, String> getResolvedEntityIds(@NotNull SolutionKit solutionKit) {
         Map<String, String> result = resolvedEntityIds.get(solutionKit);
         if (result == null) {
@@ -95,5 +103,14 @@ public class SolutionKitsConfig {
 
     public void setResolvedEntityIds(@NotNull Map<SolutionKit, Map<String, String>> resolvedEntityIds) {
         this.resolvedEntityIds = resolvedEntityIds;
+    }
+
+    @Nullable
+    public SolutionKit getSolutionKitToUpgrade() {
+        return solutionKitToUpgrade;
+    }
+
+    public void setSolutionKitToUpgrade(@Nullable SolutionKit solutionKitToUpgrade) {
+        this.solutionKitToUpgrade = solutionKitToUpgrade;
     }
 }

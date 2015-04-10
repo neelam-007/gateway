@@ -18,6 +18,8 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.xml.transform.stream.StreamSource;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,7 +44,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     private SolutionKitAdmin solutionKitAdmin;
 
-    public static InstallSolutionKitWizard getInstance(Window parent) {
+    public static InstallSolutionKitWizard getInstance(@NotNull Window parent, @Nullable SolutionKit solutionKitToUpgrade) {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
 
         final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel();
@@ -50,13 +53,17 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         final SolutionKitLoadPanel first = new SolutionKitLoadPanel();
         first.setNextPanel(second);
 
-        return new InstallSolutionKitWizard(parent, first);
+        SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        solutionKitsConfig.setSolutionKitToUpgrade(solutionKitToUpgrade);
+        return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
 
-    private InstallSolutionKitWizard(Window parent, WizardStepPanel<SolutionKitsConfig> panel) {
-        super(parent, panel, new SolutionKitsConfig());
+    public static InstallSolutionKitWizard getInstance(@NotNull Window parent) {
+        return getInstance(parent, null);
+    }
 
-        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+    private InstallSolutionKitWizard(Window parent, WizardStepPanel<SolutionKitsConfig> panel, @NotNull SolutionKitsConfig solutionKitsConfig) {
+        super(parent, panel, solutionKitsConfig);
         initialize();
     }
 
@@ -79,13 +86,14 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 }
             }
 
+            boolean isUpgrade = wizardInput.getSolutionKitToUpgrade() != null;
             String bundleXml = wizardInput.getBundleAsString(solutionKit);
             Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Install Solution Kit",
                 "The gateway is installing selected solution kit(s)",
-                solutionKitAdmin.install(solutionKit, bundleXml));
+                solutionKitAdmin.install(solutionKit, bundleXml, isUpgrade));
 
             if (result.isLeft()) {
                 // Solution kit failed to install.
@@ -165,5 +173,27 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 Actions.invokeHelp(InstallSolutionKitWizard.this);
             }
         });
+
+        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+
+        // upgrade - find previously installed mappings where srcId differs from targetId (e.g. user resolved)
+        SolutionKit solutionKitToUpgrade = wizardInput.getSolutionKitToUpgrade();
+        if (solutionKitToUpgrade != null) {
+            try {
+                Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
+                Mappings mappings = (Mappings) item.getContent();
+                Map<String, String> previouslyResolvedIds = new HashMap<>();
+                for (Mapping mapping : mappings.getMappings()) {
+                    if (!mapping.getSrcId().equals(mapping.getTargetId()) ) {
+                        previouslyResolvedIds.put(mapping.getSrcId(), mapping.getTargetId());
+                    }
+                }
+                if (!previouslyResolvedIds.isEmpty()) {
+                    wizardInput.getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
+                }
+            } catch (IOException e) {
+                throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
     }
 }

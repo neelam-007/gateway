@@ -61,11 +61,12 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      *
      * @param solutionKit the solution kit to install
      * @param bundle the bundle XML to install
+     * @param isUpgrade true if this is a upgrade install; false for new first time install
      * @return the saved solution kit entity ID
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
-    JobId<Goid> install(@NotNull SolutionKit solutionKit, @NotNull String bundle);
+    JobId<Goid> install(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
 
     /**
      *  Uninstall solution kit identified by the given ID.

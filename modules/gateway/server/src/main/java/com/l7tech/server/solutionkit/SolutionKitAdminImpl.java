@@ -47,12 +47,8 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
-                    if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
-                        throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set is " + featureSet);
-                    }
-                    boolean isTest = true;
-                    //noinspection ConstantConditions
+                    checkFeatureEnabled(solutionKit);
+                    final boolean isTest = true;
                     return solutionKitManager.installBundle(bundle, isTest);
                 }
             }));
@@ -69,20 +65,26 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public JobId<Goid> install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
+    public JobId<Goid> install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) {
         final FutureTask<Goid> task =
             new FutureTask<>(find(false).wrapCallable(new Callable<Goid>() {
                 @Override
                 public Goid call() throws Exception {
-                    boolean isTest = false;
+                    checkFeatureEnabled(solutionKit);
+
                     // Install bundle.
-                    //
-                    //noinspection ConstantConditions
+                    final boolean isTest = false;
                     String mappings = solutionKitManager.installBundle(bundle, isTest);
 
                     // Save solution kit entity.
                     solutionKit.setMappings(mappings);
-                    return solutionKitManager.save(solutionKit);
+
+                    if (isUpgrade) {
+                        solutionKitManager.update(solutionKit);
+                        return solutionKit.getGoid();
+                    } else {
+                        return solutionKitManager.save(solutionKit);
+                    }
                 }
             }));
 
@@ -117,5 +119,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         }, 0L);
 
         return registerJob(task, String.class);
+    }
+
+    private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
+        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
+            throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
+        }
     }
 }

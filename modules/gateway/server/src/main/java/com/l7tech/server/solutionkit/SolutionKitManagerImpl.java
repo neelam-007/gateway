@@ -18,7 +18,9 @@ import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +56,12 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     public Goid save(SolutionKit entity) throws SaveException {
         entity.setLastUpdateTime(System.currentTimeMillis());
         return super.save(entity);
+    }
+
+    @Override
+    public void update(SolutionKit entity) throws UpdateException {
+        entity.setLastUpdateTime(System.currentTimeMillis());
+        super.update(entity);
     }
 
     /**

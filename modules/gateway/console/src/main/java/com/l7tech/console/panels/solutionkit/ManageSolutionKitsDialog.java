@@ -20,7 +20,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,7 +73,7 @@ public class ManageSolutionKitsDialog extends JDialog {
         uninstallButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onUnintall();
+                onUninstall();
             }
         });
 
@@ -124,7 +124,7 @@ public class ManageSolutionKitsDialog extends JDialog {
         });
     }
 
-    private void onUnintall() {
+    private void onUninstall() {
         final SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
         if (header == null) {
             return;
@@ -132,7 +132,7 @@ public class ManageSolutionKitsDialog extends JDialog {
 
         DialogDisplayer.showConfirmDialog(
             this.getOwner(),
-            "Are you sure you want to unintall the selected solution kit?",
+            "Are you sure you want to uninstall the selected solution kit?",
             "Uninstall Solution Kit",
             JOptionPane.YES_NO_OPTION,
             new DialogDisplayer.OptionListener() {
@@ -183,7 +183,25 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUpgrade() {
-        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        if (header != null) {
+            try {
+                SolutionKit solutionKitToUpgrade = solutionKitAdmin.get(header.getGoid());
+                final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this, solutionKitToUpgrade);
+                wizard.pack();
+                Utilities.centerOnParentWindow(wizard);
+                DialogDisplayer.display(wizard, new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshSolutionKitsTable();
+                    }
+                });
+            } catch (FindException e) {
+                final String msg = "Unable to upgrade solution kit: " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
     }
 
     private void onProperties() {

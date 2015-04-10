@@ -49,7 +49,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JButton selectAllButton;
     private JButton clearAllButton;
     private JTable solutionKitsTable;
-    private JButton licenseInstallButton;
+    private JButton manageLicensesButton;
 
     private SelectableTableModel<SolutionKit> solutionKitsModel;
 
@@ -89,7 +89,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         testMappings.clear();
         solutionKitsModel.deselectAll();
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
-        solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
+        solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
         this.settings = settings;
     }
 
@@ -170,11 +170,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
-        licenseInstallButton.setEnabled(true);
-        licenseInstallButton.addActionListener(new ActionListener() {
+        manageLicensesButton.setEnabled(true);
+        manageLicensesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onLicenseInstall();
+                onManageLicenses();
             }
         });
 
@@ -223,7 +223,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         add(mainPanel);
     }
 
-    private void onLicenseInstall() {
+    private void onManageLicenses() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
         ManageLicensesDialog dlg = new ManageLicensesDialog(mainWindow);
         dlg.pack();
