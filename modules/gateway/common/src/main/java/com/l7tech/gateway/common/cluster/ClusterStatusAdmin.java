@@ -441,10 +441,17 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
         /** The assertion classnames provided by this module, ie { "com.yoyodyne.integration.layer7.SqlSelectAssertion" }. */
         public final Collection<String> assertionClasses;
 
-        public ModuleInfo(String moduleFilename, String moduleDigest, Collection<String> assertionClasses) {
+        /**
+         * In case the module has been uploaded using the Policy Manager (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
+         * this represents the {@code ServerModuleFile} entity name.
+         */
+        public final String moduleEntityName;
+
+        public ModuleInfo(String moduleFilename, String moduleEntityName, String moduleDigest, Collection<String> assertionClasses) {
             this.moduleFilename = moduleFilename;
             this.moduleDigest = moduleDigest;
             this.assertionClasses = assertionClasses;
+            this.moduleEntityName = moduleEntityName;
         }
     }
 

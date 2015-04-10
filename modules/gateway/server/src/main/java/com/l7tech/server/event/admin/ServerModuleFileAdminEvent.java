@@ -22,18 +22,18 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
          * This is a Admin message indicating that the module has been successfully uploaded into the Database.
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar", size "234KB" uploaded.}
+         * {@code Uploaded Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion", size "234KB"}
          */
-        UPLOADED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\", size \"{4}\" uploaded."),
+        UPLOADED("Uploaded Module #{0}, name \"{1}\", type \"{2}\", size \"{3}\" uploaded"),
 
         /**
          * This is a Admin message indicating that the module has been successfully deleted from the Database.
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar" deleted.}
+         * {@code Deleted Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          *
          */
-        DELETED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\" deleted.")
+        DELETED("Deleted Module #{0}, name \"{1}\", type \"{2}\"")
         ;
 
         private final String messageFormat;
@@ -129,7 +129,6 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
         switch (action) {
             case UPLOADED:
                 // make sure we do not overshot admin audit MESSAGE_MAX_LENGTH
-                // to make things simpler the name and file-name will each use half of the remaining space
                 maxDetailLength = MESSAGE_MAX_LENGTH - action.getMessageFormat().length() -
                         moduleFile.getGoid().toHexString().length() -
                         moduleFile.getModuleType().toString().length() -
@@ -138,16 +137,14 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
                         MessageFormat.format(
                                 action.getMessageFormat(),
                                 moduleFile.getGoid().toHexString(),
-                                TextUtils.truncateStringAtEnd(moduleFile.getName(), maxDetailLength / 2),
+                                TextUtils.truncateStringAtEnd(moduleFile.getName(), maxDetailLength),
                                 moduleFile.getModuleType().toString(),
-                                TextUtils.truncateStringAtEnd(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME), maxDetailLength / 2),
                                 moduleFile.getHumanReadableFileSize()
                         ),
                         MESSAGE_MAX_LENGTH
                 );
             case DELETED:
                 // make sure we do not overshot admin audit MESSAGE_MAX_LENGTH
-                // to make things simpler the name and file-name will each use half of the remaining space
                 maxDetailLength = MESSAGE_MAX_LENGTH - action.getMessageFormat().length() -
                         moduleFile.getGoid().toHexString().length() -
                         moduleFile.getModuleType().toString().length();
@@ -155,9 +152,8 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
                         MessageFormat.format(
                                 action.getMessageFormat(),
                                 moduleFile.getGoid().toHexString(),
-                                TextUtils.truncateStringAtEnd(moduleFile.getName(), maxDetailLength / 2),
-                                moduleFile.getModuleType().toString(),
-                                TextUtils.truncateStringAtEnd(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME), maxDetailLength / 2)
+                                TextUtils.truncateStringAtEnd(moduleFile.getName(), maxDetailLength),
+                                moduleFile.getModuleType().toString()
                         ),
                         MESSAGE_MAX_LENGTH
                 );
@@ -175,6 +171,5 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
             default:
                 throw new IllegalStateException("Unsupported action: " + action);
         }
-
     }
 }

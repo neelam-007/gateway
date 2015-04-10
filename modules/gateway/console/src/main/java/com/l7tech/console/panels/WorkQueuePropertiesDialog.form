@@ -21,7 +21,8 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Name:"/>
+              <text value="Name:*"/>
+              <toolTipText value=""/>
             </properties>
           </component>
           <component id="1e02e" class="javax.swing.JTextField" binding="nameTextField">
@@ -31,7 +32,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter a name for the connection."/>
+              <toolTipText value="Enter a name for this work queue"/>
             </properties>
           </component>
           <component id="7ba0d" class="javax.swing.JTextField" binding="maxQueueSizeTextField">
@@ -41,7 +42,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter addresses of the nodes to connect to the Cassandra server, comma separated; IP address or DNS name accepted."/>
+              <toolTipText value="Enter the maximum queue size"/>
             </properties>
           </component>
           <component id="dfb0a" class="javax.swing.JLabel">
@@ -49,7 +50,7 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Max Queue Size:"/>
+              <text value="Max Queue Size:*"/>
             </properties>
           </component>
           <component id="82ca2" class="javax.swing.JTextField" binding="threadPoolMaxTextField">
@@ -59,7 +60,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter the TCP port monitored by the Cassandra server, this port is listened to by all nodes in the Cassandra cluster."/>
+              <toolTipText value="Enter the maximum number of worker threads for this work queue"/>
             </properties>
           </component>
           <component id="6120a" class="javax.swing.JLabel">
@@ -67,7 +68,7 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Max Worker Threads:"/>
+              <text value="Max Worker Threads:*"/>
             </properties>
           </component>
         </children>
@@ -96,6 +97,7 @@
             </constraints>
             <properties>
               <text value="Wait for Room"/>
+              <toolTipText value="Wait for room when the queue is full"/>
             </properties>
           </component>
           <component id="8ee2e" class="javax.swing.JRadioButton" binding="failImmediatelyRadioButton" default-binding="true">
@@ -104,6 +106,7 @@
             </constraints>
             <properties>
               <text value="Fail Immediately"/>
+              <toolTipText value="Fail immediately when queue is full"/>
             </properties>
           </component>
         </children>

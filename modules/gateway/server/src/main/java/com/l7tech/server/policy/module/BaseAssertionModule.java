@@ -1,5 +1,8 @@
 package com.l7tech.server.policy.module;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.net.URLClassLoader;
 
 /**
@@ -9,26 +12,36 @@ import java.net.URLClassLoader;
  */
 public class BaseAssertionModule<T extends URLClassLoader> {
 
-    protected final String name;
-    protected final long modifiedTime;
-    protected final String digest;
-    protected final T classLoader;
+    @NotNull private final String name;
+    private final long modifiedTime;
+    @NotNull private final String digest;
+    @NotNull private final T classLoader;
+
+    /**
+     * In case the module has been uploaded using the Policy manager (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
+     * this represents the {@code ServerModuleFile} entity name.
+     */
+    @Nullable private String entityName;
 
     /**
      * Create assertion module.
      *
-     * @param moduleName      the module filename.
+     * @param moduleName      the module filename.  Required and cannot be {@code null}.
      * @param modifiedTime    the module last modified timestamp.
-     * @param moduleDigest    the module content checksum (currently SHA256).
-     * @param classLoader     the module class loader.
+     * @param moduleDigest    the module content checksum (currently SHA256). Required and cannot be {@code null}.
+     * @param classLoader     the module class loader. Required and cannot be {@code null}.
      */
-    public BaseAssertionModule(final String moduleName,
-                               final long modifiedTime,
-                               final String moduleDigest,
-                               final T classLoader)
-    {
+    public BaseAssertionModule(
+            @SuppressWarnings("NullableProblems") final String moduleName,
+            final long modifiedTime,
+            @SuppressWarnings("NullableProblems") final String moduleDigest,
+            @SuppressWarnings("NullableProblems") final T classLoader
+    ) {
         if (moduleName == null || moduleName.length() < 1) {
             throw new IllegalArgumentException("non-empty moduleName required");
+        }
+        if (moduleDigest == null || moduleDigest.length() < 1) {
+            throw new IllegalArgumentException("non-empty moduleDigest required");
         }
         if (classLoader == null) {
             throw new IllegalArgumentException("classLoader required");
@@ -43,6 +56,7 @@ public class BaseAssertionModule<T extends URLClassLoader> {
     /**
      * @return the name of this assertion module, ie "RateLimitAssertion-3.7.0.jar".
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -57,6 +71,7 @@ public class BaseAssertionModule<T extends URLClassLoader> {
     /**
      * @return the checksum of this assertion module file (currently SHA256).
      */
+    @NotNull
     public String getDigest() {
         return digest;
     }
@@ -64,7 +79,31 @@ public class BaseAssertionModule<T extends URLClassLoader> {
     /**
      * @return the ClassLoader providing classes for this jar file.
      */
+    @NotNull
     public T getModuleClassLoader() {
         return classLoader;
+    }
+
+    /**
+     * Getter for {@link #entityName}
+     */
+    @Nullable
+    public String getEntityName() {
+        return entityName;
+    }
+
+    /**
+     * Setter for {@link #entityName}.
+     */
+    public void setEntityName(@Nullable final String entityName) {
+        this.entityName = entityName;
+    }
+
+    /**
+     * Indicates whether the module has been uploaded using the Policy manager
+     * (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}).
+     */
+    public boolean isFromDb() {
+        return (entityName != null && entityName.length() > 0);
     }
 }

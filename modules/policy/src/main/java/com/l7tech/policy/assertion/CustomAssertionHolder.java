@@ -59,6 +59,11 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private String customModuleFileName;
     private String registeredCustomFeatureSetName;
 
+    /**
+     * In case the module has been uploaded using the Policy manager this represents the {@code ServerModuleFile} entity name.
+     */
+    @Nullable private String customModuleEntityName;
+
     // add categories set
     private Set<Category> categories;
 
@@ -272,6 +277,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         clone.policyNodeName = this.policyNodeName;
         clone.isUiAutoOpen = this.isUiAutoOpen;
         clone.customModuleFileName = this.customModuleFileName;
+        clone.customModuleEntityName = this.customModuleEntityName;
 
         // do shallow copy, since Category instances are singletons.
         clone.categories = this.categories != null ? new HashSet<>(this.categories) : null;
@@ -434,6 +440,21 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     @Override
     public boolean isTargetModifiedByGateway() {
         return customAssertion instanceof CustomMessageTargetable && ((CustomMessageTargetable) customAssertion).isTargetModifiedByGateway();
+    }
+
+    /**
+     * Getter for {@link #customModuleEntityName}.
+     */
+    @Nullable
+    public String getModuleEntityName() {
+        return customModuleEntityName;
+    }
+
+    /**
+     * Setter for {@link #customModuleEntityName}.
+     */
+    public void setModuleEntityName(@Nullable final String customModuleEntityName) {
+        this.customModuleEntityName = customModuleEntityName;
     }
 }
 

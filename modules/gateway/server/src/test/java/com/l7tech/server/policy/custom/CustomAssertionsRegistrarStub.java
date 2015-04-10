@@ -178,6 +178,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
             customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+            customAssertionHolder.setModuleEntityName(customAssertionDescriptor.getModuleEntityName());
             if (cas instanceof CustomFeatureSetName) {
                 CustomFeatureSetName customFeatureSetName = (CustomFeatureSetName) cas;
                 customAssertionHolder.setRegisteredCustomFeatureSetName(customFeatureSetName.getFeatureSetName());

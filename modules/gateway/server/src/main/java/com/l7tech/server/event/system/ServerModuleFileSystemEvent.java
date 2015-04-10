@@ -1,7 +1,6 @@
 package com.l7tech.server.event.system;
 
 import com.l7tech.gateway.common.Component;
-import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,67 +22,60 @@ public class ServerModuleFileSystemEvent extends SystemEvent {
          * Indicates that a module is in the process of installing.
          * <p/>
          * Sample message: <br/>
-         * {@code Installing Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar"...}
+         * {@code Installing Module #981ac894eed924fc779c841369433c91, name "SalesForce Connector", type "Custom Assertion"...}
          */
-        INSTALLING("Installing Module #{0} ({1}), type \"{2}\", file-name \"{3}\"...", "Installing Server Module File", Level.INFO),
+        INSTALLING("Installing Module #{0}, name \"{1}\", type \"{2}\"...", "Installing Server Module File", Level.INFO),
         /**
-         * Indicates that a module has been successfully deployed into the Gateway modules deploy folder.
+         * Indicates that a module signature was verified (i.e. the Gateway accepted the module) and the module was staged successfully.
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar" deployed successfully.}
+         * {@code Verified Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          */
-        INSTALL_DEPLOYED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\" deployed successfully.", "Installing Server Module File", Level.INFO),
+        INSTALL_ACCEPTED("Verified Module #{0}, name \"{1}\", type \"{2}\"", "Installing Server Module File", Level.INFO),
         /**
-         * Notifies that the gateway doesn't have write permission to the modules deploy folder, thus ths module is being staged instead..
+         * Indicates that a module signature was not verified (i.e. the Gateway rejected the module).
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar" deployed successfully.}
+         * {@code Gateway rejected Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion", as signature cannot be verified}
          */
-        DEPLOY_PERMISSION("The Gateway doesn''t have write permission on the modules deploy folder, Module #{0} ({1}), type \"{2}\", file-name \"{3}\" will be staged instead.", "Installing Server Module File", Level.INFO),
-        /**
-         * Indicates that a module has been staged.
-         * <p/>
-         * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar" staged successfully.}
-         */
-        INSTALL_STAGED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\" staged successfully.", "Installing Server Module File", Level.INFO),
+        INSTALL_REJECTED("Gateway rejected Module #{0}, name \"{1}\", type \"{2}\", as signature cannot be verified", "Installing Server Module File", Level.INFO),
         /**
          * Indicates that installation has failed for the module.
          * <p/>
          * Sample message: <br/>
-         * {@code Failed to install Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar".}
+         * {@code Failed to install Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          */
-        INSTALL_FAIL("Failed to install Module #{0} ({1}), type \"{2}\", file-name \"{3}\".", "Installing Server Module File", Level.WARNING),
+        INSTALL_FAIL("Failed to install Module #{0}, name \"{1}\", type \"{2}\"", "Installing Server Module File", Level.WARNING),
 
         /**
          * Indicates that a module is in the process of un-installation.
          * <p/>
          * Sample message: <br/>
-         * {@code Uninstalling Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar"...}
+         * {@code Uninstalling Module #2d10078e12e0099191b41f672fd97af4 name "SalesForce Connector", type "Custom Assertion"...}
          */
-        UNINSTALLING("Uninstalling Module #{0} ({1}), type \"{2}\", file-name \"{3}\"...", "Uninstalling Server Module File", Level.INFO),
+        UNINSTALLING("Uninstalling Module #{0}, name \"{1}\", type \"{2}\"...", "Uninstalling Server Module File", Level.INFO),
         /**
          * Indicates that a module has been successfully un-installed.
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar" uninstalled successfully.}
+         * {@code Successfully uninstalled Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
          */
-        UNINSTALL_SUCCESS("Module #{0} ({1}), type \"{2}\", file-name \"{3}\" uninstalled successfully.", "Uninstalling Server Module File", Level.INFO),
+        UNINSTALL_SUCCESS("Successfully uninstalled Module #{0}, name \"{1}\", type \"{2}\"", "Uninstalling Server Module File", Level.INFO),
         /**
          * Indicates that un-installation has failed for the module.
          * <p/>
          * Sample message: <br/>
-         * {@code Failed to uninstall Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar".}
+         * {@code Failed to uninstall Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
          */
-        UNINSTALL_FAIL("Failed to uninstall Module #{0} ({1}), type \"{2}\", file-name \"{3}\".", "Uninstalling Server Module File", Level.WARNING),
+        UNINSTALL_FAIL("Failed to uninstall Module #{0}, name \"{1}\", type \"{2}\"", "Uninstalling Server Module File", Level.WARNING),
 
         /**
          * Indicates that the Gateway successfully loaded the module.
          * <p/>
          * Sample message: <br/>
-         * {@code Failed to uninstall Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type "Custom Assertion", file-name "SalesForceConnector.jar".}
+         * {@code Successfully loaded Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
          */
-        LOADED("Module with type \"{0}\" and file-name \"{1}\" loaded successfully.", "Loading Module", Level.INFO)
+        LOADED("Successfully loaded Module #{0}, name \"{1}\", type \"{2}\"", "Loading Module", Level.INFO)
         ;
 
         private final String messageFormat;
@@ -131,35 +123,21 @@ public class ServerModuleFileSystemEvent extends SystemEvent {
         return new ServerModuleFileSystemEvent(source, action.getLogLevel(), formatMessage(action, moduleFile), action.getAction());
     }
 
-    public static ServerModuleFileSystemEvent createLoadedSystemEvent(Object source, @NotNull final ModuleType moduleType, @NotNull final String moduleFileName) {
-        return new ServerModuleFileSystemEvent(
-                source,
-                Action.LOADED.getLogLevel(),
-                MessageFormat.format(
-                        Action.LOADED.getMessageFormat(),
-                        moduleType,
-                        moduleFileName
-                ),
-                Action.LOADED.getAction()
-        );
-    }
-
     private static String formatMessage(@NotNull final Action action, @NotNull final ServerModuleFile moduleFile) {
         switch (action) {
             case INSTALLING:
             case INSTALL_FAIL:
-            case INSTALL_DEPLOYED:
-            case INSTALL_STAGED:
-            case DEPLOY_PERMISSION:
+            case INSTALL_ACCEPTED:
+            case INSTALL_REJECTED:
             case UNINSTALLING:
             case UNINSTALL_FAIL:
             case UNINSTALL_SUCCESS:
+            case LOADED:
                 return MessageFormat.format(
                         action.getMessageFormat(),
                         moduleFile.getGoid().toHexString(),
                         moduleFile.getName(),
-                        moduleFile.getModuleType().toString(),
-                        moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)
+                        moduleFile.getModuleType().toString()
                 );
             default:
                 throw new IllegalStateException("Unsupported action: " + action);

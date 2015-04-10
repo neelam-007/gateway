@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.comparator.NullSafeComparator;
 
@@ -161,7 +162,11 @@ public class AssertionInfoDialog extends JDialog {
             }
             if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getModuleFileName() != null) {
                 // use file name from registrar
-                assertionType = "Custom (" + registeredCustomAssertionPrototype.getModuleFileName() + ")";
+                final String moduleDisplayInfo =
+                        StringUtils.isBlank(registeredCustomAssertionPrototype.getModuleEntityName())
+                                ? registeredCustomAssertionPrototype.getModuleFileName()
+                                : registeredCustomAssertionPrototype.getModuleEntityName();
+                assertionType = "Custom (" + moduleDisplayInfo + ")";
             } else if (customAssertionHolder.getModuleFileName() != null) {
                 // use de-serialized file name from WspReader thawed assertion
                 assertionType = "Custom (" + customAssertionHolder.getModuleFileName() + ")";
@@ -173,7 +178,7 @@ public class AssertionInfoDialog extends JDialog {
         } else if (AssertionRegistry.isCoreAssertion(assertion.getClass())) {
             assertionType = "Core";
         } else {
-            assertionType = "Modular (" + assertion.meta().get(AssertionMetadata.MODULE_FILE_NAME) + ")";
+            assertionType = "Modular (" + assertion.meta().get(AssertionMetadata.MODULE_DISPLAY_INFO) + ")";
         }
         return assertionType;
     }

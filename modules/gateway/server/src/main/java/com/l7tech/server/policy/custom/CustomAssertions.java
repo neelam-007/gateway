@@ -26,7 +26,9 @@ class CustomAssertions {
 
     static void register( CustomAssertionDescriptor eh) {
         logger.fine("registering " + eh);
-        assertions.put(eh.getName(), eh);
+        if (assertions.put(eh.getName(), eh) != null) {
+            logger.log(Level.WARNING, "Custom Assertion with name \"" + eh.getName() + "\" already exists! The old Custom Assertion descriptor will be replaced by the new one. This will most likely cause polices, using the old Custom Assertion, to stop working.");
+        }
     }
 
     static CustomAssertionDescriptor unregister(final CustomAssertionDescriptor eh) {

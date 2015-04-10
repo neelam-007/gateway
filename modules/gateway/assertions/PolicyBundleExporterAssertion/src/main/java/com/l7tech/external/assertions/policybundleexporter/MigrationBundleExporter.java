@@ -91,6 +91,8 @@ public class MigrationBundleExporter {
                         if (!AssertionRegistry.isCoreAssertion(assertion.getClass())) {
                             // TODO don't include modules that we know come pre-installed on Gateway (e.g. JdbcQueryAssertion-*.aar, ComparisonAssertion-*.aar, etc).
                             final ModularAssertionModule module = assertionRegistry.getModuleForClassLoader(assertion.getClass().getClassLoader());
+                            // TODO (tveninov): check if this module is a ServerModuleFile (i.e. module from DB).
+                            // TODO (tveninov): if so then perhaps skip it here and use restman to get the ServerModuleFile content.
                             exportEvent.getServerModuleFileNames().add(module.getName());
 
                             // TODO need top level license feature set?  (e.g. "set:Profile:Gateway")

@@ -46,14 +46,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
     protected final Map<String, Long> failModTimes = new ConcurrentHashMap<>();
 
     /**
-     * Container of modules which did not load or unload since .
-     * This is
+     * Container of modules which did not successfully load or unload since last time we've scanned.
+     * They are going to be reloaded once modified.
      */
     protected final Map<String, Long> skipModTimes = new ConcurrentHashMap<>();
 
 
     /**
-     * Helper class defining the status of {@link #onModuleLoad(java.io.File, String, long) onModuleLoad} function,
+     * Helper class defining the status of {@link #onModuleLoad(ModuleData) onModuleLoad} function,
      * i.e. indicating whether a previous version of the module was unloaded or not and whether the new module was successfully loaded or not.<br/>
      * It's used to properly set the <code>changes-made</code> flag i.e. the return of {@link #scanModules(ModulesConfig) scanModules} function.
      *
@@ -153,15 +153,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      *     of the file is dropped in the modules folder, unless the failed modules container is reset by calling {@link #clearFailedModTimes()}.</li>
      * </ul>
      *
-     * @param file            the file containing the module to register.  Must be an existing, readable jar-file in the modules directory.
-     * @param digest          file checksum (currently SHA256).
-     * @param lastModified    file last modified time.
+     * @param moduleData      The {@link ModuleData} holding module info, including the module file, digest, timestamp, and optionally
+     *                        for {@code ServerModuleFile}'s entity name.  Required and cannot be {@code null}.
      * @return an instance of {@link ModuleLoadStatus ModuleLoadStatus} containing the status of the scan.
      * @throws ModuleException if an error happens during registration process, in which case the module will be added in the
      * failed modules container {@link #failModTimes} and will be ignored until a new version of the file is dropped in the modules folder.
      */
     @NotNull
-    protected abstract ModuleLoadStatus<T> onModuleLoad(File file, String digest, long lastModified) throws ModuleException;
+    protected abstract ModuleLoadStatus<T> onModuleLoad(ModuleData moduleData) throws ModuleException;
 
     /**
      * Implement this method to provide targeted functionality for modular or custom assertions.<br/>
@@ -232,7 +231,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
     /**
      * Remove all scammed modules.
      */
-    protected void clearScannedModules() {
+    private void clearScannedModules() {
         scannedModules.clear();
     }
 
@@ -297,7 +296,8 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
         // must be redesigned to use Iterator.remove instead, so that ConcurrentModificationException is avoided.
         for (T module : scannedModules.values()) {
             final String name = module.getName();
-            if (!moduleFileNames.contains(name)) {
+            // ignore modules uploaded using the Policy Manager.
+            if (!module.isFromDb() && !moduleFileNames.contains(name)) {
                 logger.fine("Processing module that has been removed or disabled: " + name);
                 try {
                     // if this module is not skipped (i.e. marked as non-unloadable)
@@ -354,6 +354,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
             return this;
         }
 
+        @NotNull
         public String build() throws IOException {
             if (file == null) {
                 throw new IllegalArgumentException("file cannot be null");
@@ -397,7 +398,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
             //
             // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting digest <-> loading jar.
             // doctor's answer for now, until we find a way to get all the info from a FileDescriptor instead of a File
-            long lastModified = module.lastModified();
+            final long lastModified = module.lastModified();
 
             // if this module was marked as skipped, check if it was modified since the last time it was skipped.
             if (new Long(lastModified).equals(skipModTimes.get(fileName))) {
@@ -433,8 +434,32 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
                 }
 
                 // load and create the new or modified module
-                //final T newModule = onModuleLoad(module, moduleDigest, lastModified);
-                final ModuleLoadStatus loadStatus = onModuleLoad(module, moduleDigest, lastModified);
+                final ModuleLoadStatus loadStatus = onModuleLoad(
+                        new ModuleData() {
+                            @NotNull
+                            @Override
+                            public File getFile() {
+                                return module;
+                            }
+
+                            @NotNull
+                            @Override
+                            public String getDigest() {
+                                return moduleDigest;
+                            }
+
+                            @Override
+                            public long getLastModified() {
+                                return lastModified;
+                            }
+
+                            @Nullable
+                            @Override
+                            public String getName() {
+                                return null;  // this is not a ServerModuleFile
+                            }
+                        }
+                );
 
                 // set the changes-made flag
                 changesMade = changesMade || (loadStatus.isPrevModuleUnloaded() || (loadStatus.getLoadedModule() != null));
@@ -468,9 +493,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      *
      * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
      * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param entityName      the module entity name.  Required and cannot be {@code null}.
      * @throws ModuleLoadingException if an error happens while loading the {@code ServerModuleFile}.
      */
-    public void loadServerModuleFile(@NotNull final File stagedFile, @NotNull final String moduleDigest) throws ModuleLoadingException {
+    public void loadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
         // get the module filename
         final String fileName = stagedFile.getName();
         // get module last modified timestamp
@@ -485,8 +515,32 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
 
         try {
             // load and create the new or modified module
-            //final T newModule = onModuleLoad(module, moduleDigest, lastModified);
-            final ModuleLoadStatus loadStatus = onModuleLoad(stagedFile, moduleDigest, lastModified);
+            final ModuleLoadStatus loadStatus = onModuleLoad(
+                    new ModuleData() {
+                        @NotNull
+                        @Override
+                        public File getFile() {
+                            return stagedFile;
+                        }
+
+                        @NotNull
+                        @Override
+                        public String getDigest() {
+                            return moduleDigest;
+                        }
+
+                        @Override
+                        public long getLastModified() {
+                            return lastModified;
+                        }
+
+                        @Nullable
+                        @Override
+                        public String getName() {
+                            return entityName;
+                        }
+                    }
+            );
 
             // should we skip this module
             if (loadStatus.getLoadedModule() == null) {
@@ -498,6 +552,13 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
         }
     }
 
+    /**
+     * Unload a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest}.
+     *
+     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @throws ModuleLoadingException if an error happens while loading the {@code ServerModuleFile}.
+     */
     public void unloadServerModuleFile(@NotNull final File stagedFile, @NotNull final String moduleDigest) throws ModuleLoadingException {
         // get the module filename
         final String fileName = stagedFile.getName();
@@ -505,17 +566,17 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
         // get the module
         final T module = getModule(fileName);
         if (module == null) {
-            throw new ModuleLoadingException("Cannot unload module which is not loaded; staged file-name \"" + stagedFile + "\"");
+            throw new ModuleLoadingException("Module appears not being loaded; staged file-name \"" + fileName + "\"");
         }
         if (!moduleDigest.equals(module.getDigest())) {
-            throw new ModuleLoadingException("Cannot unload module as digest of loaded and staged file mismatched; staged file-name \"" + stagedFile + "\"");
+            throw new ModuleLoadingException("Cannot unload module as digest of loaded and staged file mismatch; staged file-name \"" + fileName + "\"");
         }
         try {
             if (!onModuleUnload(module)) {
-                throw new ModuleLoadingException("Failed to unload module; staged file-name \"" + stagedFile + "\"");
+                throw new ModuleLoadingException("Failed to unload module; staged file-name \"" + fileName + "\"");
             }
         } catch (final ModuleException e) {
-            throw new ModuleLoadingException(e);
+            throw new ModuleLoadingException("Error while unloading module; staged file-name \"" + fileName + "\"", e);
         }
     }
 

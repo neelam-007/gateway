@@ -15,7 +15,6 @@ import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
-import junit.framework.Assert;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -120,7 +119,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     /**
      * Verifies that correct methods are called from <tt>assertionsScanner</tt> and that
      *
-     * @param onModuleLoadCalls              expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(java.io.File, String, long) onModuleLoad} calls.
+     * @param onModuleLoadCalls              expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleLoad(ModuleData) onModuleLoad} calls.
      * @param onModuleUnloadCalls            expected number of {@link com.l7tech.server.policy.module.ModulesScanner#onModuleUnload(BaseAssertionModule) onModuleUnload} calls.
      * @param numberOfLoadedModules          expected number of loaded modules
      *                                       (i.e. calls to {@link com.l7tech.server.policy.module.ScannerCallbacks#publishEvent(org.springframework.context.ApplicationEvent) publishEvent}
@@ -142,7 +141,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
             final int numberOfAssertionsPerModule
     ) throws Exception {
         // make sure we load all our modules
-        Mockito.verify(assertionsScanner, Mockito.times(onModuleLoadCalls)).onModuleLoad(Mockito.<File>any(), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(assertionsScanner, Mockito.times(onModuleLoadCalls)).onModuleLoad(Mockito.<ModuleData>any());
         // make sure all modules have been registered
         Mockito.verify(customAssertionCallbacks, Mockito.times(numberOfLoadedModules)).publishEvent(Mockito.isA(AssertionModuleRegistrationEvent.class));
         // make sure all assertions have been registered
@@ -177,7 +176,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
      * Utility function for {@link #verifyAssertionScanner(int, int, int, int, int, int, int) verifyAssertionScanner}
      * with reduced arguments, targeted for verifying modules loading process.
      *
-     * @param onModuleLoadCalls        expected number of {@link CustomAssertionsScanner#onModuleLoad(java.io.File, String, long) onModuleLoad} calls.
+     * @param onModuleLoadCalls        expected number of {@link CustomAssertionsScanner#onModuleLoad(ModuleData) onModuleLoad} calls.
      * @param numberOfLoadedModules    expected number of loaded modules
      *                                 (i.e. calls to {@link ScannerCallbacks.CustomAssertion#publishEvent(org.springframework.context.ApplicationEvent) publishEvent}
      *                                 with {@link AssertionModuleRegistrationEvent}).

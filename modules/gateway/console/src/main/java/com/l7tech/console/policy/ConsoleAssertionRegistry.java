@@ -22,6 +22,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -186,6 +187,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         final Collection<String> assertionClassnames = module.assertionClasses;
 
         final String moduleFilename = module.moduleFilename;
+        final String moduleEntityName = module.moduleEntityName;
+        final String moduleDisplayInfo = StringUtils.isBlank(moduleEntityName) ? moduleFilename : moduleEntityName;
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
@@ -206,6 +209,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         AssertionMetadata meta = prototype.meta();
                         if ( meta instanceof DefaultAssertionMetadata ) {
                             ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_FILE_NAME, moduleFilename );
+                            ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_ENTITY_NAME, moduleEntityName );
+                            ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_DISPLAY_INFO, moduleDisplayInfo );
                         }
                         String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
 

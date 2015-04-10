@@ -479,6 +479,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
             customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+            customAssertionHolder.setModuleEntityName(customAssertionDescriptor.getModuleEntityName());
             if (cas instanceof CustomFeatureSetName) {
                 CustomFeatureSetName customFeatureSetName = (CustomFeatureSetName) cas;
                 customAssertionHolder.setRegisteredCustomFeatureSetName(customFeatureSetName.getFeatureSetName());
@@ -621,7 +622,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
     @Override
     public void loadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
-        assertionsScanner.loadServerModuleFile(stagedFile, moduleEntity.getModuleSha256());
+        assertionsScanner.loadServerModuleFile(stagedFile, moduleEntity.getModuleSha256(), moduleEntity.getName());
     }
 
     @Override
