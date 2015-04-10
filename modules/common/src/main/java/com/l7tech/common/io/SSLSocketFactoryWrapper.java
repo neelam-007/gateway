@@ -7,6 +7,7 @@ import static com.l7tech.util.Functions.nullary;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -63,6 +64,11 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
     @Override
     public Socket createSocket( final String s, final int i, final InetAddress inetAddress, final int i1 ) throws IOException {
         return notifySocket(delegate.call().createSocket( s, i, inetAddress, i1 ));
+    }
+
+    @Override
+    public Socket createSocket(final Socket s, final InputStream inputStream, final boolean b) throws IOException {
+        return notifySocket(delegate.call().createSocket(s, inputStream, b));
     }
 
     /**

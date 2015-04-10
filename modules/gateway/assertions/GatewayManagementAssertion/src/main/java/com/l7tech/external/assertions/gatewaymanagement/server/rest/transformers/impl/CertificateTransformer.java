@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -22,6 +23,7 @@ public class CertificateTransformer extends APIResourceWsmanBaseTransformer<Trus
 
     @Override
     @Inject
+    @Named("certificateResourceFactory")
     protected void setFactory(CertificateResourceFactory factory) {
         super.factory = factory;
     }

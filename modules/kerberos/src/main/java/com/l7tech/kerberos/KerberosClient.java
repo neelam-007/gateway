@@ -6,6 +6,10 @@ import org.ietf.jgss.*;
 import org.jaaslounge.decoding.DecodingException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.jaaslounge.decoding.kerberos.KerberosToken;
+import sun.security.jgss.GSSCredentialImpl;
+import sun.security.jgss.GSSUtil;
+import sun.security.jgss.krb5.Krb5AcceptCredential;
+import sun.security.jgss.spi.GSSCredentialSpi;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.APReq;
 import sun.security.krb5.internal.ktab.KeyTab;
@@ -20,8 +24,6 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.security.Principal;
@@ -313,12 +315,11 @@ public class KerberosClient {
                         scontext = manager.createContext(scred);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
-                        KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
-                        KrbApReq apReq = buildKrbApReq( apReqBytes, keys, clientAddress );
+                        KrbApReq apReq = buildKrbApReq( apReqBytes, scred, clientAddress );
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
                         //extract additional Kerberos Data from the ticket such as PAC Logon Info, PAC Signature, etc.  as per
                         // Utilizing the Windows 2000 Authorization Data in Kerberos Tickets for  Access Control to Resources http://msdn.microsoft.com/en-us/library/aa302203.aspx
-                        KerberosEncData krbEncData = getKerberosAuthorizationData(keys, gssAPReqTicket);
+                        KerberosEncData krbEncData = getKerberosAuthorizationData(getKeys(kerberosSubject.getPrivateCredentials()), gssAPReqTicket);
                         // Extract the delegated kerberos ticket if one exists
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
@@ -808,10 +809,20 @@ public class KerberosClient {
  	 * @throws IllegalStateException if the private key cannot be found
      */
     protected static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
-        List<KerberosKey> keys = new ArrayList<KerberosKey>();
+        List<KerberosKey> keys = new ArrayList<>();
 
         for( Object o : creds ) {
-            if( o instanceof KerberosKey ) keys.add( (KerberosKey) o );
+            //extract Kerberos keys from the keytab
+            // unlike previous versions JDK8 does not provide keys via private credentials instead
+            // the keys can be extracted from the keytab
+            if(o instanceof javax.security.auth.kerberos.KeyTab) {
+                javax.security.auth.kerberos.KeyTab ktab = (javax.security.auth.kerberos.KeyTab) o;
+                //TODO: validate that principal is the one from the keytab
+                KerberosPrincipal kerbClientPrinc = ktab.getPrincipal();
+                for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
+                    keys.add(key);
+                }
+            }
         }
 
         if (keys.isEmpty()) throw new IllegalStateException("Private Kerberos key not found!");
@@ -820,56 +831,18 @@ public class KerberosClient {
     }
 
     /**
-     * Takes the array of KerberosKeys and converts them into corresponding
-     * sun.security.krb5.EncryptionKey objects.
-	 *
-     * @param keys the Kerberos Keys
- 	 * @return Array of EncryptionKeys, one for each Kerberos key in the argument
-     */
-    private static EncryptionKey[] toEncryptionKey(KerberosKey[] keys) {
-        EncryptionKey[] ekeys = new EncryptionKey[keys.length];
-
-        for (int k=0; k<keys.length; k++) {
-            ekeys[k] = new EncryptionKey(keys[k].getKeyType(), keys[k].getEncoded());
-        }
-
-        return ekeys;
-    }
-
-    /**
      * OpenJDK introduced the "InetAddress" argument, so we'll support either
      * the old or the new constructor.
      */
     protected KrbApReq buildKrbApReq( final byte[] apReqBytes,
-                                    final KerberosKey[] keys,
-                                    final InetAddress clientAddress ) throws KerberosException {
-        KrbApReq apReq;
-
+                                      final GSSCredential scred,
+                                      final InetAddress clientAddress ) throws KerberosException {
         try {
-            Constructor constructor;
-            Object[] args;
-            try {
-                // OpenJDK / new constructor
-                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class, InetAddress.class );
-                args = new Object[]{ apReqBytes, toEncryptionKey(keys), PASS_INETADDR ? clientAddress : null };
-            } catch ( NoSuchMethodException nsme ) {
-                // original constructor
-                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class );
-                args = new Object[]{ apReqBytes, toEncryptionKey(keys) };
-            }
-
-            apReq = (KrbApReq) constructor.newInstance( args );
-        } catch (NoSuchMethodException e) {
-            throw new KerberosException( e );
-        } catch (InvocationTargetException e) {
-            throw new KerberosException( e );
-        } catch (IllegalAccessException e) {
-            throw new KerberosException( e );
-        } catch (InstantiationException e) {
-            throw new KerberosException( e );
+            GSSCredentialSpi credentialSpi = ((GSSCredentialImpl)scred).getElement(GSSUtil.GSS_KRB5_MECH_OID, false);
+            return new KrbApReq(apReqBytes, (Krb5AcceptCredential) credentialSpi, clientAddress);
+        } catch (Exception e) {
+           throw new KerberosException(e);
         }
-
-        return apReq;
     }
 
     /**

@@ -3,16 +3,15 @@ package com.l7tech.kerberos;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.*;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import sun.security.jgss.krb5.Krb5Util;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
-import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KeyTab;
@@ -48,14 +47,15 @@ public class KerberosClientTest {
     @BeforeClass
     public static void init() throws IOException, KerberosException {
         tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
-
+        MockKrb5LoginModule.setKeyTabBytes(KerberosConfigTest.MULTIPLE_PRINCIPAL_KEYTAB);
         KerberosTestSetup.init(tmpDir);
     }
 
-/*    @AfterClass
+    @AfterClass
     public static void dispose() {
-        FileUtils.deleteDir(tmpDir);
-    }*/
+        //FileUtils.deleteDir(tmpDir);
+        MockKrb5LoginModule.setKeyTabBytes(null);
+    }
 
     /**
      * Setup the Kerberos Client.
@@ -190,7 +190,7 @@ public class KerberosClientTest {
         assertNotNull(serviceTicket);
     }
 
-    @Ignore("Needs connection to the KDC")
+    @Ignore("Needs connection to the KDC, also broken in JDK 8")
     @Test
     /**
      * Capture the data from the real KDC connection and
@@ -207,6 +207,7 @@ public class KerberosClientTest {
         //The TGT
         KerberosTicket kerberosTicket = (KerberosTicket) subject.getPrivateCredentials().toArray()[0];
         KeyTab keyTab = (KeyTab) subject.getPrivateCredentials().toArray()[1];
+/*  JDK 8 compatibilty:  the KeysFromKeyTab inner classes no longer exists
         Krb5Util.KeysFromKeyTab keysFromKeyTab = (Krb5Util.KeysFromKeyTab) subject.getPrivateCredentials().toArray()[2];
         KerberosKey k = new KerberosKey(keysFromKeyTab.getPrincipal(), keysFromKeyTab.getEncoded(), keysFromKeyTab.getKeyType(), keysFromKeyTab.getVersionNumber());
         System.out.println("KerberosPrincipal: " + encode(kerberosPrincipal));
@@ -214,6 +215,7 @@ public class KerberosClientTest {
         System.out.println("KeyBytes: " + Base64.encodeBase64String(keysFromKeyTab.getEncoded()));
         System.out.println("KeyType: " + keysFromKeyTab.getKeyType());
         System.out.println("VersionNumber: " + keysFromKeyTab.getVersionNumber());
+*/
         Subject.doAs(subject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
             @Override
             public KerberosServiceTicket run() throws Exception {

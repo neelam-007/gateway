@@ -76,7 +76,7 @@ public class DelegateKrbTgsReq {
                 options,
                 tgtCreds.getTicket(),
                 tgtCreds.getSessionKey(),
-                new KerberosTime(KerberosTime.NOW),
+                KerberosTime.now(), //used to be new KerberosTime(KerberosTime.NOW)
                 princName,
                 princName.getRealm(),
                 servName,
@@ -109,19 +109,18 @@ public class DelegateKrbTgsReq {
             PrincipalName sname,
             PrincipalName uname,
             Ticket[] additionalTickets)
-            throws Asn1Exception, IOException, KdcErrException, KrbApErrException,
-            KrbCryptoException {
+            throws KrbException, IOException {
 
         int[] eTypes = null;
         eTypes = EType.getDefaults("default_tgs_enctypes");
         if (eTypes == null) {
             throw new KrbCryptoException("Not supported encryption types");
         }
-
+        //realm is missing from KDCReqBody param
         KDCReqBody reqBody = new KDCReqBody(
                 kdc_options,
                 cname,
-                sname.getRealm(),
+                /*sname.getRealm(),*/
                 sname,
                 null,
                 new KerberosTime(0),
@@ -140,7 +139,6 @@ public class DelegateKrbTgsReq {
                 new APOptions(),
                 ticket,
                 key,
-                crealm,
                 cname,
                 cksum,
                 ctime,

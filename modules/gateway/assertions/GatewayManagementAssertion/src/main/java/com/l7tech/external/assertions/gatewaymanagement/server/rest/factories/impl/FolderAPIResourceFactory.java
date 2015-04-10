@@ -29,6 +29,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.Collections;
 import java.util.List;
 
@@ -66,6 +67,7 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
 
     @Override
     @Inject
+    @Named("folderResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory factory) {
         super.factory = factory;
     }

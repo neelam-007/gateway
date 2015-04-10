@@ -18,7 +18,10 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AddHeaderAssertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.*;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -178,9 +181,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 try {
                     final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeaderPayload(responseMessage);
                     assertEquals(new String(parsedRequest.right), AssertionStatus.FAILED.getMessage());
-                } catch (IOException e) {
-                    fail(e.getMessage());
-                } catch (MQDataException e) {
+                } catch (IOException | MQDataException e) {
                     fail(e.getMessage());
                 }
                 return null;
@@ -190,7 +191,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
     }
 
     @Test
-    public void addConnector() throws ListenerException, MqNativeConfigException, FindException, ParseException {
+    public void addSingleConnector() throws ListenerException, MqNativeConfigException, FindException, ParseException {
         mqNativeModule.setApplicationContext(ApplicationContexts.getTestApplicationContext());
 
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
@@ -221,12 +222,43 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqNativeModule.addConnector(ssgActiveConnector);
         Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
+    }
+
+    @Test
+    public void addMultipleConnectorsConcurrently() throws ListenerException, MqNativeConfigException, FindException, ParseException {
+        mqNativeModule.setApplicationContext(ApplicationContexts.getTestApplicationContext());
+
+        SsgActiveConnector activeConnector = new SsgActiveConnector();
+
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME, queueManagerName);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, targetQueueName);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, replyQueueName);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, replyType.toString());
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, hostName);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, Integer.toString(port));
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL, channel);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED, Boolean.toString(isQueueCredentialRequired));
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_USERID, userId);
+        activeConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, securePasswordGoid.toHexString());
+
+        when(securePassword.getEncodedPassword()).thenReturn(encryptedPassword);
+
+        when(securePasswordManager.findByPrimaryKey(securePasswordGoid)).thenReturn(securePassword);
+        when(securePasswordManager.decryptPassword(encryptedPassword)).thenReturn(password);
+
+        serverConfig.putProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, "10s");
+        serverConfig.putProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, "5s");
+
+        activeConnector.setName("Test SSG Active Connector");
+        activeConnector.setGoid(new Goid(0,999999999L));
 
         // test multiple concurrent listener create
-        numberOfListenersToCreate = 20;
-        when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
-        mqNativeModule.addConnector(ssgActiveConnector);
-        activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
+        int numberOfListenersToCreate = 20;
+        activeConnector.setProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, Integer.toString(numberOfListenersToCreate));
+
+        mqNativeModule.addConnector(activeConnector);
+
+        Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(activeConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
     }
 
@@ -413,9 +445,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 try {
                     final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeaderPayload(responseMessage);
                     assertEquals(new String(parsedRequest.right), AssertionStatus.NONE.getMessage());
-                } catch (IOException e) {
-                    fail(e.getMessage());
-                } catch (MQDataException e) {
+                } catch (IOException | MQDataException e) {
                     fail(e.getMessage());
                 }
                 return null;

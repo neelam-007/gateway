@@ -73,26 +73,29 @@ public class ScriptletHelper extends JRDefaultScriptlet {
                 }
                 if (jrFillGroup == null) throw new IllegalStateException("Group " + s + " not found");
 
-                JRBand jrBand = jrFillGroup.getGroupFooter();
-                List children = jrBand.getChildren();
-                for (Object o : children) {
-                    //This band should only have 1 frame
-                    if (o instanceof JRFillFrame) {
-                        JRFillFrame jrFillFrame = (JRFillFrame) o;
-                        jrFillFrame.setStyle(nonDetailStyle);
-                        List frameChildren = jrFillFrame.getChildren();
-                        for (Object o1 : frameChildren) {
-                            if (o1 instanceof JRFillTextField) {
-                                JRFillTextField field = (JRFillTextField) o1;
-                                if (field.getKey().startsWith("serviceName")) {
-                                    field.setStyle(serviceTextFieldColumnStyle);
-                                } else {
-                                    field.setStyle(tableColumnStyle);
+                JRSection jrSection = jrFillGroup.getGroupFooterSection();
+                JRBand[] jrBands = jrSection.getBands();
+                for (JRBand jrBand : jrBands) {
+                    List children = jrBand.getChildren();
+                    for (Object o : children) {
+                        //This band should only have 1 frame
+                        if (o instanceof JRFillFrame) {
+                            JRFillFrame jrFillFrame = (JRFillFrame) o;
+                            jrFillFrame.setStyle(nonDetailStyle);
+                            List frameChildren = jrFillFrame.getChildren();
+                            for (Object o1 : frameChildren) {
+                                if (o1 instanceof JRFillTextField) {
+                                    JRFillTextField field = (JRFillTextField) o1;
+                                    if (field.getKey().startsWith("serviceName")) {
+                                        field.setStyle(serviceTextFieldColumnStyle);
+                                    } else {
+                                        field.setStyle(tableColumnStyle);
+                                    }
                                 }
                             }
-                        }
 
-                        break;
+                            break;
+                        }
                     }
                 }
             }

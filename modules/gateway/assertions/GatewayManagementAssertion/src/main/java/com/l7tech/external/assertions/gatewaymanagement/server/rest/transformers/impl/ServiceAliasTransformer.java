@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<ServiceAliasMO, PublishedServiceAlias, AliasHeader<PublishedService>, ServiceAliasResourceFactory> {
@@ -23,6 +24,7 @@ public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<Ser
 
     @Override
     @Inject
+    @Named("serviceAliasResourceFactory")
     protected void setFactory(ServiceAliasResourceFactory factory) {
         super.factory = factory;
     }

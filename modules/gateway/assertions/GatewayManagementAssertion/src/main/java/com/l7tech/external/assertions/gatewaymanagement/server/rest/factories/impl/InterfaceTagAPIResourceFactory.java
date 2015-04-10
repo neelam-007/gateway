@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,7 @@ public class InterfaceTagAPIResourceFactory extends WsmanBaseResourceFactory<Int
 
     @Override
     @Inject
+    @Named("interfaceTagResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResourceFactory factory) {
         super.factory = factory;
     }

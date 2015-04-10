@@ -114,17 +114,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         final FutureTask<String> connectTask = new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
-
-                try {
-                    cassandraConnectionManager.testConnection(connection);
-                } catch (FindException | ParseException e) {
-                    return "Invalid username or password setting. \n" + ExceptionUtils.getMessage(e);
-                } catch (NoHostAvailableException e) {
-                    return "Cannot connect to any Cassandra Server.";
-                } catch (Throwable e) {
-                    return "Unable to connect to Cassandra cluster using specified connection settings";
-                }
-                return "";
+                return testConnection(connection);
             }
         }));
 
@@ -138,22 +128,26 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         return registerJob(connectTask, String.class);
     }
 
+    protected String testConnection(final CassandraConnection connection) {
+        try {
+            cassandraConnectionManager.testConnection(connection);
+        } catch (FindException | ParseException e) {
+            return "Invalid username or password setting. \n" + ExceptionUtils.getMessage(e);
+        } catch (NoHostAvailableException e) {
+            return "Cannot connect to any Cassandra Server.";
+        } catch (Throwable e) {
+            return "Unable to connect to Cassandra cluster using specified connection settings";
+        }
+        return "";
+    }
+
     @Override
     public JobId<String> testCassandraQuery(final String connectionName, final String query, final long queryTimeout) {
         checkLicense();
         final FutureTask<String> queryTask = new FutureTask<>(find(true).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                try {
-                    CassandraConnectionHolder testConnection = cassandraConnectionManager.getConnection(connectionName);
-                    if(testConnection == null || testConnection.getSession() == null) {
-                        return "Unable to establish connection to Cassandra server";
-                    }
-                    cassandraQueryManager.testQuery(testConnection.getSession(), query, queryTimeout);
-                } catch (Exception e) {
-                    return "Test query failed: " + ExceptionUtils.getMessage(e);
-                }
-                return "";
+                return testQuery(connectionName, query, queryTimeout);
             }
         }));
 
@@ -165,6 +159,19 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         }, 0L);
 
         return registerJob(queryTask, String.class);
+    }
+
+    protected String testQuery(final String connectionName, final String query, final long queryTimeout) {
+        try {
+            CassandraConnectionHolder testConnection = cassandraConnectionManager.getConnection(connectionName);
+            if(testConnection == null || testConnection.getSession() == null) {
+                return "Unable to establish connection to Cassandra server";
+            }
+            cassandraQueryManager.testQuery(testConnection.getSession(), query, queryTimeout);
+        } catch (Exception e) {
+            return "Test query failed: " + ExceptionUtils.getMessage(e);
+        }
+        return "";
     }
 
     protected void checkLicense() {

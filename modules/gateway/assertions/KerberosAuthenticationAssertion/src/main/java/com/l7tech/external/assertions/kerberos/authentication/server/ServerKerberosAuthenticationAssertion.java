@@ -63,7 +63,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        AssertionStatus status = AssertionStatus.NONE;
         KerberosDelegateClient delegateClient = new KerberosDelegateClient();
         AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         if (authContext.getCredentials().size() < 1 && authContext.getLastAuthenticatedUser() == null) {
@@ -154,7 +153,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     svcPrincipal = getServicePrincipal(realm);
                     //Check for referral, if user realm != service realm, get referral service ticket.
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
-                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicketWithKeytab(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount, realm);
                     } else {
                         int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 5);
                         kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount, userRealm, maxReferral);
@@ -163,7 +162,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                     String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
-                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicketWithCredentials(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount, realm);
                     } else {
                         int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 5);
                         kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount, userRealm, maxReferral);
@@ -196,12 +195,12 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(realm);
                     // construct the ticket from the delegated ticket
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, serviceTicket);
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), new PrincipalName(kst.getClientPrincipalName()), svcPrincipal, serviceTicket);
                 }
                 else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                     String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, serviceTicket);
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), new PrincipalName(kst.getClientPrincipalName()), userPrincipal.getName(), plaintextPassword, serviceTicket);
                 }
             }
 

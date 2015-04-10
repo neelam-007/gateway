@@ -447,7 +447,7 @@ public class IdentityProviderRestEntityResourceTest extends RestEntityTests<Iden
                     if(ldapIdentityProviderConfig.isAdminEnabled()) {
                         Assert.assertTrue((Boolean) managedObject.getProperties().get("adminEnabled"));
                     } else {
-                        Assert.assertTrue(managedObject.getProperties().get("adminEnabled") == null || managedObject.getProperties().get("adminEnabled") == false);
+                        Assert.assertTrue(managedObject.getProperties().get("adminEnabled") == null || !Boolean.valueOf( managedObject.getProperties().get("adminEnabled").toString() ) );
                     }
                     verifyMappings(ldapIdentityProviderConfig.getGroupMappings(), managedObject.getLdapIdentityProviderDetail().getGroupMappings());
                     verifyMappings(ldapIdentityProviderConfig.getUserMappings(), managedObject.getLdapIdentityProviderDetail().getUserMappings());

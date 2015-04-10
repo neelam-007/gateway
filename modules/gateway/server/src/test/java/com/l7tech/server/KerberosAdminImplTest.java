@@ -1,16 +1,11 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.admin.KerberosAdmin;
-import com.l7tech.kerberos.KerberosConfigConstants;
-import com.l7tech.kerberos.KerberosConfigTest;
-import com.l7tech.kerberos.KerberosException;
-import com.l7tech.kerberos.KerberosTestSetup;
+import com.l7tech.kerberos.*;
 import com.l7tech.server.security.MasterPasswordManagerStub;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 import java.util.Map;
@@ -23,6 +18,16 @@ public class KerberosAdminImplTest {
     private File tmpDir;
     private KerberosAdmin kerberosAdmin;
     private MockClusterPropertyManager clusterPropertyManager;
+
+    @BeforeClass
+    public static void init() throws Exception {
+        MockKrb5LoginModule.setKeyTabBytes(KerberosConfigTest.MULTIPLE_PRINCIPAL_KEYTAB);
+    }
+
+    @AfterClass
+    public static void dispose() {
+        MockKrb5LoginModule.setKeyTabBytes(null);
+    }
 
     @Before
     public void setup() throws Exception {

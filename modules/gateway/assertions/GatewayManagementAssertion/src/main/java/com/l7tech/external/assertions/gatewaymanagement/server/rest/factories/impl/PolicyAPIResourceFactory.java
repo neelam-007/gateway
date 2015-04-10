@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
@@ -61,6 +62,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
 
     @Override
     @Inject
+    @Named("policyResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory factory) {
         super.factory = factory;
     }

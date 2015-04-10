@@ -130,6 +130,7 @@ public class KerberosConfigTest {
 
     @Test(expected = KerberosException.class)
     public void testDuplicatePrincipalKeyTabWithException() throws IOException, KerberosException {
+        KerberosConfig.clearCache();
         writeKeyTab(DUPLICATE_PRINCIPAL_KEYTAB, false);
         KerberosConfig.getKeytab(false);
     }

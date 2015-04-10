@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -26,6 +27,7 @@ public class CertificateAPIResourceFactory extends WsmanBaseResourceFactory<Trus
 
     @Override
     @Inject
+    @Named("certificateResourceFactory")
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory factory) {
         super.factory = factory;
     }

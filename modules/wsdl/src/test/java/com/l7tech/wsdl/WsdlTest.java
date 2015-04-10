@@ -31,8 +31,6 @@ public class WsdlTest {
     public static final String WSDL = TestDocuments.WSDL;
     public static final String WSDL2PORTS = TestDocuments.WSDL2PORTS;
     public static final String WSDL2SERVICES = TestDocuments.WSDL2SERVICES;
-    public static final String WSDL_DOC_STYLE = TestDocuments.WSDL_DOC_LITERAL;
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Win");
 
     public Reader getWsdlReader(String resourcetoread) {
         if (resourcetoread == null) {
@@ -45,7 +43,7 @@ public class WsdlTest {
     /**
      * Read the well formed WSDL using StringReader.
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testReadWsdlFromString() throws Exception {
@@ -58,24 +56,17 @@ public class WsdlTest {
         }
 
         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(sw.toString()));
-        wsdl.getTypes();
-        wsdl.getBindings();
-        wsdl.getMessages();
-        wsdl.getPortTypes();
-        wsdl.getServices();
-
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "gxW8U1bR7KbW7If+vvOJeQ==", wsdl.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "idiLlFDBpP2sEljl54VX1A==", wsdl.getHash() );
-        }
+        assertTrue("Type != 0", wsdl.getTypes().size() == 0);
+        assertTrue("Bindings != 1", wsdl.getBindings().size() == 1);
+        assertTrue("Messages != 2", wsdl.getMessages().size() == 2);
+        assertTrue("Port Types != 1", wsdl.getPortTypes().size() == 1);
+        assertTrue("Service != 1", wsdl.getServices().size() == 1);
     }
 
     /**
-     * Read the well fromed WSDL using FileReader.
+     * Read the well formed WSDL using FileReader.
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testReadWsdlFromFile() throws Exception {
@@ -98,12 +89,12 @@ public class WsdlTest {
         wsdl.getServices();
         wsdl.getSoapPort();
 
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "71ZEkOFJ3rINoB6y5Zd1OA==", wsdl.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "FOs/wNJqudFH9j/UwKunyA==", wsdl.getHash() );
-        }
+        assertTrue("Type != 0", wsdl.getTypes().size() == 0);
+        assertTrue("Bindings != 1", wsdl.getBindings().size() == 1);
+        assertTrue("Messages != 4", wsdl.getMessages().size() == 4);
+        assertTrue("Port Types != 1", wsdl.getPortTypes().size() == 1);
+        assertTrue("Service != 1", wsdl.getServices().size() == 1);
+        assertTrue("SOAP port name does not match", wsdl.getSoapPort().getName().equals("GetQuoteKira"));
     }
 
     @Test
@@ -116,12 +107,12 @@ public class WsdlTest {
         wsdl.getServices();
         wsdl.getSoapPort();
 
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "BczKOnpvR6pqswdlwFxKTA==", wsdl.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "5Jrp/fpHC51BLRdNwWoGlw==", wsdl.getHash() );
-        }
+        assertTrue("Type != 0", wsdl.getTypes().size() == 0);
+        assertTrue("Bindings != 2", wsdl.getBindings().size() == 2);
+        assertTrue("Messages != 4", wsdl.getMessages().size() == 4);
+        assertTrue("Port Types != 2", wsdl.getPortTypes().size() == 2);
+        assertTrue("Service != 2", wsdl.getServices().size() == 2);
+        assertTrue("SOAP port name does not match", wsdl.getSoapPort().getName().equals("GetQuoteKira"));
     }
 
     @Test
@@ -140,7 +131,7 @@ public class WsdlTest {
     /**
      * Test determine the Soap Encoded binding
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testDetermineSoapEncodedBinding() throws Exception {
@@ -156,7 +147,7 @@ public class WsdlTest {
     /**
      * Test determine the Soap Literal binding
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testDetermineSoapDocLiteralBinding() throws Exception {
@@ -172,7 +163,7 @@ public class WsdlTest {
     /**
      * Test determine the Soap Literal binding from rpc-literla service
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testDetermineSoapRpcLiteralBinding() throws Exception {
@@ -190,7 +181,7 @@ public class WsdlTest {
      * Test non soap binding throws. Uses the .NET style wsdl that describes http
      * get/post bindings and that is not supported.
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testNonSoapBindingThrows() throws Exception {
@@ -206,19 +197,12 @@ public class WsdlTest {
                 //
             }
         }
-
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "p0x1YkycAU0rmRizZFyM1g==", wsdl.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "NmjaO9VQRVqjSMCuO/oI6Q==", wsdl.getHash() );
-        }
     }
 
     /**
      * Test unsupported wsdl with mixed use (encoded and literal).
      *
-     * @throws Exception on tesat errors
+     * @throws Exception on test errors
      */
     @Test
     public void testInvalidWsdlMixedSoapBindingUse() throws Exception {
@@ -233,13 +217,6 @@ public class WsdlTest {
             } catch (WSDLException e) {
                 //
             }
-        }
-
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "sXpDLfpcgxXii2NIca3N/g==", wsdl.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "YV+dlG3GNfaptkLbMiur1Q==", wsdl.getHash() );
         }
     }
 
@@ -289,13 +266,6 @@ public class WsdlTest {
             wsdlB.getServices();
         } catch (StackOverflowError err) {
             fail("WSDLs with circular imports has been handled, so Stack Overflow Error should not happen here.");
-        }
-
-        if (IS_WINDOWS) {
-            assertEquals( "Hash", "Z/PJ3FhP5Qd2e5rKk3RrWw==", wsdlA.getHash() );
-        }
-        else {
-            assertEquals( "Hash", "ylC488wFxrJz8/LTtJxHwg==", wsdlA.getHash() );
         }
     }
 

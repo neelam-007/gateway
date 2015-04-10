@@ -61,7 +61,8 @@ public class XmlResultSetFormatterTest extends AbstractXmlTestUtility {
 
         final String result = formatter.format(resultSet, null);
 
-        assertEquals("<foo><bar><name1>value1</name1><name2>value2</name2></bar></foo>", result);
+        assertTrue("<foo><bar><name1>value1</name1><name2>value2</name2></bar></foo>".equals(result)
+                || "<foo><bar><name2>value2</name2><name1>value1</name1></bar></foo>".equals(result));
     }
 
     @Test
@@ -87,7 +88,7 @@ public class XmlResultSetFormatterTest extends AbstractXmlTestUtility {
 
         final String result = formatter.format(resultSet, null);
 
-        assertEquals("<foo><bar><name1>value1</name1><name2>value2</name2></bar><bar><name1>value3</name1><name2>value4</name2></bar></foo>", result);
+        assertTrue(result.matches("<foo><bar>[(<name1>value1</name1>)(<name2>value2</name2>)]*</bar><bar>[(<name1>value3</name1>)(<name2>value4</name2>)]*</bar></foo>"));
     }
 
     @Test

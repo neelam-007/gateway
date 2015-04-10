@@ -14,12 +14,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Component
 public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO, Policy, PolicyHeader, PolicyResourceFactory> {
 
     @Override
     @Inject
+    @Named("policyResourceFactory")
     protected void setFactory(PolicyResourceFactory factory) {
         super.factory = factory;
     }

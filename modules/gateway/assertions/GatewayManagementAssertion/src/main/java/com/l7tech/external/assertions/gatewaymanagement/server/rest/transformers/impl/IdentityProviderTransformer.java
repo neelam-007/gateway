@@ -8,7 +8,6 @@ import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.bundling.EntityContainer;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.text.ParseException;
 import java.util.regex.Matcher;
 
@@ -26,6 +26,7 @@ public class IdentityProviderTransformer extends APIResourceWsmanBaseTransformer
 
     @Override
     @Inject
+    @Named("identityProviderResourceFactory")
     protected void setFactory(IdentityProviderResourceFactory factory) {
         super.factory = factory;
     }

@@ -1,6 +1,7 @@
 package com.l7tech.common.mime;
 
  import com.l7tech.common.io.*;
+ import com.l7tech.common.io.UncheckedIOException;
  import com.l7tech.util.*;
 
  import java.io.*;

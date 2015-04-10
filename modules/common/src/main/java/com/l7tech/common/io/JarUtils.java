@@ -34,7 +34,7 @@ public class JarUtils {
 
     // - PRIVATE
 
-    private static final String JARSIGNER_CLASS_NAME = "sun.security.tools.JarSigner";
+    private static final String JARSIGNER_CLASS_NAME = "sun.security.tools.jarsigner.Main";
 
     private JarUtils() { }
 

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -28,6 +29,7 @@ public class IdentityProviderAPIResourceFactory extends WsmanBaseResourceFactory
 
     @Override
     @Inject
+    @Named("identityProviderResourceFactory")
     public void setFactory(IdentityProviderResourceFactory factory) {
         super.factory = factory;
     }

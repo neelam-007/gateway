@@ -369,10 +369,6 @@ public class CustomAssertionHolderTest {
         // do a quick check
         assertNotNull("Read policy is not NULL", readPolicy);
         assertTrue("Read policy is of type ExactlyOneAssertion", readPolicy instanceof ExactlyOneAssertion);
-        final String readPolicyString = WspWriter.getPolicyXml(readPolicy);
-        //These does differ if the custom assertion does not serialize in a consistent way. For example it contains a hashmap. SSG-8286
-        assertEquals("Both policies XMLs are the same", initialPolicyString, readPolicyString);
-
         final ExactlyOneAssertion eoaRead = (ExactlyOneAssertion)readPolicy;
         assertSame("Read policy number of children is 1", eoaRead.getChildren().size(), 1);
         assertTrue("Read policy first child is of type CustomAssertionHolder", eoaRead.getChildren().get(0) instanceof CustomAssertionHolder);

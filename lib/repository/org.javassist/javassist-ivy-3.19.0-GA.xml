@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.javassist"
+		module="javassist"
+		revision="3.19.0-GA"
+		status="release"
+		publication="20150302145535"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="javassist" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

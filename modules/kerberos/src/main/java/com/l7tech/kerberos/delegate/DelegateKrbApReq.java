@@ -13,7 +13,6 @@ public class DelegateKrbApReq {
     public DelegateKrbApReq(APOptions apOptions,
                             Ticket ticket,
                             EncryptionKey eKey,
-                            Realm crealm,
                             PrincipalName cname,
                             Checksum cksum,
                             KerberosTime ctime,
@@ -22,8 +21,8 @@ public class DelegateKrbApReq {
                             AuthorizationData authorizationData)
             throws Asn1Exception, IOException,
             KdcErrException, KrbCryptoException {
-
-        Authenticator authenticator = new Authenticator(crealm,
+        //crealm param is missing in JDK 8
+        Authenticator authenticator = new Authenticator(
                 cname,
                 cksum,
                 ctime.getMicroSeconds(),

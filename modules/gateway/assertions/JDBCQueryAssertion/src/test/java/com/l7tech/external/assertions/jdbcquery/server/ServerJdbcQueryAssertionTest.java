@@ -43,6 +43,8 @@ import org.springframework.jdbc.support.rowset.ResultSetWrappingSqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -493,7 +495,8 @@ public class ServerJdbcQueryAssertionTest {
         String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
         assertNotNull(xmlResult);
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">1</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">name1</L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\">value1</L7j:col></L7j:row></L7j:jdbcQueryResult>";
-        assertEquals(expected, xmlResult);
+        assertXmlResult(xmlResult, expected);
+
         Object[] idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
         Object[] nameObj = (Object[]) peCtx.getVariable("jdbcQuery.name");
         Object[] valueObj = (Object[]) peCtx.getVariable("jdbcQuery.value");
@@ -516,7 +519,7 @@ public class ServerJdbcQueryAssertionTest {
         xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
         assertNotNull(xmlResult);
         expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">2</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\"><![CDATA[name2]]></L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\"><![CDATA[value2&'<\">]]></L7j:col></L7j:row></L7j:jdbcQueryResult>";
-        assertEquals(expected, xmlResult);
+        assertXmlResult(expected, xmlResult);
         idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
         nameObj = (Object[]) peCtx.getVariable("jdbcQuery.name");
         valueObj = (Object[]) peCtx.getVariable("jdbcQuery.value");
@@ -541,7 +544,7 @@ public class ServerJdbcQueryAssertionTest {
         xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
         assertNotNull(xmlResult);
         expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">John</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">45</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Darcy</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">26</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Alice</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">22</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Mary</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">32</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Oliver</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">50</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Bob</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">40</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Ahmad</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">38</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Amy</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">19</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Carmen</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">25</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">David</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">28</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Carlo</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">37</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Kan</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">29</L7j:col></L7j:row></L7j:jdbcQueryResult>";
-        assertEquals(expected, xmlResult);
+        assertXmlResult(expected, xmlResult);
         // Check context variables creation
         assertArrayEquals("All names matched", MockJdbcDatabaseManager.MOCK_NAMES, (Object[])peCtx.getVariable("jdbcQuery.name"));
         assertArrayEquals("All departments matched", MockJdbcDatabaseManager.MOCK_DEPTS, (Object[])peCtx.getVariable("jdbcQuery.department"));
@@ -558,6 +561,36 @@ public class ServerJdbcQueryAssertionTest {
             fail("Should have failed");
         } catch (NoSuchVariableException e) {
             //expected
+        }
+    }
+
+    private void assertXmlResult(String xmlResult, String expected) throws SAXException {
+        Document expectedDoc = XmlUtil.parse(expected);
+        Document actualDoc  = XmlUtil.parse(xmlResult);
+
+        Node expectedRow = expectedDoc.getFirstChild().getFirstChild();
+        NodeList expectedColumns = expectedRow.getChildNodes();
+
+        Node actualRow = actualDoc.getFirstChild().getFirstChild();
+        NodeList actualColumns = actualRow.getChildNodes();
+        assertEquals(expectedColumns.getLength(), actualColumns.getLength());
+        for(int i=0; i < actualColumns.getLength(); i++) {
+            boolean match = false;
+            Node actualColumn = actualColumns.item(i);
+            for(int j=0; j < expectedColumns.getLength(); j++) {
+                Node expectedColumn = expectedColumns.item(j);
+                NamedNodeMap actualAttributes = actualColumn.getAttributes();
+                NamedNodeMap expectedAttributes = expectedColumn.getAttributes();
+                if(actualAttributes.getNamedItem("name").isEqualNode(expectedAttributes.getNamedItem("name")) &&
+                        (actualAttributes.getNamedItem("type") == null || actualAttributes.getNamedItem("type").isEqualNode(expectedAttributes.getNamedItem("type"))) &&
+                   actualColumn.getTextContent().equalsIgnoreCase(expectedColumn.getTextContent())) {
+                        match = true;
+                        break;
+                }
+            }
+            if(!match) {
+                fail("Actual columns don't match expected");
+            }
         }
     }
 
@@ -672,7 +705,7 @@ public class ServerJdbcQueryAssertionTest {
         String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
         assertNotNull(xmlResult);
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">2</L7j:col><L7j:col  name=\"testByte\" type=\"java.lang.byte[]\">63 68 61 72 64 </L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\"><![CDATA[name2]]></L7j:col><L7j:col  name=\"testField\" ><![CDATA[NULL]]></L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\"><![CDATA[value2&'<\">]]></L7j:col></L7j:row></L7j:jdbcQueryResult>";
-        assertEquals(expected, xmlResult);
+        assertXmlResult(expected, xmlResult);
         assertTrue(xmlResult.indexOf("type=\"java.lang.byte[]\"")>0);
         assertTrue(xmlResult.indexOf("<![CDATA[NULL]]>")>0);
         Object[] idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
@@ -1379,7 +1412,7 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals("value1", ((Object[]) context.getVariable("jdbcQuery.value"))[0]);
         assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
         String expectedXMLResult = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">1</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">name1</L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\">value1</L7j:col></L7j:row></L7j:jdbcQueryResult>";
-        assertEquals(expectedXMLResult, context.getVariable("jdbcQuery.xmlResult"));
+        assertXmlResult(expectedXMLResult, (String)context.getVariable("jdbcQuery.xmlResult"));
 
         context = makeContext("<xml />", "<xml />");
         assertion.setSaveResultsAsContextVariables(true);
@@ -1423,7 +1456,7 @@ public class ServerJdbcQueryAssertionTest {
             }
         }, context);
         assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
-        assertEquals(expectedXMLResult, context.getVariable("jdbcQuery.xmlResult"));
+        assertXmlResult(expectedXMLResult, (String)context.getVariable("jdbcQuery.xmlResult"));
 
         context = makeContext("<xml />", "<xml />");
         assertion.setSaveResultsAsContextVariables(false);

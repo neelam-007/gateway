@@ -74,9 +74,8 @@
             <exclude org="org.slf4j" module="slf4j-api" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
-        <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
-        <dependency org="org.javassist" name="javassist" rev="3.16.1-GA" force="true" conf="core"/>
+        <dependency org="org.javassist" name="javassist" rev="3.19.0-GA" force="true" conf="core"/>
         <dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
         <dependency org="org.apache.mina" name="mina-core" rev="2.0.7" force="true" conf="core"/>

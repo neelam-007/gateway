@@ -823,7 +823,7 @@ public class TextUtils {
                                                 @NotNull final Pattern splitPattern,
                                                 @NotNull final Unary<O, String> transformation) {
 
-        final List<String> values = grep(map(Arrays.asList(Option.optional(propValue).map(split(splitPattern)).orSome(new String[]{})), trim()), isNotEmpty());
+        final List<String> values = grep(map( Arrays.<String>asList(Option.optional(propValue).map(split(splitPattern)).orSome(new String[]{})), trim()), isNotEmpty());
         return grepNotNull(map(values, transformation));
     }
 

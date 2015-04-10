@@ -34,7 +34,7 @@ public final class CollectionUtils {
      * @param <T> The type of the list
      * @return The read-only list
      */
-    //TODO [jdk7] @SafeVarargs
+    @SafeVarargs
     public static <T> List<T> list( final T... items ) {
         return Collections.unmodifiableList( Arrays.asList( items ) );
     }
@@ -48,7 +48,7 @@ public final class CollectionUtils {
      * @param <T> The type of the list
      * @return The read-only list
      */
-    public static <T> List<T> toList( final Collection<? extends T> items ) {
+    public static <T> List<T> toListFromCollection( final Collection<? extends T> items ) {
         return Collections.unmodifiableList( new ArrayList<T>( items ) );
     }
 
@@ -59,7 +59,7 @@ public final class CollectionUtils {
      * @param <T> The type of the set
      * @return The read-only set
      */
-    //TODO [jdk7] @SafeVarargs
+    @SafeVarargs
     public static <T> Set<T> set( final T... items ) {
         return Collections.unmodifiableSet( new LinkedHashSet<T>( Arrays.asList( items ) ) );
     }
@@ -271,14 +271,13 @@ public final class CollectionUtils {
     /**
      * Get an iterable for all the given iterables.
      *
-     * TODO [jdk7] @SafeVarargs
-     *
      * <p>The returned iterable will support "remove" if supported by the given
      * iterables.</p>
      *
      * @param iterables The iterables to iterate
      * @return An iterable that iterates all the given iterables.
      */
+    @SafeVarargs
     public static <T> Iterable<T> iterable( final Iterable<? extends T>... iterables ) {
         return new Iterable<T>() {
             @Override
@@ -365,6 +364,9 @@ public final class CollectionUtils {
      */
     @NotNull
     public static <T> List<T> toList( final Iterable<T> iterable ) {
+        if ( iterable instanceof Collection ) {
+            return toListFromCollection( (Collection<T>) iterable );
+        }
         final List<T> ret = new ArrayList<T>();
         if ( iterable != null )
             for ( final T t : iterable ) ret.add( t );

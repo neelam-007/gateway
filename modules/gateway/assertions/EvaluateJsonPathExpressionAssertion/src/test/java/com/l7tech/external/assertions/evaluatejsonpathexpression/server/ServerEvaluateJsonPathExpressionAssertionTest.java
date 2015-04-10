@@ -12,11 +12,15 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import net.minidev.json.JSONArray;
+import net.minidev.json.parser.JSONParser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Test the EvaluateJsonPathExpressionAssertion.
@@ -50,6 +54,8 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
 
     private ServerEvaluateJsonPathExpressionAssertion serverAssertion;
 
+    private JSONParser jsonParser;
+
     @Before
     public void setUp() {
         try {
@@ -57,7 +63,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             assertion.setTarget(TargetMessageType.REQUEST);
             final Message request = new Message();
             request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(TEST_JSON.getBytes()));
-
+            jsonParser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
             Message response = new Message();
             response.initialize(XmlUtil.stringAsDocument("<response />"));
             pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
@@ -136,9 +142,11 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             //check results
             Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
             Assert.assertEquals(1, pec.getVariable("jsonPath.count"));
+            final String expected = "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}";
+            Object expectedJson = jsonParser.parse(expected);
             try {
-                final String expected = "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}";
-                Assert.assertEquals(expected, pec.getVariable("jsonPath.result"));
+                Object actualJson = jsonParser.parse(pec.getVariable("jsonPath.result").toString());
+                assertEquals(expectedJson, actualJson);
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }
@@ -163,10 +171,17 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
                     "{\"author\":\"Nigel Rees\",\"title\":\"Sayings of the Century\",\"category\":\"reference\",\"price\":8.95}",
                     "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}"
             };
+            JSONArray expectedArray = new JSONArray();
+            expectedArray.add(jsonParser.parse(expected[0]));
+            expectedArray.add(jsonParser.parse(expected[1]));
             try {
-                Assert.assertEquals(expected[0], pec.getVariable("jsonPath.result"));
+                assertEquals(expectedArray.get(0), jsonParser.parse(pec.getVariable("jsonPath.result").toString()));
                 Object results = pec.getVariable("jsonPath.results");
-                Assert.assertArrayEquals(expected, (Object[]) results);
+                JSONArray actualArray = new JSONArray();
+                for(Object s : (Object[])results) {
+                    actualArray.add(jsonParser.parse(s.toString()));
+                }
+                assertEquals(expectedArray, actualArray);
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }
@@ -262,13 +277,13 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             pec.setVariable("myExpression", "$.store.book[1]");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.NONE, status);
-
             //check results
             Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
             Assert.assertEquals(1, pec.getVariable("jsonPath.count"));
+            final String expected = "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}";
+            Object expectedJson = jsonParser.parse(expected);
             try {
-                final String expected = "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}";
-                Assert.assertEquals(expected, pec.getVariable("jsonPath.result"));
+                Assert.assertEquals(expectedJson, jsonParser.parse(pec.getVariable("jsonPath.result").toString()));
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }

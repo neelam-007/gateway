@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.xml.namespace.QName;
 import java.text.ParseException;
 import java.util.regex.Matcher;
@@ -28,6 +29,7 @@ public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<J
 
     @Override
     @Inject
+    @Named("jdbcConnectionResourceFactory")
     protected void setFactory(JDBCConnectionResourceFactory factory) {
         super.factory = factory;
     }

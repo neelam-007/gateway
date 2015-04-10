@@ -6,13 +6,14 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncry
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.JMSConnection;
 import com.l7tech.gateway.api.JMSDestinationMO;
 import com.l7tech.gateway.api.impl.AttributeExtensibleType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.JmsEndpointHeader;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.bundling.JmsContainer;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.util.Charsets;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.xml.namespace.QName;
 import java.text.ParseException;
 import java.util.Iterator;
@@ -33,6 +35,7 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
 
     @Override
     @Inject
+    @Named("jmsDestinationResourceFactory")
     protected void setFactory(JMSDestinationResourceFactory factory) {
         super.factory = factory;
     }

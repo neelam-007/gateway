@@ -121,7 +121,7 @@ public class FillReportHandler extends AbstractHandler {
         String date = DATE_FORMAT.format(d);
         final String reportName = date+"_"+rName;
 
-        final Properties reportProps = new Properties();
+        final Map reportProps = new HashMap<>();
         reportProps.put(TEMPLATE_FILE_ABSOLUTE, templateFile+"/Styles.jrtx");
         reportProps.put(SUBREPORT_DIRECTORY, jasperFileDir);
 

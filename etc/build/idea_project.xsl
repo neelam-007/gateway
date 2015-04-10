@@ -7,7 +7,7 @@
     <xsl:param name="data"/> <!-- file containing modules -->
     <xsl:param name="datalibs"/> <!-- file containing ivy module dependencies -->
     <xsl:param name="projectmeta"/> <!-- Javadoc URLs etc for libraries -->    
-    <xsl:param name="idea.jdk">1.7</xsl:param>
+    <xsl:param name="idea.jdk">1.8</xsl:param>
     <xsl:param name="idea.javac.out">idea-classes</xsl:param>
     <xsl:param name="idea.ant.integration">true</xsl:param>
 

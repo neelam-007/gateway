@@ -17,16 +17,17 @@
     <!--<property name="canned_usage_interval_subreport_2.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport_subreport0.jrxml" />-->
 
     <path id="jrc.classpath">
-        <file file="${lib}/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
+        <file file="${lib}/repository/net.sf.jasperreports/jasperreports-6.0.3.jar"/>
         <file file="${lib}/repository/jfree/jcommon-1.0.7.jar"/>
         <file file="${lib}/repository/jfree/jfreechart-1.0.14.jar"/>
         <fileset dir="${lib}/repository/org.apache.tomcat">
             <include name="*.jar"/>
         </fileset>
-        <file file="${lib}/repository/commons-digester/commons-digester-1.7.jar"/>
+        <file file="${lib}/repository/commons-digester/commons-digester-2.1.jar"/>
         <file file="${lib}/repository/commons-collections/commons-collections-3.2.jar"/>
         <file file="${lib}/repository/commons-logging/commons-logging-1.1.jar"/>
-        <file file="${lib}/repository/commons-beanutils/commons-beanutils-1.7.0.jar"/>
+        <file file="${lib}/repository/commons-beanutils/commons-beanutils-1.9.0.jar"/>
+        <file file="${lib}/repository/com.itextpdf/itextpdf-5.5.0.jar"/>
     </path>
 
     <path id="classpath">

@@ -89,8 +89,10 @@ public class JsonResultSetFormatterTest {
 
         final String result = formatter.format(resultSet, null);
 
-        assertTrue(result.contains("{\"name1\":\"value1\",\"name2\":\"value2\"}"));
-        assertTrue(result.contains("{\"name1\":\"value3\",\"name2\":\"value4\"}"));
+        assertTrue(result.contains("{\"name1\":\"value1\",\"name2\":\"value2\"}")
+                || result.contains("{\"name2\":\"value2\",\"name1\":\"value1\"}"));
+        assertTrue(result.contains("{\"name1\":\"value3\",\"name2\":\"value4\"}")
+                || result.contains("{\"name2\":\"value4\",\"name1\":\"value3\"}"));
     }
 
     @Test

@@ -9,13 +9,13 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.util.Charsets;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.text.ParseException;
 
 @Component
@@ -23,6 +23,7 @@ public class EmailListenerTransformer extends APIResourceWsmanBaseTransformer<Em
 
     @Override
     @Inject
+    @Named("emailListenerResourceFactory")
     protected void setFactory(EmailListenerResourceFactory factory) {
         super.factory = factory;
     }

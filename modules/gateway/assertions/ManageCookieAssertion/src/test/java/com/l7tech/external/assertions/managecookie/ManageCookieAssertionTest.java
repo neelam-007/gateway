@@ -45,7 +45,14 @@ public class ManageCookieAssertionTest {
         assertion.getCookieCriteria().put(NAME, new ManageCookieAssertion.CookieCriteria(NAME, "foo", false));
         assertion.getCookieCriteria().put(DOMAIN, new ManageCookieAssertion.CookieCriteria(DOMAIN, "localhost", false));
         assertion.getCookieCriteria().put(PATH, new ManageCookieAssertion.CookieCriteria(PATH, "/", false));
-        assertEquals("Request: Remove Cookie(s) if name equals foo and path equals / and domain equals localhost", assertionNameFactory.getAssertionName(assertion, true));
+        String assertionName = assertionNameFactory.getAssertionName(assertion, true);
+        //rather than check the entire string we should check if the assertion name contains certain criteria
+        assertTrue(assertionName.startsWith("Request: Remove Cookie(s) if"));
+        assertTrue(assertionName.contains("name equals foo"));
+        assertTrue(assertionName.contains("path equals /"));
+        assertTrue(assertionName.contains("domain equals localhost"));
+
+        //assertEquals("Request: Remove Cookie(s) if name equals foo and path equals / and domain equals localhost", assertionNameFactory.getAssertionName(assertion, true));
     }
 
     @Test
@@ -61,7 +68,14 @@ public class ManageCookieAssertionTest {
         assertion.getCookieCriteria().put(NAME, new ManageCookieAssertion.CookieCriteria(NAME, "f.*", true));
         assertion.getCookieCriteria().put(DOMAIN, new ManageCookieAssertion.CookieCriteria(DOMAIN, "l.*", true));
         assertion.getCookieCriteria().put(PATH, new ManageCookieAssertion.CookieCriteria(PATH, "p.*", true));
-        assertEquals("Request: Remove Cookie(s) if name matches f.* and path matches p.* and domain matches l.*", assertionNameFactory.getAssertionName(assertion, true));
+
+        String assertionName = assertionNameFactory.getAssertionName(assertion, true);
+        //rather than check the entire string we should check if the assertion name contains certain criteria
+        assertTrue(assertionName.startsWith("Request: Remove Cookie(s) if"));
+        assertTrue(assertionName.contains("name matches f.*"));
+        assertTrue(assertionName.contains("path matches p.*"));
+        assertTrue(assertionName.contains("domain matches l.*"));
+//        assertEquals("Request: Remove Cookie(s) if name matches f.* and path matches p.* and domain matches l.*", assertionNameFactory.getAssertionName(assertion, true));
     }
 
     @Test
@@ -77,7 +91,13 @@ public class ManageCookieAssertionTest {
         assertion.getCookieCriteria().put(NAME, new ManageCookieAssertion.CookieCriteria(NAME, "foo", false));
         assertion.getCookieCriteria().put(DOMAIN, new ManageCookieAssertion.CookieCriteria(DOMAIN, "localhost", false));
         assertion.getCookieCriteria().put(PATH, new ManageCookieAssertion.CookieCriteria(PATH, "/", false));
-        assertEquals("Request: Update Cookie(s) if name equals foo and path equals / and domain equals localhost", assertionNameFactory.getAssertionName(assertion, true));
+
+        String assertionName = assertionNameFactory.getAssertionName(assertion, true);
+        //rather than check the entire string we should check if the assertion name contains certain criteria
+        assertTrue(assertionName.startsWith("Request: Update Cookie(s) if"));
+        assertTrue(assertionName.contains("name equals foo"));
+        assertTrue(assertionName.contains("path equals /"));
+        assertTrue(assertionName.contains("domain equals localhost"));
     }
 
     @Test
@@ -93,7 +113,13 @@ public class ManageCookieAssertionTest {
         assertion.getCookieCriteria().put(NAME, new ManageCookieAssertion.CookieCriteria(NAME, "f.*", true));
         assertion.getCookieCriteria().put(DOMAIN, new ManageCookieAssertion.CookieCriteria(DOMAIN, "l.*", true));
         assertion.getCookieCriteria().put(PATH, new ManageCookieAssertion.CookieCriteria(PATH, "p.*", true));
-        assertEquals("Request: Update Cookie(s) if name matches f.* and path matches p.* and domain matches l.*", assertionNameFactory.getAssertionName(assertion, true));
+
+        String assertionName = assertionNameFactory.getAssertionName(assertion, true);
+        //rather than check the entire string we should check if the assertion name contains certain criteria
+        assertTrue(assertionName.startsWith("Request: Update Cookie(s) if"));
+        assertTrue(assertionName.contains("name matches f.*"));
+        assertTrue(assertionName.contains("path matches p.*"));
+        assertTrue(assertionName.contains("domain matches l.*"));
     }
 
     @Test
