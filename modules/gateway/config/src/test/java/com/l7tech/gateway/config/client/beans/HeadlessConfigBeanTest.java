@@ -202,6 +202,51 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
+    public void createDBAndConfigMysqlNoFailoverBadClusterHost() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
+        expectedException.expect(ConfigurationException.class);
+        expectedException.expectMessage(containsString("Unable to parse option value for 'cluster.host' value given: '123@#10.10.10.10'"));
+
+        final String clusterHost = "123@#10.10.10.10";
+        String pmAdminUser = "pmAdminUser";
+        String pmAdminUserPassword = "pmAdminUserPassword";
+        String databaseName = "databaseName";
+        String databaseAdminUser = "databaseAdminUser";
+        int databasePort = 1234;
+        String databaseUser = "databaseUser";
+        final Boolean nodeEnabled = true;
+        String databaseAdminPass = "databaseAdminPass";
+        String databasePass = "databasePass";
+        String databaseHost = "databaseHost";
+        final String clusterPass = "clusterPass";
+        String databaseType = "mysql";
+
+        final Properties properties = new Properties();
+        properties.setProperty("cluster.host", clusterHost);
+        properties.setProperty("database.name", databaseName);
+        properties.setProperty("admin.pass", pmAdminUserPassword);
+        properties.setProperty("database.admin.user", databaseAdminUser);
+        properties.setProperty("database.port", String.valueOf(databasePort));
+        properties.setProperty("database.user", databaseUser);
+        properties.setProperty("node.enable", String.valueOf(nodeEnabled));
+        properties.setProperty("admin.user", pmAdminUser);
+        properties.setProperty("database.admin.pass", databaseAdminPass);
+        properties.setProperty("database.pass", databasePass);
+        properties.setProperty("database.host", databaseHost);
+        properties.setProperty("cluster.pass", clusterPass);
+        properties.setProperty("database.type", databaseType);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
     public void createDBAndConfigMysqlFailoverPortButNoHost() throws ConfigurationException, IOException, NodeManagementApi.DatabaseCreationException, SaveException, InterruptedException {
         expectedException.expect(ConfigurationException.class);
         expectedException.expectMessage(containsString("Missing: database.failover.host"));

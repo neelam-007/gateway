@@ -417,6 +417,11 @@ public class HeadlessConfigBean {
                 throw new ConfigurationException("Invalid value for option '" + option.getConfigName() + "' value given: '" + value + "'. Could not convert to number. Message: " + ExceptionUtils.getMessage(nfe), nfe);
             }
         }
+
+        //Test to see that the value matches the option type, this does a regex check on the option type regex
+        if( value != null && !value.trim().isEmpty() && option.getType() != null && !option.getType().matches(value)) {
+            throw new ConfigurationException("Unable to parse option value for '" + option.getConfigName() + "' value given: '" + value + "'");
+        }
     }
 
     //this is the option specified whether the database should be created
