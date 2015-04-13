@@ -105,9 +105,14 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    solutionKitManager.uninstallBundle(goid);
+                    final boolean isTest = false;
+                    final SolutionKit solutionKit = get(goid);
+                    String resultMappings = "";
+                    if (solutionKit.getUninstallBundle() != null) {
+                        resultMappings = solutionKitManager.installBundle(solutionKit.getUninstallBundle(), isTest);
+                    }
                     solutionKitManager.delete(goid);
-                    return "";
+                    return resultMappings;
                 }
             }));
 

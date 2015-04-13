@@ -61,6 +61,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String SK_ELE_FEATURE_SET = "FeatureSet";
     private static final String SK_ELE_BUNDLE = "Bundle";
     private static final String SK_ELE_UPGRADE = "Upgrade";
+    private static final String SK_ELE_UNINSTALL = "Uninstall";
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
 
@@ -246,6 +247,13 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                 }
                 DomUtils.removeChildElementsByName(bundleEle, SK_NS, BUNDLE_ELE_MAPPINGS);
                 bundleEle.appendChild(upgradeMappingEle);
+            }
+
+            // save uninstall bundle for later use
+            Element uninstallEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_UNINSTALL);
+            if (uninstallEle != null) {
+                Element uninstallBundleEle = DomUtils.findExactlyOneChildElementByName(uninstallEle, SK_NS, SK_ELE_BUNDLE);
+                solutionKit.setUninstallBundle(XmlUtil.nodeToString(uninstallBundleEle));
             }
 
             DOMSource source = new DOMSource();

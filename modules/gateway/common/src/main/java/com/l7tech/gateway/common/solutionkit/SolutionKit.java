@@ -37,6 +37,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
     private transient String installXmlProperties;
     private Map<String, String> installProperties;
     private String mappings;
+    private String uninstallBundle;
     private long lastUpdateTime;
 
     public SolutionKit() {
@@ -143,8 +144,18 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         return mappings;
     }
 
-    public void setMappings(String mapping) {
-        this.mappings = mapping;
+    public void setMappings(String mappings) {
+        this.mappings = mappings;
+    }
+
+    @Column(name = "uninstall_bundle", length = Integer.MAX_VALUE)
+    @Lob
+    public String getUninstallBundle() {
+        return uninstallBundle;
+    }
+
+    public void setUninstallBundle(String uninstallBundle) {
+        this.uninstallBundle = uninstallBundle;
     }
 
     @Column(name = "last_update_time", nullable = false)

@@ -157,7 +157,11 @@ public class ManageSolutionKitsDialog extends JDialog {
                             msg = result.left();
                             logger.log(Level.WARNING, msg);
                         } else if (result.isRight()) {
-                            msg = "Solution kit uninstalled successfully.";
+                            if ("".equals(result.right())) {
+                                msg = "This solution kit requires a manual uninstall. The solution kit record has been deleted, please manually delete entities previously installed by this solution kit.";
+                            } else {
+                                msg = "Solution kit uninstalled successfully.";
+                            }
                             successful = true;
                         }
                     } catch (InvocationTargetException e) {

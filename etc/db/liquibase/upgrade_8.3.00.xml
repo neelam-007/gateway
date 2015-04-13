@@ -383,6 +383,7 @@
             <column name="mappings" type="${mediumtext.type}">
                 <constraints nullable="false"/>
             </column>
+            <column name="uninstall_bundle" type="${mediumtext.type}"/>
             <column name="last_update_time" type="BIGINT(19)" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
