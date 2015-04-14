@@ -36,9 +36,9 @@ public class ServerModuleFileSystemEvent extends SystemEvent {
          * Indicates that a module signature was not verified (i.e. the Gateway rejected the module).
          * <p/>
          * Sample message: <br/>
-         * {@code Gateway rejected Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion", as signature cannot be verified}
+         * {@code Gateway rejected Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion", as signature cannot be verified}
          */
-        INSTALL_REJECTED("Gateway rejected Module #{0}, name \"{1}\", type \"{2}\", as signature cannot be verified", "Installing Server Module File", Level.INFO),
+        INSTALL_REJECTED("Gateway rejected Module #{0}, name \"{1}\", type \"{2}\", as signature cannot be verified", "Installing Server Module File", Level.WARNING),
         /**
          * Indicates that installation has failed for the module.
          * <p/>
@@ -51,21 +51,21 @@ public class ServerModuleFileSystemEvent extends SystemEvent {
          * Indicates that a module is in the process of un-installation.
          * <p/>
          * Sample message: <br/>
-         * {@code Uninstalling Module #2d10078e12e0099191b41f672fd97af4 name "SalesForce Connector", type "Custom Assertion"...}
+         * {@code Uninstalling Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"...}
          */
         UNINSTALLING("Uninstalling Module #{0}, name \"{1}\", type \"{2}\"...", "Uninstalling Server Module File", Level.INFO),
         /**
          * Indicates that a module has been successfully un-installed.
          * <p/>
          * Sample message: <br/>
-         * {@code Successfully uninstalled Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
+         * {@code Successfully uninstalled Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          */
         UNINSTALL_SUCCESS("Successfully uninstalled Module #{0}, name \"{1}\", type \"{2}\"", "Uninstalling Server Module File", Level.INFO),
         /**
          * Indicates that un-installation has failed for the module.
          * <p/>
          * Sample message: <br/>
-         * {@code Failed to uninstall Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
+         * {@code Failed to uninstall Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          */
         UNINSTALL_FAIL("Failed to uninstall Module #{0}, name \"{1}\", type \"{2}\"", "Uninstalling Server Module File", Level.WARNING),
 
@@ -73,7 +73,7 @@ public class ServerModuleFileSystemEvent extends SystemEvent {
          * Indicates that the Gateway successfully loaded the module.
          * <p/>
          * Sample message: <br/>
-         * {@code Successfully loaded Module #2d10078e12e0099191b41f672fd97af4 , name "SalesForce Connector", type "Custom Assertion"}
+         * {@code Successfully loaded Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion"}
          */
         LOADED("Successfully loaded Module #{0}, name \"{1}\", type \"{2}\"", "Loading Module", Level.INFO)
         ;

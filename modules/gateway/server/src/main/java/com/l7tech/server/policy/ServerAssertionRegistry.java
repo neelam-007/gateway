@@ -321,6 +321,11 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     @Override
+    public void updateModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) {
+        assertionsScanner.updateServerModuleFile(stagedFile, moduleEntity.getModuleSha256(), moduleEntity.getName());
+    }
+
+    @Override
     public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
         assertionsScanner.unloadServerModuleFile(stagedFile, moduleEntity.getModuleSha256());
     }

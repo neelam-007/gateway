@@ -77,7 +77,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      *
      * @see #copyFrom(com.l7tech.gateway.common.module.ServerModuleFile, boolean, boolean, boolean)
      */
-    static class ServerModuleFileInfo extends ServerModuleFile {
+    static class StagedServerModuleFile extends ServerModuleFile {
         /**
          * The Module File inside the staging folder.  Optional and can be {@code null}
          */
@@ -87,7 +87,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
          * Default constructor.
          * @param module    the module to copy from.  Required and cannot be {@code null}.
          */
-        ServerModuleFileInfo(@NotNull final ServerModuleFile module) {
+        StagedServerModuleFile(@NotNull final ServerModuleFile module) {
             this(module, null);
         }
 
@@ -97,7 +97,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
          * @param module         the module to copy from.  Required and cannot be {@code null}.
          * @param stagingFile    the module staging file, after successfully downloading module content into the staging folder.  Optional and can be {@code null}.
          */
-        ServerModuleFileInfo(@NotNull final ServerModuleFile module, @Nullable final File stagingFile) {
+        StagedServerModuleFile(@NotNull final ServerModuleFile module, @Nullable final File stagingFile) {
             this.stagingFile = stagingFile;
             copyFrom(module, false, true, false);
         }
@@ -141,7 +141,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     /**
      * Contains cached server module files copies, having only meta-data (i.e. without bytes and state).
      */
-    @NotNull protected final Map<Goid, ServerModuleFileInfo> knownModuleFiles = new ConcurrentHashMap<>();
+    @NotNull protected final Map<Goid, StagedServerModuleFile> knownModuleFiles = new ConcurrentHashMap<>();
 
     /**
      * Contains the root staging folder i.e. the value of
@@ -293,7 +293,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             );
             final boolean isModuleUploadEnabled = serverModuleFileManager.isModuleUploadEnabled();
             for (final ServerModuleFile moduleFile : modules) {
-                final ServerModuleFileInfo moduleInfo = addToKnownModules(moduleFile);
+                final StagedServerModuleFile moduleInfo = addToKnownModules(moduleFile);
                 if (isModuleUploadEnabled) {
                     loadModule(moduleInfo);
                 }
@@ -311,10 +311,10 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      *
      * @param module    the module entity to load.  Required and cannot be {@code null}.
      */
-    void loadModule(@NotNull final ServerModuleFileInfo module) {
+    void loadModule(@NotNull final StagedServerModuleFile module) {
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Loading module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", file-name \"" + module.getProperty(ServerModuleFile.PROP_FILE_NAME) + "\"");
+            logger.log(Level.FINE, "Loading module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\"");
         }
 
         // audit installation start
@@ -463,7 +463,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      * @param module           the module entity holding the signature.  Required and cannot be {@code null}
      * @throws ModuleSignatureException when error happens while verifying module signature.
      */
-    void verifySignature(@NotNull final ServerModuleFileInfo module) throws ModuleSignatureException {
+    void verifySignature(@NotNull final StagedServerModuleFile module) throws ModuleSignatureException {
         if (!module.hasStagingFile()) {
             throw new IllegalArgumentException("module must contain a staging file");
         }
@@ -527,10 +527,12 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
                 if (moduleFile != null) {
                     // add it to the known modules cache
-                    final ServerModuleFileInfo moduleInfo = addToKnownModules(moduleFile);
+                    final StagedServerModuleFile moduleInfo = addToKnownModules(moduleFile);
                     // process new or updated module only if upload is enabled
                     if (isModuleUploadEnabled && ((op == EntityInvalidationEvent.CREATE) || ((op == EntityInvalidationEvent.UPDATE) && !ModuleState.LOADED.equals(getModuleState(moduleFile))))) {
                         loadModule(moduleInfo);
+                    } else if (op == EntityInvalidationEvent.UPDATE) {
+                        updateModule(moduleInfo);
                     }
                 } else {
                     // non-existent module goid, remove it from known cache
@@ -538,7 +540,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 }
             } else if (op == EntityInvalidationEvent.DELETE) {
                 // extract server module file
-                final ServerModuleFileInfo moduleFile;
+                final StagedServerModuleFile moduleFile;
                 try {
                     moduleFile = removeFromKnownModules(goid);
                 } catch (FindException e) {
@@ -560,12 +562,41 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
+     * Update the specified module uploaded to the Database.<br/>
+     * Currently the module content cannot be updated, which leaves only the entity name.
+     * This method will update the entity name from {@link com.l7tech.server.policy.module.BaseAssertionModule}
+     *
+     * @param module    the module entity to load.  Required and cannot be {@code null}.
+     */
+    void updateModule(@NotNull final StagedServerModuleFile module) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Updating module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staged file-name \"" + module.getStagingFile() + "\"");
+        }
+
+        try {
+            final ModuleType moduleType = module.getModuleType();
+            if (ModuleType.MODULAR_ASSERTION == moduleType) {
+                modularAssertionRegistrar.updateModule(module.getStagingFile(), module);
+            } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
+                customAssertionRegistrar.updateModule(module.getStagingFile(), module);
+            } else {
+                throw new UnsupportedModuleTypeException(moduleType);
+            }
+
+            logger.log(Level.INFO, "Successfully updated module; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", type \"" + module.getModuleType() + "\"");
+        } catch (final ModuleLoadingException e) {
+            logger.log(Level.WARNING, "Error while Updating Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+        }
+    }
+
+    /**
      * Unloads the specified module entity.<br/>
      * The module entity and its staging file is send to the appropriate modules scanner for unload and unregister its assertions.
      *
      * @param module    the module entity to load.  Required and cannot be {@code null}.
      */
-    void unloadModule(@NotNull final ServerModuleFileInfo module) {
+    void unloadModule(@NotNull final StagedServerModuleFile module) {
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Unloading module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
@@ -605,19 +636,23 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      * Utility method for adding the specified {@code moduleFile} into the {@link #knownModuleFiles known modules cache}.
      *
      * @param moduleFile    the module to add.  Required and cannot be {@code null}.
-     * @return a {@link ServerModuleFileInfo copy} of the specified {@code moduleFile}.  Never {@code null}.
+     * @return a {@link com.l7tech.server.module.ServerModuleFileListener.StagedServerModuleFile copy} of the specified {@code moduleFile}.  Never {@code null}.
      */
     @NotNull
-    private ServerModuleFileInfo addToKnownModules(@NotNull final ServerModuleFile moduleFile) {
-        final ServerModuleFileInfo moduleInfo = new ServerModuleFileInfo(moduleFile);
-        knownModuleFiles.put(moduleFile.getGoid(), moduleInfo);
+    private StagedServerModuleFile addToKnownModules(@NotNull final ServerModuleFile moduleFile) {
+        final StagedServerModuleFile newModule = new StagedServerModuleFile(moduleFile);
+        final StagedServerModuleFile prevModule = knownModuleFiles.put(moduleFile.getGoid(), newModule);
+        if (prevModule != null) {
+            // this is an update so update the staging file of the new ServerModuleFile object.
+            newModule.setStagingFile(prevModule.getStagingFile());
+        }
 
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Added/Updating known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\", file-name \"" + moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME) + "\"");
+            logger.log(Level.FINE, "Added/Updating known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\"");
         }
 
-        return moduleInfo;
+        return newModule;
     }
 
     /**
@@ -629,15 +664,15 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      * @throws FindException If no module with {@code goid} is known.
      */
     @NotNull
-    private ServerModuleFileInfo removeFromKnownModules(@NotNull final Goid goid) throws FindException {
-        final ServerModuleFileInfo moduleFile = knownModuleFiles.remove(goid);
+    private StagedServerModuleFile removeFromKnownModules(@NotNull final Goid goid) throws FindException {
+        final StagedServerModuleFile moduleFile = knownModuleFiles.remove(goid);
         if (moduleFile == null) {
             throw new FindException("Module with goid \"" + goid + "\" doesn't exist in the known modules map");
         }
 
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Removed from known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\", file-name \"" + moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME) + "\"");
+            logger.log(Level.FINE, "Removed from known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\", staged file-name \"" + moduleFile.getStagingFile() + "\"");
         }
 
         return moduleFile;

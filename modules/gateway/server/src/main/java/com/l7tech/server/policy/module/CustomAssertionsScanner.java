@@ -662,6 +662,33 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
         return true;
     }
 
+    /**
+     * Override the base implementation to update {@code CustomAssertionDescriptor}'s entity name as well.
+     *
+     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param entityName      the module entity name.  Required and cannot be {@code null}.
+     */
+    @Override
+    public void updateServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) {
+        // get the module filename
+        final String fileName = stagedFile.getName();
+
+        // find previous loaded module with the same name
+        final CustomAssertionModule previousModule = scannedModules.get(fileName);
+        if (previousModule != null && moduleDigest.equals(previousModule.getDigest())) {
+            previousModule.setEntityName(entityName);
+            final Collection<CustomAssertionDescriptor> descriptors = previousModule.getDescriptors();
+            for (final CustomAssertionDescriptor descriptor : descriptors) {
+                descriptor.setModuleEntityName(entityName);
+            }
+        }
+    }
+
     @Override
     public synchronized void destroy() {
         isShuttingDown = true;

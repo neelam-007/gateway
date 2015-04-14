@@ -709,8 +709,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(1)).handleEvent(Mockito.<ApplicationEvent>any());
         Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         Assert.assertNotNull(modulesListener.knownModuleFiles);
         assertThat(modulesListener.knownModuleFiles.values(), empty());
         // make sure nothing is written to both staging and deploy folders
@@ -734,8 +734,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(2)).handleEvent(Mockito.<ApplicationEvent>any());
         Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.STAGED));
         Assert.assertNotNull(modulesListener.knownModuleFiles);
         assertThat(modulesListener.knownModuleFiles.values(), empty());
@@ -760,8 +760,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(3)).handleEvent(Mockito.<ApplicationEvent>any());
         Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
         Assert.assertNotNull(modulesListener.knownModuleFiles);
         assertThat(modulesListener.knownModuleFiles.values(), empty());
@@ -786,8 +786,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(4)).handleEvent(Mockito.<ApplicationEvent>any());
         Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
         Assert.assertNotNull(modulesListener.knownModuleFiles);
         assertThat(modulesListener.knownModuleFiles.values(), empty());
@@ -814,8 +814,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(1)).handleEvent(Mockito.<ApplicationEvent>any()); // make sure handleEvent was actually called
         Mockito.verify(modulesListener, Mockito.times(1)).processGatewayStartedEvent(); // processGatewayStartedEvent should be called in order to populate knownModuleFiles
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any()); // shouldn't be called
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
         assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(moduleFiles.size())); // make sure all modules are populate into knownModuleFiles
         for (final ServerModuleFile moduleFile : moduleFiles.values()) {
@@ -853,8 +853,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(2)).handleEvent(Mockito.<ApplicationEvent>any()); // make sure handleEvent was actually called
         Mockito.verify(modulesListener, Mockito.times(1)).processGatewayStartedEvent(); // still called only the first time
         Mockito.verify(modulesListener, Mockito.times(1)).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any()); // called once
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(knownSize + 1)); // make sure the new module_100 is populated
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(moduleFiles.size()));
         for (final ServerModuleFile moduleFile : moduleFiles.values()) {
@@ -886,8 +886,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(3)).handleEvent(Mockito.<ApplicationEvent>any()); // make sure handleEvent was actually called
         Mockito.verify(modulesListener, Mockito.times(1)).processGatewayStartedEvent(); // still called only the first time
         Mockito.verify(modulesListener, Mockito.times(2)).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any()); // called twice now
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(knownSize - 1)); // make sure the new module_2 is removed
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(moduleFiles.size()));
         for (final ServerModuleFile moduleFile : moduleFiles.values()) {
@@ -1009,8 +1009,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.times(1)).handleEvent(Mockito.<ApplicationEvent>any());
         Mockito.verify(modulesListener, Mockito.times(1)).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());  // shouldn't be called
-        Mockito.verify(modulesListener, Mockito.times(moduleFiles.size() - (expectedLoadedModularModules.size() + expectedLoadedCustomModules.size()))).loadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.ServerModuleFileInfo>any()); // shouldn't be called
+        Mockito.verify(modulesListener, Mockito.times(moduleFiles.size() - (expectedLoadedModularModules.size() + expectedLoadedCustomModules.size()))).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any()); // shouldn't be called
         assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
         assertThat(modulesListener.knownModuleFiles.values().size(), equalTo(moduleFiles.size())); // make sure all modules are populate into knownModuleFiles
         for (final ServerModuleFile moduleFile : moduleFiles.values()) {

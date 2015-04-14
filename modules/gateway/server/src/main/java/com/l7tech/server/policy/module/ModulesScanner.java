@@ -553,6 +553,29 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
     }
 
     /**
+     * Update a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest}.<br/>
+     * For the time being only the entity name will be updated.
+     *
+     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param entityName      the module entity name.  Required and cannot be {@code null}.
+     */
+    public void updateServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) {
+        // get the module filename
+        final String fileName = stagedFile.getName();
+
+        // find previous loaded module with the same name
+        final T previousModule = scannedModules.get(fileName);
+        if (previousModule != null && moduleDigest.equals(previousModule.getDigest())) {
+            previousModule.setEntityName(entityName);
+        }
+    }
+
+    /**
      * Unload a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest}.
      *
      * @param stagedFile      the module staging file.  Required and cannot be {@code null}.

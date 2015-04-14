@@ -195,6 +195,11 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     @Override
+    public void updateModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) {
+        // nothing to do
+    }
+
+    @Override
     public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
         // nothing to do
     }
