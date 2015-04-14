@@ -122,7 +122,11 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map(), message.getHeadersKnob().getHeaders(HeadersKnob.HEADER_TYPE_HTTP));
             response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
             response.getMimeKnob().getContentLength();
-            response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
+            if(response.isHttpResponse()) {
+                response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
+            }
+            context.setVariable(assertion.getVariablePrefix() +"."+ RESTGatewayManagementAssertion.SUFFIX_STATUS, managementResponse.getStatus());
+
             for(String header : managementResponse.getHeaders().keySet()){
                 //Don't set the content-length or content-type header. See bug: SSG-7824, SSG-10685
                 if(header.equals("Content-Length") || header.equalsIgnoreCase("Content-Type")) {

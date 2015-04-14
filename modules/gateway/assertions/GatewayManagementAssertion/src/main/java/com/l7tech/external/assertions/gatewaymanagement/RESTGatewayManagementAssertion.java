@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -23,6 +24,7 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
 
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_URI = "uri";
+    public static final String SUFFIX_STATUS = "status";
 
     @Override
     public AssertionMetadata meta() {
@@ -61,6 +63,14 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
                 variablePrefix+"."+SUFFIX_URI);
         }
         return super.doGetVariablesUsed();
+    }
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        final VariableMetadata[] varsSet = new VariableMetadata[] {
+                new VariableMetadata(variablePrefix+"."+SUFFIX_STATUS, false, false, null, true)
+        };
+        return super.doGetVariablesSet().withVariables(varsSet);
     }
 
     public static class Validator implements AssertionValidator {

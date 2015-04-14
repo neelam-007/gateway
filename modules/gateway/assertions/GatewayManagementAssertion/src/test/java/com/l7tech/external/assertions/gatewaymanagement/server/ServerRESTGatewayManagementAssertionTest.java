@@ -169,6 +169,37 @@ public class ServerRESTGatewayManagementAssertionTest {
         assertEquals(0, pec.getResponse().getHeadersKnob().getHeaderValues("Content-Type").length);
     }
 
+    @Test
+    public void nonHttpResponse() throws Exception {
+        final ServerRESTGatewayManagementAssertion serverAss = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), restContext, stashManagerFactory, restAgent);
+        serverAss.getAssertion().setOtherTargetMessageVariable("other");
+        serverAss.getAssertion().setTarget(TargetMessageType.OTHER);
+
+        final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        pec.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
+                        new UserBean("admin"),
+                        new HttpBasicToken("admin", "".toCharArray()), null, false)
+        );
+        final PublishedService service = new PublishedService();
+        service.setRoutingUri("/restman*");
+        pec.setService(service);
+        pec.setVariable(serverAss.getAssertion().getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_ACTION,"GET");
+        pec.setVariable(serverAss.getAssertion().getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_URI,"/test");
+        pec.setVariable("other",new Message());
+
+        final String responseContentType = ContentTypeHeader.TEXT_DEFAULT.getFullValue();
+        final MultivaluedHashMap<String, Object> responseHeaders = new MultivaluedHashMap<>();
+        responseHeaders.add("Content-Type", responseContentType);
+        final RestResponse restResponse = new RestResponse(new ByteArrayInputStream("response".getBytes()), responseContentType, 200, responseHeaders);
+        when(restAgent.handleRequest(anyString(), any(URI.class), any(URI.class), anyString(), anyString(),
+                any(InputStream.class), any(SecurityContext.class), anyMap(), anyCollection())).thenReturn(restResponse);
+
+        assertEquals(AssertionStatus.NONE, serverAss.checkRequest(pec));
+        assertEquals(responseContentType, pec.getResponse().getMimeKnob().getOuterContentType().getFullValue());
+        assertEquals(0, pec.getResponse().getHeadersKnob().getHeaderValues("Content-Type").length);
+        assertEquals(200, pec.getVariable(serverAss.getAssertion().getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_STATUS));
+    }
+
     private PolicyEnforcementContext getAuthorizedRestContext(HttpServletRequest servletRequest, String requestMessage) throws IOException {
         final PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest, requestMessage);
         pec.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
