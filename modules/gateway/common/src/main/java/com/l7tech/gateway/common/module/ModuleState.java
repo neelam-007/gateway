@@ -11,18 +11,6 @@ public enum ModuleState {
     UPLOADED("Uploaded"),
 
     /**
-     * Indicates that the module is successfully copied into the staging folder.
-     */
-    @Deprecated
-    STAGED("Staged"),
-
-    /**
-     * Indicates that the module is successfully copied into the corresponding modules folder (depending on the type).
-     */
-    @Deprecated
-    DEPLOYED("Deployed"),
-
-    /**
      * Indicates that module signature is verified, however the module could not be loaded due to errors.
      */
     ACCEPTED("Accepted"),

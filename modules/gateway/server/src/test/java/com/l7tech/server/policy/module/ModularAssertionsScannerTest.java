@@ -1,10 +1,14 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.gateway.common.module.ModuleDigest;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -17,15 +21,16 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * The Custom Assertion jars used by the unit test. The filename must start with "com.l7tech.". Otherwise, it will
+ * The Modular Assertion aar(s) used by the unit test. The filename must start with "com.l7tech.". Otherwise, it will
  * not be loaded by the unit test. See idea_project.xml file for list of valid unit test resource names.
  * <p/>
- * Content of module/custom test folders:
+ * Content of modules test folders:
  * <pre>
  * modular
  *  |_ com.l7tech.WorkingTest1.aar                              [sample module without any issues]
@@ -54,9 +59,11 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
     // The module temp directory name.
     private static final String MODULES_TEMP_DIR_NAME = "l7tech-ModularAssertionsScannerTest";
     private static final String MODULES_ROOT_EMPTY_DIR = "com/l7tech/server/policy/module/modular/dummy.png";
+    private static final String MODULES_COPY_ROOT_EMPTY_DIR = "com/l7tech/server/policy/module/modular/copy/dummy.png";
     private static final String DISABLED_MODULES_SUFFIX = ".disabled";
 
     private static File modulesRootEmptyDir;
+    private static File modulesCopyRootEmptyDir;
     private static File modTmpFolder;
 
     @Mock
@@ -297,6 +304,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
         cleanUpTemporaryFilesFromPreviousRuns(MODULES_TEMP_DIR_NAME);
 
         modulesRootEmptyDir = new File(extractFolder(MODULES_ROOT_EMPTY_DIR));
+        modulesCopyRootEmptyDir = new File(extractFolder(MODULES_COPY_ROOT_EMPTY_DIR));
     }
 
     @AfterClass
@@ -1775,5 +1783,390 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
         Assert.assertFalse("no changes", changesMade);
         // verify no changes made
         verifyAssertionScanner(1, 1, 1, 0, 1, 2, 0, 0, 2);
+    }
+
+    /**
+     * Utility method for loading a {@code ServerModuleFile} specified with the {@code stagedFile} and {@code entityName}.<br/>
+     * Also verifying that the load process finished successfully.
+     *
+     * @param stagedFile    The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.WorkingTest1.aar).  Required and cannot be {@code null} and must exist.
+     * @param entityName    The {@code ServerModuleFile} entity name.  Required and cannot be {@code null}.
+     * @return The loaded {@code ModularAssertionModule} module object.
+     */
+    private ModularAssertionModule load_and_verify(final File stagedFile, final String entityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(entityName));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.loadServerModuleFile(stagedFile, moduleDigest, entityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules + 1, assertionsScanner.getModules().size());
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) has the load from DB flag set
+        ModularAssertionModule serverModuleFileModule = null;
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (entityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+        return serverModuleFileModule;
+    }
+
+    /**
+     * Utility method for updating a {@code ServerModuleFile} specified with the {@code stagedFileName} and {@code orgEntityName}.<br/>
+     * Also verifying that the unload process finished successfully.
+     *
+     * @param stagedFile        The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.WorkingTest1.aar).  Required and cannot be {@code null} and must exist.
+     * @param orgEntityName     The {@code ServerModuleFile} original entity name.  Required and cannot be {@code null}.
+     * @param newEntityName     The {@code ServerModuleFile} new entity name.  Required and cannot be {@code null}.
+     * @return The updated {@code ModularAssertionModule} module object.
+     */
+    private ModularAssertionModule update_and_verify(final File stagedFile, final String orgEntityName, final String newEntityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(orgEntityName));
+        Assert.assertFalse(StringUtils.isBlank(newEntityName));
+        Assert.assertThat(newEntityName, Matchers.not(Matchers.equalTo(orgEntityName)));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.updateServerModuleFile(stagedFile, moduleDigest, newEntityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules, assertionsScanner.getModules().size()); // no change
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // TODO : for now only module name can be updated. Change this test once the module content can be updated.
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) has the load from DB flag set
+        ModularAssertionModule serverModuleFileModule = null;
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (newEntityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+            } else if (orgEntityName.equals(module.getEntityName())) {
+                Assert.fail("Module \"" + orgEntityName + "\" should be renamed to \"" + newEntityName + "\"!");
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+        return serverModuleFileModule;
+    }
+
+    /**
+     * Utility method for unloading a {@code ServerModuleFile} specified with the {@code stagedFileName} and {@code entityName}.<br/>
+     * Also verifying that the unload process finished successfully.
+     *
+     * @param stagedFile   The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.WorkingTest1.aar).  Required and cannot be {@code null} and must exist.
+     * @param entityName   The {@code ServerModuleFile} entity name.  Required and cannot be {@code null}.
+     */
+    private void unload_and_verify(final File stagedFile, final String entityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(entityName));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.unloadServerModuleFile(stagedFile, moduleDigest, entityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules - 1, assertionsScanner.getModules().size());
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) is not loaded anymore
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (entityName.equals(module.getEntityName())) {
+                Assert.fail("Module \"" + entityName + "\" should be unloaded!");
+            }
+        }
+    }
+
+    @Test
+    public void test_ServerModuleFile_load() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest5.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar"), "test server module file 5");
+
+        // initially copy few dynamic modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(modulesRootEmptyDir, "com.l7tech.WorkingTest#.aar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy + 1 /* plus one for "test server module file 5"*/, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest4.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar"), "test server module file 4");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_load_scanner_disabled() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+        // disable scanning
+        Mockito.doReturn(false).when(modulesConfig).isScanningEnabled();
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_load_feature_disabled() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+        // disable feature
+        Mockito.doReturn(false).when(modulesConfig).isFeatureEnabled();
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+    }
+
+    @Test
+    public void test_ServerModuleFile_load_duplicate_deployed() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // initially copy few dynamic modules
+        // com.l7tech.WorkingTest1.aar and com.l7tech.WorkingTest2.aar should be deployed
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(modulesRootEmptyDir, "com.l7tech.WorkingTest#.aar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest5.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar"), "test server module file 5");
+
+        try {
+            // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1Copy.aar
+            load_and_verify(new File(modulesCopyRootEmptyDir, "com.l7tech.WorkingTest1Copy.aar"), "test server module file 1");
+            Assert.fail("Loading a duplicate module is not allow!");
+        } catch (final ModuleLoadingException ignore) {
+            /* expected*/
+        }
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest4.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar"), "test server module file 4");
+    }
+
+    @Test
+    public void test_ServerModuleFile_update() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"), "test server module file 2");
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest3.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"), "test server module file 3");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        update_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"), "test server module file 2", "new test server module file 2");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        update_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1", "new test server module file 1");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.WorkingTest3.aar
+        update_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"), "test server module file 3", "new test server module file 3");
+    }
+
+    @Test
+    public void test_ServerModuleFile_unload() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"), "test server module file 2");
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest3.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"), "test server module file 3");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"), "test server module file 2");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest2.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest3.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"), "test server module file 3");
+
+        // make sure all is unloaded
+        Assert.assertThat(assertionsScanner.getModules(), Matchers.emptyCollectionOf(ModularAssertionModule.class));
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_wrong_file() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest3.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"), "test server module file 3");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_scanner_disabled() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // disable scanning
+        Mockito.doReturn(false).when(modulesConfig).isScanningEnabled();
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_feature_disabled() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // disable feature
+        Mockito.doReturn(false).when(modulesConfig).isFeatureEnabled();
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+    }
+
+    @Test
+    public void test_that_processRemovedModules_ignores_modules_from_db() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // initially copy few dynamic modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(modulesRootEmptyDir, "com.l7tech.WorkingTest#.aar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest5.aar
+        final File stagedServerModuleFile = new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar");
+        final String serverModuleFileEntityName = "test server module file 5";
+        Assert.assertTrue(stagedServerModuleFile.exists());
+        // load the ServerModuleFile
+        assertionsScanner.loadServerModuleFile(
+                stagedServerModuleFile,
+                ModuleDigest.digest(stagedServerModuleFile),
+                serverModuleFileEntityName
+        );
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(numOfFilesToCopy + 1, assertionsScanner.getModules().size());
+        final File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(numOfFilesToCopy, files.length);
+
+        // make module with ServerModuleFile (i..e module with name serverModuleFileEntityName) has the load from DB flag set
+        ModularAssertionModule serverModuleFileModule = null;
+        Assert.assertEquals(assertionsScanner.getModules().size(), numOfFilesToCopy + 1);
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (serverModuleFileEntityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+            } else {
+                Assert.assertFalse("not loaded from Database", module.isFromDb());
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+
+        // touch deployed folder i.e. change modules deployed folder lastModified flag
+        Assert.assertTrue(modTmpFolder.setLastModified(Math.max(new Date().getTime(), modTmpFolder.lastModified() + 1000)));
+        // run scanModules again to make sure processRemovedModules did not unload the ServerModuleFile
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy + 1, assertionsScanner.getModules().size());
     }
 }

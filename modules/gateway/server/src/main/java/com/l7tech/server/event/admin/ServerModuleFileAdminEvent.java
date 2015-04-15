@@ -24,7 +24,7 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
          * Sample message: <br/>
          * {@code Uploaded Module #2d10078e12e0099191b41f672fd97af4, name "SalesForce Connector", type "Custom Assertion", size "234KB"}
          */
-        UPLOADED("Uploaded Module #{0}, name \"{1}\", type \"{2}\", size \"{3}\" uploaded"),
+        UPLOADED("Uploaded Module #{0}, name \"{1}\", type \"{2}\", size \"{3}\""),
 
         /**
          * This is a Admin message indicating that the module has been successfully deleted from the Database.

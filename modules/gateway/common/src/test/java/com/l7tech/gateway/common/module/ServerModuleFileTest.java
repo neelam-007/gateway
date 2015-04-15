@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,6 +24,16 @@ public class ServerModuleFileTest {
         "cert=" + SAMPLE_CERT + "\n" +
         "digest=" + SAMPLE_DIGEST;
 
+    /**
+     * Create a test {@code ServerModuleFile}, having:
+     * <ul>
+     *     <li>goid: {@code Goid(100, 101)}</li>
+     *     <li>name: {@code module_name}</li>
+     *     <li>version: {@code 12}</li>
+     *     <li>module-type: {@code MODULAR_ASSERTION}</li>
+     *     <li>states: {@code node1:UPLOADED}, {@code node2:ACCEPTED}</li>
+     * </ul>
+     */
     private ServerModuleFile createTestServerModuleFile() {
         final ServerModuleFile entity = new ServerModuleFile();
         entity.setName("module_name");
@@ -31,7 +41,7 @@ public class ServerModuleFileTest {
         entity.setModuleType(ModuleType.MODULAR_ASSERTION);
         entity.createData("test_data".getBytes(Charsets.UTF8), "sha_for_data");
         entity.setStateForNode("node1", ModuleState.UPLOADED);
-        entity.setStateForNode("node2", ModuleState.STAGED);
+        entity.setStateForNode("node2", ModuleState.ACCEPTED);
         entity.setStateErrorMessageForNode("node2", "error message");
         entity.setProperty(ServerModuleFile.PROP_FILE_NAME, "module_file_name");
         entity.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(100));
@@ -248,13 +258,13 @@ public class ServerModuleFileTest {
         assertNull(entity.getStates());
 
         entity = new ServerModuleFile();
-        entity.setStateForNode("node1", ModuleState.STAGED);
+        entity.setStateForNode("node1", ModuleState.ACCEPTED);
         assertNotNull(entity.getStates());
         assertFalse(entity.getStates().isEmpty());
         assertEquals(1, entity.getStates().size());
         ServerModuleFileState state = entity.getStates().get(0);
         assertEquals("node1", state.getNodeId());
-        assertEquals(ModuleState.STAGED, state.getState());
+        assertEquals(ModuleState.ACCEPTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
 
         entity = new ServerModuleFile();
@@ -277,13 +287,13 @@ public class ServerModuleFileTest {
         assertEquals("node1", state.getNodeId());
         assertEquals(ModuleState.LOADED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
-        entity.setStateForNode("node1", ModuleState.DEPLOYED);
+        entity.setStateForNode("node1", ModuleState.REJECTED);
         assertNotNull(entity.getStates());
         assertFalse(entity.getStates().isEmpty());
         assertEquals(1, entity.getStates().size());
         state = entity.getStates().get(0);
         assertEquals("node1", state.getNodeId());
-        assertEquals(ModuleState.DEPLOYED, state.getState());
+        assertEquals(ModuleState.REJECTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
         entity.setStateErrorMessageForNode("node1", "error");
         assertNotNull(entity.getStates());
@@ -296,8 +306,8 @@ public class ServerModuleFileTest {
 
         entity = new ServerModuleFile();
         entity.setStateForNode("node1", ModuleState.UPLOADED);
-        entity.setStateForNode("node2", ModuleState.DEPLOYED);
-        entity.setStateForNode("node3", ModuleState.STAGED);
+        entity.setStateForNode("node2", ModuleState.REJECTED);
+        entity.setStateForNode("node3", ModuleState.ACCEPTED);
         assertNotNull(entity.getStates());
         assertFalse(entity.getStates().isEmpty());
         assertEquals(3, entity.getStates().size());
@@ -308,11 +318,11 @@ public class ServerModuleFileTest {
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
         state = entity.getStates().get(1);
         assertEquals("node2", state.getNodeId());
-        assertEquals(ModuleState.DEPLOYED, state.getState());
+        assertEquals(ModuleState.REJECTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
         state = entity.getStates().get(2);
         assertEquals("node3", state.getNodeId());
-        assertEquals(ModuleState.STAGED, state.getState());
+        assertEquals(ModuleState.ACCEPTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
 
         entity.setStateErrorMessageForNode("node2", "error");
@@ -330,7 +340,7 @@ public class ServerModuleFileTest {
         assertEquals("error", state.getErrorMessage());
         state = entity.getStates().get(2);
         assertEquals("node3", state.getNodeId());
-        assertEquals(ModuleState.STAGED, state.getState());
+        assertEquals(ModuleState.ACCEPTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
 
         entity.setStateForNode("node2", ModuleState.UPLOADED);
@@ -348,7 +358,7 @@ public class ServerModuleFileTest {
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
         state = entity.getStates().get(2);
         assertEquals("node3", state.getNodeId());
-        assertEquals(ModuleState.STAGED, state.getState());
+        assertEquals(ModuleState.ACCEPTED, state.getState());
         assertTrue(StringUtils.isBlank(state.getErrorMessage()));
     }
 
@@ -415,7 +425,7 @@ public class ServerModuleFileTest {
         another.setStateForNode("node2", ModuleState.UPLOADED);
         assertThat(entity, equalTo(another));
         assertThat(entity.hashCode(), equalTo(another.hashCode()));
-        another.setStateForNode("node10", ModuleState.DEPLOYED);
+        another.setStateForNode("node10", ModuleState.REJECTED);
         assertThat(entity, equalTo(another));
         assertThat(entity.hashCode(), equalTo(another.hashCode()));
 

@@ -513,6 +513,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
             return;
         }
 
+        // make sure there is no other module already loaded.
+        // TODO : revisit this logic once SSG-11156 is addressed (at least consider using digest hash instead of looping through all modules)
+        for (final T module : getModules()) {
+            if (moduleDigest.equals(module.getDigest())) {
+                throw new ModuleLoadingException("Cannot load duplicate module \"" + entityName + "\"; Module with exact content checksum already loaded.");
+            }
+        }
+
         try {
             // load and create the new or modified module
             final ModuleLoadStatus loadStatus = onModuleLoad(
@@ -556,14 +564,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      * Update a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest}.<br/>
      * For the time being only the entity name will be updated.
      *
-     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
-     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
-     * @param entityName      the module entity name.  Required and cannot be {@code null}.
+     * @param stagedFile            the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest          the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param updatedEntityName     updated module entity name.  Required and cannot be {@code null}.
      */
     public void updateServerModuleFile(
             @NotNull final File stagedFile,
             @NotNull final String moduleDigest,
-            @NotNull final String entityName
+            @NotNull final String updatedEntityName
     ) {
         // get the module filename
         final String fileName = stagedFile.getName();
@@ -571,7 +579,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
         // find previous loaded module with the same name
         final T previousModule = scannedModules.get(fileName);
         if (previousModule != null && moduleDigest.equals(previousModule.getDigest())) {
-            previousModule.setEntityName(entityName);
+            previousModule.setEntityName(updatedEntityName);
         }
     }
 
@@ -580,9 +588,14 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      *
      * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
      * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param entityName      the module entity name.  Required and cannot be {@code null}.
      * @throws ModuleLoadingException if an error happens while loading the {@code ServerModuleFile}.
      */
-    public void unloadServerModuleFile(@NotNull final File stagedFile, @NotNull final String moduleDigest) throws ModuleLoadingException {
+    public void unloadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
         // get the module filename
         final String fileName = stagedFile.getName();
 

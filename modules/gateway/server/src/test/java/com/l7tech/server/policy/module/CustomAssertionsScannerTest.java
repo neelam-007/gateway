@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.module.ModuleDigest;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.policy.assertion.ext.ServiceFinder;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfigParams;
@@ -15,6 +17,8 @@ import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -25,6 +29,7 @@ import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * The Custom Assertion jars used by the unit test. The filename must start with "com.l7tech.". Otherwise, it will
@@ -86,6 +91,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     private static final String NON_DYNAMIC_MODULES_EMPTY_DIR               = "com/l7tech/server/policy/module/custom/non_dynamic/dummy.png";
     private static final String NON_DYNAMIC_LIFE_LISTENER_MODULES_EMPTY_DIR = "com/l7tech/server/policy/module/custom/non_dynamic/life_listener/dummy.png";
     private static final String DYNAMIC_MODULES_EMPTY_DIR                   = "com/l7tech/server/policy/module/custom/dynamic/dummy.png";
+    private static final String DYNAMIC_COPY_MODULES_EMPTY_DIR              = "com/l7tech/server/policy/module/custom/dynamic/copy/dummy.png";
     private static final String FAILED_ON_LOAD_MODULES_EMPTY_DIR            = "com/l7tech/server/policy/module/custom/failed/onLoad/dummy.png";
     private static final String FAILED_ON_UNLOAD_MODULES_EMPTY_DIR          = "com/l7tech/server/policy/module/custom/failed/onUnload/dummy.png";
     private static final String DUAL_MODULES_EMPTY_DIR                      = "com/l7tech/server/policy/module/custom/dual/dummy.png";
@@ -97,6 +103,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     private static String nonDynamicModulesEmptyDir;
     private static String nonDynamicLifeListenerModulesEmptyDir;
     private static String dynamicModulesEmptyDir;
+    private static String dynamicCopyModulesEmptyDir;
     private static String failedOnLoadModulesEmptyDir;
     private static String failedOnUnloadModulesEmptyDir;
     private static String dualModulesEmptyDir;
@@ -196,6 +203,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         Assert.assertFalse("NON_DYNAMIC_MODULES_EMPTY_DIR exists", (nonDynamicModulesEmptyDir = extractFolder(NON_DYNAMIC_MODULES_EMPTY_DIR)).isEmpty());
         Assert.assertFalse("NON_DYNAMIC_LIFE_LISTENER_MODULES_EMPTY_DIR exists", (nonDynamicLifeListenerModulesEmptyDir = extractFolder(NON_DYNAMIC_LIFE_LISTENER_MODULES_EMPTY_DIR)).isEmpty());
         Assert.assertFalse("DYNAMIC_MODULES_EMPTY_DIR exists", (dynamicModulesEmptyDir = extractFolder(DYNAMIC_MODULES_EMPTY_DIR)).isEmpty());
+        Assert.assertFalse("DYNAMIC_COPY_MODULES_EMPTY_DIR exists", (dynamicCopyModulesEmptyDir = extractFolder(DYNAMIC_COPY_MODULES_EMPTY_DIR)).isEmpty());
         Assert.assertFalse("FAILED_ON_LOAD_MODULES_EMPTY_DIR exists", (failedOnLoadModulesEmptyDir = extractFolder(FAILED_ON_LOAD_MODULES_EMPTY_DIR)).isEmpty());
         Assert.assertFalse("FAILED_ON_UNLOAD_MODULES_EMPTY_DIR exists", (failedOnUnloadModulesEmptyDir = extractFolder(FAILED_ON_UNLOAD_MODULES_EMPTY_DIR)).isEmpty());
         Assert.assertFalse("DUAL_MODULES_EMPTY_DIR exists", (dualModulesEmptyDir = extractFolder(DUAL_MODULES_EMPTY_DIR)).isEmpty());
@@ -1544,7 +1552,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         copy_all_files(
                 modTmpFolder,
                 TOTAL_NUMBER_OF_FILES_IN_MODULE_DIR,
-                copyDataValues = new CopyData[] {
+                copyDataValues = new CopyData[]{
                         new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar"),
                         new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar"),
                         new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
@@ -1715,11 +1723,11 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
                 numberOfOnModuleLoadCalls = numberOfOnModuleLoadCalls + deletedFiles.length * numOfFilesToDisable,
                 numberOfOnModuleUnloadCalls,
                 numberOfModulesLoaded = numberOfModulesLoaded + numOfFilesToDisable,  // only numOfFilesToDisable are dynamic,
-                                                                                      // the rest will not be re-loaded (i.e. skipped)
+                // the rest will not be re-loaded (i.e. skipped)
                 numberOfUnloadedModules,
                 0,
                 skipped = (deletedFiles.length - 1) * numOfFilesToDisable,  // only numOfFilesToDisable are dynamic,
-                                                                            // the rest will not be re-loaded (i.e. skipped)
+                // the rest will not be re-loaded (i.e. skipped)
                 1
         );
 
@@ -1912,7 +1920,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         delete_all_files(
                 modTmpFolder,
                 1,
-                new String[]{ "com.l7tech.DynamicOnUnloadFailCustomAssertionsTest1.jar" }
+                new String[]{"com.l7tech.DynamicOnUnloadFailCustomAssertionsTest1.jar"}
         );
 
         // do another scan, after disabling DynamicOnUnloadFailCustomAssertionsTest1.jar
@@ -1925,7 +1933,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         delete_all_files(
                 modTmpFolder,
                 1,
-                new String[]{ "com.l7tech.NonDynamicLifecycleListenerOnUnloadFailCustomAssertionsTest1.jar" }
+                new String[]{"com.l7tech.NonDynamicLifecycleListenerOnUnloadFailCustomAssertionsTest1.jar"}
         );
 
         // do another scan, after disabling NonDynamicLifecycleListenerOnUnloadFailCustomAssertionsTest1.jar
@@ -2178,7 +2186,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         copy_all_files(
                 modTmpFolder,
                 1,
-                new CopyData[] {
+                new CopyData[]{
                         new CopyData(
                                 nonDynamicModulesEmptyDir,
                                 "com.l7tech.NonDynamicCustomAssertionTest1.jar",
@@ -2238,7 +2246,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         copy_all_files(
                 modTmpFolder,
                 1,
-                new CopyData[] {
+                new CopyData[]{
                         new CopyData(
                                 nonDynamicModulesEmptyDir,
                                 "com.l7tech.NonDynamicCustomAssertionTest1.jar",
@@ -2260,5 +2268,406 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         Assert.assertFalse("no module changes the second time", changesMade);
 
         verifyAssertionScanner(1, 0, 1, 0, 0, 0, 2);
+    }
+
+    /**
+     * Utility method for loading a {@code ServerModuleFile} specified with the {@code stagedFile} and {@code entityName}.<br/>
+     * Also verifying that the load process finished successfully.
+     *
+     * @param stagedFile    The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.DynamicCustomAssertionsTest1.jar).  Required and cannot be {@code null} and must exist.
+     * @param entityName    The {@code ServerModuleFile} entity name.  Required and cannot be {@code null}.
+     * @return The loaded {@code CustomAssertionModule} module object.
+     */
+    private CustomAssertionModule load_and_verify(final File stagedFile, final String entityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(entityName));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.loadServerModuleFile(stagedFile, moduleDigest, entityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules + 1, assertionsScanner.getModules().size());
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) has the load from DB flag set
+        CustomAssertionModule serverModuleFileModule = null;
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (entityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+                for (final CustomAssertionDescriptor descriptor : module.getDescriptors()) {
+                    Assert.assertEquals(entityName, descriptor.getModuleEntityName());
+                }
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+        return serverModuleFileModule;
+    }
+
+    /**
+     * Utility method for updating a {@code ServerModuleFile} specified with the {@code stagedFileName} and {@code orgEntityName}.<br/>
+     * Also verifying that the unload process finished successfully.
+     *
+     * @param stagedFile        The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.DynamicCustomAssertionsTest1.jar).  Required and cannot be {@code null} and must exist.
+     * @param orgEntityName     The {@code ServerModuleFile} original entity name.  Required and cannot be {@code null}.
+     * @param newEntityName     The {@code ServerModuleFile} new entity name.  Required and cannot be {@code null}.
+     * @return The updated {@code CustomAssertionModule} module object.
+     */
+    private CustomAssertionModule update_and_verify(final File stagedFile, final String orgEntityName, final String newEntityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(orgEntityName));
+        Assert.assertFalse(StringUtils.isBlank(newEntityName));
+        Assert.assertThat(newEntityName, Matchers.not(Matchers.equalTo(orgEntityName)));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.updateServerModuleFile(stagedFile, moduleDigest, newEntityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules, assertionsScanner.getModules().size()); // no change
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // TODO : for now only module name can be updated. Change this test once the module content can be updated.
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) has the load from DB flag set
+        CustomAssertionModule serverModuleFileModule = null;
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (newEntityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+                for (final CustomAssertionDescriptor descriptor : module.getDescriptors()) {
+                    Assert.assertEquals(newEntityName, descriptor.getModuleEntityName());
+                }
+            } else if (orgEntityName.equals(module.getEntityName())) {
+                Assert.fail("Module \"" + orgEntityName + "\" should be renamed to \"" + newEntityName + "\"!");
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+        return serverModuleFileModule;
+    }
+
+    /**
+     * Utility method for unloading a {@code ServerModuleFile} specified with the {@code stagedFileName} and {@code entityName}.<br/>
+     * Also verifying that the unload process finished successfully.
+     *
+     * @param stagedFile   The {@code ServerModuleFile} staged file, can be any of the test files (e.g. com.l7tech.DynamicCustomAssertionsTest1.jar).  Required and cannot be {@code null} and must exist.
+     * @param entityName   The {@code ServerModuleFile} entity name.  Required and cannot be {@code null}.
+     */
+    private void unload_and_verify(final File stagedFile, final String entityName) throws Exception {
+        Assert.assertNotNull(stagedFile);
+        Assert.assertTrue(stagedFile.exists());
+        Assert.assertFalse(StringUtils.isBlank(entityName));
+
+        Assert.assertNotNull(modTmpFolder);
+        File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+
+        // initial number of modules loaded
+        final int prevNumLoadedModules = assertionsScanner.getModules().size();
+        final int prevNumDeployedModules = files.length;
+
+        // simulate ServerModuleFile with staged file
+        final String moduleDigest = ModuleDigest.digest(stagedFile);
+
+        // load the ServerModuleFile
+        assertionsScanner.unloadServerModuleFile(stagedFile, moduleDigest, entityName);
+
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(prevNumLoadedModules - 1, assertionsScanner.getModules().size());
+        // make sure no files have been deployed
+        files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(prevNumDeployedModules, files.length); // not touched
+
+        // make sure module with ServerModuleFile (i.e. module with name entityName) is not loaded anymore
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (entityName.equals(module.getEntityName())) {
+                Assert.fail("Module \"" + entityName + "\" should be unloaded!");
+            }
+        }
+    }
+
+    @Test
+    public void test_ServerModuleFile_load() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest5.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest5.jar"), "test server module file dynamic 5");
+
+        // initially copy few dynamic modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy + 1 /* plus one for "test server module file dynamic 5"*/, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest4.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest4.jar"), "test server module file dynamic 4");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_load_scanner_disabled() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+        // disable scanning
+        Mockito.doReturn(false).when(modulesConfig).isScanningEnabled();
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_load_feature_disabled() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+        // disable feature
+        Mockito.doReturn(false).when(modulesConfig).isFeatureEnabled();
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+    }
+
+    @Test
+    public void test_ServerModuleFile_load_duplicate_deployed() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few dynamic modules
+        // com.l7tech.DynamicCustomAssertionsTest1.jar and com.l7tech.DynamicCustomAssertionsTest2.jar should be deployed
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest5.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest5.jar"), "test server module file dynamic 5");
+
+        try {
+            // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1Copy.jar
+            load_and_verify(new File(dynamicCopyModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1Copy.jar"), "test server module file dynamic 1");
+            Assert.fail("Loading a duplicate module is not allow!");
+        } catch (final ModuleLoadingException ignore) {
+            /* expected*/
+        }
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest4.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest4.jar"), "test server module file dynamic 4");
+    }
+
+    @Test
+    public void test_ServerModuleFile_update() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest2.jar"), "test server module file dynamic 2");
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest3.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"), "test server module file dynamic 3");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        update_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest2.jar"), "test server module file dynamic 2", "new test server module file dynamic 2");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        update_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1", "new test server module file dynamic 1");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest3.jar
+        update_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"), "test server module file dynamic 3", "new test server module file dynamic 3");
+    }
+
+    @Test
+    public void test_ServerModuleFile_unload() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest2.jar"), "test server module file dynamic 2");
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest3.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"), "test server module file dynamic 3");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest2.jar"), "test server module file dynamic 2");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest2.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest3.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"), "test server module file dynamic 3");
+
+        // make sure all is unloaded
+        Assert.assertThat(assertionsScanner.getModules(), Matchers.emptyCollectionOf(CustomAssertionModule.class));
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_wrong_file() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest3.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"), "test server module file dynamic 3");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_scanner_disabled() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // disable scanning
+        Mockito.doReturn(false).when(modulesConfig).isScanningEnabled();
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+    }
+
+    @Test(expected = ModuleLoadingException.class)
+    public void test_ServerModuleFile_unload_feature_disabled() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // disable feature
+        Mockito.doReturn(false).when(modulesConfig).isFeatureEnabled();
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+    }
+
+    @Test
+    public void test_that_processRemovedModules_ignores_modules_from_db() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few dynamic modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("did found module changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy, assertionsScanner.getModules().size());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest5.jar
+        final File stagedServerModuleFile = new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest5.jar");
+        final String serverModuleFileEntityName = "test server module file dynamic 5";
+        Assert.assertTrue(stagedServerModuleFile.exists());
+        // load the ServerModuleFile
+        assertionsScanner.loadServerModuleFile(
+                stagedServerModuleFile,
+                ModuleDigest.digest(stagedServerModuleFile),
+                serverModuleFileEntityName
+        );
+        // verify the ServerModuleFile was loaded successfully
+        Assert.assertEquals(numOfFilesToCopy + 1, assertionsScanner.getModules().size());
+        final File[] files = modTmpFolder.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(numOfFilesToCopy, files.length);
+
+        // make module with ServerModuleFile (i..e module with name serverModuleFileEntityName) has the load from DB flag set
+        CustomAssertionModule serverModuleFileModule = null;
+        Assert.assertEquals(assertionsScanner.getModules().size(), numOfFilesToCopy + 1);
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (serverModuleFileEntityName.equals(module.getEntityName())) {
+                serverModuleFileModule = module;
+                Assert.assertTrue("loaded from Database", module.isFromDb());
+            } else {
+                Assert.assertFalse("not loaded from Database", module.isFromDb());
+            }
+        }
+        Assert.assertNotNull(serverModuleFileModule);
+
+        // touch deployed folder i.e. change modules deployed folder lastModified flag
+        Assert.assertTrue(modTmpFolder.setLastModified(Math.max(new Date().getTime(), modTmpFolder.lastModified() + 1000)));
+        // run scanModules again to make sure processRemovedModules did not unload the ServerModuleFile
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes", changesMade);
+        Assert.assertEquals(numOfFilesToCopy + 1, assertionsScanner.getModules().size());
     }
 }

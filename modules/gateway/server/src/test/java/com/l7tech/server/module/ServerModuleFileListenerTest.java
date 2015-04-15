@@ -48,6 +48,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
     private static final String MODULAR_ASSERTIONS_MODULES_DIR_NAME = "l7tech-modular";
     // Custom Assertions deploy directory
     private static final String CUSTOM_ASSERTIONS_MODULES_DIR_NAME = "l7tech-custom";
+    // Staging directory
+    private static final String STAGING_MODULES_DIR_NAME = "l7tech-staging";
 
     // used to generate random GOID
     private static final Random rnd = new Random();
@@ -67,8 +69,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
 
     // server module files initial repository
     private Map<Goid, ServerModuleFile> moduleFiles;
-    // modular and custom assertions deploy folders
-    private static File modularDeployFolder, customDeployFolder;
+    // modular and custom assertions deploy folders as well as ServerModuleFile staging folder
+    private static File modularDeployFolder, customDeployFolder, stagingFolder;
 
     // emulate this cluster node
     private String currentNodeId = "currentClusterNode";
@@ -80,6 +82,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         // which means that at a worst case scenario we will only end up with files from a single run.
         cleanUpTemporaryFilesFromPreviousRuns(MODULAR_ASSERTIONS_MODULES_DIR_NAME);
         cleanUpTemporaryFilesFromPreviousRuns(CUSTOM_ASSERTIONS_MODULES_DIR_NAME);
+        cleanUpTemporaryFilesFromPreviousRuns(STAGING_MODULES_DIR_NAME);
     }
 
     @AfterClass
@@ -95,11 +98,14 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modularDeployFolder = getTempFolder(MODULAR_ASSERTIONS_MODULES_DIR_NAME));
         Assert.assertNotNull(customDeployFolder = getTempFolder(CUSTOM_ASSERTIONS_MODULES_DIR_NAME));
+        Assert.assertNotNull(stagingFolder = getTempFolder(STAGING_MODULES_DIR_NAME));
         // set the modules folder property to the temporary folders
         Mockito.when(config.getProperty(ServerConfigParams.PARAM_MODULAR_ASSERTIONS_DIRECTORY)).thenReturn(modularDeployFolder.getCanonicalPath());
         Mockito.when(config.getProperty(Mockito.eq(ServerConfigParams.PARAM_MODULAR_ASSERTIONS_DIRECTORY), Mockito.anyString())).thenReturn(modularDeployFolder.getCanonicalPath());
         Mockito.when(config.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(customDeployFolder.getCanonicalPath());
         Mockito.when(config.getProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY), Mockito.anyString())).thenReturn(customDeployFolder.getCanonicalPath());
+        Mockito.when(config.getProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_STAGING_FOLDER)).thenReturn(stagingFolder.getCanonicalPath());
+        Mockito.when(config.getProperty(Mockito.eq(ServerConfigParams.PARAM_SERVER_MODULE_FILE_STAGING_FOLDER), Mockito.anyString())).thenReturn(stagingFolder.getCanonicalPath());
 
         // create modules listener spy
         modulesListener = Mockito.spy(
@@ -362,7 +368,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 0),
                         new ServerModuleFileBuilder(create_test_module_without_states(0, ModuleType.CUSTOM_ASSERTION))
-                                .addState(currentNodeId, ModuleState.STAGED)
+                                .addState(currentNodeId, ModuleState.REJECTED)
                                 .addState("node_1", ModuleState.UPLOADED)
                                 .addState("node_3", ModuleState.LOADED)
                                 .build()
@@ -379,8 +385,8 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         new Goid(GOID_HI_START, 1),
                         new ServerModuleFileBuilder(create_test_module_without_states(1, ModuleType.CUSTOM_ASSERTION))
                                 .addState(currentNodeId, ModuleState.UPLOADED)
-                                .addState("node_1", ModuleState.STAGED)
-                                .addState("node_2", ModuleState.STAGED)
+                                .addState("node_1", ModuleState.REJECTED)
+                                .addState("node_2", ModuleState.REJECTED)
                                 .addState("node_3", ModuleState.UPLOADED)
                                 .build()
                 )
@@ -450,7 +456,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 7),
                         new ServerModuleFileBuilder(create_test_module_without_states(7, ModuleType.CUSTOM_ASSERTION))
-                                .addState(currentNodeId, ModuleState.DEPLOYED)
+                                .addState(currentNodeId, ModuleState.ACCEPTED)
                                 .addState("node_2", ModuleState.REJECTED)
                                 .build()
                 )
@@ -463,7 +469,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 8),
                         new ServerModuleFileBuilder(create_test_module_without_states(8, ModuleType.MODULAR_ASSERTION))
-                                .addState(currentNodeId, ModuleState.DEPLOYED)
+                                .addState(currentNodeId, ModuleState.ACCEPTED)
                                 .addState("node_3", ModuleState.LOADED)
                                 .build()
                 )
@@ -475,7 +481,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 9),
                         new ServerModuleFileBuilder(create_test_module_without_states(9, ModuleType.MODULAR_ASSERTION))
-                                .addState(currentNodeId, ModuleState.STAGED)
+                                .addState(currentNodeId, ModuleState.REJECTED)
                                 .build()
                 )
                 .put(
@@ -507,16 +513,16 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         // module_10 => LOADED   => MODULAR_ASSERTION
         // verify
         initialStates = new ModuleState[]{
-                ModuleState.STAGED,
+                ModuleState.REJECTED,
                 ModuleState.UPLOADED,
                 ModuleState.UPLOADED,
                 ModuleState.LOADED,
                 ModuleState.UPLOADED,
                 ModuleState.UPLOADED,
                 ModuleState.UPLOADED,
-                ModuleState.DEPLOYED,
-                ModuleState.DEPLOYED,
-                ModuleState.STAGED,
+                ModuleState.ACCEPTED,
+                ModuleState.ACCEPTED,
+                ModuleState.REJECTED,
                 ModuleState.LOADED,
         };
     }
@@ -567,7 +573,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                             }
                         }
                 );
-        Mockito.when(serverModuleFileManager.findAll()).thenReturn(moduleFiles.values());
+        Mockito.when(serverModuleFileManager.findAll()).thenReturn(Collections.unmodifiableCollection(moduleFiles.values()));
         Mockito.doAnswer(
                 new Answer<Void>() {
                     @Override
@@ -710,90 +716,12 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
         Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
         Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        Mockito.verify(modulesListener, Mockito.never()).updateModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
         Assert.assertNotNull(modulesListener.knownModuleFiles);
         assertThat(modulesListener.knownModuleFiles.values(), empty());
-        // make sure nothing is written to both staging and deploy folders
-        assertThat(customDeployFolder.listFiles(), emptyArray());
-        assertThat(modularDeployFolder.listFiles(), emptyArray());
-
-        // send AssertionModuleRegistrationEvent for module: (module_0 => STAGED   => CUSTOM_ASSERTION)
-        ServerModuleFile moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 0));
-        Assert.assertNotNull(moduleFile);
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.STAGED));
-        CustomAssertionModule customModule = Mockito.mock(CustomAssertionModule.class);
-        Mockito.when(customModule.getName()).thenReturn(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME));
-        // send AssertionModuleRegistrationEvent
-        Assert.assertNull(
-                "No events should be processed before Started is processed!",
-                waitForFuture(
-                        modulesListener.handleEvent(new AssertionModuleRegistrationEvent(this, customModule))
-                )
-        );
-        // module state shouldn't be changed
-        Mockito.verify(modulesListener, Mockito.times(2)).handleEvent(Mockito.<ApplicationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
-        Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.STAGED));
-        Assert.assertNotNull(modulesListener.knownModuleFiles);
-        assertThat(modulesListener.knownModuleFiles.values(), empty());
-        // make sure nothing is written to both staging and deploy folders
-        assertThat(customDeployFolder.listFiles(), emptyArray());
-        assertThat(modularDeployFolder.listFiles(), emptyArray());
-
-        // send another AssertionModuleRegistrationEvent for module: (module_2 => UPLOADED   => MODULAR_ASSERTION)
-        moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 2));
-        Assert.assertNotNull(moduleFile);
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
-        ModularAssertionModule modularModule = Mockito.mock(ModularAssertionModule.class);
-        Mockito.when(modularModule.getName()).thenReturn(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME));
-        // send AssertionModuleRegistrationEvent
-        Assert.assertNull(
-                "No events should be processed before Started is processed!",
-                waitForFuture(
-                        modulesListener.handleEvent(new AssertionModuleRegistrationEvent(this, modularModule))
-                )
-        );
-        // module state shouldn't be changed
-        Mockito.verify(modulesListener, Mockito.times(3)).handleEvent(Mockito.<ApplicationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
-        Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
-        Assert.assertNotNull(modulesListener.knownModuleFiles);
-        assertThat(modulesListener.knownModuleFiles.values(), empty());
-        // make sure nothing is written to both staging and deploy folders
-        assertThat(customDeployFolder.listFiles(), emptyArray());
-        assertThat(modularDeployFolder.listFiles(), emptyArray());
-
-        // send another AssertionModuleRegistrationEvent for module: (module_100 => UPLOADED   => MODULAR_ASSERTION)
-        moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 100));
-        Assert.assertNotNull(moduleFile);
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
-        modularModule = Mockito.mock(ModularAssertionModule.class);
-        Mockito.when(modularModule.getName()).thenReturn(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME));
-        // send AssertionModuleRegistrationEvent
-        Assert.assertNull(
-                "No events should be processed before Started is processed!",
-                waitForFuture(
-                        modulesListener.handleEvent(new AssertionModuleRegistrationEvent(this, modularModule))
-                )
-        );
-        // module state shouldn't be
-        Mockito.verify(modulesListener, Mockito.times(4)).handleEvent(Mockito.<ApplicationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).processGatewayStartedEvent();
-        Mockito.verify(modulesListener, Mockito.never()).processServerModuleFileInvalidationEvent(Mockito.<EntityInvalidationEvent>any());
-        Mockito.verify(modulesListener, Mockito.never()).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        Mockito.verify(modulesListener, Mockito.never()).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(ModuleState.UPLOADED));
-        Assert.assertNotNull(modulesListener.knownModuleFiles);
-        assertThat(modulesListener.knownModuleFiles.values(), empty());
-        // make sure nothing is written to both staging and deploy folders
-        assertThat(customDeployFolder.listFiles(), emptyArray());
-        assertThat(modularDeployFolder.listFiles(), emptyArray());
+        // make sure nothing is written to the staging folder
+        assertThat(stagingFolder.listFiles(), emptyArray());
     }
 
     @Test
@@ -980,12 +908,12 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Assert.assertNotNull(expectedInstalledModularModules);
         for (final ServerModuleFile moduleFile : expectedInstalledModularModules) {
             Assert.assertNotNull(moduleFile);
-            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModularDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED));
+            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModularDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED));
         }
         Assert.assertNotNull(expectedInstalledCustomModules);
         for (final ServerModuleFile moduleFile : expectedInstalledCustomModules) {
             Assert.assertNotNull(moduleFile);
-            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isCustomDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED));
+            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isCustomDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED));
         }
 
         // we have:
@@ -1082,16 +1010,16 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         // we have:
         publishInitialStartedEventAndVerifyResult(
                 new ModuleState[]{
-                        ModuleState.STAGED,    // module_0  => STAGED   => CUSTOM_ASSERTION
-                        ModuleState.DEPLOYED,  // module_1  => DEPLOYED => CUSTOM_ASSERTION
+                        ModuleState.REJECTED,    // module_0  => STAGED   => CUSTOM_ASSERTION
+                        ModuleState.ACCEPTED,  // module_1  => DEPLOYED => CUSTOM_ASSERTION
                         ModuleState.LOADED,    // module_2  => LOADED   => MODULAR_ASSERTION
                         ModuleState.LOADED,    // module_3  => LOADED   => CUSTOM_ASSERTION
-                        ModuleState.DEPLOYED,  // module_4  => DEPLOYED => MODULAR_ASSERTION
+                        ModuleState.ACCEPTED,  // module_4  => DEPLOYED => MODULAR_ASSERTION
                         ModuleState.LOADED,    // module_5  => LOADED   => MODULAR_ASSERTION
                         ModuleState.LOADED,    // module_6  => LOADED   => CUSTOM_ASSERTION
-                        ModuleState.DEPLOYED,  // module_7  => DEPLOYED => CUSTOM_ASSERTION
-                        ModuleState.DEPLOYED,  // module_8  => DEPLOYED => MODULAR_ASSERTION
-                        ModuleState.STAGED,    // module_9  => STAGED   => MODULAR_ASSERTION
+                        ModuleState.ACCEPTED,  // module_7  => DEPLOYED => CUSTOM_ASSERTION
+                        ModuleState.ACCEPTED,  // module_8  => DEPLOYED => MODULAR_ASSERTION
+                        ModuleState.REJECTED,    // module_9  => STAGED   => MODULAR_ASSERTION
                         ModuleState.LOADED     // module_10 => LOADED   => MODULAR_ASSERTION
                 },
                 true, // modular deploy
@@ -1133,16 +1061,16 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         // we have:
         publishInitialStartedEventAndVerifyResult(
                 new ModuleState[]{
-                        ModuleState.STAGED,                                                     // module_0  => STAGED   => CUSTOM_ASSERTION;   => STAGED
-                        isCustomDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED,     // module_1  => UPLOADED => CUSTOM_ASSERTION;   => DEPLOYED/STAGED
-                        isModularDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED,    // module_2  => UPLOADED => MODULAR_ASSERTION;  => DEPLOYED/STAGED
+                        ModuleState.REJECTED,                                                     // module_0  => STAGED   => CUSTOM_ASSERTION;   => STAGED
+                        isCustomDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED,     // module_1  => UPLOADED => CUSTOM_ASSERTION;   => DEPLOYED/STAGED
+                        isModularDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED,    // module_2  => UPLOADED => MODULAR_ASSERTION;  => DEPLOYED/STAGED
                         ModuleState.LOADED,                                                     // module_3  => LOADED   => CUSTOM_ASSERTION;   => LOADED
-                        isModularDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED,    // module_4  => <NONE>   => MODULAR_ASSERTION;  => DEPLOYED/STAGED
-                        isModularDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED,    // module_5  => <NONE>   => MODULAR_ASSERTION;  => DEPLOYED/STAGED
-                        isCustomDeployWritable ? ModuleState.DEPLOYED : ModuleState.STAGED,     // module_6  => <NONE>   => CUSTOM_ASSERTION;   => DEPLOYED/STAGED
-                        ModuleState.DEPLOYED,                                                   // module_7  => DEPLOYED => CUSTOM_ASSERTION;   => DEPLOYED
-                        ModuleState.DEPLOYED,                                                   // module_8  => DEPLOYED => MODULAR_ASSERTION;  => DEPLOYED
-                        ModuleState.STAGED,                                                     // module_9  => STAGED   => MODULAR_ASSERTION;  => STAGED
+                        isModularDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED,    // module_4  => <NONE>   => MODULAR_ASSERTION;  => DEPLOYED/STAGED
+                        isModularDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED,    // module_5  => <NONE>   => MODULAR_ASSERTION;  => DEPLOYED/STAGED
+                        isCustomDeployWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED,     // module_6  => <NONE>   => CUSTOM_ASSERTION;   => DEPLOYED/STAGED
+                        ModuleState.ACCEPTED,                                                   // module_7  => DEPLOYED => CUSTOM_ASSERTION;   => DEPLOYED
+                        ModuleState.ACCEPTED,                                                   // module_8  => DEPLOYED => MODULAR_ASSERTION;  => DEPLOYED
+                        ModuleState.REJECTED,                                                     // module_9  => STAGED   => MODULAR_ASSERTION;  => STAGED
                         ModuleState.LOADED                                                      // module_10 => LOADED   => MODULAR_ASSERTION;  => LOADED
                 },
                 isModularDeployWritable, // modular deploy
@@ -1302,7 +1230,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         }
         moduleFile = moduleFiles.get(goid);
         Assert.assertNotNull(moduleFile);
-        assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModuleDeployFolderWritable ? ModuleState.DEPLOYED : ModuleState.STAGED));
+        assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModuleDeployFolderWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED));
 
         // verify that the module ended up in the right folder
         if (isModuleDeployFolderWritable) {
@@ -1455,7 +1383,7 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         }
         if (ModuleState.UPLOADED.equals(moduleState)) {
             // only if uploaded the module will be installed
-            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModuleDeployFolderWritable ? ModuleState.DEPLOYED : ModuleState.STAGED));
+            assertThat(modulesListener.getModuleState(moduleFile), equalTo(isModuleDeployFolderWritable ? ModuleState.ACCEPTED : ModuleState.REJECTED));
             if (isModuleDeployFolderWritable) {
                 Assert.assertTrue(new File(moduleDeployFolder, moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)).exists());
             } else {
@@ -1557,11 +1485,11 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 
-        moduleFile.setStateForNode(currentNodeId, ModuleState.STAGED);
+        moduleFile.setStateForNode(currentNodeId, ModuleState.REJECTED);
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 
-        moduleFile.setStateForNode(currentNodeId, ModuleState.DEPLOYED);
+        moduleFile.setStateForNode(currentNodeId, ModuleState.ACCEPTED);
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 
@@ -1590,11 +1518,11 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 
-        moduleFile.setStateForNode(currentNodeId, ModuleState.STAGED);
+        moduleFile.setStateForNode(currentNodeId, ModuleState.REJECTED);
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 
-        moduleFile.setStateForNode(currentNodeId, ModuleState.DEPLOYED);
+        moduleFile.setStateForNode(currentNodeId, ModuleState.ACCEPTED);
         publishAndVerifyUpdateModuleFile(moduleFile.getGoid(), determineWritable(moduleFile.getGoid(), isModularDeployWritable, isCustomDeployWritable), true);
         publishAssertionModuleRegistrationEvent(moduleFile, true);
 

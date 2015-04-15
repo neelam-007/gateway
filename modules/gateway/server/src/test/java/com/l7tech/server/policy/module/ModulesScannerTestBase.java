@@ -3,7 +3,7 @@ package com.l7tech.server.policy.module;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Rule;

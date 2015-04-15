@@ -16,7 +16,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.util.*;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -103,7 +103,7 @@ public class ClusterStatusAdminImpTest {
      * ----------------------------------------
      * module_0: Goid(GOID_HI_START, 0)  sha_0
      * ----------------------------------------
-     *      currentCluster  => STAGED
+     *      currentCluster  => ACCEPTED
      *      node_1          => UPLOADED
      *      node_3          => LOADED
      * ----------------------------------------
@@ -112,8 +112,8 @@ public class ClusterStatusAdminImpTest {
      * module_1: Goid(GOID_HI_START, 1)  sha_1
      * ----------------------------------------
      *      currentCluster  => UPLOADED
-     *      node_1          => STAGED
-     *      node_2          => STAGED
+     *      node_1          => ACCEPTED
+     *      node_2          => ACCEPTED
      *      node_3          => UPLOADED
      * ----------------------------------------
      *
@@ -171,20 +171,20 @@ public class ClusterStatusAdminImpTest {
         // ----------------------------------------
         // module_0:
         // ----------------------------------------
-        //      currentCluster  => STAGED
+        //      currentCluster  => ACCEPTED
         //      node_1          => UPLOADED
         //      node_3          => LOADED
         // ----------------------------------------
         entity = moduleFiles.get(new Goid(GOID_HI_START, 0));
         Assert.assertNotNull(entity);
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         entity.setStateForNode("node_1", ModuleState.UPLOADED);
         entity.setStateForNode("node_3", ModuleState.LOADED);
         states = entity.getStates();
         Assert.assertNotNull(states);
         Assert.assertEquals(3, states.size());
         Assert.assertEquals(clusterNodeId, states.get(0).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(0).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(0).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(0).getErrorMessage()));
         Assert.assertEquals("node_1", states.get(1).getNodeId());
         Assert.assertEquals(ModuleState.UPLOADED, states.get(1).getState());
@@ -197,14 +197,14 @@ public class ClusterStatusAdminImpTest {
         // module_1:
         // ----------------------------------------
         //      currentCluster  => UPLOADED
-        //      node_1          => STAGED
-        //      node_2          => STAGED
+        //      node_1          => ACCEPTED
+        //      node_2          => ACCEPTED
         //      node_3          => UPLOADED
         // ----------------------------------------
         entity = moduleFiles.get(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
-        entity.setStateForNode("node_1", ModuleState.STAGED);
-        entity.setStateForNode("node_2", ModuleState.STAGED);
+        entity.setStateForNode("node_1", ModuleState.ACCEPTED);
+        entity.setStateForNode("node_2", ModuleState.ACCEPTED);
         entity.setStateForNode("node_3", ModuleState.UPLOADED);
         states = entity.getStates();
         Assert.assertNotNull(states);
@@ -213,10 +213,10 @@ public class ClusterStatusAdminImpTest {
         Assert.assertEquals(ModuleState.UPLOADED, states.get(0).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(0).getErrorMessage()));
         Assert.assertEquals("node_1", states.get(1).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(1).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(1).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(1).getErrorMessage()));
         Assert.assertEquals("node_2", states.get(2).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(2).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(2).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(2).getErrorMessage()));
         Assert.assertEquals("node_3", states.get(3).getNodeId());
         Assert.assertEquals(ModuleState.UPLOADED, states.get(3).getState());
@@ -611,7 +611,7 @@ public class ClusterStatusAdminImpTest {
         // ----------------------------------------
         // module_0:
         // ----------------------------------------
-        //      currentCluster  => STAGED
+        //      currentCluster  => ACCEPTED
         //      node_1          => UPLOADED
         //      node_3          => LOADED
         // ----------------------------------------
@@ -660,7 +660,7 @@ public class ClusterStatusAdminImpTest {
         assertThat(addedModule.getStates(), not(equalTo(removedModule.getStates())));
         assertThat(getStateForThisNode(addedModule).getState(), not(equalTo(getStateForThisNode(removedModule).getState())));
         assertThat(getStateForThisNode(addedModule).getState(), equalTo(ModuleState.UPLOADED));
-        assertThat(getStateForThisNode(removedModule).getState(), equalTo(ModuleState.STAGED));
+        assertThat(getStateForThisNode(removedModule).getState(), equalTo(ModuleState.ACCEPTED));
         assertThat(copyOfServerModuleFiles, not(equalTo(serverModuleFiles)));
 
 
@@ -694,14 +694,14 @@ public class ClusterStatusAdminImpTest {
         // module_1: Goid(GOID_HI_START, 1)
         // ----------------------------------------
         // currentCluster  => UPLOADED
-        // node_1          => STAGED
-        // node_2          => STAGED
+        // node_1          => ACCEPTED
+        // node_2          => ACCEPTED
         // node_3          => UPLOADED
         // ----------------------------------------
         // update state for one node
         ServerModuleFile moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 1)); // get from the storage directly, as admin cannot update module states
         Assert.assertNotNull(moduleFile);
-        // STAGED => REJECTED
+        // ACCEPTED => REJECTED
         String nodeToChange = "node_1";
         moduleFile.setStateForNode(nodeToChange, ModuleState.REJECTED);
         // do update
@@ -734,7 +734,7 @@ public class ClusterStatusAdminImpTest {
                 assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
                 assertThat(addedState.getErrorMessage(), equalTo(removedState.getErrorMessage()));
                 assertThat(addedState.getState(), equalTo(ModuleState.REJECTED));
-                assertThat(removedState.getState(), equalTo(ModuleState.STAGED));
+                assertThat(removedState.getState(), equalTo(ModuleState.ACCEPTED));
             } else {
                 assertThat(addedState, equalTo(removedState));
             }
@@ -744,13 +744,13 @@ public class ClusterStatusAdminImpTest {
         // ----------------------------------------
         // currentCluster  => UPLOADED
         // node_1          => REJECTED
-        // node_2          => STAGED
+        // node_2          => ACCEPTED
         // node_3          => UPLOADED
         // ----------------------------------------
         // update error message for one node
         moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 1)); // get from the storage directly, as admin cannot update module states
         Assert.assertNotNull(moduleFile);
-        // STAGED => (ERROR, "error for node_2")
+        // ACCEPTED => (ERROR, "error for node_2")
         nodeToChange = "node_2";
         moduleFile.setStateErrorMessageForNode(nodeToChange, "error for node_2");
         // do update
@@ -782,7 +782,7 @@ public class ClusterStatusAdminImpTest {
                 assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                 assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
                 assertThat(addedState.getState(), equalTo(ModuleState.ERROR));
-                assertThat(removedState.getState(), equalTo(ModuleState.STAGED));
+                assertThat(removedState.getState(), equalTo(ModuleState.ACCEPTED));
                 assertThat(addedState.getErrorMessage(), equalTo("error for node_2"));
                 assertThat(removedState.getErrorMessage(), Matchers.isEmptyOrNullString());
             } else {
@@ -821,7 +821,7 @@ public class ClusterStatusAdminImpTest {
         // ----------------------------------------
         // module_0: Goid(GOID_HI_START, 0)
         // ----------------------------------------
-        // currentCluster  => STAGED
+        // currentCluster  => ACCEPTED
         // node_1          => UPLOADED
         // node_3          => LOADED
         // ----------------------------------------
@@ -830,20 +830,20 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(moduleFile);
         // make sure states are as expected
         ServerModuleFileState tmpState = moduleFile.getStateForNode(admin.getSelfNode().getNodeIdentifier());Assert.assertNotNull(tmpState);
-        assertThat(tmpState.getState(), equalTo(ModuleState.STAGED));
+        assertThat(tmpState.getState(), equalTo(ModuleState.ACCEPTED));
         tmpState = moduleFile.getStateForNode("node_3");Assert.assertNotNull(tmpState);
         assertThat(tmpState.getState(), equalTo(ModuleState.LOADED));
         // set states
-        // currentCluster | STAGED => (ERROR, "error for current_node")
-        // node_3         | LOADED => STAGED
+        // currentCluster | ACCEPTED => (ERROR, "error for current_node")
+        // node_3         | LOADED => ACCEPTED
         moduleFile.setStateErrorMessageForNode(admin.getSelfNode().getNodeIdentifier(), "error for current_node");
-        moduleFile.setStateForNode("node_3", ModuleState.STAGED);
+        moduleFile.setStateForNode("node_3", ModuleState.ACCEPTED);
         // ----------------------------------------
         // module_1: Goid(GOID_HI_START, 1)
         // ----------------------------------------
         // currentCluster  => UPLOADED
-        // node_1          => STAGED
-        // node_2          => STAGED
+        // node_1          => ACCEPTED
+        // node_2          => ACCEPTED
         // node_3          => UPLOADED
         // ----------------------------------------
         moduleFile = moduleFiles.get(new Goid(GOID_HI_START, 1)); // get from the storage directly, as admin cannot update module states
@@ -852,14 +852,14 @@ public class ClusterStatusAdminImpTest {
         tmpState = moduleFile.getStateForNode(admin.getSelfNode().getNodeIdentifier());Assert.assertNotNull(tmpState);
         assertThat(tmpState.getState(), equalTo(ModuleState.UPLOADED));
         tmpState = moduleFile.getStateForNode("node_2");Assert.assertNotNull(tmpState);
-        assertThat(tmpState.getState(), equalTo(ModuleState.STAGED));
+        assertThat(tmpState.getState(), equalTo(ModuleState.ACCEPTED));
         tmpState = moduleFile.getStateForNode("node_1");Assert.assertNotNull(tmpState);
-        assertThat(tmpState.getState(), equalTo(ModuleState.STAGED));
+        assertThat(tmpState.getState(), equalTo(ModuleState.ACCEPTED));
         // set states
-        // currentCluster | UPLOADED => STAGED
-        // node_2         | STAGED   => LOADED
-        // node_1         | STAGED   => UPLOADED
-        moduleFile.setStateForNode(admin.getSelfNode().getNodeIdentifier(), ModuleState.STAGED);
+        // currentCluster | UPLOADED => ACCEPTED
+        // node_2         | ACCEPTED   => LOADED
+        // node_1         | ACCEPTED   => UPLOADED
+        moduleFile.setStateForNode(admin.getSelfNode().getNodeIdentifier(), ModuleState.ACCEPTED);
         moduleFile.setStateForNode("node_2", ModuleState.LOADED);
         moduleFile.setStateForNode("node_1", ModuleState.UPLOADED);
         // do update
@@ -891,18 +891,18 @@ public class ClusterStatusAdminImpTest {
                     }
                     Assert.assertNotNull(removedState);
                     if (admin.getSelfNode().getNodeIdentifier().equals(addedState.getNodeId())) {
-                        // currentCluster | STAGED => (ERROR, "error for current_node")
+                        // currentCluster | ACCEPTED => (ERROR, "error for current_node")
                         assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                         assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
                         assertThat(addedState.getState(), equalTo(ModuleState.ERROR));
-                        assertThat(removedState.getState(), equalTo(ModuleState.STAGED));
+                        assertThat(removedState.getState(), equalTo(ModuleState.ACCEPTED));
                         assertThat(addedState.getErrorMessage(), equalTo("error for current_node"));
                         assertThat(removedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                     } else if ("node_3".equals(addedState.getNodeId())) {
-                        // node_3 | LOADED => STAGED
+                        // node_3 | LOADED => ACCEPTED
                         assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                         assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
-                        assertThat(addedState.getState(), equalTo(ModuleState.STAGED));
+                        assertThat(addedState.getState(), equalTo(ModuleState.ACCEPTED));
                         assertThat(removedState.getState(), equalTo(ModuleState.LOADED));
                         assertThat(addedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                         assertThat(addedState.getErrorMessage(), equalTo(removedState.getErrorMessage()));
@@ -925,27 +925,27 @@ public class ClusterStatusAdminImpTest {
                     }
                     Assert.assertNotNull(removedState);
                     if (admin.getSelfNode().getNodeIdentifier().equals(addedState.getNodeId())) {
-                        // currentCluster | UPLOADED => STAGED
+                        // currentCluster | UPLOADED => ACCEPTED
                         assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                         assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
-                        assertThat(addedState.getState(), equalTo(ModuleState.STAGED));
+                        assertThat(addedState.getState(), equalTo(ModuleState.ACCEPTED));
                         assertThat(removedState.getState(), equalTo(ModuleState.UPLOADED));
                         assertThat(addedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                         assertThat(addedState.getErrorMessage(), equalTo(removedState.getErrorMessage()));
                     } else if ("node_2".equals(addedState.getNodeId())) {
-                        // node_2 | STAGED   => LOADED
+                        // node_2 | ACCEPTED   => LOADED
                         assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                         assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
                         assertThat(addedState.getState(), equalTo(ModuleState.LOADED));
-                        assertThat(removedState.getState(), equalTo(ModuleState.STAGED));
+                        assertThat(removedState.getState(), equalTo(ModuleState.ACCEPTED));
                         assertThat(addedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                         assertThat(removedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                     } else if ("node_1".equals(addedState.getNodeId())) {
-                        // node_1 | STAGED   => UPLOADED
+                        // node_1 | ACCEPTED   => UPLOADED
                         assertThat(addedState.getGoid(), equalTo(removedState.getGoid()));
                         assertThat(addedState.getNodeId(), equalTo(removedState.getNodeId()));
                         assertThat(addedState.getState(), equalTo(ModuleState.UPLOADED));
-                        assertThat(removedState.getState(), equalTo(ModuleState.STAGED));
+                        assertThat(removedState.getState(), equalTo(ModuleState.ACCEPTED));
                         assertThat(addedState.getErrorMessage(), Matchers.isEmptyOrNullString());
                         assertThat(addedState.getErrorMessage(), equalTo(removedState.getErrorMessage()));
                     } else {
@@ -1642,7 +1642,7 @@ public class ClusterStatusAdminImpTest {
         //
         // Goid(GOID_HI_START, 0)
         // ----------------------------------------
-        //       currentCluster  => STAGED
+        //       currentCluster  => ACCEPTED
         //       node_1          => UPLOADED
         //       node_3          => LOADED
         // ----------------------------------------
@@ -1668,8 +1668,8 @@ public class ClusterStatusAdminImpTest {
         thisNodeState = getStateForThisNode(moduleFile);
         Assert.assertNotNull(thisNodeState);
         Assert.assertNotNull(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0))));
-        assertThat(thisNodeState, not(equalTo(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0)))))); // module_0 state for currentCluster is STAGED
-        assertThat(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0))).getState(), equalTo(ModuleState.STAGED));
+        assertThat(thisNodeState, not(equalTo(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0)))))); // module_0 state for currentCluster is ACCEPTED
+        assertThat(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0))).getState(), equalTo(ModuleState.ACCEPTED));
         assertThat(thisNodeState.getNodeId(), equalTo(admin.getSelfNode().getNodeIdentifier()));
         assertThat(thisNodeState.getState(), equalTo(ModuleState.UPLOADED));
         Assert.assertTrue(StringUtils.isBlank(thisNodeState.getErrorMessage()));

@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.*;
@@ -334,6 +335,54 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
         onModuleUnloaded(module);
 
         return true;
+    }
+
+    @Override
+    public void loadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
+        // check if there is a Gateway feature for executing modules
+        if (!modulesConfig.isFeatureEnabled()) {
+            throw new ModuleLoadingException("Cannot load module \"" + entityName + "\"; Gateway doesn't have license for Modular Assertions.");
+        }
+        // check if scanning is enabled
+        if (!modulesConfig.isScanningEnabled()) {
+            throw new ModuleLoadingException("Cannot load module \"" + entityName + "\"; Modular Assertions scanner is disabled.");
+        }
+
+        super.loadServerModuleFile(stagedFile, moduleDigest, entityName);
+    }
+
+    @Override
+    public void updateServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String updatedEntityName
+    ) {
+        // TODO: No need to check if the scanner is enabled or not, for now the entity name change is of interest not the module content i.e. the module is not reloaded if the content has changed.
+        // TODO: Once module content can be updated, consider checking whether the scanner is enabled or not.
+
+        super.updateServerModuleFile(stagedFile, moduleDigest, updatedEntityName);
+    }
+
+    @Override
+    public void unloadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
+        // check if there is a Gateway feature for executing modules
+        if (!modulesConfig.isFeatureEnabled()) {
+            throw new ModuleLoadingException("Cannot unload module \"" + entityName + "\"; Gateway doesn't have license for Modular Assertions.");
+        }
+        // check if scanning is enabled
+        if (!modulesConfig.isScanningEnabled()) {
+            throw new ModuleLoadingException("Cannot unload module \"" + entityName + "\"; Modular Assertions scanner is disabled.");
+        }
+
+        super.unloadServerModuleFile(stagedFile, moduleDigest, entityName);
     }
 
     @Override

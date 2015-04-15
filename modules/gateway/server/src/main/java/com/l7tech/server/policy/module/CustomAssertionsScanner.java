@@ -2,6 +2,7 @@ package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.module.CustomAssertionsScannerHelper;
+import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
@@ -663,30 +664,72 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     }
 
     /**
+     * Override to check if the custom assertion scanner is enabled and if there is a license for custom assertions.
+     */
+    @Override
+    public void loadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
+        // check if there is a Gateway feature for executing modules
+        if (!modulesConfig.isFeatureEnabled()) {
+            throw new ModuleLoadingException("Cannot load module \"" + entityName + "\"; Gateway doesn't have license for Custom Assertions.");
+        }
+        // check if scanning is enabled
+        if (!modulesConfig.isScanningEnabled()) {
+            throw new ModuleLoadingException("Cannot load module \"" + entityName + "\"; Custom Assertions scanner is disabled.");
+        }
+
+        super.loadServerModuleFile(stagedFile, moduleDigest, entityName);
+    }
+
+    /**
      * Override the base implementation to update {@code CustomAssertionDescriptor}'s entity name as well.
      *
-     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
-     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
-     * @param entityName      the module entity name.  Required and cannot be {@code null}.
+     * @param stagedFile            the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest          the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param updatedEntityName     the module entity name.  Required and cannot be {@code null}.
      */
     @Override
     public void updateServerModuleFile(
             @NotNull final File stagedFile,
             @NotNull final String moduleDigest,
-            @NotNull final String entityName
+            @NotNull final String updatedEntityName
     ) {
+        // TODO: No need to check if the scanner is enabled or not, for now the entity name change is of interest not the module content i.e. the module is not reloaded if the content has changed.
+        // TODO: Once module content can be updated, consider checking whether the scanner is enabled or not.
+
         // get the module filename
         final String fileName = stagedFile.getName();
 
         // find previous loaded module with the same name
-        final CustomAssertionModule previousModule = scannedModules.get(fileName);
+        final CustomAssertionModule previousModule = getModule(fileName);
         if (previousModule != null && moduleDigest.equals(previousModule.getDigest())) {
-            previousModule.setEntityName(entityName);
+            previousModule.setEntityName(updatedEntityName);
             final Collection<CustomAssertionDescriptor> descriptors = previousModule.getDescriptors();
             for (final CustomAssertionDescriptor descriptor : descriptors) {
-                descriptor.setModuleEntityName(entityName);
+                descriptor.setModuleEntityName(updatedEntityName);
             }
         }
+    }
+
+    @Override
+    public void unloadServerModuleFile(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) throws ModuleLoadingException {
+        // check if there is a Gateway feature for executing modules
+        if (!modulesConfig.isFeatureEnabled()) {
+            throw new ModuleLoadingException("Cannot unload module \"" + entityName + "\"; Gateway doesn't have license for Custom Assertions.");
+        }
+        // check if scanning is enabled
+        if (!modulesConfig.isScanningEnabled()) {
+            throw new ModuleLoadingException("Cannot unload module \"" + entityName + "\"; Custom Assertions scanner is disabled.");
+        }
+
+        super.unloadServerModuleFile(stagedFile, moduleDigest, entityName);
     }
 
     @Override

@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.EntityManagerTest;
 import com.l7tech.util.Charsets;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.LazyInitializationException;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
      * ----------------------------------------
      * module_1: Goid(GOID_HI_START, 1)  sha_1
      * ----------------------------------------
-     *      currentCluster  => STAGED
+     *      currentCluster  => ACCEPTED
      *      node_1          => UPLOADED
      *      node_3          => LOADED
      * ----------------------------------------
@@ -83,8 +83,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
      * module_2: Goid(GOID_HI_START, 2)  sha_2
      * ----------------------------------------
      *      currentCluster  => UPLOADED
-     *      node_1          => STAGED
-     *      node_2          => STAGED
+     *      node_1          => ACCEPTED
+     *      node_2          => ACCEPTED
      *      node_3          => UPLOADED
      * ----------------------------------------
      *
@@ -136,13 +136,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         // ----------------------------------------
         // module_0:
         // ----------------------------------------
-        //      currentCluster  => STAGED
+        //      currentCluster  => ACCEPTED
         //      node_1          => UPLOADED
         //      node_3          => LOADED
         // ----------------------------------------
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         entity.setStateForNode("node_1", ModuleState.UPLOADED);
         entity.setStateForNode("node_3", ModuleState.LOADED);
         serverModuleFileManager.update(entity);
@@ -153,7 +153,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         Assert.assertNotNull(states);
         Assert.assertEquals(3, states.size());
         Assert.assertEquals(clusterNodeId, states.get(0).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(0).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(0).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(0).getErrorMessage()));
         Assert.assertEquals("node_1", states.get(1).getNodeId());
         Assert.assertEquals(ModuleState.UPLOADED, states.get(1).getState());
@@ -166,14 +166,14 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         // module_1:
         // ----------------------------------------
         //      currentCluster  => UPLOADED
-        //      node_1          => STAGED
-        //      node_2          => STAGED
+        //      node_1          => ACCEPTED
+        //      node_2          => ACCEPTED
         //      node_3          => UPLOADED
         // ----------------------------------------
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 2));
         Assert.assertNotNull(entity);
-        entity.setStateForNode("node_1", ModuleState.STAGED);
-        entity.setStateForNode("node_2", ModuleState.STAGED);
+        entity.setStateForNode("node_1", ModuleState.ACCEPTED);
+        entity.setStateForNode("node_2", ModuleState.ACCEPTED);
         entity.setStateForNode("node_3", ModuleState.UPLOADED);
         serverModuleFileManager.update(entity);
         flushSession();
@@ -186,10 +186,10 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         Assert.assertEquals(ModuleState.UPLOADED, states.get(0).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(0).getErrorMessage()));
         Assert.assertEquals("node_1", states.get(1).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(1).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(1).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(1).getErrorMessage()));
         Assert.assertEquals("node_2", states.get(2).getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, states.get(2).getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, states.get(2).getState());
         Assert.assertTrue(StringUtils.isBlank(states.get(2).getErrorMessage()));
         Assert.assertEquals("node_3", states.get(3).getNodeId());
         Assert.assertEquals(ModuleState.UPLOADED, states.get(3).getState());
@@ -293,7 +293,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         // ----------------------------------------
         // module_1:    BEFORE
         // ----------------------------------------
-        //      currentCluster  => STAGED
+        //      currentCluster  => ACCEPTED
         //      node_1          => UPLOADED
         //      node_3          => LOADED
         // ----------------------------------------
@@ -306,7 +306,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         Assert.assertNotNull(entityState.getServerModuleFile());
         Assert.assertEquals(entityGoid, entityState.getServerModuleFile().getGoid());
         Assert.assertEquals(clusterNodeId, entityState.getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, entityState.getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, entityState.getState());
         Assert.assertTrue(StringUtils.isBlank(entityState.getErrorMessage()));
 
         serverModuleFileManager.updateState(entityGoid, ModuleState.REJECTED);
@@ -372,13 +372,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entityState = serverModuleFileManager.findStateForCurrentNode(entity);
         Assert.assertNull(entityState);
 
-        serverModuleFileManager.updateState(entityGoid, ModuleState.STAGED);
+        serverModuleFileManager.updateState(entityGoid, ModuleState.ACCEPTED);
         flushSession();
 
         // ----------------------------------------
         // module_5:
         // ----------------------------------------
-        //      currentCluster  => STAGED
+        //      currentCluster  => ACCEPTED
         //      node_3          => LOADED
         // ----------------------------------------
         entity = serverModuleFileManager.findByPrimaryKey(entityGoid);
@@ -390,7 +390,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         Assert.assertNotNull(entityState.getServerModuleFile());
         Assert.assertEquals(entityGoid, entityState.getServerModuleFile().getGoid());
         Assert.assertEquals(clusterNodeId, entityState.getNodeId());
-        Assert.assertEquals(ModuleState.STAGED, entityState.getState());
+        Assert.assertEquals(ModuleState.ACCEPTED, entityState.getState());
         Assert.assertTrue(StringUtils.isBlank(entityState.getErrorMessage()));
 
         serverModuleFileManager.updateState(entityGoid, "some error");
@@ -598,7 +598,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
         entity.createData("test123".getBytes(), "non_existent_sha");
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
             Assert.fail("name exist, sha does not exist should have failed with DuplicateObjectException");
@@ -612,7 +612,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
         entity.createData("test123".getBytes(), "sha_2");
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
             Assert.fail("name exist sha exists (diff entities) should have failed with DuplicateObjectException");
@@ -626,7 +626,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
         entity.createData("test123".getBytes(), "sha_1");
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
             Assert.fail("name exist sha exists (same entity) should have failed with DuplicateObjectException");
@@ -640,7 +640,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
         entity.createData("test123".getBytes(), "sha_2");
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
             Assert.fail("name does not exist, sha exist should have failed with DuplicateObjectException");
@@ -654,7 +654,7 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
         entity.createData("test123".getBytes(), "non_existent_sha");
-        entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
+        entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         Assert.assertNotNull(serverModuleFileManager.save(entity));
         flushSession();
     }
