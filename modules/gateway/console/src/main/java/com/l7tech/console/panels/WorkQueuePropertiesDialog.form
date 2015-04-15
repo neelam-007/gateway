@@ -32,7 +32,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter a name for this work queue"/>
+              <toolTipText value="Enter a name for this work queue."/>
             </properties>
           </component>
           <component id="7ba0d" class="javax.swing.JTextField" binding="maxQueueSizeTextField">
@@ -42,7 +42,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter the maximum queue size"/>
+              <toolTipText value="Enter the maximum queue size (up to 1000000)."/>
             </properties>
           </component>
           <component id="dfb0a" class="javax.swing.JLabel">
@@ -60,7 +60,7 @@
               </grid>
             </constraints>
             <properties>
-              <toolTipText value="Enter the maximum number of worker threads for this work queue"/>
+              <toolTipText value="Enter the maximum thread pool size for this work queue (up to 10000)."/>
             </properties>
           </component>
           <component id="6120a" class="javax.swing.JLabel">
@@ -97,7 +97,7 @@
             </constraints>
             <properties>
               <text value="Wait for Room"/>
-              <toolTipText value="Wait for room when the queue is full"/>
+              <toolTipText value="When the queue is full, the current thread waits until there is room in the work queue."/>
             </properties>
           </component>
           <component id="8ee2e" class="javax.swing.JRadioButton" binding="failImmediatelyRadioButton" default-binding="true">
@@ -106,7 +106,7 @@
             </constraints>
             <properties>
               <text value="Fail Immediately"/>
-              <toolTipText value="Fail immediately when queue is full"/>
+              <toolTipText value="When the queue is full, fail the policy immediately."/>
             </properties>
           </component>
         </children>

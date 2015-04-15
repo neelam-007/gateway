@@ -3,10 +3,6 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.search.Dependency;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -19,10 +15,9 @@ public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntitie
     private static final String META_INITIALIZED = InvokePolicyAsyncAssertion.class.getName() + ".metadataInitialized";
 
     private String workQueueName;
+    private Goid workQueueGoid;
     private String policyName;
     private Goid policyGoid;
-    private String policyBackedServiceName = null;
-    private Goid policyBackedServiceGoid = null;
 
     @Override
     public AssertionMetadata meta() {
@@ -57,13 +52,20 @@ public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntitie
         return meta;
     }
 
-    @Dependency(type = Dependency.DependencyType.WORK_QUEUE, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getWorkQueueName() {
         return workQueueName;
     }
 
     public void setWorkQueueName(String workQueueName) {
         this.workQueueName = workQueueName;
+    }
+
+    public Goid getWorkQueueGoid() {
+        return workQueueGoid;
+    }
+
+    public void setWorkQueueGoid(Goid workQueueGoid) {
+        this.workQueueGoid = workQueueGoid;
     }
 
     public String getPolicyName() {
@@ -82,42 +84,38 @@ public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntitie
         this.policyGoid = policyGoid;
     }
 
-    public String getPolicyBackedServiceName() {
-        return policyBackedServiceName;
-    }
-
-    public void setPolicyBackedServiceName(String policyBackedServiceName) {
-        this.policyBackedServiceName = policyBackedServiceName;
-    }
-
-    public Goid getPolicyBackedServiceGoid() {
-        return policyBackedServiceGoid;
-    }
-
-    public void setPolicyBackedServiceGoid(Goid policyBackedServiceGoid) {
-        this.policyBackedServiceGoid = policyBackedServiceGoid;
-    }
-
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        if (policyBackedServiceGoid == null)
+        if (policyName == null)
             return new EntityHeader[0];
 
-        EntityHeader header = new EntityHeader();
-        if (policyBackedServiceName != null)
-            header.setName(policyBackedServiceName);
-        header.setGoid(policyBackedServiceGoid);
-        header.setType(EntityType.POLICY_BACKED_SERVICE);
-        return new EntityHeader[]{header};
+        EntityHeader policyHeader = new EntityHeader();
+        if (policyName != null)
+            policyHeader.setName(policyName);
+        policyHeader.setGoid(policyGoid);
+        policyHeader.setType(EntityType.POLICY);
+
+        EntityHeader wqHeader = new EntityHeader();
+        if (workQueueName != null)
+            wqHeader.setName(workQueueName);
+        wqHeader.setGoid(workQueueGoid);
+        wqHeader.setType(EntityType.WORK_QUEUE);
+
+        return new EntityHeader[]{policyHeader, wqHeader};
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if (EntityType.POLICY_BACKED_SERVICE.equals(oldEntityHeader.getType()) &&
+        if (EntityType.POLICY.equals(oldEntityHeader.getType()) &&
                 oldEntityHeader.getType().equals(newEntityHeader.getType()) &&
-                Goid.equals(policyBackedServiceGoid, oldEntityHeader.getGoid())) {
-            policyBackedServiceName = newEntityHeader.getName();
-            policyBackedServiceGoid = newEntityHeader.getGoid();
+                Goid.equals(policyGoid, oldEntityHeader.getGoid())) {
+            policyName = newEntityHeader.getName();
+            policyGoid = newEntityHeader.getGoid();
+        } else if (EntityType.WORK_QUEUE.equals(oldEntityHeader.getType()) &&
+                oldEntityHeader.getType().equals(newEntityHeader.getType()) &&
+                Goid.equals(workQueueGoid, oldEntityHeader.getGoid())) {
+            workQueueName = newEntityHeader.getName();
+            workQueueGoid = newEntityHeader.getGoid();
         }
     }
 }

@@ -5,11 +5,13 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.polback.BackgroundTask;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.InvokePolicyAsyncAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.EntityFinder;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -22,6 +24,7 @@ import org.springframework.context.ApplicationContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.lang.reflect.Method;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,32 +44,50 @@ public class ServerInvokePolicyAsyncAssertion extends AbstractServerAssertion<In
     private String nodeId;
 
     private final WorkQueueExecutorManager workQueueExecutorManager;
+    private final EntityFinder entityFinder;
     private final ApplicationContext applicationContext;
 
     public ServerInvokePolicyAsyncAssertion(final InvokePolicyAsyncAssertion assertion, ApplicationContext applicationContext) {
         super(assertion);
         workQueueExecutorManager = applicationContext.getBean("workQueueExecutorManager", WorkQueueExecutorManager.class);
+        entityFinder = applicationContext.getBean("entityFinder", EntityFinder.class);
         this.applicationContext = applicationContext;
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException {
-        final ThreadPoolExecutor workQueueExecutor = this.workQueueExecutorManager.getWorkQueueExecutor(assertion.getWorkQueueName());
+        try {
+            Entity entity = entityFinder.find(new EntityHeader((assertion).getPolicyGoid(), EntityType.POLICY, null, null));
+            if (entity == null) {
+                logAndAudit(AssertionMessages.INVOKE_POLICY_ASYNC_ASSERTION_FAILED, "Policy fragment \"" + assertion.getPolicyName() + "\" does not exist.");
+                return AssertionStatus.FALSIFIED;
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error looking for policy fragment: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        final ThreadPoolExecutor workQueueExecutor = this.workQueueExecutorManager.getWorkQueueExecutor(assertion.getWorkQueueGoid());
         if (workQueueExecutor != null) {
             // Send to queue
-            workQueueExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, assertion.getWorkQueueName(),
-                            String.valueOf(workQueueExecutor.getQueue().size()),
-                            String.valueOf(workQueueExecutor.getActiveCount()),
-                            String.valueOf(workQueueExecutor.getPoolSize()),
-                            workQueueExecutor.getRejectedExecutionHandler().getClass().getName());
-                    runBackgroundTask(assertion.getPolicyGoid(), assertion.getPolicyName());
-                }
-            });
+            try {
+                workQueueExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_INFO_FINER, assertion.getWorkQueueName(),
+                                String.valueOf(workQueueExecutor.getQueue().size()),
+                                String.valueOf(workQueueExecutor.getActiveCount()),
+                                String.valueOf(workQueueExecutor.getPoolSize()),
+                                workQueueExecutor.getRejectedExecutionHandler().getClass().getName());
+                        runBackgroundTask(assertion.getPolicyGoid(), assertion.getPolicyName());
+                    }
+                });
+            } catch (RejectedExecutionException ree) {
+                logAndAudit(AssertionMessages.INVOKE_POLICY_ASYNC_ASSERTION_FAILED, "Work Queue \"" + assertion.getWorkQueueName() +
+                        "\" is full. Rejected request ID: " + context.getRequestId() + ". " + ExceptionUtils.getMessage(ree));
+            }
         } else {
             logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, assertion.getWorkQueueName(), "Work queue executor does not exist.");
+            return AssertionStatus.FALSIFIED;
         }
         return AssertionStatus.NONE;
     }

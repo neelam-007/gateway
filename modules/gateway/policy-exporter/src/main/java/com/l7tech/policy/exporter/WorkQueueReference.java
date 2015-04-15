@@ -31,7 +31,7 @@ public class WorkQueueReference extends ExternalReference {
     private String threadPoolMax;
     private String rejectPolicy;
 
-    private String localName;
+    private Goid localGoid;
     private LocalizeAction localizeType;
 
     public WorkQueueReference(final ExternalReferenceFinder finder) {
@@ -42,9 +42,9 @@ public class WorkQueueReference extends ExternalReference {
         this(finder);
         if (assertion == null) throw new IllegalStateException("WorkQueueable must not be null.");
 
-        name = assertion.getWorkQueueName();
+        goid = assertion.getWorkQueueGoid();
         try {
-            WorkQueue wq = getFinder().getWorkQueue(name);
+            WorkQueue wq = getFinder().getWorkQueue(goid);
             if (wq != null) {
                 goid = wq.getGoid();
                 name = wq.getName();
@@ -121,9 +121,11 @@ public class WorkQueueReference extends ExternalReference {
         localizeType = LocalizeAction.IGNORE;
     }
 
-    public void setLocalizeReplaceByName(String name) {
+    @Override
+    public boolean setLocalizeReplace(Goid goid) {
         localizeType = LocalizeAction.REPLACE;
-        localName = name;
+        localGoid = goid;
+        return true;
     }
 
     public static WorkQueueReference parseFromElement(final ExternalReferenceFinder context, final Element elmt) throws InvalidDocumentFormatException {
@@ -176,7 +178,7 @@ public class WorkQueueReference extends ExternalReference {
             return true;
         }
         try {
-            WorkQueue wq = getFinder().getWorkQueue(name);
+            WorkQueue wq = getFinder().getWorkQueue(goid);
             return wq != null &&
                     wq.getName().equalsIgnoreCase(name) &&
                     String.valueOf(wq.getMaxQueueSize()).equals(maxQueueSize) &&
@@ -193,9 +195,9 @@ public class WorkQueueReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof WorkQueueable) {
                 final WorkQueueable workQueueable = (WorkQueueable) assertionToLocalize;
-                if (workQueueable.getWorkQueueName().equalsIgnoreCase(name)) {
+                if (workQueueable.getWorkQueueGoid().equals(goid)) {
                     if (localizeType == LocalizeAction.REPLACE) {
-                        workQueueable.setWorkQueueName(localName);
+                        workQueueable.setWorkQueueGoid(localGoid);
                     } else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;

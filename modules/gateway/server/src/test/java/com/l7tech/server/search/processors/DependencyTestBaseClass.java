@@ -105,8 +105,6 @@ public abstract class DependencyTestBaseClass {
     HttpConfigurationDependencyProcessor httpConfigurationDependencyProcessor = new HttpConfigurationDependencyProcessor();
     @InjectMocks
     SsgKeyEntryDependencyProcessor ssgKeyEntryDependencyProcessor = new SsgKeyEntryDependencyProcessor();
-    @InjectMocks
-    WorkQueueDependencyProcessor workQueueDependencyProcessor = new WorkQueueDependencyProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, InternalDependencyProcessor>builder()
@@ -124,7 +122,6 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.CASSANDRA_CONNECTION, cassandraConnectionDependencyProcessor)
             .put(Dependency.DependencyType.HTTP_CONFIGURATION, httpConfigurationDependencyProcessor)
             .put(Dependency.DependencyType.SSG_PRIVATE_KEY, ssgKeyEntryDependencyProcessor)
-            .put(Dependency.DependencyType.WORK_QUEUE, workQueueDependencyProcessor)
             .map());
 
     @InjectMocks

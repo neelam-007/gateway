@@ -2678,10 +2678,6 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
                 </entry>
-                <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.WORK_QUEUE"/></key>
-                    <bean class="com.l7tech.server.search.processors.WorkQueueDependencyProcessor"/>
-                </entry>
             </util:map>
         </constructor-arg>
     </bean>

@@ -92,7 +92,7 @@ public class WorkQueueManagerDialog extends JDialog {
         };
         queueTable.getSelectionModel().addListSelectionListener(enableDisableListener);
 
-        final RowSorter.SortKey sortKey = new RowSorter.SortKey(1, SortOrder.ASCENDING);
+        final RowSorter.SortKey sortKey = new RowSorter.SortKey(0, SortOrder.ASCENDING);
         final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(workQueueTableModel);
         sorter.setSortKeys(java.util.Arrays.asList(sortKey));
         sorter.setSortsOnUpdates(true);
@@ -328,10 +328,10 @@ public class WorkQueueManagerDialog extends JDialog {
         return closed;
     }
 
-    public String getSelectedWorkQueueName() {
+    public WorkQueue getSelectedWorkQueue() {
         if (queueTable.getSelectedRow() < 0) {
             return null;
         }
-        return workQueueTableModel.getRowObject(queueTable.getSelectedRow()).getName();
+        return workQueueTableModel.getRowObject(queueTable.convertRowIndexToModel(queueTable.getSelectedRow()));
     }
 }

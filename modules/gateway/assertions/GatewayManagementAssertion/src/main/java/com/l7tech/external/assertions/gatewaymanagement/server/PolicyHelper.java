@@ -671,8 +671,8 @@ public class PolicyHelper {
         }
 
         @Override
-        public WorkQueue getWorkQueue(final String name) throws FindException {
-            return filter(workQueueEntityManager.findByUniqueName(name));
+        public WorkQueue getWorkQueue(final Goid id) throws FindException {
+            return filter(workQueueEntityManager.findByPrimaryKey(id));
         }
 
         private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {

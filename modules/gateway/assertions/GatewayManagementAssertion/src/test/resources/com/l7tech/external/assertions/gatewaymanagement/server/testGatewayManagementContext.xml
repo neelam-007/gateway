@@ -323,6 +323,7 @@
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
+                <ref bean="workQueueEntityManager"/>
             </list>
         </constructor-arg>
     </bean>

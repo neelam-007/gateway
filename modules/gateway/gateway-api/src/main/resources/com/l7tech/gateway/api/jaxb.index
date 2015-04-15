@@ -59,3 +59,4 @@ GroupMO
 FirewallRuleMO
 SampleMessageMO
 ScheduledTaskMO
+WorkQueueMO

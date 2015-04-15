@@ -284,9 +284,9 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public WorkQueue getWorkQueue(final String name) throws FindException {
+    public WorkQueue getWorkQueue(final Goid id) throws FindException {
         WorkQueueManagerAdmin workQueueManagerAdmin = getAdminInterface(WorkQueueManagerAdmin.class);
-        return workQueueManagerAdmin.getWorkQueue(name);
+        return workQueueManagerAdmin.getWorkQueue(id);
     }
 
     @Override

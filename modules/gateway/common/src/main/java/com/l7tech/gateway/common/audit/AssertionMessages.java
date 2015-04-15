@@ -1381,9 +1381,10 @@ public class AssertionMessages extends Messages {
     public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
 
     // InvokePolicyAsync Assertion
-    public static final M WORK_QUEUE_EXECUTOR_NOT_AVAIL = m(11100, Level.WARNING, "Executor associated with work queue {0} not available due to {1}");
+    public static final M WORK_QUEUE_EXECUTOR_NOT_AVAIL = m(11100, Level.WARNING, "Executor associated with work queue \"{0}\" not available due to {1}");
     public static final M WORK_QUEUE_EXECUTOR_FINE = m(11101, Level.FINE, "Work Queue Executor Manager: {0}");
     public static final M WORK_QUEUE_EXECUTOR_INFO_FINER = m(11102, Level.FINER, "Work queue name: {0}; queue size: {1}; active threads: {2}; threads in pool: {3}; reject policy: {4}.");
+    public static final M INVOKE_POLICY_ASYNC_ASSERTION_FAILED = m(11103, Level.WARNING, "\"Invoke Policy Async\" assertion failed due to: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

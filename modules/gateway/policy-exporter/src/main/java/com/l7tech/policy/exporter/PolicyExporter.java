@@ -175,10 +175,6 @@ public class PolicyExporter {
                 addReference( new PrivateKeyReference( finder, keyable), refs);
             }
         }
-
-        if (assertion instanceof InvokePolicyAsyncAssertion) {
-            addReference(new WorkQueueReference(finder, (WorkQueueable) assertion), refs);
-        }
     }
 
     /**
@@ -230,6 +226,8 @@ public class PolicyExporter {
                 } else {
                     logger.warning("Ignoring empty custom-key-value-store header: " + entityHeader);
                 }
+            } else if (EntityType.WORK_QUEUE.equals(entityHeader.getType()) ) {
+                addReference(new WorkQueueReference(finder, (WorkQueueable) assertion), refs);
             }
         }
     }

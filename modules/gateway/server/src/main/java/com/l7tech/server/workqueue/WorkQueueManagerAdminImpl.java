@@ -28,8 +28,13 @@ public class WorkQueueManagerAdminImpl extends AsyncAdminMethodsImpl implements 
     }
 
     @Override
-    public WorkQueue getWorkQueue(String name) throws FindException {
-        return workQueueEntityManager.findByUniqueName(name);
+    public WorkQueue getWorkQueue(String workQueueName) throws FindException {
+        return workQueueEntityManager.findByUniqueName(workQueueName);
+    }
+
+    @Override
+    public WorkQueue getWorkQueue(Goid id) throws FindException {
+        return workQueueEntityManager.findByPrimaryKey(id);
     }
 
     @Override

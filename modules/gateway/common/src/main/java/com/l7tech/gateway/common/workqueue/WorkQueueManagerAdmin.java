@@ -27,6 +27,17 @@ public interface WorkQueueManagerAdmin extends AsyncAdminMethods {
     WorkQueue getWorkQueue(String workQueueName) throws FindException;
 
     /**
+     * Retrieve a Work Queue entity from the database by using a Work Queue name.
+     *
+     * @param id: the id of a Work Queue
+     * @return a Work Queue entity with the name, "workQueueName".
+     * @throws FindException: thrown when errors finding the Work Queue entity.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.WORK_QUEUE, stereotype= MethodStereotype.FIND_ENTITY)
+    WorkQueue getWorkQueue(Goid id) throws FindException;
+
+    /**
      * Retrieve all Work Queue entities from the database.
      *
      * @return a list of Work Queue entities

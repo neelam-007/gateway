@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
@@ -84,8 +85,10 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
                 dialog.pack();
                 dialog.setVisible(true);
                 if (dialog.isClosed()) {
-                    if (dialog.getSelectedWorkQueueName() != null) {
-                        assertion.setWorkQueueName(dialog.getSelectedWorkQueueName());
+                    final WorkQueue wq = dialog.getSelectedWorkQueue();
+                    if (wq != null) {
+                        assertion.setWorkQueueName(wq.getName());
+                        assertion.setWorkQueueGoid(wq.getGoid());
                     }
                     populateWorkQueueCombobox();
                 }
@@ -109,16 +112,25 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
     }
 
     private void viewToModel(final InvokePolicyAsyncAssertion assertion) {
-        assertion.setWorkQueueName((String) workQueueComboBox.getSelectedItem());
-        for (Policy policy : policies) {
-            if (policy.getName().equals(policyComboBox.getSelectedItem())) {
-                assertion.setPolicyName(policy.getName());
-                assertion.setPolicyGoid(policy.getGoid());
-                return;
+        WorkQueueManagerAdmin workQueueManagerAdmin = Registry.getDefault().getWorkQueueManagerAdmin();
+        try {
+            WorkQueue wq = workQueueManagerAdmin.getWorkQueue((String) workQueueComboBox.getSelectedItem());
+            assertion.setWorkQueueName(wq.getName());
+            assertion.setWorkQueueGoid(wq.getGoid());
+
+            for (Policy policy : policies) {
+                if (policy.getName().equals(policyComboBox.getSelectedItem())) {
+                    assertion.setPolicyName(policy.getName());
+                    assertion.setPolicyGoid(policy.getGoid());
+                    return;
+                }
             }
+            // Should not happen
+            JOptionPane.showMessageDialog(this, resources.getString("message.error.find.policy"), "Error", JOptionPane.ERROR_MESSAGE);
+
+        } catch (FindException fe) {
+            JOptionPane.showMessageDialog(this, resources.getString("message.error.find.work.queues"), "Error", JOptionPane.ERROR_MESSAGE);
         }
-        // Should not happen
-        JOptionPane.showMessageDialog(this, resources.getString("message.error.find.policy"), "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void populatePolicyCombobox() {
@@ -158,10 +170,10 @@ public class InvokePolicyAsyncAssertionDialog extends AssertionPropertiesEditorS
             DefaultComboBoxModel model = new DefaultComboBoxModel();
             WorkQueueManagerAdmin workQueueManagerAdmin = Registry.getDefault().getWorkQueueManagerAdmin();
 
-            for (String wqName : workQueueManagerAdmin.getAllWorkQueueNames()) {
-                model.addElement(wqName);
-                if (wqName.equals(assertion.getWorkQueueName())) {
-                    selectedWorkQueue = wqName;
+            for (WorkQueue wq : workQueueManagerAdmin.getAllWorkQueues()) {
+                model.addElement(wq.getName());
+                if (wq.getGoid().equals(assertion.getWorkQueueGoid())) {
+                    selectedWorkQueue = wq.getName();
                 }
             }
 

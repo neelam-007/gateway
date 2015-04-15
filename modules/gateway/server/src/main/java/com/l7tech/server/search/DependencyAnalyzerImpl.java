@@ -21,6 +21,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -103,7 +104,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SsgFirewallRule.class,
             SampleMessage.class,
             ResourceEntry.class,
-            ScheduledTask.class
+            ScheduledTask.class,
+            WorkQueue.class
     );
     @Inject
     private EntityCrud entityCrud;

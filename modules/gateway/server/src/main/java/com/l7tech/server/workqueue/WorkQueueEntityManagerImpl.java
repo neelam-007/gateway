@@ -3,6 +3,7 @@ package com.l7tech.server.workqueue;
 import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.HibernateEntityManager;
 
@@ -19,8 +20,8 @@ public class WorkQueueEntityManagerImpl extends HibernateEntityManager<WorkQueue
     }
 
     @Override
-    public WorkQueue getWorkQueueEntity(String workQueueName) throws FindException {
-        return findByUniqueName(workQueueName);
+    public WorkQueue getWorkQueueEntity(Goid id) throws FindException {
+        return findByPrimaryKey(id);
     }
 
 }

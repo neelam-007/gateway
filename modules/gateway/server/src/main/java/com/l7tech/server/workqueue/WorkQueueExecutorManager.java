@@ -8,11 +8,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public interface WorkQueueExecutorManager {
 
-    ThreadPoolExecutor getWorkQueueExecutor(String name);
+    ThreadPoolExecutor getWorkQueueExecutor(Goid id);
 
     void removeWorkQueueExecutor(WorkQueue workQueueEntity);
-
-    void removeWorkQueueExecutor(Goid goid);
 
     void updateWorkQueueExecutor(WorkQueue newEntity, WorkQueue oldEntity) throws UpdateException;
 }

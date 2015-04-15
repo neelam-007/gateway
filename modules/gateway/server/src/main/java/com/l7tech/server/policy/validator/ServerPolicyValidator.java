@@ -674,22 +674,6 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         }
     }
 
-    private void checkWorkQueue(final WorkQueueable workQueueable,
-                                final AssertionPath ap,
-                                final PolicyValidatorResult r) {
-        final String name = workQueueable.getWorkQueueName();
-        try {
-            WorkQueue wq = workQueueEntityManager.getWorkQueueEntity(name);
-            if (wq == null) {
-                r.addError(new PolicyValidatorResult.Error((Assertion) workQueueable,
-                        "Assertion refers to the " + EntityType.WORK_QUEUE.getName() + " '" + name + "' which cannot be located on this system.", null));
-
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Error looking for work queue: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
     private void checkHttpDigestConfiguration(final HttpDigest httpDigestAssertion,
                                               final AssertionPath ap,
                                               final PolicyValidatorResult r) {

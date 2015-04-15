@@ -103,5 +103,5 @@ public interface ExternalReferenceFinder {
 
     CustomEntitySerializer getCustomKeyValueEntitySerializer(final String entitySerializerClassName);
 
-    WorkQueue getWorkQueue(String name) throws FindException;
+    WorkQueue getWorkQueue(Goid id) throws FindException;
 }

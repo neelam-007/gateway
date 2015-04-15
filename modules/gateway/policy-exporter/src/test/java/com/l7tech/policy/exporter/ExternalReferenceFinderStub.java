@@ -197,7 +197,7 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public WorkQueue getWorkQueue(final String name) throws FindException {
+    public WorkQueue getWorkQueue(final Goid id) throws FindException {
         return null;
     }
 }
