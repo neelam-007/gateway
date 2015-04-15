@@ -1023,6 +1023,7 @@ public class GatewayFeatureSets {
             fs(retrieveServiceWsdlAssertion),
             fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
+            mass("assertion:PortalBootstrap");
 
         fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -1094,6 +1095,7 @@ public class GatewayFeatureSets {
             fs(retrieveServiceWsdlAssertion),
             fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
+            mass("assertion:PortalBootstrap");
 
         fsp(PROFILE_CLOUD_CONTROL, "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -1225,6 +1227,7 @@ public class GatewayFeatureSets {
                 fs(csrfProtectionAssertion),
                 fs(retrieveServiceWsdlAssertion),
                 fs(jwtAssertion));
+                mass("assertion:PortalBootstrap");
 
         /**
          * ### FEATURE PACK DEFINITIONS BEGIN ###

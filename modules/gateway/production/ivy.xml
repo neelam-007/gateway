@@ -91,6 +91,7 @@
         <dependency name="BufferDataAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JwtAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CassandraAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="PortalBootstrapAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>
