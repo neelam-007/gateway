@@ -2613,6 +2613,23 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     }
 
     @Test
+    public void test_ServerModuleFile_CRUD() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // simulate ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        load_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        update_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "test server module file dynamic 1", "new test server module file dynamic 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.DynamicCustomAssertionsTest1.jar
+        unload_and_verify(new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"), "new test server module file dynamic 1");
+    }
+
+    @Test
     public void test_that_processRemovedModules_ignores_modules_from_db() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));

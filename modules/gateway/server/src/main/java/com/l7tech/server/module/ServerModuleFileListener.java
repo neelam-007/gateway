@@ -362,7 +362,11 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_REJECTED, module);
             } else {
                 moduleState = ModuleState.ERROR;
-                moduleStateError = e.getMessage();
+                moduleStateError = StringUtils.isNotBlank(e.getMessage())
+                        ? e.getMessage()
+                        : (e instanceof ModuleSignatureException)
+                            ? resources.getString("error.signature.verification")
+                            : resources.getString("error.module.load.failed");
                 // audit installation failure
                 logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, module);
             }
@@ -372,7 +376,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             logger.log(Level.WARNING, "Error while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         } catch (final RuntimeException e) {
             moduleState = ModuleState.ERROR;
-            moduleStateError = e.getMessage();
+            moduleStateError = StringUtils.isNotBlank(e.getMessage()) ? e.getMessage() : resources.getString("error.module.load.unhandled");
             // audit installation failure
             logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, module);
             // delete the staging file
@@ -531,7 +535,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                     // process new or updated module only if upload is enabled
                     if (isModuleUploadEnabled && ((op == EntityInvalidationEvent.CREATE) || ((op == EntityInvalidationEvent.UPDATE) && !ModuleState.LOADED.equals(getModuleState(moduleFile))))) {
                         loadModule(moduleInfo);
-                    } else if (op == EntityInvalidationEvent.UPDATE) {
+                    } else if (isModuleUploadEnabled && op == EntityInvalidationEvent.UPDATE) {
                         updateModule(moduleInfo);
                     }
                 } else {

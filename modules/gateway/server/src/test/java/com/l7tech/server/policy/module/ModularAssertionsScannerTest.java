@@ -2113,6 +2113,22 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
     }
 
     @Test
+    public void test_ServerModuleFile_CRUD() throws Exception {
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(modulesConfig.getModuleDir()).thenReturn(modTmpFolder);
+
+        // simulate ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        load_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1");
+
+        // simulate update of ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        update_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "test server module file 1", "new test server module file 1");
+
+        // simulate unload of ServerModuleFile with staged file com.l7tech.WorkingTest1.aar
+        unload_and_verify(new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"), "new test server module file 1");
+    }
+
+    @Test
     public void test_that_processRemovedModules_ignores_modules_from_db() throws Exception {
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
