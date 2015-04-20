@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.polback.BackgroundTask;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.InvokePolicyAsyncAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -83,7 +82,7 @@ public class ServerInvokePolicyAsyncAssertion extends AbstractServerAssertion<In
                 });
             } catch (RejectedExecutionException ree) {
                 logAndAudit(AssertionMessages.INVOKE_POLICY_ASYNC_ASSERTION_FAILED, "Work Queue \"" + assertion.getWorkQueueName() +
-                        "\" is full. Rejected request ID: " + context.getRequestId() + ". " + ExceptionUtils.getMessage(ree));
+                        "\" is full. Rejected request ID: " + context.getRequestId() + ".");
             }
         } else {
             logAndAudit(AssertionMessages.WORK_QUEUE_EXECUTOR_NOT_AVAIL, assertion.getWorkQueueName(), "Work queue executor does not exist.");
