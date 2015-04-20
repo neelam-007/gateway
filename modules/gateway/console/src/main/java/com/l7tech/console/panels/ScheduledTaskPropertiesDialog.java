@@ -185,23 +185,11 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             }
         }));
         intervalTextField.setText("1");
-        unitComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    int interval = Integer.parseInt(intervalTextField.getText());
-                    populateTextFieldsFromCronExpression(((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(interval));
-                }catch( NumberFormatException ex){
-                    // do nothing
-                }
-            }
-        });
 
         unitComboBox.setModel(new DefaultComboBoxModel(ScheduledTaskBasicInterval.values()));
         unitComboBox.setSelectedIndex(0);
         try {
-            int interval = Integer.parseInt(intervalTextField.getText());
-            populateTextFieldsFromCronExpression(((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(interval));
+            populateTextFieldsFromCronExpression("* * * * * ?");
         }catch( NumberFormatException ex){
             // do nothing
         }

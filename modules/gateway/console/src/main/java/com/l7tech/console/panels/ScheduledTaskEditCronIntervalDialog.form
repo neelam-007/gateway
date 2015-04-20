@@ -30,7 +30,6 @@
                 </constraints>
                 <properties>
                   <text value="Every minute"/>
-                  <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.every"/>
                 </properties>
               </component>
               <vspacer id="b6dad">
@@ -52,7 +51,6 @@
                     </constraints>
                     <properties>
                       <text value="Every"/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.step"/>
                     </properties>
                   </component>
                   <component id="86a25" class="javax.swing.JTextField" binding="stepWidthTextField">
@@ -61,9 +59,6 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.step"/>
-                    </properties>
                   </component>
                   <component id="404c1" class="javax.swing.JLabel" binding="stepWidthLabel">
                     <constraints>
@@ -100,7 +95,6 @@
                     </constraints>
                     <properties>
                       <text value=""/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.from"/>
                     </properties>
                   </component>
                   <component id="1bf07" class="javax.swing.JLabel" binding="toLabel">
@@ -119,7 +113,6 @@
                     </constraints>
                     <properties>
                       <text value=""/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.to"/>
                     </properties>
                   </component>
                   <component id="8e064" class="javax.swing.JLabel" binding="exactLabel">
@@ -146,7 +139,6 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="label.radio.at"/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.at"/>
                     </properties>
                   </component>
                   <component id="fdf78" class="javax.swing.JTextField" binding="exactTextField">
@@ -155,9 +147,6 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.exact"/>
-                    </properties>
                   </component>
                 </children>
               </grid>
@@ -184,9 +173,6 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskEditCronIntervalDialog" key="tooltip.radio.expression"/>
-                    </properties>
                   </component>
                 </children>
               </grid>

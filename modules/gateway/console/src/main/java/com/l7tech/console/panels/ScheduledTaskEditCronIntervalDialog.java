@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -132,31 +133,49 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
                 everyRadioButton.setText(resource.getString("label.second.every"));
                 exactLabel.setText(resource.getString("label.second.exact"));
                 exactRadioButton.setText(resource.getString("label.second.radio.exact"));
+                everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.second.exact")));
+                inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.second.step")));
+                exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.second.exact")));
         } else if(interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MINUTE)){
             stepWidthLabel.setText(resource.getString("label.minute.step"));
             everyRadioButton.setText(resource.getString("label.minute.every"));
             exactLabel.setText(resource.getString("label.minute.exact"));
             exactRadioButton.setText(resource.getString("label.minute.radio.exact"));
+            everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.minute.exact")));
+            inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.minute.step")));
+            exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.minute.exact")));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_HOUR)){
             stepWidthLabel.setText(resource.getString("label.hour.step"));
             everyRadioButton.setText(resource.getString("label.hour.every"));
             exactLabel.setText(resource.getString("label.hour.exact"));
             exactRadioButton.setText(resource.getString("label.hour.radio.exact"));
+            everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.hour.exact")));
+            inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.hour.step")));
+            exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.hour.exact")));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_DAY)){
             stepWidthLabel.setText(resource.getString("label.day.step"));
             everyRadioButton.setText(resource.getString("label.day.every"));
             exactLabel.setText(resource.getString("label.day.exact"));
             exactRadioButton.setText(resource.getString("label.day.radio.exact"));
+            everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.day.exact")));
+            inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.day.step")));
+            exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.day.exact")));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_MONTH)){
             stepWidthLabel.setText(resource.getString("label.month.step"));
             everyRadioButton.setText(resource.getString("label.month.every"));
             exactLabel.setText(resource.getString("label.month.exact"));
             exactRadioButton.setText(resource.getString("label.month.radio.exact"));
+            everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.month.exact")));
+            inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.month.step")));
+            exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.month.exact")));
         } else if (interval.equals(ScheduledTaskPropertiesDialog.ScheduledTaskBasicInterval.EVERY_WEEK)){
             stepWidthLabel.setText(resource.getString("label.weekday.step"));
             everyRadioButton.setText(resource.getString("label.weekday.every"));
             exactLabel.setText(resource.getString("label.weekday.exact"));
             exactRadioButton.setText(resource.getString("label.weekday.radio.exact"));
+            everyRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.every"),resource.getString("label.weekday.exact")));
+            inAStepWidthRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.step"),resource.getString("label.weekday.step")));
+            exactRadioButton.setToolTipText(MessageFormat.format(resource.getString("tooltip.radio.at"),resource.getString("label.weekday.exact")));
         }
     }
 

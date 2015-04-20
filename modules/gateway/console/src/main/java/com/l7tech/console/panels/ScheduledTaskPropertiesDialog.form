@@ -22,15 +22,14 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.node"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.gateway.node"/>
             </properties>
           </component>
           <component id="c9ecb" class="com.l7tech.gui.widgets.BetterComboBox" binding="nodeComboBox">
             <constraints>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.gateway.node"/>
-            </properties>
+            <properties/>
           </component>
           <component id="6ba37" class="javax.swing.JLabel" binding="policyIdLabel">
             <constraints>
@@ -38,15 +37,14 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.policy"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.policy"/>
             </properties>
           </component>
           <component id="35397" class="com.l7tech.gui.widgets.BetterComboBox" binding="policyComboBox">
             <constraints>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.policy"/>
-            </properties>
+            <properties/>
           </component>
           <component id="ef611" class="javax.swing.JLabel">
             <constraints>
@@ -62,6 +60,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.one.time"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.oneTime"/>
             </properties>
           </component>
           <component id="88c2" class="javax.swing.JRadioButton" binding="recurringRadioButton">
@@ -70,6 +69,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.recurring"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.recurring"/>
             </properties>
           </component>
           <grid id="3b0c6" binding="recurringPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -94,9 +94,7 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.minute.field"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="7267e" class="javax.swing.JButton" binding="minuteEditButton">
                     <constraints>
@@ -113,6 +111,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.minute"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.minute.field"/>
                     </properties>
                   </component>
                   <component id="a303a" class="javax.swing.JTextField" binding="hourTextField">
@@ -121,9 +120,7 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.hour.field"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="6bbc8" class="javax.swing.JButton" binding="hourEditButton">
                     <constraints>
@@ -140,6 +137,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.hour"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.hour.field"/>
                     </properties>
                   </component>
                   <component id="4e296" class="javax.swing.JTextField" binding="dayTextField">
@@ -148,9 +146,7 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.day.field"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="8a74b" class="javax.swing.JButton" binding="dayEditButton">
                     <constraints>
@@ -167,6 +163,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.day"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.day.field"/>
                     </properties>
                   </component>
                   <component id="ff2de" class="javax.swing.JTextField" binding="monthTextField">
@@ -175,9 +172,7 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.month.field"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="3f256" class="javax.swing.JButton" binding="monthEditButton">
                     <constraints>
@@ -194,6 +189,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.month"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.month.field"/>
                     </properties>
                   </component>
                   <component id="5e73c" class="javax.swing.JLabel" binding="weekdayLabel">
@@ -210,9 +206,7 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.second.field"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="54db4" class="javax.swing.JButton" binding="secondEditButton">
                     <constraints>
@@ -229,6 +223,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.second"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.second.field"/>
                     </properties>
                   </component>
                   <grid id="757d8" layout-manager="GridLayoutManager" row-count="1" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -318,9 +313,7 @@
                     <constraints>
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.unit"/>
-                    </properties>
+                    <properties/>
                   </component>
                   <component id="82bf0" class="javax.swing.JRadioButton" binding="basicRadioButton" default-binding="true">
                     <constraints>
@@ -328,7 +321,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.every"/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.interval"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.every"/>
                     </properties>
                   </component>
                   <component id="207d9" class="javax.swing.JTextField" binding="intervalTextField">
@@ -339,7 +332,6 @@
                     </constraints>
                     <properties>
                       <text value=""/>
-                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.interval"/>
                     </properties>
                   </component>
                 </children>
@@ -370,6 +362,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.name"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.job.name"/>
             </properties>
           </component>
           <component id="f4ebb" class="javax.swing.JTextField" binding="nameField">
@@ -378,17 +371,13 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties>
-              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.job.name"/>
-            </properties>
+            <properties/>
           </component>
           <component id="5a57e" class="com.l7tech.console.util.jcalendar.JDateTimeChooser" binding="timeChooser">
             <constraints>
               <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.date"/>
-            </properties>
+            <properties/>
           </component>
           <grid id="2f0f5" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
