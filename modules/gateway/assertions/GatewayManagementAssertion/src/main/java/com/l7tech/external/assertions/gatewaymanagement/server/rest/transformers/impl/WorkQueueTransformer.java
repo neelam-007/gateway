@@ -75,7 +75,14 @@ public class WorkQueueTransformer implements EntityAPITransformer<WorkQueueMO, W
         workQueue.setName(workQueueMO.getName());
         workQueue.setMaxQueueSize(workQueueMO.getMaxQueueSize());
         workQueue.setThreadPoolMax(workQueueMO.getThreadPoolMax());
-        workQueue.setRejectPolicy(workQueueMO.getRejectPolicy());
+        final String rejectPolicy = workQueueMO.getRejectPolicy();
+        if (WorkQueue.REJECT_POLICY_FAIL_IMMEDIATELY.equals(rejectPolicy) || WorkQueue.REJECT_POLICY_WAIT_FOR_ROOM.equals(rejectPolicy)) {
+            workQueue.setRejectPolicy(rejectPolicy);
+        }
+        else {
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                    "Unknown reject policy '" + rejectPolicy + "'.");
+        }
         doSecurityZoneFromMO(workQueueMO, workQueue, strict);
 
         return new EntityContainer<>(workQueue);
