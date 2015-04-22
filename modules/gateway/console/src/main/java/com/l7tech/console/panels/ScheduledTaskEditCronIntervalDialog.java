@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -110,7 +111,7 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
     private void setRadioButtonSelection(){
         if(cronExpressionFragment.equals("*")){
            everyRadioButton.setSelected(true);
-        } else if(cronExpressionFragment.contains("/")){
+        } else if(cronExpressionFragment.startsWith("*/")){
            inAStepWidthRadioButton.setSelected(true);
            stepWidthTextField.setText(cronExpressionFragment.substring(2));
         } else if (cronExpressionFragment.contains("-")){
@@ -121,9 +122,12 @@ public class ScheduledTaskEditCronIntervalDialog extends JDialog {
         } else if (cronExpressionFragment.contains(",")){
             otherRadioButton.setSelected(true);
             expressionTextField.setText(cronExpressionFragment);
-        } else {
+        } else if (ValidationUtils.isValidInteger(cronExpressionFragment, false, 0, Integer.MAX_VALUE)) {
             exactRadioButton.setSelected(true);
             exactTextField.setText(cronExpressionFragment);
+        }else {
+            otherRadioButton.setSelected(true);
+            expressionTextField.setText(cronExpressionFragment);
         }
     }
 
