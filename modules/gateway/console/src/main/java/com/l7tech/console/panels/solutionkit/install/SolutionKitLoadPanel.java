@@ -264,9 +264,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             if (solutionKitToUpgrade != null) {
                 Map<String, String> previouslyResolvedIds = resolvedEntityIds.get(solutionKitToUpgrade);
                 for (Mapping mapping : bundle.getMappings()) {
-                    String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
-                    if (resolvedId != null) {
-                        mapping.setTargetId(resolvedId);
+                    if (previouslyResolvedIds != null) {
+                        String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
+                        if (resolvedId != null) {
+                            mapping.setTargetId(resolvedId);
+                        }
                     }
                 }
             }
