@@ -26,8 +26,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.text.ParseException;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -129,10 +130,13 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
 
         // policy combo box
         try {
-            policyComboBoxModel = new DefaultComboBoxModel() {
-
-            };
-            Collection<Policy> policyHeaders = getPolicyAdmin().findPoliciesByTypeTagAndSubTag(PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.BackgroundTask", "run");
+            policyComboBoxModel = new DefaultComboBoxModel();
+            List<Policy> policyHeaders = Functions.sort(getPolicyAdmin().findPoliciesByTypeTagAndSubTag(PolicyType.POLICY_BACKED_OPERATION, "com.l7tech.objectmodel.polback.BackgroundTask", "run"), new Comparator<Policy>() {
+                @Override
+                public int compare(Policy o1, Policy o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
             Functions.forall(policyHeaders, new Functions.Unary<Boolean, Policy>() {
                 @Override
                 public Boolean call(Policy policyHeader) {
