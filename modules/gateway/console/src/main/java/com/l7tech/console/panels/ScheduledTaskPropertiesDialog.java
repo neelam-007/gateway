@@ -266,6 +266,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         boolean isRecurring = recurringRadioButton.isSelected();
         Utilities.setEnabled(recurringPanel, isRecurring);
         unitComboBox.setEnabled(isRecurring && basicRadioButton.isSelected());
+        intervalTextField.setEnabled(isRecurring && basicRadioButton.isSelected());
         Utilities.setEnabled(advancedPanel, isRecurring && advancedRadioButton.isSelected());
 
         boolean isOK;
