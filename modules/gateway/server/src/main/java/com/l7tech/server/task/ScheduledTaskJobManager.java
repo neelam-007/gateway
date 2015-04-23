@@ -204,13 +204,23 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
     public void scheduleOneTimeJob(ScheduledTask job) {
-        if (job.getJobStatus().equals(JobStatus.COMPLETED))
-            return;
+
         try {
+            if (job.getJobStatus().equals(JobStatus.COMPLETED) || job.getExecutionDate() < System.currentTimeMillis()){
+                   if(getScheduler().deleteJob(JobKey.jobKey(job.getId()))){
+                    logger.log(Level.INFO, "Removed disabled recurring job for " + job.getName());
+                }
+                return;
+            }
             JobDetail jobDetail = getJobDetail(job);
             Trigger trigger = newTrigger().withIdentity(job.getId()).startAt(new Date(job.getExecutionDate())).build();
-            getScheduler().scheduleJob(jobDetail, trigger);
-            logger.log(Level.INFO, "One time job scheduled for " + job.getName());
+            if(getScheduler().checkExists(jobDetail.getKey())){
+                getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
+                logger.log(Level.INFO, "One time job rescheduled for " + job.getName());
+            }else {
+                getScheduler().scheduleJob(jobDetail, trigger);
+                logger.log(Level.INFO, "One time job scheduled for " + job.getName());
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Fail to create one time job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
         }
@@ -230,11 +240,23 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     public void scheduleRecurringJob(ScheduledTask job) {
 
-        JobDetail jobDetail = getJobDetail(job);
-        CronTrigger cronTrigger = newTrigger().withIdentity(job.getId()).withSchedule(cronSchedule(job.getCronExpression())).build();
         try {
-            getScheduler().scheduleJob(jobDetail, cronTrigger);
-            logger.log(Level.INFO, "Recurring job scheduled for " + job.getName());
+            if(job.getJobStatus().equals(JobStatus.DISABLED)){
+                if(getScheduler().deleteJob(JobKey.jobKey(job.getId()))) {
+                    logger.log(Level.INFO, "Removed disabled recurring job for " + job.getName());
+                }
+                return;
+            }
+            CronTrigger cronTrigger = newTrigger().withIdentity(job.getId()).withSchedule(cronSchedule(job.getCronExpression())).build();
+            JobDetail jobDetail = getJobDetail(job);
+            if(getScheduler().checkExists(jobDetail.getKey())){
+                getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), cronTrigger);
+                logger.log(Level.INFO, "Recurring job rescheduled for " + job.getName());
+            }else {
+
+                getScheduler().scheduleJob(jobDetail, cronTrigger);
+                logger.log(Level.INFO, "Recurring job scheduled for " + job.getName());
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Fail to create recurring job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
         }
