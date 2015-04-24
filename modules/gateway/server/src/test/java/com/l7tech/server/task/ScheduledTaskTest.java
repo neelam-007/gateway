@@ -9,6 +9,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
+import org.quartz.Trigger;
 
 import static org.mockito.Mockito.*;
 
@@ -21,6 +22,8 @@ public class ScheduledTaskTest {
     @Mock
     JobDataMap jobDataMap;
     @Mock
+    Trigger trigger;
+    @Mock
     ScheduledPolicyRunner policyRunner;
     @Mock
     ScheduledTaskJobManager jobManger;
@@ -31,7 +34,8 @@ public class ScheduledTaskTest {
         Goid policyID = new Goid(4, 5);
         when(jobDataMap.getString(Matchers.eq(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID))).thenReturn(policyID.toString());
         when(jobDataMap.getString(Matchers.eq(ScheduledTaskJobManager.JOB_DETAIL_NODE))).thenReturn(ScheduledTaskJobManager.JOB_DETAIL_NODE_ONE);
-        when(executionContext.getMergedJobDataMap()).thenReturn(jobDataMap);
+        when(executionContext.getTrigger()).thenReturn(trigger);
+        when(trigger.getJobDataMap()).thenReturn(jobDataMap);
         ScheduledPolicyRunner.setInstance(policyRunner);
         stub(policyRunner.isClusterMaster()).toReturn(true);
 
