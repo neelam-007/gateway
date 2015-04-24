@@ -89,7 +89,6 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     final Goid goid = event.getEntityIds()[i];
                     switch (op) {
                         case EntityInvalidationEvent.UPDATE:
-                            removeJob(goid);
                         case EntityInvalidationEvent.CREATE: // Intentional fallthrough
                             try {
                                 ScheduledTask task = scheduledTaskManager.findByPrimaryKey(goid);
@@ -124,7 +123,9 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
         try {
             ScheduledPolicyRunner.getInstance(this);
             for (ScheduledTask task : scheduledTaskManager.findAll()) {
-                scheduleJob(task);
+                if(task.getJobStatus().equals(JobStatus.SCHEDULED)) {
+                    scheduleJob(task);
+                }
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to create scheduled jobs", ExceptionUtils.getDebugException(e));
@@ -157,14 +158,14 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     @Override
                     public void triggerComplete(Trigger trigger, JobExecutionContext context, Trigger.CompletedExecutionInstruction triggerInstructionCode) {
                         // update one time jobs as completed
-                        String nodeId = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_NODE);
-                        if(ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || clusterMaster.isMaster()) {
-                            String jobType = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
-                            String entityGoid = context.getJobDetail().getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
+                        String nodeId = trigger.getJobDataMap().getString(JOB_DETAIL_NODE);
+                        if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || clusterMaster.isMaster()) {
+                            String jobType = trigger.getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
+                            String entityGoid = trigger.getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
                             try {
                                 if (jobType.equals(JobType.ONE_TIME.name())) {
-                                    ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid),true);
-                                    if(!task.getJobStatus().equals(JobStatus.COMPLETED)) {
+                                    ScheduledTask task = scheduledTaskManager.findByPrimaryKey(Goid.parseGoid(entityGoid), true);
+                                    if (!task.getJobStatus().equals(JobStatus.COMPLETED)) {
                                         task.setJobStatus(JobStatus.COMPLETED);
                                         scheduledTaskManager.update(task);
                                     }
@@ -187,8 +188,10 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
     public void scheduleJob(ScheduledTask job) {
-        if (job.getJobStatus().equals(JobStatus.DISABLED))
+        if (job.getJobStatus().equals(JobStatus.DISABLED)) {
+            removeJob(job.getGoid());
             return;
+        }
 
         switch (job.getJobType()) {
             case ONE_TIME:
@@ -204,21 +207,16 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
     public void scheduleOneTimeJob(ScheduledTask job) {
-
+        if (job.getJobStatus().equals(JobStatus.COMPLETED))
+            return;
         try {
-            if (job.getJobStatus().equals(JobStatus.COMPLETED) || job.getExecutionDate() < System.currentTimeMillis()){
-                   if(getScheduler().deleteJob(JobKey.jobKey(job.getId()))){
-                    logger.log(Level.INFO, "Removed disabled recurring job for " + job.getName());
-                }
-                return;
-            }
-            JobDetail jobDetail = getJobDetail(job);
-            Trigger trigger = newTrigger().withIdentity(job.getId()).startAt(new Date(job.getExecutionDate())).build();
-            if(getScheduler().checkExists(jobDetail.getKey())){
+            Trigger trigger = populateTriggerDetails(job,newTrigger().startAt(new Date(job.getExecutionDate())));
+            if(getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))) {
                 getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
                 logger.log(Level.INFO, "One time job rescheduled for " + job.getName());
+
             }else {
-                getScheduler().scheduleJob(jobDetail, trigger);
+                getScheduler().scheduleJob(getJobDetail(job), trigger);
                 logger.log(Level.INFO, "One time job scheduled for " + job.getName());
             }
         } catch (Exception e) {
@@ -230,31 +228,32 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     private JobDetail getJobDetail(ScheduledTask job) {
         return newJob(ScheduledServiceQuartzJob.class)
                 .withIdentity(job.getId())
-                .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
-                .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
-                .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
-                .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicyGoid().toString())
                 .build();
     }
 
 
+    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder){
+        return triggerBuilder
+                .withIdentity(job.getId())
+                .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
+                .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
+                .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
+                .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicyGoid().toString())
+                .forJob(job.getId())
+                .build();
+
+    }
+
     public void scheduleRecurringJob(ScheduledTask job) {
 
+        Trigger trigger = populateTriggerDetails(job,newTrigger().withSchedule(cronSchedule(job.getCronExpression())));
         try {
-            if(job.getJobStatus().equals(JobStatus.DISABLED)){
-                if(getScheduler().deleteJob(JobKey.jobKey(job.getId()))) {
-                    logger.log(Level.INFO, "Removed disabled recurring job for " + job.getName());
-                }
-                return;
-            }
-            CronTrigger cronTrigger = newTrigger().withIdentity(job.getId()).withSchedule(cronSchedule(job.getCronExpression())).build();
-            JobDetail jobDetail = getJobDetail(job);
-            if(getScheduler().checkExists(jobDetail.getKey())){
-                getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), cronTrigger);
+            if(getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))){
+                getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
                 logger.log(Level.INFO, "Recurring job rescheduled for " + job.getName());
-            }else {
 
-                getScheduler().scheduleJob(jobDetail, cronTrigger);
+            }else {
+                getScheduler().scheduleJob(getJobDetail(job),trigger);
                 logger.log(Level.INFO, "Recurring job scheduled for " + job.getName());
             }
         } catch (Exception e) {
@@ -265,7 +264,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     public void removeJob(Goid taskGoid) {
         try {
-            boolean deleted = getScheduler().deleteJob(JobKey.jobKey(taskGoid.toString()));
+            boolean deleted = getScheduler().unscheduleJob(TriggerKey.triggerKey(taskGoid.toString()));
             if (deleted) {
                 logger.log(Level.INFO, "Job removed for scheduled task id:" + taskGoid.toString());
             }

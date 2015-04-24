@@ -36,8 +36,8 @@ public class ScheduledServiceQuartzJob implements StatefulJob {
     public void execute(JobExecutionContext context)
             throws JobExecutionException {
 
-        Goid policyGoid = Goid.parseGoid(context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID));
-        String nodeId = context.getMergedJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
+        Goid policyGoid = Goid.parseGoid(context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID));
+        String nodeId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
 
         if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
             try {
