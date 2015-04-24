@@ -170,4 +170,9 @@ public class WorkQueueExecutorManagerImpl implements WorkQueueExecutorManager {
             return (int) Math.ceil(maxThreadPool * 0.75);
         }
     }
+
+    // For unit testing
+    public int getNumberOfWorkQueueExecutors() {
+        return workQueueExecutorMap.size();
+    }
 }

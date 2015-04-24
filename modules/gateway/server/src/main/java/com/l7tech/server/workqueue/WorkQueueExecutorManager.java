@@ -13,4 +13,6 @@ public interface WorkQueueExecutorManager {
     void removeWorkQueueExecutor(WorkQueue workQueueEntity);
 
     void updateWorkQueueExecutor(WorkQueue newEntity, WorkQueue oldEntity) throws UpdateException;
+
+    public int getNumberOfWorkQueueExecutors();
 }
