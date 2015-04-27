@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
@@ -140,7 +141,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 threadPool.initialize();
                 Properties quartzProperties = new Properties();
                 // skip version update check
-                quartzProperties.setProperty("org.quartz.scheduler.skipUpdateCheck","true");
+                quartzProperties.setProperty("org.quartz.scheduler.skipUpdateCheck", "true");
                 quartzProperties.setProperty("org.quartz.threadPool.threadCount", Integer.toString(maxThreads));
                 SchedulerFactory schedulerFactory = new StdSchedulerFactory(quartzProperties);
                 scheduler = schedulerFactory.getScheduler();
@@ -210,8 +211,8 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
         if (job.getJobStatus().equals(JobStatus.COMPLETED))
             return;
         try {
-            Trigger trigger = populateTriggerDetails(job,newTrigger().startAt(new Date(job.getExecutionDate())));
-            if(getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))) {
+            Trigger trigger = populateTriggerDetails(job, newTrigger().startAt(new Date(job.getExecutionDate())).withSchedule(simpleSchedule().withMisfireHandlingInstructionIgnoreMisfires()));
+            if (getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))) {
                 getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
                 logger.log(Level.INFO, "One time job rescheduled for " + job.getName());
 
@@ -246,7 +247,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     public void scheduleRecurringJob(ScheduledTask job) {
 
-        Trigger trigger = populateTriggerDetails(job,newTrigger().withSchedule(cronSchedule(job.getCronExpression())));
+        Trigger trigger = populateTriggerDetails(job, newTrigger().withSchedule(cronSchedule(job.getCronExpression()).withMisfireHandlingInstructionIgnoreMisfires()));
         try {
             if(getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))){
                 getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
