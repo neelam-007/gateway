@@ -334,8 +334,8 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 final ServicesAndPoliciesTree tree,
                                 final Folder newParentFolder,
                                 final Policy policy ) throws UserCancelledException {
-        // Only policy include fragments can be copied
-        if ( policy.getType() != PolicyType.INCLUDE_FRAGMENT ) {
+        // Only policy include fragments and policy-backed operations can be copied
+        if ( policy.getType() != PolicyType.INCLUDE_FRAGMENT && policy.getType() != PolicyType.POLICY_BACKED_OPERATION) {
             return false;
         }
 

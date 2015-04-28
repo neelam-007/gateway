@@ -124,7 +124,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if(secureCut != null){
             actions.add(secureCut);
         }
-        if(secureCopy != null && getEntityHeader().getPolicyType()==PolicyType.INCLUDE_FRAGMENT){
+        if (secureCopy != null &&
+                (getEntityHeader().getPolicyType() == PolicyType.INCLUDE_FRAGMENT || getEntityHeader().getPolicyType() == PolicyType.POLICY_BACKED_OPERATION)) {
             actions.add(secureCopy);
         }
         
