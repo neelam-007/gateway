@@ -65,7 +65,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JLabel secondLabel;
     private JTextField secondTextField;
     private JButton secondEditButton;
-    private JCheckBox disableCheckBox;
     private JButton cancelButton;
     private JButton okButton;
     private JTextField nameField;
@@ -81,6 +80,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JTextField intervalTextField;
     private JDateTimeChooser timeChooser;
     private SecurityZoneWidget securityZoneChooser;
+    private JRadioButton disableRadioButton;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
@@ -119,6 +119,22 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 enableDisableComponents();
             }
         });
+
+        RunOnChangeListener dayOfWeekChangeListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisableDayInputs();
+            }
+        });
+
+        // Day of Week checkboxes
+        mondayCheckBox.addActionListener(dayOfWeekChangeListener);
+        tuesdayCheckBox.addActionListener(dayOfWeekChangeListener);
+        wednesdayCheckBox.addActionListener(dayOfWeekChangeListener);
+        thursdayCheckBox.addActionListener(dayOfWeekChangeListener);
+        fridayCheckBox.addActionListener(dayOfWeekChangeListener);
+        saturdayCheckBox.addActionListener(dayOfWeekChangeListener);
+        sundayCheckBox.addActionListener(dayOfWeekChangeListener);
 
         // name field
         nameField.setDocument(new MaxLengthDocument(128));
@@ -170,8 +186,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         jobTypeButtonGroup.add(oneTimeRadioButton);
         jobTypeButtonGroup.add(recurringRadioButton);
         oneTimeRadioButton.addActionListener(changeListener);
-
         recurringRadioButton.addActionListener(changeListener);
+        disableRadioButton.addActionListener(changeListener);
 
         // One time date field
         timeChooser.getJCalendar().setDecorationBackgroundVisible(true);
@@ -235,6 +251,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         recurringButtonGroup = new ButtonGroup();
         recurringButtonGroup.add(basicRadioButton);
         recurringButtonGroup.add(advancedRadioButton);
+        recurringButtonGroup.add(disableRadioButton);
         basicRadioButton.setSelected(true);
         basicRadioButton.addActionListener(changeListener);
         advancedRadioButton.addActionListener(changeListener);
@@ -258,6 +275,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         Utilities.setEscAction(this, okButton);
         pack();
         Utilities.centerOnScreen(this);
+        enableDisableDayInputs();
     }
 
     private void enableDisableComponents() {
@@ -300,7 +318,10 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             recurringRadioButton.setSelected(true);
             selectRadioButton(scheduledTask.getCronExpression());
         }
-        disableCheckBox.setSelected(JobStatus.DISABLED.equals(scheduledTask.getJobStatus()));
+
+        if (JobStatus.DISABLED.equals(scheduledTask.getJobStatus())) {
+            disableRadioButton.setSelected(true);
+        }
         securityZoneChooser.configure(scheduledTask);
     }
 
@@ -398,13 +419,13 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         } else {
             scheduledTask.setJobType(JobType.RECURRING);
             scheduledTask.setExecutionDate(0);
-            if (disableCheckBox.isSelected()) {
+            if (disableRadioButton.isSelected()) {
                 scheduledTask.setJobStatus(JobStatus.DISABLED);
             } else {
                 scheduledTask.setJobStatus(JobStatus.SCHEDULED);
             }
 
-            String cronExpression;
+            String cronExpression = scheduledTask.getCronExpression();
             if (basicRadioButton.isSelected()) {
                 try {
                     cronExpression = ((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(Integer.parseInt(intervalTextField.getText()));
@@ -413,7 +434,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                             resources.getString("error.interval.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-            } else {
+            } else if (advancedRadioButton.isSelected()) {
                 cronExpression = createAdvancedCronExpression();
             }
 
@@ -472,6 +493,9 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             weekBuilder.append(fridayCheckBox.isSelected()?"6,":"");
             weekBuilder.append(saturdayCheckBox.isSelected()?"7,":"");
             dayOfweekExpression = weekBuilder.toString().substring(0,weekBuilder.toString().length()-1);
+
+            // Automatically modify Day fragment to "?" because a Day of Week is selected and it only works with "?".
+            cronFragments[ScheduledTaskBasicInterval.EVERY_DAY.ordinal()] = "?";
         }
 
         StringBuilder builder = new StringBuilder();
@@ -530,6 +554,21 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             Matcher matcher = Pattern.compile("\\d+").matcher(fragments[ordinal()]);
             matcher.find();
             return matcher.group();
+        }
+    }
+
+    private void enableDisableDayInputs() {
+        if (mondayCheckBox.isSelected() || tuesdayCheckBox.isSelected() || wednesdayCheckBox.isSelected() ||
+                thursdayCheckBox.isSelected() || fridayCheckBox.isSelected() || saturdayCheckBox.isSelected() || sundayCheckBox.isSelected()) {
+            dayTextField.setEnabled(false);
+            dayEditButton.setEnabled(false);
+        }
+        else {
+            if ("?".equals(dayTextField.getText())) {
+                dayTextField.setText("*");
+            }
+            dayTextField.setEnabled(true);
+            dayEditButton.setEnabled(true);
         }
     }
 }
