@@ -434,7 +434,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                             resources.getString("error.interval.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-            } else if (advancedRadioButton.isSelected()) {
+            } else if (advancedRadioButton.isSelected() || (disableRadioButton.isSelected() && cronExpression == null)) {
                 cronExpression = createAdvancedCronExpression();
             }
 
@@ -563,7 +563,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             dayTextField.setEnabled(false);
             dayEditButton.setEnabled(false);
         }
-        else {
+        else if (advancedRadioButton.isSelected()) {
             if ("?".equals(dayTextField.getText())) {
                 dayTextField.setText("*");
             }
