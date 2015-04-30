@@ -6,7 +6,7 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
-    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator"/>
+    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator, package.softwaredbextractor"/>
 
     <!--
       Build a Jar containing all dependencies
@@ -154,6 +154,39 @@
         <mkdir dir="${src.root}/build/installer"/>
         <copy file="${build.dir}/GenerateCertificate.jar" todir="${src.root}/build/installer"/>
     </target>
+
+    <!--
+    Package the SoftwareDbExtractor utility.
+    Result is a self-contained executable JAR file with dependency JARs nested inside.
+    -->
+    <target name="package.softwaredbextractor"
+            description="Compile and package the command line SoftwareDbExtractor utility."
+            depends="init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.softwaredbextractorlibs.dir" value="${build.dir}/softwaredbextractor"/>
+        <delete dir="${package.softwaredbextractorlibs.dir}/lib"/>
+        <mkdir dir="${package.softwaredbextractorlibs.dir}/lib"/>
+
+        <ivy:resolve file="softwaredbextractor-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.softwaredbextractorlibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.softwaredbextractorlibs.dir}/lib/SoftwareDbExtractor.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/sdbpkcs12/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/SoftwareDbExtractor.jar"
+                 title="SoftwareDbExtractor"
+                 main="com.l7tech.internal.sdbpkcs12.SoftwareDbExtractor"
+                 libsDir="${package.softwaredbextractorlibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <copy file="${build.dir}/SoftwareDbExtractor.jar" todir="${src.root}/build/installer"/>
+    </target>
+
 
     <!--
       Package the BatchLicenseGenerator

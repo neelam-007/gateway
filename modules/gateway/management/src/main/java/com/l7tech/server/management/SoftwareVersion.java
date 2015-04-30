@@ -3,11 +3,15 @@
  */
 package com.l7tech.server.management;
 
+import com.l7tech.util.SyspropUtil;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** @author alex */
 public class SoftwareVersion {
+    private static final String PROP_LAX_VERSION_CHECK = "com.l7tech.server.management.laxVersionCheck";
+
     private final int major;
     private final int minor;
     private final Integer revision;
@@ -38,7 +42,11 @@ public class SoftwareVersion {
 
     public static SoftwareVersion fromString(String s) throws NumberFormatException {
         final Matcher mat = PARSER.matcher(s);
-        if (!mat.matches() || mat.groupCount() != 5) throw new IllegalArgumentException("Illegal version number format");
+        if (!mat.matches() || mat.groupCount() != 5) {
+            if ( SyspropUtil.getBoolean( PROP_LAX_VERSION_CHECK, false ) )
+                return new SoftwareVersion( 1, 0, 0, null, null );
+            throw new IllegalArgumentException("Illegal version number format");
+        }
 
         final int major = Integer.parseInt(mat.group(1));
         final int minor = Integer.parseInt(mat.group(2));
