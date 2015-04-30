@@ -44,6 +44,9 @@ public class KeystoreCertReplacer {
             ks.load( is, passphrase );
         }
 
+        KeyStore out = KeyStore.getInstance( "PKCS12" );
+        out.load( null, passphrase );
+
         // Scan all key entry cert chains for old cert, and replace with new cert, leaving rest of chain as-is
         int entriesModified = 0;
         Enumeration<String> aliases = ks.aliases();
@@ -52,6 +55,7 @@ public class KeystoreCertReplacer {
             if ( !ks.isKeyEntry( alias ) )
                 continue;
 
+            Key key = ks.getKey( alias, passphrase );
             Certificate[] chain = ks.getCertificateChain( alias );
             Certificate[] newChain = new Certificate[ chain.length ];
             System.arraycopy( chain, 0, newChain, 0, chain.length );
@@ -66,9 +70,9 @@ public class KeystoreCertReplacer {
                 }
             }
 
+            out.setKeyEntry( alias, key, passphrase, newChain );
+
             if ( chainChanged ) {
-                Key key = ks.getKey( alias, passphrase );
-                ks.setKeyEntry( alias, key, passphrase, newChain );
                 entriesModified++;
             }
         }
@@ -78,8 +82,8 @@ public class KeystoreCertReplacer {
             System.exit( 2 );
         }
 
-        try ( OutputStream out = new FileOutputStream( outkspath ) ) {
-            ks.store( out, passphrase );
+        try ( OutputStream outstream = new FileOutputStream( outkspath ) ) {
+           out.store( outstream, passphrase );
         }
 
         System.err.println( "Output file " + outkspath + " created.  " + entriesModified + " certificate chains were updated." );
