@@ -257,7 +257,7 @@ public class L7C2SecretEncryptor implements SecretEncryptor {
                 destroyable.destroy();
             } catch ( DestroyFailedException e ) {
                 // Not much we can do about this at this point aside from log it
-                logger.log( Level.WARNING, "Unable to destroy ephemeral key: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                logger.log( Level.FINE, "Unable to destroy ephemeral key: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             }
         }
     }
