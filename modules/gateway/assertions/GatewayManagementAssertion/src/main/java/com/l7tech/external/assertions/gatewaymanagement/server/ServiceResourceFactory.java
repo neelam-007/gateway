@@ -42,7 +42,7 @@ import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 
 /**
- * 
+ *
  */
 @ResourceFactory.ResourceType(type=ServiceMO.class)
 public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
@@ -293,7 +293,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
                 String resource = null;
                 if ( url.toLowerCase().startsWith("http:") ||
                      url.toLowerCase().startsWith("https:") ) {
-                    resource = serviceDocumentResolver.resolveWsdlTarget( url );                       
+                    resource = serviceDocumentResolver.resolveWsdlTarget( url );
                 }
                 return resource;
             }
@@ -353,6 +353,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         if ( newPublishedService.soapVersionSet() ) {
             oldPublishedService.setSoapVersion( newPublishedService.getSoapVersion() );
         }
+        oldPublishedService.setProperties(newPublishedService.getProperties());
         oldPublishedService.getPolicy().setXml( newPublishedService.getPolicy().getXml() );
 
         final boolean wsdlUpdated = isWsdlUpdated(oldEntityBag, newEntityBag);
@@ -541,7 +542,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         for ( ServiceDocument serviceDocument : serviceDocuments ) {
             Resource includedResource = ManagedObjectFactory.createResource();
             includedResource.setType( resourceHelper.getType(
-                    serviceDocument.getUri(), 
+                    serviceDocument.getUri(),
                     serviceDocument.getContents(),
                     ResourceHelper.WSDL_TYPE) );
             includedResource.setContent( serviceDocument.getContents() );
@@ -716,7 +717,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
             }
         }
     }
-    
+
     private String soapVersionToString( final SoapVersion soapVersion ) {
         String soapVersionText = soapVersion != null ? soapVersion.getVersionNumber() : "";
         if ( soapVersionText.isEmpty() ) {

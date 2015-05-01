@@ -728,11 +728,11 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     @Column(name="value", nullable=false, length=32672)
     @XmlElement(name = "Properties")
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
-    protected Map<String,String> getProperties() {
+    public Map<String,String> getProperties() {
         return properties;
     }
 
-    protected void setProperties(final Map<String,String> properties) {
+    public void setProperties(final Map<String,String> properties) {
         checkLocked();
         this.properties = properties;
     }

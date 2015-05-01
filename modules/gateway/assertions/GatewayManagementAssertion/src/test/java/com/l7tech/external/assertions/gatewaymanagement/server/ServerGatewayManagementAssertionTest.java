@@ -2660,6 +2660,88 @@ public class ServerGatewayManagementAssertionTest {
         putAndVerify( message, verifier, true );
     }
 
+    @BugId("APIM-330")
+    @Test
+    public void testPutServiceWithProperties() throws Exception {
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Service id=\""+new Goid(0,2)+"\" version=\"1\">\n" +
+                "            <l7:ServiceDetail id=\""+new Goid(0,2)+"\" version=\"1\">\n" +
+                "                <l7:Name>Test Service 2</l7:Name>\n" +
+                "                <l7:Enabled>true</l7:Enabled>\n" +
+                "                <l7:ServiceMappings>\n" +
+                "                    <l7:HttpMapping>\n" +
+                "                        <l7:Verbs>\n" +
+                "                            <l7:Verb>POST</l7:Verb>\n" +
+                "                        </l7:Verbs>\n" +
+                "                    </l7:HttpMapping>\n" +
+                "                    <l7:SoapMapping>\n" +
+                "                        <l7:Lax>false</l7:Lax>\n" +
+                "                    </l7:SoapMapping>\n" +
+                "                </l7:ServiceMappings>\n" +
+                "                <l7:Properties>\n" +
+                "                    <l7:Property key=\"policyRevision\">\n" +
+                "                        <l7:LongValue>0</l7:LongValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"wssProcessingEnabled\">\n" +
+                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"soap\">\n" +
+                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"soapVersion\">\n" +
+                "                        <l7:StringValue>1.2</l7:StringValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"internal\">\n" +
+                "                        <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"property.newProperty\">\n" +
+                "                        <l7:StringValue>propValue</l7:StringValue>\n" +
+                "                    </l7:Property>\n" +
+                "                </l7:Properties>\n" +
+                "            </l7:ServiceDetail>\n" +
+                "            <l7:Resources>\n" +
+                "                <l7:ResourceSet tag=\"policy\">\n" +
+                "                    <l7:Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                "    &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;</l7:Resource>\n" +
+                "                </l7:ResourceSet>\n" +
+                "                <l7:ResourceSet\n" +
+                "                    rootUrl=\"http://localhost:8080/test.wsdl\" tag=\"wsdl\">\n" +
+                "                    <l7:Resource\n" +
+                "                        sourceUrl=\"http://localhost:8080/test.wsdl\" type=\"wsdl\">&lt;wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/&gt;</l7:Resource>\n" +
+                "                </l7:ResourceSet>\n" +
+                "            </l7:Resources>\n" +
+                "        </l7:Service>" +
+                "</s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            private int expectedVersion = 2;
+
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element service = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Service");
+                final Element serviceDetail = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
+                final Element serviceDetailName = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Name");
+                final Element properties = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Properties");
+
+                final int version = expectedVersion++;
+
+                assertEquals("Service id", new Goid(0,2).toHexString(), service.getAttribute( "id" ));
+                assertEquals("Service version", Integer.toString( version ), service.getAttribute( "version" ));
+                assertEquals("Service detail id", new Goid(0,2).toHexString(), serviceDetail.getAttribute( "id" ));
+                assertEquals("Service detail version", Integer.toString( version ), serviceDetail.getAttribute( "version" ));
+                assertEquals("Service detail name", "Test Service 2", XmlUtil.getTextValue(serviceDetailName));
+                assertEquals("Service property", "propValue", getPropertyValue(properties, "property.newProperty"));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
     @Test
     public void testPutStoredPassword() throws Exception {
         final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/storedPasswords</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002101</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
@@ -3260,7 +3342,7 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testDelete() throws Exception {        
+    public void testDelete() throws Exception {
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );

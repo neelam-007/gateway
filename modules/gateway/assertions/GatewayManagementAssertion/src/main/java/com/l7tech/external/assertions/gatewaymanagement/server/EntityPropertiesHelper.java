@@ -453,7 +453,8 @@ class EntityPropertiesHelper {
             "goid",
             "disabled",
             "soapVersion",
-            "securityZone"
+            "securityZone"   ,
+            "properties"
         ) )
         .put( ResourceEntry.class, list(
             "content",
