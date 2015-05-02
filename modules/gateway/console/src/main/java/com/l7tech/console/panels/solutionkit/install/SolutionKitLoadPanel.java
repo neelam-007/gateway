@@ -48,6 +48,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
     private static final String SK_NS = "http://ns.l7tech.com/2010/04/gateway-management";
     private static final String SK_FILENAME = "SolutionKit.xml";
+    private static final String SK_INSTALL_BUNDLE_FILENAME = "InstallBundle.xml";
+    private static final String SK_UPGRADE_BUNDLE_FILENAME = "UpgradeBundle.xml";
+    private static final String SK_DELETE_BUNDLE_FILENAME = "DeleteBundle.xml";
     private static final String SK_ELE_ROOT = "SolutionKit";
     private static final String SK_ELE_ID = "Id";
     private static final String SK_ELE_VERSION = "Version";
@@ -59,9 +62,6 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String SK_ELE_CUSTOM_CALLBACK = "CustomCallback";
     private static final String SK_ELE_DEPENDENCIES = "Dependencies";
     private static final String SK_ELE_FEATURE_SET = "FeatureSet";
-    private static final String SK_ELE_BUNDLE = "Bundle";
-    private static final String SK_ELE_UPGRADE = "Upgrade";
-    private static final String SK_ELE_UNINSTALL = "Uninstall";
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
 
@@ -125,6 +125,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         FileInputStream fis = null;
         ZipInputStream zis = null;
         try {
+            final SolutionKit solutionKit = new SolutionKit();
+            boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false;
+            final DOMSource installBundleSource = new DOMSource();
+            final DOMSource upgradeBundleSource = new DOMSource();
+
             fis = new FileInputStream(file);
             zis = new ZipInputStream(fis);
             ZipEntry entry = zis.getNextEntry();
@@ -134,7 +139,18 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                     final String fileName = new File(entry.getName()).getName();
                     switch (fileName) {
                         case SK_FILENAME:
-                            loadSolutionKitXml(zis);
+                            hasRequiredSolutionKitFile = true;
+                            loadSolutionKitXml(zis, solutionKit);
+                            break;
+                        case SK_INSTALL_BUNDLE_FILENAME:
+                            hasRequiredInstallBundleFile = true;
+                            loadInstallBundleXml(zis, installBundleSource);
+                            break;
+                        case SK_UPGRADE_BUNDLE_FILENAME:
+                            loadUpgradeBundleXml(zis, solutionKit, upgradeBundleSource);
+                            break;
+                        case SK_DELETE_BUNDLE_FILENAME:
+                            loadDeleteBundleXml(zis, solutionKit);
                             break;
                         default:
                             logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
@@ -146,6 +162,17 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                 zis.closeEntry();
                 entry = zis.getNextEntry();
             }
+
+            validate(hasRequiredSolutionKitFile, hasRequiredInstallBundleFile);
+            final Bundle installBundle = MarshallingUtils.unmarshal(Bundle.class, installBundleSource, true);
+            Bundle bundle = installBundle;
+
+            if (upgradeBundleSource.getNode() != null) {
+                final Bundle upgradeBundle = MarshallingUtils.unmarshal(Bundle.class, upgradeBundleSource, true);
+                bundle = mergeBundle(installBundle, upgradeBundle);
+            }
+
+            loaded.put(solutionKit, bundle);
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException | SolutionKitException e) {
             solutionKitToUpgrade = null;
             loaded.clear();
@@ -206,74 +233,87 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         });
     }
 
-    private void loadSolutionKitXml(final ZipInputStream zis) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
+    private void validate(boolean hasRequiredSolutionKitFile, boolean hasRequiredInstallBundleFile) throws SolutionKitException {
+        if (!hasRequiredSolutionKitFile) {
+            throw new SolutionKitException("Missing required file " + SK_FILENAME);
+        } else if (!hasRequiredInstallBundleFile) {
+            throw new SolutionKitException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
+        }
+    }
+
+    // load solution kit metadata
+    private void loadSolutionKitXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
         final Element docEle = doc.getDocumentElement();
-        final String solutionKitGuid = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID));
 
-        // 1) load solution kit for install or 2) load matching solution kit for upgrade
-        if (solutionKitToUpgrade == null || solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKitGuid)) {
-            final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID)));
+        solutionKit.setSolutionKitVersion(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION)));
+        solutionKit.setName(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME)));
+        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
+        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
 
-            // upgrade
-            if (solutionKitToUpgrade != null) {
-                solutionKit.setGoid(solutionKitToUpgrade.getGoid());
-                solutionKit.setVersion(solutionKitToUpgrade.getVersion());
+        final Element featureSetElement = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
+        if (featureSetElement != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetElement));
+        }
+    }
+
+    // load install bundle
+    private void loadInstallBundleXml(final ZipInputStream zis, final DOMSource installBundleSource) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
+        final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
+        final Element installBundleEle = doc.getDocumentElement();
+
+        if (installBundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "l7") == null) {
+            installBundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + "l7", SK_NS);
+        }
+
+        installBundleSource.setNode(installBundleEle);
+    }
+
+    // load matching upgrade bundle
+    private void loadUpgradeBundleXml(final ZipInputStream zis, final SolutionKit solutionKit, final DOMSource upgradeBundleSource) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
+        final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
+        final Element upgradeBundleEle = doc.getDocumentElement();
+
+        if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
+            solutionKit.setGoid(solutionKitToUpgrade.getGoid());
+            solutionKit.setVersion(solutionKitToUpgrade.getVersion());
+
+            // find upgrade mappings to replace install mappings with upgrade mappings
+            Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeBundleEle, null, BUNDLE_ELE_MAPPINGS);
+            if (upgradeMappingEle == null) {
+                throw new SolutionKitException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
             }
 
-            solutionKit.setSolutionKitGuid(solutionKitGuid);
-            solutionKit.setSolutionKitVersion(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION)));
-            solutionKit.setName(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME)));
-            solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
-            solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
+            upgradeBundleSource.setNode(upgradeBundleEle);
+        }
+    }
 
-            final Element featureSetElement = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
-            if (featureSetElement != null) {
-                solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetElement));
-            }
+    // load uninstall bundle for later use
+    private void loadDeleteBundleXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
+        final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
+        final Element uninstallBundleEle = doc.getDocumentElement();
+        solutionKit.setUninstallBundle(XmlUtil.nodeToString(uninstallBundleEle));
+    }
 
-            Element bundleEle = DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_BUNDLE);
-            if (bundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "l7") == null) {
-                bundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + "l7", SK_NS);
-            }
-
-            // upgrade - get bundle, find upgrade mappings to replace install mappings with upgrade mappings
-            if (solutionKitToUpgrade != null) {
-                bundleEle = DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_BUNDLE);
-                Element upgradeEle = DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_UPGRADE);
-                Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeEle, null, BUNDLE_ELE_MAPPINGS);
-                if (upgradeMappingEle == null) {
-                    throw new SolutionKitException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element during upgrade in " + SK_FILENAME + ".");
-                }
-                DomUtils.removeChildElementsByName(bundleEle, SK_NS, BUNDLE_ELE_MAPPINGS);
-                bundleEle.appendChild(upgradeMappingEle);
-            }
-
-            // save uninstall bundle for later use
-            Element uninstallEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_UNINSTALL);
-            if (uninstallEle != null) {
-                Element uninstallBundleEle = DomUtils.findExactlyOneChildElementByName(uninstallEle, SK_NS, SK_ELE_BUNDLE);
-                solutionKit.setUninstallBundle(XmlUtil.nodeToString(uninstallBundleEle));
-            }
-
-            DOMSource source = new DOMSource();
-            source.setNode(bundleEle);
-            Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, source, true);
-
-            // upgrade - update previously resolved mapping target IDs
-            if (solutionKitToUpgrade != null) {
-                Map<String, String> previouslyResolvedIds = resolvedEntityIds.get(solutionKitToUpgrade);
-                for (Mapping mapping : bundle.getMappings()) {
-                    if (previouslyResolvedIds != null) {
-                        String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
-                        if (resolvedId != null) {
-                            mapping.setTargetId(resolvedId);
-                        }
+    // merge bundles (if upgrade mappings exists, replace existing install mappings)
+    private Bundle mergeBundle(final Bundle installBundle, final Bundle upgradeBundle) {
+        if (upgradeBundle.getMappings() != null) {
+            // update previously resolved mapping target IDs
+            Map<String, String> previouslyResolvedIds = resolvedEntityIds.get(solutionKitToUpgrade);
+            for (Mapping mapping : upgradeBundle.getMappings()) {
+                if (previouslyResolvedIds != null) {
+                    String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
+                    if (resolvedId != null) {
+                        mapping.setTargetId(resolvedId);
                     }
                 }
             }
 
-            loaded.put(solutionKit, bundle);
+            // replace with upgrade mappings
+            installBundle.setMappings(upgradeBundle.getMappings());
         }
+
+        return installBundle;
     }
 }
