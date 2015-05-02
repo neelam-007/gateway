@@ -396,4 +396,30 @@
             <dropTable tableName="solution_kit"/>
         </rollback>
     </changeSet>
+    <changeSet id="create_solution_kit_meta_table" author="gateway">
+        <createTable tableName="solution_kit_meta">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(50)"> <!-- other sizes seen in ssg-base.xmlVARCHAR(64) and VARCHAR(255) -->
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="solution_kit_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_created" type="${tinyint.type}" defaultValueNumeric="0"/>
+            <column name="user_editable" type="${tinyint.type}" defaultValueNumeric="1"/>
+        </createTable>
+        <createIndex indexName="solution_kit_goid_index" tableName="solution_kit_meta" unique="false">
+            <!-- index for "find metadata installed by a solution kit" -->
+            <column name="solution_kit_goid"/>
+        </createIndex>
+        <rollback>
+            <dropIndex indexName="solution_kit_index" tableName="solution_kit"/>
+            <dropTable tableName="solution_kit"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
