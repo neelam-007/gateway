@@ -528,4 +528,7 @@
     <!-- scheduled task admin impl -->
     <bean id="scheduledTaskAdmin" class="com.l7tech.server.task.ScheduledTaskAdminImpl"/>
 
+    <!-- Solution kit admin imple -->
+    <bean id="solutionKitAdmin" class="com.l7tech.server.solutionkit.SolutionKitAdminImpl"/>
+
 </beans>

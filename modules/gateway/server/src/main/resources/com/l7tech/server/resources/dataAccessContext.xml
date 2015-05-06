@@ -228,6 +228,9 @@
                 <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
                 <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value>
                 <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
+
+                <!-- Solution Kit -->
+                <value>com.l7tech.gateway.common.solutionkit.SolutionKit</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

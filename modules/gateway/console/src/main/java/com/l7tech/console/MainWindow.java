@@ -220,6 +220,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
     private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
     private ManageWorkQueuesAction manageWorkQueuesAction = null;
+    private ManageSolutionKitsAction manageSolutionKitsAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1086,6 +1087,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getSiteMinderConfigurationAction());
             menu.add(getManageServerModuleFilesAction());
             menu.add(getManageWorkQueuesAction());
+            menu.add(getManageSolutionKitsAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2463,6 +2465,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageTrustedEsmUsersAction = (ManageTrustedEsmUsersAction) action;
     }
 
+    private Action getManageSolutionKitsAction() {
+        if (manageSolutionKitsAction != null)
+            return manageSolutionKitsAction;
+
+        manageSolutionKitsAction = new ManageSolutionKitsAction();
+        disableUntilLogin(manageSolutionKitsAction);
+        return manageSolutionKitsAction;
+    }
+
     private JMenu getCustomGlobalActionsMenu() {
         if (customGlobalActionsMenu != null)
             return customGlobalActionsMenu;
@@ -2813,6 +2824,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getSiteMinderConfigurationAction());
                 manageMenu.add(getManageServerModuleFilesAction());
                 manageMenu.add(getManageWorkQueuesAction());
+                manageMenu.add(getManageSolutionKitsAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;

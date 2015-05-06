@@ -48,6 +48,8 @@ public class SecurePasswordManagerWindow extends JDialog {
 
     private SimpleTableModel<SecurePassword> passwordTableModel;
 
+    private SecurePassword defaultSecurePassword;
+
     public SecurePasswordManagerWindow(Window owner) {
         super(owner, "Manage Stored Passwords");        
         setContentPane(contentPane);
@@ -78,7 +80,18 @@ public class SecurePasswordManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 boolean isEdit = editButton == e.getSource();
 
-                final SecurePassword securePassword = isEdit ? getSelectedSecurePassword() : new SecurePassword();
+                final SecurePassword securePassword;
+                if (isEdit) {
+                    securePassword = getSelectedSecurePassword();
+                } else {
+                    if (defaultSecurePassword != null) {
+                        securePassword = defaultSecurePassword;
+                        defaultSecurePassword = null;
+                    } else {
+                        securePassword = new SecurePassword();
+                    }
+                }
+
                 if (securePassword == null)
                     return;
 
@@ -195,6 +208,15 @@ public class SecurePasswordManagerWindow extends JDialog {
         Utilities.setMinimumSize(this);
 
         loadSecurePasswords( null );
+    }
+
+    /**
+     * Set the default password on to display on Add.
+     *
+     * @param defaultSecurePassword the default password
+     */
+    public void setDefaultSecurePassword(SecurePassword defaultSecurePassword) {
+        this.defaultSecurePassword = defaultSecurePassword;
     }
 
     private void loadSecurePasswords( @Nullable final Goid goidToSelect ) {

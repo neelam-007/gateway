@@ -56,7 +56,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = set( "logAccessAdmin", "clusterLogAccessAdmin" );
     private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
-    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin", "cassandraAdmin");
+    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin", "cassandraAdmin", "solutionKitAdmin");
     //This is a set of getter methods to ignore when checking for getter read only transactional. The format is 'beanId.methodName'
     private static final Set<String> TRANSACTIONAL_GETTER_METHOD_BLACKLIST = set("resourceAdmin.getJobStatus", "resourceAdmin.getJobResult", "workQueueAdmin.getJobStatus", "workQueueAdmin.getJobResult");
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "debugAdmin", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");

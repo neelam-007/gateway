@@ -26,6 +26,7 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
@@ -602,6 +603,11 @@ public class RegistryStub extends Registry {
     @Override
     public ScheduledTaskAdmin getScheduledTaskAdmin() {
         return scheduledTaskAdmin;
+    }
+
+    @Override
+    public SolutionKitAdmin getSolutionKitAdmin() {
+        return null;
     }
 
     @Override

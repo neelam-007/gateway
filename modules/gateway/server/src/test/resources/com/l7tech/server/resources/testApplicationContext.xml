@@ -771,6 +771,8 @@
 
     <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerStub"/>
 
+    <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerStub"/>
+
     <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub"/>
 
     <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>

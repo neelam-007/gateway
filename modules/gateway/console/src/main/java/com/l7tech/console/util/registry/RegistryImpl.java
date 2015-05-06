@@ -18,6 +18,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -95,6 +96,7 @@ public final class RegistryImpl extends Registry
     private PolicyPathBuilderFactory policyPathBuilderFactory;
     private EntityNameResolver entityNameResolver;
     private WorkQueueManagerAdmin workQueueManagerAdmin;
+    private SolutionKitAdmin solutionKitAdmin;
     // When you add an admin interface don't forget to
     // add it to the reset method
 
@@ -451,6 +453,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public SolutionKitAdmin getSolutionKitAdmin() {
+        checkAdminContext();
+        if (solutionKitAdmin != null) {
+            return solutionKitAdmin;
+        }
+        solutionKitAdmin = adminContext.getAdminInterface(SolutionKitAdmin.class);
+        return solutionKitAdmin;
+    }
+
+    @Override
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
@@ -565,6 +577,7 @@ public final class RegistryImpl extends Registry
         cassandraConnectionAdmin = null;
         workQueueManagerAdmin = null;
         scheduledTaskAdmin = null;
+        solutionKitAdmin = null;
     }
 
 

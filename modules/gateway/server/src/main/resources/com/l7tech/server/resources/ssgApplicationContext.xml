@@ -2727,4 +2727,6 @@
         <constructor-arg ref="workQueueEntityManager"/>
     </bean>
 
+    <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
+
 </beans>

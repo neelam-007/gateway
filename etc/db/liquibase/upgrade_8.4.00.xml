@@ -227,4 +227,58 @@
             <column name="state" value="REJECTED"/>
         </update>
     </changeSet>
+    <changeSet id="create_solution_kit_tables" author="gateway">
+        <createTable tableName="solution_kit">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sk_guid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sk_version" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="properties" type="${mediumtext.type}"/>
+            <column name="install_properties" type="${mediumtext.type}"/>
+            <column name="mappings" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uninstall_bundle" type="${mediumtext.type}"/>
+            <column name="last_update_time" type="BIGINT(19)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="solution_kit_index" tableName="solution_kit" unique="false">
+            <column name="sk_guid"/>
+        </createIndex>
+        <createTable tableName="solution_kit_meta">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(50)"> <!-- other sizes seen in ssg-base.xmlVARCHAR(64) and VARCHAR(255) -->
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="solution_kit_goid" type="${goid.type}">
+                <constraints nullable="false" references="solution_kit(goid)" foreignKeyName="fk_solution_kit_goid" deleteCascade="true"/>
+            </column>
+            <column name="user_created" type="${tinyint.type}" defaultValueNumeric="0"/>
+            <column name="user_editable" type="${tinyint.type}" defaultValueNumeric="1"/>
+        </createTable>
+        <rollback>
+            <delete tableName="solution_kit_meta"/>
+            <delete tableName="solution_kit"/>
+            <dropIndex indexName="solution_kit_index" tableName="solution_kit"/>
+            <dropTable tableName="solution_kit_meta"/>
+            <dropTable tableName="solution_kit"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
