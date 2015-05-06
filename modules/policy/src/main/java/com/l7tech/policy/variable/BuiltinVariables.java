@@ -63,6 +63,7 @@ public class BuiltinVariables {
     public static final String SERVICE_SUFFIX_ROUTINGURL = "defaultRoutingURL";
     public static final String SERVICE_SUFFIX_POLICY_GUID = "policy.guid";
     public static final String SERVICE_SUFFIX_POLICY_VERSION = "policy.version";
+    public static final String SERVICE_SUFFIX_PROPERTIES = "property";
     @Deprecated
     public static final String SERVICE_SUFFIX_URL = "url";
     @Deprecated
@@ -174,6 +175,7 @@ public class BuiltinVariables {
             //service.name and service.oid have no suffixes => have no need to be stored as a variable
             //which can have suffixes attached to it, unlike service.url which can have service.url.host etc...
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_NAME, false, false, null, false),
+            new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_PROPERTIES, true, true, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_OID, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_POLICY_GUID, false, false, null, false),

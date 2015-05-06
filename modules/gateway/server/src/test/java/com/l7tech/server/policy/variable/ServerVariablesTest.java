@@ -114,6 +114,8 @@ public class ServerVariablesTest {
         ps.setGoid(new Goid(0,123456L));
         ps.setName( "testServiceNameContextVariable" );
         ps.getPolicy().setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a66");
+        ps.putProperty( "prop1", "prop1val" );
+        ps.putProperty( "prop2", "prop2val" );
         pec.setService(ps);
         pec.setServicePolicyMetadata(new PolicyMetadataStub() {
             @Override
@@ -133,6 +135,9 @@ public class ServerVariablesTest {
 
         final String policyVersionValue = ServerVariables.get("service.policy.version", pec).toString();
         assertEquals("service policy guid variable", "123", policyVersionValue);
+
+        final String prop1val = ServerVariables.get("service.property.prop1", pec).toString();
+        assertEquals("service property value", "prop1val", prop1val);
     }
 
     @Test

@@ -526,6 +526,31 @@ public class ServerVariables {
                 }
             }),
 
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_PROPERTIES, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final PublishedService service = context.getService();
+                    if ( service == null )
+                        return null;
+
+                    String prefix = BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_PROPERTIES;
+                    String suffix = name.substring(prefix.length());
+                    if ( suffix.length() == 0 ) {
+                        // Unsuffixed gets entire properties map
+                        Map<String,Object> properties = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
+                        Set<String> names = service.getPropertyNames();
+                        for ( String propName : names ) {
+                            Object prop = service.getProperty( propName );
+                            properties.put( propName, prop );
+                        }
+                        return properties;
+                    }
+
+                    String part = suffix.substring(1);
+                    return service.getProperty( part );
+                }
+            }),
+
             new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_OID, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
