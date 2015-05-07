@@ -30,7 +30,7 @@ public class EnrollWithPortalDialog extends JDialog {
     private JPanel contentPanel;
 
     public EnrollWithPortalDialog( Window owner ) {
-        super( owner, "Activate Saas Portal", JDialog.DEFAULT_MODALITY_TYPE );
+        super( owner, "Activate SaaS Portal", JDialog.DEFAULT_MODALITY_TYPE );
         setContentPane( contentPanel );
 
         Utilities.attachDefaultContextMenu( enrollmentUrlField );
