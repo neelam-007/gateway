@@ -337,7 +337,7 @@ public class AuditRecordManagerImpl
                     "' is not a valid number. Using " + minAgeHours + " instead.");
         }
 
-        final long systemMinAge =  minAgeHours * 60 * 60 * 1000;
+        final long systemMinAge =  minAgeHours * 60L * 60 * 1000;
         Runnable runnable = new DeletionTask( System.currentTimeMillis() -  Math.max(systemMinAge, minAge) );
 
         new Thread(runnable).start();
