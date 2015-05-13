@@ -2,13 +2,13 @@
 # Must be edited by hand whenever a new branch is created:
 #   - tag the branch
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
-build.version.major=8
-build.version.minor=4
+build.version.major=9
+build.version.minor=0
 build.version.subminor=00
 build.version.revision=1
 
 build.em.version.major=1
-build.em.version.minor=14
+build.em.version.minor=15
 build.em.version.subminor=00
 build.em.version.revision=1
 
@@ -21,7 +21,7 @@ build.em.version.revision=1
 #   - Major: major changes to the published API (significant features added).
 #   - Minor: minor changes to the published API from added feature(s).
 #   - Subminor: minor changes to the published API from bug fix(es).
-build.api.version.major=8
-build.api.version.minor=2
+build.api.version.major=9
+build.api.version.minor=0
 build.api.version.subminor=00
-build.api.version.revision=6
+build.api.version.revision=1
