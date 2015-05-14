@@ -1,0 +1,12 @@
+        <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            <l7:Mappings>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71ba3" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b8f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b61" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b4c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71b0c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER"/>
+            </l7:Mappings>
+        </l7:Bundle>

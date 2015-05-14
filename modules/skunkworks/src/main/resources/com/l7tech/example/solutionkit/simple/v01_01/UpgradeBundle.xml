@@ -1,0 +1,40 @@
+        <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+        <l7:Mappings>
+            <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b0c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b61" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61" type="POLICY">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71a6d" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d" type="SECURE_PASSWORD">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrExisting" srcId="0567c6a8f0c4cc2c9fb331cb03b4de6f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f" type="JDBC_CONNECTION">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b8f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f" type="POLICY">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71ba3" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3" type="ENCAPSULATED_ASSERTION">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b4c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="POLICY">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrExisting" srcId="0000000000000000fffffffffffffffe" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe" type="ID_PROVIDER_CONFIG">
+                <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            </l7:Mapping>
+        </l7:Mappings>
+        </l7:Bundle>
