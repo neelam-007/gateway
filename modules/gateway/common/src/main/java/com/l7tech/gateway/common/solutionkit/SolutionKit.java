@@ -31,6 +31,8 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
     public static final String SK_PROP_DESC_KEY = "Description";
     public static final String SK_PROP_TIMESTAMP_KEY = "TimeStamp";
     public static final String SK_PROP_FEATURE_SET_KEY = "FeatureSet";
+    public static final String SK_PROP_CUSTOM_CALLBACK_KEY = "CustomCallback";
+    public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";
 
     private String sk_guid;
     private String sk_version;

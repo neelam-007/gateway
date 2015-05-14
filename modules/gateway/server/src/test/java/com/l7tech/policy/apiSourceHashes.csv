@@ -68,3 +68,6 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceRequest
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/store/KeyValueStoreChangeEventListener.java,OAug7oP2pQqs4GJ0UAZp5erw6gg=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/store/KeyValueStoreException.java,x9aXBn7xQHgxuE+31R3ioFjCrgo=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/commonui/CustomPrivateKeyPanel.java,6xuBNLFiNeimZfb6uO1ainBdp0s=
+modules/gateway/api/src/main/java/com/l7tech/policy/solutionkit/SolutionKitManagerCallback.java,MUsiCn6zdqvah+z9HG8Zd05rEic=
+modules/gateway/api/src/main/java/com/l7tech/policy/solutionkit/SolutionKitManagerUi.java,EfR5xnS8cD3fAljbMzOTq636THg=
+modules/gateway/api/src/main/java/com/l7tech/policy/solutionkit/SolutionKitManagerContext.java,wzcqDXm/HE4u9EkGY7/eKSrysz0=

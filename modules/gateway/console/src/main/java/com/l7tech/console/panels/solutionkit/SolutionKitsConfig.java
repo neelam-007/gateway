@@ -5,11 +5,15 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Document;
 
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
@@ -27,6 +31,8 @@ public class SolutionKitsConfig {
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
     @Nullable
     private SolutionKit solutionKitToUpgrade;
+    private Map<SolutionKit, SolutionKitManagerCallback> customCallbacks = new HashMap<>();
+    private Map<SolutionKit, SolutionKitManagerUi> customUis = new HashMap<>();
 
     public SolutionKitsConfig() {
     }
@@ -58,6 +64,28 @@ public class SolutionKitsConfig {
         } else {
             return null;
         }
+    }
+
+    public Document getBundleAsDocument(@NotNull SolutionKit solutionKit) {
+        Bundle bundle = getBundle(solutionKit);
+        if (bundle != null) {
+            DOMResult result = new DOMResult();
+            try {
+                MarshallingUtils.marshal(bundle, result, false);
+                return (Document) result.getNode();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public void setBundle(@NotNull SolutionKit solutionKit, Document bundleDocument) throws IOException {
+        final DOMSource bundleSource = new DOMSource();
+        bundleSource.setNode(bundleDocument.getDocumentElement());
+        loaded.put(solutionKit, MarshallingUtils.unmarshal(Bundle.class, bundleSource, true));
     }
 
     @NotNull
@@ -112,5 +140,13 @@ public class SolutionKitsConfig {
 
     public void setSolutionKitToUpgrade(@Nullable SolutionKit solutionKitToUpgrade) {
         this.solutionKitToUpgrade = solutionKitToUpgrade;
+    }
+
+    public Map<SolutionKit, SolutionKitManagerCallback> getCustomCallbacks() {
+        return customCallbacks;
+    }
+
+    public Map<SolutionKit, SolutionKitManagerUi> getCustomUis() {
+        return customUis;
     }
 }

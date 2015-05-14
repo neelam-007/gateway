@@ -16,10 +16,13 @@ import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -50,6 +53,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JButton clearAllButton;
     private JTable solutionKitsTable;
     private JButton manageLicensesButton;
+    private JPanel customizableButtonPanel;
 
     private SelectableTableModel<SolutionKit> solutionKitsModel;
 
@@ -91,6 +95,20 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
         this.settings = settings;
+
+        Map<SolutionKit, SolutionKitManagerUi> customUis = settings.getCustomUis();
+
+        // todo handle multiple kits
+        if (customUis.size() > 1) {
+            throw new IllegalArgumentException("Can't handle multiple kits.");
+        }
+
+        // add custom ui
+        for (SolutionKit solutionKit : customUis.keySet()) {
+            SolutionKitManagerUi ui = customUis.get(solutionKit);
+            ui.setParentPanel(customizableButtonPanel);
+            customizableButtonPanel.add(ui.getButton());
+        }
     }
 
     @Override
@@ -107,6 +125,22 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // todo (kpak) - handle multiple kits. for now, install first one.
         //
         SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+
+        // invoke custom callback
+        try {
+            Document bundleDocument;
+            Map<SolutionKit, SolutionKitManagerUi> customUis = settings.getCustomUis();
+            Map<SolutionKit, SolutionKitManagerCallback> customCallback = settings.getCustomCallbacks();
+            for (SolutionKit sk : customCallback.keySet()) {
+                bundleDocument = settings.getBundleAsDocument(sk);
+                customCallback.get(sk).preMigrationBundleImport(bundleDocument, customUis.get(sk).getContext());
+                settings.setBundle(sk, bundleDocument);
+            }
+        } catch (SolutionKitManagerCallback.CallbackException | IOException e) {
+            errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+        }
+
         String bundle = settings.getBundleAsString(solutionKit);
         try {
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
@@ -231,5 +265,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         Utilities.centerOnParentWindow(dlg);
         dlg.setModal(true);
         DialogDisplayer.display(dlg);
+    }
+
+    /**
+     * Called by IDEA's UI initialization when "Custom Create" is checked for any UI component.
+     */
+    private void createUIComponents() {
+        customizableButtonPanel = new JPanel();
+        customizableButtonPanel.setLayout(new BorderLayout());
     }
 }

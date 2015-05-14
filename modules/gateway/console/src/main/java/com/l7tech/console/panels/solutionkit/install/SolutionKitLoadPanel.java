@@ -12,7 +12,10 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,11 +29,11 @@ import javax.xml.transform.dom.DOMSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -51,6 +54,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String SK_INSTALL_BUNDLE_FILENAME = "InstallBundle.xml";
     private static final String SK_UPGRADE_BUNDLE_FILENAME = "UpgradeBundle.xml";
     private static final String SK_DELETE_BUNDLE_FILENAME = "DeleteBundle.xml";
+    private static final String SK_CUSTOMIZATION_JAR_FILENAME = "Customization.jar";
     private static final String SK_ELE_ROOT = "SolutionKit";
     private static final String SK_ELE_ID = "Id";
     private static final String SK_ELE_VERSION = "Version";
@@ -69,11 +73,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private JTextField fileTextField;
     private JButton fileButton;
 
-    private Map<SolutionKit, Bundle> loaded;
-    private Map<SolutionKit, Map<String, String>> resolvedEntityIds;
-
-    @Nullable
-    private SolutionKit solutionKitToUpgrade;
+    private SolutionKitsConfig solutionKitsConfig;
 
     public SolutionKitLoadPanel() {
         super(null);
@@ -102,11 +102,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        solutionKitToUpgrade = settings.getSolutionKitToUpgrade();
-        loaded = settings.getLoadedSolutionKits();
-        loaded.clear();
-        resolvedEntityIds = settings.getResolvedEntityIds();
-        resolvedEntityIds.clear();
+        solutionKitsConfig = settings;
+        solutionKitsConfig.getLoadedSolutionKits().clear();
+        solutionKitsConfig.getResolvedEntityIds().clear();
     }
 
     @Override
@@ -129,6 +127,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false;
             final DOMSource installBundleSource = new DOMSource();
             final DOMSource upgradeBundleSource = new DOMSource();
+            ClassLoader classLoader = null;
 
             fis = new FileInputStream(file);
             zis = new ZipInputStream(fis);
@@ -147,11 +146,15 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                             loadInstallBundleXml(zis, installBundleSource);
                             break;
                         case SK_UPGRADE_BUNDLE_FILENAME:
-                            loadUpgradeBundleXml(zis, solutionKit, upgradeBundleSource);
+                            loadUpgradeBundleXml(zis, upgradeBundleSource);
                             break;
                         case SK_DELETE_BUNDLE_FILENAME:
                             loadDeleteBundleXml(zis, solutionKit);
                             break;
+                        case SK_CUSTOMIZATION_JAR_FILENAME:
+                            classLoader = getCustomizationClassLoader(zis);
+                            break;
+
                         default:
                             logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
                             break;
@@ -169,14 +172,15 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
             if (upgradeBundleSource.getNode() != null) {
                 final Bundle upgradeBundle = MarshallingUtils.unmarshal(Bundle.class, upgradeBundleSource, true);
-                bundle = mergeBundle(installBundle, upgradeBundle);
+                bundle = mergeBundle(solutionKit, installBundle, upgradeBundle);
             }
 
-            loaded.put(solutionKit, bundle);
+            solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
+
+            setCustomizationInstances(solutionKit, classLoader);
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException | SolutionKitException e) {
-            solutionKitToUpgrade = null;
-            loaded.clear();
-            resolvedEntityIds.clear();
+            solutionKitsConfig.getLoadedSolutionKits().clear();
+            solutionKitsConfig.getResolvedEntityIds().clear();
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -252,9 +256,19 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
         solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
 
-        final Element featureSetElement = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
-        if (featureSetElement != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetElement));
+        final Element featureSetEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
+        if (featureSetEle != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetEle));
+        }
+
+        final Element customCallbackEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_CALLBACK);
+        if (customCallbackEle != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
+        }
+
+        final Element customUiEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_UI);
+        if (customUiEle != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
         }
     }
 
@@ -271,22 +285,17 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     }
 
     // load matching upgrade bundle
-    private void loadUpgradeBundleXml(final ZipInputStream zis, final SolutionKit solutionKit, final DOMSource upgradeBundleSource) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
+    private void loadUpgradeBundleXml(final ZipInputStream zis, final DOMSource upgradeBundleSource) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
         final Element upgradeBundleEle = doc.getDocumentElement();
 
-        if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
-            solutionKit.setGoid(solutionKitToUpgrade.getGoid());
-            solutionKit.setVersion(solutionKitToUpgrade.getVersion());
-
-            // find upgrade mappings to replace install mappings with upgrade mappings
-            Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeBundleEle, null, BUNDLE_ELE_MAPPINGS);
-            if (upgradeMappingEle == null) {
-                throw new SolutionKitException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
-            }
-
-            upgradeBundleSource.setNode(upgradeBundleEle);
+        // find upgrade mappings to replace install mappings with upgrade mappings
+        Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeBundleEle, null, BUNDLE_ELE_MAPPINGS);
+        if (upgradeMappingEle == null) {
+            throw new SolutionKitException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
         }
+
+        upgradeBundleSource.setNode(upgradeBundleEle);
     }
 
     // load uninstall bundle for later use
@@ -297,10 +306,16 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     }
 
     // merge bundles (if upgrade mappings exists, replace existing install mappings)
-    private Bundle mergeBundle(final Bundle installBundle, final Bundle upgradeBundle) {
-        if (upgradeBundle.getMappings() != null) {
+    private Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
+        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade();
+        if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid()) && upgradeBundle.getMappings() != null) {
+
+            // set goid and version for upgrade
+            solutionKit.setGoid(solutionKitToUpgrade.getGoid());
+            solutionKit.setVersion(solutionKitToUpgrade.getVersion());
+
             // update previously resolved mapping target IDs
-            Map<String, String> previouslyResolvedIds = resolvedEntityIds.get(solutionKitToUpgrade);
+            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitsConfig.getSolutionKitToUpgrade());
             for (Mapping mapping : upgradeBundle.getMappings()) {
                 if (previouslyResolvedIds != null) {
                     String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
@@ -315,5 +330,50 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         }
 
         return installBundle;
+    }
+
+    @Nullable
+    private ClassLoader getCustomizationClassLoader(final ZipInputStream zis) throws SolutionKitException {
+        ClassLoader classLoader = null;
+
+        File outFile = new File("Customization-" + UUID.randomUUID() + ".jar");   // can we do this without writing to disk?
+        OutputStream entryOut = null;
+        try {
+            logger.fine("JAR FILE: " + outFile.getCanonicalPath());
+            // System.out.println("JAR FILE: " + outFile.getCanonicalPath());
+
+            entryOut = new BufferedOutputStream(new FileOutputStream(outFile));
+            IOUtils.copyStream(zis, entryOut);
+            entryOut.flush();
+
+            classLoader = new URLClassLoader(new URL[] {outFile.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+        } catch (IOException ioe) {
+            throw new SolutionKitException("Error loading the customization jar.", ioe);
+        } finally {
+            ResourceUtils.closeQuietly(entryOut);
+            outFile.deleteOnExit();
+        }
+
+        return classLoader;
+    }
+
+    // may need to move class loading logic to the server (i.e. admin) for headless to work
+    private void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final ClassLoader classLoader) throws SolutionKitException {
+        if (classLoader != null) {
+            try {
+                final String uiClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
+                if (!StringUtils.isEmpty(uiClassName)) {
+                    final Class cls = classLoader.loadClass(uiClassName);
+                    solutionKitsConfig.getCustomUis().put(solutionKit, ((SolutionKitManagerUi) cls.newInstance()).initialize());
+                }
+                final String callbackClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY);
+                if (!StringUtils.isEmpty(callbackClassName)) {
+                    final Class cls = classLoader.loadClass(callbackClassName);
+                    solutionKitsConfig.getCustomCallbacks().put(solutionKit, (SolutionKitManagerCallback) cls.newInstance());
+                }
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new SolutionKitException("Error loading the customization class(es).", e);
+            }
+        }
     }
 }

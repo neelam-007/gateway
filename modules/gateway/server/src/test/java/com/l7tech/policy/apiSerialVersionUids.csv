@@ -17,3 +17,4 @@ com.l7tech.policy.assertion.ext.message.InvalidDataException, -17858750133516389
 com.l7tech.policy.assertion.ext.security.SignerException, -8287434476129725209
 com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport$ReferenceElement, -1519739648961747529
 com.l7tech.policy.variable.VariableNotSettableException, 5030901721152784969
+com.l7tech.policy.solutionkit.SolutionKitManagerCallback$CallbackException, -7476656161883467323
