@@ -1386,6 +1386,9 @@ public class AssertionMessages extends Messages {
     public static final M WORK_QUEUE_EXECUTOR_INFO_FINER = m(11102, Level.FINER, "Work queue name: {0}; queue size: {1}; active threads: {2}; threads in pool: {3}; reject policy: {4}.");
     public static final M INVOKE_POLICY_ASYNC_ASSERTION_FAILED = m(11103, Level.WARNING, "\"Invoke Policy Async\" assertion failed due to: {0}");
 
+    // PortalBootstrap Assertion
+    public static final M PORTAL_BOOTSTRAP_ERROR = m(11200, Level.WARNING, "Error enrolling Gateway with Portal server: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
 

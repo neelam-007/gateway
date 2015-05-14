@@ -1,21 +1,42 @@
 package com.l7tech.external.assertions.portalbootstrap;
 
 import com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapManager;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Invisible support assertion for Portal bootstrap.
  */
-public class PortalBootstrapAssertion extends Assertion {
+public class PortalBootstrapAssertion extends Assertion implements UsesVariables {
+
+    private String enrollmentUrl;
+
+    public String getEnrollmentUrl() {
+        return enrollmentUrl;
+    }
+
+    public void setEnrollmentUrl(String enrollmentUrl) {
+        this.enrollmentUrl = enrollmentUrl;
+    }
+
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        return Syntax.getReferencedNames(enrollmentUrl);
+    }
+
     //
     // Metadata
     //

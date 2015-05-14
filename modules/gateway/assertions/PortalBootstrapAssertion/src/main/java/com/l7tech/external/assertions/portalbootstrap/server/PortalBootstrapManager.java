@@ -24,7 +24,6 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -36,6 +35,7 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -115,8 +115,8 @@ public class PortalBootstrapManager {
     }
 
     public void enrollWithPortal( String enrollmentUrl ) throws IOException {
-        User adminUser = AdminInfo.find( false ).user;
-        if ( null == adminUser )
+        final User user = JaasUtils.getCurrentUser();
+        if ( null == user )
             throw new IllegalStateException( "No administrative user authenticated" );
 
         URL url = new URL( enrollmentUrl );
@@ -130,12 +130,12 @@ public class PortalBootstrapManager {
         if ( !pinMatcher.find() )
             throw new IOException( "Enrollment URL does not contain a server certificate key hash (sckh) parameter" );
 
-        byte[] postBody = buildEnrollmentPostBody( adminUser );
+        byte[] postBody = buildEnrollmentPostBody( user );
 
         String sckh = pinMatcher.group( 1 );
         final byte[] pinBytes = HexUtils.decodeBase64Url( sckh );
 
-        final SsgKeyEntry clientCert = prepareClientCert( adminUser );
+        final SsgKeyEntry clientCert = prepareClientCert( user );
 
         X509TrustManager tm = new PinCheckingX509TrustManager( pinBytes );
         X509KeyManager km;
@@ -159,7 +159,7 @@ public class PortalBootstrapManager {
         connection.getOutputStream().write( postBody );
         byte[] bundleBytes = IOUtils.slurpStream( connection.getInputStream() );
 
-        installBundle( bundleBytes, adminUser );
+        installBundle( bundleBytes, user );
     }
 
     private byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
