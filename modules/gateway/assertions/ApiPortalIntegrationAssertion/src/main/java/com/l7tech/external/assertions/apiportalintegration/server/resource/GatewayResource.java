@@ -18,6 +18,8 @@ public class GatewayResource extends Resource {
     private GatewayStatResource apiLegacyKey = new GatewayStatResource();
     @XmlElement(name = "AccountPlans", namespace = JAXBResourceMarshaller.NAMESPACE)
     private GatewayStatResource accountPlan = new GatewayStatResource();
+    @XmlElement(name = "ApiFragments", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private GatewayStatResource apiFragment = new GatewayStatResource();
 
     public GatewayStatResource getApi() {
         return api;
@@ -76,6 +78,18 @@ public class GatewayResource extends Resource {
             this.accountPlan = new GatewayStatResource();
         } else {
             this.accountPlan = accountPlans;
+        }
+    }
+
+    public GatewayStatResource getApiFragment() {
+        return apiFragment;
+    }
+
+    public void setApiFragment(final GatewayStatResource apiFragment) {
+        if (apiFragment == null) {
+            this.apiFragment = new GatewayStatResource();
+        } else {
+            this.apiFragment = apiFragment;
         }
     }
 }

@@ -1,0 +1,19 @@
+<ivysettings>
+  <settings defaultResolver="nexus"/>
+  <credentials host="blackforest.l7tech.com"
+                      realm="Sonatype Nexus Repository Manager"
+                      username="deployment" passwd="7layer"/>
+  <publications>
+     <artifact name="api-portal-assertion8.2" type="aar"/>
+  </publications>
+  <property name="nexus-public"
+                   value="http://blackforest.l7tech.com:8080/nexus/content/groups/public"/>
+  <property name="nexus-releases" value="http://blackforest.l7tech.com:8080/nexus/content/repositories/releases"/>
+  <property name="nexus-snapshots" value="http://blackforest.l7tech.com:8080/nexus/content/repositories/snapshots"/>
+  <resolvers>
+    <ibiblio name="nexus" m2compatible="true" root="${nexus-public}"/>
+    <ibiblio name="nexus-releases" m2compatible="true" root="${nexus-releases}"/>
+    <ibiblio name="nexus-snapshots" m2compatible="true" root="${nexus-snapshots}" checkmodified="true" 
+changingPattern="*-SNAPSHOT"/>
+  </resolvers>
+</ivysettings>

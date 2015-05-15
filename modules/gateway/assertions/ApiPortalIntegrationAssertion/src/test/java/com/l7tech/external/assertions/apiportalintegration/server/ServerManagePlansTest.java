@@ -61,6 +61,8 @@ public class ServerManagePlansTest {
     @Mock
     private AccountPlanResourceHandler accountPlanResourceHandler;
     @Mock
+    private ApiFragmentResourceHandler apiFragmentResourceHandler;
+    @Mock
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
@@ -80,7 +82,8 @@ public class ServerManagePlansTest {
         policyHelper = new PolicyHelper(policyManager,policyVersionManager,transactionManager,licenseManager,policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
                 resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
-                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
+                keyLegacyResourceHandler, accountPlanResourceHandler, apiFragmentResourceHandler, policyHelper,
+                policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         apiPlanResources = new ArrayList<ApiPlanResource>();
         expectedFilters = new HashMap<String, String>();

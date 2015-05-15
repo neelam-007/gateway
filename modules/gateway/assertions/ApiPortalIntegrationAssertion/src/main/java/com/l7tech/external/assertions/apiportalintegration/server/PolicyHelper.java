@@ -83,7 +83,7 @@ public class PolicyHelper {
                         doAsSystem(new Callable<Void>() {
                             @Override
                             public Void call() throws Exception {
-                                PolicyVersion policyVersion = policyVersionManager.checkpointPolicy(policy, true, true);
+                                PolicyVersion policyVersion = policyVersionManager.checkpointPolicy(policy, true, false);
                                 if (userLogin != null && userLogin.length() > 0) {
                                     policyVersion.setUserLogin(userLogin);
                                     policyVersionManager.save(policyVersion);

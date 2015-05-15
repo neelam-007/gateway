@@ -26,6 +26,7 @@ public class ApiKey extends AbstractPortalGenericEntity {
     private String accountPlanMappingId;
     //private String xmlRepresentation;
     private String customMetaData;
+    private String applicationId;
 
     public Map<String, String> getServiceIds() {
         return serviceIds;
@@ -123,6 +124,14 @@ public class ApiKey extends AbstractPortalGenericEntity {
         this.customMetaData = customMetaData;
     }
 
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
+    }
+
     @Override
     public ApiKey getReadOnlyCopy() {
         final ApiKey readOnly = new ApiKey();
@@ -140,6 +149,7 @@ public class ApiKey extends AbstractPortalGenericEntity {
         readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
 //        readOnly.setXmlRepresentation(this.getXmlRepresentation());
         readOnly.setCustomMetaData(this.getCustomMetaData());
+        readOnly.setApplicationId(this.getApplicationId());
         readOnly.lock();
         return readOnly;
     }

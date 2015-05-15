@@ -38,6 +38,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 ApiKeyResourceHandler.getInstance(context),
                 ApiKeyDataResourceHandler.getInstance(context),
                 AccountPlanResourceHandler.getInstance(context),
+                ApiFragmentResourceHandler.getInstance(context),
                 new PolicyHelper(context),
                 PolicyValidationMarshaller.getInstance());
     }
@@ -63,6 +64,8 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 handleGateway(context, manageOperation);
             } else if (ACCOUNT_PLANS_URI.equals(manageOperation.resourceType)) {
                 handleAccountPlans(context, manageOperation);
+            } else if(API_FRAGMENTS_URI.equals(manageOperation.resourceType)) {
+                handleApiFragments(context, manageOperation);
             } else if (POLICY_UPDATE_URI.equals(manageOperation.resourceType)) {
                 assertionStatus = handlePolicyUpdate(context, manageOperation, false);
             } else if (POLICY_VALIDATE_URI.equals(manageOperation.resourceType)) {
@@ -90,6 +93,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
     static final String KEYS_URI = "api/keys";
     static final String GATEWAY_URI = "gateway";
     static final String ACCOUNT_PLANS_URI = "account/plans";
+    static final String API_FRAGMENTS_URI = "api/fragments";
     static final String POLICY_UPDATE_URI = "policy/update";
     static final String POLICY_VALIDATE_URI = "policy/validate";
 
@@ -101,6 +105,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                                         @NotNull final ApiKeyResourceHandler keyResourceHandler,
                                         @NotNull final ApiKeyDataResourceHandler keyLegacyResourceHandler,
                                         @NotNull final AccountPlanResourceHandler accountPlanResourceHandler,
+                                        @NotNull final ApiFragmentResourceHandler apiFragmentResourceHandler,
                                         @NotNull final PolicyHelper policyHelper,
                                         @NotNull final PolicyValidationMarshaller policyValidationMarshaller) {
         super(assertion);
@@ -113,6 +118,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
         this.accountPlanResourceHandler = accountPlanResourceHandler;
         this.policyHelper = policyHelper;
         this.policyValidationMarshaller = policyValidationMarshaller;
+        this.apiFragmentResourceHandler = apiFragmentResourceHandler;
     }
 
     private final JAXBResourceMarshaller resourceMarshaller;
@@ -122,6 +128,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
     private final ApiKeyResourceHandler keyResourceHandler;
     private final ApiKeyDataResourceHandler keyLegacyResourceHandler;
     private final AccountPlanResourceHandler accountPlanResourceHandler;
+    private final ApiFragmentResourceHandler apiFragmentResourceHandler;
     private final PolicyHelper policyHelper;
     private final PolicyValidationMarshaller policyValidationMarshaller;
 
@@ -253,6 +260,13 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                     manageOperation = new ManageOperation(httpMethod, POLICY_VALIDATE_URI, null);
                 }
             }
+        } else if (resourceUri.startsWith(ROOT_URI + API_FRAGMENTS_URI) && HttpMethod.GET.equals(httpMethod)) {
+            final String stripped = resourceUri.replaceFirst(ROOT_URI + API_FRAGMENTS_URI, "");
+            if (StringUtils.isBlank(stripped)) {
+                manageOperation = new ManageOperation(httpMethod, API_FRAGMENTS_URI, null);
+            } else if (isValidResourceId(stripped)) {
+                manageOperation = new ManageOperation(httpMethod, API_FRAGMENTS_URI, stripped.replaceFirst("/", ""));
+            }
         }
 
         if (manageOperation == null) {
@@ -310,6 +324,18 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 }
                 break;
             }
+        }
+    }
+
+    private void handleApiFragments(final PolicyEnforcementContext context, final ManageOperation manageOperation) throws JAXBException, ObjectModelException {
+        final List<ApiFragmentResource> resources = apiFragmentResourceHandler.get(createFiltersForApiFragments(manageOperation));
+        if (manageOperation.resourceId != null && resources.isEmpty()) {
+            final String message = "Cannot find Api Fragment with guid=" + manageOperation.resourceId;
+            setContextVariables(context, 404, message, null);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{message});
+        } else {
+            final String xml = resourceMarshaller.marshal(new ApiFragmentListResource(resources));
+            setContextVariables(context, 200, SUCCESS, xml);
         }
     }
 
@@ -427,11 +453,15 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
             GatewayStatResource accountPlanStat = new GatewayStatResource();
                 accountPlanStat.setCount(String.valueOf(accountPlanResourceHandler.get(new HashMap<String, String>()).size()));
                 accountPlanStat.setCacheItems(String.valueOf(accountPlanResourceHandler.getCacheItems()));
+            GatewayStatResource apiFragmentStat = new GatewayStatResource();
+                apiFragmentStat.setCount(String.valueOf(apiFragmentResourceHandler.get(new HashMap<String, String>()).size()));
+                apiFragmentStat.setCacheItems(String.valueOf(apiFragmentResourceHandler.getCacheItems()));
             gatewayResource.setApi(apiStat);
             gatewayResource.setApiKey(apiKeyStat);
             gatewayResource.setApiPlan(apiPlanStat);
             gatewayResource.setApiLegacyKey(apiLegacyKeyStat);
             gatewayResource.setAccountPlan(accountPlanStat);
+            gatewayResource.setApiFragment(apiFragmentStat);
             setContextVariables(context, 200, SUCCESS, resourceMarshaller.marshal(gatewayResource));
         }
     }
@@ -561,6 +591,14 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
         final String apiGroup = ExpandVariables.process("${" + OPTION_API_GROUP + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
         if (StringUtils.isNotBlank(apiGroup)) {
             filters.put(ApiResourceHandler.API_GROUP, apiGroup);
+        }
+        return filters;
+    }
+
+    private Map<String, String> createFiltersForApiFragments(final ManageOperation manageOperation) {
+        final Map<String, String> filters = new HashMap<String, String>();
+        if (StringUtils.isNotBlank(manageOperation.resourceId)) {
+            filters.put(ApiFragmentResourceHandler.GUID, manageOperation.resourceId);
         }
         return filters;
     }

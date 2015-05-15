@@ -18,7 +18,7 @@ public class AccountPlanManager extends AbstractPortalGenericEntityManager<Accou
     public AccountPlanManager(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
         final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
-        genericEntityManager.registerClass(AccountPlan.class);
+        genericEntityManager.registerClass(AccountPlan.class, PORTAL_GENERIC_ENTITY_METADATA);
         entityManager = genericEntityManager.getEntityManager(AccountPlan.class);
     }
 

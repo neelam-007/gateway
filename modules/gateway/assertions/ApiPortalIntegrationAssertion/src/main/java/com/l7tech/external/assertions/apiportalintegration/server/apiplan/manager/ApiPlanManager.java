@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
+import com.l7tech.server.entity.GenericEntityMetadata;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -18,7 +19,7 @@ public class ApiPlanManager extends AbstractPortalGenericEntityManager<ApiPlan> 
     public ApiPlanManager(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
         final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
-        genericEntityManager.registerClass(ApiPlan.class);
+        genericEntityManager.registerClass(ApiPlan.class, PORTAL_GENERIC_ENTITY_METADATA);
         entityManager = genericEntityManager.getEntityManager(ApiPlan.class);
     }
 

@@ -1,0 +1,10 @@
+#Thu, 26 Mar 2015 11:49:22 -0700
+# Stores the major and minor version of the software in this branch of this source tree.
+# Must be edited by hand whenever a new branch is created:
+#   - tag the branch
+#   - in HEAD, edit this file (build.version) to bump up the major and minor versions
+build.version.major=2
+build.version.minor=1
+build.version.micro=2
+build.version.revision=0
+

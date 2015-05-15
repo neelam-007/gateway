@@ -43,7 +43,8 @@ public class DefaultJAXBResourceMarshaller implements JAXBResourceMarshaller {
 
     DefaultJAXBResourceMarshaller() throws JAXBException {
         jaxbContext = JAXBContext.newInstance(ApiListResource.class, ApiPlanListResource.class, ApiKeyResource.class,
-                GatewayResource.class, ApiKeyListResource.class, AccountPlanListResource.class);
+                GatewayResource.class, ApiKeyListResource.class, AccountPlanListResource.class,
+                ApiFragmentListResource.class);
     }
 
     final JAXBContext jaxbContext;

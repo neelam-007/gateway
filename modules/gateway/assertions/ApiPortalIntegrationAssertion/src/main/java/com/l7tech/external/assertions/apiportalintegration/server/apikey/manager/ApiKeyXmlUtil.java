@@ -55,6 +55,7 @@ public final class ApiKeyXmlUtil {
         newEntry.setSecret(getElementValue(XmlUtil.findFirstChildElementByName(keyElem, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.SECRET_ELEMENT_NAME)));
         newEntry.setAccountPlanMappingId(getElementValue(XmlUtil.findFirstChildElementByName(keyElem, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.ACCOUNTPLANMAPPINGID_ELEMENT_NAME)));
         newEntry.setCustomMetaData(getElementValue(XmlUtil.findFirstChildElementByName(keyElem, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.CUSTOMMETADATA_ELEMENT_NAME)));
+        newEntry.setApplicationId(getElementValue(XmlUtil.findFirstChildElementByName(keyElem, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.APPLICATIONID_ELEMENT_NAME)));
         final Element servicesElement = XmlUtil.findFirstChildElementByName(keyElem, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.SERVICES_ELEMENT_NAME);
         if (servicesElement != null) {
             final List<Element> serviceElements = XmlUtil.findChildElementsByName(servicesElement, ModuleConstants.NAMESPACE_API_KEYS, ModuleConstants.SERVICE_ELEMENT_NAME);

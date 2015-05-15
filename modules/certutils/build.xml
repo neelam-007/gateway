@@ -1,0 +1,6 @@
+<project name="layer7-certutils" default="compile">
+    <property name="module.main" value="com.l7tech.util.CertUtilsUtil"/>
+    <property name="module.package.root" value="com/l7tech/util"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

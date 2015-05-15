@@ -29,17 +29,17 @@ import static org.mockito.Mockito.*;
 public class AccountPlanManagerTest {
     private static final String PLAN_NAME = "The Plan";
     private static final String POLICY_XML = "the xml";
-    private static final List<String> ORG_IDS = new ArrayList<String>(2);
-    static {
-        ORG_IDS.add("1");
-        ORG_IDS.add("2");
-    }
+    private static final String ORG_IDS = "1,2";
     private static final Date DATE = new Date();
     public static final boolean DEFAULT_PLAN_ENABLED = true;
     public static final boolean THROUGHPUT_QUOTA_ENABLED = true;
     public static final int QUOTA_10 = 10;
     public static final int TIME_UNIT_1 = 1;
     public static final int COUNTER_STRATEGY_1 = 1;
+    public static final boolean RATE_LIMIT_ENABLED = true;
+    public static final int MAX_REQUEST_RATE = 100;
+    public static final int WINDOW_SIZE = 60;
+    public static final boolean HARD_LIMIT = true;
     private AccountPlanManager manager;
     @Mock
     private ApplicationContext applicationContext;
@@ -61,7 +61,8 @@ public class AccountPlanManagerTest {
     @Test
     public void add() throws Exception {
         final AccountPlan plan = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.save(plan)).thenReturn(new Goid(0,1234L));
 
         final AccountPlan result = manager.add(plan);
@@ -90,7 +91,8 @@ public class AccountPlanManagerTest {
     @Test(expected = SaveException.class)
     public void addNonDefaultOid() throws Exception {
         final AccountPlan plan = createAccountPlan(new Goid(0,1L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         try {
             manager.add(plan);
         } catch (final SaveException e) {
@@ -106,7 +108,8 @@ public class AccountPlanManagerTest {
     @Test(expected = SaveException.class)
     public void addSaveException() throws Exception {
         final AccountPlan plan = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.save(any(AccountPlan.class))).thenThrow(new SaveException("Mocking exception"));
 
         try {
@@ -124,14 +127,15 @@ public class AccountPlanManagerTest {
     public void update() throws Exception {
         final AccountPlan toUpdate = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         toUpdate.setVersion(1);
         final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         existing.setVersion(5);
         final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         expected.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
 
@@ -150,7 +154,7 @@ public class AccountPlanManagerTest {
         assertEquals(QUOTA_10 - 1, cached.getQuota());
         assertEquals(TIME_UNIT_1 + 1, cached.getTimeUnit());
         assertEquals(COUNTER_STRATEGY_1 + 1, cached.getCounterStrategy());
-        assertEquals(ORG_IDS.subList(0, 1), cached.getIds());
+        assertEquals("1", cached.getIds());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
         assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
@@ -166,7 +170,8 @@ public class AccountPlanManagerTest {
 
         try {
             manager.update(createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                    RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         } catch (final ObjectNotFoundException e) {
             // expected
             assertTrue(manager.getCache().isEmpty());
@@ -184,7 +189,8 @@ public class AccountPlanManagerTest {
 
         try {
             manager.update(createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                    RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         } catch (final FindException e) {
             // expected
             assertTrue(manager.getCache().isEmpty());
@@ -202,7 +208,8 @@ public class AccountPlanManagerTest {
 
         try {
             manager.update(createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                    RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         } catch (final InvalidGenericEntityException e) {
             // expected
             assertTrue(manager.getCache().isEmpty());
@@ -221,7 +228,8 @@ public class AccountPlanManagerTest {
 
         try {
             manager.update(createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
-                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                    DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                    RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         } catch (final ObjectNotFoundException e) {
             // expected
             assertTrue(manager.getCache().isEmpty());
@@ -237,14 +245,15 @@ public class AccountPlanManagerTest {
     public void updateUpdateException() throws Exception {
         final AccountPlan toUpdate = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         toUpdate.setVersion(1);
         final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         existing.setVersion(5);
         final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         expected.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
         doThrow(new UpdateException("mocking exception")).when(entityManager).update(any(AccountPlan.class));
@@ -265,7 +274,8 @@ public class AccountPlanManagerTest {
     @Test(expected = UpdateException.class)
     public void updateMissingPlanId() throws Exception {
         final AccountPlan toUpdate = createAccountPlan(null, null, PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
 
         try {
             manager.update(toUpdate);
@@ -285,10 +295,12 @@ public class AccountPlanManagerTest {
         // name, description, policy, default plan, throughputquotaenabled, quota, timeunit, counter strategy
         // and organizations have not changed
         final AccountPlan toUpdate = createAccountPlan(null, "p1", PLAN_NAME, new Date(), POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         toUpdate.setVersion(1);
         final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         existing.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
 
@@ -321,14 +333,15 @@ public class AccountPlanManagerTest {
     public void updateCache() throws Exception {
         final AccountPlan toUpdate = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         toUpdate.setVersion(1);
         final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         existing.setVersion(5);
         final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
-                ORG_IDS.subList(0, 1));
+                "1", RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         expected.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
 
@@ -350,7 +363,7 @@ public class AccountPlanManagerTest {
         assertEquals(QUOTA_10 - 1, cached.getQuota());
         assertEquals(TIME_UNIT_1 + 1, cached.getTimeUnit());
         assertEquals(COUNTER_STRATEGY_1 + 1, cached.getCounterStrategy());
-        assertEquals(ORG_IDS.subList(0, 1), cached.getIds());
+        assertEquals("1", cached.getIds());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
         assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
@@ -363,7 +376,8 @@ public class AccountPlanManagerTest {
     @Test
     public void delete() throws Exception {
         final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
 
         manager.delete("p1");
@@ -446,7 +460,8 @@ public class AccountPlanManagerTest {
     @Test(expected = DeleteException.class)
     public void deleteDeleteException() throws Exception {
         final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
         doThrow(new DeleteException("mocking exception")).when(entityManager).delete(any(AccountPlan.class));
 
@@ -466,7 +481,8 @@ public class AccountPlanManagerTest {
     @Test
     public void deleteRemovesFromCache() throws Exception {
         final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
         manager.getCache().put("p1", found);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
@@ -484,7 +500,8 @@ public class AccountPlanManagerTest {
     @Test
     public void find() throws Exception {
         final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
 
         final AccountPlan AccountPlan = manager.find("p1", false);
@@ -567,7 +584,8 @@ public class AccountPlanManagerTest {
     @Test
     public void findFromCache() throws Exception {
         manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         final AccountPlan plan = manager.find("p1", false);
@@ -598,7 +616,8 @@ public class AccountPlanManagerTest {
     @Test(expected = IllegalStateException.class)
     public void findFromCacheReadOnly() throws Exception {
         manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         final AccountPlan plan = manager.find("p1", false);
@@ -617,9 +636,11 @@ public class AccountPlanManagerTest {
     @Test
     public void findAll() throws Exception {
         when(entityManager.findAll()).thenReturn(Arrays.asList(createAccountPlan(new Goid(0,1L), "p1", PLAN_NAME + "1", DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS),
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT),
                 createAccountPlan(new Goid(0,2L), "p2", PLAN_NAME + "2", DATE, POLICY_XML,
-                        DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS)));
+                        DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                        RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT)));
 
         final List<AccountPlan> plans = manager.findAll();
 
@@ -651,7 +672,8 @@ public class AccountPlanManagerTest {
     @Test
     public void onApplicationEventGenericEntity() throws Exception {
         final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         manager.getCache().put("p1", plan);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
         final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});
@@ -665,7 +687,8 @@ public class AccountPlanManagerTest {
     @Test
     public void onApplicationEventNotGenericEntity() throws Exception {
         manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT));
         manager.getNameCache().put(new Goid(0,1234L), "p1");
         final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});
 
@@ -678,7 +701,8 @@ public class AccountPlanManagerTest {
     @Test
     public void onApplicationEventNotEntityInvalidationEvent() throws Exception {
         final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         manager.getCache().put("p1", plan);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
 
@@ -691,7 +715,8 @@ public class AccountPlanManagerTest {
     @Test
     public void onApplicationEventGenericEntityWrongId() throws Exception {
         final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
-                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
+                DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS,
+                RATE_LIMIT_ENABLED, MAX_REQUEST_RATE, WINDOW_SIZE, HARD_LIMIT);
         manager.getCache().put("p1", plan);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
         final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{EntityInvalidationEvent.CREATE});
@@ -705,7 +730,9 @@ public class AccountPlanManagerTest {
     private AccountPlan createAccountPlan(final Goid goid, final String planId, final String planName,
                                           final Date lastUpdate, final String policyXml, final boolean defaultPlan,
                                           final boolean throughputQuotaEnabled, final int quota, final int timeUnit,
-                                          final int counterStrategy, final List<String> organizationIds) {
+                                          final int counterStrategy, final String organizationIds,
+                                          final boolean rateLimitEnabled, final int maxRequestRate,
+                                          final int windowSize, final boolean hardLimit) {
         final AccountPlan plan = new AccountPlan();
         if (goid != null) {
             plan.setGoid(goid);
@@ -720,6 +747,10 @@ public class AccountPlanManagerTest {
         plan.setTimeUnit(timeUnit);
         plan.setCounterStrategy(counterStrategy);
         plan.setIds(organizationIds);
+        plan.setRateLimitEnabled(rateLimitEnabled);
+        plan.setMaxRequestRate(maxRequestRate);
+        plan.setWindowSizeInSeconds(windowSize);
+        plan.setHardLimit(hardLimit);
         return plan;
     }
 }

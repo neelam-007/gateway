@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.apiportalintegration.server.resource;
 
+import com.l7tech.gui.util.HtmlUtil;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -7,7 +8,8 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ApiKeyJAXBResourceMarshallerTest {
     private DefaultJAXBResourceMarshaller marshaller;
@@ -174,6 +176,20 @@ public class ApiKeyJAXBResourceMarshallerTest {
         assertEquals(StringUtils.deleteWhitespace(buildExpectedXml(key)), StringUtils.deleteWhitespace(xml));
     }
 
+    @Test
+    public void marshalCustomDataFieldAndApplicationId() throws Exception {
+        initKey();
+        key.setApplicationId("uuid-1");
+        key.setCustomMetaData("<blah/>");
+
+        final String xml = marshaller.marshal(key);
+
+        String expectedXml = buildExpectedXml(key);
+        assertEquals(StringUtils.deleteWhitespace(expectedXml), StringUtils.deleteWhitespace(xml));
+        assertTrue(expectedXml.indexOf("<l7:ApplicationId>uuid-1</l7:ApplicationId>") > 0);
+        assertTrue(expectedXml.indexOf("<l7:CustomMetaData>&lt;blah/&gt;</l7:CustomMetaData>") > 0);
+    }
+
     private void initKey() {
         apis.put("s1", "p1");
         apis.put("s2", "p2");
@@ -191,7 +207,8 @@ public class ApiKeyJAXBResourceMarshallerTest {
         stringBuilder.append(buildExpectedXmlForElement("Key", key.getKey()));
         stringBuilder.append(buildExpectedXmlForElement("Status", key.getStatus()));
         stringBuilder.append(buildExpectedXmlForElement("AccountPlanMappingId", key.getAccountPlanMappingId()));
-        stringBuilder.append(buildExpectedXmlForElement("CustomMetaData", key.getCustomMetaData()));
+        stringBuilder.append(buildExpectedXmlForElement("CustomMetaData", HtmlUtil.escapeHtmlCharacters(key.getCustomMetaData())));
+        stringBuilder.append(buildExpectedXmlForElement("ApplicationId", key.getApplicationId()));
         if (key.getApis().isEmpty()) {
             stringBuilder.append("<l7:Apis/>");
         } else {

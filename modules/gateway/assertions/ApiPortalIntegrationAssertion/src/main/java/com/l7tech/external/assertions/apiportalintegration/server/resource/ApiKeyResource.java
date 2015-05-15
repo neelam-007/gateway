@@ -25,6 +25,9 @@ public class ApiKeyResource extends Resource {
     private Date lastUpdate;
     @XmlElement(name = "CustomMetaData", namespace = JAXBResourceMarshaller.NAMESPACE)
     private String customMetaData = StringUtils.EMPTY;
+    @XmlElement(name = "ApplicationId", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private String applicationId = StringUtils.EMPTY;
+
 
     /**
      * Key = api id, Value = plan id.
@@ -158,6 +161,18 @@ public class ApiKeyResource extends Resource {
             this.customMetaData = customMetaData;
         } else {
             this.customMetaData = StringUtils.EMPTY;
+        }
+    }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(final String applicationId) {
+        if (applicationId != null) {
+            this.applicationId = applicationId;
+        } else {
+            this.applicationId = StringUtils.EMPTY;
         }
     }
 

@@ -39,11 +39,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -58,11 +61,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>1</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>1</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>200</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>120</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>false</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>abc</l7:Id>\n" +
-                "    <l7:Id>def</l7:Id>\n" +
-                "    <l7:Id>ghi</l7:Id>\n" +
+                "    <l7:Ids>abc,def,ghi</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml2</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -82,7 +88,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan1.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan1.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan1.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -98,7 +109,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(200000, details.getQuota());
         assertEquals(1, details.getTimeUnit());
         assertEquals(1, details.getCounterStrategy());
-        orgIds = plan2.getPlanMapping().getIds();
+        rateLimitDetails = plan2.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(200, rateLimitDetails.getMaxRequestRate());
+        assertEquals(120, rateLimitDetails.getWindowSizeInSeconds());
+        assertFalse(rateLimitDetails.isHardLimit());
+        orgIds = Arrays.asList(plan2.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("abc", orgIds.get(0));
         assertEquals("def", orgIds.get(1));
@@ -119,11 +135,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -143,7 +162,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -164,11 +188,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -188,7 +215,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -209,11 +241,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -233,7 +268,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -255,11 +295,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -279,7 +322,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -301,11 +349,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "</l7:AccountPlan>\n" +
                 "</l7:AccountPlans>";
@@ -324,7 +375,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -345,11 +401,14 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -369,7 +428,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -385,9 +449,7 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "  <l7:LastUpdated>" + LAST_UPDATE_STRING + "</l7:LastUpdated>\n" +
                 "  <l7:DefaultPlan>true</l7:DefaultPlan>\n" +
                 "  <l7:PlanMapping>\n" +
-                "    <l7:Id>123</l7:Id>\n" +
-                "    <l7:Id>456</l7:Id>\n" +
-                "    <l7:Id>789</l7:Id>\n" +
+                "    <l7:Ids>123,456,789</l7:Ids>\n" +
                 "  </l7:PlanMapping>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -407,7 +469,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(0, details.getQuota());
         assertEquals(0, details.getTimeUnit());
         assertEquals(0, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertFalse(rateLimitDetails.isEnabled());
+        assertEquals(0, rateLimitDetails.getMaxRequestRate());
+        assertEquals(0, rateLimitDetails.getWindowSizeInSeconds());
+        assertFalse(rateLimitDetails.isHardLimit());
+        List<String> orgIds = Arrays.asList(plan.getPlanMapping().getIds().split(","));
         assertEquals(3, orgIds.size());
         assertEquals("123", orgIds.get(0));
         assertEquals("456", orgIds.get(1));
@@ -428,6 +495,11 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -447,8 +519,12 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
         assertEquals(100000, details.getQuota());
         assertEquals(4, details.getTimeUnit());
         assertEquals(2, details.getCounterStrategy());
-        List<String> orgIds = plan.getPlanMapping().getIds();
-        assertEquals(0, orgIds.size());
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        assertTrue(rateLimitDetails.isEnabled());
+        assertEquals(100, rateLimitDetails.getMaxRequestRate());
+        assertEquals(60, rateLimitDetails.getWindowSizeInSeconds());
+        assertTrue(rateLimitDetails.isHardLimit());
+        assertTrue(plan.getPlanMapping().getIds().isEmpty());
     }
 
     @Test(expected = JAXBException.class)
@@ -472,6 +548,11 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +
@@ -494,6 +575,11 @@ public class AccountPlanListJAXBResourceUnmarshallerTest {
                 "      <l7:TimeUnit>4</l7:TimeUnit>\n" +
                 "      <l7:CounterStrategy>2</l7:CounterStrategy>\n" +
                 "    </l7:ThroughputQuota>\n" +
+                "    <l7:RateLimit l7:enabled=\"true\">\n" +
+                "      <l7:MaxRequestRate>100</l7:MaxRequestRate>\n" +
+                "      <l7:WindowSizeInSeconds>60</l7:WindowSizeInSeconds>\n" +
+                "      <l7:HardLimit>true</l7:HardLimit>\n" +
+                "    </l7:RateLimit>\n" +
                 "  </l7:PlanDetails>\n" +
                 "  <l7:PlanPolicy>policy xml</l7:PlanPolicy>\n" +
                 "</l7:AccountPlan>\n" +

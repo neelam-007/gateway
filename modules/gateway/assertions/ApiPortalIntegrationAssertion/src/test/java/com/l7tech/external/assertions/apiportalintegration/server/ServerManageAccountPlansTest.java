@@ -38,11 +38,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerManageAccountPlansTest {
-    private static final List<String> ORG_IDS = new ArrayList<String>(2);
-    static {
-        ORG_IDS.add("1");
-        ORG_IDS.add("2");
-    }
+    private static final String ORG_IDS = "1,2";
     public static final boolean DEFAULT_PLAN_ENABLED = true;
     public static final boolean THROUGHPUT_QUOTA_ENABLED = true;
     public static final int QUOTA_10 = 10;
@@ -71,6 +67,8 @@ public class ServerManageAccountPlansTest {
     @Mock
     private AccountPlanResourceHandler accountPlanResourceHandler;
     @Mock
+    private ApiFragmentResourceHandler apiFragmentResourceHandler;
+    @Mock
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
@@ -90,7 +88,8 @@ public class ServerManageAccountPlansTest {
         policyHelper = new PolicyHelper(policyManager,policyVersionManager,transactionManager,licenseManager,policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
                 resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
-                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
+                keyLegacyResourceHandler, accountPlanResourceHandler, apiFragmentResourceHandler, policyHelper,
+                policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         accountPlanResources = new ArrayList<AccountPlanResource>();
         expectedFilters = new HashMap<String, String>();
@@ -608,7 +607,7 @@ public class ServerManageAccountPlansTest {
     private AccountPlanResource createAccountPlanResource(final String planId, final String planName,
                                                           final Date lastUpdate, final String policyXml, final boolean defaultPlan,
                                                           final boolean throughputQuotaEnabled, final int quota, final int timeUnit,
-                                                          final int counterStrategy, final List<String> organizationIds) {
+                                                          final int counterStrategy, final String organizationIds) {
         final AccountPlanResource resource = new AccountPlanResource();
         resource.setPlanId(planId);
         resource.setPlanName(planName);

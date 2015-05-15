@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="api-portal-assertion8.2" default="release" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+    <description>
+        Ant build file for deploy and release task to Nexus
+    </description>
+
+     <!-- set environment properties -->
+    <property environment="env"/>
+    <property name="env.HOSTNAME" value="${env.COMPUTERNAME}"/>
+    <property name="hostname" value="${env.HOSTNAME}"/>
+    <property name="svn.user" value="${env.SVN_USER}"/>
+    <property name="svn.password" value="${env.SVN_PASSWORD}"/>
+    <property name="nexus.user" value="${env.NEXUS_USER}"/>
+    <property name="nexus.password" value="${env.NEXUS_PASSWORD}"/>
+
+    <!-- Set src.root to ${basedir} if not already set -->
+    <property name="src.root" location="${basedir}"/>
+
+    <!-- get the version -->
+    
+    <property name="version.filename" value="build.portal.aar.version"/>
+
+    <property file="${src.root}/${version.filename}"/>
+    <property name="version.file" location="${src.root}/${version.filename}"/>
+
+    <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.micro}"/>
+    <property name="build.org" value="com.layer7.portal"/>
+    <property name="build.name" value="${ant.project.name}"/>
+    <property name="ivy.file.name" value="ivy.nexus.xml"/>
+    <property name="ivy.template.file" value="${src.root}/ivy.templates/${ivy.file.name}"/>
+    <property name="ivy.build.file" value="${src.root}/${ivy.file.name}"/>
+    <property name="ivy.settings.file" value="${src.root}/etc/build/ivysettings-cake.xml"/>
+
+    <property name="nexus.server.url" value="http://blackforest.l7tech.com:8080/nexus"/>
+
+    <!--
+      Ivy initialization is global
+    -->
+
+    <property name="libs.directory" value="${src.root}/lib/cake/" />
+
+    <property name="ivy.home" value="${libs.directory}/ivy/" />
+    <property name="svnant.home" value="${libs.directory}/svnant/" />
+    <property name="missinglink.home" value="${libs.directory}/missinglink/" />
+    <property name="antcontrib.home" value="${libs.directory}/antcontrib/" />
+
+    <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant">
+        <classpath>
+            <fileset dir="${ivy.home}">
+                <include name="*.jar"/>
+            </fileset>
+        </classpath>
+    </taskdef>
+
+    <ivy:configure file="${ivy.settings.file}" override="true"/>
+
+    <target name="ivy.resolve">
+        <ivy:resolve file="${ivy.build.file}" transitive="false" />
+    </target>
+
+    <!-- path to the svnant libraries. Usually they will be located in ANT_HOME/lib -->
+    <path id="svnant.classpath">
+      <fileset dir="${svnant.home}">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+
+    <!-- load the svn task -->
+    <typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpathref="svnant.classpath" />
+
+    <svnSetting javahl="false" svnkit="true" username="${svn.user}" password="${svn.password}" id="svn.settings" />
+
+
+    <!-- loading missing link -->
+    <path id="missinglink.classpath">
+        <fileset dir="${missinglink.home}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <taskdef name="http" classname="org.missinglink.ant.task.http.HttpClientTask">
+        <classpath refid="missinglink.classpath"/>
+    </taskdef>
+
+    <!-- loading ant-contrib -->
+    <path id="antcontrib.classpath">
+        <fileset dir="${antcontrib.home}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="antcontrib.classpath"/>
+
+
+    <macrodef name="nexus-publish">
+        <attribute name="stage" default="snapshots" />
+        <attribute name="build-version" default="${build.version}" />
+        <sequential>
+            <ivy:publish organisation="${build.org}" module="${build.name}" revision="@{build-version}" resolver="nexus-@{stage}" pubrevision="@{build-version}" overwrite="true" publishivy="true" update="true" >
+                <artifacts pattern="${src.root}/target/[organisation]-[module]-[revision]-[type].[ext]"/>
+            </ivy:publish>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="nexus-prepare">
+        <attribute name="build-version" default="${build.version}" />
+        <sequential>
+            <!-- convert ivy.xml to pom.xml type -->
+            <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}" status="release"/>
+            <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
+
+            <!-- copy artifacts into correct name to be published -->
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-8.2.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
+
+        </sequential>
+    </macrodef>
+
+    <macrodef name="update-nexus-metadata">
+        <attribute name="stage" default="snapshots" />
+        <sequential>
+            <http
+              url="${nexus.server.url}/service/local/metadata/repositories/@{stage}/content/com/layer7/portal/${build.name}/"
+              method="DELETE"
+              expected="204">
+                <credentials username="${nexus.user}" password="${nexus.password}"/>
+            </http>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="increment-revision">
+      <sequential>
+        <math result="build.version.micro.new" operand1="${build.version.micro}" operation="add" operand2="1" datatype="int"/>
+        <property name="build.version.new"  value="${build.version.major}.${build.version.minor}.${build.version.micro.new}"/>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="version-ivy-file">
+        <attribute name="version" default="${build.version}-SNAPSHOTS" />
+        <sequential>
+            <echo message="@{version}"/>
+            <echo message="${ivy.template.file}"/>
+            <echo message="${ivy.build.file}"/>
+
+            <copy file="${ivy.template.file}" tofile="${ivy.build.file}" overwrite="true">
+                <filterset>
+                    <filter token="REVISION_NO" value="@{version}"/>
+                </filterset>  
+            </copy>
+        </sequential>
+    </macrodef>
+
+
+    <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="ivy.resolve">
+        <version-ivy-file/>
+        <nexus-prepare build-version="${build.version}-SNAPSHOT"/>
+        <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
+        <update-nexus-metadata stage="snapshots"/>
+    </target>
+
+    <target name="release" description="Upload releases artifacts to Nexus server" depends="ivy.resolve">
+        <version-ivy-file version="${build.version}"/>
+        <nexus-prepare build-version="${build.version}"/> 
+        <nexus-publish stage="releases" build-version="${build.version}"/>
+ 
+        <increment-revision/>
+        <version-ivy-file version="${build.version.new}"/>
+        <antcall target="bump-revision-in-version-file"/>
+        <antcall target="scm-update-revision"/>
+        <update-nexus-metadata stage="releases"/>
+    </target>
+
+    <target name="bump-revision-in-version-file">
+      <propertyfile file="${version.file}">
+         <entry key="build.version.micro" type="int" operation="+" value="1"/>
+      </propertyfile>
+    </target>
+
+    <target name="scm-update-revision">
+      <svn refid="svn.settings">
+        <commit message="[Automated-by-TeamCity] - updating version number.">
+          <fileset dir="${src.root}">
+            <include name="${version.filename}"/>
+            <include name="${ivy.build.file}"/> 
+          </fileset>
+        </commit>
+      </svn>
+    </target>
+
+
+</project>

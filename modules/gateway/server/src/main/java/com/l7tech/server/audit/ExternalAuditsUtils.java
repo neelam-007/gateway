@@ -302,6 +302,8 @@ public class ExternalAuditsUtils {
             }
 
             SecurityTokenType tokenType = SecurityTokenType.getByName(authenticationType);
+            userName = userName !=null? userName.length()>0? userName: null: null;
+            userId = userId !=null? userId.length()>0? userId: null: null;
 
 
             record = new MessageSummaryAuditRecord(
