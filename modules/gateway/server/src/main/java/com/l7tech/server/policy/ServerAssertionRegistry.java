@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * modular ServerConfig properties in the new assertions and register them with ServerConfig.
  * @noinspection ContinueStatement,ContinueStatement
  */
-public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean, ServerModuleFileLoader {
+public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean, ServerModuleFileLoader, AssertionModuleFinder<ModularAssertionModule> {
     /** @noinspection FieldNameHidesFieldInSuperclass*/
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
 
@@ -189,7 +189,8 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
      * @return the {@link com.l7tech.server.policy.module.ModularAssertionModule} that provides this class loader, or null if no currently registered AssertionModule owns
      *         the specified ClassLoader.
      */
-    public ModularAssertionModule getModuleForClassLoader(ClassLoader classLoader) {
+    @Override
+    public ModularAssertionModule getModuleForClassLoader(final ClassLoader classLoader) {
         for (ModularAssertionModule module : assertionsScanner.getModules())
             if (classLoader == module.getModuleClassLoader())
                 return module;
@@ -199,13 +200,16 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     /**
      * @see ModularAssertionsScanner#getModuleForPackage(String)
      */
-    public ModularAssertionModule getModuleForPackage(@NotNull String packageName) {
+    @Override
+    public ModularAssertionModule getModuleForPackage(@NotNull final String packageName) {
         return assertionsScanner.getModuleForPackage(packageName);
     }
 
     /**
      * @return a view of all assertion modules which are currently loaded.  May be empty but never null.
      */
+    @NotNull
+    @Override
     public Set<ModularAssertionModule> getLoadedModules() {
         return new HashSet<>(assertionsScanner.getModules());
     }

@@ -38,7 +38,7 @@ public enum ModuleState {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return displayName;
     }
 }

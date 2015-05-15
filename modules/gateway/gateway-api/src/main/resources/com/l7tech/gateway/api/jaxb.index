@@ -60,3 +60,4 @@ FirewallRuleMO
 SampleMessageMO
 ScheduledTaskMO
 WorkQueueMO
+ServerModuleFileMO

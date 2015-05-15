@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -16,7 +17,10 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
+import com.l7tech.server.module.ServerModuleFileManager;
+import com.l7tech.server.policy.AssertionModuleFinder;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -27,6 +31,7 @@ import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -60,7 +65,11 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
     @Inject
     private CustomAssertionsRegistrar customAssertionRegistrar;
     @Inject
+    private AssertionModuleFinder<ModularAssertionModule> moduleAssertionModuleFinder;
+    @Inject
     private DefaultKey defaultKey;
+    @Inject
+    private ServerModuleFileManager serverModuleFileManager;
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -171,6 +180,44 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                         dependencies.add(dependency);
                 } catch ( IOException e){
                     throw new CannotRetrieveDependenciesException(assertion.getClass(),e.getMessage());
+                }
+            }
+        }
+
+        // determine whether the assertion is from a module uploaded via Policy Manager (i.e. ServerModuleFile)
+        if (assertion instanceof CustomAssertionHolder) {
+            // this is a Custom Assertion so get the module entity name directly
+            final String moduleName = ((CustomAssertionHolder)assertion).getModuleEntityName();
+            if (StringUtils.isNotBlank(moduleName)) {
+                final ServerModuleFile moduleFile = serverModuleFileManager.findByUniqueName(moduleName);
+                if (moduleFile != null) {
+                    final Dependency dependency = finder.getDependency(
+                            DependencyFinder.FindResults.create(
+                                    moduleFile,
+                                    new EntityHeader(Goid.DEFAULT_GOID, EntityType.SERVER_MODULE_FILE, moduleName, null)
+                            )
+                    );
+                    if (dependency != null && !dependencies.contains(dependency)) {
+                        dependencies.add(dependency);
+                    }
+                }
+            }
+        } else {
+            // this is a Modular Assertion so get the module entity through the assertion module
+            final ModularAssertionModule module = moduleAssertionModuleFinder.getModuleForClassLoader(assertion.getClass().getClassLoader());
+            if (module != null && module.isFromDb()) {
+                final String moduleName = module.getEntityName();
+                final ServerModuleFile moduleFile = serverModuleFileManager.findByUniqueName(moduleName);
+                if (moduleFile != null) {
+                    final Dependency dependency = finder.getDependency(
+                            DependencyFinder.FindResults.create(
+                                    moduleFile,
+                                    new EntityHeader(Goid.DEFAULT_GOID, EntityType.SERVER_MODULE_FILE, moduleName, null)
+                            )
+                    );
+                    if (dependency != null && !dependencies.contains(dependency)) {
+                        dependencies.add(dependency);
+                    }
                 }
             }
         }

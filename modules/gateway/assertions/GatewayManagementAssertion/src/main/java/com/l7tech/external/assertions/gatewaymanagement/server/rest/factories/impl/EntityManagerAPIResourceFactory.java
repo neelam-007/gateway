@@ -33,7 +33,7 @@ import static com.l7tech.util.Option.optional;
 public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E extends PersistentEntityImp, EH extends EntityHeader> implements APIResourceFactory<R> {
 
     @Inject
-    private RbacAccessService rbacAccessService;
+    protected RbacAccessService rbacAccessService;
 
     @Inject
     private PlatformTransactionManager transactionManager;

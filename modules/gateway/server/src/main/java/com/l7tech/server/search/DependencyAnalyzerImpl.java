@@ -3,6 +3,7 @@ package com.l7tech.server.search;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
@@ -105,7 +106,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SampleMessage.class,
             ResourceEntry.class,
             ScheduledTask.class,
-            WorkQueue.class
+            WorkQueue.class,
+            ServerModuleFile.class
     );
     @Inject
     private EntityCrud entityCrud;

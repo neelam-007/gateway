@@ -606,6 +606,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new {@link ServerModuleFileMO} instance.
+     *
+     * @return The new instance.
+     */
+    public static ServerModuleFileMO createServerModuleFileMO() {
+        return new ServerModuleFileMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

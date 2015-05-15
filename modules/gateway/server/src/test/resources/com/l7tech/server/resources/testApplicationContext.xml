@@ -789,6 +789,14 @@
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>
 
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerStub">
+        <constructor-arg>
+            <list />
+        </constructor-arg>
+    </bean>
+
+    <bean id="modularAssertionModuleFinder" class="com.l7tech.server.policy.ModularAssertionModuleFinderStub" />
+
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManagerStub" />
 
     <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

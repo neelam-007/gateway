@@ -74,7 +74,8 @@ public @interface Dependency {
         ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
         SCHEDULED_TASK(EntityType.SCHEDULED_TASK),
         INTERFACE_TAG(EntityType.INTERFACE_TAG),
-        WORK_QUEUE(EntityType.WORK_QUEUE);
+        WORK_QUEUE(EntityType.WORK_QUEUE),
+        SERVER_MODULE_FILE(EntityType.SERVER_MODULE_FILE);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

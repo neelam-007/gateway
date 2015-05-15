@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.module;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
-import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -48,6 +47,23 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * assumed to be 100% reliable, and is intended to be used for display purposes.
      */
     public static final String PROP_ASSERTIONS = "moduleAssertions";
+
+
+    /**
+     * Convenient field holding all known property keys used by the {@link ServerModuleFile}.<br/>
+     * Currently the following property keys are used:
+     * <ul>
+     *     <li>{@link #PROP_FILE_NAME}</li>
+     *     <li>{@link #PROP_SIZE}</li>
+     *     <li>{@link #PROP_ASSERTIONS}</li>
+     * </ul>
+     */
+    private static final String[] ALL_PROPERTY_KEYS = {
+            PROP_FILE_NAME,
+            PROP_SIZE,
+            PROP_ASSERTIONS
+    };
+
 
     /**
      * Specifies the module {@link ModuleType type}.
@@ -369,6 +385,17 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
     @NotNull
     public static String calcBytesChecksum(@NotNull final byte[] bytes) {
         return ModuleDigest.digest(bytes);
+    }
+
+    /**
+     * Utility function for gathering all known property keys used by the {@code ServerModuleFile}.
+     *
+     * @return a {@code String} array containing all known property keys used by the {@code ServerModuleFile}, never {@code null}.
+     * @see #ALL_PROPERTY_KEYS
+     */
+    @NotNull
+    public static String[] getPropertyKeys() {
+        return ALL_PROPERTY_KEYS;
     }
 
     @SuppressWarnings("RedundantIfStatement")

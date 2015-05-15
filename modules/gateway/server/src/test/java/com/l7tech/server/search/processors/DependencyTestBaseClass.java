@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -18,6 +19,9 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.module.ServerModuleFileManager;
+import com.l7tech.server.policy.AssertionModuleFinder;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.search.DependencyProcessorRegistry;
@@ -58,6 +62,10 @@ public abstract class DependencyTestBaseClass {
     protected SsgKeyStoreManager keyStoreManager;
     @Mock
     private TrustedCertManager trustedCertManager;
+    @Mock
+    private ServerModuleFileManager serverModuleFileManager;
+    @Mock
+    private AssertionModuleFinder<ModularAssertionModule> moduleAssertionModuleFinder;
 
     @Spy
     DependencyProcessorRegistry dependencyProcessorRegistry;
@@ -160,6 +168,9 @@ public abstract class DependencyTestBaseClass {
         } else if(entity instanceof TrustedCert){
             Mockito.when(trustedCertManager.findByUniqueName(entityHeader.getName())).thenReturn((TrustedCert) entity);
             Mockito.when(trustedCertManager.findByPrimaryKey(entityHeader.getGoid())).thenReturn((TrustedCert) entity);
+        } else if (entity instanceof ServerModuleFile) {
+            Mockito.when(serverModuleFileManager.findByUniqueName(entityHeader.getName())).thenReturn((ServerModuleFile) entity);
+            Mockito.when(serverModuleFileManager.findByPrimaryKey(entityHeader.getGoid())).thenReturn((ServerModuleFile) entity);
         }
     }
 

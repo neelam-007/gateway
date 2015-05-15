@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URL
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
@@ -83,6 +84,9 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 //include certificates for users
                 if(entityResource.getEntity() instanceof User) {
                     mo = ((UserTransformer)transformer).convertToMO((User) entityResource.getEntity(), secretsEncryptor, true);
+                } else if(entityResource.getEntity() instanceof ServerModuleFile) {
+                    // include ServerModuleFile bytes
+                    mo = ((ServerModuleFileTransformer)transformer).convertToMO((ServerModuleFile) entityResource.getEntity(), secretsEncryptor, true);
                 } else {
                     mo = transformer.convertToMO(entityResource.getEntity(), secretsEncryptor);
                 }
