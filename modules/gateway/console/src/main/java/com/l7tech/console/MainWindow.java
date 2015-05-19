@@ -3569,7 +3569,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         setName("MainWindow");
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
-        setTitle(resapplication.getString("SSG"));
+        setTitle( resapplication.getString("SSG") + " " + BuildInfo.getProductVersion() );
 
         String imagePath = null;
         final ClassLoader classLoader = getClass().getClassLoader();
