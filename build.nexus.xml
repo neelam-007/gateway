@@ -110,7 +110,7 @@
             <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
 
             <!-- copy artifacts into correct name to be published -->
-            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-8.3.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.0.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
 
         </sequential>
     </macrodef>
