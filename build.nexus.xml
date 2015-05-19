@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="api-portal-assertion8.2" default="release" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="api-portal-assertion8.3" default="release" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
     <description>
         Ant build file for deploy and release task to Nexus
     </description>
@@ -110,7 +110,7 @@
             <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
 
             <!-- copy artifacts into correct name to be published -->
-            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-8.2.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-8.3.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
 
         </sequential>
     </macrodef>

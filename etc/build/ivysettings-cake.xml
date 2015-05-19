@@ -4,7 +4,7 @@
                       realm="Sonatype Nexus Repository Manager"
                       username="deployment" passwd="7layer"/>
   <publications>
-     <artifact name="api-portal-assertion8.2" type="aar"/>
+     <artifact name="api-portal-assertion8.3" type="aar"/>
   </publications>
   <property name="nexus-public"
                    value="http://blackforest.l7tech.com:8080/nexus/content/groups/public"/>
