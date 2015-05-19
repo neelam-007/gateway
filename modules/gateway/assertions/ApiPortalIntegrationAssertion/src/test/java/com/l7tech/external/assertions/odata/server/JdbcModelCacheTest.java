@@ -71,7 +71,6 @@ public class JdbcModelCacheTest {
 
   Message response;
 
-
   //for hsqldb use
   protected Connection connection;
   protected static JDBCDataSource dataSource;
@@ -99,7 +98,6 @@ public class JdbcModelCacheTest {
     connection = DriverManager.getConnection(DB, USERNAME, PASSWORD);
     createDb(connection);
 
-
     when(jdbcConnectionManager.getJdbcConnection(Matchers.eq(connectionName))).thenReturn(jdbcConnection);
     when(jdbcConnectionPoolManager.getDataSource(Matchers.eq(connectionName))).thenReturn(dataSource);
 
@@ -125,11 +123,15 @@ public class JdbcModelCacheTest {
   @After
   public void cleanUp() throws Exception {
     update(connection, "DROP TABLE " + TABLE_NAME);
+    try {
+      update(connection, "DROP TABLE " + TABLE_NAME2);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
-
   @Test
-  public void test1_Metadata() throws Exception {
+  public void test01_Metadata_() throws Exception {
     MockServletContext servletContext = new MockServletContext();
     MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
     hrequest.setRequestURI("/OData.svc/$metadata");
@@ -167,7 +169,7 @@ public class JdbcModelCacheTest {
   }
 
   @Test
-  public void test2_MetadataWithMockCache() throws Exception {
+  public void test02_Metadata_WithMockCache() throws Exception {
     Map<String, JdbcModel> modelCache = mock(Map.class);
     MockServletContext servletContext = new MockServletContext();
     MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
@@ -240,6 +242,6 @@ public class JdbcModelCacheTest {
 
   }    // void upd
 
-    private final static String TEXT_METADATA_XML = "<?xml version='1.0' encoding='utf-8'?><edmx:Edmx Version=\"1.0\" xmlns:edmx=\"http://schemas.microsoft.com/ado/2007/06/edmx\"><edmx:DataServices m:DataServiceVersion=\"2.0\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\"><Schema Namespace=\"JdbcModel\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityType Name=\"TableName1\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.Int32\" Nullable=\"false\" MaxLength=\"32\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType></Schema><Schema Namespace=\"JdbcEntities.Public\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityContainer Name=\"Public\" m:IsDefaultEntityContainer=\"true\"><EntitySet Name=\"TableName1s\" EntityType=\"JdbcModel.TableName1\"/></EntityContainer></Schema></edmx:DataServices></edmx:Edmx>";
-    private final static String TEXT_METADATA_XML2 = "<?xml version='1.0' encoding='utf-8'?><edmx:Edmx Version=\"1.0\" xmlns:edmx=\"http://schemas.microsoft.com/ado/2007/06/edmx\"><edmx:DataServices m:DataServiceVersion=\"2.0\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\"><Schema Namespace=\"JdbcModel\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityType Name=\"TableName1\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.Int32\" Nullable=\"false\" MaxLength=\"32\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType><EntityType Name=\"TableName2\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.String\" Nullable=\"false\" MaxLength=\"255\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType></Schema><Schema Namespace=\"JdbcEntities.Public\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityContainer Name=\"Public\" m:IsDefaultEntityContainer=\"true\"><EntitySet Name=\"TableName1s\" EntityType=\"JdbcModel.TableName1\"/><EntitySet Name=\"TableName2s\" EntityType=\"JdbcModel.TableName2\"/></EntityContainer></Schema></edmx:DataServices></edmx:Edmx>";
+  private final static String TEXT_METADATA_XML = "<?xml version='1.0' encoding='utf-8'?><edmx:Edmx Version=\"1.0\" xmlns:edmx=\"http://schemas.microsoft.com/ado/2007/06/edmx\"><edmx:DataServices m:DataServiceVersion=\"2.0\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\"><Schema Namespace=\"JdbcModel\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityType Name=\"TableName1\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.Int32\" Nullable=\"false\" MaxLength=\"32\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType></Schema><Schema Namespace=\"JdbcEntities.Public\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityContainer Name=\"Public\" m:IsDefaultEntityContainer=\"true\"><EntitySet Name=\"TableName1s\" EntityType=\"JdbcModel.TableName1\"/></EntityContainer></Schema></edmx:DataServices></edmx:Edmx>";
+  private final static String TEXT_METADATA_XML2 = "<?xml version='1.0' encoding='utf-8'?><edmx:Edmx Version=\"1.0\" xmlns:edmx=\"http://schemas.microsoft.com/ado/2007/06/edmx\"><edmx:DataServices m:DataServiceVersion=\"2.0\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\"><Schema Namespace=\"JdbcModel\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityType Name=\"TableName1\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.Int32\" Nullable=\"false\" MaxLength=\"32\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType><EntityType Name=\"TableName2\"><Key><PropertyRef Name=\"Id\"/></Key><Property Name=\"Id\" Type=\"Edm.String\" Nullable=\"false\" MaxLength=\"255\"/><Property Name=\"StrCol\" Type=\"Edm.String\" Nullable=\"true\" MaxLength=\"256\"/><Property Name=\"NumCol\" Type=\"Edm.Int32\" Nullable=\"true\" MaxLength=\"32\"/></EntityType></Schema><Schema Namespace=\"JdbcEntities.Public\" xmlns=\"http://schemas.microsoft.com/ado/2008/09/edm\"><EntityContainer Name=\"Public\" m:IsDefaultEntityContainer=\"true\"><EntitySet Name=\"TableName1s\" EntityType=\"JdbcModel.TableName1\"/><EntitySet Name=\"TableName2s\" EntityType=\"JdbcModel.TableName2\"/></EntityContainer></Schema></edmx:DataServices></edmx:Edmx>";
 }
