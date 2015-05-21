@@ -13,7 +13,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import org.glassfish.jersey.server.ContainerResponse;
 
 import javax.inject.Inject;
 import javax.security.auth.Subject;
@@ -22,8 +21,6 @@ import java.io.IOException;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Server side implementation of the PortalBootstrapAssertion.
@@ -42,11 +39,14 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final String url = ExpandVariables.process(getAssertion().getEnrollmentUrl(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
         final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-        if (null == user)
-            throw new IllegalStateException("An authenticated user is required but not present");
+        if (null == user) {
+            logAndAudit(AssertionMessages.PORTAL_BOOTSTRAP_ERROR, new String[]{"An authenticated user is required but not present"});
+            return AssertionStatus.FAILED;
+        }
 
         if (!isFullAdministrator(user)) {
-            throw new IllegalStateException("Administrator use required");
+            logAndAudit(AssertionMessages.PORTAL_BOOTSTRAP_ERROR, new String[]{"Administrator user required"});
+            return AssertionStatus.FAILED;
         }
 
         //Create the subject for securing manager calls
