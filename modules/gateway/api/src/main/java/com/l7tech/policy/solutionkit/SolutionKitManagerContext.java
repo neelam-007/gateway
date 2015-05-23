@@ -10,9 +10,14 @@ import org.w3c.dom.Document;
  */
 public class SolutionKitManagerContext {   // <T> {   // look into making this type safe
     /**
-     * XML document representing the restman bundle to install the Solution Kit.
+     * XML document representing the solution kit metadata.
      */
-    private Document solutionKitBundle;
+    private Document solutionKitMetadata;
+
+    /**
+     * XML document representing the restman migration bundle to install the Solution Kit.
+     */
+    private Document migrationBundle;
 
     /**
      * A string to change entities so it's possible to install multiple instances of the same Solution Kit.
@@ -26,12 +31,12 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
     private Object customDataObject;
     //    T customDataObject;
 
-    public Document getSolutionKitBundle() {
-        return solutionKitBundle;
+    public Document getSolutionKitMetadata() {
+        return solutionKitMetadata;
     }
 
-    public void setSolutionKitBundle(Document solutionKitBundle) {
-        this.solutionKitBundle = solutionKitBundle;
+    public void setSolutionKitMetadata(Document solutionKitMetadata) {
+        this.solutionKitMetadata = solutionKitMetadata;
     }
 
     public String getInstanceModifier() {
@@ -48,6 +53,14 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
 
     public void setCustomDataObject(Object customDataObject) {
         this.customDataObject = customDataObject;
+    }
+
+    public Document getMigrationBundle() {
+        return migrationBundle;
+    }
+
+    public void setMigrationBundle(Document migrationBundle) {
+        this.migrationBundle = migrationBundle;
     }
 
 //    public T getCustomDataObject() {

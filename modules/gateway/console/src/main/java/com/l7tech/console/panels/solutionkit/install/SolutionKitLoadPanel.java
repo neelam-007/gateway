@@ -2,6 +2,7 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
@@ -49,23 +50,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String STEP_DESC = "Specify the location of solution kit file (skar) to install.";
 
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
-    private static final String SK_NS = "http://ns.l7tech.com/2010/04/gateway-management";
     private static final String SK_FILENAME = "SolutionKit.xml";
     private static final String SK_INSTALL_BUNDLE_FILENAME = "InstallBundle.xml";
     private static final String SK_UPGRADE_BUNDLE_FILENAME = "UpgradeBundle.xml";
     private static final String SK_DELETE_BUNDLE_FILENAME = "DeleteBundle.xml";
     private static final String SK_CUSTOMIZATION_JAR_FILENAME = "Customization.jar";
-    private static final String SK_ELE_ROOT = "SolutionKit";
-    private static final String SK_ELE_ID = "Id";
-    private static final String SK_ELE_VERSION = "Version";
-    private static final String SK_ELE_NAME = "Name";
-    private static final String SK_ELE_DESC = "Description";
-    private static final String SK_ELE_TIMESTAMP = "TimeStamp";
-    private static final String SK_ELE_IS_COLLECTION = "IsCollection";
-    private static final String SK_ELE_CUSTOM_UI = "CustomUI";
-    private static final String SK_ELE_CUSTOM_CALLBACK = "CustomCallback";
-    private static final String SK_ELE_DEPENDENCIES = "Dependencies";
-    private static final String SK_ELE_FEATURE_SET = "FeatureSet";
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
 
@@ -248,28 +237,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     // load solution kit metadata
     private void loadSolutionKitXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
-        final Element docEle = doc.getDocumentElement();
-
-        solutionKit.setSolutionKitGuid(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID)));
-        solutionKit.setSolutionKitVersion(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION)));
-        solutionKit.setName(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME)));
-        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
-        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
-
-        final Element featureSetEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
-        if (featureSetEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetEle));
-        }
-
-        final Element customCallbackEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_CALLBACK);
-        if (customCallbackEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
-        }
-
-        final Element customUiEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_UI);
-        if (customUiEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
-        }
+        SolutionKitUtils.copyDocumentToSolutionKit(doc, solutionKit);
     }
 
     // load install bundle
@@ -277,8 +245,8 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
         final Element installBundleEle = doc.getDocumentElement();
 
-        if (installBundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "l7") == null) {
-            installBundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + "l7", SK_NS);
+        if (installBundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, SolutionKitUtils.SK_NS_PREFIX) == null) {
+            installBundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + SolutionKitUtils.SK_NS_PREFIX, SolutionKitUtils.SK_NS);
         }
 
         installBundleSource.setNode(installBundleEle);

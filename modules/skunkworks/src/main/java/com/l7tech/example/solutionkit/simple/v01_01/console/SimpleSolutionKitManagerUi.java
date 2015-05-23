@@ -13,19 +13,19 @@ import java.awt.event.ActionListener;
  */
 public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
     final SolutionKitManagerContext context = new SolutionKitManagerContext();
-    final StringBuilder message = new StringBuilder();
+    final StringBuilder customText = new StringBuilder();
 
     @Override
     public JButton getButton() {
         JButton button = new JButton("Custom UI");
         button.setLayout(new BorderLayout());
-        message.setLength(0);
+        customText.setLength(0);
 
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                message.append("Button action performed.");
-                JOptionPane.showMessageDialog(getParentPanel(), message.toString());
+                String inputText = JOptionPane.showInputDialog(getParentPanel(), "Enter customization text here.", "CUSTOMIZED!");
+                customText.append(inputText);
             }
         });
 
@@ -35,7 +35,7 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
     @Override
     public SolutionKitManagerUi initialize() {
         setContext(context);
-        context.setCustomDataObject(message);
+        context.setCustomDataObject(customText);
         return this;
     }
 }

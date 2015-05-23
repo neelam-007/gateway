@@ -168,4 +168,24 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
     public void setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
     }
+
+    @SuppressWarnings("RedundantIfStatement")
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final SolutionKit that = (SolutionKit) o;
+
+        if (sk_guid != null ? !sk_guid.equals(that.sk_guid) : that.sk_guid != null) return false;
+        if (sk_version != null ? !sk_version.equals(that.sk_version) : that.sk_version != null) return false;
+        if (installXmlProperties != null ? !installXmlProperties.equals(that.installXmlProperties) : that.installXmlProperties != null) return false;
+        if (installProperties != null ? !installProperties.equals(that.installProperties) : that.installProperties != null) return false;
+        if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
+        if (uninstallBundle != null ? !uninstallBundle.equals(that.sk_version) : that.uninstallBundle != null) return false;
+        if (lastUpdateTime != that.lastUpdateTime) return false;
+
+        return true;
+    }
 }

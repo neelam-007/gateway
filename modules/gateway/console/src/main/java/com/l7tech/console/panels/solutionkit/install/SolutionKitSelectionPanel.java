@@ -2,6 +2,7 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -17,10 +18,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 
@@ -60,7 +60,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
-    private boolean disableAutoNext = false;
+//    private boolean disableAutoNext = false;
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -128,15 +128,36 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // invoke custom callback
         try {
-            Document bundleDocument;
+            Document metadataDoc, bundleDoc;
+            SolutionKitManagerContext skContext;
             Map<SolutionKit, SolutionKitManagerUi> customUis = settings.getCustomUis();
             Map<SolutionKit, SolutionKitManagerCallback> customCallback = settings.getCustomCallbacks();
+
             for (SolutionKit sk : customCallback.keySet()) {
-                bundleDocument = settings.getBundleAsDocument(sk);
-                customCallback.get(sk).preMigrationBundleImport(bundleDocument, customUis.get(sk).getContext());
-                settings.setBundle(sk, bundleDocument);
+                // get xml (document) version of metadata and bundle
+                metadataDoc = SolutionKitUtils.createDocument(sk);
+                bundleDoc = settings.getBundleAsDocument(sk);
+
+                // if implementer provides a context
+                skContext = customUis.get(sk).getContext();
+                if (skContext != null) {
+                    // set metadata and bundle xml (document)
+                    skContext.setSolutionKitMetadata(metadataDoc);
+                    skContext.setMigrationBundle(bundleDoc);
+
+                    // execute callback
+                    customCallback.get(sk).preMigrationBundleImport(skContext);
+
+                    // copy back metadata from xml version
+                    SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, sk);
+
+                    // set (possible) changes made to metadata and bundle
+                    settings.setBundle(sk, bundleDoc);
+                } else {
+                    customCallback.get(sk).preMigrationBundleImport(null);
+                }
             }
-        } catch (SolutionKitManagerCallback.CallbackException | IOException e) {
+        } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         }
