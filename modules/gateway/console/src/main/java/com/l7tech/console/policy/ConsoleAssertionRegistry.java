@@ -15,15 +15,19 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -139,9 +143,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         updateAssertionAccess();
 
         try {
-            ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
-            Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
-            for (ClusterStatusAdmin.ModuleInfo module : modules) {
+            final ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
+            final Collection<AssertionModuleInfo> modules = cluster.getAssertionModuleInfo();
+            for (final AssertionModuleInfo module : modules) {
                 registerAssertionsFromModule(module);
             }
         } catch (RuntimeException e) {
@@ -183,12 +187,10 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
 
 
-    private void registerAssertionsFromModule(final ClusterStatusAdmin.ModuleInfo module) {
-        final Collection<String> assertionClassnames = module.assertionClasses;
+    private void registerAssertionsFromModule(final AssertionModuleInfo module) {
+        final Collection<String> assertionClassnames = module.getAssertionClasses();
 
-        final String moduleFilename = module.moduleFilename;
-        final String moduleEntityName = module.moduleEntityName;
-        final String moduleDisplayInfo = StringUtils.isBlank(moduleEntityName) ? moduleFilename : moduleEntityName;
+        final String moduleFilename = module.getModuleFileName();
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
@@ -209,8 +211,6 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         AssertionMetadata meta = prototype.meta();
                         if ( meta instanceof DefaultAssertionMetadata ) {
                             ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_FILE_NAME, moduleFilename );
-                            ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_ENTITY_NAME, moduleEntityName );
-                            ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_DISPLAY_INFO, moduleDisplayInfo );
                         }
                         String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
 
@@ -218,7 +218,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         modulePrototypes.add(prototype);
                         registerAssertion(prototype.getClass());
                         if (basePackage.length() > 0)
-                            moduleNameByBasePackage.put(basePackage, module.moduleFilename);
+                            moduleNameByBasePackage.put(basePackage, module.getModuleFileName());
                     } catch (NoClassDefFoundError | ClassNotFoundException e) {
                         logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
                     } catch (ClassCastException e) {
@@ -430,6 +430,92 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     public Collection<CustomAssertionHolder> getCustomAssertionsByCategory( @NotNull Category category ) {
         Collection<CustomAssertionHolder> got = customAssertionsByCategory.get( category );
         return got == null ? Collections.<CustomAssertionHolder>emptyList() : Collections.unmodifiableCollection( got );
+    }
+
+    /**
+     * Utility method for extracting custom or modular assertion module display name.
+     *
+     * @param assertion    custom or modular assertion prototype.
+     * @return The specified {@code assertion} module display name never {@code null}.
+     */
+    public String getModuleDisplayName(@NotNull final Assertion assertion) {
+        if (assertion instanceof CustomAssertionHolder) { // custom assertion
+            CustomAssertionHolder registeredCustomAssertionPrototype = null;
+            try {
+                final Class<? extends CustomAssertion> customAssertionClass = ((CustomAssertionHolder) assertion).getCustomAssertion().getClass();
+                for (final CustomAssertionHolder registeredAssertion : getCustomAssertions()) {
+                    if (customAssertionClass.equals(registeredAssertion.getCustomAssertion().getClass())) {
+                        registeredCustomAssertionPrototype = registeredAssertion;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+
+            final CustomAssertionHolder customAssertionHolder = registeredCustomAssertionPrototype != null
+                    ? registeredCustomAssertionPrototype // use the one in the registry
+                    : (CustomAssertionHolder)assertion; // use de-serialized from WspReader thawed assertion
+            final String moduleEntityName = getModuleEntityName(customAssertionHolder);
+            if (StringUtils.isNotBlank(moduleEntityName)) {
+                return "Custom (" + moduleEntityName + ")";
+            } else if (StringUtils.isNotBlank(customAssertionHolder.getModuleFileName())) {
+                return "Custom (" + customAssertionHolder.getModuleFileName() + ")";
+            }
+            return "Custom";
+        } else if (assertion instanceof EncapsulatedAssertion) {
+            return "Encapsulated";
+        } else if (isCoreAssertion(assertion.getClass())) {
+            return "Core";
+        } else {
+            final String moduleEntityName = getModuleEntityName(assertion);
+            if (StringUtils.isNotBlank(moduleEntityName)) {
+                return "Modular (" + moduleEntityName + ")";
+            }
+            return assertion.meta().get(AssertionMetadata.MODULE_FILE_NAME);
+        }
+    }
+
+    /**
+     * Convenient method for getting the module entity name, in case the module was uploaded via Policy Manager
+     * (i.e. it is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile} module).
+     *
+     * @param assertion    the assertion prototype to get entity name from.
+     * @return A {@code String} with the module entity name, in case the module was uploaded via Policy Manager, or {@code null} otherwise.
+     */
+    @Nullable
+    private static String getModuleEntityName(@NotNull final Assertion assertion) {
+        if (assertion instanceof CustomAssertionHolder) {
+            final CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+            if (registrar != null) {
+                final String customAssertionClassName =
+                        (((CustomAssertionHolder) assertion).getCustomAssertion() != null)
+                                ? ((CustomAssertionHolder) assertion).getCustomAssertion().getClass().getName()
+                                : null;
+                if (StringUtils.isNotBlank(customAssertionClassName)) {
+                    final AssertionModuleInfo moduleInfo = registrar.getModuleInfoForAssertionClass(customAssertionClassName);
+                    if (moduleInfo != null && StringUtils.isNotBlank(moduleInfo.getModuleEntityName())) {
+                        return moduleInfo.getModuleEntityName();
+                    }
+                }
+            }
+        } else if (!(assertion instanceof EncapsulatedAssertion || isCoreAssertion(assertion.getClass()))) {
+            final ClusterStatusAdmin registrar = Registry.getDefault().getClusterStatusAdmin();
+            if (registrar != null) {
+                final String modularAssertionClassName = assertion.getClass().getName();
+                if (StringUtils.isNotBlank(modularAssertionClassName)) {
+                    try {
+                        final AssertionModuleInfo moduleInfo = registrar.getModuleInfoForAssertionClass(modularAssertionClassName);
+                        if (moduleInfo != null && StringUtils.isNotBlank(moduleInfo.getModuleEntityName())) {
+                            return moduleInfo.getModuleEntityName();
+                        }
+                    } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
+                        logger.log(Level.WARNING, "No Modular Assertion with class name '" + modularAssertionClassName + "' exists on the Gateway!", ExceptionUtils.getDebugException(e));
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

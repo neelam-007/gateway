@@ -86,7 +86,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
         final ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
         serverModuleFileMO.setId(moduleFile.getId());
         serverModuleFileMO.setVersion(moduleFile.getVersion());
-        serverModuleFileMO.setName(moduleFile.getName());
+        serverModuleFileMO.setName(asName(moduleFile.getName()));
         serverModuleFileMO.setModuleType(convertModuleType(moduleFile.getModuleType()));
         serverModuleFileMO.setModuleSha256(moduleFile.getModuleSha256());
         serverModuleFileMO.setProperties(gatherProperties(moduleFile, ServerModuleFile.getPropertyKeys()));
@@ -129,7 +129,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
         if (serverModuleFileMO.getVersion() != null) {
             serverModuleFile.setVersion(serverModuleFileMO.getVersion());
         }
-        serverModuleFile.setName(serverModuleFileMO.getName());
+        serverModuleFile.setName(asName(serverModuleFileMO.getName()));
 
         serverModuleFile.setModuleType(convertModuleType(serverModuleFileMO.getModuleType()));
 
@@ -158,6 +158,18 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
                 m.getId(),
                 EntityType.SERVER_MODULE_FILE.name()
         ).setContent(m).build();
+    }
+
+    /**
+     * Convenient method for trimming the name field.
+     *
+     * @param name    the name field value to trim.  Optional and can be {@code null}.
+     * @return A {@code String} containing trimmed version of the specified {@code name} field
+     * or {@code null} if {@code name} is {@code null}
+     */
+    @Nullable
+    static String asName(@Nullable final String name) {
+        return name != null ? name.trim() : null;
     }
 
     /**

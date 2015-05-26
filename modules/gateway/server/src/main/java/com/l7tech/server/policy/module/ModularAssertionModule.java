@@ -125,8 +125,8 @@ public class ModularAssertionModule extends BaseAssertionModule<ModularAssertion
      * @param assertionClassname  the class name to check
      * @return true if this module added the specified assertion concrete classname.
      */
-    boolean offersClass(String assertionClassname) {
-        for (Assertion prototype : assertionPrototypes)
+    public boolean offersClass(final String assertionClassname) {
+        for (final Assertion prototype : assertionPrototypes)
             if (prototype.getClass().getName().equals(assertionClassname))
                 return true;
         return false;

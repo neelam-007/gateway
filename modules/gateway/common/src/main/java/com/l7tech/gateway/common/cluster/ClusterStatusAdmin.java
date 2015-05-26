@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ServerModuleConfig;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
@@ -427,42 +428,26 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     @NotNull List<Pair<String, Pattern>> getAutoDateFormats();
 
     /**
-     * Describes a loaded module.
-     */
-    public static final class ModuleInfo implements Serializable {
-        private static final long serialVersionUID = 1937230947284240743L;
-
-        /** The filename of the module, ie "RateLimitAssertion-3.7.0.jar". */
-        public final String moduleFilename;
-
-        /** The hex encoded digest of the module file, currently SHA256 */
-        public final String moduleDigest;
-
-        /** The assertion classnames provided by this module, ie { "com.yoyodyne.integration.layer7.SqlSelectAssertion" }. */
-        public final Collection<String> assertionClasses;
-
-        /**
-         * In case the module has been uploaded using the Policy Manager (i.e. if the module is a {@link com.l7tech.gateway.common.module.ServerModuleFile ServerModuleFile}),
-         * this represents the {@code ServerModuleFile} entity name.
-         */
-        public final String moduleEntityName;
-
-        public ModuleInfo(String moduleFilename, String moduleEntityName, String moduleDigest, Collection<String> assertionClasses) {
-            this.moduleFilename = moduleFilename;
-            this.moduleDigest = moduleDigest;
-            this.assertionClasses = assertionClasses;
-            this.moduleEntityName = moduleEntityName;
-        }
-    }
-
-    /**
      * Get information about the modular assertions currently loaded on this cluster node.
      *
-     * @return A Collection of ModuleInfo, one for each loaded module.  May be empty but never null.
+     * @return A Collection of {@link AssertionModuleInfo}, one for each loaded module.  May be empty but never null.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    Collection<ModuleInfo> getAssertionModuleInfo();
+    Collection<AssertionModuleInfo> getAssertionModuleInfo();
+
+    /**
+     * Get information about the specified modular assertion currently loaded on this cluster node.
+     *
+     * @param className    The Modular Assertion Class Name to look for.  Required and cannot be {@code null}.
+     *
+     * @return A {@link AssertionModuleInfo} instance never {@code null}.
+     * @throws ModuleNotFoundException if the Modular Assertion with the specified {@code className} is not registered on this cluster node.
+     */
+    @Nullable
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
+    AssertionModuleInfo getModuleInfoForAssertionClass(@NotNull String className) throws ModuleNotFoundException;
 
     /** Exception thrown when a named assertion module is not currently loaded. */
     public static final class ModuleNotFoundException extends Exception {

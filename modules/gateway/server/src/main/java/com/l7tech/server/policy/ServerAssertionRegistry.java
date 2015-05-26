@@ -11,10 +11,12 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseChangeEvent;
+import com.l7tech.server.module.AssertionModuleFinder;
 import com.l7tech.server.policy.module.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -182,6 +184,20 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public ModularAssertionModule getModuleForAssertion(@NotNull final String className) {
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (module.offersClass(className)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Find the assertion module, if any, that owns the specified class loader.
      *
      * @param classLoader the class loader to check.  Any code that suspects it may be running as a modular
@@ -189,17 +205,21 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
      * @return the {@link com.l7tech.server.policy.module.ModularAssertionModule} that provides this class loader, or null if no currently registered AssertionModule owns
      *         the specified ClassLoader.
      */
+    @Nullable
     @Override
     public ModularAssertionModule getModuleForClassLoader(final ClassLoader classLoader) {
-        for (ModularAssertionModule module : assertionsScanner.getModules())
-            if (classLoader == module.getModuleClassLoader())
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (classLoader == module.getModuleClassLoader()) {
                 return module;
+            }
+        }
         return null;
     }
 
     /**
      * @see ModularAssertionsScanner#getModuleForPackage(String)
      */
+    @Nullable
     @Override
     public ModularAssertionModule getModuleForPackage(@NotNull final String packageName) {
         return assertionsScanner.getModuleForPackage(packageName);

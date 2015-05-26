@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.custom;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ServerModuleFileLoader;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
@@ -88,6 +89,25 @@ public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
      */
     @Administrative(licensed=false)
     CustomAssertionDescriptor getDescriptor(Class a);
+
+    /**
+     * Get information about the custom assertion modules currently loaded on the gateway (this cluster node).
+     *
+     * @return A Collection of {@link AssertionModuleInfo}, one for each loaded module.  May be empty but never null.
+     */
+    @Administrative(licensed=false)
+    Collection<AssertionModuleInfo> getAssertionModuleInfo();
+
+    /**
+     * Get information about the specified custom assertion module currently on the gateway (this cluster node).
+     *
+     * @param className    The Custom Assertion Class Name to look for.  Required and cannot be {@code null}.
+     *
+     * @return A {@link AssertionModuleInfo} object with module info or {@code null} if the Custom Assertion
+     * specified with the {@code className} is not registered.
+     */
+    @Administrative(licensed=false)
+    AssertionModuleInfo getModuleInfoForAssertionClass(String className);
 
     /**
      * Return the <code>CustomAssertionUI</code> class for a given assertion or <b>null<b>.

@@ -3,6 +3,7 @@ package com.l7tech.server.policy.custom;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ModuleLoadingException;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -14,6 +15,7 @@ import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.module.AssertionModuleFinder;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.SecurePasswordServicesImpl;
 import com.l7tech.server.policy.ServerAssertionRegistry;
@@ -37,7 +39,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -49,7 +53,7 @@ import java.util.zip.ZipOutputStream;
  * @author emil
  * @version 16-Feb-2004
  */
-public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean, DisposableBean {
+public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean, DisposableBean, AssertionModuleFinder<CustomAssertionModule> {
 
     //- PUBLIC
 
@@ -278,17 +282,59 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return false;
     }
 
-        /**
-        * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
-        * Note that this method may not be invoked from management console.
-        * Server classes may not de-serialize into the ssm environment.
-        *
-        * @param a the assertion class
-        * @return the custom assertion descriptor class or <b>null</b>
-        */
+    /**
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
+     * Note that this method may not be invoked from management console.
+     * Server classes may not de-serialize into the ssm environment.
+     *
+     * @param a the assertion class
+     * @return the custom assertion descriptor class or <b>null</b>
+     */
     @Override
     public CustomAssertionDescriptor getDescriptor(Class a) {
         return CustomAssertions.getDescriptor(a);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<AssertionModuleInfo> getAssertionModuleInfo() {
+        final Collection<AssertionModuleInfo> ret = new ArrayList<>();
+        final Collection<CustomAssertionModule> modules = getLoadedModules();
+        for (final CustomAssertionModule module : modules) {
+            ret.add(new AssertionModuleInfo(module.getName(), module.getEntityName(), module.getDigest(), getAssertionClasses(module)));
+        }
+        return ret;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AssertionModuleInfo getModuleInfoForAssertionClass(final String className) {
+        if (className == null) {
+            throw new IllegalArgumentException("className cannot be null!");
+        }
+        final CustomAssertionModule module = getModuleForAssertion(className);
+        if (module != null) {
+            return new AssertionModuleInfo(module.getName(), module.getEntityName(), module.getDigest(), getAssertionClasses(module));
+        }
+        return null;
+    }
+
+    /**
+     * Convenient method for gathering all assertions (their class names) registered by the specified {@code module}.
+     *
+     * @param module    the module to gather assertions for.
+     * @return Read-only view of module assertions class names, never {@code null}.
+     */
+    private Collection<String> getAssertionClasses(@NotNull final CustomAssertionModule module) {
+        final Collection<String> assertions = new ArrayList<>();
+        for (final CustomAssertionDescriptor descriptor : module.getDescriptors()) {
+            assertions.add(descriptor.getAssertion().getName());
+        }
+        return Collections.unmodifiableCollection(assertions);
     }
 
     /**
@@ -479,7 +525,6 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
             customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
-            customAssertionHolder.setModuleEntityName(customAssertionDescriptor.getModuleEntityName());
             if (cas instanceof CustomFeatureSetName) {
                 CustomFeatureSetName customFeatureSetName = (CustomFeatureSetName) cas;
                 customAssertionHolder.setRegisteredCustomFeatureSetName(customFeatureSetName.getFeatureSetName());
@@ -633,5 +678,62 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     @Override
     public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
         assertionsScanner.unloadServerModuleFile(stagedFile, moduleEntity.getModuleSha256(), moduleEntity.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public CustomAssertionModule getModuleForAssertion(@NotNull final String className) {
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (module.offersClass(className)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find the assertion module, if any, that owns the specified class loader.
+     *
+     * @param classLoader    the class loader to check.  Required and cannot be {@code null}.
+     * @return The module that provides this {@code classLoader}, or {@code null} if no currently registered
+     * assertion modules owns the specified {@code ClassLoader}.
+     */
+    @Nullable
+    @Override
+    public CustomAssertionModule getModuleForClassLoader(final ClassLoader classLoader) {
+        if (classLoader == null) {
+            throw new IllegalArgumentException("classLoader cannot be null!");
+        }
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (classLoader == module.getModuleClassLoader()) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Note that, this method is not supported for Custom Assertions and will fail with {@code UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Nullable
+    @Override
+    public CustomAssertionModule getModuleForPackage(@NotNull final String packageName) {
+        throw new UnsupportedOperationException("Method not supported for Custom Assertions");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @NotNull
+    @Override
+    public Set<CustomAssertionModule> getLoadedModules() {
+        return new HashSet<>(assertionsScanner.getModules());
     }
 }

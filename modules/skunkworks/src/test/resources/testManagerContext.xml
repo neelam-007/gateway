@@ -117,6 +117,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
+    <alias name="assertionRegistry" alias="modularAssertionModuleFinder" />
 
     <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl"
           parent="hibernateBean"/>

@@ -1829,6 +1829,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
+    <alias name="assertionRegistry" alias="modularAssertionModuleFinder" />
 
     <bean id="allModulesClassLoader" class="com.l7tech.server.policy.module.AllModularAssertionClassLoader">
         <constructor-arg ref="assertionRegistry"/>

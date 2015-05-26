@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
 import java.io.File;
@@ -67,6 +68,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      * @param packageName a package name.  Required
      * @return the most-recently-loaded loaded module that offers at least one file in this package, or null if there isn't one.
      */
+    @Nullable
     public ModularAssertionModule getModuleForPackage(@NotNull String packageName) {
         return modulesByPackageName.get(packageName);
     }

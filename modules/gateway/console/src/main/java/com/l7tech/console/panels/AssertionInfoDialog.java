@@ -2,12 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.comparator.NullSafeComparator;
 
@@ -146,40 +147,6 @@ public class AssertionInfoDialog extends JDialog {
     }
 
     private String getAssertionType(@NotNull final Assertion assertion) {
-        String assertionType;
-        if (assertion instanceof CustomAssertionHolder) {
-            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
-            CustomAssertionHolder registeredCustomAssertionPrototype = null;
-            try {
-                for (Object registeredAssertion : TopComponents.getInstance().getAssertionRegistry().getCustomAssertions()) {
-                    if (customAssertionHolder.getCustomAssertion().getClass() == ((CustomAssertionHolder) registeredAssertion).getCustomAssertion().getClass()) {
-                        registeredCustomAssertionPrototype = (CustomAssertionHolder) registeredAssertion;
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-            }
-            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getModuleFileName() != null) {
-                // use file name from registrar
-                final String moduleDisplayInfo =
-                        StringUtils.isBlank(registeredCustomAssertionPrototype.getModuleEntityName())
-                                ? registeredCustomAssertionPrototype.getModuleFileName()
-                                : registeredCustomAssertionPrototype.getModuleEntityName();
-                assertionType = "Custom (" + moduleDisplayInfo + ")";
-            } else if (customAssertionHolder.getModuleFileName() != null) {
-                // use de-serialized file name from WspReader thawed assertion
-                assertionType = "Custom (" + customAssertionHolder.getModuleFileName() + ")";
-            } else {
-                assertionType = "Custom";
-            }
-        } else if (assertion instanceof EncapsulatedAssertion) {
-            assertionType = "Encapsulated";
-        } else if (AssertionRegistry.isCoreAssertion(assertion.getClass())) {
-            assertionType = "Core";
-        } else {
-            assertionType = "Modular (" + assertion.meta().get(AssertionMetadata.MODULE_DISPLAY_INFO) + ")";
-        }
-        return assertionType;
+        return TopComponents.getInstance().getAssertionRegistry().getModuleDisplayName(assertion);
     }
 }

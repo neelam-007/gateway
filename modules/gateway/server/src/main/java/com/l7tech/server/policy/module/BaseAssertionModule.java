@@ -1,16 +1,15 @@
 package com.l7tech.server.policy.module;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.net.URLClassLoader;
 
 /**
  * Base holder for assertion jar-files, both modular and custom.
  * <br/>
  * All shared entities between modular and custom assertion modules goes here.
  */
-public class BaseAssertionModule<T extends URLClassLoader> {
+public class BaseAssertionModule<T extends ClassLoader> {
 
     @NotNull private final String name;
     private final long modifiedTime;
@@ -37,10 +36,10 @@ public class BaseAssertionModule<T extends URLClassLoader> {
             @SuppressWarnings("NullableProblems") final String moduleDigest,
             @SuppressWarnings("NullableProblems") final T classLoader
     ) {
-        if (moduleName == null || moduleName.length() < 1) {
+        if (StringUtils.isBlank(moduleName)) {
             throw new IllegalArgumentException("non-empty moduleName required");
         }
-        if (moduleDigest == null || moduleDigest.length() < 1) {
+        if (StringUtils.isBlank(moduleDigest)) {
             throw new IllegalArgumentException("non-empty moduleDigest required");
         }
         if (classLoader == null) {

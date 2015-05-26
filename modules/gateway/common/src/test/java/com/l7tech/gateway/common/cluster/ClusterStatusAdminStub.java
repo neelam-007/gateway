@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ServerModuleConfig;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
@@ -254,8 +255,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     @Override
     @Transactional(propagation = Propagation.SUPPORTS)
-    public Collection<ModuleInfo> getAssertionModuleInfo() {
+    public Collection<AssertionModuleInfo> getAssertionModuleInfo() {
         return Collections.emptyList();
+    }
+
+    @Nullable
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public AssertionModuleInfo getModuleInfoForAssertionClass(@NotNull final String className) throws ModuleNotFoundException {
+        return null;
     }
 
     @Override

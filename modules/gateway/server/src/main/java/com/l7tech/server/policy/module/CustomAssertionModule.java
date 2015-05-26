@@ -94,6 +94,20 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
     }
 
     /**
+     * Check if this module owns the specified Custom Assertion classname.
+     *
+     * @param assertionClassname  the Custom Assertion class name to check.
+     * @return {@code true} if this module added the specified assertion concrete classname.
+     */
+    public boolean offersClass(final String assertionClassname) {
+        for (final CustomAssertionDescriptor descriptor : descriptors) {
+            if (descriptor.getAssertion().getName().equals(assertionClassname))
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Notify all assertions that it's module is about to be loaded.<br/>
      * Will try to execute {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onLoad(com.l7tech.policy.assertion.ext.ServiceFinder)} method.<br/>
      *

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,11 @@ import java.util.List;
 @Table(name = "server_module_file")
 public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Serializable {
     private static final long serialVersionUID = 8274036580628116861L;
+
+    /**
+     * Maximum allowed length of the name field.
+     */
+    public static final int NAME_FIELD_MAX_LENGTH = 128;
 
     /**
      * Holds the module file-name.
@@ -85,6 +91,19 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * Module {@link ServerModuleFileData data}, data-bytes and hash.
      */
     private ServerModuleFileData data;
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Overridden to set the name field length constraints.
+     */
+    @Transient
+    @RbacAttribute
+    @Size(min = 1, max = NAME_FIELD_MAX_LENGTH)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
 
 
     /**

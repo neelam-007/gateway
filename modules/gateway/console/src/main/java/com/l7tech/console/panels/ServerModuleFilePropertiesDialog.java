@@ -27,7 +27,6 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFilePropertiesDialog.class.getName());
 
     private static final String SPLIT_ASSERTIONS_REGEX = "\\s*,\\s*";
-    private static final int NAME_FIELD_MAX_LENGTH = 128;
 
     private JPanel contentPane;
     private JButton okButton;
@@ -68,7 +67,7 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
         inputValidator.disableButtonWhenInvalid(okButton);
 
         // Name field must not be empty and must not be longer than 128 characters
-        ((AbstractDocument)moduleNameText.getDocument()).setDocumentFilter(new DocumentSizeFilter(NAME_FIELD_MAX_LENGTH));
+        ((AbstractDocument)moduleNameText.getDocument()).setDocumentFilter(new DocumentSizeFilter(ServerModuleFile.NAME_FIELD_MAX_LENGTH));
         inputValidator.constrainTextFieldToBeNonEmpty(
                 resources.getString("field.name"),
                 moduleNameText,
@@ -78,8 +77,8 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
                         final int nameLength = getModuleName().length();
                         if (nameLength == 0) {
                             return resources.getString("error.validation.blank.name");
-                        } else if (nameLength > NAME_FIELD_MAX_LENGTH) {
-                            return MessageFormat.format(resources.getString("error.validation.name.max.length"), NAME_FIELD_MAX_LENGTH);
+                        } else if (nameLength > ServerModuleFile.NAME_FIELD_MAX_LENGTH) {
+                            return MessageFormat.format(resources.getString("error.validation.name.max.length"), ServerModuleFile.NAME_FIELD_MAX_LENGTH);
                         }
                         return null;
                     }

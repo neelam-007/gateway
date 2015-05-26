@@ -20,7 +20,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.module.ServerModuleFileManager;
-import com.l7tech.server.policy.AssertionModuleFinder;
+import com.l7tech.server.module.AssertionModuleFinder;
 import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
@@ -65,7 +65,7 @@ public abstract class DependencyTestBaseClass {
     @Mock
     private ServerModuleFileManager serverModuleFileManager;
     @Mock
-    private AssertionModuleFinder<ModularAssertionModule> moduleAssertionModuleFinder;
+    private AssertionModuleFinder<ModularAssertionModule> modularAssertionModuleFinder;
 
     @Spy
     DependencyProcessorRegistry dependencyProcessorRegistry;

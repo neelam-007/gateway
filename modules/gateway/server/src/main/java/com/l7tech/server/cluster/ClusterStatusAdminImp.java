@@ -427,16 +427,38 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
 
     @Override
     @Transactional(propagation = Propagation.SUPPORTS)
-    public Collection<ModuleInfo> getAssertionModuleInfo() {
-        Collection<ModuleInfo> ret = new ArrayList<>();
-        Set<ModularAssertionModule> modules = assertionRegistry.getLoadedModules();
-        for (ModularAssertionModule module : modules) {
-            Collection<String> assertions = new ArrayList<>();
-            for (Assertion assertion : module.getAssertionPrototypes())
-                assertions.add(assertion.getClass().getName());
-            ret.add(new ModuleInfo(module.getName(), module.getEntityName(), module.getDigest(), assertions));
+    public Collection<AssertionModuleInfo> getAssertionModuleInfo() {
+        final Collection<AssertionModuleInfo> ret = new ArrayList<>();
+        final Set<ModularAssertionModule> modules = assertionRegistry.getLoadedModules();
+        for (final ModularAssertionModule module : modules) {
+            ret.add(new AssertionModuleInfo(module.getName(), module.getEntityName(), module.getDigest(), getAssertionClasses(module)));
         }
         return ret;
+    }
+
+    @Nullable
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public AssertionModuleInfo getModuleInfoForAssertionClass(@NotNull final String className) throws ModuleNotFoundException {
+        final ModularAssertionModule module = assertionRegistry.getModuleForAssertion(className);
+        if (module != null) {
+            return new AssertionModuleInfo(module.getName(), module.getEntityName(), module.getDigest(), getAssertionClasses(module));
+        }
+        throw new ModuleNotFoundException();
+    }
+
+    /**
+     * Convenient method for gathering all assertions (their class names) registered by the specified {@code module}.
+     *
+     * @param module    the module to gather assertions for.
+     * @return Read-only view of module assertions class names, never {@code null}.
+     */
+    private Collection<String> getAssertionClasses(@NotNull final ModularAssertionModule module) {
+        final Collection<String> assertions = new ArrayList<>();
+        for (final Assertion assertion : module.getAssertionPrototypes()) {
+            assertions.add(assertion.getClass().getName());
+        }
+        return Collections.unmodifiableCollection(assertions);
     }
 
     @Override

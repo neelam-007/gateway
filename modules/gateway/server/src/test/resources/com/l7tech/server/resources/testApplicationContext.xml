@@ -795,7 +795,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="modularAssertionModuleFinder" class="com.l7tech.server.policy.ModularAssertionModuleFinderStub" />
+    <bean id="modularAssertionModuleFinder" class="com.l7tech.server.module.ModularAssertionModuleFinderStub" />
 
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManagerStub" />
 
