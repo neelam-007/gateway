@@ -407,6 +407,7 @@
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.user"/>
+                      <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.user"/>
                     </properties>
                   </component>
                   <component id="8e393" class="javax.swing.JLabel" binding="userLabel">
