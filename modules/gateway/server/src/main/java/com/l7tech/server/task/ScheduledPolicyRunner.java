@@ -69,7 +69,8 @@ public class ScheduledPolicyRunner {
             throw new RuntimeException(e);
         }
 
-        AuthenticationResult authenticationResult = null;
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
         if (providerId != null && userId != null) {
             try {
                 IdentityProvider idProvider = jobManager.identityProviderFactory.getProvider(providerId);
@@ -78,14 +79,13 @@ public class ScheduledPolicyRunner {
                     return;
                 }
                 User user = idProvider.getUserManager().findByPrimaryKey(userId);
-                authenticationResult = new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), null));
+                AuthenticationResult authenticationResult = new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), null));
+                context.getDefaultAuthenticationContext().addAuthenticationResult(authenticationResult);
             } catch (FindException e) {
                 getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR, new String[]{"Identity provider not found"});
             }
-
         }
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
-        context.getDefaultAuthenticationContext().addAuthenticationResult(authenticationResult);
+
         final BackgroundTask task = jobManager.pbsReg.getImplementationProxyForSingleMethod(runMethod, policyGoid, context);
 
         // Create an audit record in which to accumulate any audit details that appear.
