@@ -97,9 +97,4 @@ public class ScheduledTaskTest {
         assertTrue(triggerArg.getValue() instanceof CronTrigger);
         assertEquals(task.getCronExpression(), ((CronTrigger) triggerArg.getValue()).getCronExpression());
     }
-
-    @Test
-    public void blah() {
-        System.out.println(new Goid(0, -1760));
-    }
 }

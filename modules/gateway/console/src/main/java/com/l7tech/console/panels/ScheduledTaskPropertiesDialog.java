@@ -339,8 +339,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         intervalTextField.setEnabled(isRecurring && basicRadioButton.isSelected());
         Utilities.setEnabled(advancedPanel, isRecurring && advancedRadioButton.isSelected());
 
-        userButton.setEnabled(canEditUser && userCheckBox.isSelected());
         Utilities.setEnabled(userPanel, canEditUser);
+        userButton.setEnabled(canEditUser && userCheckBox.isSelected());
 
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
@@ -391,6 +391,9 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 userLabel.setText(MessageFormat.format(resources.getString("label.user.checkbox"), scheduledTask.getUserId(), scheduledTask.getIdProviderGoid()));
                 userHeader = new IdentityHeader(scheduledTask.getIdProviderGoid(), scheduledTask.getUserId(), EntityType.USER, null, null, null, null);
             }
+        } else {
+            userLabel.setText(null);
+            userButton.setEnabled(false);
         }
     }
 
