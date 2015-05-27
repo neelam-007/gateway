@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ScheduledTaskTransformer;
 import com.l7tech.gateway.api.ScheduledTaskMO;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.task.ScheduledTaskManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -40,5 +42,23 @@ public class ScheduledTaskAPIResourceFactory extends
     @Override
     protected ScheduledTaskManager getEntityManager() {
         return scheduledTaskManager;
+    }
+
+    @Override
+    protected void beforeUpdateEntity(ScheduledTask entity) throws ObjectModelException {
+        // only users that have role management access can set a user for a scheduled task
+        if (entity.getIdProviderGoid() != null || entity.getUserId() != null) {
+            rbacAccessService.validatePermitted(EntityType.USER, OperationType.UPDATE);
+            rbacAccessService.validatePermitted(EntityType.USER, OperationType.CREATE);
+        }
+    }
+
+    @Override
+    protected void beforeCreateEntity(ScheduledTask entity) throws ObjectModelException {
+        // only users that have role management access can set a user for a scheduled task
+        if (entity.getIdProviderGoid() != null || entity.getUserId() != null) {
+            rbacAccessService.validatePermitted(EntityType.USER, OperationType.UPDATE);
+            rbacAccessService.validatePermitted(EntityType.USER, OperationType.CREATE);
+        }
     }
 }

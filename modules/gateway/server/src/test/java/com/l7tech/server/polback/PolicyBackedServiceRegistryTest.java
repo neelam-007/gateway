@@ -237,10 +237,10 @@ public class PolicyBackedServiceRegistryTest {
         registry.registerPolicyBackedServiceTemplate( TestFace.class );
         TestFace getStub = registry.getImplementationProxyForSingleMethod(
                 TestFace.class.getMethod( "get", new Class[] { String.class } ),
-                new Goid( goidHiPolicy, goidLoCassandraGet ) );
+                new Goid( goidHiPolicy, goidLoCassandraGet ), null );
         TestFace putStub = registry.getImplementationProxyForSingleMethod(
                 TestFace.class.getMethod( "put", new Class[] { String.class, String.class } ),
-                new Goid( goidHiPolicy, goidLoCassandraPut ) );
+                new Goid( goidHiPolicy, goidLoCassandraPut ) , null);
 
         when( getPolicy.checkRequest( Matchers.<PolicyEnforcementContext>any() ) ).then( new Answer<AssertionStatus>() {
             @Override

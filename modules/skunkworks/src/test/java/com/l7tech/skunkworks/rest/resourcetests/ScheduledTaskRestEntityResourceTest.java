@@ -1,20 +1,26 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.ScheduledTaskMO;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.task.ScheduledTaskManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -23,14 +29,19 @@ import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
+import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<ScheduledTask, ScheduledTaskMO> {
+    private static final Logger logger = Logger.getLogger(ScheduledTask.class.getName());
 
     private ScheduledTaskManager scheduledTaskManager;
     private List<ScheduledTask> tasks = new ArrayList<>();
@@ -43,6 +54,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\"/>\n" +
             "</wsp:Policy>";
+
     @Before
     public void before() throws ObjectModelException {
         scheduledTaskManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("scheduledTaskManager", ScheduledTaskManager.class);
@@ -63,7 +75,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         policy.setSoap(true);
 
         policyManager.save(policy);
-        policyVersionManager.checkpointPolicy(policy,true,"comment",true);
+        policyVersionManager.checkpointPolicy(policy, true, "comment", true);
         policies.add(policy);
 
         policy = new Policy(PolicyType.POLICY_BACKED_OPERATION, "Policy 2",
@@ -77,7 +89,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         policy.setSoap(true);
 
         policyManager.save(policy);
-        policyVersionManager.checkpointPolicy(policy,true,"comment",true);
+        policyVersionManager.checkpointPolicy(policy, true, "comment", true);
         policies.add(policy);
 
         policy = new Policy(PolicyType.INTERNAL, "Policy 3",
@@ -89,7 +101,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         policy.setSoap(true);
 
         policyManager.save(policy);
-        policyVersionManager.checkpointPolicy(policy,true,"comment",true);
+        policyVersionManager.checkpointPolicy(policy, true, "comment", true);
         policies.add(policy);
 
         //Create the scheduled tasks
@@ -158,11 +170,12 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         ScheduledTaskMO scheduledTask = ManagedObjectFactory.createScheduledTaskMO();
         scheduledTask.setId(getGoid().toString());
         scheduledTask.setName("Test Scheduled Task created");
-        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policies.get(0).getId()));
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(0).getId()));
         scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */5 * ?");
         scheduledTask.setUseOneNode(false);
+        scheduledTask.setProperties(CollectionUtils.<String, String>mapBuilder().put("idProvider", new Goid(0, -3).toString()).put("userId", new Goid(1, 2).toString()).map());
         tasks.add(scheduledTask);
 
         return tasks;
@@ -177,7 +190,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         scheduledTask.setName(task.getName() + " Updated");
         scheduledTask.setId(task.getId());
         scheduledTask.setVersion(task.getVersion());
-        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policies.get(0).getId()));
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(0).getId()));
         scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */5 * ?");
@@ -188,7 +201,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         scheduledTask.setId(task.getId());
         scheduledTask.setName(task.getName() + " Updated");
         scheduledTask.setVersion(task.getVersion());
-        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policies.get(0).getId()));
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(0).getId()));
         scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */6 * ?");
@@ -203,7 +216,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
 
         ScheduledTaskMO scheduledTask = ManagedObjectFactory.createScheduledTaskMO();
         scheduledTask.setName(tasks.get(0).getName());
-        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policies.get(2).getId()));
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(2).getId()));
         scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */5 * ?");
@@ -227,7 +240,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
         scheduledTask.setId(tasks.get(0).getId());
         scheduledTask.setName(tasks.get(1).getName());
         scheduledTask.setVersion(tasks.get(1).getVersion());
-        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policies.get(0).getId()));
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(0).getId()));
         scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
         scheduledTask.setCronExpression("* * */6 * ?");
@@ -245,7 +258,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
     @Override
     public Map<String, Functions.BinaryVoid<String, RestResponse>> getUnGettableManagedObjectIds() {
         CollectionUtils.MapBuilder<String, Functions.BinaryVoid<String, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
-        builder.put("asdf"+getGoid().toString(), new Functions.BinaryVoid<String, RestResponse>() {
+        builder.put("asdf" + getGoid().toString(), new Functions.BinaryVoid<String, RestResponse>() {
             @Override
             public void call(String s, RestResponse restResponse) {
                 Assert.assertEquals("Expected successful response", 400, restResponse.getStatus());
@@ -311,7 +324,7 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
             Assert.assertEquals(entity.isUseOneNode(), managedObject.isUseOneNode().booleanValue());
             Assert.assertEquals(entity.getJobStatus().toString(), managedObject.getJobStatus().toString());
             Assert.assertEquals(entity.getJobType().toString(), managedObject.getJobType().toString());
-            Assert.assertEquals(entity.getExecutionDate(), managedObject.getExecutionDate() == null?0: managedObject.getExecutionDate().getTime() );
+            Assert.assertEquals(entity.getExecutionDate(), managedObject.getExecutionDate() == null ? 0 : managedObject.getExecutionDate().getTime());
             Assert.assertEquals(entity.getCronExpression(), managedObject.getCronExpression());
             for (String key : entity.getProperties().keySet()) {
                 Assert.assertEquals(entity.getProperties().get(key), managedObject.getProperties().get(key));
@@ -343,4 +356,43 @@ public class ScheduledTaskRestEntityResourceTest extends RestEntityTests<Schedul
                 .put("name=" + URLEncoder.encode(tasks.get(0).getName()) + "&name=" + URLEncoder.encode(tasks.get(1).getName()) + "&sort=name&order=desc", Arrays.asList(tasks.get(1).getId(), tasks.get(0).getId()))
                 .map();
     }
+
+    @Test
+    public void testCreateScheduledTaskWithScheduledTaskRole() throws Exception {
+        // assign user the scheduled task role
+        InternalUser user = createUnprivilegedUser();
+        RoleManager roleManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("roleManager", RoleManager.class);
+        final Role role = roleManager.findByUniqueName("Manage Scheduled Task");
+        role.addAssignedUser(user);
+        roleManager.update(role);
+
+        ScheduledTaskMO scheduledTask = ManagedObjectFactory.createScheduledTaskMO();
+        scheduledTask.setName("Test Scheduled Task created");
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(0).getId()));
+        scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
+        scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
+        scheduledTask.setCronExpression("* * */5 * ?");
+        scheduledTask.setUseOneNode(false);
+
+        try {
+            // task with no user succeeds
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), null, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(scheduledTask)), null, user);
+            logger.log(Level.FINE, response.toString());
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals(201, response.getStatus());
+
+            // task with user fails
+            scheduledTask.setProperties(CollectionUtils.<String, String>mapBuilder().put("idProvider", new Goid(0, -3).toString()).put("userId", new Goid(1, 2).toString()).map());
+            response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), null, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(scheduledTask)), null, user);
+            logger.log(Level.FINE, response.toString());
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals(401, response.getStatus());
+
+        } finally {
+            userManager.delete(user);
+        }
+    }
+
 }

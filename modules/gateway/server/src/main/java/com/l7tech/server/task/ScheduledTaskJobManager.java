@@ -14,6 +14,7 @@ import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Stopped;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
@@ -47,6 +48,8 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     public static final String JOB_DETAIL_JOBTYPE = "jobType";
     public static final String JOB_DETAIL_ENITTY_GOID = "entityGoid";
     public static final String JOB_DETAIL_POLICY_GOID = "policyGoid";
+    public static final String JOB_DETAIL_USER_ID = "userId";
+    public static final String JOB_DETAIL_ID_PROVIDER_GOID = "idProviderGoid";
     public static final String JOB_DETAIL_NODE_ONE = "One";
     public static final String JOB_DETAIL_NODE_ALL = "All";
 
@@ -56,6 +59,8 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     private ServerConfig config;
     @Inject
     protected PolicyBackedServiceRegistry pbsReg;
+    @Inject
+    protected IdentityProviderFactory identityProviderFactory;
     @Inject
     protected AuditContextFactory auditContextFactory;
     @Inject
@@ -124,7 +129,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
         try {
             ScheduledPolicyRunner.getInstance(this);
             for (ScheduledTask task : scheduledTaskManager.findAll()) {
-                if(task.getJobStatus().equals(JobStatus.SCHEDULED)) {
+                if (task.getJobStatus().equals(JobStatus.SCHEDULED)) {
                     scheduleJob(task);
                 }
             }
@@ -146,7 +151,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 SchedulerFactory schedulerFactory = new StdSchedulerFactory(quartzProperties);
                 scheduler = schedulerFactory.getScheduler();
 
-                if(scheduler == null){
+                if (scheduler == null) {
                     logger.log(Level.WARNING, "Failed to create scheduler");
                     return null;
                 }
@@ -216,12 +221,12 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
                 logger.log(Level.INFO, "One time job rescheduled for " + job.getName());
 
-            }else {
+            } else {
                 getScheduler().scheduleJob(getJobDetail(job), trigger);
                 logger.log(Level.INFO, "One time job scheduled for " + job.getName());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Fail to create one time job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Fail to create one time job for scheduled task " + job.getName(), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -233,13 +238,15 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     }
 
 
-    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder){
+    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder) {
         return triggerBuilder
                 .withIdentity(job.getId())
                 .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
                 .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
                 .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
                 .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicyGoid().toString())
+                .usingJobData(JOB_DETAIL_ID_PROVIDER_GOID, job.getIdProviderGoid() == null ? (String) null : job.getIdProviderGoid().toString())
+                .usingJobData(JOB_DETAIL_USER_ID, job.getUserId())
                 .forJob(job.getId())
                 .build();
 
@@ -249,16 +256,16 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
         Trigger trigger = populateTriggerDetails(job, newTrigger().withSchedule(cronSchedule(job.getCronExpression()).withMisfireHandlingInstructionIgnoreMisfires()));
         try {
-            if(getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))){
+            if (getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))) {
                 getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
                 logger.log(Level.INFO, "Recurring job rescheduled for " + job.getName());
 
-            }else {
-                getScheduler().scheduleJob(getJobDetail(job),trigger);
+            } else {
+                getScheduler().scheduleJob(getJobDetail(job), trigger);
                 logger.log(Level.INFO, "Recurring job scheduled for " + job.getName());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Fail to create recurring job for scheduled task " +job.getName() , ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Fail to create recurring job for scheduled task " + job.getName(), ExceptionUtils.getDebugException(e));
         }
 
     }
@@ -270,7 +277,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 logger.log(Level.INFO, "Job removed for scheduled task id:" + taskGoid.toString());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to remove job with id: " + taskGoid.toString() , ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Failed to remove job with id: " + taskGoid.toString(), ExceptionUtils.getDebugException(e));
         }
     }
 

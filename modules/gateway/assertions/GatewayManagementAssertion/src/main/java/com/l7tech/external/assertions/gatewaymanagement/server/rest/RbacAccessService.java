@@ -56,6 +56,27 @@ public class RbacAccessService {
     }
 
     /**
+     * Check if a user is permitted to perform a given operation on the given entity type. Here the operation type will be
+     * set to {@link com.l7tech.gateway.common.security.rbac.OperationType#OTHER}
+     *
+     * @param entityType    The entity type to check access on.
+     * @param operationType The operation type
+     * @throws InsufficientPermissionsException This is thrown if the current user does not have sufficient privileges
+     *                                          to perform the operation of the entity
+     */
+    public void validatePermitted(@NotNull final EntityType entityType,
+                                  @NotNull final OperationType operationType) {
+        final User user = getCurrentUser();
+        try {
+            if (!rbacServices.isPermittedForAnyEntityOfType(user, operationType, entityType)) {
+                throw new InsufficientPermissionsException(user, entityType, operationType, null);
+            }
+        } catch (FindException e) {
+            throw new InsufficientPermissionsException(user, entityType, operationType, null, e);
+        }
+    }
+
+    /**
      * Check if a user is permitted to perform a given operation on the given entity.
      *
      * @param entity             The entity that check access on.

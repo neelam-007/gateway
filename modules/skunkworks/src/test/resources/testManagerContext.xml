@@ -28,7 +28,8 @@
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerImpl" parent="hibernateBean">
     </bean>
 
-    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl"
+          parent="hibernateBean">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterNodeId"/>
     </bean>
@@ -71,7 +72,8 @@
         <property name="config" ref="serverConfig"/>
     </bean>
 
-    <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerImpl" parent="hibernateBean"/>
+    <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl"
           parent="hibernateBean">
@@ -82,13 +84,14 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl" parent="hibernateBean"/>
+    <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="roleManager"/>
         <constructor-arg index="1" ref="policyAliasManager"/>
         <constructor-arg index="2" ref="folderManager"/>
-        <constructor-arg index="3" >
+        <constructor-arg index="3">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
                 <constructor-arg value="policyCache"/>
                 <constructor-arg value="com.l7tech.server.policy.PolicyCache"/>
@@ -99,7 +102,8 @@
 
     <bean id="policyAliasManager" class="com.l7tech.server.policy.PolicyAliasManagerImpl" parent="hibernateBean"/>
 
-    <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
+    <bean id="encapsulatedAssertionConfigManager"
+          class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl"
@@ -187,7 +191,8 @@
         <constructor-arg value="com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl"/>
         <constructor-arg value="policyBackedIdentityProvider"/>
     </bean>
-    <bean id="policyBackedIdentityProvider" class="com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl" scope="prototype">
+    <bean id="policyBackedIdentityProvider" class="com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl"
+          scope="prototype">
         <property name="userManager">
             <bean class="com.l7tech.server.identity.external.PolicyBackedUserManagerImpl" scope="prototype"/>
         </property>
@@ -241,7 +246,8 @@
         <constructor-arg value="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl"/>
         <constructor-arg value="bindOnlyLdapIdentityProvider"/>
     </bean>
-    <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl" scope="prototype">
+    <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl"
+          scope="prototype">
         <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
         <property name="userManager">
             <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManagerImpl" scope="prototype">
@@ -294,7 +300,8 @@
     <bean id="serviceDocumentManager" class="com.l7tech.server.service.ServiceDocumentManagerImpl"
           parent="hibernateBean"/>
 
-    <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
+    <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl"
+          parent="hibernateBean">
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
@@ -329,7 +336,8 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerImpl" parent="hibernateBean"/>
+    <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="httpConfigurationManager" class="com.l7tech.server.globalresources.HttpConfigurationManagerImpl"
           parent="hibernateBean"/>
@@ -384,7 +392,8 @@
         <constructor-arg ref="messageContextMappingValueManager"/>
     </bean>
 
-    <bean id="ssgFirewallRuleManager" class="com.l7tech.server.transport.firewall.SsgFirewallRuleManagerImpl" parent="hibernateBean">
+    <bean id="ssgFirewallRuleManager" class="com.l7tech.server.transport.firewall.SsgFirewallRuleManagerImpl"
+          parent="hibernateBean">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
@@ -415,9 +424,9 @@
 
     <!-- Non Manager related -->
 
-    <bean id="entityBundleImporter" class="com.l7tech.server.bundling.EntityBundleImporterImpl" />
-    <bean id="entityBundleExporter" class="com.l7tech.server.bundling.EntityBundleExporterImpl" />
-    <bean id="mappingInstructionsBuilder" class="com.l7tech.server.bundling.MappingInstructionsBuilder" />
+    <bean id="entityBundleImporter" class="com.l7tech.server.bundling.EntityBundleImporterImpl"/>
+    <bean id="entityBundleExporter" class="com.l7tech.server.bundling.EntityBundleExporterImpl"/>
+    <bean id="mappingInstructionsBuilder" class="com.l7tech.server.bundling.MappingInstructionsBuilder"/>
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 
@@ -425,86 +434,135 @@
         <constructor-arg>
             <util:map>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ANY"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.ANY"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.DefaultDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.PolicyDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.ServiceDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.FolderDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.HTTP_CONFIGURATION"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.HTTP_CONFIGURATION"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.HttpConfigurationDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.JdbcConnectionDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.SecurePasswordDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ASSERTION"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.ASSERTION"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.AssertionDependencyProcessor">
-                        <constructor-arg><bean class="com.l7tech.server.search.processors.DefaultAssertionDependencyProcessor"/></constructor-arg>
+                        <constructor-arg>
+                            <bean class="com.l7tech.server.search.processors.DefaultAssertionDependencyProcessor"/>
+                        </constructor-arg>
                     </bean>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CLUSTER_PROPERTY"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.CLUSTER_PROPERTY"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.ClusterPropertyDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ID_PROVIDER_CONFIG"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.ID_PROVIDER_CONFIG"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.IdentityProviderProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_ACTIVE_CONNECTOR"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_ACTIVE_CONNECTOR"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.SsgActiveConnectorDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_CONNECTOR"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_CONNECTOR"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.SsgConnectorDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JMS_ENDPOINT"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.JMS_ENDPOINT"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.JmsEndpointDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.GenericEntityDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_ALIAS"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_ALIAS"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.PolicyServiceAliasDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE_ALIAS"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE_ALIAS"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.PolicyServiceAliasDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.REVOCATION_CHECK_POLICY"/></key>
+                    <key>
+                        <util:constant
+                                static-field="com.l7tech.search.Dependency.DependencyType.REVOCATION_CHECK_POLICY"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.RevocationCheckPolicyDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.SsgKeyEntryDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.RBAC_ROLE"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.RBAC_ROLE"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.RoleDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.CASSANDRA_CONNECTION"/>
+                    </key>
                     <bean class="com.l7tech.server.search.processors.CassandraConnectionDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key>
+                        <util:constant static-field="com.l7tech.search.Dependency.DependencyType.SCHEDULED_TASK"/>
+                    </key>
+                    <bean class="com.l7tech.server.search.processors.ScheduledTaskDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>
@@ -523,25 +581,31 @@
         </constructor-arg>
     </bean>
 
-    <bean id="ssgActiveConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry" />
+    <bean id="ssgActiveConnectorDependencyProcessorRegistry"
+          class="com.l7tech.server.search.DependencyProcessorRegistry"/>
 
-    <bean id="genericEntityDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry" />
+    <bean id="genericEntityDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry"/>
 
     <bean id="ssgConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry">
         <constructor-arg>
             <util:map key-type="java.lang.String" value-type="com.l7tech.server.search.processors.DependencyProcessor">
                 <entry>
-                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/>
+                    </key>
                     <ref bean="sslSsgConnectorDependencyProcessor"/>
                 </entry>
                 <entry>
-                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/></key>
+                    <key>
+                        <util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/>
+                    </key>
                     <ref bean="sslSsgConnectorDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>
     </bean>
-    <bean id="sslSsgConnectorDependencyProcessor" class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor" />
+    <bean id="sslSsgConnectorDependencyProcessor"
+          class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor"/>
 
     <bean id="uddiServiceWsdlUpdateChecker" class="com.l7tech.server.uddi.ServiceWsdlUpdateChecker">
         <constructor-arg index="0" ref="serviceManager"/>
@@ -590,7 +654,8 @@
         </constructor-arg>
     </bean>
 
-    <bean id="httpConnectionIdleTimeoutManager" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager">
+    <bean id="httpConnectionIdleTimeoutManager"
+          class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1">
             <bean class="com.l7tech.server.util.ManagedTimer">
@@ -621,7 +686,8 @@
         <constructor-arg ref="secureRandom"/>
     </bean>
 
-    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
@@ -689,6 +755,7 @@
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="workQueueEntityManager"/>
+                <ref bean="scheduledTaskManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -891,10 +958,11 @@
 
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
-    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance" primary="true"/>
+    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"
+          primary="true"/>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
-        <constructor-arg index="0" value="7layer" />
+        <constructor-arg index="0" value="7layer"/>
         <constructor-arg index="1" ref="transactionManager"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
@@ -1072,7 +1140,9 @@
         <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
     </bean>
 
-    <bean id="storedSecureConversationSessionManager" class="com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerImpl" parent="hibernateBean"/>
+    <bean id="storedSecureConversationSessionManager"
+          class="com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl">
         <property name="encryptedKeyCache" ref="encryptedKeyCache"/>
@@ -1104,8 +1174,8 @@
 
     <alias name="securityTokenResolver" alias="encryptedKeyCache"/>
 
-    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" >
-        <property name="config" ref="serverConfig" />
+    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils">
+        <property name="config" ref="serverConfig"/>
     </bean>
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
@@ -1474,7 +1544,7 @@
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager" depends-on="systemAuditListener">
-        <constructor-arg >
+        <constructor-arg>
             <set>
                 <value>flag:FipsModeAlways</value>
             </set>
@@ -1497,7 +1567,8 @@
 
     <bean id="featureLicenseFactory" class="com.l7tech.server.licensing.FeatureLicenseFactory"/>
 
-    <bean id="licenseDocumentManager" class="com.l7tech.server.licensing.LicenseDocumentManagerImpl" parent="hibernateBean"/>
+    <bean id="licenseDocumentManager" class="com.l7tech.server.licensing.LicenseDocumentManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="auditLogListenerTarget" class="com.l7tech.server.log.FilteringAuditLogListener">
         <constructor-arg ref="serverConfig"/>
@@ -1557,7 +1628,8 @@
         <constructor-arg index="1">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
                 <constructor-arg value="clusterHttpRequestExecutor"/>
-                <constructor-arg value="com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor"/>
+                <constructor-arg
+                        value="com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor"/>
             </bean>
         </constructor-arg>
         <constructor-arg index="2" value="ADMIN"/>
@@ -1628,7 +1700,8 @@
         <!-- passwordChangeDaily -->
     </bean>
 
-    <bean id="activateServerAuditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryActivator" depends-on="cryptoInit">
+    <bean id="activateServerAuditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryActivator"
+          depends-on="cryptoInit">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="auditContextFactory"/>
         <constructor-arg index="2" ref="auditRecordManager"/>
@@ -1651,7 +1724,7 @@
     </bean>
 
     <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
-        <constructor-arg ref="jdbcConnectionManager" />
+        <constructor-arg ref="jdbcConnectionManager"/>
     </bean>
 
     <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub"/>
@@ -1662,9 +1735,11 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
+    <bean id="postStartupApplicationListenerRegistration"
+          class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl" parent="hibernateBean"/>
+    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl"
+          parent="hibernateBean"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
 </beans>

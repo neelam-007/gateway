@@ -8,11 +8,15 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
-import com.l7tech.objectmodel.polback.*;
+import com.l7tech.objectmodel.polback.BackgroundTask;
+import com.l7tech.objectmodel.polback.PolicyBackedInterfaceIntrospector;
+import com.l7tech.objectmodel.polback.PolicyBackedService;
+import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -192,7 +196,8 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
      * @return a proxy object that will invoke the specified method by looking up the specified policy in the policy cache and executing it.
      */
     @NotNull
-    public <T> T getImplementationProxyForSingleMethod( final @NotNull Method method, final @NotNull Goid policyGoid ) {
+    public <T> T getImplementationProxyForSingleMethod( final @NotNull Method method, final @NotNull Goid policyGoid,
+                                                        final @Nullable PolicyEnforcementContext pec ) {
         final Template template;
 
         rwlock.readLock().lock();
@@ -227,7 +232,8 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
                         policyGoid,
                         name,
                         templateOperation.getArgumentDescriptors(),
-                        templateOperation.getResultDescriptors() );
+                        templateOperation.getResultDescriptors(),
+                        pec);
             }
         } );
     }
@@ -335,7 +341,8 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
                         operation.getPolicyGoid(),
                         operation.getName(),
                         templateOperation.getArgumentDescriptors(),
-                        templateOperation.getResultDescriptors() );
+                        templateOperation.getResultDescriptors(),
+                        null);
             }
         } );
     }
@@ -347,20 +354,22 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
      * to the outputs mapping.
      *
      * @param method the Method that is being invoked, from a registered @PolicyBacked interface.  Required.
-     * @param args the method arguments.  Required, but may be empty.
+     * @param args the method arguments.
      * @param policyGoid the Goid of the policy that will be executed to handle the method invocation.  Required.
      * @param operationName the user-meaningful operation name, for logging purposes.  Required.
      * @param inputs the input mappings.  Required, but may be empty.
      * @param outputs the output mappings.  Required, but may be empty.
+     * @param policyEnforcementContext the parent policy enforcement context to use
      * @return the method return value, translated according to the output mappings from variables left behind
      *         in the policy enforcement context.
      */
     private Object invokeProxyMethod( @NotNull Method method,
-                                      @NotNull Object[] args,
+                                      @Nullable Object[] args,
                                       @NotNull Goid policyGoid,
                                       @NotNull String operationName,
                                       @NotNull Set<EncapsulatedAssertionArgumentDescriptor> inputs,
-                                      @NotNull Set<EncapsulatedAssertionResultDescriptor> outputs )
+                                      @NotNull Set<EncapsulatedAssertionResultDescriptor> outputs,
+                                      @Nullable PolicyEnforcementContext policyEnforcementContext)
     {
         Map<String, Object> contextVariableInputs = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
         for ( EncapsulatedAssertionArgumentDescriptor argDescriptor : inputs ) {
@@ -378,9 +387,14 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
         // invoke encapsulated assertion
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
 
-            invokePolicyBackedOperation( context, policyGoid, operationName, contextVariableInputs );
+            if(policyEnforcementContext!=null) {
+                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(policyEnforcementContext);
+            }else{
+                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+            }
+
+            invokePolicyBackedOperation(context, policyGoid, operationName, contextVariableInputs);
 
             // convert output context variables into return value (possibly multivalued Map)
 

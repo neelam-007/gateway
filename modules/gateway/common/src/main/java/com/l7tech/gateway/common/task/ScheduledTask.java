@@ -62,7 +62,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     }
 
 
-    @Column(name="use_one_node")
+    @Column(name = "use_one_node")
     public boolean isUseOneNode() {
         return useOneNode;
     }
@@ -72,7 +72,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     }
 
     @RbacAttribute
-    @Column(name="job_type", nullable = false)
+    @Column(name = "job_type", nullable = false)
     @Enumerated(EnumType.STRING)
     public JobType getJobType() {
         return jobType;
@@ -82,7 +82,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         this.jobType = jobType;
     }
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     @Enumerated(EnumType.STRING)
     public JobStatus getJobStatus() {
         return jobStatus;
@@ -92,7 +92,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         this.jobStatus = jobStatus;
     }
 
-    @Column(name="executed_date")
+    @Column(name = "executed_date")
     @Min(0)
     public long getExecutedDate() {
         return executedDate;
@@ -102,7 +102,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         this.executedDate = executedDate;
     }
 
-    @Column(name="execution_date")
+    @Column(name = "execution_date")
     @Min(0)
     public long getExecutionDate() {
         return executionDate;
@@ -193,5 +193,31 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         this.setExecutionDate(other.getExecutionDate());
         this.setCronExpression(other.getCronExpression());
         this.setProperties(other.getProperties());
+    }
+
+    @Transient
+    public String getUserId() {
+        return properties.get("userId");
+    }
+
+    public void setUserId(String userId) {
+        this.propertiesXml = null;
+        if (userId == null)
+            properties.remove("userId");
+        else
+            properties.put("userId", userId);
+    }
+
+    @Transient
+    public Goid getIdProviderGoid() {
+        return properties.get("idProvider") == null ? null : Goid.parseGoid(properties.get("idProvider"));
+    }
+
+    public void setIdProviderGoid(Goid idProvider) {
+        this.propertiesXml = null;
+        if (idProvider == null)
+            properties.remove("idProvider");
+        else
+            properties.put("idProvider", idProvider.toString());
     }
 }

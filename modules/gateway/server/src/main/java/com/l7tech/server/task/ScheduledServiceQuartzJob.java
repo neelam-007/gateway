@@ -9,8 +9,8 @@ import org.quartz.StatefulJob;
 import java.util.logging.Logger;
 
 /**
-* Created by luiwy01 on 3/23/2015.
-*/
+ * Created by luiwy01 on 3/23/2015.
+ */
 @DisallowConcurrentExecution
 public class ScheduledServiceQuartzJob implements StatefulJob {
 
@@ -38,10 +38,12 @@ public class ScheduledServiceQuartzJob implements StatefulJob {
 
         Goid policyGoid = Goid.parseGoid(context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID));
         String nodeId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
+        String providerId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_ID_PROVIDER_GOID);
+        String userId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_USER_ID);
 
         if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
             try {
-                ScheduledPolicyRunner.getInstance(null).runBackgroundTask(policyGoid);
+                ScheduledPolicyRunner.getInstance(null).runBackgroundTask(policyGoid, providerId == null ? null : Goid.parseGoid(providerId), userId);
             } catch (Exception e) {
                 throw new JobExecutionException(e);
             }

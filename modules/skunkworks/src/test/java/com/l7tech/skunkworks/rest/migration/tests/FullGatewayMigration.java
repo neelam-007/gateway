@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
+import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.transport.email.EmailListener;
@@ -33,6 +34,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -204,7 +206,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
      * This will create a policy on the source gateway, which generated an auto generated role for the policy. A user
      * is then assigned to that role.
      * That will be migrated. (with the user mapped to another user on the target gateway.)
-     *
+     * <p/>
      * We validate that the user is correctly mapped in the role on the target gateway
      *
      * @throws Exception
@@ -252,7 +254,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             getMapping(bundleItem.getContent().getMappings(), userItem.getId()).setTargetId("00000000000000000000000000000003");
-            Assert.assertEquals(Mapping.Action.NewOrExisting,getMapping(bundleItem.getContent().getMappings(), userItem.getId()).getAction());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, getMapping(bundleItem.getContent().getMappings(), userItem.getId()).getAction());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -538,6 +540,103 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
     }
 
     /**
+     * Test migrating a full gateway with one scheduled task
+     */
+    @Test
+    public void testFullGatewayExportImportOneScheduledTask() throws Exception {
+        Item<ScheduledTaskMO> scheduledTaskItem = null;
+        Item<PolicyMO> policyItem = null;
+        try {
+            policyItem = createScheduledTaskPolicy(getSourceEnvironment());
+            scheduledTaskItem = createScheduledTask(getSourceEnvironment(), policyItem.getId(), new Goid(0, 3).toString());
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            // check scheduled task created
+            response = getTargetEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+        } finally {
+            if (scheduledTaskItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (policyItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    /**
+     * Test migrating a full gateway with one scheduled task map user
+     */
+    @Test
+    public void testFullGatewayExportImportOneScheduledTaskMapUser() throws Exception {
+        Item<ScheduledTaskMO> scheduledTaskItem = null;
+        Item<PolicyMO> policyItem = null;
+        Item<UserMO> userItem = null;
+        Item<UserMO> targetUserItem = null;
+        try {
+            targetUserItem = createUser(getTargetEnvironment(), "user target", internalIDProviderItem.getId());
+            userItem = createUser(getSourceEnvironment(), "user1", internalIDProviderItem.getId());
+            policyItem = createScheduledTaskPolicy(getSourceEnvironment());
+            scheduledTaskItem = createScheduledTask(getSourceEnvironment(), policyItem.getId(), userItem.getId());
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            // map the user
+            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), userItem.getId());
+            userMappingIn.setTargetId(targetUserItem.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            // check scheduled task created
+            response = getTargetEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            // check user mapped
+            final Item<ScheduledTaskMO> targetScheduledTask = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            assertEquals(targetUserItem.getId(), targetScheduledTask.getContent().getProperties().get("userId"));
+            assertEquals(internalIDProviderItem.getId(), targetScheduledTask.getContent().getProperties().get("idProvider"));
+
+        } finally {
+            if (scheduledTaskItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("scheduledTasks/" + scheduledTaskItem.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (policyItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (userItem != null) {
+                getSourceEnvironment().processRequest("users/" + userItem.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (targetUserItem != null) {
+                getTargetEnvironment().processRequest("users/" + targetUserItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    /**
      * Test migrating a full gateway with one created email listener.
      */
     @Test
@@ -611,7 +710,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
             assertOkResponse(response);
 
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), new Goid(0,3).toString());
+            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), new Goid(0, 3).toString());
             userMappingIn.getProperties().remove("FailOnNew");
 
             //import the bundle
@@ -1030,6 +1129,70 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
         return new Goid(hi, low);
     }
 
+    private Item<ScheduledTaskMO> createScheduledTask(JVMDatabaseBasedRestManagementEnvironment environment, String policyId, String userId) throws Exception {
+        ScheduledTaskMO scheduledTask = ManagedObjectFactory.createScheduledTaskMO();
+        scheduledTask.setName("Test Scheduled Task created");
+        scheduledTask.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyId));
+        scheduledTask.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
+        scheduledTask.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.DISABLED);
+        scheduledTask.setCronExpression("* * */5 * ?");
+        scheduledTask.setUseOneNode(false);
+        scheduledTask.setProperties(CollectionUtils.<String, String>mapBuilder().put("idProvider", new Goid(0, -2).toString()).put("userId", userId).map());
+
+        RestResponse response = environment.processRequest("scheduledTasks", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(scheduledTask)));
+
+        assertOkCreatedResponse(response);
+
+        Item<ScheduledTaskMO> scheduledTaskItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        scheduledTaskItem.setContent(scheduledTask);
+        return scheduledTaskItem;
+
+    }
+
+    private Item<PolicyMO> createScheduledTaskPolicy(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+        //create policy
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AuditDetailAssertion>\n" +
+                        "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
+                        "        </L7p:AuditDetailAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("Source Policy");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.SERVICE_OPERATION);
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .put("subtag", "run")
+                .put("tag", "com.l7tech.objectmodel.polback.BackgroundTask")
+                .map());
+        ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResourceSet.setTag("policy");
+        Resource policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        policyResource.setType("policy");
+        policyResource.setContent(assXml);
+        policyMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        RestResponse response = environment.processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        response = environment.processRequest("policies/" + policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        return MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+    }
+
     private Item<HttpConfigurationMO> createHttpConfiguration(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
         HttpConfigurationMO httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
         httpConfiguration.setUsername("userNew");
@@ -1062,7 +1225,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
         serviceMapping.setVerbs(Arrays.asList("POST"));
         ServiceDetail.SoapMapping soapMapping = ManagedObjectFactory.createSoapMapping();
         soapMapping.setLax(false);
-        serviceDetail.setServiceMappings(Arrays.asList(serviceMapping,soapMapping));
+        serviceDetail.setServiceMappings(Arrays.asList(serviceMapping, soapMapping));
         serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
                 .put("soap", true)
                 .put("soapVersion", "1.2")
@@ -1072,7 +1235,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
         Resource policyResource = ManagedObjectFactory.createResource();
         policyResourceSet.setResources(Arrays.asList(policyResource));
         policyResource.setType("policy");
-        policyResource.setContent(assXml );
+        policyResource.setContent(assXml);
         ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
         wsdlResourceSet.setTag("wsdl");
         wsdlResourceSet.setRootUrl("http://localhost:8080/test.wsdl");
@@ -1080,8 +1243,8 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
         wsdlResourceSet.setResources(Arrays.asList(wsdlResource));
         wsdlResource.setType("wsdl");
         wsdlResource.setSourceUrl("http://localhost:8080/test.wsdl");
-        wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
-        serviceMO.setResourceSets(Arrays.asList(policyResourceSet,wsdlResourceSet));
+        wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>");
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet, wsdlResourceSet));
 
         RestResponse response = environment.processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
@@ -1230,7 +1393,7 @@ public class FullGatewayMigration extends com.l7tech.skunkworks.rest.tools.Migra
         AssertionSecurityZoneMO assertionAccessMo = ManagedObjectFactory.createAssertionAccess();
         assertionAccessMo.setName(assertionName);
         assertionAccessMo.setSecurityZoneId(securityZoneId);
-        RestResponse response = environment.processRequest("assertionSecurityZones/"+assertionName, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = environment.processRequest("assertionSecurityZones/" + assertionName, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(assertionAccessMo)));
 
         assertOkResponse(response);

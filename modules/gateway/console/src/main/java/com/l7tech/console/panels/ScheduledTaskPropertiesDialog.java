@@ -1,9 +1,16 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.Options;
+import com.l7tech.console.panels.identity.finder.SearchType;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAll;
 import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
@@ -12,9 +19,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.BetterComboBox;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Functions;
@@ -81,6 +88,10 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JDateTimeChooser timeChooser;
     private SecurityZoneWidget securityZoneChooser;
     private JRadioButton disableRadioButton;
+    private JCheckBox userCheckBox;
+    private JButton userButton;
+    private JPanel userPanel;
+    private JLabel userLabel;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
@@ -93,7 +104,9 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private String[] cronFragments;
 
     private ScheduledTask scheduledTask;
+    private IdentityHeader userHeader = null;
     private boolean readOnly;
+    private boolean canEditUser = false;
 
     public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask, final boolean readOnly) {
         super(parent, resources.getString("dialog.title"));
@@ -104,7 +117,14 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             scheduledTask.setExecutionDate(new Date().getTime());
         }
 
+
+        canEditUser = canEditUser();
         initComponents();
+    }
+
+    private boolean canEditUser() {
+        return getSecurityProvider().hasPermission(new AttemptedCreate(EntityType.USER)) &&
+                getSecurityProvider().hasPermission(new AttemptedUpdateAll(EntityType.USER));
     }
 
     private void initComponents() {
@@ -210,7 +230,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         unitComboBox.setSelectedIndex(0);
         try {
             populateTextFieldsFromCronExpression("* * * * * ?");
-        }catch( NumberFormatException ex){
+        } catch (NumberFormatException ex) {
             // do nothing
         }
 
@@ -256,7 +276,17 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         basicRadioButton.addActionListener(changeListener);
         advancedRadioButton.addActionListener(changeListener);
 
-        securityZoneChooser.configure( scheduledTask);
+        securityZoneChooser.configure(scheduledTask);
+
+        //user options
+        userCheckBox.addActionListener(changeListener);
+        userButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectUser();
+                enableDisableComponents();
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -278,6 +308,28 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         enableDisableDayInputs();
     }
 
+    private void selectUser() {
+        Frame f = TopComponents.getInstance().getTopParent();
+        Options options = new Options();
+
+        options.setSearchType(SearchType.USER);
+        options.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        options.setDisposeOnSelect(true);
+        FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
+        fd.pack();
+        Utilities.centerOnScreen(fd);
+        FindIdentitiesDialog.FindResult result = fd.showDialog();
+        if (result != null && result.entityHeaders != null && result.entityHeaders.length > 0) {
+            try {
+                IdentityProviderConfig idProvider = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(result.entityHeaders[0].getProviderGoid());
+                userLabel.setText(MessageFormat.format(resources.getString("label.user.checkbox"), result.entityHeaders[0].getCommonName(), idProvider.getName()));
+                userHeader = result.entityHeaders[0];
+            } catch (FindException e) {
+                logger.warning("Cannot find identity provider");
+            }
+        }
+    }
+
     private void enableDisableComponents() {
         timeChooser.setEnabled(oneTimeRadioButton.isSelected());
 
@@ -287,18 +339,21 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         intervalTextField.setEnabled(isRecurring && basicRadioButton.isSelected());
         Utilities.setEnabled(advancedPanel, isRecurring && advancedRadioButton.isSelected());
 
+        userButton.setEnabled(canEditUser && userCheckBox.isSelected());
+        Utilities.setEnabled(userPanel, canEditUser);
+
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
         isOK = isOK && policyComboBox.getSelectedIndex() > -1;
+        isOK = isOK && !canEditUser || (!userCheckBox.isSelected() || userHeader != null);
         isOK = isOK && !readOnly;
-        if(isRecurring){
-            try{
+        if (isRecurring) {
+            try {
                 Integer.parseInt(intervalTextField.getText());
-            }catch(NumberFormatException e){
+            } catch (NumberFormatException e) {
                 isOK = false;
             }
-        }
-        else{
+        } else {
             isOK = isOK && timeChooser.getDate() != null;
         }
 
@@ -323,6 +378,20 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             disableRadioButton.setSelected(true);
         }
         securityZoneChooser.configure(scheduledTask);
+
+        boolean hasUser = scheduledTask.getUserId() != null && scheduledTask.getIdProviderGoid() != null;
+        userCheckBox.setSelected(hasUser);
+        if (hasUser) {
+            try {
+                IdentityProviderConfig idProvider = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(scheduledTask.getIdProviderGoid());
+                User user = Registry.getDefault().getIdentityAdmin().findUserByID(scheduledTask.getIdProviderGoid(), scheduledTask.getUserId());
+                userLabel.setText(MessageFormat.format(resources.getString("label.user.checkbox"), user.getLogin(), idProvider.getName()));
+                userHeader = new IdentityHeader(scheduledTask.getIdProviderGoid(), scheduledTask.getUserId(), EntityType.USER, user.getLogin(), null, null, null);
+            } catch (FindException e) {
+                userLabel.setText(MessageFormat.format(resources.getString("label.user.checkbox"), scheduledTask.getUserId(), scheduledTask.getIdProviderGoid()));
+                userHeader = new IdentityHeader(scheduledTask.getIdProviderGoid(), scheduledTask.getUserId(), EntityType.USER, null, null, null, null);
+            }
+        }
     }
 
     private void selectRadioButton(String cronExpression) {
@@ -371,6 +440,10 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         thursdayCheckBox.setSelected(weekday.contains("5"));
         fridayCheckBox.setSelected(weekday.contains("6"));
         saturdayCheckBox.setSelected(weekday.contains("7"));
+    }
+
+    protected final SecurityProvider getSecurityProvider() {
+        return Registry.getDefault().getSecurityProvider();
     }
 
     private PolicyAdmin getPolicyAdmin() {
@@ -429,8 +502,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             if (basicRadioButton.isSelected()) {
                 try {
                     cronExpression = ((ScheduledTaskBasicInterval) unitComboBox.getSelectedItem()).getCronExpression(Integer.parseInt(intervalTextField.getText()));
-                }catch( NumberFormatException e){
-                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.interval.message"),intervalTextField.getText()),
+                } catch (NumberFormatException e) {
+                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.interval.message"), intervalTextField.getText()),
                             resources.getString("error.interval.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
@@ -438,20 +511,23 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 cronExpression = createAdvancedCronExpression();
             }
 
-            if(!CronExpression.isValidExpression(cronExpression)){
+            if (!CronExpression.isValidExpression(cronExpression)) {
                 try {
                     CronExpression.validateExpression(cronExpression);
                 } catch (ParseException e) {
-                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this,  MessageFormat.format(resources.getString("error.cron.message.detail"),cronExpression, e.getMessage()),
+                    DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.cron.message.detail"), cronExpression, e.getMessage()),
                             resources.getString("error.cron.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.cron.message"),cronExpression) ,
+                DialogDisplayer.showMessageDialog(ScheduledTaskPropertiesDialog.this, MessageFormat.format(resources.getString("error.cron.message"), cronExpression),
                         resources.getString("error.cron.title"), JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
             scheduledTask.setCronExpression(cronExpression);
         }
+
+        scheduledTask.setIdProviderGoid(userCheckBox.isSelected() ? userHeader.getProviderGoid() : null);
+        scheduledTask.setUserId(userCheckBox.isSelected() ? userHeader.getStrId() : null);
 
         // save the task
         try {
@@ -474,25 +550,25 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         cronFragments[ScheduledTaskBasicInterval.EVERY_MONTH.ordinal()] = monthTextField.getText();
 
         String dayOfweekExpression;
-        if(!mondayCheckBox.isSelected() &&
+        if (!mondayCheckBox.isSelected() &&
                 !tuesdayCheckBox.isSelected() &&
                 !wednesdayCheckBox.isSelected() &&
                 !thursdayCheckBox.isSelected() &&
                 !fridayCheckBox.isSelected() &&
                 !saturdayCheckBox.isSelected() &&
-                !sundayCheckBox.isSelected()){
+                !sundayCheckBox.isSelected()) {
             dayOfweekExpression = "?";
-        }else{
+        } else {
             StringBuilder weekBuilder = new StringBuilder();
             // (1 = Sunday)
-            weekBuilder.append(sundayCheckBox.isSelected()?"1,":"");
-            weekBuilder.append(mondayCheckBox.isSelected()?"2,":"");
-            weekBuilder.append(tuesdayCheckBox.isSelected()?"3,":"");
-            weekBuilder.append(wednesdayCheckBox.isSelected()?"4,":"");
-            weekBuilder.append(thursdayCheckBox.isSelected()?"5,":"");
-            weekBuilder.append(fridayCheckBox.isSelected()?"6,":"");
-            weekBuilder.append(saturdayCheckBox.isSelected()?"7,":"");
-            dayOfweekExpression = weekBuilder.toString().substring(0,weekBuilder.toString().length()-1);
+            weekBuilder.append(sundayCheckBox.isSelected() ? "1," : "");
+            weekBuilder.append(mondayCheckBox.isSelected() ? "2," : "");
+            weekBuilder.append(tuesdayCheckBox.isSelected() ? "3," : "");
+            weekBuilder.append(wednesdayCheckBox.isSelected() ? "4," : "");
+            weekBuilder.append(thursdayCheckBox.isSelected() ? "5," : "");
+            weekBuilder.append(fridayCheckBox.isSelected() ? "6," : "");
+            weekBuilder.append(saturdayCheckBox.isSelected() ? "7," : "");
+            dayOfweekExpression = weekBuilder.toString().substring(0, weekBuilder.toString().length() - 1);
 
             // Automatically modify Day fragment to "?" because a Day of Week is selected and it only works with "?".
             cronFragments[ScheduledTaskBasicInterval.EVERY_DAY.ordinal()] = "?";
@@ -541,7 +617,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         }
 
         public String getCronExpression(int interval) {
-            return MessageFormat.format(cronExpression, "*/"+interval);
+            return MessageFormat.format(cronExpression, "*/" + interval);
         }
 
         public boolean matches(String cronExpression) {
@@ -562,8 +638,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                 thursdayCheckBox.isSelected() || fridayCheckBox.isSelected() || saturdayCheckBox.isSelected() || sundayCheckBox.isSelected()) {
             dayTextField.setEnabled(false);
             dayEditButton.setEnabled(false);
-        }
-        else if (advancedRadioButton.isSelected()) {
+        } else if (advancedRadioButton.isSelected()) {
             if ("?".equals(dayTextField.getText())) {
                 dayTextField.setText("*");
             }

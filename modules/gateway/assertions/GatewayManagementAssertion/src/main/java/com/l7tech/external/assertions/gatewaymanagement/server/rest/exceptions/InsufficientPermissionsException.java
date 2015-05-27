@@ -32,4 +32,12 @@ public class InsufficientPermissionsException extends RuntimeException {
     public InsufficientPermissionsException(@Nullable final User user, @NotNull final Entity entity, @NotNull final OperationType operationType, @Nullable final String otherOperationName, @NotNull final Throwable e) {
         super(MessageFormat.format("Permission denied for user {0} on entity {1} with id {2}. Requested operation {3}", user != null ? user.getLogin() : "<unauthenticated>", EntityType.findTypeByEntity(entity.getClass()), entity.getId(), OperationType.OTHER.equals(operationType) ? otherOperationName : operationType), e);
     }
+
+    public InsufficientPermissionsException(@Nullable final User user, @NotNull final EntityType entityType, @Nullable final OperationType operationType, @Nullable final String otherOperationName) {
+        super(MessageFormat.format("Permission denied for user {0} on entity type: {1}. Requested operation {2}", user != null ? user.getLogin() : "<unauthenticated>", entityType, OperationType.OTHER.equals(operationType) ? otherOperationName : operationType));
+    }
+
+    public InsufficientPermissionsException(@Nullable final User user, @NotNull final EntityType entityType, @Nullable final OperationType operationType, @Nullable final String otherOperationName, @NotNull final Throwable e) {
+        super(MessageFormat.format("Permission denied for user {0} on entity type: {1}. Requested operation {2}", user != null ? user.getLogin() : "<unauthenticated>", entityType, OperationType.OTHER.equals(operationType) ? otherOperationName : operationType), e);
+    }
 }

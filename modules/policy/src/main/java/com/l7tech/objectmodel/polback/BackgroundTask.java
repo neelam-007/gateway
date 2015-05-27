@@ -9,6 +9,5 @@ public interface BackgroundTask {
     /**
      * Run the background task.
      */
-    // TODO: Dummy argument added to work around a problem, should be removed later when it's fixed.
-    void run(@PolicyParam("arg") String arg);
+    void run();
 }
