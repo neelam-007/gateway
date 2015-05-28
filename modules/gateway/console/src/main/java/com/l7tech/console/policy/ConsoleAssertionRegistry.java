@@ -472,7 +472,11 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             if (StringUtils.isNotBlank(moduleEntityName)) {
                 return "Modular (" + moduleEntityName + ")";
             }
-            return assertion.meta().get(AssertionMetadata.MODULE_FILE_NAME);
+            final String moduleFileName = assertion.meta().get(AssertionMetadata.MODULE_FILE_NAME);
+            if (StringUtils.isNotBlank(moduleFileName)) {
+                return "Modular (" + moduleFileName + ")";
+            }
+            return "Modular";
         }
     }
 
