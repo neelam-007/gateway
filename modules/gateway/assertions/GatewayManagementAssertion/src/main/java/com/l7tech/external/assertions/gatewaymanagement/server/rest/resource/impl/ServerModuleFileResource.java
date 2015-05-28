@@ -169,7 +169,7 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
             @QueryParam("sort") @ChoiceParam({"id", "name", "type"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) final String order,
             @QueryParam("name") final List<String> names,
-            @QueryParam("type") final List<String> types,
+            @QueryParam("type") @ChoiceParam(value = {"Custom", "Modular"}, caseSensitive = false) final List<String> types,
             @QueryParam("includeData") @DefaultValue("false") final Boolean includeData
     ) {
         final Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
@@ -192,16 +192,16 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
                             new Functions.UnaryThrows<ModuleType, String, InvalidArgumentException>() {
                                 @Override
                                 public ModuleType call(final String type) {
-                                    switch (type) {
-                                        case "Custom Assertion":
-                                            return ModuleType.CUSTOM_ASSERTION;
-                                        case "Modular Assertion":
-                                            return ModuleType.MODULAR_ASSERTION;
-                                        default:
-                                            throw new InvalidArgumentException("type", "Invalid Module Type '" + type + "'. Expected either: 'Custom Assertion' or 'Modular Assertion'");
+                                    if (type.equalsIgnoreCase("Custom")) {
+                                        return ModuleType.CUSTOM_ASSERTION;
+                                    } else if (type.equalsIgnoreCase("Modular")) {
+                                        return ModuleType.MODULAR_ASSERTION;
+                                    } else {
+                                        throw new InvalidArgumentException("type", "Invalid Module Type '" + type + "'. Expected either: 'Custom' or 'Modular'");
                                     }
                                 }
-                            }));
+                            })
+            );
         }
 
         if (StringUtils.equalsIgnoreCase("type", sort)) {
