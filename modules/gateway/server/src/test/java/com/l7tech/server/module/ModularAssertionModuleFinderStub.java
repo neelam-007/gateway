@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Stab for Modular {@link com.l7tech.server.module.AssertionModuleFinder}
+ * Stub for Modular {@link com.l7tech.server.module.AssertionModuleFinder}
  */
 public class ModularAssertionModuleFinderStub implements AssertionModuleFinder<ModularAssertionModule> {
 

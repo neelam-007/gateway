@@ -35,6 +35,7 @@ import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -194,46 +195,49 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
             if (customAssertion != null) {
                 final AssertionModuleInfo moduleInfo = customAssertionRegistrar.getModuleInfoForAssertionClass(customAssertion.getClass().getName());
                 if (moduleInfo != null && moduleInfo.isFromDb()) {
-                    final String moduleName = moduleInfo.getModuleEntityName();
-                    if (StringUtils.isNotBlank(moduleName)) { // shouldn't be empty if isFromDb
-                        final ServerModuleFile moduleFile = serverModuleFileManager.findByUniqueName(moduleName);
-                        if (moduleFile != null) {
-                            final Dependency dependency = finder.getDependency(
-                                    DependencyFinder.FindResults.create(
-                                            moduleFile,
-                                            new EntityHeader(Goid.DEFAULT_GOID, EntityType.SERVER_MODULE_FILE, moduleName, null)
-                                    )
-                            );
-                            if (dependency != null && !dependencies.contains(dependency)) {
-                                dependencies.add(dependency);
-                            }
-                        }
-                    }
+                    processServerModuleFileDependency(moduleInfo.getModuleEntityName(), finder, dependencies);
                 }
             }
         } else {
             // this is a Modular Assertion so get the module entity through the assertion module
             final ModularAssertionModule module = modularAssertionModuleFinder.getModuleForClassLoader(assertion.getClass().getClassLoader());
             if (module != null && module.isFromDb()) {
-                final String moduleName = module.getEntityName();
-                if (StringUtils.isNotBlank(moduleName)) { // shouldn't be empty if isFromDb
-                    final ServerModuleFile moduleFile = serverModuleFileManager.findByUniqueName(moduleName);
-                    if (moduleFile != null) {
-                        final Dependency dependency = finder.getDependency(
-                                DependencyFinder.FindResults.create(
-                                        moduleFile,
-                                        new EntityHeader(Goid.DEFAULT_GOID, EntityType.SERVER_MODULE_FILE, moduleName, null)
-                                )
-                        );
-                        if (dependency != null && !dependencies.contains(dependency)) {
-                            dependencies.add(dependency);
-                        }
-                    }
-                }
+                processServerModuleFileDependency(module.getEntityName(), finder, dependencies);
             }
         }
 
         return dependencies;
+    }
+
+    /**
+     * Utility method for processing Assertion dependencies of the {@code ServerModuleFile} specified with the {@code moduleName}.
+     *
+     * @param moduleName      The module name i.e. {@code ServerModuleFile} entity name.  Optional and can be {@code null}, in which case nothing is checked.
+     * @param finder          The finder that is performing the current dependency search.
+     * @param dependencies    List of dependencies found so far.
+     * @throws FindException
+     * @throws CannotRetrieveDependenciesException
+     */
+    private void processServerModuleFileDependency(
+            @Nullable final String moduleName,
+            @NotNull final DependencyFinder finder,
+            @NotNull final List<Dependency> dependencies
+    ) throws FindException, CannotRetrieveDependenciesException {
+        if (StringUtils.isNotBlank(moduleName)) {
+            final ServerModuleFile moduleFile = serverModuleFileManager.findByUniqueName(moduleName);
+            if (moduleFile != null) {
+                final Dependency dependency = finder.getDependency(
+                        DependencyFinder.FindResults.create(
+                                moduleFile,
+                                new EntityHeader(Goid.DEFAULT_GOID, EntityType.SERVER_MODULE_FILE, moduleName, null)
+                        )
+                );
+                // add the dependency if not processed yet.
+                if (dependency != null && !dependencies.contains(dependency)) {
+                    dependencies.add(dependency);
+                }
+            }
+        }
     }
 
     @NotNull

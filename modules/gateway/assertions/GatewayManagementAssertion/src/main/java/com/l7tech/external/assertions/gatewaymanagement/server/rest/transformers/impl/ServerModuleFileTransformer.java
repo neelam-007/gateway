@@ -11,15 +11,23 @@ import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Config;
+import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Named;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static com.l7tech.util.Option.*;
 
 /**
  * Transform {@link ServerModuleFile internal entity} to a {@link ServerModuleFileMO managed object} and vise versa.
@@ -29,6 +37,12 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
 
     @Inject
     private ServerModuleFileAPIResourceFactory factory;
+
+    @Inject
+    @Named("serverConfig")
+    private Config config;
+
+    private final static long DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = 20971520L;
 
     @NotNull
     @Override
@@ -133,19 +147,49 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
 
         serverModuleFile.setModuleType(convertModuleType(serverModuleFileMO.getModuleType()));
 
+        // verify module sha and module data
         if (StringUtils.isBlank(serverModuleFileMO.getModuleSha256())) {
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "Module SHA-256 must be set");
+            throw new ResourceFactory.InvalidResourceException(
+                    ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                    "Module SHA-256 must be set"
+            );
         }
         if (serverModuleFileMO.getModuleData() == null) {
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "Module data bytes must be set");
+            throw new ResourceFactory.InvalidResourceException(
+                    ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                    "Module data bytes must be set"
+            );
         }
+
+        // make sure ServerModuleFile size doesn't exceed max allowed size
+        final long fileLength = serverModuleFileMO.getModuleData().length;
+        final long maxModuleFileSize = config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE);
+        if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
+            throw new ResourceFactory.InvalidResourceException(
+                    ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                    MessageFormat.format("ServerModuleFiles greater than {0} are not supported.", ServerModuleFile.humanReadableBytes(maxModuleFileSize))
+            );
+        }
+
+        // set the ServerModuleFile data and verify if the module sha and module data match
         serverModuleFile.createData(serverModuleFileMO.getModuleData(), serverModuleFileMO.getModuleSha256());
         final String calculatedDigest = ServerModuleFile.calcBytesChecksum(serverModuleFile.getData().getDataBytes());
         if (!calculatedDigest.equals(serverModuleFile.getModuleSha256())) {
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Module data bytes doesn't match SHA-256");
+            throw new ResourceFactory.InvalidResourceException(
+                    ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                    "Module data bytes doesn't match SHA-256"
+            );
         }
 
-        setProperties(serverModuleFileMO, serverModuleFile, ServerModuleFile.getPropertyKeys());
+        // set the ServerModuleFile properties
+        setProperties(
+                serverModuleFileMO.getProperties(),
+                serverModuleFile,
+                ServerModuleFile.getPropertyKeys(),
+                CollectionUtils.<String, String>mapBuilder()
+                        .put(ServerModuleFile.PROP_SIZE, String.valueOf(fileLength))
+                        .map()
+        );
 
         return new EntityContainer<>(serverModuleFile);
     }
@@ -232,26 +276,81 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     }
 
     /**
-     * Loop through all registered properties of the input {@code moduleFileMO} and set them accordingly into the
-     * output {@code moduleFile}.
+     * Loop through all registered properties of the source {@code props} and set them accordingly into the
+     * destination {@code moduleFile}.
      *
-     * @param moduleFileMO    input {@link ServerModuleFileMO MO}.
-     * @param moduleFile      output {@link ServerModuleFile internal entity}.
-     * @param keys            the list of known {@code ServerModuleFile} properties (i.e. property keys).
+     * @param props         Source {@code com.l7tech.gateway.api.ServerModuleFileMO} properties.  Optional and can be {@code null}.
+     * @param moduleFile    Destination {@link com.l7tech.gateway.common.module.ServerModuleFile internal entity}.
+     * @param keys          List of known {@code ServerModuleFile} properties (i.e. property keys).
+     * @param defaultValues Map of default key values.
      */
     static void setProperties(
-            @NotNull final ServerModuleFileMO moduleFileMO,
+            @Nullable final Map<String, String> props,
             @NotNull final ServerModuleFile moduleFile,
-            @NotNull final String[] keys
-    ) {
-        final Map<String, String> props = moduleFileMO.getProperties();
-        if (props != null) {
-            for (final String key : keys) {
-                final String value = props.get(key);
-                if (value != null) {
-                    moduleFile.setProperty(key, value);
+            @NotNull final String[] keys,
+            @NotNull final Map<String, String> defaultValues
+    ) throws ResourceFactory.InvalidResourceException {
+        for (final String key : keys) {
+            setProperty(moduleFile, key, getProperty(props, key, optional(defaultValues.get(key)), String.class));
+        }
+    }
+
+    /**
+     * Utility method for getting a property from the given properties map.
+     *
+     * @param properties       The properties to use
+     * @param propertyName     The name of the property
+     * @param defaultValue     The default value for the property
+     * @param propertyClass    The class for the property type
+     * @param <PT>             The type of the property
+     * @return The actual or default value
+     * @throws ResourceFactory.InvalidResourceException if the property is not of the expected type
+     */
+
+    @NotNull
+    static <PT> Option<PT> getProperty(@Nullable final Map<String,?> properties,
+                                       @NotNull  final String propertyName,
+                                       @NotNull  final Option<PT> defaultValue,
+                                       @NotNull  final Class<PT> propertyClass
+    ) throws ResourceFactory.InvalidResourceException {
+        final Option<PT> value;
+
+        if (properties != null) {
+            final Object valueObject = properties.get(propertyName);
+            if (valueObject != null) {
+                if (!propertyClass.isInstance(valueObject)) {
+                    throw new ResourceFactory.InvalidResourceException(
+                            ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                            "Invalid value for property " + propertyName
+                    );
                 }
+                value = some(propertyClass.cast(valueObject));
+            } else {
+                value = none();
             }
+        } else {
+            value = none();
+        }
+
+        return value.orElse(defaultValue);
+    }
+
+    /**
+     * Utility method for setting a {@code ServerModuleFile} property, with the given name to the given optional value.<br/>
+     * If the property value is {@link com.l7tech.util.Option#none() none} then the property will not be set.
+     *
+     * @param serverModuleFile    The {@code ServerModuleFile}
+     * @param propertyName        The name of the property
+     * @param propertyValue       The property value or none.
+     * @param <T>                 The type of the property
+     */
+    static <T> void setProperty(
+            @NotNull final ServerModuleFile serverModuleFile,
+            @NotNull final String propertyName,
+            @NotNull Option<T> propertyValue
+    ) {
+        if (propertyValue.isSome()) {
+            serverModuleFile.setProperty(propertyName, String.valueOf(propertyValue.some()));
         }
     }
 }

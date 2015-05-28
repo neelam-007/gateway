@@ -51,7 +51,50 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
     }
 
     /**
-     * Creates new ServerModuleFile.
+     * <p>Creates a new ServerModuleFile. The properties are optional but you may specify:</p>
+     * <table class="properties-table" cellpadding="0" cellspacing="0">
+     * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
+     * <tr>
+     * <td>moduleFileName</td>
+     * <td>String</td>
+     * <td>The module original File Name.
+     * Optional and if not specified empty text will be shown under Manage Server Module Files dialog in the Policy Manager.</td>
+     * </tr>
+     * <tr>
+     * <td>moduleSize</td>
+     * <td>String</td>
+     * <td>This is the module data-bytes size in bytes.
+     * Should not be assumed to be 100% reliable, and is intended to be used for display purposes.
+     * Optional and if not specified the size will be calculated from the specified module data-bytes.</td>
+     * </tr>
+     * <tr>
+     * <td>moduleAssertions</td>
+     * <td>String</td>
+     * <td>Comma separated list of Module Assertion ClassNames.
+     * Optional and if not specified empty text will be shown under Server Module Files Properties dialog in the Policy Manager.</td>
+     * </tr>
+     * </table>
+     * <p class="italicize">Example request:</p>
+     * <div class="code">
+     * <pre>
+     * &lt;l7:ServerModuleFile xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+     *     &lt;l7:Name&gt;module name&lt;/l7:Name&gt;
+     *     .......
+     *     &lt;l7:Properties&gt;
+     *         &lt;l7:Property key=&quot;moduleAssertions&quot;&gt;
+     *              &lt;l7:StringValue&gt;TestAssertion1,TestAssertion2&lt;/l7:StringValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;moduleFileName&quot;&gt;
+     *              &lt;l7:StringValue&gt;testAssertion.jar&lt;/l7:StringValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;moduleSize&quot;&gt;
+     *              &lt;l7:StringValue&gt;38191&lt;/l7:StringValue&gt;
+     *         &lt;/l7:Property&gt;
+     *     &lt;/l7:Properties&gt;
+     * &lt;/l7:ServerModuleFile&gt;
+     * </pre>
+     * </div>
+     * <p>This responds with a reference to the newly created ServerModuleFile.</p>
      *
      * @param resource The ServerModuleFile to create.
      * @return A reference to the newly created ServerModuleFile.
@@ -204,6 +247,7 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
         serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
                 .put(ServerModuleFile.PROP_SIZE, "4194378") // ~ 4 MB
                 .put(ServerModuleFile.PROP_ASSERTIONS, "TestAssertion1,TestAssertion2")
+                .put(ServerModuleFile.PROP_FILE_NAME, "TestAssertion.jar")
                 .map()
         );
         return super.createTemplateItem(serverModuleFileMO);
