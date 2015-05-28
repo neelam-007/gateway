@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.portalbootstrap.server;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
@@ -41,12 +42,17 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -157,9 +163,30 @@ public class PortalBootstrapManager {
         connection.setRequestProperty( "Content-Type", "application/json" );
         connection.setDoOutput( true );
         connection.getOutputStream().write( postBody );
-        byte[] bundleBytes = IOUtils.slurpStream( connection.getInputStream() );
+        Document bundleDoc = setMappings(connection.getInputStream(), user);
+        installBundle(bundleDoc, user);
+    }
 
-        installBundle( bundleBytes, user );
+    private Document setMappings(InputStream inputStream, User currentUser) throws IOException {
+        // maps the scheduled task user to the current user.
+        try {
+            Document bundle = XmlUtil.parse(inputStream);
+
+            NodeList refItemNodeList = bundle.getElementsByTagNameNS("http://ns.l7tech.com/2010/04/gateway-management", "Mapping");
+            for (int i = 0; i < refItemNodeList.getLength(); i++) {
+                Element node = (Element) refItemNodeList.item(i);
+                if (node.getAttribute("srcId").equals("7d5bba18f6cb40000000786e2ce1e3d9")) {
+                    node.setAttribute("targetId", currentUser.getId());
+
+                } else if (node.getAttribute("srcId").equals("7d5bba18f6cb40000000786e2ce1e3d8")) {
+                    node.setAttribute("targetId", currentUser.getProviderId().toString());
+                }
+            }
+            return bundle;
+        } catch (SAXException e) {
+            throw new IOException(e);
+        }
+
     }
 
     private byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
@@ -264,7 +291,7 @@ public class PortalBootstrapManager {
         throw new RuntimeException( "portalman private key does not already exist, and no mutable keystore exists in which to create a new one." );
     }
 
-    private void installBundle( @NotNull byte[] bundleBytes, @NotNull User adminUser ) throws IOException {
+    private void installBundle( @NotNull Document bundleDoc, @NotNull User adminUser ) throws IOException {
         String policyXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -283,7 +310,7 @@ public class PortalBootstrapManager {
             sph = serverPolicyFactory.compilePolicy( assertion, false );
 
             Message mess = new Message();
-            mess.initialize( ContentTypeHeader.XML_DEFAULT, bundleBytes );
+            mess.initialize( bundleDoc, ContentTypeHeader.XML_DEFAULT );
 
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
             context.getResponse().attachHttpResponseKnob( new AbstractHttpResponseKnob() {} );
