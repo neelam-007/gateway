@@ -345,7 +345,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         boolean isOK;
         isOK = nameField.getText().trim().length() > 0;
         isOK = isOK && policyComboBox.getSelectedIndex() > -1;
-        isOK = isOK && !canEditUser || (!userCheckBox.isSelected() || userHeader != null);
+        isOK = isOK && (!canEditUser || (!userCheckBox.isSelected() || userHeader != null));
         isOK = isOK && !readOnly;
         if (isRecurring) {
             try {
