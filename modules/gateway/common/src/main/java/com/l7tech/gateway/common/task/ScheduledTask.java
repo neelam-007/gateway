@@ -185,6 +185,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     public void copyFrom(ScheduledTask other) {
         this.setGoid(other.getGoid());
         this.setName(other.getName());
+        this.setVersion(other.getVersion());
         this.setPolicyGoid(other.getPolicyGoid());
         this.setUseOneNode(other.isUseOneNode());
         this.setJobType(other.getJobType());
