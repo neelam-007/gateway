@@ -87,11 +87,11 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
     private JTextField intervalTextField;
     private JDateTimeChooser timeChooser;
     private SecurityZoneWidget securityZoneChooser;
-    private JRadioButton disableRadioButton;
     private JCheckBox userCheckBox;
     private JButton userButton;
     private JPanel userPanel;
     private JLabel userLabel;
+    private JCheckBox enableCheckBox;
     private ButtonGroup jobTypeButtonGroup;
     private ButtonGroup recurringButtonGroup;
 
@@ -208,7 +208,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         jobTypeButtonGroup.add(recurringRadioButton);
         oneTimeRadioButton.addActionListener(changeListener);
         recurringRadioButton.addActionListener(changeListener);
-        disableRadioButton.addActionListener(changeListener);
+        enableCheckBox.addActionListener(changeListener);
 
         // One time date field
         timeChooser.getJCalendar().setDecorationBackgroundVisible(true);
@@ -272,7 +272,6 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         recurringButtonGroup = new ButtonGroup();
         recurringButtonGroup.add(basicRadioButton);
         recurringButtonGroup.add(advancedRadioButton);
-        recurringButtonGroup.add(disableRadioButton);
         basicRadioButton.setSelected(true);
         basicRadioButton.addActionListener(changeListener);
         advancedRadioButton.addActionListener(changeListener);
@@ -338,6 +337,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         Utilities.setEnabled(recurringPanel, isRecurring);
         unitComboBox.setEnabled(isRecurring && basicRadioButton.isSelected());
         intervalTextField.setEnabled(isRecurring && basicRadioButton.isSelected());
+        enableCheckBox.setEnabled(isRecurring);
         Utilities.setEnabled(advancedPanel, isRecurring && advancedRadioButton.isSelected());
 
         Utilities.setEnabled(userPanel, canEditUser);
@@ -375,8 +375,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
             selectRadioButton(scheduledTask.getCronExpression());
         }
 
-        if (JobStatus.DISABLED.equals(scheduledTask.getJobStatus())) {
-            disableRadioButton.setSelected(true);
+        if (JobType.ONE_TIME.equals(scheduledTask.getJobType()) || JobStatus.SCHEDULED.equals(scheduledTask.getJobStatus())) {
+            enableCheckBox.setSelected(true);
         }
         securityZoneChooser.configure(scheduledTask);
 
@@ -496,10 +496,10 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         } else {
             scheduledTask.setJobType(JobType.RECURRING);
             scheduledTask.setExecutionDate(0);
-            if (disableRadioButton.isSelected()) {
-                scheduledTask.setJobStatus(JobStatus.DISABLED);
-            } else {
+            if (enableCheckBox.isSelected()) {
                 scheduledTask.setJobStatus(JobStatus.SCHEDULED);
+            } else {
+                scheduledTask.setJobStatus(JobStatus.DISABLED);
             }
 
             String cronExpression = scheduledTask.getCronExpression();
@@ -511,7 +511,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
                             resources.getString("error.interval.title"), JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-            } else if (advancedRadioButton.isSelected() || (disableRadioButton.isSelected() && cronExpression == null)) {
+            } else if (advancedRadioButton.isSelected() || cronExpression == null) {
                 cronExpression = createAdvancedCronExpression();
             }
 

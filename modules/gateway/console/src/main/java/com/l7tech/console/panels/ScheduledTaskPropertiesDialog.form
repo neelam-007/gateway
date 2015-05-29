@@ -72,18 +72,18 @@
               <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.recurring"/>
             </properties>
           </component>
-          <grid id="3b0c6" binding="recurringPanel" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="3b0c6" binding="recurringPanel" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="15" bottom="0" right="0"/>
             <constraints>
               <grid row="6" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
-            <border type="etched"/>
+            <border type="none"/>
             <children>
               <grid id="979d2" binding="advancedPanel" layout-manager="GridLayoutManager" row-count="6" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="15" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -304,7 +304,7 @@
               <grid id="a5bfd" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -338,20 +338,11 @@
               </grid>
               <component id="ce0d3" class="javax.swing.JRadioButton" binding="advancedRadioButton" default-binding="true">
                 <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.advanced"/>
                   <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.advanced"/>
-                </properties>
-              </component>
-              <component id="4a2c6" class="javax.swing.JRadioButton" binding="disableRadioButton" default-binding="true">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Disable"/>
-                  <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.disable"/>
                 </properties>
               </component>
             </children>
@@ -430,6 +421,15 @@
               </grid>
             </children>
           </grid>
+          <component id="f3776" class="javax.swing.JCheckBox" binding="enableCheckBox">
+            <constraints>
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="label.disable"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ScheduledTaskPropertiesDialog" key="tooltip.disable"/>
+            </properties>
+          </component>
         </children>
       </grid>
       <vspacer id="e5004">
