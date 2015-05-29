@@ -110,7 +110,8 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
 
     public ScheduledTaskPropertiesDialog(Dialog parent, ScheduledTask scheduledTask, final boolean readOnly) {
         super(parent, resources.getString("dialog.title"));
-        this.scheduledTask = scheduledTask;
+        this.scheduledTask = new ScheduledTask();
+        this.scheduledTask.copyFrom(scheduledTask);
         this.readOnly = readOnly;
 
         if (scheduledTask.getExecutionDate() == 0) {
