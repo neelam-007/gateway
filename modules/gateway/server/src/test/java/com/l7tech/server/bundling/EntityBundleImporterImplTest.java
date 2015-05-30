@@ -11,6 +11,7 @@ import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.TestPasswordHasher;
+import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyManager;
@@ -80,6 +81,8 @@ public class EntityBundleImporterImplTest {
     private ClientCertManager clientCertManager;
     @Mock
     private PolicyCache policyCache;
+    @Mock
+    private ServerModuleFileManager serverModuleFileManager;
     @Spy
     private PasswordHasher passwordHasher = new TestPasswordHasher();
 
@@ -104,6 +107,7 @@ public class EntityBundleImporterImplTest {
                 .put("clientCertManager", clientCertManager)
                 .put("passwordHasher", passwordHasher)
                 .put("policyCache", policyCache)
+                .put("serverModuleFileManager", serverModuleFileManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }

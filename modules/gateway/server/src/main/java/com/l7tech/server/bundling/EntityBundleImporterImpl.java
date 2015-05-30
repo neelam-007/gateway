@@ -3,6 +3,7 @@ package com.l7tech.server.bundling;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -34,6 +35,7 @@ import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyManager;
@@ -116,6 +118,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private ClientCertManager clientCertManager;
     @Inject
     private PolicyCache policyCache;
+    @Inject
+    private ServerModuleFileManager serverModuleFileManager;
 
 
     /**
@@ -1401,6 +1405,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error finding auto generated role to map to: " + ExceptionUtils.getMessage(e)));
                             }
                         }
+                    } else if (EntityType.SERVER_MODULE_FILE.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265.equals(mapping.getTargetMapping().getType())) {
+                        final ServerModuleFile moduleFileEntity = (ServerModuleFile)entity;
+                        if (moduleFileEntity == null){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a ServerModuleFile by it's moduleSha256 but the ServerModuleFile is not in the bundle"));
+                        } else if (StringUtils.isBlank(moduleFileEntity.getModuleSha256())) {
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a ServerModuleFile by it's moduleSha256 but the ServerModuleFile moduleSha256 is empty"));
+                        } else {
+                            try {
+                                resource = serverModuleFileManager.findModuleWithSha256(moduleFileEntity.getModuleSha256());
+                            } catch (Exception e) {
+                                return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error finding ServerModuleFile by it's moduleSha256: " + ExceptionUtils.getMessage(e)));
+                            }
+                        }
                     } else if (EntityType.SSG_KEY_ENTRY.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.NAME.equals(mapping.getTargetMapping().getType())) {
                         if(entity == null) {
                             return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a private key by it's name but the private key is not in the bundle"));
@@ -1445,6 +1462,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 }
                                 case MAP_BY_ROLE_ENTITY: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping by role entity but the source entity is not appropriate. The source entity should be a role that is not user created and specifies both entity id and entity type" ));
+                                }
+                                case MODULE_SHA265: {
+                                    return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping moduleSha256 but the source entity is not appropriate. The source entity should be a ServerModuleFile" ));
                                 }
                                 default: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping: " + mapping.getTargetMapping().getType() + ". Only id, name, and guid are supported"));
@@ -1536,6 +1556,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 targetMapTo = ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid();
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
                 // set the target mapping to the id of the role, this should be the default.
+                targetMapTo = mapping.getSourceEntityHeader().getStrId();
+            } else if (EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265.equals(type)) {
+                // set the target mapping to the id of the server module file, this should be the default.
                 targetMapTo = mapping.getSourceEntityHeader().getStrId();
             } else {
                 //cannot find a target id.

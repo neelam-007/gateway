@@ -1,6 +1,7 @@
 package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -297,6 +298,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
                     EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    false,
+                    false);
+        } else if(entity instanceof ServerModuleFile) {
+            //make cluster properties and assertion access map by name by default
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265),
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
                     false,
                     false);
         } else {

@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
@@ -71,4 +72,15 @@ public interface ServerModuleFileManager extends EntityManager<ServerModuleFile,
      */
     @Nullable
     InputStream getModuleBytesAsStream(Goid goid) throws FindException;
+
+
+    /**
+     * Locate a {@link ServerModuleFile} specified by it's {@code moduleSha256}.
+     *
+     * @param moduleSha256    the module data bytes digest (currently sha256).
+     * @return The {@link ServerModuleFile} that has the specified content digest.
+     * @throws FindException if there is no {@link ServerModuleFile} having the specified {@code moduleSha256}.
+     */
+    @Nullable
+    ServerModuleFile findModuleWithSha256(@NotNull String moduleSha256) throws FindException;
 }

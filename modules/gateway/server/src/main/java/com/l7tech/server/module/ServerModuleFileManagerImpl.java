@@ -7,9 +7,13 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.admin.ServerModuleFileAdminEvent;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -157,6 +161,31 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
                 }
             });
         } catch (final SQLException e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    private final String HQL_FIND_BY_MODULE_SHA256 =
+            "FROM " + getTableName() +
+                    " IN CLASS " + getImpClass().getName() +
+                    " WHERE " + getTableName() + "." + F_MODULE_SHA256 + " = ?";
+
+    @Nullable
+    @Override
+    @Transactional(readOnly=true)
+    public ServerModuleFile findModuleWithSha256(@NotNull final String moduleSha256) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<ServerModuleFile>() {
+                @Override
+                protected ServerModuleFile doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    final Query q = session.createQuery(HQL_FIND_BY_MODULE_SHA256);
+                    q.setParameter(0, moduleSha256);
+                    final ServerModuleFile et = (ServerModuleFile) q.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
+                }
+            });
+        } catch (Exception e) {
             throw new FindException(e.toString(), e);
         }
     }

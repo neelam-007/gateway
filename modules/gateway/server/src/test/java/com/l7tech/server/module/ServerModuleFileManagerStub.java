@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.EntityManagerStub;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -52,6 +53,13 @@ public class ServerModuleFileManagerStub extends EntityManagerStub<ServerModuleF
     @Nullable
     @Override
     public InputStream getModuleBytesAsStream(final Goid goid) throws FindException {
+        // not needed for ClusterStatusAdmin
+        throw new NotImplementedException();
+    }
+
+    @Nullable
+    @Override
+    public ServerModuleFile findModuleWithSha256(@NotNull final String moduleSha256) throws FindException {
         // not needed for ClusterStatusAdmin
         throw new NotImplementedException();
     }

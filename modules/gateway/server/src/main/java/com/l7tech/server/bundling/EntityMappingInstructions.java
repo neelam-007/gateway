@@ -187,7 +187,7 @@ public class EntityMappingInstructions {
         private final Type type;
 
         public enum Type {
-            ID, NAME, GUID, MAP_BY_ROLE_ENTITY
+            ID, NAME, GUID, MAP_BY_ROLE_ENTITY, MODULE_SHA265
         }
 
         /**

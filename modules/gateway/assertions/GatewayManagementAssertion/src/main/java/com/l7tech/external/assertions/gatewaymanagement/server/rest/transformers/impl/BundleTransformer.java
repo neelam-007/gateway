@@ -276,6 +276,9 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 case MAP_BY_ROLE_ENTITY:
                     mapping.addProperty(MapBy, "mapByRoleEntity");
                     break;
+                case MODULE_SHA265:
+                    mapping.addProperty(MapBy, "moduleSha256");
+                    break;
             }
             if (entityMappingInstructions.getTargetMapping().getTargetID() != null) {
                 mapping.addProperty(MapTo, entityMappingInstructions.getTargetMapping().getTargetID());
@@ -366,6 +369,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "mapByRoleEntity".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY, mapping.getTargetId());
+        } else if (mapping.getProperties() != null && "moduleSha256".equals(mapping.getProperties().get(MapBy))) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265, mapping.getTargetId());
         } else if (mapping.getTargetId() != null) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ID, mapping.getTargetId());
         } else {
