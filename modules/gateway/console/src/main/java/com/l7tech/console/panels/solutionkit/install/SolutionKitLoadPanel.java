@@ -93,7 +93,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         solutionKitsConfig = settings;
-        solutionKitsConfig.clear();
+        solutionKitsConfig.clear(false);
     }
 
     @Override
@@ -168,7 +168,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
             setCustomizationInstances(solutionKit, classLoader);
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException | SolutionKitException e) {
-            solutionKitsConfig.clear();
+            solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);

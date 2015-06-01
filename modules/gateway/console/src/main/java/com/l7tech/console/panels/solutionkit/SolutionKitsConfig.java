@@ -152,13 +152,19 @@ public class SolutionKitsConfig {
         return customizations;
     }
 
-    public void clear() {
+    public void clear(boolean nullSolutionKitToUpgrade) {
         loaded.clear();
         selected.clear();
         testMappings.clear();
         resolvedEntityIds.clear();
-        solutionKitToUpgrade = null;
+        if (nullSolutionKitToUpgrade) {
+            solutionKitToUpgrade = null;
+        }
         clearCustomizations();
+    }
+
+    public void clear() {
+        clear(true);
     }
 
     private void clearCustomizations() {
