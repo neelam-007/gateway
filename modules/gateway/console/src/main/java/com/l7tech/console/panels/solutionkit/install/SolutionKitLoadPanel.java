@@ -2,8 +2,10 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
+import com.l7tech.console.panels.solutionkit.SolutionKitCustomization;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
+import com.l7tech.console.panels.solutionkit.SolutionKitCustomizationClassLoader;
+import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -32,7 +34,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -92,8 +93,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         solutionKitsConfig = settings;
-        solutionKitsConfig.getLoadedSolutionKits().clear();
-        solutionKitsConfig.getResolvedEntityIds().clear();
+        solutionKitsConfig.clear();
     }
 
     @Override
@@ -116,7 +116,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false;
             final DOMSource installBundleSource = new DOMSource();
             final DOMSource upgradeBundleSource = new DOMSource();
-            ClassLoader classLoader = null;
+            SolutionKitCustomizationClassLoader classLoader = null;
 
             fis = new FileInputStream(file);
             zis = new ZipInputStream(fis);
@@ -168,8 +168,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
             setCustomizationInstances(solutionKit, classLoader);
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException | SolutionKitException e) {
-            solutionKitsConfig.getLoadedSolutionKits().clear();
-            solutionKitsConfig.getResolvedEntityIds().clear();
+            solutionKitsConfig.clear();
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -301,8 +300,8 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     }
 
     @Nullable
-    private ClassLoader getCustomizationClassLoader(final ZipInputStream zis) throws SolutionKitException {
-        ClassLoader classLoader = null;
+    private SolutionKitCustomizationClassLoader getCustomizationClassLoader(final ZipInputStream zis) throws SolutionKitException {
+        SolutionKitCustomizationClassLoader classLoader = null;
 
         File outFile = new File("Customization-" + UUID.randomUUID() + ".jar");   // can we do this without writing to disk?
         OutputStream entryOut = null;
@@ -314,7 +313,10 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             IOUtils.copyStream(zis, entryOut);
             entryOut.flush();
 
-            classLoader = new URLClassLoader(new URL[] {outFile.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+            classLoader = new SolutionKitCustomizationClassLoader(
+                    new URL[] {outFile.toURI().toURL()},
+                    Thread.currentThread().getContextClassLoader(),
+                    outFile);
         } catch (IOException ioe) {
             throw new SolutionKitException("Error loading the customization jar.", ioe);
         } finally {
@@ -326,18 +328,23 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     }
 
     // may need to move class loading logic to the server (i.e. admin) for headless to work
-    private void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final ClassLoader classLoader) throws SolutionKitException {
+    private void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
         if (classLoader != null) {
             try {
+                SolutionKitManagerUi customUi = null;
+                SolutionKitManagerCallback customCallback = null;
                 final String uiClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
                 if (!StringUtils.isEmpty(uiClassName)) {
                     final Class cls = classLoader.loadClass(uiClassName);
-                    solutionKitsConfig.getCustomUis().put(solutionKit, ((SolutionKitManagerUi) cls.newInstance()).initialize());
+                    customUi = ((SolutionKitManagerUi)cls.newInstance()).initialize();
                 }
                 final String callbackClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY);
                 if (!StringUtils.isEmpty(callbackClassName)) {
                     final Class cls = classLoader.loadClass(callbackClassName);
-                    solutionKitsConfig.getCustomCallbacks().put(solutionKit, (SolutionKitManagerCallback) cls.newInstance());
+                    customCallback = (SolutionKitManagerCallback) cls.newInstance();
+                }
+                if (customUi != null || customCallback != null) {
+                    solutionKitsConfig.getCustomizations().put(solutionKit, new SolutionKitCustomization(classLoader, customUi, customCallback));
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new SolutionKitException("Error loading the customization class(es).", e);

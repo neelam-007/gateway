@@ -2,16 +2,14 @@ package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.SafeXMLDecoder;
 import com.l7tech.util.SafeXMLDecoderBuilder;
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -26,6 +24,12 @@ import java.util.Map;
 @Proxy(lazy=false)
 @Table(name="solution_kit")
 public class SolutionKit extends NamedEntityWithPropertiesImp {
+    /**
+     * Maximum allowed length of the name field.
+     */
+    public static final int NAME_FIELD_MAX_LENGTH = 255;
+
+    private static final long serialVersionUID = 6091924030211843475L;
     private static final Charset INSTALL_PROPERTIES_ENCODING = Charsets.UTF8;
 
     public static final String SK_PROP_DESC_KEY = "Description";
@@ -169,23 +173,47 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    @Transient
+    @RbacAttribute
+    @Size(min = 1, max = NAME_FIELD_MAX_LENGTH)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     @SuppressWarnings("RedundantIfStatement")
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        final SolutionKit that = (SolutionKit) o;
+        SolutionKit that = (SolutionKit) o;
 
+        if (lastUpdateTime != that.lastUpdateTime) return false;
+        if (installProperties != null ? !installProperties.equals(that.installProperties) : that.installProperties != null)
+            return false;
+        if (installXmlProperties != null ? !installXmlProperties.equals(that.installXmlProperties) : that.installXmlProperties != null)
+            return false;
+        if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
         if (sk_guid != null ? !sk_guid.equals(that.sk_guid) : that.sk_guid != null) return false;
         if (sk_version != null ? !sk_version.equals(that.sk_version) : that.sk_version != null) return false;
-        if (installXmlProperties != null ? !installXmlProperties.equals(that.installXmlProperties) : that.installXmlProperties != null) return false;
-        if (installProperties != null ? !installProperties.equals(that.installProperties) : that.installProperties != null) return false;
-        if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
-        if (uninstallBundle != null ? !uninstallBundle.equals(that.sk_version) : that.uninstallBundle != null) return false;
-        if (lastUpdateTime != that.lastUpdateTime) return false;
+        if (uninstallBundle != null ? !uninstallBundle.equals(that.uninstallBundle) : that.uninstallBundle != null)
+            return false;
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (sk_guid != null ? sk_guid.hashCode() : 0);
+        result = 31 * result + (sk_version != null ? sk_version.hashCode() : 0);
+        result = 31 * result + (installXmlProperties != null ? installXmlProperties.hashCode() : 0);
+        result = 31 * result + (installProperties != null ? installProperties.hashCode() : 0);
+        result = 31 * result + (mappings != null ? mappings.hashCode() : 0);
+        result = 31 * result + (uninstallBundle != null ? uninstallBundle.hashCode() : 0);
+        result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
+        return result;
     }
 }

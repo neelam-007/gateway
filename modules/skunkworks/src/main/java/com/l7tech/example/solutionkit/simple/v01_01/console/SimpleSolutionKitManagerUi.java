@@ -1,6 +1,5 @@
 package com.l7tech.example.solutionkit.simple.v01_01.console;
 
-import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 
 import javax.swing.*;
@@ -12,11 +11,10 @@ import java.awt.event.ActionListener;
  * Simple example of a customized UI for the Solution Kit Manager.
  */
 public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
-    final SolutionKitManagerContext context = new SolutionKitManagerContext();
     final StringBuilder customText = new StringBuilder();
 
     @Override
-    public JButton getButton() {
+    public JButton createButton(final JPanel parentPanel) {
         JButton button = new JButton("Custom UI");
         button.setLayout(new BorderLayout());
         customText.setLength(0);
@@ -24,7 +22,7 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String inputText = JOptionPane.showInputDialog(getParentPanel(), "Enter customization text here.", "CUSTOMIZED!");
+                String inputText = JOptionPane.showInputDialog(parentPanel, "Enter customization text here.", "CUSTOMIZED!");
                 customText.append(inputText);
             }
         });
@@ -34,8 +32,7 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
 
     @Override
     public SolutionKitManagerUi initialize() {
-        setContext(context);
-        context.setCustomDataObject(customText);
+        getContext().setCustomDataObject(customText);
         return this;
     }
 }

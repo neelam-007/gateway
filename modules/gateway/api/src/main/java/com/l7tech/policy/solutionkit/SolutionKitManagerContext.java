@@ -6,11 +6,11 @@ import org.w3c.dom.Document;
  * WARNING: this class is under development and is currently for CA internal use only.
  * This interface contract may change without notice.
  *
- * Provides data transport between the customized UI and the customized callback code.
+ * Provides data transport between the your UI and callback code.
  */
 public class SolutionKitManagerContext {   // <T> {   // look into making this type safe
     /**
-     * XML document representing the solution kit metadata.
+     * XML document representing the solution kit metadata (e.g. id, version, name, description, etc).
      */
     private Document solutionKitMetadata;
 
@@ -26,7 +26,8 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
     private String instanceModifier;
 
     /**
-     * To be used by custom implementers to pass custom data between the UI and the callback code.
+     * Optionally you can provide a custom data object to pass between your UI and callback code.
+     * Be sure to initialize your custom data object in your UI first, e.g. SolutionKitManagerUi.initialize().
      */
     private Object customDataObject;
     //    T customDataObject;

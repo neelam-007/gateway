@@ -2,6 +2,7 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.panels.solutionkit.SolutionKitCustomization;
 import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
@@ -96,19 +97,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
         this.settings = settings;
 
-        Map<SolutionKit, SolutionKitManagerUi> customUis = settings.getCustomUis();
-
-        // todo handle multiple kits
-        if (customUis.size() > 1) {
-            throw new IllegalArgumentException("Can't handle multiple kits.");
-        }
-
-        // add custom ui
-        for (SolutionKit solutionKit : customUis.keySet()) {
-            SolutionKitManagerUi ui = customUis.get(solutionKit);
-            ui.setParentPanel(customizableButtonPanel);
-            customizableButtonPanel.add(ui.getButton());
-        }
+        addCustomUis(customizableButtonPanel, settings);
     }
 
     @Override
@@ -128,41 +117,17 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // invoke custom callback
         try {
-            Document metadataDoc, bundleDoc;
-            SolutionKitManagerContext skContext;
-            Map<SolutionKit, SolutionKitManagerUi> customUis = settings.getCustomUis();
-            Map<SolutionKit, SolutionKitManagerCallback> customCallback = settings.getCustomCallbacks();
-
-            for (SolutionKit sk : customCallback.keySet()) {
-                // get xml (document) version of metadata and bundle
-                metadataDoc = SolutionKitUtils.createDocument(sk);
-                bundleDoc = settings.getBundleAsDocument(sk);
-
-                // if implementer provides a context
-                skContext = customUis.get(sk).getContext();
-                if (skContext != null) {
-                    // set metadata and bundle xml (document)
-                    skContext.setSolutionKitMetadata(metadataDoc);
-                    skContext.setMigrationBundle(bundleDoc);
-
-                    // execute callback
-                    customCallback.get(sk).preMigrationBundleImport(skContext);
-
-                    // copy back metadata from xml version
-                    SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, sk);
-
-                    // set (possible) changes made to metadata and bundle
-                    settings.setBundle(sk, bundleDoc);
-                } else {
-                    customCallback.get(sk).preMigrationBundleImport(null);
-                }
-            }
+            invokeCustomCallback(settings);
         } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         }
 
         String bundle = settings.getBundleAsString(solutionKit);
+        if (bundle == null) {
+            DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit bundle.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+            return false;
+        }
         try {
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
                     solutionKitAdmin,
@@ -286,6 +251,69 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         Utilities.centerOnParentWindow(dlg);
         dlg.setModal(true);
         DialogDisplayer.display(dlg);
+    }
+
+    private void addCustomUis(final JPanel customizableButtonPanel, final SolutionKitsConfig settings) {
+        customizableButtonPanel.removeAll();
+        final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
+
+        // todo handle multiple kits
+        if (customizations.size() > 1) {
+            throw new IllegalArgumentException("Can't handle multiple kits.");
+        }
+
+        // add custom ui
+        for (SolutionKitCustomization customization : customizations.values()) {
+            SolutionKitManagerUi customUi = customization.getCustomUi();
+            if (customUi != null) {
+                customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
+            }
+        }
+    }
+
+    private void invokeCustomCallback(final SolutionKitsConfig settings)
+            throws SolutionKitManagerCallback.CallbackException, IOException, TooManyChildElementsException, MissingRequiredElementException {
+
+        Document metadataDoc, bundleDoc;
+        SolutionKitManagerContext skContext;
+
+        SolutionKitCustomization customization;
+        SolutionKitManagerCallback customCallback;
+        SolutionKitManagerUi customUi;
+
+        for (SolutionKit sk : settings.getCustomizations().keySet()) {
+            customization = settings.getCustomizations().get(sk);
+
+            // implementer provides a callback
+            customCallback = customization.getCustomCallback();
+            if (customCallback != null) {
+                customUi = customization.getCustomUi();
+
+                // if implementer provides a context
+                skContext = customUi != null ? customUi.getContext() : null;
+                if (skContext != null) {
+                    // get from selected
+                    metadataDoc = SolutionKitUtils.createDocument(sk);
+                    bundleDoc = settings.getBundleAsDocument(sk);
+
+                    // set to context
+                    skContext.setSolutionKitMetadata(metadataDoc);
+                    skContext.setMigrationBundle(bundleDoc);
+
+                    // execute callback
+                    customCallback.preMigrationBundleImport(skContext);
+
+                    // copy back metadata from xml version
+                    SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, sk);
+
+                    // set (possible) changes made to metadata and bundle
+                    // TODO fix duplicate HashMap bug where put(...) does not replace previous value
+                    settings.setBundle(sk, bundleDoc);
+                } else  {
+                    customCallback.preMigrationBundleImport(null);
+                }
+            }
+        }
     }
 
     /**

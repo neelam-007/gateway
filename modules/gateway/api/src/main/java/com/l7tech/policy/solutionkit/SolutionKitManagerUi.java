@@ -7,25 +7,21 @@ import javax.swing.*;
  * This interface contract may change without notice.
  *
  * Provides an opportunity for the caller to hook into the Solution Kit Manager UI and provide customized UIs.
+ * Methods to implement:
+ *      initialize() - provide an opportunity to do initialization work (e.g. set your custom data object).
+ *      createButton(...) - implement the button to launch your main screen.
  */
 public abstract class SolutionKitManagerUi {
-    /**
-     * Parent panel is a customizable button panel in the Solution Kit Manager UI.
-     */
-    private JPanel parentPanel;
+
+    public SolutionKitManagerUi() {
+        // default constructor needed to create new instance (e.g. Class.newInstance())
+    }
 
     /**
      * Provides data transport between the customized UI and the customized callback code.
      */
-    private SolutionKitManagerContext context;
+    private SolutionKitManagerContext context = new SolutionKitManagerContext();
 
-    public JPanel getParentPanel() {
-        return parentPanel;
-    }
-
-    public void setParentPanel(JPanel parentPanel) {
-        this.parentPanel = parentPanel;
-    }
 
     public SolutionKitManagerContext getContext() {
         return context;
@@ -36,16 +32,14 @@ public abstract class SolutionKitManagerUi {
     }
 
     /**
-     * This button triggers the implementer's custom UI.
+     * Implement the button to launch your main screen.
+     * @param parentPanel Parent panel is a customizable button panel in the Solution Kit Manager UI.
      * @return the button to show in the Solution Kit Manager
      */
-    public JButton getButton() {
-        // override to implement in sub class if required
-        return null;
-    }
+    abstract public JButton createButton(final JPanel parentPanel);
 
     /**
-     * Provide opportunity to do initialization work.
+     * Provide an opportunity to do initialization work (e.g. set your custom data object).
      * @return an instance of itself
      */
     public SolutionKitManagerUi initialize() {

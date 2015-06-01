@@ -14,6 +14,7 @@ import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
@@ -70,24 +71,32 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     @Override
     protected void finish(ActionEvent evt) {
         if (wizardInput != null) {
-            this.getSelectedWizardPanel().storeSettings(wizardInput);
+            this.getSelectedWizardPanel().storeSettings(getWizardInput());
         }
 
         try {
-            SolutionKit solutionKit = wizardInput.getSingleSelectedSolutionKit();
+            SolutionKit solutionKit = getWizardInput().getSingleSelectedSolutionKit();
+            if (solutionKit == null) {
+                throw new SolutionKitException("Unexpected error: unable to get selected Solution Kit.");
+            }
 
             // Update resolved mapping target IDs.
-            Map<String, String> resolvedEntityIds = wizardInput.getResolvedEntityIds(solutionKit);
-            Bundle bundle = wizardInput.getBundle(solutionKit);
-            for (Mapping mapping : bundle.getMappings()) {
-                String resolvedId = resolvedEntityIds.get(mapping.getSrcId());
-                if (resolvedId != null) {
-                    mapping.setTargetId(resolvedId);
+            Map<String, String> resolvedEntityIds = getWizardInput().getResolvedEntityIds(solutionKit);
+            Bundle bundle = getWizardInput().getBundle(solutionKit);
+            if (bundle != null) {
+                for (Mapping mapping : bundle.getMappings()) {
+                    String resolvedId = resolvedEntityIds.get(mapping.getSrcId());
+                    if (resolvedId != null) {
+                        mapping.setTargetId(resolvedId);
+                    }
                 }
             }
 
-            boolean isUpgrade = wizardInput.getSolutionKitToUpgrade() != null;
-            String bundleXml = wizardInput.getBundleAsString(solutionKit);
+            boolean isUpgrade = getWizardInput().getSolutionKitToUpgrade() != null;
+            String bundleXml = getWizardInput().getBundleAsString(solutionKit);
+            if (bundleXml == null) {
+                throw new SolutionKitException("Unexpected error: unable to get Solution Kit bundle.");
+            }
             Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
@@ -102,8 +111,13 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 displayErrorDialog(msg);
             } else if (result.isRight()) {
                 // Solution kit installed successfully.
+                getWizardInput().clear();
                 super.finish(evt);
             }
+        } catch (SolutionKitException e) {
+            String msg = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
         } catch (InvocationTargetException e) {
             String msg = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
@@ -113,6 +127,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         }
     }
 
+    @SuppressWarnings("unused")
     protected void clickButtonNext() {
         super.getButtonNext().doClick();
     }
@@ -133,6 +148,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             // msg is not a bundle mapping xml.
         }
 
+        final String dialogTitle = "Install Solution Kit Error";
         if (mappings != null) {
             // Only display mappings with errors.
             //
@@ -144,9 +160,21 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             }
             mappings.setMappings(errorMappings);
 
-            SolutionKit solutionKit = wizardInput.getSingleSelectedSolutionKit();
-            Bundle bundle = wizardInput.getBundle(solutionKit);
-            Map<String, String> resolvedEntityId = wizardInput.getResolvedEntityIds(solutionKit);
+            // need the selected solution kit
+            SolutionKit solutionKit = getWizardInput().getSingleSelectedSolutionKit();
+            if (solutionKit == null) {
+                JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // need the solution kit bundle
+            Bundle bundle = getWizardInput().getBundle(solutionKit);
+            if (bundle == null) {
+                JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit);
 
             JPanel errorPanel = new JPanel();
             JLabel label = new JLabel("Failed to install solution kit(s) due to following entity conflicts:");
@@ -159,9 +187,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             errorPanel.add(label, BorderLayout.NORTH);
             errorPanel.add(solutionKitMappingsPanel, BorderLayout.CENTER);
 
-            DialogDisplayer.showMessageDialog(this.getOwner(), errorPanel, "Install Solution Kit Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this.getOwner(), errorPanel, dialogTitle, JOptionPane.ERROR_MESSAGE, null);
         } else {
-            JOptionPane.showMessageDialog(this.getOwner(), msg, "Install Solution Kit Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -177,7 +205,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
 
         // upgrade - find previously installed mappings where srcId differs from targetId (e.g. user resolved)
-        SolutionKit solutionKitToUpgrade = wizardInput.getSolutionKitToUpgrade();
+        SolutionKit solutionKitToUpgrade = getWizardInput().getSolutionKitToUpgrade();
         if (solutionKitToUpgrade != null) {
             try {
                 Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
@@ -189,7 +217,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     }
                 }
                 if (!previouslyResolvedIds.isEmpty()) {
-                    wizardInput.getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
+                    getWizardInput().getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
                 }
             } catch (IOException e) {
                 throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

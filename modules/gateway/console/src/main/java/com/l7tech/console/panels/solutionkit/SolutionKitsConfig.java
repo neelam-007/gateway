@@ -5,9 +5,8 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
-import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -31,8 +30,7 @@ public class SolutionKitsConfig {
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
     @Nullable
     private SolutionKit solutionKitToUpgrade;
-    private Map<SolutionKit, SolutionKitManagerCallback> customCallbacks = new HashMap<>();
-    private Map<SolutionKit, SolutionKitManagerUi> customUis = new HashMap<>();
+    private Map<SolutionKit, SolutionKitCustomization> customizations = new HashMap<>();
 
     public SolutionKitsConfig() {
     }
@@ -46,10 +44,12 @@ public class SolutionKitsConfig {
         this.loaded = loaded;
     }
 
+    @Nullable
     public Bundle getBundle(@NotNull SolutionKit solutionKit) {
         return loaded.get(solutionKit);
     }
 
+    @Nullable
     public String getBundleAsString(@NotNull SolutionKit solutionKit) {
         Bundle bundle = getBundle(solutionKit);
         if (bundle != null) {
@@ -66,6 +66,7 @@ public class SolutionKitsConfig {
         }
     }
 
+    @Nullable
     public Document getBundleAsDocument(@NotNull SolutionKit solutionKit) {
         Bundle bundle = getBundle(solutionKit);
         if (bundle != null) {
@@ -85,6 +86,8 @@ public class SolutionKitsConfig {
     public void setBundle(@NotNull SolutionKit solutionKit, Document bundleDocument) throws IOException {
         final DOMSource bundleSource = new DOMSource();
         bundleSource.setNode(bundleDocument.getDocumentElement());
+
+        // TODO fix duplicate HashMap bug where put(...) does not replace previous value
         loaded.put(solutionKit, MarshallingUtils.unmarshal(Bundle.class, bundleSource, true));
     }
 
@@ -93,6 +96,7 @@ public class SolutionKitsConfig {
         return selected;
     }
 
+    @Nullable
     public SolutionKit getSingleSelectedSolutionKit() {
         if (!selected.isEmpty()) {
             // todo (kpak): Multiple solution kits not supported. Return the first item.
@@ -107,6 +111,7 @@ public class SolutionKitsConfig {
         this.selected = selectedSolutionKits;
     }
 
+    @Nullable
     public Mappings getTestMappings(@NotNull SolutionKit solutionKit) {
         return testMappings.get(solutionKit);
     }
@@ -142,11 +147,24 @@ public class SolutionKitsConfig {
         this.solutionKitToUpgrade = solutionKitToUpgrade;
     }
 
-    public Map<SolutionKit, SolutionKitManagerCallback> getCustomCallbacks() {
-        return customCallbacks;
+    @NotNull
+    public Map<SolutionKit, SolutionKitCustomization> getCustomizations() {
+        return customizations;
     }
 
-    public Map<SolutionKit, SolutionKitManagerUi> getCustomUis() {
-        return customUis;
+    public void clear() {
+        loaded.clear();
+        selected.clear();
+        testMappings.clear();
+        resolvedEntityIds.clear();
+        solutionKitToUpgrade = null;
+        clearCustomizations();
+    }
+
+    private void clearCustomizations() {
+        for (final SolutionKitCustomization customization : customizations.values()) {
+            ResourceUtils.closeQuietly(customization.getClassLoader());
+        }
+        customizations.clear();
     }
 }
