@@ -150,15 +150,17 @@
     </macrodef>
 
 
-    <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="ivy.resolve">
+    <target name="deploy" description="Upload snapshots artifacts to Nexus server">
         <version-ivy-file/>
-        <nexus-prepare build-version="${build.version}-SNAPSHOT"/>
+	<antcall target="ivy.resolve"/>
+	<!--<nexus-prepare build-version="${build.version}-SNAPSHOT"/>
         <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
-        <update-nexus-metadata stage="snapshots"/>
+	<update-nexus-metadata stage="snapshots"/> -->
     </target>
 
-    <target name="release" description="Upload releases artifacts to Nexus server" depends="ivy.resolve">
+    <target name="release" description="Upload releases artifacts to Nexus server">
         <version-ivy-file version="${build.version}"/>
+	<antcall target="ivy.resolve"/>
         <nexus-prepare build-version="${build.version}"/> 
         <nexus-publish stage="releases" build-version="${build.version}"/>
  
