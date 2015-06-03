@@ -675,7 +675,10 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
             if (params.isPreemptiveAuthentication()) {
                 //set preemptive authentication
-                clientParams.setParameter(ClientPNames.HANDLE_AUTHENTICATION, false);
+                if(!proxyConfigured) {
+                    //disable preemptive authentication only when proxy is not used
+                    clientParams.setParameter(ClientPNames.HANDLE_AUTHENTICATION, false);
+                }
                 // Create AuthCache instance
                 AuthCache authCache = new BasicAuthCache();
                 // Generate BASIC scheme object and add it to the local auth cache
