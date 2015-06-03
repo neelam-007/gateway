@@ -135,7 +135,7 @@
     </macrodef>
 
     <macrodef name="version-ivy-file">
-        <attribute name="version" default="${build.version}-SNAPSHOTS" />
+        <attribute name="version" default="${build.version}-SNAPSHOT" />
         <sequential>
             <echo message="@{version}"/>
             <echo message="${ivy.template.file}"/>
