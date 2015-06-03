@@ -26,7 +26,7 @@
     <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.micro}"/>
     <property name="build.org" value="com.layer7.portal"/>
     <property name="build.name" value="${ant.project.name}"/>
-    <property name="ivy.file.name" value="ivy.nexus.xml"/>
+    <property name="ivy.file.name" value="${src.root}/ivy.nexus.xml"/>
     <property name="ivy.template.file" value="${src.root}/ivy.templates/${ivy.file.name}"/>
     <property name="ivy.build.file" value="${src.root}/${ivy.file.name}"/>
     <property name="ivy.settings.file" value="${src.root}/etc/build/ivysettings-cake.xml"/>
