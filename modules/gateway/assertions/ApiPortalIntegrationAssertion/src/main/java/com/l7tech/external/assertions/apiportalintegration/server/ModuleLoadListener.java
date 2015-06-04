@@ -189,6 +189,11 @@ public class ModuleLoadListener implements ApplicationListener {
 
     private void handleUpdate(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
+        if (service == null) {
+            // service has been deleted
+            deletePortalManagedServiceIfFound(entityId);
+            return;
+        }
         final PortalManagedService portalManagedService = portalManagedServiceManager.fromService(service);
         if (portalManagedService != null) {
             // service is portal managed
