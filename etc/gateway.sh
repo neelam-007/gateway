@@ -215,12 +215,7 @@ elif [ "$1" = "run" ] ; then
             echo $$ > "${GATEWAY_PID}"
         fi
 
-        # Debug level so off by default
-        LOGGER="logger -p local5.debug -t ssg"
-
-        # The cat at the end of this pipeline causes output to truncate rather than block once the PC stops reading
-        # the startup log messages.
-        exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" 2>&1 | ${LOGGER} > >(cat)
+        exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
     fi
 
 elif [ "$1" = "stop" ] ; then
