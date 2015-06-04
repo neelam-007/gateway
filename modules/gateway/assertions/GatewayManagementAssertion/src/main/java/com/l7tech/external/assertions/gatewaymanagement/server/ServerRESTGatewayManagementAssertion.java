@@ -20,6 +20,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.InetAddressUtil;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
@@ -92,7 +93,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             //The service ID should always be a constant.
             final String serviceId = context.getService() == null ? null : context.getService().getId();
             final HttpMethod action = getAction(varMap, message, assertion);
-            final String contentType = getContentType( message);
+            final String contentType = getContentType(message);
 
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -117,7 +118,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             };
-            RestResponse managementResponse = restAgent.handleRequest(message.isHttpRequest()?message.getHttpRequestKnob().getRemoteHost():null,
+            RestResponse managementResponse = restAgent.handleRequest(message.isHttpRequest()?message.getHttpRequestKnob().getRemoteHost(): InetAddressUtil.getLocalHostAddress(),
                     baseUri, uri, action.getProtocolName(), contentType, message.getMimeKnob().getEntireMessageBodyAsInputStream(),
                     securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map(), message.getHeadersKnob().getHeaders(HeadersKnob.HEADER_TYPE_HTTP));
             response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
