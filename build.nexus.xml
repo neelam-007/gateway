@@ -153,9 +153,9 @@
     <target name="deploy" description="Upload snapshots artifacts to Nexus server">
         <version-ivy-file/>
 	<antcall target="ivy.resolve"/>
-	<!--<nexus-prepare build-version="${build.version}-SNAPSHOT"/>
+	<nexus-prepare build-version="${build.version}-SNAPSHOT"/>
         <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
-	<update-nexus-metadata stage="snapshots"/> -->
+	<update-nexus-metadata stage="snapshots"/>
     </target>
 
     <target name="release" description="Upload releases artifacts to Nexus server">
