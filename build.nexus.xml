@@ -104,11 +104,10 @@
 
     <macrodef name="nexus-prepare">
         <attribute name="build-version" default="${build.version}" />
-        <sequential>
+	<sequential>
             <!-- convert ivy.xml to pom.xml type -->
             <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}" status="release"/>
             <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
-
             <!-- copy artifacts into correct name to be published -->
             <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.0.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
 
@@ -149,18 +148,21 @@
         </sequential>
     </macrodef>
 
-
-    <target name="deploy" description="Upload snapshots artifacts to Nexus server">
+    <target name="ivy.generate.deploy.ivyfile">
         <version-ivy-file/>
-	<antcall target="ivy.resolve"/>
-	<nexus-prepare build-version="${build.version}-SNAPSHOT"/>
-        <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
-	<update-nexus-metadata stage="snapshots"/>
     </target>
 
-    <target name="release" description="Upload releases artifacts to Nexus server">
+    <target name="ivy.generate.release.ivyfile">
         <version-ivy-file version="${build.version}"/>
-	<antcall target="ivy.resolve"/>
+    </target>
+
+    <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="ivy.generate.deploy.ivyfile,ivy.resolve">
+        <nexus-prepare build-version="${build.version}-SNAPSHOT"/>
+        <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
+        <update-nexus-metadata stage="snapshots"/>
+    </target>
+
+    <target name="release" description="Upload releases artifacts to Nexus server" depends="ivy.generate.release.ivyfile,ivy.resolve">
         <nexus-prepare build-version="${build.version}"/> 
         <nexus-publish stage="releases" build-version="${build.version}"/>
  
