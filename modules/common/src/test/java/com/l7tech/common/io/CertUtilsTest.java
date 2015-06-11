@@ -2,6 +2,7 @@ package com.l7tech.common.io;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -730,6 +732,39 @@ public class CertUtilsTest {
             assertEquals("Certificate [] contains no issuer DN", e.getMessage());
         }
     }
+
+    @Test
+    @BugId( "SSG-11353" )
+    public void testExtractCurveNameFromEcCert() throws Exception {
+        PublicKey publicKey = TestKeys.getCert( TestKeys.EC_secp256r1_CERT_X509_B64 ).getPublicKey();
+        String curveName = CertUtils.guessEcCurveName( publicKey );
+        assertEquals( "secp256r1", curveName );
+    }
+
+    @Test
+    @BugId( "SSG-11353" )
+    public void testExtractCurveNameFromEcCert_nonSunImpl() throws Exception {
+        final PublicKey publicKey = TestKeys.getCert( TestKeys.EC_secp256r1_CERT_X509_B64 ).getPublicKey();
+        PublicKey nonSunPublicKey = new PublicKey() {
+            @Override
+            public String getAlgorithm() {
+                return "EC";
+            }
+
+            @Override
+            public String getFormat() {
+                return "X.509";
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return publicKey.getEncoded();
+            }
+        };
+        String curveName = CertUtils.guessEcCurveName( nonSunPublicKey );
+        assertEquals( "secp256r1", curveName );
+    }
+
 
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL

@@ -1259,9 +1259,13 @@ public class CertUtils {
     static {
         Constructor ctor = null;
         try {
-            ctor = sunECPublicKeyImpl == null ? null : sunECPublicKeyImpl.getConstructor(byte[].class);
+            ctor = sunECPublicKeyImpl == null ? null : sunECPublicKeyImpl.getDeclaredConstructor(byte[].class);
+            if ( ctor != null )
+                ctor.setAccessible( true );
         } catch (NoSuchMethodException e) {
             logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl constructor from byte[] available; will not attempt to guess EC curve names");
+        } catch ( SecurityException e ) {
+            logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl constructor from byte[] available (access denied); will not attempt to guess EC curve names");
         }
         //noinspection unchecked
         sunECPublicKeyImpl_ctorFromEncoded = ctor;
