@@ -536,14 +536,9 @@ public class ServerVariables {
                     String prefix = BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_PROPERTIES;
                     String suffix = name.substring(prefix.length());
                     if ( suffix.length() == 0 ) {
-                        // Unsuffixed gets entire properties map
-                        Map<String,Object> properties = new TreeMap<>( String.CASE_INSENSITIVE_ORDER );
+                        // Unsuffixed gets entire properties key list
                         Set<String> names = service.getPropertyNames();
-                        for ( String propName : names ) {
-                            Object prop = service.getProperty( propName );
-                            properties.put( propName, prop );
-                        }
-                        return properties;
+                        return names.toArray( new String[names.size()] );
                     }
 
                     String part = suffix.substring(1);

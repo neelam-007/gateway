@@ -63,10 +63,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -138,6 +135,12 @@ public class ServerVariablesTest {
 
         final String prop1val = ServerVariables.get("service.property.prop1", pec).toString();
         assertEquals("service property value", "prop1val", prop1val);
+
+        final String[] propsList = (String[]) ServerVariables.get( "service.property", pec );
+        assertEquals( 2, propsList.length );
+        Set<String> names = new HashSet<>( Arrays.asList( propsList ) );
+        assertTrue( names.contains( "prop1" ) );
+        assertTrue( names.contains( "prop2" ) );
     }
 
     @Test
