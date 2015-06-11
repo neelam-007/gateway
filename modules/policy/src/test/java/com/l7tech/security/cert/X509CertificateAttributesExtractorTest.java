@@ -119,6 +119,14 @@ public class X509CertificateAttributesExtractorTest {
     }
 
     @Test
+    public void testThumbprints() throws Exception {
+        X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals( "thumbprintSHA1", "pwa6Hsq2oqsYaZ/A192MfeNvKQ8=", cae.getAttributeValue( "thumbprintSHA1" ) );
+        assertEquals( "thumbprintSHA256", "or32GShkTVoPXMyTybM55gCtGtBeRoLYbBR3zjmZfP8=", cae.getAttributeValue( "thumbprintSHA256" ) );
+    }
+
+    @Test
     public void testDefaultDn() throws Exception {
         X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
         X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);

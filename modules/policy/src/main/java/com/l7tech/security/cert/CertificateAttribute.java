@@ -341,6 +341,21 @@ public enum CertificateAttribute {
         }},
 
     /**
+     * The BASE64 encoded value of the SHA-1 hash for the DER encoded certificate .
+     */
+    THUMBPRINT_SHA256("thumbprintSHA256", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            try {
+                return makeMap( this.toString(), HexUtils.encodeBase64( HexUtils.getSha256Digest( certificate.getEncoded() ), true ) );
+            } catch (CertificateEncodingException e) {
+                logger.log(Level.WARNING, "Error getting DER-encoded certificate" +
+                        ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+                return new HashMap<String, Collection<Object>>();
+            }
+        }},
+
+    /**
      * An array of countries that the certificate reports citizenship for
      */
     COUNTRY_OF_CITIZENSHIP("countryOfCitizenship", false, true) {
