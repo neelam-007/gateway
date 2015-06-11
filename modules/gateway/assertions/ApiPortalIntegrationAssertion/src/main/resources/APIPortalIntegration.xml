@@ -32,7 +32,7 @@
       <L7p:Detail stringValue="auth_user: ${request.authenticateduser}"/>
     </L7p:AuditDetailAssertion>
     <L7p:CommentAssertion>
-      <L7p:Comment stringValue="API Portal Authentication &amp; Management Policy v3.0 as of 2014-6-11 1200 //JB"/>
+      <L7p:Comment stringValue="API Portal Authentication &amp; Management Policy v3.0 as of 2014-6-11 16:00 //JB"/>
     </L7p:CommentAssertion>
     <L7p:SetVariable>
       <L7p:Base64Expression stringValue="My4w"/>
@@ -3202,7 +3202,7 @@
                           <L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0="/>
                           <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
                           <L7p:DataType variableDataType="message"/>
-                          <L7p:VariableToSet stringValue="wsman.request"/>
+                          <L7p:VariableToSet stringValue="restman.request"/>
                         </L7p:SetVariable>
                         <L7p:AuditDetailAssertion>
                           <L7p:Detail stringValue="${response.mainpart}"/>
@@ -3444,7 +3444,7 @@
 
                               <L7p:Direction intValue="-1"/>
 
-                              <L7p:OtherTargetMessageVariable stringValue="wsman.request"/>
+                              <L7p:OtherTargetMessageVariable stringValue="restman.request"/>
 
                               <L7p:ResourceInfo staticResourceInfo="included">
 
@@ -3455,62 +3455,27 @@
 <xsl:param name="serviceEnabled" select="'true'"/>
 <xsl:output encoding="UTF-8" indent="yes" method="xml" omit-xml-declaration="yes" version="1.0"/>
 <xsl:template match="/">
-<s:Envelope xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
-   <s:Header>
-      <wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action>
-      <wsa:To s:mustUnderstand="true">https://<xsl:value-of select="$gateway.cluster.hostname"/>:8443/wsman</wsa:To>
-      <wsman:ResourceURI s:mustUnderstand="true">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>
-      <wsa:MessageID s:mustUnderstand="true">requestId:<xsl:value-of select="$requestId"/></wsa:MessageID>
-      <wsa:ReplyTo>
-         <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
-      </wsa:ReplyTo>
-      <wsman:SelectorSet>
-         <wsman:Selector Name="id"><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/@id"/></wsman:Selector>
-      </wsman:SelectorSet>
-   </s:Header>
-   <s:Body>
-   <xsl:variable name="folderId" select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/@folderId"/>
-   <xsl:variable name="version" select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/@version"/>
-   <xsl:variable name="policy_version" select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:Resources/l7:ResourceSet/l7:Resource/@version"/>
-   <xsl:variable name="new_version" select="$version"/>
-   <xsl:variable name="new_policy_version" select="$policy_version"/>
-   <xsl:variable name="original_policy" select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:Resources/l7:ResourceSet/l7:Resource"/>
    <xsl:element name="l7:Service">
-		 <xsl:attribute name="id"><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/@id"/></xsl:attribute>
-		 <xsl:attribute name="version"><xsl:value-of select="$new_version"/></xsl:attribute>
+		 <xsl:attribute name="id"><xsl:value-of select="l7:Item/l7:Resource/l7:Service/@id"/></xsl:attribute>
+		 <xsl:attribute name="version"><xsl:value-of select="l7:Item/l7:Resource/l7:Service/@version"/></xsl:attribute>
 		 <xsl:element name="l7:ServiceDetail">
-         	<xsl:attribute name="folderId"><xsl:value-of select="$folderId"/></xsl:attribute>
-		 	<xsl:attribute name="id"><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/@id"/></xsl:attribute>
-			<xsl:attribute name="version"><xsl:value-of select="$new_version"/></xsl:attribute>
-         <l7:Name><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:Name"/></l7:Name>
+         	<xsl:attribute name="folderId"><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/@folderId"/></xsl:attribute>
+		 	<xsl:attribute name="id"><xsl:value-of select="l7:Item/l7:Resource/l7:Service/@id"/></xsl:attribute>
+			<xsl:attribute name="version"><xsl:value-of select="l7:Item/l7:Resource/l7:Service/@version"/></xsl:attribute>
+         <l7:Name><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Name"/></l7:Name>
          <l7:Enabled><xsl:value-of select="$serviceEnabled"/></l7:Enabled>
 		 <l7:ServiceMappings>
 		 <l7:HttpMapping>
-	          <l7:UrlPattern><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern"/></l7:UrlPattern>
+	          <l7:UrlPattern><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern"/></l7:UrlPattern>
 			  <l7:Verbs>
-			  <xsl:for-each select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:Verbs/l7:Verb/text()"><l7:Verb><xsl:value-of select="."/></l7:Verb></xsl:for-each>
+			  <xsl:for-each select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:Verbs/l7:Verb/text()"><l7:Verb><xsl:value-of select="."/></l7:Verb></xsl:for-each>
 			  </l7:Verbs>
 		   </l7:HttpMapping>
 		 </l7:ServiceMappings>
-		 <l7:Properties>
-               <l7:Property key="policyRevision">
-                  <l7:LongValue><xsl:value-of select="$new_policy_version"/></l7:LongValue>
-               </l7:Property>
-               <l7:Property key="wssProcessingEnabled">
-                  <l7:BooleanValue><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='soap']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
-               <l7:Property key="soap">
-                  <l7:BooleanValue><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='internal']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
-               <l7:Property key="internal">
-                  <l7:BooleanValue><xsl:value-of select="env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='wssProcessingEnabled']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
-            </l7:Properties>
+		 <xsl:copy-of select="/l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Properties"/>
 		 </xsl:element>
-         <xsl:copy-of select="/env:Envelope/env:Body/wsen:EnumerateResponse/wsman:Items/l7:Service/l7:Resources"/>
+         <xsl:copy-of select="/l7:Item/l7:Resource/l7:Service/l7:Resources"/>
   </xsl:element>
-    </s:Body>
-</s:Envelope>
 </xsl:template>
 </xsl:stylesheet>]]></L7p:Document>
                               </L7p:ResourceInfo>
@@ -3536,7 +3501,7 @@
                             </L7p:AssertionComment>
                             <L7p:Direction intValue="-1"/>
 
-                            <L7p:OtherTargetMessageVariable stringValue="wsman.request"/>
+                            <L7p:OtherTargetMessageVariable stringValue="restman.request"/>
 
                             <L7p:ResourceInfo staticResourceInfo="included">
 
@@ -3681,7 +3646,7 @@
                         </wsp:OneOrMore>
                         <L7p:SetVariable>
 
-                          <L7p:Base64Expression stringValue="JHt3c21hbi5yZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+                          <L7p:Base64Expression stringValue="JHtyZXN0bWFuLnJlcXVlc3QubWFpbnBhcnR9"/>
                           <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
                           <L7p:DataType variableDataType="message"/>
                           <L7p:VariableToSet stringValue="request"/>
@@ -3713,9 +3678,6 @@
                           <L7p:Base64Expression stringValue="UFVU"/>
                           <L7p:VariableToSet stringValue="restGatewayMan.action"/>
                         </L7p:SetVariable>
-                        <L7p:AuditDetailAssertion>
-                          <L7p:Detail stringValue="${serviceMO.mainpart}"/>
-                        </L7p:AuditDetailAssertion>
                         <L7p:RESTGatewayManagement>
 
                           <L7p:AssertionComment assertionComment="included">
@@ -3731,23 +3693,6 @@
                           <L7p:OtherTargetMessageVariable stringValue="serviceMO"/>
                           <L7p:Target target="OTHER"/>
                         </L7p:RESTGatewayManagement>
-                        <L7p:AuditDetailAssertion>
-                          <L7p:Detail stringValue="${response.mainpart}"/>
-                        </L7p:AuditDetailAssertion>
-                        <L7p:GatewayManagement>
-
-                          <L7p:AssertionComment assertionComment="included">
-                            <L7p:Properties mapValue="included">
-                              <L7p:entry>
-                                <L7p:key stringValue="RIGHT.COMMENT"/>
-
-                                <L7p:value stringValue="//update service"/>
-                              </L7p:entry>
-                            </L7p:Properties>
-                          </L7p:AssertionComment>
-                          <L7p:Enabled booleanValue="false"/>
-                          <L7p:VariablePrefix stringValue="wsman"/>
-                        </L7p:GatewayManagement>
                         <L7p:SetVariable>
 
                           <L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0="/>
@@ -3757,93 +3702,6 @@
                         </L7p:SetVariable>
                         <wsp:OneOrMore wsp:Usage="Required">
                           <wsp:All wsp:Usage="Required">
-                            <L7p:ResponseXpathAssertion>
-                              <L7p:Enabled booleanValue="false"/>
-
-                              <L7p:VariablePrefix stringValue="serviceId"/>
-
-                              <L7p:XmlMsgSrc stringValue="RESP_createOp"/>
-
-                              <L7p:XpathExpression xpathExpressionValue="included">
-
-                                <L7p:Expression stringValue="/env:Envelope/env:Body/l7:Service"/>
-
-                                <L7p:Namespaces mapValue="included">
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wsa"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="mdo"/>
-
-                                    <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="s"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="l7"/>
-
-                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wxf"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/transfer"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="xs"/>
-
-                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="env"/>
-
-                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wsen"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wsman"/>
-
-                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="mex"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wse"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wsmeta"/>
-
-                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
-                                  </L7p:entry>
-                                </L7p:Namespaces>
-                              </L7p:XpathExpression>
-                            </L7p:ResponseXpathAssertion>
                             <L7p:ComparisonAssertion>
 
                               <L7p:CaseSensitive booleanValue="false"/>
@@ -3888,32 +3746,20 @@
 
                               <L7p:XpathExpression xpathExpressionValue="included">
 
-                                <L7p:Expression stringValue="/env:Envelope/env:Body/env:Fault"/>
+                                <L7p:Expression stringValue="/l7:Error"/>
 
                                 <L7p:Namespaces mapValue="included">
+                                  <L7p:entry>
+
+                                    <L7p:key stringValue="mex"/>
+
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
+                                  </L7p:entry>
                                   <L7p:entry>
 
                                     <L7p:key stringValue="wsa"/>
 
                                     <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="mdo"/>
-
-                                    <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="s"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="l7"/>
-
-                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
                                   </L7p:entry>
                                   <L7p:entry>
 
@@ -3923,9 +3769,15 @@
                                   </L7p:entry>
                                   <L7p:entry>
 
-                                    <L7p:key stringValue="xs"/>
+                                    <L7p:key stringValue="wse"/>
 
-                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                                  </L7p:entry>
+                                  <L7p:entry>
+
+                                    <L7p:key stringValue="l7"/>
+
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
                                   </L7p:entry>
                                   <L7p:entry>
 
@@ -3941,21 +3793,15 @@
                                   </L7p:entry>
                                   <L7p:entry>
 
-                                    <L7p:key stringValue="wsman"/>
+                                    <L7p:key stringValue="s"/>
 
-                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
                                   </L7p:entry>
                                   <L7p:entry>
 
-                                    <L7p:key stringValue="mex"/>
+                                    <L7p:key stringValue="mdo"/>
 
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
-                                  </L7p:entry>
-                                  <L7p:entry>
-
-                                    <L7p:key stringValue="wse"/>
-
-                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                                    <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
                                   </L7p:entry>
                                   <L7p:entry>
 
@@ -3963,7 +3809,21 @@
 
                                     <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
                                   </L7p:entry>
+                                  <L7p:entry>
+
+                                    <L7p:key stringValue="xs"/>
+
+                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                                  </L7p:entry>
+                                  <L7p:entry>
+
+                                    <L7p:key stringValue="wsman"/>
+
+                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                                  </L7p:entry>
                                 </L7p:Namespaces>
+
+                                <L7p:XpathVersion xpathVersion="XPATH_1_0"/>
                               </L7p:XpathExpression>
                             </L7p:ResponseXpathAssertion>
                             <L7p:SetVariable>
@@ -3986,7 +3846,7 @@
 
                                   <L7p:XpathExpression xpathExpressionValue="included">
 
-                                    <L7p:Expression stringValue="//s:Reason/s:Text/text()"/>
+                                    <L7p:Expression stringValue="//l7:Type/text()"/>
 
                                     <L7p:Namespaces mapValue="included">
                                       <L7p:entry>
@@ -4002,6 +3862,8 @@
                                         <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
                                       </L7p:entry>
                                     </L7p:Namespaces>
+
+                                    <L7p:XpathVersion xpathVersion="XPATH_1_0"/>
                                   </L7p:XpathExpression>
                                 </L7p:ResponseXpathAssertion>
                                 <L7p:ResponseXpathAssertion>
@@ -4012,7 +3874,7 @@
 
                                   <L7p:XpathExpression xpathExpressionValue="included">
 
-                                    <L7p:Expression stringValue="//s:Detail/s:Text/text()"/>
+                                    <L7p:Expression stringValue="//l7:Detail/text()"/>
 
                                     <L7p:Namespaces mapValue="included">
                                       <L7p:entry>
@@ -5260,7 +5122,7 @@
                         <L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0="/>
                         <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
                         <L7p:DataType variableDataType="message"/>
-                        <L7p:VariableToSet stringValue="wsman.request"/>
+                        <L7p:VariableToSet stringValue="restman.request"/>
                       </L7p:SetVariable>
                       <L7p:ResponseXpathAssertion>
                         <L7p:VariablePrefix stringValue="service.policy"/>
@@ -5334,7 +5196,7 @@
                       <L7p:XslTransformation>
                         <L7p:Direction intValue="-1"/>
 
-                        <L7p:OtherTargetMessageVariable stringValue="wsman.request"/>
+                        <L7p:OtherTargetMessageVariable stringValue="restman.request"/>
                         <L7p:ResourceInfo staticResourceInfo="included">
                           <L7p:Document stringValueReference="inline"><![CDATA[<xsl:stylesheet exclude-result-prefixes="l7 L7p wsman env wsen" version="1.0" xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:param name="gateway.cluster.hostname" select="'localhost'"/>
@@ -5411,9 +5273,10 @@
                         </L7p:ResourceInfo>
                         <L7p:Target target="OTHER"/>
                         <L7p:TransformName stringValue=""/>
+                        <L7p:XsltVersion stringValue="1.0"/>
                       </L7p:XslTransformation>
                       <L7p:SetVariable>
-                        <L7p:Base64Expression stringValue="JHt3c21hbi5yZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+                        <L7p:Base64Expression stringValue="JHtyZXN0bWFuLnJlcXVlc3QubWFpbnBhcnR9"/>
                         <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
                         <L7p:DataType variableDataType="message"/>
                         <L7p:VariableToSet stringValue="request"/>
