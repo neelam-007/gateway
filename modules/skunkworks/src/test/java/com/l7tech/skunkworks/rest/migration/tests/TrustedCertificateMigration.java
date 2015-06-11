@@ -503,7 +503,7 @@ public class TrustedCertificateMigration extends com.l7tech.skunkworks.rest.tool
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
             Assert.assertNotNull(certDependency);
             Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
             Assert.assertEquals(trustedCertItem.getId(), certDependency.getId());
 
             validate(mappings);
@@ -583,7 +583,7 @@ public class TrustedCertificateMigration extends com.l7tech.skunkworks.rest.tool
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
             Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);

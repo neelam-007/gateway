@@ -592,7 +592,7 @@ public class EncapsulatedAssertionMigration extends com.l7tech.skunkworks.rest.t
             Assert.assertNull(getDependency(dependencies, createdEncassPolicy.getId()));
             DependencyMO encassDep = getDependency(dependencies, createdEncass.getId());
             Assert.assertNotNull(encassDep);
-            assertEquals(encassMO.getName(),encassDep.getName());
+            assertEquals(encassItem.getName(),encassDep.getName());
 
         }finally{
 

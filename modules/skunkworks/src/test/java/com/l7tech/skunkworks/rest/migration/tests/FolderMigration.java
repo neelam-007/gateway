@@ -666,7 +666,7 @@ public class FolderMigration extends com.l7tech.skunkworks.rest.tools.MigrationT
             response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<FolderMO> folderUpdated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Assert.assertEquals(folderMO.getName(),folderUpdated.getName());
+            Assert.assertEquals(sourceChild2FolderItem.getName(),folderUpdated.getName());
 
             validate(mappings);
 

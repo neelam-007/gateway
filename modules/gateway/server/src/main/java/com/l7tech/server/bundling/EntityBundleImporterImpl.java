@@ -3,10 +3,12 @@ package com.l7tech.server.bundling;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -23,7 +25,10 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.policy.*;
+import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.audit.AuditContextFactory;
@@ -758,6 +763,15 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             ((GuidEntity)entityContainer.getEntity()).setGuid(UUID.randomUUID().toString());
         }
 
+        //don't replace dependencies on generic entities. This will happen after all other dependencies are replaced in order to allow for circular dependencies
+        if (!(entityContainer.getEntity() instanceof GenericEntity)) {
+            //not replace dependencies for assertions
+            dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping, false);
+        }
+
+        //create/save dependent entities
+        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType())) ? id : null, resourceMapping);
+
         //if it is a mapping by name and the mapped name is set it should be preserved here. Or if the mapped GUID is set it should be preserved.
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {
             switch (mapping.getTargetMapping().getType()) {
@@ -777,15 +791,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     break;
             }
         }
-
-        //don't replace dependencies on generic entities. This will happen after all other dependencies are replaced in order to allow for circular dependencies
-        if (!(entityContainer.getEntity() instanceof GenericEntity)) {
-            //not replace dependencies for assertions
-            dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping, false);
-        }
-
-        //create/save dependent entities
-        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType())) ? id : null, resourceMapping);
 
         //validate the entity. This should check the entity annotations and see if it contains valid data.
         validate(entityContainer);
@@ -1166,8 +1171,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 throw new IllegalStateException("A folderable entity was mapped to an entity that is not folderable: " + existingEntity.getClass());
             }
         }
-        //if this is a nameable entity and the existing entity exists then preserve the existing entity name
-        if(entityContainer.getEntity() instanceof NameableEntity && existingEntity != null ) {
+        //if this is an entity that get referenced by name by others and  the existing entity exists then preserve the existing entity name
+        if((entityContainer.getEntity() instanceof JdbcConnection ||
+            entityContainer.getEntity() instanceof ClusterProperty ||
+            entityContainer.getEntity() instanceof SecurePassword ||
+            entityContainer.getEntity() instanceof InterfaceTag ||
+            (entityContainer.getEntity() instanceof Role &&  !((Role)entityContainer.getEntity()).isUserCreated())) &&
+                existingEntity != null ) {
             if(existingEntity instanceof NameableEntity){
                 ((NameableEntity) entityContainer.getEntity()).setName(((NameableEntity) existingEntity).getName());
             } else {

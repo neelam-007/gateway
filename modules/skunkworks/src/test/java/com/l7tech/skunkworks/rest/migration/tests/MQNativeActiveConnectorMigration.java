@@ -676,7 +676,7 @@ public class MQNativeActiveConnectorMigration extends com.l7tech.skunkworks.rest
 
             DependencyMO mqDependency = getDependency(policyDependencies, mqNativeItem.getId());
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getName());
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getName());
             Assert.assertEquals(mqNativeItem.getId(), mqDependency.getId());
 
             validate(mappings);
@@ -784,7 +784,7 @@ public class MQNativeActiveConnectorMigration extends com.l7tech.skunkworks.rest
 
             DependencyMO mqDependency = getDependency(policyDependencies, activeConnectorMO.getId());
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getName());
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getName());
             Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getId());
 
             validate(mappings);

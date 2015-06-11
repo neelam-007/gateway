@@ -550,7 +550,7 @@ public class PolicyMigration extends MigrationTestBase {
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<PolicyMO> updatedPolicy = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Assert.assertEquals(policyMO.getPolicyDetail().getName(), updatedPolicy.getContent().getPolicyDetail().getName());
+            Assert.assertEquals(policyItem.getName(), updatedPolicy.getContent().getPolicyDetail().getName());
             Assert.assertEquals(1, updatedPolicy.getContent().getResourceSets().size());
 
             validate(mappings);
@@ -820,7 +820,7 @@ public class PolicyMigration extends MigrationTestBase {
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<PolicyMO> updatedPolicy = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Assert.assertEquals(policyMO.getPolicyDetail().getName(), updatedPolicy.getContent().getPolicyDetail().getName());
+            Assert.assertEquals(policyItem.getName(), updatedPolicy.getContent().getPolicyDetail().getName());
             Assert.assertEquals("The policy folder was updated but it shouldn't have been.", folderCreated.getId(), updatedPolicy.getContent().getPolicyDetail().getFolderId());
             Assert.assertEquals(1, updatedPolicy.getContent().getResourceSets().size());
 
