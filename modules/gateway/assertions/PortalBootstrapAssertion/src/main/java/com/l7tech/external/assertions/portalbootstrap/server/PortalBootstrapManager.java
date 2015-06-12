@@ -76,6 +76,7 @@ public class PortalBootstrapManager {
     private static final Logger logger = Logger.getLogger( PortalBootstrapManager.class.getName() );
 
     private static PortalBootstrapManager instance = null;
+    private static int ENROLL_PORT = 9446;
 
     private final ApplicationContext applicationContext;
     private boolean initialized;
@@ -129,6 +130,9 @@ public class PortalBootstrapManager {
 
         if ( !"https".equals( url.getProtocol() ) )
             throw new IOException( "Enrollment URL must begin with https" );
+
+        if ( ENROLL_PORT != url.getPort() )
+            throw new IOException( "Incorrect port." );
 
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
