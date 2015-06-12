@@ -1,10 +1,14 @@
 package com.l7tech.external.assertions.portalbootstrap.console;
 
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.portalbootstrap.PortalBootstrapExtensionInterface;
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -78,17 +82,27 @@ public class EnrollWithPortalDialog extends JDialog {
                                     PortalBootstrapExtensionInterface portalboot =
                                             Registry.getDefault().getExtensionInterface( PortalBootstrapExtensionInterface.class, null );
                                     try {
-                                        portalboot.enrollWithPortal( urlText );
-                                        DialogDisplayer.showMessageDialog( EnrollWithPortalDialog.this,
-                                                "Gateway Enrolled Successfully",
-                                                "Gateway Enrolled Successfully",
-                                                JOptionPane.INFORMATION_MESSAGE,
-                                                new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        EnrollWithPortalDialog.this.dispose();
-                                                    }
-                                                } );
+                                        AsyncAdminMethods.JobId<Boolean> enrollJobId = portalboot.enrollWithPortal(urlText);
+                                        Either<String, Boolean> result =
+                                                AdminGuiUtils.doAsyncAdmin(portalboot, EnrollWithPortalDialog.this, "Enrolling Gateway", "Enrolling Gateway", enrollJobId);
+
+                                        if (result.isLeft()) {
+                                            String msg = "Unable to enroll: " + result.left();
+                                            logger.log( Level.WARNING, msg );
+                                            showError( msg );
+                                        } else {
+                                            DialogDisplayer.showMessageDialog( EnrollWithPortalDialog.this,
+                                                    "Gateway Enrolled Successfully",
+                                                    "Gateway Enrolled Successfully",
+                                                    JOptionPane.INFORMATION_MESSAGE,
+                                                    new Runnable() {
+                                                        @Override
+                                                        public void run() {
+                                                            EnrollWithPortalDialog.this.dispose();
+                                                        }
+                                                    } );
+                                            TopComponents.getInstance().refreshPoliciesFolderNode();
+                                        }
                                     } catch ( Exception e ) {
                                         String msg = "Unable to enroll: " + ExceptionUtils.getMessage( e );
                                         logger.log( Level.WARNING, msg, e );

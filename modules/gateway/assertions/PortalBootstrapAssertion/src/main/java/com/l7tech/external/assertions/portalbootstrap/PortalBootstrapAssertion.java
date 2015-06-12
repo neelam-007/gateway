@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.portalbootstrap;
 
-import com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapManager;
+import com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapExtensionInterfaceImpl;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -9,7 +9,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -61,12 +60,7 @@ public class PortalBootstrapAssertion extends Assertion implements UsesVariables
         meta.put( AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(PortalBootstrapExtensionInterface.class, null, new PortalBootstrapExtensionInterface() {
-                    @Override
-                    public void enrollWithPortal( String enrollmentUrl ) throws IOException {
-                        PortalBootstrapManager.getInstance().enrollWithPortal( enrollmentUrl );
-                    }
-                });
+                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(PortalBootstrapExtensionInterface.class, null, new PortalBootstrapExtensionInterfaceImpl());
                 return Collections.singletonList( binding );
             }
         } );

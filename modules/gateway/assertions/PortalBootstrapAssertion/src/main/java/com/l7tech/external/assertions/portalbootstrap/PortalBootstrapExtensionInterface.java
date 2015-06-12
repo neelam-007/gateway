@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portalbootstrap;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import org.springframework.transaction.annotation.Propagation;
@@ -17,9 +18,9 @@ import static com.l7tech.objectmodel.EntityType.USER;
 @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
 @Administrative
 @Secured(types = USER)
-public interface PortalBootstrapExtensionInterface {
+public interface PortalBootstrapExtensionInterface extends AsyncAdminMethods {
 
     @Secured( stereotype = SET_PROPERTY_BY_UNIQUE_ATTRIBUTE ) // require abilty to update all users (equiv to admin power)
-    void enrollWithPortal( String enrollmentUrl ) throws IOException;
+    AsyncAdminMethods.JobId<Boolean> enrollWithPortal( String enrollmentUrl ) throws IOException;
 
 }
