@@ -32,7 +32,7 @@
       <L7p:Detail stringValue="auth_user: ${request.authenticateduser}"/>
     </L7p:AuditDetailAssertion>
     <L7p:CommentAssertion>
-      <L7p:Comment stringValue="API Portal Authentication &amp; Management Policy v3.0 as of 2014-6-11 16:00 //JB"/>
+      <L7p:Comment stringValue="API Portal Authentication &amp; Management Policy v3.0 as of 2014-6-15 13:00 //JB"/>
     </L7p:CommentAssertion>
     <L7p:SetVariable>
       <L7p:Base64Expression stringValue="My4w"/>
