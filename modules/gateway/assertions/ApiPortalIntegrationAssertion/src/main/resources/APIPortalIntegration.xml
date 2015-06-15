@@ -3568,17 +3568,9 @@
            </l7:HttpMapping>
          </l7:ServiceMappings>
          <l7:Properties>
-               <l7:Property key="wssProcessingEnabled">
-                  <l7:BooleanValue><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='soap']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
-               <l7:Property key="soap">
-                  <l7:BooleanValue><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='internal']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
-               <l7:Property key="internal">
-                  <l7:BooleanValue><xsl:value-of select="l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[@key='wssProcessingEnabled']/l7:BooleanValue"/></l7:BooleanValue>
-               </l7:Property>
+			   <xsl:copy-of select="/l7:Item/l7:Resource/l7:Service/l7:ServiceDetail/l7:Properties/l7:Property[not(starts-with(@key, 'property.'))]"/>
 			   <xsl:value-of disable-output-escaping="yes" select="$serviceProperties"/>
-            </l7:Properties>
+			   </l7:Properties>
          </xsl:element>
          <l7:Resources>
             <l7:ResourceSet tag="policy">
