@@ -11,16 +11,16 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.LSInputImpl;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -28,6 +28,7 @@ import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -281,6 +282,74 @@ public class WspWriterTest {
         Document doc = XmlUtil.stringToDocument(got);
         assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("FooAssertion"));
         log.info("Serialized: " + got);
+    }
+
+    @Test
+    @BugNumber(4752)
+    public void testUnknownAssertionPreservesOriginalElement_NowIncludingL7pNamespace() throws Exception {
+        final NamespaceContext policyNs = new NamespaceContextImpl(
+                CollectionUtils.MapBuilder.<String, String>builder()
+                        .put("wsp", WspConstants.WSP_POLICY_NS)
+                        .put("L7p", WspConstants.L7_POLICY_NS)
+                        .map()
+        );
+
+        // modular assertion
+        AllAssertion aa = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new UnknownAssertion(null, "<L7p:FooAssertion/>"),
+                new FalseAssertion()
+        ));
+        String got = WspWriter.getPolicyXml(aa);
+        log.info("Serialized: " + got);
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:FooAssertion", policyNs));
+
+        // modular assertion without L7p namespace
+        aa = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new UnknownAssertion(null, "<FooAssertion/>"),
+                new FalseAssertion()
+        ));
+        got = WspWriter.getPolicyXml(aa);
+        log.info("Serialized: " + got);
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/FooAssertion", policyNs));
+
+        // custom assertion
+        aa = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new UnknownAssertion(null, "<L7p:CustomAssertion><L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAlaAAxpc1VpQXV0b09wZW5MAApjYXRlZ29yaWVzdAAPTGphdmEvdXRpbC9TZXQ7TAAIY2F0ZWdvcnl0ACpMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DYXRlZ29yeTtMAA9jdXN0b21Bc3NlcnRpb250ADFMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DdXN0b21Bc3NlcnRpb247TAAUY3VzdG9tTW9kdWxlRmlsZU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAA9kZXNjcmlwdGlvblRleHRxAH4ABEwAD3BhbGV0dGVOb2RlTmFtZXEAfgAETAAOcG9saWN5Tm9kZU5hbWVxAH4ABEwAHnJlZ2lzdGVyZWRDdXN0b21GZWF0dXJlU2V0TmFtZXEAfgAEeHIAJWNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5Bc3NlcnRpb27bX2OZPL2isQIAAloAB2VuYWJsZWRMABBhc3NlcnRpb25Db21tZW50dAAvTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9Bc3NlcnRpb24kQ29tbWVudDt4cAFwAHNyABFqYXZhLnV0aWwuSGFzaFNldLpEhZWWuLc0AwAAeHB3DAAAAAI/QAAAAAAAAXNyAChjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uZXh0LkNhdGVnb3J5WrCcZaFE/jUCAAJJAAVteUtleUwABm15TmFtZXEAfgAEeHAAAAALdAAQQ3VzdG9tQXNzZXJ0aW9uc3hwc3IATmNvbS5sN3RlY2guY3VzdG9tLmR5bmFtaWNjdXN0b21hc3NlcnRpb24uRHluYW1pY0N1c3RvbUFzc2VydGlvbkN1c3RvbUFzc2VydGlvbkpcu85N7ILgAgAAeHB0ADRmMGZlNjE0MGZjNWFhNDE5MjdlZTY3MzVkMGQ2ZTg4OTcwYmNjOTM2MDJlMTMzNGIuamFydAA9PGh0bWw+VGhpcyBpcyBEeW5hbWljQ3VzdG9tQXNzZXJ0aW9uIEN1c3RvbSBBc3NlcnRpb24uPC9odG1sPnBwcA==</L7p:base64SerializedValue></L7p:CustomAssertion>"),
+                new FalseAssertion()
+        ));
+        got = WspWriter.getPolicyXml(aa);
+        log.info("Serialized: " + got);
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion", policyNs));
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion/L7p:base64SerializedValue", policyNs));
+
+        // modular and custom assertion
+        aa = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new UnknownAssertion(null, "<L7p:FooAssertion/>"),
+                new UnknownAssertion(null, "<L7p:CustomAssertion><L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAlaAAxpc1VpQXV0b09wZW5MAApjYXRlZ29yaWVzdAAPTGphdmEvdXRpbC9TZXQ7TAAIY2F0ZWdvcnl0ACpMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DYXRlZ29yeTtMAA9jdXN0b21Bc3NlcnRpb250ADFMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DdXN0b21Bc3NlcnRpb247TAAUY3VzdG9tTW9kdWxlRmlsZU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAA9kZXNjcmlwdGlvblRleHRxAH4ABEwAD3BhbGV0dGVOb2RlTmFtZXEAfgAETAAOcG9saWN5Tm9kZU5hbWVxAH4ABEwAHnJlZ2lzdGVyZWRDdXN0b21GZWF0dXJlU2V0TmFtZXEAfgAEeHIAJWNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5Bc3NlcnRpb27bX2OZPL2isQIAAloAB2VuYWJsZWRMABBhc3NlcnRpb25Db21tZW50dAAvTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9Bc3NlcnRpb24kQ29tbWVudDt4cAFwAHNyABFqYXZhLnV0aWwuSGFzaFNldLpEhZWWuLc0AwAAeHB3DAAAAAI/QAAAAAAAAXNyAChjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uZXh0LkNhdGVnb3J5WrCcZaFE/jUCAAJJAAVteUtleUwABm15TmFtZXEAfgAEeHAAAAALdAAQQ3VzdG9tQXNzZXJ0aW9uc3hwc3IATmNvbS5sN3RlY2guY3VzdG9tLmR5bmFtaWNjdXN0b21hc3NlcnRpb24uRHluYW1pY0N1c3RvbUFzc2VydGlvbkN1c3RvbUFzc2VydGlvbkpcu85N7ILgAgAAeHB0ADRmMGZlNjE0MGZjNWFhNDE5MjdlZTY3MzVkMGQ2ZTg4OTcwYmNjOTM2MDJlMTMzNGIuamFydAA9PGh0bWw+VGhpcyBpcyBEeW5hbWljQ3VzdG9tQXNzZXJ0aW9uIEN1c3RvbSBBc3NlcnRpb24uPC9odG1sPnBwcA==</L7p:base64SerializedValue></L7p:CustomAssertion>"),
+                new FalseAssertion()
+        ));
+        got = WspWriter.getPolicyXml(aa);
+        log.info("Serialized: " + got);
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:FooAssertion", policyNs));
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion", policyNs));
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion/L7p:base64SerializedValue", policyNs));
+
+        // modular and custom assertion without L7p
+        aa = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new UnknownAssertion(null, "<FooAssertion/>"),
+                new UnknownAssertion(null, "<L7p:CustomAssertion><L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAlaAAxpc1VpQXV0b09wZW5MAApjYXRlZ29yaWVzdAAPTGphdmEvdXRpbC9TZXQ7TAAIY2F0ZWdvcnl0ACpMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DYXRlZ29yeTtMAA9jdXN0b21Bc3NlcnRpb250ADFMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DdXN0b21Bc3NlcnRpb247TAAUY3VzdG9tTW9kdWxlRmlsZU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAA9kZXNjcmlwdGlvblRleHRxAH4ABEwAD3BhbGV0dGVOb2RlTmFtZXEAfgAETAAOcG9saWN5Tm9kZU5hbWVxAH4ABEwAHnJlZ2lzdGVyZWRDdXN0b21GZWF0dXJlU2V0TmFtZXEAfgAEeHIAJWNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5Bc3NlcnRpb27bX2OZPL2isQIAAloAB2VuYWJsZWRMABBhc3NlcnRpb25Db21tZW50dAAvTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9Bc3NlcnRpb24kQ29tbWVudDt4cAFwAHNyABFqYXZhLnV0aWwuSGFzaFNldLpEhZWWuLc0AwAAeHB3DAAAAAI/QAAAAAAAAXNyAChjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uZXh0LkNhdGVnb3J5WrCcZaFE/jUCAAJJAAVteUtleUwABm15TmFtZXEAfgAEeHAAAAALdAAQQ3VzdG9tQXNzZXJ0aW9uc3hwc3IATmNvbS5sN3RlY2guY3VzdG9tLmR5bmFtaWNjdXN0b21hc3NlcnRpb24uRHluYW1pY0N1c3RvbUFzc2VydGlvbkN1c3RvbUFzc2VydGlvbkpcu85N7ILgAgAAeHB0ADRmMGZlNjE0MGZjNWFhNDE5MjdlZTY3MzVkMGQ2ZTg4OTcwYmNjOTM2MDJlMTMzNGIuamFydAA9PGh0bWw+VGhpcyBpcyBEeW5hbWljQ3VzdG9tQXNzZXJ0aW9uIEN1c3RvbSBBc3NlcnRpb24uPC9odG1sPnBwcA==</L7p:base64SerializedValue></L7p:CustomAssertion>"),
+                new FalseAssertion()
+        ));
+        got = WspWriter.getPolicyXml(aa);
+        log.info("Serialized: " + got);
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/FooAssertion", policyNs));
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion", policyNs));
+        assertThat(XmlUtil.stringToDocument(got).getDocumentElement(), Matchers.hasXPath("/wsp:Policy/wsp:All/L7p:CustomAssertion/L7p:base64SerializedValue", policyNs));
     }
 
     @Test

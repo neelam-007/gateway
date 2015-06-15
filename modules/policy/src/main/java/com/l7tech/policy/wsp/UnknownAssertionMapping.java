@@ -5,10 +5,9 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.assertion.UnknownAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -30,7 +29,7 @@ class UnknownAssertionMapping extends AssertionMapping {
         UnknownAssertion ua = (UnknownAssertion)object.target;
         try {
             if (ua != null && ua.getOriginalXml() != null && ua.getOriginalXml().length() >= 1) {
-                Document doc = XmlUtil.stringToDocument("<DUMMY>" + ua.getOriginalXml() + "</DUMMY>");
+                Document doc = wspWriter.createSkeleton("DUMMY", ua.getOriginalXml());
                 Element originalElement = DomUtils.findOnlyOneChildElement(doc.getDocumentElement());
                 if (originalElement != null) {
                     Node imported = container.getOwnerDocument().importNode(originalElement, true);
@@ -38,9 +37,7 @@ class UnknownAssertionMapping extends AssertionMapping {
                     return (Element)imported;
                 }
             }
-        } catch (SAXException e) {
-            // fall through and just serialized the UA
-        } catch (TooManyChildElementsException e) {
+        } catch (SAXException | TooManyChildElementsException e) {
             // fall through and just serialized the UA
         }
         return super.freeze(wspWriter, object, container);

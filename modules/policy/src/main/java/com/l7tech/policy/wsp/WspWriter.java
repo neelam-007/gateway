@@ -2,6 +2,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,14 +49,37 @@ public class WspWriter {
      */
     Document createSkeleton() {
         try {
-            String l7p = ":L7p";
-            return XmlUtil.stringToDocument("<wsp:Policy " +
-                                            "xmlns:wsp=\"" + WspConstants.WSP_POLICY_NS + "\" " +
-                                            "xmlns" + l7p + "=\"" + WspConstants.L7_POLICY_NS + "\" " +
-                                            "/>");
+            return createSkeleton("wsp:Policy", null);
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }
+    }
+
+    /**
+     * Create a skeleton of a DOM tree, with the specified {@code rootElementName} and optional {@code xmlChildren}.
+     *
+     * @param rootElementName    the name of the root document element.  Required and cannot be {@code null}.
+     * @param xmlChildren        the xml of the node children. Optional and can be {@code null} to indicate no children nodes.
+     * @return a new {@code Document} with {@code rootElementName} node optionally having children node from the specified {@code xmlChildren}.
+     * @throws SAXException if an error happens while creating document node and parsing children xml.
+     */
+    Document createSkeleton(
+            @NotNull String rootElementName,
+            @Nullable final String xmlChildren
+    ) throws SAXException {
+        final String l7p = ":L7p";
+        final StringBuilder sb = new StringBuilder("<");
+        sb.append(rootElementName).append(" ");
+        sb.append("xmlns:wsp=\"").append(WspConstants.WSP_POLICY_NS).append("\" ");
+        sb.append("xmlns").append(l7p).append("=\"").append(WspConstants.L7_POLICY_NS).append("\" ");
+        if (xmlChildren != null) {
+            sb.append(">");
+            sb.append(xmlChildren);
+            sb.append("</").append(rootElementName).append(">");
+        } else {
+            sb.append("/>");
+        }
+        return XmlUtil.stringToDocument(sb.toString());
     }
 
     /**

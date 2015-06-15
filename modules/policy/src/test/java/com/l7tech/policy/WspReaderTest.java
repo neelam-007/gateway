@@ -22,7 +22,9 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
@@ -572,6 +574,83 @@ public class WspReaderTest {
 
         assertEquals(parsed1, parsed2);
 
+    }
+
+    @Test
+    @BugNumber(4752)
+    public void testUnknownElementGetsPreserved_NowIncludingL7pNamespace() throws Exception {
+        // Policy XML with our test modular assertion i.e. MyTestModularAssertion with L7p namespace
+        String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:MyTestModularAssertion/>\n" +
+                "        <L7p:HardcodedResponse>\n" +
+                "            <L7p:Base64ResponseBody stringValue=\"T0s=\"/>\n" +
+                "        </L7p:HardcodedResponse>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        // read the policy
+        Assertion policy1 = wspReader.parsePermissively(policyXml, INCLUDE_DISABLED);
+        // make sure its wrapped with com.l7tech.policy.assertion.UnknownAssertion object
+        Assert.assertThat(policy1.getAssertionWithOrdinal(1), Matchers.instanceOf(AllAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(2), Matchers.instanceOf(UnknownAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(3), Matchers.instanceOf(HardcodedResponseAssertion.class));
+        // write the policy assertion
+        String out = WspWriter.getPolicyXml(policy1);
+        // make sure original xml is preserved
+        Assert.assertThat(out, Matchers.not(Matchers.containsString("UnknownAssertion")));
+        Assert.assertTrue("original policy XML is preserved", XmlUtil.stringToDocument(policyXml).isEqualNode(XmlUtil.stringToDocument(out)));
+
+
+        // Policy XML with our test custom assertion with L7p namespace
+        policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:CustomAssertion>\n" +
+                "            <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAlaAAxpc1VpQXV0b09wZW5MAApjYXRlZ29yaWVzdAAPTGphdmEvdXRpbC9TZXQ7TAAIY2F0ZWdvcnl0ACpMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DYXRlZ29yeTtMAA9jdXN0b21Bc3NlcnRpb250ADFMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DdXN0b21Bc3NlcnRpb247TAAUY3VzdG9tTW9kdWxlRmlsZU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAA9kZXNjcmlwdGlvblRleHRxAH4ABEwAD3BhbGV0dGVOb2RlTmFtZXEAfgAETAAOcG9saWN5Tm9kZU5hbWVxAH4ABEwAHnJlZ2lzdGVyZWRDdXN0b21GZWF0dXJlU2V0TmFtZXEAfgAEeHIAJWNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5Bc3NlcnRpb27bX2OZPL2isQIAAloAB2VuYWJsZWRMABBhc3NlcnRpb25Db21tZW50dAAvTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9Bc3NlcnRpb24kQ29tbWVudDt4cAFwAHNyABFqYXZhLnV0aWwuSGFzaFNldLpEhZWWuLc0AwAAeHB3DAAAAAI/QAAAAAAAAXNyAChjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uZXh0LkNhdGVnb3J5WrCcZaFE/jUCAAJJAAVteUtleUwABm15TmFtZXEAfgAEeHAAAAALdAAQQ3VzdG9tQXNzZXJ0aW9uc3hwc3IATmNvbS5sN3RlY2guY3VzdG9tLmR5bmFtaWNjdXN0b21hc3NlcnRpb24uRHluYW1pY0N1c3RvbUFzc2VydGlvbkN1c3RvbUFzc2VydGlvbkpcu85N7ILgAgAAeHB0ADRmMGZlNjE0MGZjNWFhNDE5MjdlZTY3MzVkMGQ2ZTg4OTcwYmNjOTM2MDJlMTMzNGIuamFydAA9PGh0bWw+VGhpcyBpcyBEeW5hbWljQ3VzdG9tQXNzZXJ0aW9uIEN1c3RvbSBBc3NlcnRpb24uPC9odG1sPnBwcA==</L7p:base64SerializedValue>\n" +
+                "        </L7p:CustomAssertion>\n" +
+                "        <L7p:HardcodedResponse>\n" +
+                "            <L7p:Base64ResponseBody stringValue=\"T0s=\"/>\n" +
+                "        </L7p:HardcodedResponse>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        // read the policy
+        policy1 = wspReader.parsePermissively(policyXml, INCLUDE_DISABLED);
+        // make sure its wrapped with com.l7tech.policy.assertion.UnknownAssertion object
+        Assert.assertThat(policy1.getAssertionWithOrdinal(1), Matchers.instanceOf(AllAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(2), Matchers.instanceOf(UnknownAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(3), Matchers.instanceOf(HardcodedResponseAssertion.class));
+        // write the policy assertion
+        out = WspWriter.getPolicyXml(policy1);
+        // make sure original xml is preserved
+        Assert.assertThat(out, Matchers.not(Matchers.containsString("UnknownAssertion")));
+        Assert.assertTrue("original policy XML is preserved", XmlUtil.stringToDocument(policyXml).isEqualNode(XmlUtil.stringToDocument(out)));
+
+        // finally a policy XML with both custom and modular assertions with L7p namespace
+        policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:MyTestModularAssertion/>\n" +
+                "        <L7p:CustomAssertion>\n" +
+                "            <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAlaAAxpc1VpQXV0b09wZW5MAApjYXRlZ29yaWVzdAAPTGphdmEvdXRpbC9TZXQ7TAAIY2F0ZWdvcnl0ACpMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DYXRlZ29yeTtMAA9jdXN0b21Bc3NlcnRpb250ADFMY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL2V4dC9DdXN0b21Bc3NlcnRpb247TAAUY3VzdG9tTW9kdWxlRmlsZU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAA9kZXNjcmlwdGlvblRleHRxAH4ABEwAD3BhbGV0dGVOb2RlTmFtZXEAfgAETAAOcG9saWN5Tm9kZU5hbWVxAH4ABEwAHnJlZ2lzdGVyZWRDdXN0b21GZWF0dXJlU2V0TmFtZXEAfgAEeHIAJWNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5Bc3NlcnRpb27bX2OZPL2isQIAAloAB2VuYWJsZWRMABBhc3NlcnRpb25Db21tZW50dAAvTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9Bc3NlcnRpb24kQ29tbWVudDt4cAFwAHNyABFqYXZhLnV0aWwuSGFzaFNldLpEhZWWuLc0AwAAeHB3DAAAAAI/QAAAAAAAAXNyAChjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uZXh0LkNhdGVnb3J5WrCcZaFE/jUCAAJJAAVteUtleUwABm15TmFtZXEAfgAEeHAAAAALdAAQQ3VzdG9tQXNzZXJ0aW9uc3hwc3IATmNvbS5sN3RlY2guY3VzdG9tLmR5bmFtaWNjdXN0b21hc3NlcnRpb24uRHluYW1pY0N1c3RvbUFzc2VydGlvbkN1c3RvbUFzc2VydGlvbkpcu85N7ILgAgAAeHB0ADRmMGZlNjE0MGZjNWFhNDE5MjdlZTY3MzVkMGQ2ZTg4OTcwYmNjOTM2MDJlMTMzNGIuamFydAA9PGh0bWw+VGhpcyBpcyBEeW5hbWljQ3VzdG9tQXNzZXJ0aW9uIEN1c3RvbSBBc3NlcnRpb24uPC9odG1sPnBwcA==</L7p:base64SerializedValue>\n" +
+                "        </L7p:CustomAssertion>\n" +
+                "        <L7p:HardcodedResponse>\n" +
+                "            <L7p:Base64ResponseBody stringValue=\"T0s=\"/>\n" +
+                "        </L7p:HardcodedResponse>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        // read the policy
+        policy1 = wspReader.parsePermissively(policyXml, INCLUDE_DISABLED);
+        // make sure its wrapped with com.l7tech.policy.assertion.UnknownAssertion object
+        Assert.assertThat(policy1.getAssertionWithOrdinal(1), Matchers.instanceOf(AllAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(2), Matchers.instanceOf(UnknownAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(3), Matchers.instanceOf(UnknownAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(4), Matchers.instanceOf(HardcodedResponseAssertion.class));
+        // write the policy assertion
+        out = WspWriter.getPolicyXml(policy1);
+        // make sure original xml is preserved
+        Assert.assertThat(out, Matchers.not(Matchers.containsString("UnknownAssertion")));
+        Assert.assertTrue("original policy XML is preserved", XmlUtil.stringToDocument(policyXml).isEqualNode(XmlUtil.stringToDocument(out)));
     }
 
     @Test
