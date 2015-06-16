@@ -302,7 +302,7 @@ public class ScheduledTaskPropertiesDialog extends JDialog {
         modelToView();
         enableDisableComponents();
 
-        Utilities.setEscAction(this, okButton);
+        Utilities.setEscAction(this, cancelButton);
         pack();
         Utilities.centerOnScreen(this);
         enableDisableDayInputs();
