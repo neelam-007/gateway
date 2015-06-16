@@ -59,7 +59,7 @@ public class ScheduledPolicyRunner {
         return jobManager.clusterMaster.isMaster();
     }
 
-    public void runBackgroundTask(Goid policyGoid, Goid providerId, String userId) {
+    public void runBackgroundTask(final String jobName, Goid policyGoid, Goid providerId, String userId) {
 
         // Get an implementation proxy for the "run" method of BackgroundTask that invokes the configured Policy
         final Method runMethod;
@@ -92,7 +92,7 @@ public class ScheduledPolicyRunner {
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO,
                 jobManager.nodeId,
                 Component.GW_SCHEDULED_TASK,
-                "Executing background policy",
+                "Executing background policy for scheduled task "+jobName,
                 false,
                 null,
                 null,
@@ -111,10 +111,10 @@ public class ScheduledPolicyRunner {
                     // not audit if Policy produced non-successful assertion status
                     if (e instanceof AssertionStatusException) {
                         getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
-                                new String[]{((AssertionStatusException) e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
+                                new String[]{jobName, ((AssertionStatusException) e).getAssertionStatus().getMessage()}, ExceptionUtils.getDebugException(e));
                     } else {
                         getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
-                                new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
+                                new String[]{jobName, e.getMessage()}, ExceptionUtils.getDebugException(e));
                     }
                 }
 

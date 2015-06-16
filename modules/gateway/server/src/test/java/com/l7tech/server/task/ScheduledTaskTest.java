@@ -39,6 +39,7 @@ public class ScheduledTaskTest {
         Goid policyID = new Goid(4, 5);
         when(jobDataMap.getString(Matchers.eq(ScheduledTaskJobManager.JOB_DETAIL_POLICY_GOID))).thenReturn(policyID.toString());
         when(jobDataMap.getString(Matchers.eq(ScheduledTaskJobManager.JOB_DETAIL_NODE))).thenReturn(ScheduledTaskJobManager.JOB_DETAIL_NODE_ONE);
+        when(jobDataMap.getString(Matchers.eq(ScheduledTaskJobManager.JOB_DETAIL_NAME))).thenReturn("name");
         when(executionContext.getTrigger()).thenReturn(trigger);
         when(trigger.getJobDataMap()).thenReturn(jobDataMap);
         ScheduledPolicyRunner.setInstance(policyRunner);
@@ -47,7 +48,7 @@ public class ScheduledTaskTest {
         Job job = new ScheduledServiceQuartzJob();
         job.execute(executionContext);
 
-        verify(policyRunner).runBackgroundTask(policyID, null, null);
+        verify(policyRunner).runBackgroundTask("name", policyID, null, null);
         verify(policyRunner).isClusterMaster();
     }
 

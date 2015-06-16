@@ -45,6 +45,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     private static final Logger logger = Logger.getLogger(ScheduledTaskJobManager.class.getName());
     public static final String JOB_DETAIL_NODE = "node";
+    public static final String JOB_DETAIL_NAME = "name";
     public static final String JOB_DETAIL_JOBTYPE = "jobType";
     public static final String JOB_DETAIL_ENITTY_GOID = "entityGoid";
     public static final String JOB_DETAIL_POLICY_GOID = "policyGoid";
@@ -242,6 +243,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
         return triggerBuilder
                 .withIdentity(job.getId())
                 .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
+                .usingJobData(JOB_DETAIL_NAME, job.getName())
                 .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
                 .usingJobData(JOB_DETAIL_ENITTY_GOID, job.getId())
                 .usingJobData(JOB_DETAIL_POLICY_GOID, job.getPolicyGoid().toString())

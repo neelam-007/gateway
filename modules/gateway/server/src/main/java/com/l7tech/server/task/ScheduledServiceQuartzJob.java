@@ -40,10 +40,11 @@ public class ScheduledServiceQuartzJob implements StatefulJob {
         String nodeId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NODE);
         String providerId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_ID_PROVIDER_GOID);
         String userId = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_USER_ID);
+        String name = context.getTrigger().getJobDataMap().getString(ScheduledTaskJobManager.JOB_DETAIL_NAME);
 
         if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || ScheduledPolicyRunner.getInstance(null).isClusterMaster()) {
             try {
-                ScheduledPolicyRunner.getInstance(null).runBackgroundTask(policyGoid, providerId == null ? null : Goid.parseGoid(providerId), userId);
+                ScheduledPolicyRunner.getInstance(null).runBackgroundTask(name, policyGoid, providerId == null ? null : Goid.parseGoid(providerId), userId);
             } catch (Exception e) {
                 throw new JobExecutionException(e);
             }
