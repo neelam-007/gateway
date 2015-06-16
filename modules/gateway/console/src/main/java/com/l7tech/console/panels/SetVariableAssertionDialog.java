@@ -569,6 +569,9 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             neutralStatusString = "Expression contains leading or trailing whitespace";
         }
 
+        _contentTypeComboBox.setEnabled(false);
+        clearContentTypeStatus();
+
         if (getSelectedDataType() == DataType.MESSAGE) {
             _contentTypeComboBox.setEnabled(true);
             if (contentType.length() == 0) {
@@ -585,48 +588,39 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                     _okButton.setEnabled(false);
                 }
             }
-        } else {
-            _contentTypeComboBox.setEnabled(false);
-            clearContentTypeStatus();
-        }
-
-        if (getSelectedDataType() == DataType.INTEGER) {
+        } else if (getSelectedDataType() == DataType.INTEGER) {
             String text = _expressionTextArea.getText();
-
-            if (!Syntax.isAnyVariableReferenced(text)) {
+            if (Syntax.isAnyVariableReferenced(text)) {
                 _expressionStatusLabel.setIcon( neutralStatusIcon );
                 _expressionStatusTextArea.setText( neutralStatusString );
                 _expressionStatusScrollPane.setBorder(null);
                 _okButton.setEnabled(!readOnly);
-                return;
             }
-
-            try{
-                Integer val = Integer.parseInt(text);
-                if(val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE)
-                {
-                    _expressionStatusLabel.setIcon( neutralStatusIcon );
-                    _expressionStatusTextArea.setText( neutralStatusString );
-                    _expressionStatusScrollPane.setBorder(null);
-                    _okButton.setEnabled(!readOnly);
-                }
-                else {
+            else {
+                try {
+                    Integer val = Integer.parseInt(text);
+                    if (val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE) {
+                        _expressionStatusLabel.setIcon(neutralStatusIcon);
+                        _expressionStatusTextArea.setText(neutralStatusString);
+                        _expressionStatusScrollPane.setBorder(null);
+                        _okButton.setEnabled(!readOnly);
+                    } else {
+                        _expressionStatusLabel.setIcon(WARNING_ICON);
+                        _expressionStatusTextArea.setText("Number out of range");
+                        _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
+                        _okButton.setEnabled(false);
+                    }
+                } catch (NumberFormatException e) {
+                    ok = false;
                     _expressionStatusLabel.setIcon(WARNING_ICON);
-                    _expressionStatusTextArea.setText("Number out of range");
+                    _expressionStatusTextArea.setText("Incorrect syntax");
                     _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
                     _okButton.setEnabled(false);
                 }
-            } catch (NumberFormatException e) {
-                ok = false;
-                _expressionStatusLabel.setIcon(WARNING_ICON);
-                _expressionStatusTextArea.setText("Incorrect syntax");
-                _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
-                _okButton.setEnabled(false);
+                return;
             }
-            return;
         }
-
-        if (getSelectedDataType() == DataType.DATE_TIME) {
+        else if (getSelectedDataType() == DataType.DATE_TIME) {
             // Validate any custom format selected
             try {
                 final String pattern = getDateFormat();
@@ -670,26 +664,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             return;
         }
 
-        final java.util.List<String> badNames = new LinkedList<String>();
-        for (String name : names) {
-            if (BuiltinVariables.getMetadata(name) == null &&
-                Syntax.getMatchingName(name, _predecessorVariables, false, true) == null) {
-                badNames.add(name);
-            }
-        }
-        final String expressionStatus;
-        if (badNames.isEmpty()) {
-            expressionStatus = "";
-        } else {
-            StringBuffer sb = new StringBuffer("No such variable");
-            if (badNames.size() > 1) sb.append("s");
-            sb.append(": ");
-            for (Iterator<String> it = badNames.iterator(); it.hasNext();) {
-                sb.append(it.next());
-                if (it.hasNext()) sb.append(", ");
-            }
-            expressionStatus = sb.toString();
-        }
+        final String expressionStatus = checkBadVariableNames(names);
 
         if (expressionStatus.length() == 0) {
             _expressionStatusLabel.setIcon( neutralStatusIcon );
@@ -702,6 +677,31 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         _okButton.setEnabled(!readOnly && ok);
+    }
+
+    private String checkBadVariableNames(String[] names) {
+        String expressionStatus;
+        final List<String> badNames = new LinkedList<>();
+        for (String name : names) {
+            if (BuiltinVariables.getMetadata(name) == null &&
+                Syntax.getMatchingName(name, _predecessorVariables, false, true) == null) {
+                badNames.add(name);
+            }
+        }
+
+        if (badNames.isEmpty()) {
+            expressionStatus = "";
+        } else {
+            StringBuffer sb = new StringBuffer("No such variable");
+            if (badNames.size() > 1) sb.append("s");
+            sb.append(": ");
+            for (Iterator<String> it = badNames.iterator(); it.hasNext();) {
+                sb.append(it.next());
+                if (it.hasNext()) sb.append(", ");
+            }
+            expressionStatus = sb.toString();
+        }
+        return expressionStatus;
     }
 
     public boolean isAssertionModified() {
