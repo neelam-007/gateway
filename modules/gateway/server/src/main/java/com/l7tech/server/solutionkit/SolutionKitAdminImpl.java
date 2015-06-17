@@ -49,7 +49,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                 public String call() throws Exception {
                     checkFeatureEnabled(solutionKit);
                     final boolean isTest = true;
-                    return solutionKitManager.installBundle(bundle, solutionKit.getInstanceModifier(), isTest);
+                    return solutionKitManager.installBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                 }
             }));
 
@@ -74,7 +74,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
                     // Install bundle.
                     final boolean isTest = false;
-                    String mappings = solutionKitManager.installBundle(bundle, solutionKit.getInstanceModifier(), isTest);
+                    String mappings = solutionKitManager.installBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
 
                     // Save solution kit entity.
                     solutionKit.setMappings(mappings);
@@ -109,7 +109,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     final SolutionKit solutionKit = get(goid);
                     String resultMappings = "";
                     if (solutionKit.getUninstallBundle() != null) {
-                        resultMappings = solutionKitManager.installBundle(solutionKit.getUninstallBundle(), solutionKit.getInstanceModifier(), isTest);
+                        resultMappings = solutionKitManager.installBundle(solutionKit.getUninstallBundle(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
                     solutionKitManager.delete(goid);
                     return resultMappings;

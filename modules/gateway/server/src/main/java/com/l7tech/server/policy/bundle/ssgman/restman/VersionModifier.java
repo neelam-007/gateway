@@ -14,9 +14,9 @@ import static com.l7tech.objectmodel.EntityType.valueOf;
  * Apply version modifier to entities of a restman migration bundle.
  */
 public class VersionModifier {
-    public static final String TAG_NAME_L7_NAME = "l7:Name";
-    public static final String TAG_NAME_L7_TYPE = "l7:Type";
-    public static final String TAG_NAME_L7_URL_PATTERN = "l7:UrlPattern";
+    protected static final String TAG_NAME_L7_NAME = "l7:Name";
+    protected static final String TAG_NAME_L7_TYPE = "l7:Type";
+    protected static final String TAG_NAME_L7_URL_PATTERN = "l7:UrlPattern";
 
     private final RestmanMessage restmanMessage;
     private final String versionModifier;

@@ -300,9 +300,4 @@
             <column name="entity_type" value="USER"/>
         </insert>
     </changeSet>
-    <changeSet author="gateway" id="add_instance_modifier_column_to_solution_kit_table">
-        <addColumn tableName="solution_kit">
-            <column name="instance_modifier" type="VARCHAR(255)"/>
-        </addColumn>
-    </changeSet>
 </databaseChangeLog>

@@ -68,7 +68,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private void populateFields(SolutionKit solutionKit) {
         idFieldLabel.setText(solutionKit.getSolutionKitGuid());
         versionFieldLabel.setText(solutionKit.getSolutionKitVersion());
-        instanceModifierLabel.setText(solutionKit.getInstanceModifier());
+        instanceModifierLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         nameFieldLabel.setText(solutionKit.getName());
         descriptionFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
         createdTimeFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));

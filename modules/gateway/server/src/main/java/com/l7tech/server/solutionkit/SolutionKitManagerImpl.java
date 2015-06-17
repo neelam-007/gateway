@@ -23,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
@@ -73,16 +74,19 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String installBundle(@NotNull final String bundle, final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
+    public String installBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
         final RestmanInvoker restmanInvoker = createRestmanInvoker();
 
+        final String requestXml;
         try {
-            final RestmanMessage requestMessage = new RestmanMessage(bundle);
             if (VersionModifier.isValidVersionModifier(instanceModifier)) {
+                final RestmanMessage requestMessage = new RestmanMessage(bundle);
                 new VersionModifier(requestMessage, instanceModifier).apply();
+                requestXml = requestMessage.getAsString();
+            } else {
+                requestXml = bundle;
             }
 
-            final String requestXml = requestMessage.getAsString();
             final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
 
             if (isTest) {

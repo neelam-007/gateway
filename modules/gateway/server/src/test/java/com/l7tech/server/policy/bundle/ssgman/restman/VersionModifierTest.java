@@ -1,10 +1,7 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
+package com.l7tech.server.policy.bundle.ssgman.restman;
 
-import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
-import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
-import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.IOUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -14,13 +11,12 @@ import java.io.IOException;
 import static com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier.*;
 import static com.l7tech.objectmodel.EntityType.valueOf;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
  *  Test version modifiers for different entities via restman migration bundle message.
  */
-public class VersionModifierTest extends PolicyBundleInstallerTestBase {
+public class VersionModifierTest {
     private final String validRequestXml;
 
     public VersionModifierTest() throws IOException {
@@ -31,24 +27,24 @@ public class VersionModifierTest extends PolicyBundleInstallerTestBase {
     @Test
     public void versionModifiedEntityAttributes() {
         String name = "Simple Folder";
-        assertEquals(name, MigrationBundleInstaller.getSuffixedFolderName(null, name));
-        assertEquals(name, MigrationBundleInstaller.getSuffixedFolderName("", name));
-        assertEquals("Simple Folder Suffixed", MigrationBundleInstaller.getSuffixedFolderName("Suffixed", name));
+        Assert.assertEquals(name, getSuffixedFolderName(null, name));
+        Assert.assertEquals(name, getSuffixedFolderName("", name));
+        Assert.assertEquals("Simple Folder Suffixed", getSuffixedFolderName("Suffixed", name));
 
         name = "Simple Policy";
-        assertEquals(name, MigrationBundleInstaller.getPrefixedPolicyName(null, name));
-        assertEquals(name, MigrationBundleInstaller.getPrefixedPolicyName("", name));
-        assertEquals("Prefixed Simple Policy", MigrationBundleInstaller.getPrefixedPolicyName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedPolicyName(null, name));
+        Assert.assertEquals(name, getPrefixedPolicyName("", name));
+        Assert.assertEquals("Prefixed Simple Policy", getPrefixedPolicyName("Prefixed", name));
 
         name = "Simple Encapsulated Assertion";
-        assertEquals(name, MigrationBundleInstaller.getPrefixedEncapsulatedAssertionName(null, name));
-        assertEquals(name, MigrationBundleInstaller.getPrefixedEncapsulatedAssertionName("", name));
-        assertEquals("Prefixed Simple Encapsulated Assertion", MigrationBundleInstaller.getPrefixedEncapsulatedAssertionName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedEncapsulatedAssertionName(null, name));
+        Assert.assertEquals(name, getPrefixedEncapsulatedAssertionName("", name));
+        Assert.assertEquals("Prefixed Simple Encapsulated Assertion", getPrefixedEncapsulatedAssertionName("Prefixed", name));
 
         String resolutionUrl = "/query";
-        assertEquals(resolutionUrl, MigrationBundleInstaller.getPrefixedUrl(null, resolutionUrl));
-        assertEquals(resolutionUrl, MigrationBundleInstaller.getPrefixedUrl("", resolutionUrl));
-        assertEquals("/v1/query", MigrationBundleInstaller.getPrefixedUrl("v1", resolutionUrl));
+        Assert.assertEquals(resolutionUrl, getPrefixedUrl(null, resolutionUrl));
+        Assert.assertEquals(resolutionUrl, getPrefixedUrl("", resolutionUrl));
+        Assert.assertEquals("/v1/query", getPrefixedUrl("v1", resolutionUrl));
     }
 
     @Test

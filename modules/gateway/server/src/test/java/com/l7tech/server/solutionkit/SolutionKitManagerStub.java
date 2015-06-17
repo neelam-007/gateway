@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, SolutionKitHeader> implements SolutionKitManager {
 
@@ -22,8 +23,8 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @NotNull
     @Override
-    public String installBundle(@NotNull String bundle, String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
-        return null;
+    public String installBundle(@NotNull String migrationBundle, @Nullable String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
+        return "";
     }
 
     @Override

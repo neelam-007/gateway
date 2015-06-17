@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Entity manager for {@link com.l7tech.gateway.common.solutionkit.SolutionKit}.
@@ -23,7 +24,7 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws SolutionKitException
      */
     @NotNull
-    String installBundle(@NotNull final String bundle, final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
+    String installBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
 
     /**
      * Uninstall the given bundle. This method will delete entities that are uninstalled, but will not

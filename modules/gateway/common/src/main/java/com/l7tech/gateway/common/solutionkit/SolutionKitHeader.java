@@ -19,7 +19,7 @@ public class SolutionKitHeader extends EntityHeader {
             solutionKit.getVersion(),
             solutionKit.getSolutionKitGuid(),
             solutionKit.getSolutionKitVersion(),
-            solutionKit.getInstanceModifier(),
+            solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY),
             solutionKit.getLastUpdateTime());
     }
 

@@ -33,14 +33,6 @@ public abstract class BaseInstaller {
         return VersionModifier.getSuffixedFolderName(versionModifier, folderName);
     }
 
-    public static String getPrefixedPolicyName(@Nullable String versionModifier, @NotNull String policyName) {
-        return VersionModifier.getPrefixedPolicyName(versionModifier, policyName);
-    }
-
-    public static String getPrefixedUrl(@Nullable String versionModifier, @NotNull String urlPattern) {
-        return VersionModifier.getPrefixedUrl(versionModifier, urlPattern);
-    }
-
     public static String getPrefixedEncapsulatedAssertionName(@Nullable String versionModifier, @NotNull String encapsulatedAssertionName) {
         return VersionModifier.getPrefixedEncapsulatedAssertionName(versionModifier, encapsulatedAssertionName);
     }

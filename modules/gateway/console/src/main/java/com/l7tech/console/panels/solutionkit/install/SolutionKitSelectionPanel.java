@@ -214,8 +214,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
                 if (instanceModifierDialog.isOK()) {
                     final String instanceModifier = instanceModifierDialog.getInstanceModifier();
+                    if (StringUtils.isEmpty(instanceModifier)) return;
+
                     final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
 
+                    // Preserve bundle and customization corresponding to the specific solutionKit,
+                    // then remove old records from the two maps, loaded and customizations.
                     final Map<SolutionKit, Bundle> loadedSolutionKits = settings.getLoadedSolutionKits();
                     final Bundle bundle = loadedSolutionKits.get(solutionKit);
                     loadedSolutionKits.remove(solutionKit);
@@ -224,9 +228,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     final SolutionKitCustomization customization = customizations.get(solutionKit);
                     customizations.remove(solutionKit);
 
-                    solutionKit.setInstanceModifier(instanceModifier);
-                    loadedSolutionKits.put(solutionKit, bundle);
-                    customizations.put(solutionKit, customization);
+                    // Add records with an updated solutionKit due to properties changed back to the maps
+                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+                    if (bundle != null) loadedSolutionKits.put(solutionKit, bundle);
+                    if (customization != null) customizations.put(solutionKit, customization);
 
                     solutionKitsModel.fireTableDataChanged();
                 }
@@ -260,7 +265,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             column("Instance Modifier", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
-                    return solutionKit.getInstanceModifier();
+                    return solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
                 }
             }),
             column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKit>() {
