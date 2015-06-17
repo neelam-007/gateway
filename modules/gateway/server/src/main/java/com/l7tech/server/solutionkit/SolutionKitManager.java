@@ -16,13 +16,14 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * persist solution kit entity to the database.
      *
      * @param bundle the bundle XML to install
+     * @param instanceModifier the prefix used to distinguish solution kit instances.
      * @param isTest true if this is a test installation, no changes will be persisted; false otherwise
      * @return the resulting mappings XML
      * @throws SaveException
      * @throws SolutionKitException
      */
     @NotNull
-    String installBundle(@NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException;
+    String installBundle(@NotNull final String bundle, final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
 
     /**
      * Uninstall the given bundle. This method will delete entities that are uninstalled, but will not

@@ -18,12 +18,14 @@ import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -71,18 +73,23 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String installBundle(@NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException {
+    public String installBundle(@NotNull final String bundle, final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
         final RestmanInvoker restmanInvoker = createRestmanInvoker();
-        final PolicyEnforcementContext pec = restmanInvoker.getContext(bundle);
-
-        if (isTest) {
-            pec.setVariable("RestGatewayMan.uri", "1.0/bundle?test=true");
-        }
 
         try {
-            // Import bundle using RESTMAN.
-            //
-            Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
+            final RestmanMessage requestMessage = new RestmanMessage(bundle);
+            if (VersionModifier.isValidVersionModifier(instanceModifier)) {
+                new VersionModifier(requestMessage, instanceModifier).apply();
+            }
+
+            final String requestXml = requestMessage.getAsString();
+            final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
+
+            if (isTest) {
+                pec.setVariable("RestGatewayMan.uri", "1.0/bundle?test=true");
+            }
+
+            Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
             if (AssertionStatus.NONE != result.left) {
                 String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
                 logger.log(Level.WARNING, msg);
@@ -95,7 +102,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 throw new SolutionKitException(result.right.getAsString());
             }
             return result.right.getAsString();
-        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException e) {
+        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException | SAXException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new SolutionKitException(ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {

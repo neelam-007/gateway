@@ -33,6 +33,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private JLabel lastUpdatedFieldLabel;
     private SolutionKitMappingsPanel solutionKitMappingsPanel;
     private JButton closeButton;
+    private JLabel instanceModifierLabel;
 
     /**
      * Create dialog.
@@ -67,6 +68,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private void populateFields(SolutionKit solutionKit) {
         idFieldLabel.setText(solutionKit.getSolutionKitGuid());
         versionFieldLabel.setText(solutionKit.getSolutionKitVersion());
+        instanceModifierLabel.setText(solutionKit.getInstanceModifier());
         nameFieldLabel.setText(solutionKit.getName());
         descriptionFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
         createdTimeFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));

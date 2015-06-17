@@ -40,6 +40,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
 
     private String sk_guid;
     private String sk_version;
+    private String instanceModifier;
     private transient String installXmlProperties;
     private Map<String, String> installProperties;
     private String mappings;
@@ -66,6 +67,15 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
 
     public void setSolutionKitVersion (String sk_version) {
         this.sk_version = sk_version;
+    }
+
+    @Column(name = "instance_modifier")
+    public String getInstanceModifier() {
+        return instanceModifier;
+    }
+
+    public void setInstanceModifier(String instanceModifier) {
+        this.instanceModifier = instanceModifier;
     }
 
     /**
@@ -198,6 +208,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
         if (sk_guid != null ? !sk_guid.equals(that.sk_guid) : that.sk_guid != null) return false;
         if (sk_version != null ? !sk_version.equals(that.sk_version) : that.sk_version != null) return false;
+        if (instanceModifier != null ? !instanceModifier.equals(that.instanceModifier) : that.instanceModifier != null) return false;
         if (uninstallBundle != null ? !uninstallBundle.equals(that.uninstallBundle) : that.uninstallBundle != null)
             return false;
 
@@ -209,6 +220,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         int result = super.hashCode();
         result = 31 * result + (sk_guid != null ? sk_guid.hashCode() : 0);
         result = 31 * result + (sk_version != null ? sk_version.hashCode() : 0);
+        result = 31 * result + (instanceModifier != null ? instanceModifier.hashCode() : 0);
         result = 31 * result + (installXmlProperties != null ? installXmlProperties.hashCode() : 0);
         result = 31 * result + (installProperties != null ? installProperties.hashCode() : 0);
         result = 31 * result + (mappings != null ? mappings.hashCode() : 0);

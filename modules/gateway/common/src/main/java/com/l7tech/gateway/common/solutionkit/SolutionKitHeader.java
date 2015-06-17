@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 public class SolutionKitHeader extends EntityHeader {
     private final String solutionKitGuid;
     private final String solutionKitVersion;
+    private final String instanceModifier;
     private final long lastUpdateTime;
 
     public SolutionKitHeader(SolutionKit solutionKit) {
@@ -18,13 +19,15 @@ public class SolutionKitHeader extends EntityHeader {
             solutionKit.getVersion(),
             solutionKit.getSolutionKitGuid(),
             solutionKit.getSolutionKitVersion(),
+            solutionKit.getInstanceModifier(),
             solutionKit.getLastUpdateTime());
     }
 
-    public SolutionKitHeader(String id, String name, String description, Integer version, String solutionKitGuid, String solutionKitVersion, long lastUpdateTime) {
+    public SolutionKitHeader(String id, String name, String description, Integer version, String solutionKitGuid, String solutionKitVersion, String instanceModifier, long lastUpdateTime) {
         super(id, EntityType.SOLUTION_KIT, name, description, version);
         this.solutionKitGuid = solutionKitGuid;
         this.solutionKitVersion = solutionKitVersion;
+        this.instanceModifier = instanceModifier;
         this.lastUpdateTime = lastUpdateTime;
     }
 
@@ -38,5 +41,9 @@ public class SolutionKitHeader extends EntityHeader {
 
     public long getLastUpdateTime() {
         return lastUpdateTime;
+    }
+
+    public String getInstanceModifier() {
+        return instanceModifier;
     }
 }

@@ -106,6 +106,12 @@ public class SolutionKitTablePanel extends JPanel {
                     return solutionKitHeader.getSolutionKitVersion();
                 }
             }),
+            column("Instance Modifier", 50, 400, 5000, new Functions.Unary<String, SolutionKitHeader>() {
+                @Override
+                public String call(SolutionKitHeader solutionKitHeader) {
+                    return solutionKitHeader.getInstanceModifier();
+                }
+            }),
             column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {

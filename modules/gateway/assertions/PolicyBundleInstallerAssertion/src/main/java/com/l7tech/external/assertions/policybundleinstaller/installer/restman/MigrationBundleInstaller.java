@@ -16,6 +16,7 @@ import com.l7tech.server.policy.bundle.ssgman.BaseGatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;

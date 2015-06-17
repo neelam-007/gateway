@@ -9,6 +9,7 @@ import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -55,6 +56,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JTable solutionKitsTable;
     private JButton manageLicensesButton;
     private JPanel customizableButtonPanel;
+    private JButton instanceModifierButton;
 
     private SelectableTableModel<SolutionKit> solutionKitsModel;
 
@@ -199,6 +201,38 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
+        instanceModifierButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (solutionKitsModel.getSelected().isEmpty()) return;
+
+                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog();
+                instanceModifierDialog.pack();
+                Utilities.centerOnParentWindow(instanceModifierDialog);
+                instanceModifierDialog.setModal(true);
+                DialogDisplayer.display(instanceModifierDialog);
+
+                if (instanceModifierDialog.isOK()) {
+                    final String instanceModifier = instanceModifierDialog.getInstanceModifier();
+                    final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+
+                    final Map<SolutionKit, Bundle> loadedSolutionKits = settings.getLoadedSolutionKits();
+                    final Bundle bundle = loadedSolutionKits.get(solutionKit);
+                    loadedSolutionKits.remove(solutionKit);
+
+                    final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
+                    final SolutionKitCustomization customization = customizations.get(solutionKit);
+                    customizations.remove(solutionKit);
+
+                    solutionKit.setInstanceModifier(instanceModifier);
+                    loadedSolutionKits.put(solutionKit, bundle);
+                    customizations.put(solutionKit, customization);
+
+                    solutionKitsModel.fireTableDataChanged();
+                }
+            }
+        });
+
         solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
             column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
                 @Override
@@ -223,6 +257,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     return solutionKit.getSolutionKitVersion();
                 }
             }),
+            column("Instance Modifier", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
+                @Override
+                public String call(SolutionKit solutionKit) {
+                    return solutionKit.getInstanceModifier();
+                }
+            }),
             column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
@@ -235,6 +275,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         solutionKitsModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
+                final boolean enabled = ! solutionKitsModel.getSelected().isEmpty();
+                instanceModifierButton.setEnabled(enabled);
+                for (Component component: customizableButtonPanel.getComponents()) {
+                    if (component instanceof JButton) component.setEnabled(enabled);
+                }
+
                 notifyListeners();
             }
         });
@@ -283,6 +329,9 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         for (SolutionKit sk : settings.getCustomizations().keySet()) {
             customization = settings.getCustomizations().get(sk);
+            if (customization == null) {
+                continue;
+            }
 
             // implementer provides a callback
             customCallback = customization.getCustomCallback();

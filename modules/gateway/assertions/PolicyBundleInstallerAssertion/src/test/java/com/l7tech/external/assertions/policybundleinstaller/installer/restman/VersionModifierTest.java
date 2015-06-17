@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.IOUtils;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -10,7 +11,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.restman.VersionModifier.*;
+import static com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier.*;
 import static com.l7tech.objectmodel.EntityType.valueOf;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
