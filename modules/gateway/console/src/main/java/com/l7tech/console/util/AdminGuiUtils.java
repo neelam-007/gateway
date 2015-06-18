@@ -6,14 +6,15 @@ import com.l7tech.gateway.common.AsyncAdminMethods.JobId;
 import com.l7tech.gateway.common.AsyncAdminMethods.JobResult;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Either;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Callable;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
 
 /**
  * GUI utilities related to administration.
@@ -38,11 +39,20 @@ public class AdminGuiUtils {
                                                                           final Window parent,
                                                                           final String taskTitle,
                                                                           final String taskInfo,
-                                                                          final JobId<R> jobId ) throws InterruptedException, InvocationTargetException {
+                                                                          final JobId<R> jobId) throws InterruptedException, InvocationTargetException {
+        return doAsyncAdmin(admin,parent,taskTitle,taskInfo,jobId,true);
+    }
+
+    public static <R extends Serializable> Either<String,R> doAsyncAdmin( final AsyncAdminMethods admin,
+                                                                          final Window parent,
+                                                                          final String taskTitle,
+                                                                          final String taskInfo,
+                                                                          final JobId<R> jobId,
+                                                                          final boolean showCancelButton ) throws InterruptedException, InvocationTargetException {
         final JProgressBar progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);
         final CancelableOperationDialog cancelDialog =
-                new CancelableOperationDialog(parent, taskTitle, taskInfo, progressBar);
+                new CancelableOperationDialog(parent, taskTitle, taskInfo, progressBar,showCancelButton);
         cancelDialog.pack();
         cancelDialog.setModal(true);
         Utilities.centerOnParentWindow( cancelDialog );

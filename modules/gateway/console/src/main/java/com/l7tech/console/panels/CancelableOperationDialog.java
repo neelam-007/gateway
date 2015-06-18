@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogFactoryShower;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -23,16 +23,22 @@ public class CancelableOperationDialog extends JDialog {
     private boolean wasCancel = false;
     private boolean needsInit = true;
     private boolean needsPack = true;
+    private boolean showCancelButton = true;
 
     public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
         Window window = SwingUtilities.getWindowAncestor(component);
-        return new CancelableOperationDialog(window, title, message, null);
+        return new CancelableOperationDialog(window, title, message, null, true);
     }
 
-    public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar) {
+    public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar){
+        this(owner, title, message, progressBar, true);
+    }
+
+    public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar, boolean showCancelButton) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
         this.messageLabel.setText(message);
         this.progressBar = progressBar;
+        this.showCancelButton = showCancelButton;
         if ( owner==null ) {
             ImageIcon imageIcon = new ImageIcon( ImageCache.getInstance().getIcon("com/l7tech/console/resources/CA_Logo_Black_16x16.png"));
             setIconImage(imageIcon.getImage());
@@ -40,7 +46,7 @@ public class CancelableOperationDialog extends JDialog {
     }
 
     public CancelableOperationDialog(Window parent, String title, String message) {
-        this( parent, title, message, null );
+        this( parent, title, message, null, true );
     }
 
     private void doInit() {
@@ -53,19 +59,22 @@ public class CancelableOperationDialog extends JDialog {
                                      GridBagConstraints.CENTER,
                                      GridBagConstraints.NONE,
                                      new Insets(15, 25, 15, 25), 0, 0));
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                wasCancel = true;
-                CancelableOperationDialog.this.dispose();
-            }
-        });
-        p.add(cancelButton,
-              new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 5), 0, 0));
+        if(showCancelButton) {
+            JButton cancelButton = new JButton("Cancel");
+            cancelButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    wasCancel = true;
+                    CancelableOperationDialog.this.dispose();
+                }
+            });
+            p.add(cancelButton,
+                    new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+                            GridBagConstraints.EAST,
+                            GridBagConstraints.NONE,
+                            new Insets(0, 0, 5, 5), 0, 0)
+            );
+        }
         if (this.progressBar != null) {
             p.add(progressBar,
                   new GridBagConstraints(1, 2, GridBagConstraints.REMAINDER, 1, 1000.0, 0.0,
@@ -152,13 +161,24 @@ public class CancelableOperationDialog extends JDialog {
                                                   final long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
+        return doWithDelayedCancelDialog(callable,parent,dialogTitle,dialogMessage,msBeforeDlg,true);
+    }
+
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable,
+                                                  final Window parent,
+                                                  final String dialogTitle,
+                                                  final String dialogMessage,
+                                                  final long msBeforeDlg,
+                                                  final boolean showCancelButton)
+            throws InterruptedException, InvocationTargetException
+    {
         final DialogFactoryShower factory = new DialogFactoryShower(new Functions.Nullary<JDialog>() {
             @Override
             public JDialog call() {
                 final JProgressBar progressBar = new JProgressBar();
                 progressBar.setIndeterminate(true);
                 final CancelableOperationDialog cancelDialog =
-                        new CancelableOperationDialog(parent, dialogTitle, dialogMessage, progressBar);
+                        new CancelableOperationDialog(parent, dialogTitle, dialogMessage, progressBar, showCancelButton);
                 cancelDialog.setModalityType(ModalityType.APPLICATION_MODAL);
                 return cancelDialog;
             }
