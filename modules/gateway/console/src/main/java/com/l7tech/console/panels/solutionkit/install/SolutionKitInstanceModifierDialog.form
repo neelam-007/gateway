@@ -23,7 +23,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="Multiple instances of a same solution kit can be installed on a gateway. Specify a prefix (i.e., instance modifier) to distinguish an instance from other installed instances."/>
+          <toolTipText value="Multiple instances of a same solution kit can be installed on a gateway. Specify an instance modifier (a string) to distinguish one instance from other installed instances."/>
         </properties>
       </component>
       <nested-form id="35790" form-file="com/l7tech/console/panels/OkCancelPanel.form" binding="okCancelPanel">
