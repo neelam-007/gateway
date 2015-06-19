@@ -24,6 +24,10 @@ public class ApiKey extends AbstractPortalGenericEntity {
 
     private Date lastUpdate;
     private String accountPlanMappingId;
+    /**
+     * Organization name.
+     */
+    private String accountPlanMappingName;
     //private String xmlRepresentation;
     private String customMetaData;
     private String applicationId;
@@ -108,7 +112,15 @@ public class ApiKey extends AbstractPortalGenericEntity {
         this.accountPlanMappingId = accountPlanMappingId;
     }
 
-//    public String getXmlRepresentation() {
+    public String getAccountPlanMappingName() {
+        return accountPlanMappingName;
+    }
+
+    public void setAccountPlanMappingName(final String accountPlanMappingName) {
+        this.accountPlanMappingName = accountPlanMappingName;
+    }
+
+    //    public String getXmlRepresentation() {
 //        return xmlRepresentation;
 //    }
 //

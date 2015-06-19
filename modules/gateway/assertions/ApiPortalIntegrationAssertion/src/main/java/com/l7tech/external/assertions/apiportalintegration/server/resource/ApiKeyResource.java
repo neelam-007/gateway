@@ -20,6 +20,8 @@ public class ApiKeyResource extends Resource {
     private String status = StringUtils.EMPTY;
     @XmlElement(name = "AccountPlanMappingId", namespace = JAXBResourceMarshaller.NAMESPACE)
     private String accountPlanMappingId = StringUtils.EMPTY;
+    @XmlElement(name = "AccountPlanMappingName", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private String accountPlanMappingName = StringUtils.EMPTY;
     @XmlElement(name = "LastUpdate", namespace = JAXBResourceMarshaller.NAMESPACE)
     @XmlSchemaType(name = "timestamp")
     private Date lastUpdate;
@@ -149,6 +151,18 @@ public class ApiKeyResource extends Resource {
             this.accountPlanMappingId = accountPlanMappingId;
         } else {
             this.accountPlanMappingId = StringUtils.EMPTY;
+        }
+    }
+
+    public String getAccountPlanMappingName() {
+        return accountPlanMappingName;
+    }
+
+    public void setAccountPlanMappingName(final String accountPlanMappingName) {
+        if (accountPlanMappingName != null) {
+            this.accountPlanMappingName = accountPlanMappingName;
+        } else {
+            this.accountPlanMappingName = StringUtils.EMPTY;
         }
     }
 

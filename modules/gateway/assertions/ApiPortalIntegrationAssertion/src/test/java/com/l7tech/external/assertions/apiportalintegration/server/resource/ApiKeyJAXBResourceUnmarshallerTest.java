@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.apiportalintegration.server.resource;
 
-import org.junit.Before;
-import org.junit.Test;
-
+import static org.junit.Assert.*;
 import javax.xml.bind.JAXBException;
 
-import static org.junit.Assert.*;
+import com.l7tech.test.BugId;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ApiKeyJAXBResourceUnmarshallerTest {
     private DefaultJAXBResourceUnmarshaller unmarshaller;
@@ -49,6 +49,7 @@ public class ApiKeyJAXBResourceUnmarshallerTest {
         assertEquals(2, result.getApis().size());
         assertEquals("p1", result.getApis().get("s1"));
         assertEquals("p2", result.getApis().get("s2"));
+        assertTrue(result.getAccountPlanMappingName().isEmpty());
     }
 
     @Test
@@ -453,5 +454,32 @@ public class ApiKeyJAXBResourceUnmarshallerTest {
     @Test(expected = JAXBException.class)
     public void unmarshalInvalidXml() throws Exception {
         unmarshaller.unmarshal("<invalid>", ApiKeyResource.class);
+    }
+
+    @BugId("APIM-524")
+    @Test
+    public void unmarshalAccountPlanMappingName() throws Exception {
+        final String xml = "<l7:ApiKey xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\">\n" +
+                "    <l7:Key>k1</l7:Key>\n" +
+                "    <l7:Status>active</l7:Status>\n" +
+                "    <l7:Apis>\n" +
+                "        <l7:Api apiId=\"s2\" planId=\"p2\"/>\n" +
+                "        <l7:Api apiId=\"s1\" planId=\"p1\"/>\n" +
+                "    </l7:Apis>\n" +
+                "    <l7:Secret>secret</l7:Secret>\n" +
+                "    <l7:AccountPlanMappingName>Organization Name</l7:AccountPlanMappingName>\n" +
+                "    <l7:Label>label</l7:Label>\n" +
+                "    <l7:Platform>platform</l7:Platform>\n" +
+                "    <l7:Security>\n" +
+                "        <l7:OAuth>\n" +
+                "            <l7:CallbackUrl>callback</l7:CallbackUrl>\n" +
+                "            <l7:Scope>scope</l7:Scope>\n" +
+                "            <l7:Type>type</l7:Type>\n" +
+                "        </l7:OAuth>\n" +
+                "    </l7:Security>\n" +
+                "</l7:ApiKey>";
+
+        final ApiKeyResource result = (ApiKeyResource) unmarshaller.unmarshal(xml, ApiKeyResource.class);
+        assertEquals("Organization Name", result.getAccountPlanMappingName());
     }
 }

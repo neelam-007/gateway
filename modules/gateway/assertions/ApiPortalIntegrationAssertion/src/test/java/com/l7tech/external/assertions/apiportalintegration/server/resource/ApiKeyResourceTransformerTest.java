@@ -34,6 +34,7 @@ public class ApiKeyResourceTransformerTest {
         assertEquals(2, entity.getServiceIds().size());
         assertEquals("p1", entity.getServiceIds().get("s1"));
         assertEquals("p2", entity.getServiceIds().get("s2"));
+        assertTrue(entity.getAccountPlanMappingName().isEmpty());
     }
 
     @Test
@@ -77,6 +78,14 @@ public class ApiKeyResourceTransformerTest {
     }
 
     @Test
+    public void resourceToEntityAccountPlanMappingName() {
+        final ApiKeyResource resource = createDefaultResource();
+        resource.setAccountPlanMappingName("Organization Name");
+        final ApiKey entity = transformer.resourceToEntity(resource);
+        assertEquals("Organization Name", entity.getAccountPlanMappingName());
+    }
+
+    @Test
     public void entityToResource() {
         final ApiKey entity = createDefaultEntity();
 
@@ -93,6 +102,7 @@ public class ApiKeyResourceTransformerTest {
         assertEquals(2, resource.getApis().size());
         assertEquals("p1", resource.getApis().get("s1"));
         assertEquals("p2", resource.getApis().get("s2"));
+        assertTrue(resource.getAccountPlanMappingName().isEmpty());
     }
 
     @Test
@@ -113,6 +123,14 @@ public class ApiKeyResourceTransformerTest {
         assertEquals(2, resource.getApis().size());
         assertEquals("p1", resource.getApis().get("s1"));
         assertEquals("p2", resource.getApis().get("s2"));
+    }
+
+    @Test
+    public void entityToResourceAccountPlanMappingName() throws Exception {
+        final ApiKey entity = createDefaultEntity();
+        entity.setAccountPlanMappingName("Organization Name");
+        final ApiKeyResource resource = transformer.entityToResource(entity);
+        assertEquals("Organization Name", resource.getAccountPlanMappingName());
     }
 
     private ApiKeyResource createDefaultResource() {

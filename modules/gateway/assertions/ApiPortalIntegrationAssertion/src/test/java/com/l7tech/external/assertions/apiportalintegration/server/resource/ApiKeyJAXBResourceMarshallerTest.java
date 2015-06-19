@@ -190,6 +190,16 @@ public class ApiKeyJAXBResourceMarshallerTest {
         assertTrue(expectedXml.indexOf("<l7:CustomMetaData>&lt;blah/&gt;</l7:CustomMetaData>") > 0);
     }
 
+    @Test
+    public void marshalAccountPlanMappingName() throws Exception {
+        initKey();
+        key.setAccountPlanMappingName("Organization Name");
+        final String xml = marshaller.marshal(key);
+        String expectedXml = buildExpectedXml(key);
+        assertEquals(StringUtils.deleteWhitespace(expectedXml), StringUtils.deleteWhitespace(xml));
+        assertTrue(expectedXml.indexOf("<l7:AccountPlanMappingName>Organization Name</l7:AccountPlanMappingName>") > 0);
+    }
+
     private void initKey() {
         apis.put("s1", "p1");
         apis.put("s2", "p2");
@@ -207,6 +217,7 @@ public class ApiKeyJAXBResourceMarshallerTest {
         stringBuilder.append(buildExpectedXmlForElement("Key", key.getKey()));
         stringBuilder.append(buildExpectedXmlForElement("Status", key.getStatus()));
         stringBuilder.append(buildExpectedXmlForElement("AccountPlanMappingId", key.getAccountPlanMappingId()));
+        stringBuilder.append(buildExpectedXmlForElement("AccountPlanMappingName", key.getAccountPlanMappingName()));
         stringBuilder.append(buildExpectedXmlForElement("CustomMetaData", HtmlUtil.escapeHtmlCharacters(key.getCustomMetaData())));
         stringBuilder.append(buildExpectedXmlForElement("ApplicationId", key.getApplicationId()));
         if (key.getApis().isEmpty()) {
