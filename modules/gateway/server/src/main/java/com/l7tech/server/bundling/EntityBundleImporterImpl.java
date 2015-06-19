@@ -269,7 +269,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         break;
                                     }
                                     case AlwaysCreateNew: {
-                                        String id = entity.getEntity().getId();
+                                        //use the target id if specified, otherwise use the source id
+                                        String id = mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType()) && mapping.getTargetMapping().getTargetID() != null ? mapping.getTargetMapping().getTargetID() : mapping.getSourceEntityHeader().getStrId();
+
                                         //Create a new entity based on the one in the bundle with a different id if one with same id exists
                                         if(entityCrud.find(new EntityHeader(entity.getEntity().getId(), (EntityType)entity.getId().right, null, null)) != null){
                                             id = null;

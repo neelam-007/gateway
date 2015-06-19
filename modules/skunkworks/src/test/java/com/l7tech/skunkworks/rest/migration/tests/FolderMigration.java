@@ -1301,4 +1301,50 @@ public class FolderMigration extends com.l7tech.skunkworks.rest.tools.MigrationT
         Assert.assertEquals(Mapping.ErrorType.ImproperMapping, rootFolderMapping.getErrorType());
         Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getTargetId());
     }
+
+    @BugId("SSG-11413")
+    @Test
+    public void testAlwaysCreateNewUseTargetId() throws Exception {
+
+        String bundle1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References>\n" +
+                "        <l7:Item>\n" +
+                "            <l7:Name>FOLDER_11_5_8_18_01a_root</l7:Name>\n" +
+                "            <l7:Id>34f7acb82db0203489a4b11ba5c1a58d</l7:Id>\n" +
+                "            <l7:Type>FOLDER</l7:Type>\n" +
+                "            <l7:TimeStamp>2014-06-09T09:39:04.149-07:00</l7:TimeStamp>\n" +
+                "            <l7:Link rel=\"self\" uri=\"http://ssg82spetrov.ca.com:8080/restman/1.0/folders/34f7acb82db0203489a4b11ba5c1a58d\"/>\n" +
+                "            <l7:Link rel=\"template\" uri=\"http://ssg82spetrov.ca.com:8080/restman/1.0/folders/template\"/>\n" +
+                "            <l7:Link rel=\"list\" uri=\"http://ssg82spetrov.ca.com:8080/restman/1.0/folders\"/>\n" +
+                "            <l7:Resource>\n" +
+                "                <l7:Folder folderId=\"0000000000000000ffffffffffffec76\" id=\"34f7acb82db0203489a4b11ba5c1a58d\" version=\"0\">\n" +
+                "                    <l7:Name>FOLDER_11_5_8_18_01a_root</l7:Name>\n" +
+                "                </l7:Folder>\n" +
+                "            </l7:Resource>\n" +
+                "        </l7:Item>\n" +
+                "    </l7:References>\n" +
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"FailOnNew\">\n" +
+                "                    <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "                </l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "        </l7:Mapping>\n" +
+                "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"34f7acb82db0203489a4b11ba5c1a58d\" srcUri=\"http://ssg82spetrov.ca.com:8080/restman/1.0/folders/34f7acb82db0203489a4b11ba5c1a58d\" targetId=\"34f7acb82db0203489a4b11ba5555555\" type=\"FOLDER\"/>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>";
+
+
+        RestResponse response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), bundle1);
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        response = getTargetEnvironment().processRequest("folders/34f7acb82db0203489a4b11ba5555555", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), bundle1);
+        assertOkResponse(response);
+
+    }
 }
