@@ -159,6 +159,7 @@ public class ApiKey extends AbstractPortalGenericEntity {
         readOnly.setOauthType(this.getOauthType());
         readOnly.setLastUpdate(this.getLastUpdate());
         readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
+        readOnly.setAccountPlanMappingName(this.getAccountPlanMappingName());
 //        readOnly.setXmlRepresentation(this.getXmlRepresentation());
         readOnly.setCustomMetaData(this.getCustomMetaData());
         readOnly.setApplicationId(this.getApplicationId());
