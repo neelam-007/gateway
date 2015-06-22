@@ -19,7 +19,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
     private String instanceModifier;
 
     public SolutionKitInstanceModifierDialog() {
-        setTitle("Input Instance Modifier");
+        setTitle("Add an Instance Modifier");
         setContentPane(mainPanel);
 
         Utilities.setMaxLength(instancePrefixTextField.getDocument(), 255);
