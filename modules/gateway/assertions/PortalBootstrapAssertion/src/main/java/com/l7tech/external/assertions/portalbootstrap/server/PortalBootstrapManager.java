@@ -264,7 +264,9 @@ public class PortalBootstrapManager {
         }
 
         // TODO include tenant cluster name in this DN to make things easier to manage inside the portal DB
-        String dn = "cn=" + alias;
+        char[] unique = new char[20];
+        RandomUtil.nextChars( unique, 'a', 'z' );
+        String dn = "cn=" + alias + "." + new String( unique );
         KeyGenParams keyGenParams = new KeyGenParams( 2048 );
         CertGenParams certGenParams = new CertGenParams( new X500Principal( dn ), 365 * 25, false, null );
 
