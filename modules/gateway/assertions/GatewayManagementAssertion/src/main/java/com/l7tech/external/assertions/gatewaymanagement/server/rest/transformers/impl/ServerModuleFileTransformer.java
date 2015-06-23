@@ -35,8 +35,12 @@ import static com.l7tech.util.Option.*;
 @Component
 public class ServerModuleFileTransformer implements EntityAPITransformer<ServerModuleFileMO, ServerModuleFile> {
 
-    @Inject
     private ServerModuleFileAPIResourceFactory factory;
+
+    @Inject
+    public void setFactory(final ServerModuleFileAPIResourceFactory factory) {
+        this.factory = factory;
+    }
 
     @Inject
     @Named("serverConfig")
@@ -100,7 +104,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
         final ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
         serverModuleFileMO.setId(moduleFile.getId());
         serverModuleFileMO.setVersion(moduleFile.getVersion());
-        serverModuleFileMO.setName(asName(moduleFile.getName()));
+        serverModuleFileMO.setName(moduleFile.getName());
         serverModuleFileMO.setModuleType(convertModuleType(moduleFile.getModuleType()));
         serverModuleFileMO.setModuleSha256(moduleFile.getModuleSha256());
         serverModuleFileMO.setProperties(gatherProperties(moduleFile, ServerModuleFile.getPropertyKeys()));
@@ -147,39 +151,8 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
 
         serverModuleFile.setModuleType(convertModuleType(serverModuleFileMO.getModuleType()));
 
-        // verify module sha and module data
-        if (StringUtils.isBlank(serverModuleFileMO.getModuleSha256())) {
-            throw new ResourceFactory.InvalidResourceException(
-                    ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
-                    "Module SHA-256 must be set"
-            );
-        }
-        if (serverModuleFileMO.getModuleData() == null) {
-            throw new ResourceFactory.InvalidResourceException(
-                    ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
-                    "Module data bytes must be set"
-            );
-        }
-
-        // make sure ServerModuleFile size doesn't exceed max allowed size
-        final long fileLength = serverModuleFileMO.getModuleData().length;
-        final long maxModuleFileSize = config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE);
-        if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
-            throw new ResourceFactory.InvalidResourceException(
-                    ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                    MessageFormat.format("ServerModuleFiles greater than {0} are not supported.", ServerModuleFile.humanReadableBytes(maxModuleFileSize))
-            );
-        }
-
-        // set the ServerModuleFile data and verify if the module sha and module data match
-        serverModuleFile.createData(serverModuleFileMO.getModuleData(), serverModuleFileMO.getModuleSha256());
-        final String calculatedDigest = ServerModuleFile.calcBytesChecksum(serverModuleFile.getData().getDataBytes());
-        if (!calculatedDigest.equals(serverModuleFile.getModuleSha256())) {
-            throw new ResourceFactory.InvalidResourceException(
-                    ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                    "Module data bytes doesn't match SHA-256"
-            );
-        }
+        // set module data
+        final long fileLength = setModuleData(serverModuleFileMO, serverModuleFile, true);
 
         // set the ServerModuleFile properties
         setProperties(
@@ -224,7 +197,10 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException if the specified {@code moduleType} is not recognized.
      */
     @NotNull
-    static ModuleType convertModuleType(final ServerModuleFileMO.ServerModuleFileModuleType serverModuleType) throws ResourceFactory.InvalidResourceException {
+    public static ModuleType convertModuleType(final ServerModuleFileMO.ServerModuleFileModuleType serverModuleType) throws ResourceFactory.InvalidResourceException {
+        if (serverModuleType == null) {
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "Missing Module Type");
+        }
         switch (serverModuleType) {
             case MODULAR_ASSERTION:
                 return ModuleType.MODULAR_ASSERTION;
@@ -243,7 +219,10 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
      * @throws ResourceFactory.ResourceAccessException if the specified {@code moduleType} is not recognized.
      */
     @NotNull
-    static ServerModuleFileMO.ServerModuleFileModuleType convertModuleType(final ModuleType moduleType) throws ResourceFactory.ResourceAccessException {
+    public static ServerModuleFileMO.ServerModuleFileModuleType convertModuleType(final ModuleType moduleType) throws ResourceFactory.ResourceAccessException {
+        if (moduleType == null) {
+            throw new ResourceFactory.ResourceAccessException("Missing Module Type");
+        }
         switch (moduleType) {
             case MODULAR_ASSERTION:
                 return ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION;
@@ -264,7 +243,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
      * specified {@code moduleFile} does not contain any properties.
      */
     @Nullable
-    static Map<String, String> gatherProperties(@NotNull final ServerModuleFile moduleFile, @NotNull final String[] keys) {
+    public static Map<String, String> gatherProperties(@NotNull final ServerModuleFile moduleFile, @NotNull final String[] keys) {
         final Map<String, String> props = new TreeMap<>();
         for (final String key : keys) {
             final String value = moduleFile.getProperty(key);
@@ -352,5 +331,87 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
         if (propertyValue.isSome()) {
             serverModuleFile.setProperty(propertyName, String.valueOf(propertyValue.some()));
         }
+    }
+
+    /**
+     * Utility method for setting module data from {@link ServerModuleFileMO MO} into destination {@link ServerModuleFile internal entity}.<br/>
+     * Method will also validate the modules data bytes against the module sha256 in case module data is not omitted.
+     *
+     * @param serverModuleFileMO    Input {@link ServerModuleFileMO MO}.
+     * @param serverModuleFile      Destination {@link ServerModuleFile internal entity}.
+     * @param isMandatory           A flag indicating whether the module data (including the module sha256) are expected to be present inm the {@code MO}.
+     * @throws ResourceFactory.InvalidResourceException if the module sha265 doesn't match the module data bytes,
+     * if the module data data bytes exceeds the max allowed size (specified in the cluster property {@link ServerConfigParams#PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE}
+     * or if the module data bytes or SHA256 are missing when {@code isMandatory} is {@code true}.
+     * @return the module data bytes length or {@code 0} if module data bytes are omitted.
+     */
+    private long setModuleData(
+            @NotNull final ServerModuleFileMO serverModuleFileMO,
+            @NotNull final ServerModuleFile serverModuleFile,
+            final boolean isMandatory
+    ) throws ResourceFactory.InvalidResourceException {
+        // get module SHA256
+        final String moduleSha256 = serverModuleFileMO.getModuleSha256();
+        // initialize module data bytes and bytes length to null and zero
+        byte[] moduleDataBytes = null;
+        long fileLength = 0;
+
+        // if module data is expected then make sure they are not blank
+        if (isMandatory) {
+            if (StringUtils.isBlank(moduleSha256)) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                        "Module SHA-256 must be set"
+                );
+            }
+
+            moduleDataBytes = serverModuleFileMO.getModuleData();
+            if (moduleDataBytes == null || moduleDataBytes.length < 1) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                        "Module data bytes must be set"
+                );
+            }
+        }
+
+        // if there is a module SHA256 then verify it against the module data bytes
+        if (StringUtils.isNotBlank(moduleSha256)) {
+            // get module data bytes from MO if not already gathered (i.e. set from isMandatory condition)
+            moduleDataBytes = moduleDataBytes == null ? serverModuleFileMO.getModuleData() : moduleDataBytes;
+            // do another check if module data bytes are not specified throw
+            if (moduleDataBytes == null || moduleDataBytes.length < 1) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                        "Module data bytes must be set"
+                );
+            }
+
+            // make sure module data bytes size doesn't exceed max allowed size (to avoid calculating SHA256 for no reason)
+            fileLength = moduleDataBytes.length;
+            final long maxModuleFileSize = config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE);
+            if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                        MessageFormat.format("ServerModuleFiles greater than {0} are not supported.", ServerModuleFile.humanReadableBytes(maxModuleFileSize))
+                );
+            }
+
+            // verify that module SHA256 and data bytes match
+            final String calculatedDigest = ServerModuleFile.calcBytesChecksum(moduleDataBytes);
+            if (!calculatedDigest.equals(moduleSha256)) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                        "Module data bytes doesn't match SHA-256"
+                );
+            }
+
+            // finally set the ServerModuleFile data
+            serverModuleFile.createData(moduleDataBytes, moduleSha256);
+        }
+
+        // TODO (tveninov) : optionally throw if moduleSha256 is blank but module data bytes are not
+        // currently module data will be ignored if module SHA256 is not specified
+
+        return fileLength;
     }
 }

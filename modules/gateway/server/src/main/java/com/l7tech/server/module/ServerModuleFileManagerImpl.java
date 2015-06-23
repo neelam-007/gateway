@@ -49,7 +49,7 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     /**
      * Current node-id in a cluster environment.
      */
-    @NotNull protected String clusterNodeId;
+    @NotNull protected final String clusterNodeId;
 
     /**
      * Application event publisher
@@ -81,6 +81,14 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
             applicationEventPublisher.publishEvent(new ServerModuleFileAdminEvent(this, ServerModuleFileAdminEvent.Action.UPLOADED, entity));
         }
         return goid;
+    }
+
+    @Override
+    public void save(@NotNull final Goid id, @NotNull final ServerModuleFile entity) throws SaveException {
+        super.save(id, entity);
+        if (applicationEventPublisher != null) {
+            applicationEventPublisher.publishEvent(new ServerModuleFileAdminEvent(this, ServerModuleFileAdminEvent.Action.UPLOADED, entity));
+        }
     }
 
     @Override
@@ -154,6 +162,30 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
                         try (final ResultSet rs = statement.executeQuery()) {
                             if (rs.next()) {
                                 return rs.getBinaryStream(1);
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (final SQLException e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    @Nullable
+    @Override
+    @Transactional(readOnly=true)
+    public byte[] getModuleBytes(@NotNull final Goid goid) throws FindException {
+        try {
+            return doReadOnlyWork(new Functions.UnaryThrows<byte[], Connection, SQLException>() {
+                @Override
+                public byte[] call(final Connection connection) throws SQLException {
+                    try (final PreparedStatement statement = connection.prepareStatement(SQL_GET_DATA_BYTES_FOR_MODULE_GOID)) {
+                        statement.setBytes(1, goid.getBytes());
+                        try (final ResultSet rs = statement.executeQuery()) {
+                            if (rs.next()) {
+                                return rs.getBytes(1);
                             }
                         }
                     }

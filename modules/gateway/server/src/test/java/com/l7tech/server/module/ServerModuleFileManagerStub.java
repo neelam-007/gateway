@@ -52,7 +52,14 @@ public class ServerModuleFileManagerStub extends EntityManagerStub<ServerModuleF
 
     @Nullable
     @Override
-    public InputStream getModuleBytesAsStream(final Goid goid) throws FindException {
+    public InputStream getModuleBytesAsStream(@NotNull final Goid goid) throws FindException {
+        // not needed for ClusterStatusAdmin
+        throw new NotImplementedException();
+    }
+
+    @Nullable
+    @Override
+    public byte[] getModuleBytes(@NotNull final Goid goid) throws FindException {
         // not needed for ClusterStatusAdmin
         throw new NotImplementedException();
     }

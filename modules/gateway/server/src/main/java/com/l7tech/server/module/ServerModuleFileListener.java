@@ -77,6 +77,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      *
      * @see #copyFrom(com.l7tech.gateway.common.module.ServerModuleFile, boolean, boolean, boolean)
      */
+    @SuppressWarnings("serial")
     static class StagedServerModuleFile extends ServerModuleFile {
         /**
          * The Module File inside the staging folder.  Optional and can be {@code null}
@@ -268,6 +269,9 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             logger.log(Level.FINE, "processGatewayStartedEvent...");
         }
 
+        // log that ServerModuleFiles are about to be loaded
+        logger.info("Loading Server Module Files from Database.");
+
         // delete any previous staging files
         try {
             if (!FileUtils.deleteDirContents(getStagingDir())) {
@@ -422,25 +426,31 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         try {
             // generate unique random module file name inside staging dir, with deleteOnExit flag set
             moduleFile = generateRandomModuleFileName(stagingDir, module);
-            try (
-                    final OutputStream out = new BufferedOutputStream(new FileOutputStream(moduleFile));
-                    final InputStream is = Eithers.extract2(
-                            readOnlyTransaction(new Functions.Nullary<Eithers.E2<FindException, ModuleMissingContentsException, InputStream>>() {
-                                @Override
-                                public Eithers.E2<FindException, ModuleMissingContentsException, InputStream> call() {
-                                    try {
-                                        final InputStream bytesStream = serverModuleFileManager.getModuleBytesAsStream(module.getGoid());
-                                        if (bytesStream != null)
-                                            return Eithers.right2(bytesStream);
-                                        return Eithers.left2_2(new ModuleMissingContentsException());
-                                    } catch (final FindException e) {
-                                        return Eithers.left2_1(e);
-                                    }
+
+            final OutputStream out = new BufferedOutputStream(new FileOutputStream(moduleFile));
+            try {
+                final InputStream is = Eithers.extract2(
+                        readOnlyTransaction(new Functions.Nullary<Eithers.E2<FindException, ModuleMissingContentsException, InputStream>>() {
+                            @Override
+                            public Eithers.E2<FindException, ModuleMissingContentsException, InputStream> call() {
+                                try {
+                                    final InputStream bytesStream = serverModuleFileManager.getModuleBytesAsStream(module.getGoid());
+                                    if (bytesStream != null)
+                                        return Eithers.right2(bytesStream);
+                                    return Eithers.left2_2(new ModuleMissingContentsException());
+                                } catch (final FindException e) {
+                                    return Eithers.left2_1(e);
                                 }
-                            }))
-            ) {
-                IOUtils.copyStream(is, out);
-                out.flush();
+                            }
+                        }));
+                try {
+                    IOUtils.copyStream(is, out);
+                    out.flush();
+                } finally {
+                    ResourceUtils.closeQuietly(is);
+                }
+            } finally {
+                ResourceUtils.closeQuietly(out);
             }
 
             // for debug purposes
@@ -450,6 +460,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             // finally return the module file
             return moduleFile;
         } catch (final IOException | FindException e) {
+            //noinspection ConstantConditions
             if (moduleFile != null) {
                 try {
                     FileUtils.delete(moduleFile);
@@ -610,13 +621,16 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALLING, module);
 
         try {
-            final ModuleType moduleType = module.getModuleType();
-            if (ModuleType.MODULAR_ASSERTION == moduleType) {
-                modularAssertionRegistrar.unloadModule(module.getStagingFile(), module);
-            } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
-                customAssertionRegistrar.unloadModule(module.getStagingFile(), module);
-            } else {
-                throw new UnsupportedModuleTypeException(moduleType);
+            // unload only if module has a staging file
+            if (module.getStagingFile() != null) {
+                final ModuleType moduleType = module.getModuleType();
+                if (ModuleType.MODULAR_ASSERTION == moduleType) {
+                    modularAssertionRegistrar.unloadModule(module.getStagingFile(), module);
+                } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
+                    customAssertionRegistrar.unloadModule(module.getStagingFile(), module);
+                } else {
+                    throw new UnsupportedModuleTypeException(moduleType);
+                }
             }
 
             // audit un-installation success

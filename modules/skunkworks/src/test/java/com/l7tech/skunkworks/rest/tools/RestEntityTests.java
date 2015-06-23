@@ -15,9 +15,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ConfiguredSessionFactoryBean;
 import com.l7tech.util.Functions;
-import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

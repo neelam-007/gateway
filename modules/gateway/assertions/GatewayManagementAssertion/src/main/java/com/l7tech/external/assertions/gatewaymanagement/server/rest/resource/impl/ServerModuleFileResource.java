@@ -94,12 +94,14 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
      * &lt;/l7:ServerModuleFile&gt;
      * </pre>
      * </div>
+     * <p>When ServerModuleFile functionality is disabled this method will fail with FORBIDDEN (403).</p>
      * <p>This responds with a reference to the newly created ServerModuleFile.</p>
      *
      * @param resource The ServerModuleFile to create.
      * @return A reference to the newly created ServerModuleFile.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
+     * @throws DisabledException when ServerModuleFile functionality is disabled.
      */
     @POST
     public Response upload(
@@ -108,28 +110,35 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
         return super.create(resource);
     }
 
-//    /**
-//     * Creates or Updates an existing ServerModuleFile. <br/>
-//     * If a ServerModuleFile with the given ID does not exist one will be created and its data uploaded,
-//     * otherwise the existing module name will be updated.<br/>
-//     * Note that module data update is not currently supported (module data will be ignored if specified),
-//     * only the module name can/will be updated.
-//     * To update the module data delete and re-upload the module again.
-//     *
-//     * @param resource ServerModuleFile to create or update
-//     * @param id       ID of the scheduled task to create or update
-//     * @return A reference to the newly created or updated Scheduled task.
-//     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
-//     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException
-//     */
-//    @PUT
-//    @Path("{id}")
-//    public Response createOrUpdate(
-//            final ServerModuleFileMO resource,
-//            @PathParam("id") final String id
-//    ) throws ResourceFactory.ResourceFactoryException {
-//        return super.update(resource, id);
-//    }
+    /**
+     * Creates a new ServerModuleFile with specified ID. <br/>
+     * If a ServerModuleFile with the given ID does not exist one will be created and its data uploaded,
+     * otherwise method will fail with FORBIDDEN (403).<br/>
+     * Note that module data update is not currently supported and this method will fail with FORBIDDEN (403).
+     * To update the module data delete and re-upload the module with newer version again.
+     * <p>When ServerModuleFile functionality is disabled this method will fail with FORBIDDEN (403).</p>
+     *
+     * @param resource ServerModuleFile to create or update
+     * @param id       ID of the ServerModuleFile to create or update
+     * @return A reference to the newly created or updated ServerModuleFile.
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.DuplicateResourceAccessException If a ServerModuleFile with the given ID does exist.
+     * @throws DisabledException when ServerModuleFile functionality is disabled.
+     */
+    @PUT
+    @Path("{id}")
+    public Response createOrUpdate(
+            final ServerModuleFileMO resource,
+            @PathParam("id") final String id
+    ) throws ResourceFactory.ResourceFactoryException {
+        boolean resourceExists = factory.resourceExists(id);
+        if (resourceExists) {
+            throw new ResourceFactory.DuplicateResourceAccessException("ServerModuleFile update not supported");
+        }
+        factory.createResource(id, resource);
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
+    }
 
     /**
      * Returns a ServerModuleFile with the given id.
@@ -217,9 +226,11 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
 
     /**
      * Deletes an existing ServerModuleFile.
+     * <p>When ServerModuleFile functionality is disabled this method will fail with FORBIDDEN (403).</p>
      *
      * @param id The id of the ServerModuleFile to delete.
      * @throws ResourceFactory.ResourceNotFoundException
+     * @throws DisabledException when ServerModuleFile functionality is disabled.
      */
     @DELETE
     @Path("{id}")
@@ -247,9 +258,23 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
         serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
                 .put(ServerModuleFile.PROP_SIZE, "4194378") // ~ 4 MB
                 .put(ServerModuleFile.PROP_ASSERTIONS, "TestAssertion1,TestAssertion2")
-                .put(ServerModuleFile.PROP_FILE_NAME, "TestAssertion.jar")
+                .put(ServerModuleFile.PROP_FILE_NAME, "TestAssertion.aar")
                 .map()
         );
         return super.createTemplateItem(serverModuleFileMO);
     }
+
+    /**
+     * Runtime exception indicating {@link com.l7tech.gateway.common.module.ServerModuleFile} functionality is disabled.<br/>
+     * When disabled, calls to {@code POST}, {@code PUT} and {@code DELETE} will fail with this exception.
+     *
+     * @see com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceAccessException
+     */
+    @SuppressWarnings("serial")
+    public static class DisabledException extends ResourceFactory.ResourceAccessException {
+        public DisabledException() {
+            super("Server Module Files functionality has been disabled. Check that the serverModuleFile.upload.enable cluster property is set to 'true'");
+        }
+    }
+
 }

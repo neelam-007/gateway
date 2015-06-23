@@ -1,5 +1,6 @@
 package com.l7tech.server.module;
 
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -45,7 +46,7 @@ import static org.hamcrest.Matchers.*;
  * Test ServerModuleFileListener
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
+public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
 
     // Modular Assertions deploy directory
     private static final String MODULAR_ASSERTIONS_MODULES_DIR_NAME = "l7tech-modular";
@@ -79,11 +80,6 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
 
 
     private static final String DISABLED_MODULES_SUFFIX = ".disabled";
-
-    // used to generate random GOID
-    private static final Random rnd = new Random();
-    private static final int typeLength = ModuleType.values().length;
-    private static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     @Mock
     private ServerModuleFileManager serverModuleFileManager;
@@ -353,161 +349,6 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                     }
                 }
         ).when(loader).unloadModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-    }
-
-    /**
-     * Utility class for storing the module bytes as a File.
-     */
-    class MyServerModuleFile extends ServerModuleFile {
-        private File moduleFile;
-        File getModuleFile() { return moduleFile; }
-        void setModuleFile(File moduleFile) { this.moduleFile = moduleFile; }
-    }
-
-    /**
-     * {@link MyServerModuleFile} builder class.
-     */
-    @SuppressWarnings("UnusedDeclaration")
-    class ServerModuleFileBuilder {
-        private Goid goid;
-        private String name;
-        private Integer version;
-        private ModuleType moduleType;
-        private File moduleContent;
-        private String checkSum;
-
-        /**
-         * Pre-attached {@link MyServerModuleFile}.
-         * The builder will append new properties or override existing ones.
-         */
-        private MyServerModuleFile moduleFile;
-
-        /**
-         * Default constructor
-         */
-        public ServerModuleFileBuilder() {
-            this(null);
-        }
-
-        /**
-         * Initialize the builder with preexisting module file.
-         * This way the builder will append new properties or override existing ones.
-         *
-         * @param moduleFile    the {@link MyServerModuleFile} to attach to.
-         */
-        public ServerModuleFileBuilder(final MyServerModuleFile moduleFile) {
-            this.moduleFile = moduleFile;
-        }
-
-        /**
-         * @return either the pre-attached {@link #moduleFile} or a new {@link MyServerModuleFile} instance.
-         */
-        private MyServerModuleFile getModuleFile() {
-            return this.moduleFile == null ? new MyServerModuleFile() : this.moduleFile;
-        }
-
-        private final Collection<Triple<String, ModuleState, String>> states = new ArrayList<>();
-        private final Map<String, String> properties = new HashMap<>();
-
-        public ServerModuleFileBuilder goid(final Goid goid) {
-            this.goid = goid;
-            return this;
-        }
-
-        public ServerModuleFileBuilder name(final String name) {
-            this.name = name;
-            return this;
-        }
-
-        public ServerModuleFileBuilder version(final Integer version) {
-            this.version = version;
-            return this;
-        }
-
-        public ServerModuleFileBuilder moduleType(final ModuleType moduleType) {
-            this.moduleType = moduleType;
-            return this;
-        }
-
-        public ServerModuleFileBuilder content(final File file) {
-            this.moduleContent = file;
-            return this;
-        }
-
-        public ServerModuleFileBuilder checkSum(final String checkSum) {
-            this.checkSum = checkSum;
-            return this;
-        }
-
-        public ServerModuleFileBuilder addState(final String node, final ModuleState state) {
-            if (state == null) // do not add if null
-                return this;
-            return addState(node, state, null);
-        }
-
-        public ServerModuleFileBuilder addStateError(final String node, final String error) {
-            if (error == null) // do not add if null
-                return this;
-            return addState(node, null, error);
-
-        }
-
-        private ServerModuleFileBuilder addState(final String node, final ModuleState state, final String error) {
-            this.states.add(Triple.triple(node, state, error));
-            return this;
-        }
-
-        public ServerModuleFileBuilder addProperty(final String name, final String value) {
-            this.properties.put(name, value);
-            return this;
-        }
-
-        public MyServerModuleFile build() {
-            final MyServerModuleFile moduleFile = getModuleFile();
-            if (goid != null) {
-                moduleFile.setGoid(goid);
-            }
-            if (name != null) {
-                moduleFile.setName(name);
-            }
-            if (version != null) {
-                moduleFile.setVersion(version);
-            }
-            if (moduleType != null) {
-                moduleFile.setModuleType(moduleType);
-            }
-            if (moduleContent != null) {
-                moduleFile.setModuleFile(moduleContent);
-                try {
-                    moduleFile.setModuleSha256(ModuleDigest.digest(moduleContent));
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (checkSum != null) {
-                moduleFile.setModuleSha256(checkSum); // override check-sum
-            }
-            for (final Map.Entry<String, String> property : properties.entrySet()) {
-                if (MyServerModuleFile.PROP_SIZE.equals(property.getKey())) {
-                    moduleFile.setProperty(MyServerModuleFile.PROP_SIZE, property.getValue());
-                } else if (MyServerModuleFile.PROP_ASSERTIONS.equals(property.getKey())) {
-                    moduleFile.setProperty(MyServerModuleFile.PROP_ASSERTIONS, property.getValue());
-                } else {
-                    Assert.fail("Unsupported property: " + property.getKey());
-                }
-            }
-            for (final Triple<String, ModuleState, String> state : states) {
-                if (StringUtils.isNotBlank(state.left)) {
-                    if (state.middle != null) {
-                        moduleFile.setStateForNode(state.left, state.middle);
-                    } else {
-                        moduleFile.setStateErrorMessageForNode(state.left, state.right);
-                    }
-                }
-            }
-
-            return moduleFile;
-        }
     }
 
     /**
@@ -894,46 +735,13 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
                         final ServerModuleFile moduleFile = moduleFiles.get(goid);
                         if (moduleFile != null) {
                             Assert.assertTrue(moduleFile instanceof MyServerModuleFile);
-                            Assert.assertNotNull(((MyServerModuleFile) moduleFile).getModuleFile());
-                            Assert.assertTrue(((MyServerModuleFile) moduleFile).getModuleFile().exists());
-                            return new BufferedInputStream(new FileInputStream(((MyServerModuleFile)moduleFile).getModuleFile()));
+                            Assert.assertNotNull(((MyServerModuleFile) moduleFile).getModuleContentStream());
+                            return ((MyServerModuleFile) moduleFile).getModuleContentStream();
                         }
                         return null;
                     }
                 }
         ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
-    }
-
-    /**
-     * Convenient method for creating a test sample of {@link MyServerModuleFile} without any states, having the following attributes:
-     * <ul>
-     *     <li>goid: {@code Goid(GOID_HI_START, ordinal)}</li>
-     *     <li>name: {@code module_[ordinal]}</li>
-     *     <li>version: {@code 0}</li>
-     *     <li>specified {@code moduleType} or a random type if {@code null}</li>
-     *     <li>bytes: {@code test data _[ordinal]}</li>
-     *     <li>file-name: {@code module_[ordinal].[jar or aar, depending whether the type is modular or custom assertions]}</li>
-     *     <li>size: {@code length of the bytes array}</li>
-     *     <li>assertions: {@code assertion_[ordinal]}</li>
-     * </ul>
-     * @param ordinal       the ordinal of this test sample
-     * @param moduleType    the module type either {@link ModuleType#MODULAR_ASSERTION} or {@link ModuleType#CUSTOM_ASSERTION}
-     * @param moduleBytes   the module file containing the bytes, instead of loading the bytes in memory. Required and cannot be {@code null}.
-     */
-    private MyServerModuleFile create_test_module_without_states(final long ordinal, ModuleType moduleType, final File moduleBytes) {
-        Assert.assertNotNull(moduleBytes);
-        Assert.assertTrue(moduleBytes.exists());
-        moduleType = moduleType != null ? moduleType : ModuleType.values()[rnd.nextInt(typeLength)];
-        final byte[] bytes = String.valueOf("test data " + ordinal).getBytes(Charsets.UTF8);
-        return new ServerModuleFileBuilder()
-                .goid(new Goid(GOID_HI_START, ordinal))
-                .name("module_" + ordinal)
-                .version(0)
-                .moduleType(moduleType)
-                .content(moduleBytes)
-                .addProperty(ServerModuleFile.PROP_ASSERTIONS, "assertion_" + ordinal)
-                .addProperty(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
-                .build();
     }
 
     /**
@@ -2986,5 +2794,147 @@ public class ServerModuleFileListenerTest extends ModulesScannerTestBase {
         Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 1)));
         Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 1)));
         Assert.assertNull(customAssertionsScanner.getModule(stagedFileName));
+    }
+
+    @BugId("SSG-11352")
+    @Test
+    public void test_failed_to_download_from_db() throws Exception {
+        Assert.assertNotNull(modulesListener);
+        createSampleModules();
+        mockServerModuleFileManager(true);
+
+        // initial scan for empty deploy folders
+        do_scanner_run(ArrayUtils.EMPTY_STRING_ARRAY, ArrayUtils.EMPTY_STRING_ARRAY);
+
+        // do initial test
+        // modules initial states:
+        // module_0  => REJECTED => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar
+        // module_1  => UPLOADED => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar
+        // module_2  => ERROR    => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar
+        // module_3  => LOADED   => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar
+        // module_4  => <NONE>   => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar
+        // module_5  => <NONE>   => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar
+        // module_6  => <NONE>   => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar
+        // module_7  => ACCEPTED => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)
+        // module_8  => ACCEPTED => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)
+        // module_9  => REJECTED => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)
+        // module_10 => LOADED   => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar
+        do_test_started_event(
+                Arrays.asList(
+                        new Goid(GOID_HI_START, 2), // file: com.l7tech.WorkingTest1.aar
+                        new Goid(GOID_HI_START, 5)  // file: com.l7tech.WorkingTest3.aar
+                ),
+                Arrays.asList(
+                        new Goid(GOID_HI_START, 3)  // file: com.l7tech.DualAssertionsTest1.jar
+                )
+        );
+
+        // expected states after the started event is processed:
+        verifyModulesState(
+                new ModuleState[]{
+                        ModuleState.LOADED,   // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => LOADED
+                        ModuleState.LOADED,   // module_1  => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar       => LOADED
+                        ModuleState.REJECTED, // module_2  => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                       => REJECTED
+                        ModuleState.ERROR,    // module_3  => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                => ERROR
+                        ModuleState.LOADED,   // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => LOADED
+                        ModuleState.REJECTED, // module_5  => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                       => REJECTED
+                        ModuleState.LOADED,   // module_6  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar     => LOADED
+                        ModuleState.ERROR,    // module_7  => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)       => ERROR
+                        ModuleState.ERROR,    // module_8  => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)  => ERROR
+                        ModuleState.ERROR,    // module_9  => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)           => ERROR
+                        ModuleState.LOADED    // module_10 => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                       => LOADED
+                }
+        );
+
+        // mock to return a stream throwing java.io.IOException
+        Mockito.doAnswer(
+                new Answer<InputStream>() {
+                    @Override
+                    public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+                        Assert.assertNotNull(invocation);
+                        Assert.assertEquals("there is only one parameter for getModuleBytesAsStream", 1, invocation.getArguments().length);
+                        final Object param1 = invocation.getArguments()[0];
+                        Assert.assertTrue("Param is Goid", param1 instanceof Goid);
+                        final Goid goid = (Goid) param1;
+                        Assert.assertNotNull(goid);
+                        Assert.assertThat(goid, Matchers.is(new Goid(GOID_HI_START, 100)));
+
+                        final ServerModuleFile moduleFile = moduleFiles.get(goid);
+                        if (moduleFile != null) {
+                            return new IOExceptionThrowingInputStream(new IOException("simulated database I/O error"));
+                        }
+                        return null;
+                    }
+                }
+        ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
+
+        // add new entity module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
+        publishAndVerifyNewModuleFile(
+                100,
+                ModuleType.CUSTOM_ASSERTION,
+                null,
+                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest5.jar"),
+                ModuleState.ERROR,
+                new Functions.UnaryVoidThrows<ServerModuleFile, ServerModuleFileListener.ModuleSignatureException>() {
+                    @Override
+                    public void call(final ServerModuleFile moduleFile) throws ServerModuleFileListener.ModuleSignatureException {
+                        Assert.assertNotNull(moduleFile);
+                        Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
+                        // accept nothing to do
+                    }
+                }
+        );
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
+        Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
+
+        // remove module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
+        publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 100));
+        // double-check module_100 was deleted
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
+        Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
+
+
+        // mock to return null
+        Mockito.doAnswer(
+                new Answer<InputStream>() {
+                    @Override
+                    public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+                        Assert.assertNotNull(invocation);
+                        Assert.assertEquals("there is only one parameter for getModuleBytesAsStream", 1, invocation.getArguments().length);
+                        final Object param1 = invocation.getArguments()[0];
+                        Assert.assertTrue("Param is Goid", param1 instanceof Goid);
+                        final Goid goid = (Goid) param1;
+                        Assert.assertNotNull(goid);
+                        Assert.assertThat(goid, Matchers.is(new Goid(GOID_HI_START, 200)));
+                        Assert.assertNotNull(moduleFiles.get(goid));
+                        return null;
+                    }
+                }
+        ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
+
+        // add new entity module_200; com.l7tech.WorkingTest5.aar;
+        publishAndVerifyNewModuleFile(
+                200,
+                ModuleType.MODULAR_ASSERTION,
+                null,
+                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar"),
+                ModuleState.ERROR,
+                new Functions.UnaryVoidThrows<ServerModuleFile, ServerModuleFileListener.ModuleSignatureException>() {
+                    @Override
+                    public void call(final ServerModuleFile moduleFile) throws ServerModuleFileListener.ModuleSignatureException {
+                        Assert.assertNotNull(moduleFile);
+                        Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 200)));
+                        // accepted; nothing to do
+                    }
+                }
+        );
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 200)));
+        Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 200)));
+
+        // remove module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
+        publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 200));
+        // double-check module_100 was deleted
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 200)));
+        Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 200)));
     }
 }

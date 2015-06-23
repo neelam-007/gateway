@@ -62,16 +62,27 @@ public interface ServerModuleFileManager extends EntityManager<ServerModuleFile,
     boolean isModuleUploadEnabled();
 
     /**
-     * Retrieve module content as a stream of uninterpreted bytes. The value can then be read in chunks from the stream. <br/>
-     * Note: Current implementation of MySQL JDBC returns in-memory {@code java.io.ByteArrayInputStream}.
+     * Retrieve module content as a stream of uninterpreted bytes in a read-only transaction. The value can then be read in chunks from the stream. <br/>
+     * Note: Current implementation of MySQL JDBC returns in-memory {@code java.io.ByteArrayInputStream}.<br/>
+     * Limitation: Will not work with Derby, as current implementation of Derby JDBC throws IOException exception, with cause stream closed.
      *
-     * @param goid    the module {@link Goid}.
-     * @return A {@code InputStream} that delivers the module content as a stream of uninterpreted bytes.
-     * @throws FindException if the module entity specified with the {@code goid} doesn't exist
-     * or an SQL error occurs while extracting module content.
+     * @param goid    the module {@link Goid}.  Required and cannot be {@code null}.
+     * @return A {@code InputStream} that delivers the module content as a stream of uninterpreted bytes
+     * or {@code null} if module specified with the {@code goid} cannot be found.
+     * @throws FindException if an SQL error occurs while extracting module content.
      */
     @Nullable
-    InputStream getModuleBytesAsStream(Goid goid) throws FindException;
+    InputStream getModuleBytesAsStream(@NotNull Goid goid) throws FindException;
+
+    /**
+     * Retrieve module content as a byte array, in a read-only transaction
+     *
+     * @param goid    the module {@link Goid}.  Required and cannot be {@code null}.
+     * @return A byte array that delivers the module content or {@code null} if module specified with the {@code goid} cannot be found.
+     * @throws FindException if an SQL error occurs while extracting module content.
+     */
+    @Nullable
+    byte[] getModuleBytes(@NotNull Goid goid) throws FindException;
 
 
     /**

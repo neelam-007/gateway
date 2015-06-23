@@ -41,6 +41,9 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,10 +66,10 @@ public class DatabaseBasedRestManagementEnvironment {
     private ServerRESTGatewayManagementAssertion restManagementAssertion;
 
     public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException, SaveException, IOException {
-        SyspropUtil.setProperty("com.l7tech.server.logDirectory", this.getClass().getResource("/gateway/logs").getPath());
-        SyspropUtil.setProperty("com.l7tech.server.configDirectory", this.getClass().getResource("/gateway/config").getPath());
-        SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
-        SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
+        SyspropUtil.setProperty("com.l7tech.server.logDirectory", toPath(this.getClass().getResource("/gateway/logs")));
+        SyspropUtil.setProperty("com.l7tech.server.configDirectory", toPath(this.getClass().getResource("/gateway/config")));
+        SyspropUtil.setProperty("com.l7tech.server.varDirectory", toPath(this.getClass().getResource("/gateway/var")));
+        SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", toPath(this.getClass().getResource("/gateway/var")));
         SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "modules/skunkworks/build/modules");
         SyspropUtil.setProperty("com.l7tech.server.dbScriptsDirectory", "etc/db/liquibase");
 
@@ -99,6 +102,25 @@ public class DatabaseBasedRestManagementEnvironment {
         //This will force the default ssl key to be created
         DefaultKey defaultKey = applicationContext.getBean(DefaultKey.class);
         defaultKey.getSslInfo();
+    }
+
+    /**
+     * Convenient method for extracting the path from the specified {@code url}.
+     *
+     * @param url    the {@link java.net.URL} to convert.
+     * @return a {@code String} holding the canonical path of the specified {@code url}.
+     */
+    private static String toPath(final URL url) {
+        if (url == null) {
+            throw new NullPointerException("url cannot be null");
+        }
+
+        try {
+            return Paths.get(url.toURI()).toFile().getCanonicalPath();
+        } catch (URISyntaxException | IOException e) {
+            logger.log(Level.SEVERE, "Failed to get canonical path from url resource: " + url.getPath(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     /**

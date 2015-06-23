@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.ServerModuleFileResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ServerModuleFileTransformer;
 import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ServerModuleFile;
@@ -12,6 +13,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -52,6 +54,30 @@ public class ServerModuleFileAPIResourceFactory extends EntityManagerAPIResource
     @Override
     protected ServerModuleFileManager getEntityManager() {
         return manager;
+    }
+
+    @Override
+    public String createResource(@NotNull final ServerModuleFileMO resource) throws ResourceFactory.InvalidResourceException {
+        if (!getEntityManager().isModuleUploadEnabled()) {
+            throw new ServerModuleFileResource.DisabledException();
+        }
+        return super.createResource(resource);
+    }
+
+    @Override
+    public void createResource(@NotNull final String id, @NotNull final ServerModuleFileMO resource) throws ResourceFactory.ResourceFactoryException {
+        if (!getEntityManager().isModuleUploadEnabled()) {
+            throw new ServerModuleFileResource.DisabledException();
+        }
+        super.createResource(id, resource);
+    }
+
+    @Override
+    public void deleteResource(@NotNull final String id) throws ResourceFactory.ResourceNotFoundException {
+        if (!getEntityManager().isModuleUploadEnabled()) {
+            throw new ServerModuleFileResource.DisabledException();
+        }
+        super.deleteResource(id);
     }
 
     /**
@@ -128,7 +154,14 @@ public class ServerModuleFileAPIResourceFactory extends EntityManagerAPIResource
         final Goid goid = Goid.parseGoid(mo.getId());
         try {
             final InputStream stream = manager.getModuleBytesAsStream(goid);
-            mo.setModuleData(stream != null ? IOUtils.slurpStream(stream) : null);
+            if (stream == null) {
+                throw new ResourceFactory.ResourceNotFoundException("Unable to find ServerModuleFile with goid " + goid);
+            }
+            try {
+                mo.setModuleData(IOUtils.slurpStream(stream));
+            } finally {
+                ResourceUtils.closeQuietly(stream);
+            }
         } catch (ObjectModelException e) {
             throw new ResourceFactory.ResourceNotFoundException("Unable to find ServerModuleFile.", e);
         } catch (IOException e) {
