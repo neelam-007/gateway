@@ -195,6 +195,7 @@ public class FtpClientUtils {
         // Always use TLS 1.0 provider (SunJSSE) for outbound FTPS (Bug #8630)
         Provider tlsProv = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10);
         SSLContext sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
+        JceProvider.getInstance().prepareSslContext( sslContext );
 
         List<KeyManager> keymans = new ArrayList<KeyManager>();
         if (keyEntry != null) {

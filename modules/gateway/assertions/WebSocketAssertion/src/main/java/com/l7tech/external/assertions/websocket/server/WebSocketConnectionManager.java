@@ -213,6 +213,7 @@ public class WebSocketConnectionManager {
 
         Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
         SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+        JceProvider.getInstance().prepareSslContext( sslContext );
         sslContext.init(keyManagers, new TrustManager[]{tm}, secureRandom);
 
         return sslContext;

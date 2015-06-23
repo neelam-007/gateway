@@ -492,7 +492,9 @@ public class SsgConnectorSslHelper {
 
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Attempting to create SSLContext using " + sslContextService + " provider named " + provider.getName());
-        return SSLContext.getInstance(tlsProtocol, provider);
+        SSLContext sslContext = SSLContext.getInstance(tlsProtocol, provider);
+        JceProvider.getInstance().prepareSslContext( sslContext );
+        return sslContext;
     }
 
     /**

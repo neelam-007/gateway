@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
@@ -578,6 +579,19 @@ public abstract class JceProvider {
      */
     private static KeyStore getKeyStore(String kstype, Provider prov) throws KeyStoreException {
         return prov == null ? KeyStore.getInstance(kstype) : KeyStore.getInstance(kstype, prov);
+    }
+
+    /**
+     * Perform any provider-specific initialization that may be required for the specified newly-created
+     * SSLContext.
+     * <p/>
+     * An example of such initialization is configuring a custom session cache with a more aggressive
+     * replacement policy to avoid running out of memory when using SSL-J with the default session cache.
+     *
+     * @param sslContext an SSLContext to configure.  Required.  Implementors must check to ensure the provided
+     *                   context was created by their JSSE provider and must not assume it was.
+     */
+    public void prepareSslContext( @NotNull SSLContext sslContext ) {
     }
 
     /**

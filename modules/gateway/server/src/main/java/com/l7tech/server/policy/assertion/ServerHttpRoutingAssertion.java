@@ -164,6 +164,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             sslContext = tlsProvider == null
                     ? SSLContext.getInstance( "TLS" )
                     : SSLContext.getInstance( "TLS", tlsProvider );
+            JceProvider.getInstance().prepareSslContext( sslContext );
 
             final Goid[] tlsTrustedCertOids = assertion.getTlsTrustedCertGoids();
             Set<Goid> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Goid>(Arrays.asList(tlsTrustedCertOids));

@@ -118,13 +118,12 @@
         <!--Scheduled task-->
         <dependency org="org.quartz" name="quartz" rev="2.2.1" force="true" conf="core"/>
 
-        <!-- Alternative dependencies -->
-        <dependency org="com.rsa" name="jcm" rev="6.1.2" force="true" conf="alternative"/>
-        <dependency org="com.rsa" name="jcmFIPS" rev="6.1.2" force="true" conf="alternative"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.1.2" force="true" conf="test,alternative"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.1.2" force="true" conf="test,alternative"/>
-        <dependency org="com.rsa" name="certj" rev="6.1.1" force="true" conf="test,alternative"/>
-        <dependency org="com.rsa" name="sslj" rev="6.1.2" force="true" conf="test,alternative"/>
+        <!-- RSA Software Crypto -->
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="certj" rev="6.1.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.1.2" force="true" conf="core"/>
 
         <!-- Test dependencies -->
         <dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.5.11" force="true" conf="test"/>

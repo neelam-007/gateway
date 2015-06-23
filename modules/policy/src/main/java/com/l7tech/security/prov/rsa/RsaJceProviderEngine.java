@@ -4,8 +4,10 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.rsa.jsafe.crypto.CryptoJ;
 import org.jetbrains.annotations.NotNull;
 
+import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
@@ -22,6 +24,8 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
     private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
     private static final String PROP_CRYPTOJ_DEFAULT_RANDOM_ALG = "com.rsa.crypto.default.random";
+
+    private static final String PROVIDER_NAME_RSAJSSE = "RsaJsse";
 
     private static final boolean FIPS = ConfigFactory.getBooleanProperty( PROP_FIPS, false );
 
@@ -47,7 +51,7 @@ public class RsaJceProviderEngine extends JceProvider {
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
                 cryptoj = new CryptoJWrapper(true);
-                cryptoj.setMode(cryptoj.FIPS140_SSL_ECC_MODE);
+                cryptoj.setMode( CryptoJ.FIPS140_SSL_ECC_MODE );
                 PROVIDER = cryptoj.provider;
                 Security.insertProviderAt(PROVIDER, 1);
                 if (!cryptoj.isInFIPS140Mode()) {
@@ -59,7 +63,7 @@ public class RsaJceProviderEngine extends JceProvider {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
                 cryptoj = new CryptoJWrapper(false);
                 if (cryptoj.isFIPS140Compliant())
-                    cryptoj.setMode(cryptoj.NON_FIPS140_MODE);
+                    cryptoj.setMode( CryptoJ.NON_FIPS140_MODE );
                 PROVIDER = cryptoj.provider;
                 Security.addProvider(PROVIDER);
             }
@@ -109,13 +113,6 @@ public class RsaJceProviderEngine extends JceProvider {
         Provider prov = findSunJsseProvider(cryptojClassLoader);
         if (prov != null) {
             logger.fine("Using Sun PKCS#12 implementation");
-            return prov;
-        }
-
-        // Check for Crypto-J as fallback measure
-        prov = cryptoj.getPkcs12Provider();
-        if (prov != null) {
-            logger.fine("Using RSA PKCS#12 implementation");
             return prov;
         }
 
@@ -238,6 +235,16 @@ public class RsaJceProviderEngine extends JceProvider {
         if ("TrustManagerFactory.PKIX".equals(service))
             return PKIX_PROVIDER;
         return super.getProviderFor(service);
+    }
+
+    @Override
+    public void prepareSslContext( @NotNull SSLContext sslContext ) {
+        if ( PROVIDER_NAME_RSAJSSE.equals( sslContext.getProvider().getName() ) ) {
+            logger.fine( "Wiring up SSL-J SSLContext to custom TLS session cache" );
+            cryptoj.attachSessionCache( sslContext );
+        }
+
+        super.prepareSslContext( sslContext );
     }
 
     @Override
