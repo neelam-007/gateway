@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 
 /**
  * A custom SSL-J session cache that will not fill all of memory with SSL sessions.
- * Instantiated reflectively; see com.l7tech.security.prov.rsa.CryptoJWrapper#prepareSsljSessionCache()
  */
 public class NonLeakingSsljSessionCache extends SSLSessionCache {
     private static final Logger logger = Logger.getLogger( NonLeakingSsljSessionCache.class.getName() );
@@ -78,7 +77,6 @@ public class NonLeakingSsljSessionCache extends SSLSessionCache {
         sessionCache.remove( asKey( sessionId ) );
     }
 
-    // Called reflectively; see com.l7tech.security.prov.rsa.CryptoJWrapper.findAttachSessionCacheMethod()
     public void attach( SSLContext sslContext ) {
         SSLSessionCache.setExternalSessionCache( sslContext, cacheSharingContext, this );
     }
