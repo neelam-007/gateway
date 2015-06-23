@@ -25,6 +25,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
+import com.l7tech.server.service.ServiceAndPolicyCacheSharedLock;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.ExceptionUtils;
@@ -56,7 +57,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -743,7 +743,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     @Inject
     private DesignTimeEntityProvider entityProvider;
 
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReadWriteLock lock = ServiceAndPolicyCacheSharedLock.getLock();
     private boolean cacheIsInvalid = true;
     private boolean initialized = false;
     private final Set<Goid> policiesThatAreUnlicensed = new HashSet<Goid>();

@@ -54,7 +54,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,7 +88,7 @@ public class ServiceCache
 
     private final Timer checker; // Don't use Background since this is high priority
     // read-write lock for thread safety
-    private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
+    private final ReadWriteLock rwlock = ServiceAndPolicyCacheSharedLock.getLock();
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     private boolean running = false;
