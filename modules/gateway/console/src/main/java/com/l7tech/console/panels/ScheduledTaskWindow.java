@@ -59,7 +59,7 @@ public class ScheduledTaskWindow extends JDialog {
 
         scheduledTaskAdmin = Registry.getDefault().getScheduledTaskAdmin();
         policyAdmin = Registry.getDefault().getPolicyAdmin();
-
+        Utilities.setEscKeyStrokeDisposes(this);
         initComponents();
     }
 
