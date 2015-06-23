@@ -24,10 +24,12 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
     private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
     private static final String PROP_CRYPTOJ_DEFAULT_RANDOM_ALG = "com.rsa.crypto.default.random";
+    private static final String PROP_SSLJ_SHARED_SESSION_CACHE = "com.l7tech.security.sslj.sharedSessionCache.enable";
 
     private static final String PROVIDER_NAME_RSAJSSE = "RsaJsse";
 
     private static final boolean FIPS = ConfigFactory.getBooleanProperty( PROP_FIPS, false );
+    private static final boolean ENABLE_SSLJ_SHARED_SESSION_CACHE = SyspropUtil.getBoolean( PROP_SSLJ_SHARED_SESSION_CACHE, true );
 
     private static final CryptoJWrapper cryptoj;
     private static final Provider PROVIDER;
@@ -239,7 +241,7 @@ public class RsaJceProviderEngine extends JceProvider {
 
     @Override
     public void prepareSslContext( @NotNull SSLContext sslContext ) {
-        if ( PROVIDER_NAME_RSAJSSE.equals( sslContext.getProvider().getName() ) ) {
+        if ( ENABLE_SSLJ_SHARED_SESSION_CACHE && PROVIDER_NAME_RSAJSSE.equals( sslContext.getProvider().getName() ) ) {
             logger.fine( "Wiring up SSL-J SSLContext to custom TLS session cache" );
             cryptoj.attachSessionCache( sslContext );
         }
