@@ -273,7 +273,7 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
     @SuppressWarnings("serial")
     public static class DisabledException extends ResourceFactory.ResourceAccessException {
         public DisabledException() {
-            super("Server Module Files functionality has been disabled. Check that the serverModuleFile.upload.enable cluster property is set to 'true'");
+            super("Server Module Files functionality has been disabled. To enable, set the cluster property 'serverModuleFile.upload.enable' to 'true'");
         }
     }
 
