@@ -34,7 +34,7 @@ public class EnrollWithPortalDialog extends JDialog {
     private JPanel contentPanel;
 
     public EnrollWithPortalDialog( Window owner ) {
-        super( owner, "Activate SaaS Portal", JDialog.DEFAULT_MODALITY_TYPE );
+        super( owner, "Enroll with SaaS Portal", JDialog.DEFAULT_MODALITY_TYPE );
         setContentPane( contentPanel );
 
         Utilities.attachDefaultContextMenu( enrollmentUrlField );
@@ -71,7 +71,7 @@ public class EnrollWithPortalDialog extends JDialog {
                 }
 
                 DialogDisplayer.showConfirmDialog( EnrollWithPortalDialog.this,
-                        "Give Portal server " + url.getHost() + " full control of this Gateway?",
+                        "Allow API Portal to install portal-specific software on this Gateway?",
                         "Confirm Enrollment",
                         JOptionPane.OK_CANCEL_OPTION,
                         JOptionPane.PLAIN_MESSAGE,
