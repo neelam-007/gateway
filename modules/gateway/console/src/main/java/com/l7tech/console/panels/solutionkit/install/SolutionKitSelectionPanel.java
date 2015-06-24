@@ -206,10 +206,9 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             public void actionPerformed(ActionEvent e) {
                 if (solutionKitsModel.getSelected().isEmpty()) return;
 
-                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog();
+                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(TopComponents.getInstance().getTopParent());
                 instanceModifierDialog.pack();
                 Utilities.centerOnParentWindow(instanceModifierDialog);
-                instanceModifierDialog.setModal(true);
                 DialogDisplayer.display(instanceModifierDialog);
 
                 if (instanceModifierDialog.isOK()) {

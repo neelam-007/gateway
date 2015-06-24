@@ -4,6 +4,7 @@ import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -18,9 +19,12 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
     private boolean isOk;
     private String instanceModifier;
 
-    public SolutionKitInstanceModifierDialog() {
-        setTitle("Add an Instance Modifier");
+    public SolutionKitInstanceModifierDialog(Frame owner) {
+        super(owner, "Add an Instance Modifier", true);
+
         setContentPane(mainPanel);
+        Utilities.setEscKeyStrokeDisposes(this);
+        getRootPane().setDefaultButton(okCancelPanel.getCancelButton());
 
         Utilities.setMaxLength(instancePrefixTextField.getDocument(), 255);
 
