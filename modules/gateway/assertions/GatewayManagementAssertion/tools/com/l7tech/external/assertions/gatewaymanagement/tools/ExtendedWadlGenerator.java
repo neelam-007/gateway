@@ -325,7 +325,9 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
 
         //testing if the parameter is a list type
         if (List.class.isAssignableFrom(p.getRawType())) {
-            param.setRepeating(true);
+            if (param != null) {
+                param.setRepeating(true);
+            }
         }
         if (p.getRawType().isEnum()) {
             ArrayList<Option> options = new ArrayList<>();

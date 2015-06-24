@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionKitHeader> {
 
     /**
-     * Install the given bundle. This method will persist entities that are installed, but will not
+     * Import the given bundle. This method will persist entities that are installed / upgraded / uninstalled, but will not
      * persist solution kit entity to the database.
      *
      * @param bundle the bundle XML to install
@@ -24,16 +24,13 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws SolutionKitException
      */
     @NotNull
-    String installBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
+    String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
 
     /**
-     * Uninstall the given bundle. This method will delete entities that are uninstalled, but will not
-     * delete solution kit entity from the database.
-     *
-     * @param goid the ID of solution kit entity
+     * Find Solution Kit by it's ID.
+     * @param solutionKitGuid Solution Kit's globally unique identifier (author specified)
+     * @return the Solution Kit
      * @throws FindException
-     * @throws DeleteException
-     * @throws SolutionKitException
      */
-    void uninstallBundle(@NotNull Goid goid) throws FindException, DeleteException, SolutionKitException;
+    SolutionKit findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
 }

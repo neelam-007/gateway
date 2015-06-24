@@ -1,6 +1,7 @@
 package com.l7tech.gateway.rest;
 
 import com.l7tech.message.Header;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +55,8 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
         final Set<Class<?>> resourceClassSet = new HashSet<>();
         //add the provider class so that the RestHandler can be created.
         resourceClassSet.add(RestHandler.RestHandlerProvider.class);
+        //add multi-part support
+        resourceClassSet.add(MultiPartFeature.class);
         if (additionalResourceClasses != null) {
             resourceClassSet.addAll(additionalResourceClasses);
         }

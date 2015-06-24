@@ -1,4 +1,4 @@
-package com.l7tech.console.panels.solutionkit;
+package com.l7tech.gateway.common.api.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;

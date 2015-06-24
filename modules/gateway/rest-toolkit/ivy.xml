@@ -27,6 +27,8 @@
         <dependency name="jersey-client" org="jersey" rev="2.5.1" force="true" conf="core"/>
         <dependency name="jersey-common" org="jersey" rev="2.5.1" force="true" conf="core"/>
         <dependency name="jersey-server" org="jersey" rev="2.5.1" force="true" conf="core"/>
+        <dependency name="jersey-media-multipart" org="jersey" rev="2.5.1" force="true" conf="core"/>
+        <dependency name="mimepull" org="jersey" rev="1.9.2" force="true" conf="core"/>
         <dependency name="cglib-nodep" org="cglib" rev="2.2.2" force="true" conf="core"/>
         <dependency name="asm" org="asm" rev="3.3.1" force="true" conf="core"/>
         <dependency name="validation-api" org="javax.validation" rev="1.0.0.GA" force="true" conf="core"/>

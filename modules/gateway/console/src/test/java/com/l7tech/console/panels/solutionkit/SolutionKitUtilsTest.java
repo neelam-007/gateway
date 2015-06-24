@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import org.junit.Assert;
 import org.junit.Test;

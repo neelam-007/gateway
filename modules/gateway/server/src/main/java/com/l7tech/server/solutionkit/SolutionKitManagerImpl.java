@@ -19,9 +19,13 @@ import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +49,8 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             "</L7p:RESTGatewayManagement>" +
             "</wsp:All>" +
             "</wsp:Policy>";
+
+    private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
 
     private ServerAssertion serverRestGatewayManagementAssertion = null;
 
@@ -74,7 +81,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String installBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
+    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
         final RestmanInvoker restmanInvoker = createRestmanInvoker();
 
         final String requestXml;
@@ -116,15 +123,22 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return "";
     }
 
-    /**
-     * This method's transactional propagation is set to NOT_SUPPORTED because the RESTMAN bundle importer code will import within
-     * its own transaction and rollback if necessary.
-     */
+    @Nullable
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void uninstallBundle(@NotNull Goid goid) throws DeleteException, FindException, SolutionKitException {
-        // todo (kpak) - Delete bundle using RESTMAN.
-        //
+    @Transactional(readOnly=true)
+    public SolutionKit findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<SolutionKit>() {
+                @Override
+                protected SolutionKit doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    final Query q = session.createQuery(HQL_FIND_BY_SOLUTION_KIT_GUID);
+                    q.setParameter(0, solutionKitGuid);
+                    return (SolutionKit) q.uniqueResult();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
     }
 
     @Override

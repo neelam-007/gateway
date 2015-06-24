@@ -2,9 +2,6 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
-import com.l7tech.console.panels.solutionkit.SolutionKitCustomization;
-import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
-import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
@@ -13,18 +10,21 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
-import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.*;
+import com.l7tech.util.Either;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
-import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -119,8 +119,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // invoke custom callback
         try {
-            invokeCustomCallback(settings);
-        } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
+            new SkarProcessor(settings).invokeCustomCallback();
+        } catch (SolutionKitException e) {
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         }
@@ -318,54 +318,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             SolutionKitManagerUi customUi = customization.getCustomUi();
             if (customUi != null) {
                 customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
-            }
-        }
-    }
-
-    private void invokeCustomCallback(final SolutionKitsConfig settings)
-            throws SolutionKitManagerCallback.CallbackException, IOException, TooManyChildElementsException, MissingRequiredElementException {
-
-        Document metadataDoc, bundleDoc;
-        SolutionKitManagerContext skContext;
-
-        SolutionKitCustomization customization;
-        SolutionKitManagerCallback customCallback;
-        SolutionKitManagerUi customUi;
-
-        for (SolutionKit sk : settings.getCustomizations().keySet()) {
-            customization = settings.getCustomizations().get(sk);
-            if (customization == null) {
-                continue;
-            }
-
-            // implementer provides a callback
-            customCallback = customization.getCustomCallback();
-            if (customCallback != null) {
-                customUi = customization.getCustomUi();
-
-                // if implementer provides a context
-                skContext = customUi != null ? customUi.getContext() : null;
-                if (skContext != null) {
-                    // get from selected
-                    metadataDoc = SolutionKitUtils.createDocument(sk);
-                    bundleDoc = settings.getBundleAsDocument(sk);
-
-                    // set to context
-                    skContext.setSolutionKitMetadata(metadataDoc);
-                    skContext.setMigrationBundle(bundleDoc);
-
-                    // execute callback
-                    customCallback.preMigrationBundleImport(skContext);
-
-                    // copy back metadata from xml version
-                    SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, sk);
-
-                    // set (possible) changes made to metadata and bundle
-                    // TODO fix duplicate HashMap bug where put(...) does not replace previous value
-                    settings.setBundle(sk, bundleDoc);
-                } else  {
-                    customCallback.preMigrationBundleImport(null);
-                }
             }
         }
     }

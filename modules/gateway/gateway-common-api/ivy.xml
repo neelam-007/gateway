@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="layer7-gateway-common-api"
+          status="integration"
+            >
+    </info>
+    <configurations>
+        <include file="../../../etc/build/ivyconfigurations.xml"/>
+    </configurations>
+    <publications>
+        <artifact name="layer7-gateway-common-api" type="jar" ext="jar" conf="master"/>
+    </publications>
+    <dependencies>
+        <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-test" rev="latest.integration" conf="test"/>
+    </dependencies>
+</ivy-module>

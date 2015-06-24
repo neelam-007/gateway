@@ -59,6 +59,7 @@ import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
 import com.l7tech.server.service.*;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
+import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.SsgConnectorManagerStub;
@@ -216,6 +217,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
         applicationContext.getBeanFactory().registerSingleton("cassandraEntityManager", new CassandraConnectionEntityManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("solutionKitManager", new SolutionKitManagerStub());
 
         moreInit();
 

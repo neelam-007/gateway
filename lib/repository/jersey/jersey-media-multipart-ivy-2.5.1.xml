@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="jersey"
+		module="jersey-media-multipart"
+		revision="2.5.1"
+		status="release"
+		publication="20150610001105"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jersey-media-multipart" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

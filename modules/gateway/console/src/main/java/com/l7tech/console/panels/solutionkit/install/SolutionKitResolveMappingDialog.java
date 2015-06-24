@@ -1,7 +1,7 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.*;
-import com.l7tech.console.panels.solutionkit.SolutionKitUtils;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.Mapping;

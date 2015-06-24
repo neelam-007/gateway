@@ -4,7 +4,8 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
-import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.api.Bundle;
@@ -75,34 +76,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         }
 
         try {
-            SolutionKit solutionKit = getWizardInput().getSingleSelectedSolutionKit();
-            if (solutionKit == null) {
-                throw new SolutionKitException("Unexpected error: unable to get selected Solution Kit.");
-            }
-
-            // Update resolved mapping target IDs.
-            Map<String, String> resolvedEntityIds = getWizardInput().getResolvedEntityIds(solutionKit);
-            Bundle bundle = getWizardInput().getBundle(solutionKit);
-            if (bundle != null) {
-                for (Mapping mapping : bundle.getMappings()) {
-                    String resolvedId = resolvedEntityIds.get(mapping.getSrcId());
-                    if (resolvedId != null) {
-                        mapping.setTargetId(resolvedId);
-                    }
-                }
-            }
-
-            boolean isUpgrade = getWizardInput().getSolutionKitToUpgrade() != null;
-            String bundleXml = getWizardInput().getBundleAsString(solutionKit);
-            if (bundleXml == null) {
-                throw new SolutionKitException("Unexpected error: unable to get Solution Kit bundle.");
-            }
             Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
-                solutionKitAdmin,
-                this.getOwner(),
-                "Install Solution Kit",
-                "The gateway is installing selected solution kit(s)",
-                solutionKitAdmin.install(solutionKit, bundleXml, isUpgrade));
+                    solutionKitAdmin,
+                    this.getOwner(),
+                    "Install Solution Kit",
+                    "The gateway is installing selected solution kit(s)",
+                    new SkarProcessor(getWizardInput()).installOrUpgrade(solutionKitAdmin));
 
             if (result.isLeft()) {
                 // Solution kit failed to install.

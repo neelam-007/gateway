@@ -26,7 +26,13 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Inject
     private LicenseManager licenseManager;
 
-    public SolutionKitAdminImpl() {
+
+    @SuppressWarnings("unused")   // used for spring configuration
+    public SolutionKitAdminImpl() {}
+
+    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager) {
+        this.licenseManager = licenseManager;
+        this.solutionKitManager = solutionKitManager;
     }
 
     @NotNull
@@ -49,7 +55,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                 public String call() throws Exception {
                     checkFeatureEnabled(solutionKit);
                     final boolean isTest = true;
-                    return solutionKitManager.installBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+                    return solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                 }
             }));
 
@@ -74,7 +80,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
                     // Install bundle.
                     final boolean isTest = false;
-                    String mappings = solutionKitManager.installBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+                    String mappings = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
 
                     // Save solution kit entity.
                     solutionKit.setMappings(mappings);
@@ -109,7 +115,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     final SolutionKit solutionKit = get(goid);
                     String resultMappings = "";
                     if (solutionKit.getUninstallBundle() != null) {
-                        resultMappings = solutionKitManager.installBundle(solutionKit.getUninstallBundle(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+                        resultMappings = solutionKitManager.importBundle(solutionKit.getUninstallBundle(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
                     solutionKitManager.delete(goid);
                     return resultMappings;
