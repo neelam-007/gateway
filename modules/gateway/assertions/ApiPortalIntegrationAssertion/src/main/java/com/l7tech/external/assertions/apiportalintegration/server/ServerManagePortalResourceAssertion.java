@@ -292,13 +292,14 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
             case PUT: {
                 final String resourceXml = ExpandVariables.process("${" + RESOURCE + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
                 final ApiPlanListResource inputList = (ApiPlanListResource) resourceUnmarshaller.unmarshal(resourceXml, ApiPlanListResource.class);
-                if (!inputList.getApiPlans().isEmpty()) {
+                final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+                final boolean removeOmitted = Boolean.valueOf(deleteOmittedString).booleanValue();
+                if (removeOmitted || !inputList.getApiPlans().isEmpty()) {
                     // ensure all ids are present
                     for (final ApiPlanResource plan : inputList.getApiPlans()) {
                         Validate.notEmpty(plan.getPlanId(), "Resource id missing");
                     }
-                    final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
-                    final List<ApiPlanResource> result = planResourceHandler.put(inputList.getApiPlans(), Boolean.valueOf(deleteOmittedString).booleanValue());
+                    final List<ApiPlanResource> result = planResourceHandler.put(inputList.getApiPlans(), removeOmitted);
                     String updatedResourceXml = "N/A";
                     try {
                         updatedResourceXml = resourceMarshaller.marshal(new ApiPlanListResource(result));
@@ -378,7 +379,7 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 final ApiKeyListResource inputList = (ApiKeyListResource) resourceUnmarshaller.unmarshal(resourceXml, ApiKeyListResource.class);
                 final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
                 boolean removeOmitted = Boolean.valueOf(deleteOmittedString).booleanValue();
-                if (!inputList.getApis().isEmpty()) {
+                if (removeOmitted || !inputList.getApis().isEmpty()) {
                     // ensure all ids are present
                     final Map<String, String> filters = new HashMap<String, String>();
                     //validate that the list has the id/key & secret
@@ -483,13 +484,14 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
             case PUT: {
                 final String resourceXml = ExpandVariables.process("${" + RESOURCE + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
                 final AccountPlanListResource inputList = (AccountPlanListResource) resourceUnmarshaller.unmarshal(resourceXml, AccountPlanListResource.class);
-                if (!inputList.getAccountPlans().isEmpty()) {
+                final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+                final boolean removeOmitted = Boolean.valueOf(deleteOmittedString).booleanValue();
+                if (removeOmitted || !inputList.getAccountPlans().isEmpty()) {
                     // ensure all ids are present
                     for (final AccountPlanResource plan : inputList.getAccountPlans()) {
                         Validate.notEmpty(plan.getPlanId(), "Resource id missing");
                     }
-                    final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
-                    final List<AccountPlanResource> result = accountPlanResourceHandler.put(inputList.getAccountPlans(), Boolean.valueOf(deleteOmittedString).booleanValue());
+                    final List<AccountPlanResource> result = accountPlanResourceHandler.put(inputList.getAccountPlans(), removeOmitted);
                     String updatedResourceXml = "N/A";
                     try {
                         updatedResourceXml = resourceMarshaller.marshal(new AccountPlanListResource(result));

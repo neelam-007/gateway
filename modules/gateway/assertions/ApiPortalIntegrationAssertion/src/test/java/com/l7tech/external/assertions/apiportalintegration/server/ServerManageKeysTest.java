@@ -15,19 +15,18 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.xml.bind.JAXBException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.external.assertions.apiportalintegration.ManagePortalResourceAssertion.*;
 import static com.l7tech.external.assertions.apiportalintegration.server.ServerManagePortalResourceAssertion.ROOT_URI;
@@ -373,6 +372,30 @@ public class ServerManageKeysTest {
         verify(resourceMarshaller, never()).marshal(Matchers.<Resource>any());
     }
 
+    @BugId("APIM-522")
+    @Test
+    public void putKeysEmptyCollectionRemoveOmitted() throws Exception {
+        policyContext.setVariable(OPERATION, "PUT");
+        policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/keys");
+        policyContext.setVariable(RESOURCE, INPUT);
+        policyContext.setVariable(OPTION_REMOVE_OMITTED, "true");
+        final List<ApiKeyResource> resources = Collections.EMPTY_LIST;
+        final ApiKeyListResource apiKeyListResource = new ApiKeyListResource(resources);
+        when(resourceUnmarshaller.unmarshal(INPUT, ApiKeyListResource.class)).thenReturn(apiKeyListResource);
+        when(keyResourceHandler.put(anyList(), anyBoolean())).thenReturn(resources);
+        when(resourceMarshaller.marshal(any(ApiKeyListResource.class))).thenReturn("EMPTY COLLECTION");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(new Integer(200), policyContext.getVariable(RESPONSE_STATUS));
+        assertEquals("success", policyContext.getVariable(RESPONSE_DETAIL));
+        assertEquals("EMPTY COLLECTION", policyContext.getVariable(RESPONSE_RESOURCE));
+        verify(resourceUnmarshaller).unmarshal(INPUT, ApiKeyListResource.class);
+        verify(keyResourceHandler).put(resources, true);
+        verify(resourceMarshaller).marshal(argThat(new EmptyKeyListResourceMatcher()));
+    }
+
     @Test
     public void deleteKey() throws Exception {
         policyContext.setVariable(OPERATION, "DELETE");
@@ -491,6 +514,14 @@ public class ServerManageKeysTest {
             fail("Found unexpected context variable with name=" + name);
         } catch (final NoSuchVariableException e) {
             // expected
+        }
+    }
+
+    private class EmptyKeyListResourceMatcher extends ArgumentMatcher<ApiKeyListResource> {
+        @Override
+        public boolean matches(final Object o) {
+            final ApiKeyListResource resource = (ApiKeyListResource) o;
+            return resource != null && resource.getApis() != null && resource.getApis().isEmpty();
         }
     }
 }

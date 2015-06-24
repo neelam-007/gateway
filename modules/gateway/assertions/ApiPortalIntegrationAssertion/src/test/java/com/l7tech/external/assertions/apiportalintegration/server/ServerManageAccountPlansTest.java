@@ -15,6 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -429,6 +430,30 @@ public class ServerManageAccountPlansTest {
         assertEquals(new Integer(200), (Integer) policyContext.getVariable(RESPONSE_STATUS));
         assertEquals(SUCCESS, (String) policyContext.getVariable(RESPONSE_DETAIL));
         assertEquals(xml, (String) policyContext.getVariable(RESPONSE_RESOURCE));
+    }
+
+    @BugId("APIM-522")
+    @Test
+    public void checkRequestAddOrUpdateAccountPlansNoneRemoveOmitted() throws Exception {
+        final String xml = "<l7:AccountPlans xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\"></l7:AccountPlans>";
+        policyContext.setVariable(OPERATION, "PUT");
+        policyContext.setVariable(RESOURCE_URI, ROOT_URI + "account/plans");
+        policyContext.setVariable(RESOURCE, xml);
+        policyContext.setVariable(OPTION_REMOVE_OMITTED, "true");
+        accountPlanResources.clear();
+        final AccountPlanListResource listResource = new AccountPlanListResource(accountPlanResources);
+        when(resourceUnmarshaller.unmarshal(xml, AccountPlanListResource.class)).thenReturn(listResource);
+        when(resourceMarshaller.marshal(any(AccountPlanListResource.class))).thenReturn(xml);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        verify(resourceUnmarshaller).unmarshal(xml, AccountPlanListResource.class);
+        verify(accountPlanResourceHandler).put(accountPlanResources, true);
+        verify(resourceMarshaller).marshal(argThat(new AccountPlanListResourceMatcher()));
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(new Integer(200), policyContext.getVariable(RESPONSE_STATUS));
+        assertEquals(SUCCESS, policyContext.getVariable(RESPONSE_DETAIL));
+        assertEquals(xml, policyContext.getVariable(RESPONSE_RESOURCE));
     }
 
     @Test
