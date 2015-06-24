@@ -77,7 +77,12 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
             case RESPONSE:
                 return getResponse();
             default:
-                return context.getTargetMessage( targetable );
+                final String varName = targetable.getOtherTargetMessageVariable();
+                if (varName != null && isParentVariable(varName)) {
+                    return super.getTargetMessage(targetable);
+                } else {
+                    return context.getTargetMessage( targetable );
+                }
         }
     }
 
@@ -89,7 +94,12 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
             case RESPONSE:
                 return getResponse();
             default:
-                return context.getTargetMessage( targetable, allowNonMessageVar );
+                final String varName = targetable.getOtherTargetMessageVariable();
+                if (varName != null && isParentVariable(varName)) {
+                    return super.getTargetMessage(targetable, allowNonMessageVar);
+                } else {
+                    return context.getTargetMessage( targetable, allowNonMessageVar );
+                }
         }
     }
 
