@@ -66,6 +66,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Class that provides portal bootstrap services.
@@ -131,8 +132,8 @@ public class PortalBootstrapManager {
         if ( !"https".equals( url.getProtocol() ) )
             throw new IOException( "Enrollment URL must begin with https" );
 
-        if ( ENROLL_PORT != url.getPort() )
-            throw new IOException( "Incorrect port." );
+//        if ( ENROLL_PORT != url.getPort() )
+//            throw new IOException( "Incorrect port." );
 
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
@@ -167,7 +168,8 @@ public class PortalBootstrapManager {
         connection.setRequestProperty( "Content-Type", "application/json" );
         connection.setDoOutput( true );
         connection.getOutputStream().write( postBody );
-        Document bundleDoc = setMappings(connection.getInputStream(), user);
+        boolean isBinary = ContentTypeHeader.parseValue(connection.getContentType()).matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
+        Document bundleDoc = setMappings( isBinary ? new GZIPInputStream(connection.getInputStream()):connection.getInputStream(), user);
         installBundle(bundleDoc, user);
     }
 
