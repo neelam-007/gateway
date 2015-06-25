@@ -84,7 +84,7 @@ public class EnrollWithPortalDialog extends JDialog {
                                     try {
                                         AsyncAdminMethods.JobId<Boolean> enrollJobId = portalboot.enrollWithPortal(urlText);
                                         Either<String, Boolean> result =
-                                                AdminGuiUtils.doAsyncAdmin(portalboot, EnrollWithPortalDialog.this, "Enrolling Gateway", "Enrolling...", enrollJobId, false);
+                                                AdminGuiUtils.doAsyncAdmin(portalboot, EnrollWithPortalDialog.this, "Enroll with SaaS Portal", "Enrolling...", enrollJobId, false);
 
                                         if (result.isLeft()) {
                                             String msg = "Unable to enroll: " + result.left();
