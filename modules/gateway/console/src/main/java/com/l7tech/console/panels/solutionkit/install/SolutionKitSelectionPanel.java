@@ -20,6 +20,7 @@ import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,6 +100,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
         this.settings = settings;
+
+        initializeInstanceModifierButton(getMaxLengthForInstanceModifier());
 
         addCustomUis(customizableButtonPanel, settings);
     }
@@ -201,42 +205,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
-        instanceModifierButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (solutionKitsModel.getSelected().isEmpty()) return;
-
-                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(TopComponents.getInstance().getTopParent());
-                instanceModifierDialog.pack();
-                Utilities.centerOnParentWindow(instanceModifierDialog);
-                DialogDisplayer.display(instanceModifierDialog);
-
-                if (instanceModifierDialog.isOK()) {
-                    final String instanceModifier = instanceModifierDialog.getInstanceModifier();
-                    if (StringUtils.isEmpty(instanceModifier)) return;
-
-                    final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
-
-                    // Preserve bundle and customization corresponding to the specific solutionKit,
-                    // then remove old records from the two maps, loaded and customizations.
-                    final Map<SolutionKit, Bundle> loadedSolutionKits = settings.getLoadedSolutionKits();
-                    final Bundle bundle = loadedSolutionKits.get(solutionKit);
-                    loadedSolutionKits.remove(solutionKit);
-
-                    final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
-                    final SolutionKitCustomization customization = customizations.get(solutionKit);
-                    customizations.remove(solutionKit);
-
-                    // Add records with an updated solutionKit due to properties changed back to the maps
-                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
-                    if (bundle != null) loadedSolutionKits.put(solutionKit, bundle);
-                    if (customization != null) customizations.put(solutionKit, customization);
-
-                    solutionKitsModel.fireTableDataChanged();
-                }
-            }
-        });
-
         solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
             column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
                 @Override
@@ -294,6 +262,47 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         add(mainPanel);
     }
 
+    private void initializeInstanceModifierButton(final int maxInstanceModifierLength) {
+        instanceModifierButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (solutionKitsModel.getSelected().isEmpty()) return;
+
+                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
+                    TopComponents.getInstance().getTopParent(),
+                    maxInstanceModifierLength
+                );
+                instanceModifierDialog.pack();
+                Utilities.centerOnParentWindow(instanceModifierDialog);
+                DialogDisplayer.display(instanceModifierDialog);
+
+                if (instanceModifierDialog.isOK()) {
+                    final String instanceModifier = instanceModifierDialog.getInstanceModifier();
+                    if (StringUtils.isEmpty(instanceModifier)) return;
+
+                    final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+
+                    // Preserve bundle and customization corresponding to the specific solutionKit,
+                    // then remove old records from the two maps, loaded and customizations.
+                    final Map<SolutionKit, Bundle> loadedSolutionKits = settings.getLoadedSolutionKits();
+                    final Bundle bundle = loadedSolutionKits.get(solutionKit);
+                    loadedSolutionKits.remove(solutionKit);
+
+                    final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
+                    final SolutionKitCustomization customization = customizations.get(solutionKit);
+                    customizations.remove(solutionKit);
+
+                    // Add records with an updated solutionKit due to properties changed back to the maps
+                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+                    if (bundle != null) loadedSolutionKits.put(solutionKit, bundle);
+                    if (customization != null) customizations.put(solutionKit, customization);
+
+                    solutionKitsModel.fireTableDataChanged();
+                }
+            }
+        });
+    }
+
     private void onManageLicenses() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
         ManageLicensesDialog dlg = new ManageLicensesDialog(mainWindow);
@@ -327,5 +336,53 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private void createUIComponents() {
         customizableButtonPanel = new JPanel();
         customizableButtonPanel.setLayout(new BorderLayout());
+    }
+
+    /**
+     * Calculate what the max length of instance modifier could be.
+     * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
+     *
+     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
+     */
+    private int getMaxLengthForInstanceModifier() {
+        Map<SolutionKit, Bundle> kitBundleMap = settings.getLoadedSolutionKits();
+        //todo: need code modification when implementing collection of skar files.
+        Bundle bundle = (Bundle) kitBundleMap.values().toArray()[0];
+
+        int maxAllowedLengthAllow = Integer.MAX_VALUE;
+        int allowedLength;
+        String entityName;
+        EntityType entityType;
+
+        final List<Item> items = bundle.getReferences();
+        for (Item item: items) {
+            entityName = item.getName();
+            entityType = EntityType.valueOf(item.getType());
+
+            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
+                // The format of a folder name is "<folder_name> <instance_modifier>".
+                // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
+                // The max length of a folder name or an encapsulated assertion name is 128.
+                allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
+            } else if (entityType == EntityType.POLICY) {
+                // The format of a policy name is "<instance_modifier> <policy_name>".
+                // The max length of a policy name is 255.
+                allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
+            } else if (entityType == EntityType.SERVICE) {
+                // The max length of a service routing uri is 128
+                // The format of a service routing uri is "/<instance_modifier>/<service_name>".
+                allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
+            }  else {
+                continue;
+            }
+
+            if (maxAllowedLengthAllow > allowedLength) {
+                maxAllowedLengthAllow = allowedLength;
+            }
+        }
+
+        if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
+
+        return maxAllowedLengthAllow;
     }
 }
