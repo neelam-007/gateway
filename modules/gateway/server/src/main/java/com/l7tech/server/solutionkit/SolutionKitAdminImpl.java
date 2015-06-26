@@ -8,12 +8,18 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.util.Background;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -85,6 +91,9 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     // Save solution kit entity.
                     solutionKit.setMappings(mappings);
 
+                    // Update the delete mapping probably due to new entities created or an instance modifier specified.
+                    solutionKit.setUninstallBundle(updateUninstallBundle(solutionKit, mappings));
+
                     if (isUpgrade) {
                         solutionKitManager.update(solutionKit);
                         return solutionKit.getGoid();
@@ -137,5 +146,35 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
             throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
         }
+    }
+
+    /**
+     * After a new instance of a solution kit is installed and an instance modifier might be specified, the entity mappings
+     * will contains targetId to replace srcId. In this case, the original uninstall mappings should be updated based on
+     * the given entity mappings.
+     */
+    private String updateUninstallBundle(@NotNull final SolutionKit solutionKit, @NotNull final String mappings) throws SAXException, IOException {
+        final Map<String, String> idsMap = new HashMap<>();
+        String srcId, targetId;
+
+        // Find all matches of srdId and targetId in "mappings" and save them in a map.
+        final RestmanMessage mappingsMsg = new RestmanMessage(mappings);
+        for (Element element: mappingsMsg.getMappings()) {
+            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+            targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
+            if (!StringUtils.isEmpty(srcId) && !StringUtils.isEmpty(targetId))
+                idsMap.put(srcId, targetId);
+        }
+
+        // Add targetId in the uninstall mappings
+        final RestmanMessage uninstallMappingsMsg = new RestmanMessage(solutionKit.getUninstallBundle());
+        for (Element element: uninstallMappingsMsg.getMappings()) {
+            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+            if (idsMap.containsKey(srcId)) {
+                element.setAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE, idsMap.get(srcId));
+            }
+        }
+
+        return uninstallMappingsMsg.getAsString();
     }
 }
