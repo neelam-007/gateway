@@ -4,8 +4,6 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
@@ -24,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
@@ -32,7 +29,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -48,7 +48,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private static final long serialVersionUID = 385196421868644404L;
     private static final Logger logger = Logger.getLogger(ServerModuleFileManagerWindow.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFileManagerWindow.class.getName());
-    private static final String CLUSTER_PROP_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
     private static final int REFRESH_INTERVAL_MILLIS = 5000;
     private static final long WAIT_BEFORE_DISPLAY_ASYNC_OPERATION_DIALOG = 500L;
     private static final int SIZE_COLUMN_INDEX = 3;
@@ -87,6 +86,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
      * Convenience CellRenderer to display server module bytes into human-readable {@code String}.<br/>
      * Also the alignment is set to {@link #SIZE_COLUMN_ALIGNMENT}.
      */
+    @SuppressWarnings("serial")
     private static class SizeCellRenderer extends DefaultTableCellRenderer {
         /**
          * Sets the alignment to right.
@@ -116,7 +116,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
 
         // determine whether the user create new ServerModuleFile entities
         canCreate = getSecurityProvider().hasPermission(new AttemptedCreate(EntityType.SERVER_MODULE_FILE));
-        canUpload = isModulesUploadEnabled();
+        canUpload = ServerModuleFileClusterPropertiesReader.getInstance().isModulesUploadEnabled();
         uploadDisabledWarningPanel.setVisible(!canUpload);
 
         // set dispose on close and when ESC is pressed
@@ -152,6 +152,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 return getClusterStatusAdmin().getClusterNodesUpdate(oldVersionID);
             }
         };
+        //noinspection serial
         clusterNodesComboModel = new DefaultComboBoxModel<ClusterNodeInfo>() {
             /**
              * Adds an element in alphabetical order.
@@ -623,31 +624,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
     }
 
     /**
-     * Determine whether Modules upload is enabled or not.
-     * This is determined by checking the cluster wide property "serverModuleFile.upload.enable".
-     */
-    private boolean isModulesUploadEnabled() {
-        if (Registry.getDefault().isAdminContextPresent()) {
-            final ClusterStatusAdmin clusterAdmin = getClusterStatusAdmin();
-            try {
-                final ClusterProperty prop = clusterAdmin.findPropertyByName(CLUSTER_PROP_UPLOAD_ENABLE);
-                if (prop != null) {
-                    return Boolean.valueOf(prop.getValue());
-                }
-                for (final ClusterPropertyDescriptor desc : clusterAdmin.getAllPropertyDescriptors()) {
-                    if (desc.getName().equals(CLUSTER_PROP_UPLOAD_ENABLE)) {
-                        return Boolean.valueOf(desc.getDefaultValue());
-                    }
-                }
-                logger.log(Level.SEVERE, "Failed to get default value for cluster property :" + CLUSTER_PROP_UPLOAD_ENABLE);
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_ENABLE + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-        }
-        return false;
-    }
-
-    /**
      * Create a default delete confirmer.
      *
      * @return a new EntityDeleteConfirmer instance.  Never {@code null}.
@@ -703,6 +679,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                     final ServerModuleFileState moduleState = moduleFile.getStateForNode(selectedClusterNodeId);
                     if (moduleState != null) {
                         if (StringUtils.isNotBlank(moduleState.getErrorMessage())) {
+                            //noinspection ConstantConditions
                             return moduleState.getErrorMessage();
                         } else {
                             return moduleState.getState().toString();

@@ -1,13 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.module.*;
 import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -23,16 +18,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utility class for choosing a Modular or Custom Assertion Module from the local File System.
  */
 public class ServerModuleFileChooser {
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFileChooser.class.getName());
-    private static final Logger logger = Logger.getLogger(ServerModuleFileChooser.class.getName());
-    private static final String CLUSTER_PROP_UPLOAD_MAX_SIZE = "serverModuleFile.upload.maxSize";
 
     /**
      * Values in server module config is expected to change infrequently (e.g. almost never).
@@ -96,6 +87,7 @@ public class ServerModuleFileChooser {
                         fc.addChoosableFileFilter(modularAssertionFileFilter);
                         fc.addChoosableFileFilter(customAssertionFileFilter);
                         if (StringUtils.isNotBlank(startupFolder)) {
+                            //noinspection ConstantConditions
                             final File currentDir = new File(startupFolder);
                             if (currentDir.isDirectory()) {
                                 fc.setCurrentDirectory(currentDir);
@@ -141,7 +133,7 @@ public class ServerModuleFileChooser {
         if (fileLength == 0L) {
             throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), file.getAbsolutePath()));
         }
-        final long maxModuleFileSize = getModulesUploadMaxSize();
+        final long maxModuleFileSize = ServerModuleFileClusterPropertiesReader.getInstance().getModulesUploadMaxSize();
         if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
             throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFile.humanReadableBytes(maxModuleFileSize)));
         }
@@ -253,30 +245,5 @@ public class ServerModuleFileChooser {
                 return StringUtils.EMPTY;
             }
         };
-    }
-
-    /**
-     * Get the maximum Server Module File Size to be uploaded (in bytes), or 0 for unlimited (Integer).
-     */
-    private long getModulesUploadMaxSize() {
-        if (Registry.getDefault().isAdminContextPresent()) {
-            final ClusterStatusAdmin clusterAdmin = Registry.getDefault().getClusterStatusAdmin();
-            try {
-                final ClusterProperty prop = clusterAdmin.findPropertyByName(CLUSTER_PROP_UPLOAD_MAX_SIZE);
-                if (prop != null) {
-                    return Long.valueOf(prop.getValue());
-                }
-                for (final ClusterPropertyDescriptor desc : clusterAdmin.getAllPropertyDescriptors()) {
-                    if (desc.getName().equals(CLUSTER_PROP_UPLOAD_MAX_SIZE)) {
-                        return Long.valueOf(desc.getDefaultValue());
-                    }
-                }
-                logger.log(Level.SEVERE, "Failed to get default value for cluster property :" + CLUSTER_PROP_UPLOAD_MAX_SIZE);
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_MAX_SIZE + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-        }
-        // todo: unlikely this will happen, still should we default to unlimited (0)?
-        return 0;
     }
 }
