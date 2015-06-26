@@ -78,7 +78,7 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
             Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
-                    PortalBootstrapManager.getInstance().enrollWithPortal(url);
+                    PortalBootstrapManager.getInstance().enrollWithPortal(url, null, null);
                     return null;
                 }
             });

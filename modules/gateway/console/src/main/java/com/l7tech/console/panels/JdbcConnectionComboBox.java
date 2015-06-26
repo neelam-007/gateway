@@ -41,7 +41,7 @@ public class JdbcConnectionComboBox extends JComboBox<String> {
             return;
         }
 
-        Goid selected = getSelectedJdbcConnection();
+        Goid selected = getSelectedJdbcConnectionGoid();
 
         try {
             loadedJdbcConnections = admin.getAllJdbcConnections();
@@ -90,18 +90,29 @@ public class JdbcConnectionComboBox extends JComboBox<String> {
      *
      * @return the GOID of the selected JDBC Connection. Null if a JDBC Connection is not selected.
      */
-    public Goid getSelectedJdbcConnection() {
-        Goid goid = null;
+    public Goid getSelectedJdbcConnectionGoid() {
+        final JdbcConnection selected = getSelectedJdbcConnection();
+        return selected == null ? null : selected.getGoid();
+    }
+
+
+    /**
+     * Gets the selected JDBC Connection in the combo box.
+     *
+     * @return the selected JDBC Connection. Null if a JDBC Connection is not selected.
+     */
+    public JdbcConnection getSelectedJdbcConnection() {
+        JdbcConnection conn = null;
         String selected = (String) getSelectedItem();
         if (selected != null) {
             for (JdbcConnection aJdbcConnection : loadedJdbcConnections) {
                 if (selected.equals(aJdbcConnection.getName())) {
-                    goid = aJdbcConnection.getGoid();
+                    conn = aJdbcConnection;
                     break;
                 }
             }
         }
 
-        return goid;
+        return conn;
     }
 }

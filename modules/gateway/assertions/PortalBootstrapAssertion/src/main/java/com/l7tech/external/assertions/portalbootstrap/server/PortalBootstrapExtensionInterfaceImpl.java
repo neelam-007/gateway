@@ -1,9 +1,13 @@
 package com.l7tech.external.assertions.portalbootstrap.server;
 
 import com.l7tech.external.assertions.portalbootstrap.PortalBootstrapExtensionInterface;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.util.Background;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.TimerTask;
@@ -16,12 +20,14 @@ import java.util.concurrent.FutureTask;
 public class PortalBootstrapExtensionInterfaceImpl extends AsyncAdminMethodsImpl implements PortalBootstrapExtensionInterface {
 
     @Override
-    public JobId<Boolean> enrollWithPortal(final String enrollmentUrl) throws IOException {
-
+    public JobId<Boolean> enrollWithPortal(final String enrollmentUrl, @NotNull final JdbcConnection otkConnection) throws IOException {
+        if (StringUtils.isBlank(otkConnection.getName())) {
+            throw new IllegalArgumentException("OTK connection name must not be null or empty");
+        }
         final FutureTask<Boolean> enrollTask = new FutureTask<Boolean>(AdminInfo.find(false).wrapCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                PortalBootstrapManager.getInstance().enrollWithPortal(enrollmentUrl);
+                PortalBootstrapManager.getInstance().enrollWithPortal(enrollmentUrl, otkConnection.getGoid().toString(), otkConnection.getName());
                 return true;
             }
 
