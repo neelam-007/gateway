@@ -79,7 +79,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             String keyAlias = privateKeysComboBox.getSelectedKeyAlias();
             return keyStoreId.toString() + ":" + keyAlias;
         } else if (jdbcConnectionComboBox != null) {
-            return jdbcConnectionComboBox.getSelectedJdbcConnectionGoid().toString();
+            return jdbcConnectionComboBox.getSelectedJdbcConnection().toString();
         } else {
             return null;
         }

@@ -38,7 +38,6 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
-import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -82,7 +81,7 @@ public class PortalBootstrapManager {
 
     private final ApplicationContext applicationContext;
     private boolean initialized;
-    private Config config = ConfigFactory.getCachedConfig();
+
     @Inject
     private ServerPolicyFactory serverPolicyFactory;
 
@@ -123,7 +122,7 @@ public class PortalBootstrapManager {
         }
     }
 
-    public void enrollWithPortal( String enrollmentUrl, final String otkConnectionId, final String otkConnectionName ) throws IOException {
+    public void enrollWithPortal( String enrollmentUrl ) throws IOException {
         final User user = JaasUtils.getCurrentUser();
         if ( null == user )
             throw new IllegalStateException( "No administrative user authenticated" );
@@ -142,15 +141,7 @@ public class PortalBootstrapManager {
         if ( !pinMatcher.find() )
             throw new IOException( "Enrollment URL does not contain a server certificate key hash (sckh) parameter" );
 
-        if (StringUtils.isBlank(otkConnectionId)) {
-            throw new IllegalArgumentException("otkConnectionId is required");
-        }
-
-        if (StringUtils.isBlank(otkConnectionName)) {
-            throw new IllegalArgumentException("otkConnectionName is required");
-        }
-
-        byte[] postBody = buildEnrollmentPostBody( user, otkConnectionId, otkConnectionName );
+        byte[] postBody = buildEnrollmentPostBody( user );
 
         String sckh = pinMatcher.group( 1 );
         final byte[] pinBytes = HexUtils.decodeBase64Url( sckh );
@@ -182,53 +173,6 @@ public class PortalBootstrapManager {
         installBundle(bundleDoc, user);
     }
 
-    byte[] buildEnrollmentPostBody( @NotNull final User adminUser, @NotNull final String otkConnectionId, @NotNull final String otkConnectionName ) throws IOException {
-        String clusterName = config.getProperty( "clusterHost", "" );
-        String buildInfo = BuildInfo.getLongBuildString();
-        String ssgVersion = BuildInfo.getProductVersion();
-
-        final Collection<ClusterNodeInfo> infos;
-        try {
-            infos = clusterInfoManager.retrieveClusterStatus();
-        } catch ( FindException e ) {
-            throw new IOException( "Unable to load cluster info: " + ExceptionUtils.getMessage( e ), e );
-        }
-
-        String nodeCount = String.valueOf( infos.size() );
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonFactory jsonFactory = new JsonFactory();
-        JsonGenerator gen = jsonFactory.createJsonGenerator( baos );
-        gen.writeStartObject();
-        gen.writeStringField("cluster_name", clusterName);
-        gen.writeStringField( "version", ssgVersion );
-        gen.writeStringField( "build_info", buildInfo );
-        gen.writeStringField( "adminuser_providerid", adminUser.getProviderId().toString() );
-        gen.writeStringField( "adminuser_id", adminUser.getId() );
-        gen.writeStringField("otkJdbcConnectionId", otkConnectionId);
-        gen.writeStringField("otkJdbcConnectionName", otkConnectionName);
-        gen.writeStringField("node_count", nodeCount);
-        gen.writeFieldName( "nodeInfo" );
-        gen.writeStartArray();
-        gen.flush();
-
-        for ( ClusterNodeInfo info : infos ) {
-            gen.writeStartObject();
-            gen.writeStringField( "name", info.getName() );
-            gen.writeEndObject();
-        }
-
-        gen.writeEndArray();
-        gen.writeEndObject();
-        gen.flush();
-
-        return baos.toByteArray();
-    }
-
-    void setConfig(final Config config) {
-        this.config = config;
-    }
-
     private Document setMappings(InputStream inputStream, User currentUser) throws IOException {
         // maps the scheduled task user to the current user.
         try {
@@ -249,6 +193,48 @@ public class PortalBootstrapManager {
             throw new IOException(e);
         }
 
+    }
+
+    private byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
+        Config config = ConfigFactory.getCachedConfig();
+        String clusterName = config.getProperty( "clusterHost", "" );
+        String buildInfo = BuildInfo.getLongBuildString();
+        String ssgVersion = BuildInfo.getProductVersion();
+
+        final Collection<ClusterNodeInfo> infos;
+        try {
+            infos = clusterInfoManager.retrieveClusterStatus();
+        } catch ( FindException e ) {
+            throw new IOException( "Unable to load cluster info: " + ExceptionUtils.getMessage( e ), e );
+        }
+
+        String nodeCount = String.valueOf( infos.size() );
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonFactory jsonFactory = new JsonFactory();
+        JsonGenerator gen = jsonFactory.createJsonGenerator( baos );
+        gen.writeStartObject();
+        gen.writeStringField( "cluster_name", clusterName );
+        gen.writeStringField( "version", ssgVersion );
+        gen.writeStringField( "build_info", buildInfo );
+        gen.writeStringField( "adminuser_providerid", adminUser.getProviderId().toString() );
+        gen.writeStringField( "adminuser_id", adminUser.getId() );
+        gen.writeStringField( "node_count", nodeCount );
+        gen.writeFieldName( "nodeInfo" );
+        gen.writeStartArray();
+        gen.flush();
+
+        for ( ClusterNodeInfo info : infos ) {
+            gen.writeStartObject();
+            gen.writeStringField( "name", info.getName() );
+            gen.writeEndObject();
+        }
+
+        gen.writeEndArray();
+        gen.writeEndObject();
+        gen.flush();
+
+        return baos.toByteArray();
     }
 
     @NotNull

@@ -20,14 +20,6 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 public class PortalBootstrapAssertion extends Assertion implements UsesVariables {
 
     private String enrollmentUrl;
-    /**
-     * JDBC connection id pointing to OTK db.
-     */
-    private String otkConnectionId;
-    /**
-     * JDBC connection name pointing to OTK db.
-     */
-    private String otkConnectionName;
 
     public String getEnrollmentUrl() {
         return enrollmentUrl;
@@ -37,26 +29,11 @@ public class PortalBootstrapAssertion extends Assertion implements UsesVariables
         this.enrollmentUrl = enrollmentUrl;
     }
 
-    public String getOtkConnectionId() {
-        return otkConnectionId;
-    }
-
-    public void setOtkConnectionId(String otkConnectionId) {
-        this.otkConnectionId = otkConnectionId;
-    }
-
-    public String getOtkConnectionName() {
-        return otkConnectionName;
-    }
-
-    public void setOtkConnectionName(String otkConnectionName) {
-        this.otkConnectionName = otkConnectionName;
-    }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(enrollmentUrl, otkConnectionId, otkConnectionName);
+        return Syntax.getReferencedNames(enrollmentUrl);
     }
 
     //

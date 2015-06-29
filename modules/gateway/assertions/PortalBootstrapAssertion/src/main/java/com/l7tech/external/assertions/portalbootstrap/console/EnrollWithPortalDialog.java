@@ -1,17 +1,13 @@
 package com.l7tech.external.assertions.portalbootstrap.console;
 
-import com.l7tech.console.action.ManageJdbcConnectionsAction;
-import com.l7tech.console.panels.JdbcConnectionComboBox;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.portalbootstrap.PortalBootstrapExtensionInterface;
 import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 
@@ -36,8 +32,6 @@ public class EnrollWithPortalDialog extends JDialog {
     private JButton enrollButton;
     private JButton cancelButton;
     private JPanel contentPanel;
-    private JdbcConnectionComboBox jdbcComboBox;
-    private JButton manageJdbcBtn;
 
     public EnrollWithPortalDialog( Window owner ) {
         super( owner, "Enroll with SaaS Portal", JDialog.DEFAULT_MODALITY_TYPE );
@@ -57,12 +51,8 @@ public class EnrollWithPortalDialog extends JDialog {
         enrollButton.addActionListener( new ActionListener() {
             @Override
             public void actionPerformed( ActionEvent ae ) {
-                final JdbcConnection selectedJdbcConnection = jdbcComboBox.getSelectedJdbcConnection();
-                if (selectedJdbcConnection == null) {
-                    showError("Please select the OTK JDBC Connection.");
-                    return;
-                }
                 final String urlText = enrollmentUrlField.getText();
+
                 if ( urlText.length() < 1 ) {
                     showError( "Enrollment URL is required." );
                     return;
@@ -70,6 +60,7 @@ public class EnrollWithPortalDialog extends JDialog {
                     showError( "Enrollment URL is not valid." );
                     return;
                 }
+
                 URL url = null;
                 try {
                     url = new URL( urlText );
@@ -78,7 +69,6 @@ public class EnrollWithPortalDialog extends JDialog {
                     showError( "Invalid enrollment URL." );
                     return;
                 }
-
 
                 DialogDisplayer.showConfirmDialog( EnrollWithPortalDialog.this,
                         "Allow API Portal to install portal-specific software on this Gateway?",
@@ -92,7 +82,7 @@ public class EnrollWithPortalDialog extends JDialog {
                                     PortalBootstrapExtensionInterface portalboot =
                                             Registry.getDefault().getExtensionInterface( PortalBootstrapExtensionInterface.class, null );
                                     try {
-                                        AsyncAdminMethods.JobId<Boolean> enrollJobId = portalboot.enrollWithPortal(urlText, selectedJdbcConnection);
+                                        AsyncAdminMethods.JobId<Boolean> enrollJobId = portalboot.enrollWithPortal(urlText);
                                         Either<String, Boolean> result =
                                                 AdminGuiUtils.doAsyncAdmin(portalboot, EnrollWithPortalDialog.this, "Enroll with SaaS Portal", "Enrolling...", enrollJobId, false);
 
@@ -123,14 +113,6 @@ public class EnrollWithPortalDialog extends JDialog {
                         } );
             }
         } );
-
-        manageJdbcBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new ManageJdbcConnectionsAction().actionPerformed(null);
-                jdbcComboBox.reload();
-            }
-        });
     }
 
     @Override

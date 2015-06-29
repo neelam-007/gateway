@@ -37,10 +37,7 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final String[] variablesUsed = assertion.getVariablesUsed();
-        final String url = ExpandVariables.process(getAssertion().getEnrollmentUrl(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
-        final String otkConnectionId = ExpandVariables.process(getAssertion().getOtkConnectionId(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
-        final String otkConnectionName = ExpandVariables.process(getAssertion().getOtkConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
+        final String url = ExpandVariables.process(getAssertion().getEnrollmentUrl(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
         final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         if (null == user) {
             logAndAudit(AssertionMessages.PORTAL_BOOTSTRAP_ERROR, new String[]{"An authenticated user is required but not present"});
@@ -81,7 +78,7 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
             Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
-                    PortalBootstrapManager.getInstance().enrollWithPortal(url, otkConnectionId, otkConnectionName);
+                    PortalBootstrapManager.getInstance().enrollWithPortal(url);
                     return null;
                 }
             });
