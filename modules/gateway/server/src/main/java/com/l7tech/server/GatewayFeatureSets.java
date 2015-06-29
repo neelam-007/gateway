@@ -63,6 +63,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
     public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
     public static final String SERVICE_SSH_MESSAGE_INPUT = "service:Ssh2MessageInput";
+    public static final String SERVICE_MQTT_MESSAGE_INPUT = "service:MqttMessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
     public static final String SERVICE_MQNATIVE_MESSAGE_INPUT = "service:MqNativeMessageInput";
@@ -137,6 +138,9 @@ public class GatewayFeatureSets {
 
     public static final String PROFILE_MOBILE_EXTENSION = "set:Profile:Mobile";
 
+    //Mobile App Services Extension
+    public static final String PROFILE_MAS_EXTENSION = "set:Profile:MAS";
+
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
 
     static {
@@ -201,6 +205,11 @@ public class GatewayFeatureSets {
         fsr("set:SSH2:front", "Allow incoming SSH2 messages",
             srv(SERVICE_SSH_MESSAGE_INPUT, "Accept incoming messages over SSH2"),
             mass("assertion:SshCredential"));
+
+        GatewayFeatureSet mqttFront =
+        fsr("set:MQTT:front", "Allow incoming MQTT messages",
+            srv(SERVICE_MQTT_MESSAGE_INPUT, "Accept incoming messages over MQTT"),
+            mass("assertion:MQTTCredential"));
 
         GatewayFeatureSet srvRawTcp = misc(SERVICE_L7RAWTCP_MESSAGE_INPUT, "Accept incoming messages over l7.raw.tcp", null);
         GatewayFeatureSet rawTcpFront =
@@ -537,6 +546,14 @@ public class GatewayFeatureSets {
             fs(uiEmailListenersDialog),
             mass("assertion:FtpRouting"),
             mass("assertion:SshRoute"));
+
+        GatewayFeatureSet mqtt =
+                fsr("set:Mbaas:Mqtt", "CA API Gateway MQTT listen port and assertions.",
+                        "Adds MQTT features.",
+                        fs(mqttFront),
+                        mass("assertion:MQTTConnection"),
+                        mass("assertion:MQTTPublish"),
+                        mass("assertion:MQTTSubscribe"));
 
         // Service availability
         GatewayFeatureSet availabilityAccel =
@@ -1278,6 +1295,18 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
+         * Mobile App Services
+         *
+         * The Mobile App Services feature set
+         */
+        GatewayFeatureSet masFeaturePack = fsp(PROFILE_MAS_EXTENSION,
+                "Mobile App Services",
+                "Includes series of assertions required to support existing and future Mobile App Services " +
+                        "functionality.",
+                mqtt,
+                fs(moduleLoader));
+
+        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1291,7 +1320,8 @@ public class GatewayFeatureSets {
                 fs(profileApi),
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
-                fs(mobileFeaturePack));
+                fs(mobileFeaturePack),
+                fs(masFeaturePack));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
