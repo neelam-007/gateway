@@ -16,16 +16,19 @@ import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -120,6 +123,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // todo (kpak) - handle multiple kits. for now, install first one.
         //
         SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+
+        // Double check if instance modifier is unique for a selected solution kit
+        boolean validInstanceModifierUsed = checkInstanceModifierUniqueness(solutionKit);
+        if (! validInstanceModifierUsed) return false;
 
         // invoke custom callback
         try {
@@ -384,5 +391,46 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
 
         return maxAllowedLengthAllow;
+    }
+
+    /**
+     * Check if instance modifier is unique for a selected solution kit.
+     *
+     * @param solutionKit: a solution kit whose instance modifier will be checked.
+     * @return true if the instance modifier is valid.  That is, it does not violate the instance modifier uniqueness for a given solution kit.
+     */
+    private boolean checkInstanceModifierUniqueness(@NotNull final SolutionKit solutionKit) {
+        Map<String, List<String>> usedInstanceModifiersMap = new HashMap<>();
+        try {
+            for (SolutionKitHeader solutionKitHeader: solutionKitAdmin.findSolutionKits()) {
+                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
+                List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
+                if (usedInstanceModifiers == null) {
+                    usedInstanceModifiers = new ArrayList<>();
+                }
+                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
+                usedInstanceModifiersMap.put(solutionKitGuid, usedInstanceModifiers);
+            }
+        } catch (FindException e) {
+            logger.warning("Finding solution kits error: " + ExceptionUtils.getDebugException(e));
+        }
+
+        final String solutionKitGuid = solutionKit.getSolutionKitGuid();
+        if (usedInstanceModifiersMap.keySet().contains(solutionKitGuid)) {
+            final List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
+            final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+            if (usedInstanceModifiers != null && usedInstanceModifiers.contains(newInstanceModifier)) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "The solution kit '" + solutionKit.getName() + "' has already used " +
+                        (newInstanceModifier == null? "an empty instance modifier" : "the instance modifier, '" + newInstanceModifier + "'") +
+                        ".\nPlease specify a different instance modifier to continue installation.",
+                    "Duplicate Instance Modifier Warning", JOptionPane.WARNING_MESSAGE, null);
+
+                return false;
+            }
+        }
+
+        return true;
     }
 }
