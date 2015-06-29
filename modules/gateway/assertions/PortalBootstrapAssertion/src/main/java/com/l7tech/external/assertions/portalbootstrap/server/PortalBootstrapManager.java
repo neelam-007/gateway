@@ -8,14 +8,16 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -131,8 +133,8 @@ public class PortalBootstrapManager {
         if ( !"https".equals( url.getProtocol() ) )
             throw new IOException( "Enrollment URL must begin with https" );
 
-//        if ( ENROLL_PORT != url.getPort() )
-//            throw new IOException( "Incorrect port." );
+        if ( ENROLL_PORT != url.getPort() )
+            throw new IOException( "Incorrect port." );
 
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
