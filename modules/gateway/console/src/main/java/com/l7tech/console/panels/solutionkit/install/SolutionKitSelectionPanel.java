@@ -270,6 +270,9 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void initializeInstanceModifierButton(final int maxInstanceModifierLength) {
+        ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
+        for (ActionListener actionListener: actionListeners) instanceModifierButton.removeActionListener(actionListener);
+
         instanceModifierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
