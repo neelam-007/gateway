@@ -278,8 +278,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             public void actionPerformed(ActionEvent e) {
                 if (solutionKitsModel.getSelected().isEmpty()) return;
 
+                final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
                 final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
                     TopComponents.getInstance().getTopParent(),
+                    solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), // Old instance modifier
                     maxInstanceModifierLength
                 );
                 instanceModifierDialog.pack();
@@ -287,10 +289,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 DialogDisplayer.display(instanceModifierDialog);
 
                 if (instanceModifierDialog.isOK()) {
-                    final String instanceModifier = instanceModifierDialog.getInstanceModifier();
-                    if (StringUtils.isEmpty(instanceModifier)) return;
-
-                    final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+                    final String newInstanceModifier = instanceModifierDialog.getInstanceModifier();
+                    if (StringUtils.isEmpty(newInstanceModifier)) return;
 
                     // Preserve bundle and customization corresponding to the specific solutionKit,
                     // then remove old records from the two maps, loaded and customizations.
@@ -303,7 +303,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     customizations.remove(solutionKit);
 
                     // Add records with an updated solutionKit due to properties changed back to the maps
-                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
                     if (bundle != null) loadedSolutionKits.put(solutionKit, bundle);
                     if (customization != null) customizations.put(solutionKit, customization);
 

@@ -23,10 +23,11 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
     private OkCancelPanel okCancelPanel;
 
     private boolean isOk;
-    private String instanceModifier;
 
-    public SolutionKitInstanceModifierDialog(final Frame owner, final int maxInstanceModifierLength) {
+    public SolutionKitInstanceModifierDialog(final Frame owner, final String instanceModifier, final int maxInstanceModifierLength) {
         super(owner, "Add an Instance Modifier", true);
+
+        instanceModifierTextField.setText(instanceModifier);
 
         setContentPane(mainPanel);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -59,7 +60,6 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 isOk = true;
-                instanceModifier = instanceModifierTextField.getText().trim();
                 dispose();
             }
         });
@@ -79,7 +79,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
     }
 
     public String getInstanceModifier() {
-        return instanceModifier;
+        return instanceModifierTextField.getText();
     }
 
     private String getPrefixedUrlErrorMsg(String prefix){
