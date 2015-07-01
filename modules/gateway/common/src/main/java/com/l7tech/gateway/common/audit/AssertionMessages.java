@@ -1389,6 +1389,24 @@ public class AssertionMessages extends Messages {
     // PortalBootstrap Assertion
     public static final M PORTAL_BOOTSTRAP_ERROR = m(11200, Level.WARNING, "Error enrolling Gateway with Portal server: {0}");
 
+    //MQTT
+    //MQTT Base Assertion
+    public static final M MQTT_ASSERTION_PROPERTY_ERROR = m(11300, Level.WARNING, "MQTT assertion error with property: ''{0}''. Message: {1}");
+    //MQTT Connection Assertion
+    public static final M MQTT_CONNECTION_ERROR = m(11310, Level.WARNING, "MQTT connection error: {0}");
+    public static final M MQTT_CONNECTION_MANAGER_ACTION = m(11311, Level.FINE, "MQTT Connection Manager Action: {0}. Connection Key: {1}");
+    public static final M MQTT_CONNECTION_MANAGER_DETAILS = m(11312, Level.FINEST, "MQTT Connection Manager Details: Number of connections: {0}");
+    //MQTT Publish Assertion
+    public static final M MQTT_PUBLISH_ERROR = m(11320, Level.WARNING, "MQTT publish error: {0}");
+    public static final M MQTT_PUBLISH_INFO = m(11321, Level.FINE, "MQTT publish info: {0}");
+    //MQTT Subscribe Assertion
+    public static final M MQTT_SUBSCRIPTION_ERROR = m(11330, Level.WARNING, "MQTT subscribe error: {0}");
+    public static final M MQTT_SUBSCRIPTION_INFO = m(11331, Level.FINE, "MQTT subscribe info: {0}");
+    //MQTT Credentials Assertion
+    public static final M MQTT_CREDENTIAL_NOT_MQTT = m(11340, Level.INFO, "Request not MQTT or credentials missing; unable to extract MQTT credentials.");
+    public static final M MQTT_CREDENTIAL_AUTH_USER = m(11341, Level.FINE, "Found credentials for user ''{0}''.");
+    public static final M MQTT_CREDENTIAL_NO_AUTH = m(11342, Level.FINE, "Not authenticated.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
 
