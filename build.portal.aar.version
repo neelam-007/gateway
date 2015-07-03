@@ -4,7 +4,7 @@
 #   - tag the branch
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
 build.version.major=2
-build.version.minor=2
-build.version.micro=4
+build.version.minor=3
+build.version.micro=0
 build.version.revision=0
 
