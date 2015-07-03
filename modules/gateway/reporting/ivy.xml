@@ -17,7 +17,7 @@
     <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>
     <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
 
-    <dependency org="net.sf.jasperreports" name="jasperreports" rev="6.0.3" force="true" conf="core"/>
+    <dependency org="net.sf.jasperreports" name="jasperreports" rev="6.1.0" force="true" conf="core"/>
     <dependency org="org.eclipse.jdt.core.compiler" name="ecj" rev="4.3.1" force="true" conf="core"/>
     <dependency org="jfree" name="jcommon" rev="1.0.17" force="true" conf="core">
         <exclude org="gnujaxp" module="gnujaxp" name="*" type="*" ext="*" conf="" matcher="exact"/>
@@ -27,6 +27,6 @@
     </dependency>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" force="true" conf="core"/>
     <dependency org="commons-beanutils" name="commons-beanutils" rev="1.9.0" force="true" conf="core"/>
-    <dependency org="com.itextpdf" name="itextpdf" rev="5.5.0" force="true" conf="core"/>
+    <dependency org="com.lowagie" name="iText-2.1.7.js2" rev="2.1.7" force="true" conf="core"/>
 </dependencies>
 </ivy-module>

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.standardreports;
 
+import net.sf.jasperreports.engine.JasperReportsContext;
 import net.sf.jasperreports.engine.design.JRAbstractJavaCompiler;
 import net.sf.jasperreports.engine.design.JRCompilationSourceCode;
 import net.sf.jasperreports.engine.design.JRSourceCompileTask;
@@ -29,6 +30,10 @@ public class GatewayJavaReportCompiler extends JRAbstractJavaCompiler {
 
     public GatewayJavaReportCompiler() {
         super( false );
+    }
+
+    public GatewayJavaReportCompiler(JasperReportsContext jasperReportsContext) {
+        super( jasperReportsContext, false );
     }
 
     public static void registerClass( final Class compilationClass ) {

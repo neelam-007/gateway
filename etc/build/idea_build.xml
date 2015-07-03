@@ -8,7 +8,7 @@
       Classpath for Jasper Reports compiler
     -->
     <path id="jasperreports.classpath">
-        <file file="lib/repository/net.sf.jasperreports/jasperreports-6.0.3.jar"/>
+        <file file="lib/repository/net.sf.jasperreports/jasperreports-6.1.0.jar"/>
         <file file="lib/repository/jfree/jcommon-1.0.17.jar"/>
         <file file="lib/repository/jfree/jfreechart-1.0.14.jar"/>
         <file file="lib/repository/org.eclipse.jdt.core.compiler/ecj-4.3.1.jar"/>
@@ -16,7 +16,7 @@
         <file file="lib/repository/commons-collections/commons-collections-3.2.1.jar"/>
         <file file="lib/repository/commons-logging/commons-logging-1.1.1.jar"/>
         <file file="lib/repository/commons-beanutils/commons-beanutils-1.9.0.jar"/>
-        <file file="lib/repository/com.itextpdf/itextpdf-5.5.0.jar"/>
+        <file file="lib/repository/com.lowawgie/iText-2.1.7.js2.jar"/>
     </path>
 
     <!--

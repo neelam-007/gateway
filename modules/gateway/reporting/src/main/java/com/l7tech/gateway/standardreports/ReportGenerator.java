@@ -269,6 +269,11 @@ public class ReportGenerator {
             Map<String, Object> paramsForStyleGenerator = new HashMap<String, Object>();
             paramsForStyleGenerator.putAll(parameters);
             styleIn = ReportGenerator.class.getResourceAsStream("/StyleGenerator.jasper");
+
+            if (null == styleIn) {  // EM-1040: Java 8 seems to have changed the compiled StyleGenerator file location
+                styleIn = ReportGenerator.class.getResourceAsStream("/com/l7tech/gateway/standardreports/StyleGenerator.jasper");
+            }
+
             //do not pass the Map 'parameters' into fillReport as this map is returned to the caller
             //and will have some parameters overwritten by fillReport, which is not desierable as we already
             //have user supplied values for them e.g. IS_IGNORE_PAGINATION and possibly time zone also

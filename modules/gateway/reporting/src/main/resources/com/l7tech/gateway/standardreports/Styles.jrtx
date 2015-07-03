@@ -14,7 +14,7 @@
             mode="Transparent"
             vAlign="Middle"
             hAlign="Left"
-            fontName="Arial, Helvetica, sans-serif"
+            fontName="SansSerif"
             fontSize="10"
             isBold="false"
             isItalic="false"
