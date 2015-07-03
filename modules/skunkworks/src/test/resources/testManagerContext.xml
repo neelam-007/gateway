@@ -1742,4 +1742,6 @@
           parent="hibernateBean"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
+
+    <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 </beans>
