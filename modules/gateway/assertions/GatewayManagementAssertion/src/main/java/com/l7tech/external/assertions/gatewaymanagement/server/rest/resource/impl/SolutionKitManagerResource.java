@@ -135,7 +135,8 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
-            final SolutionKit solutionKitToUninstall = solutionKitManager.findBySolutionKitGuid(deleteGuid);
+            // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits, the next line is temporarily changed to use the first returned element.  Please change the next line as needed.
+            final SolutionKit solutionKitToUninstall = solutionKitManager.findBySolutionKitGuid(deleteGuid).get(0);
             if (solutionKitToUninstall == null) {
                 logger.info("No Solution Kit ID " + deleteGuid + " found for uninstall.");
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
@@ -228,7 +229,8 @@ public class SolutionKitManagerResource {
     private void handleUpgrade(final SolutionKitsConfig solutionKitsConfig, final String upgradeGuid) throws SolutionKitManagerResourceException {
         if (StringUtils.isNotEmpty(upgradeGuid)) {
             try {
-                solutionKitsConfig.setSolutionKitToUpgrade(solutionKitManager.findBySolutionKitGuid(upgradeGuid));
+                // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits,  The next line is temporarily changed to use the first returned element.  Please change the next line as needed.
+                solutionKitsConfig.setSolutionKitToUpgrade(solutionKitManager.findBySolutionKitGuid(upgradeGuid).get(0));
                 if (solutionKitsConfig.getSolutionKitToUpgrade() == null) {
                     throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + upgradeGuid + " found for upgrade." + lineSeparator()).build());
                 }

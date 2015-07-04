@@ -474,6 +474,18 @@ public class RestmanMessage {
         return result;
     }
 
+    public void removeMappingByEntityType(String toBeIgnoredEntityType) {
+        final List<Element> mappingsElements = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
+        if (mappingsElements.size() != 1) return;
+
+        final Element mappingParentElement = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap()).get(0);
+        final List<Element> toBeRemovedMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@type=\"" + toBeIgnoredEntityType + "\"]", getNamespaceMap());
+
+        for (Element tobeRemoved: toBeRemovedMappings) {
+            mappingParentElement.removeChild(tobeRemoved);
+        }
+    }
+
     // START load methods, can be private access, but made protected for unit testing
 
     protected void loadMappingErrors() {

@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -123,17 +124,17 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return "";
     }
 
-    @Nullable
+    @NotNull
     @Override
     @Transactional(readOnly=true)
-    public SolutionKit findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException {
+    public List<SolutionKit> findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException {
         try {
-            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<SolutionKit>() {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKit>>() {
                 @Override
-                protected SolutionKit doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                protected List<SolutionKit> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
                     final Query q = session.createQuery(HQL_FIND_BY_SOLUTION_KIT_GUID);
                     q.setParameter(0, solutionKitGuid);
-                    return (SolutionKit) q.uniqueResult();
+                    return (List<SolutionKit>) q.list();
                 }
             });
         } catch (Exception e) {

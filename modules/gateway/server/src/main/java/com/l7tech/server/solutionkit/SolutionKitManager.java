@@ -7,6 +7,8 @@ import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Entity manager for {@link com.l7tech.gateway.common.solutionkit.SolutionKit}.
  */
@@ -27,10 +29,10 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
     String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
 
     /**
-     * Find Solution Kit by it's ID.
+     * Find a list of Solution Kits by a given GUID.
      * @param solutionKitGuid Solution Kit's globally unique identifier (author specified)
-     * @return the Solution Kit
+     * @return the list of Solution Kits, whose GUID matches the given GUID.
      * @throws FindException
      */
-    SolutionKit findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
+    List<SolutionKit> findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
 }
