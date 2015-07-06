@@ -69,7 +69,7 @@ public class ScheduledPolicyRunner {
             throw new RuntimeException(e);
         }
 
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
         if (providerId != null && userId != null) {
             try {
@@ -116,6 +116,8 @@ public class ScheduledPolicyRunner {
                         getAuditor().logAndAudit(SystemMessages.SCHEDULER_POLICY_ERROR,
                                 new String[]{jobName, e.getMessage()}, ExceptionUtils.getDebugException(e));
                     }
+                } finally {
+                    context.close();
                 }
 
             }
