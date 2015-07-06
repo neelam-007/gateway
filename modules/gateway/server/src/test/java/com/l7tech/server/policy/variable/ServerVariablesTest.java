@@ -13,9 +13,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.message.HeadersKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.Policy;
@@ -50,6 +48,8 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +70,7 @@ import java.util.logging.Logger;
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  *
@@ -1296,6 +1297,450 @@ public class ServerVariablesTest {
         assertFalse(context.isOverwriteResponseCookieDomain());
     }
 
+    @Test
+    public void testRequestMQTTMessageType() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMessageType(MQTTRequestKnob.MessageType.PUBLISH);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("PUBLISH", context.getVariable("request.mqtt.messageType"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTMessageTypeNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.messageType");
+    }
+
+    @Test
+    public void testRequestMQTTClientIdentifier() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        String clientId = UUID.randomUUID().toString();
+        mqttRequestKnobStub.setClientIdentifier(clientId);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(clientId, context.getVariable("request.mqtt.clientIdentifier"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTClientIdentifierNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.clientIdentifier");
+    }
+
+    @Test
+    public void testRequestMQTTUserName() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        String userName = "MyUser";
+        mqttRequestKnobStub.setUserName(userName);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(userName, context.getVariable("request.mqtt.userName"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTUserNameNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.userName");
+    }
+
+    @Test
+    public void testRequestMQTTUserPassword() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        String userPassword = "MyPassword";
+        mqttRequestKnobStub.setUserPassword(userPassword);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(userPassword, context.getVariable("request.mqtt.userPassword"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTUserPasswordNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.userPassword");
+    }
+
+    @Test
+    public void testRequestMQTTConnectCleanSession() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setCleanSession(true);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(true, context.getVariable("request.mqtt.connect.cleanSession"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectCleanSessionNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.cleanSession");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectCleanSessionNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.cleanSession");
+    }
+
+    @Test
+    public void testRequestMQTTConnectKeepAlive() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setKeepAlive(123);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(123, context.getVariable("request.mqtt.connect.keepAlive"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectKeepAliveNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.keepAlive");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectKeepAliveNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.keepAlive");
+    }
+
+    @Test
+    public void testRequestMQTTConnectWillPresent() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillPresent(true);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(true, context.getVariable("request.mqtt.connect.will.present"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillPresentNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.will.present");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillPresentNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.will.present");
+    }
+
+    @Test
+    public void testRequestMQTTConnectWillTopic() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillPresent(true);
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillTopic("MyWill");
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("MyWill", context.getVariable("request.mqtt.connect.will.topic"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillTopicNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.will.topic");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillTopicNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.will.topic");
+    }
+
+    @Test
+    public void testRequestMQTTConnectWillMessage() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillPresent(true);
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillMessage("MyWillMessage");
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("MyWillMessage", context.getVariable("request.mqtt.connect.will.message"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillMessageNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.will.message");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillMessageNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.will.message");
+    }
+
+    @Test
+    public void testRequestMQTTConnectWillQOS() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillPresent(true);
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillQOS(2);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(2, context.getVariable("request.mqtt.connect.will.qos"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillQOSNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.will.qos");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillQOSNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.will.qos");
+    }
+
+    @Test
+    public void testRequestMQTTConnectWillRetain() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillPresent(true);
+        mqttRequestKnobStub.getMQTTConnectParameters().setWillRetain(true);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(true, context.getVariable("request.mqtt.connect.will.retain"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillRetainNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.connect.will.retain");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTConnectWillRetainNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttConnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.connect.will.retain");
+    }
+
+    @Test
+    public void testRequestMQTTPublishTopic() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTPublishParameters().setTopic("MyTopic");
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("MyTopic", context.getVariable("request.mqtt.publish.topic"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishTopicNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.publish.topic");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishTopicNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttPublishParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.publish.topic");
+    }
+
+    @Test
+    public void testRequestMQTTPublishQOS() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTPublishParameters().setQos(2);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(2, context.getVariable("request.mqtt.publish.qos"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishQOSNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.publish.qos");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishQOSNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttPublishParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.publish.qos");
+    }
+
+    @Test
+    public void testRequestMQTTPublishRetain() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTPublishParameters().setRetain(true);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(true, context.getVariable("request.mqtt.publish.retain"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishRetainNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.publish.retain");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTPublishRetainNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttPublishParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.publish.retain");
+    }
+
+    @Test
+    public void testRequestMQTTSubscribeSubscriptions() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTSubscribeParameters().setSubscriptions("MySubscriptions");
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("MySubscriptions", context.getVariable("request.mqtt.subscribe.subscriptions"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTSubscribeSubscriptionsNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.subscribe.subscriptions");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTSubscribeSubscriptionsNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttSubscribeParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.subscribe.subscriptions");
+    }
+
+    @Test
+    public void testResponseMQTTConnectResponseCodeGet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
+        //noinspection ConstantConditions
+        mqttConnectResponseKnobStub.setResponseCode(2);
+        context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
+        assertEquals(2, context.getVariable("response.mqtt.connect.responseCode"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testResponseMQTTConnectResponseCodeGetNoMQTTKnob() throws Exception {
+        context().getVariable("response.mqtt.connect.responseCode");
+    }
+
+    @Test
+    public void testResponseMQTTConnectResponseCodeSet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
+        //noinspection ConstantConditions
+        context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
+        context.setVariable("response.mqtt.connect.responseCode", 2);
+        assertEquals(2, context.getVariable("response.mqtt.connect.responseCode"));
+        assertEquals(2, mqttConnectResponseKnobStub.getResponseCode());
+    }
+
+    @Test
+    public void testResponseMQTTConnectResponseCodeSetNoKnob() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.setVariable("response.mqtt.connect.responseCode", 2);
+        assertEquals(2, context.getVariable("response.mqtt.connect.responseCode"));
+        assertNotNull(context.getResponse().getKnob(MQTTConnectResponseKnob.class));
+        assertEquals(2, context.getResponse().getKnob(MQTTConnectResponseKnob.class).getResponseCode());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testResponseMQTTConnectResponseCodeSetBadValue() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.setVariable("response.mqtt.connect.responseCode", "abc");
+    }
+
+    @Test
+    public void testResponseMQTTConnectSessionPresentGet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
+        //noinspection ConstantConditions
+        mqttConnectResponseKnobStub.setSessionPresent(true);
+        context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
+        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testResponseMQTTConnectSessionPresentGetNoMQTTKnob() throws Exception {
+        context().getVariable("response.mqtt.connect.sessionPresent");
+    }
+
+    @Test
+    public void testResponseMQTTConnectSessionPresentSet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
+        //noinspection ConstantConditions
+        context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
+        context.setVariable("response.mqtt.connect.sessionPresent", true);
+        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
+        assertEquals(true, mqttConnectResponseKnobStub.isSessionPresent());
+    }
+
+    @Test
+    public void testResponseMQTTConnectSessionPresentSetNoKnob() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.setVariable("response.mqtt.connect.sessionPresent", true);
+        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
+        assertNotNull(context.getResponse().getKnob(MQTTConnectResponseKnob.class));
+        assertEquals(true, context.getResponse().getKnob(MQTTConnectResponseKnob.class).isSessionPresent());
+    }
+
+
+    @Test
+    public void testResponseMQTTSubscribeGrantedQOSGet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTSubscribeResponseKnobStub mqttSubscribeResponseKnobStub = new MQTTSubscribeResponseKnobStub();
+        //noinspection ConstantConditions
+        mqttSubscribeResponseKnobStub.setGrantedQOS(Arrays.asList(1,2,0));
+        context.getResponse().attachKnob(mqttSubscribeResponseKnobStub, MQTTSubscribeResponseKnob.class);
+        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testResponseMQTTSubscribeGrantedQOSGetNoMQTTKnob() throws Exception {
+        context().getVariable("response.mqtt.subscribe.grantedQOS");
+    }
+
+    @Test
+    public void testResponseMQTTSubscribeGrantedQOSSet() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTSubscribeResponseKnobStub mqttSubscribeResponseKnobStub = new MQTTSubscribeResponseKnobStub();
+        //noinspection ConstantConditions
+        context.getResponse().attachKnob(mqttSubscribeResponseKnobStub, MQTTSubscribeResponseKnob.class);
+        context.setVariable("response.mqtt.subscribe.grantedQOS", Arrays.asList(1,2,0));
+        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
+        assertArrayEquals(new Integer[]{1,2,0}, mqttSubscribeResponseKnobStub.getGrantedQOS().toArray());
+    }
+
+    @Test
+    public void testResponseMQTTSubscribeGrantedQOSSetNoKnob() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.setVariable("response.mqtt.subscribe.grantedQOS", Arrays.asList(1,2,0));
+        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
+        assertNotNull(context.getResponse().getKnob(MQTTSubscribeResponseKnob.class));
+        assertArrayEquals(new Integer[]{1,2,0}, context.getResponse().getKnob(MQTTSubscribeResponseKnob.class).getGrantedQOS().toArray());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testResponseMQTTSubscribeGrantedQOSSetBadValue() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.setVariable("response.mqtt.subscribe.grantedQOS", "abc");
+    }
 
     // - PRIVATE
 
@@ -1452,5 +1897,278 @@ public class ServerVariablesTest {
     private void addTextNode(Message message, String text) throws Exception {
         Document doc = message.getXmlKnob().getDocumentWritable();
         doc.getDocumentElement().appendChild(doc.createTextNode(text));
+    }
+
+    private class MQTTRequestKnobStub implements MQTTRequestKnob {
+        private MessageType messageType;
+        private String clientIdentifier;
+        private String userName;
+        private String userPassword;
+        private MQTTConnectParametersStub mqttConnectParametersStub = new MQTTConnectParametersStub();
+        private MQTTPublishParametersStub mqttPublishParametersStub = new MQTTPublishParametersStub();
+        private MQTTSubscribeParametersStub mqttSubscribeParametersStub = new MQTTSubscribeParametersStub();
+
+        @NotNull
+        @Override
+        public MessageType getMessageType() {
+            return messageType;
+        }
+
+        @Nullable
+        @Override
+        public String getClientIdentifier() {
+            return clientIdentifier;
+        }
+
+        @Nullable
+        @Override
+        public String getUserName() {
+            return userName;
+        }
+
+        @Nullable
+        @Override
+        public String getUserPassword() {
+            return userPassword;
+        }
+
+        @Nullable
+        @Override
+        public MQTTConnectParametersStub getMQTTConnectParameters() {
+            return mqttConnectParametersStub;
+        }
+
+        public void setMqttConnectParametersStub(MQTTConnectParametersStub mqttConnectParametersStub) {
+            this.mqttConnectParametersStub = mqttConnectParametersStub;
+        }
+
+        @Nullable
+        @Override
+        public MQTTPublishParametersStub getMQTTPublishParameters() {
+            return mqttPublishParametersStub;
+        }
+
+        public void setMqttPublishParametersStub(MQTTPublishParametersStub mqttPublishParametersStub) {
+            this.mqttPublishParametersStub = mqttPublishParametersStub;
+        }
+
+        @Nullable
+        @Override
+        public MQTTSubscribeParametersStub getMQTTSubscribeParameters() {
+            return mqttSubscribeParametersStub;
+        }
+
+        public void setMqttSubscribeParametersStub(MQTTSubscribeParametersStub mqttSubscribeParametersStub) {
+            this.mqttSubscribeParametersStub = mqttSubscribeParametersStub;
+        }
+
+        @Override
+        public String getRemoteAddress() {
+            return null;
+        }
+
+        @Override
+        public String getRemoteHost() {
+            return null;
+        }
+
+        @Override
+        public int getRemotePort() {
+            return 0;
+        }
+
+        @Override
+        public String getLocalAddress() {
+            return null;
+        }
+
+        @Override
+        public String getLocalHost() {
+            return null;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return 0;
+        }
+
+        @Override
+        public int getLocalListenerPort() {
+            return 0;
+        }
+
+        public void setMessageType(MessageType messageType) {
+            this.messageType = messageType;
+        }
+
+        public void setClientIdentifier(String clientIdentifier) {
+            this.clientIdentifier = clientIdentifier;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+
+        public void setUserPassword(String userPassword) {
+            this.userPassword = userPassword;
+        }
+
+        private class MQTTConnectParametersStub implements MQTTConnectParameters{
+            private boolean cleanSession;
+            private int keepAlive;
+            private boolean willPresent;
+            private String willTopic;
+            private String willMessage;
+            private int willQOS;
+            private boolean willRetain;
+
+            @Override
+            public boolean isCleanSession() {
+                return cleanSession;
+            }
+
+            @Override
+            public int getKeepAlive() {
+                return keepAlive;
+            }
+
+            @Override
+            public boolean isWillPresent() {
+                return willPresent;
+            }
+
+            @Override
+            public String getWillTopic() {
+                return willTopic;
+            }
+
+            @Override
+            public String getWillMessage() {
+                return willMessage;
+            }
+
+            @Override
+            public int getWillQOS() {
+                return willQOS;
+            }
+
+            @Override
+            public boolean isWillRetain() {
+                return willRetain;
+            }
+
+            public void setCleanSession(boolean cleanSession) {
+                this.cleanSession = cleanSession;
+            }
+
+            public void setKeepAlive(int keepAlive) {
+                this.keepAlive = keepAlive;
+            }
+
+            public void setWillPresent(boolean willPresent) {
+                this.willPresent = willPresent;
+            }
+
+            public void setWillTopic(String willTopic) {
+                this.willTopic = willTopic;
+            }
+
+            public void setWillMessage(String willMessage) {
+                this.willMessage = willMessage;
+            }
+
+            public void setWillQOS(int willQOS) {
+                this.willQOS = willQOS;
+            }
+
+            public void setWillRetain(boolean willRetain) {
+                this.willRetain = willRetain;
+            }
+        }
+
+        private class MQTTPublishParametersStub implements MQTTPublishParameters {
+            private boolean retain;
+            private int qos;
+            private String topic;
+
+            @Override
+            public String getTopic() {
+                return topic;
+            }
+
+            @Override
+            public int getQOS() {
+                return qos;
+            }
+
+            @Override
+            public boolean isRetain() {
+                return retain;
+            }
+
+            public void setRetain(boolean retain) {
+                this.retain = retain;
+            }
+
+            public void setQos(int qos) {
+                this.qos = qos;
+            }
+
+            public void setTopic(String topic) {
+                this.topic = topic;
+            }
+        }
+
+        private class MQTTSubscribeParametersStub implements MQTTSubscribeParameters {
+            private String subscriptions;
+
+            @Override
+            public String getSubscriptions() {
+                return subscriptions;
+            }
+
+            public void setSubscriptions(String subscriptions) {
+                this.subscriptions = subscriptions;
+            }
+        }
+    }
+
+    private class MQTTConnectResponseKnobStub implements MQTTConnectResponseKnob {
+        private int responseCode = -1;
+        private boolean sessionPresent;
+
+        @Override
+        public int getResponseCode() {
+            return responseCode;
+        }
+
+        @Override
+        public void setResponseCode(int responseCode) {
+            this.responseCode = responseCode;
+        }
+
+        @Override
+        public boolean isSessionPresent() {
+            return sessionPresent;
+        }
+
+        @Override
+        public void setSessionPresent(boolean sessionPresent) {
+            this.sessionPresent = sessionPresent;
+        }
+    }
+
+    private class MQTTSubscribeResponseKnobStub implements MQTTSubscribeResponseKnob{
+        private List<Integer> grantedQOS;
+
+        @Override
+        public List<Integer> getGrantedQOS() {
+            return grantedQOS;
+        }
+
+        @Override
+        public void setGrantedQOS(List<Integer> grantedQOS) {
+            this.grantedQOS = grantedQOS;
+        }
     }
 }

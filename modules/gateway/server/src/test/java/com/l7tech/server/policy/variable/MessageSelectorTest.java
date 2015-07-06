@@ -1029,6 +1029,108 @@ public class MessageSelectorTest {
         assertNull(selector.select(null, message, "ftp.replytext", handler, false));
     }
 
+    @Test
+    public void selectMQTTConnectResponseCodeValue() {
+        final int responseCode = 2;
+        message.attachKnob(new MQTTConnectResponseKnob() {
+
+            @Override
+            public int getResponseCode() {
+                return responseCode;
+            }
+
+            @Override
+            public void setResponseCode(int responseCode) {
+            }
+
+            @Override
+            public boolean isSessionPresent() {
+                return false;
+            }
+
+            @Override
+            public void setSessionPresent(boolean sessionPresent) {
+
+            }
+        }, MQTTConnectResponseKnob.class);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "mqtt.connect.responseCode", handler, false);
+
+        assertNotNull(selection);
+        assertEquals(responseCode, selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectMQTTConnectResponseCodeValueNullMQTTConnectResponseKnob() {
+        assertNull(message.getKnob(MQTTConnectResponseKnob.class));
+        assertNull(selector.select(null, message, "mqtt.connect.responseCode", handler, false));
+    }
+
+    @Test
+    public void selectMQTTConnectSessionPresentValue() {
+        final boolean session = true;
+        message.attachKnob(new MQTTConnectResponseKnob() {
+
+            @Override
+            public int getResponseCode() {
+                return -1;
+            }
+
+            @Override
+            public void setResponseCode(int responseCode) {
+            }
+
+            @Override
+            public boolean isSessionPresent() {
+                return session;
+            }
+
+            @Override
+            public void setSessionPresent(boolean sessionPresent) {
+
+            }
+        }, MQTTConnectResponseKnob.class);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "mqtt.connect.sessionPresent", handler, false);
+
+        assertNotNull(selection);
+        assertEquals(session, selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectMQTTConnectSessionPresentValueNullMQTTConnectResponseKnob() {
+        assertNull(message.getKnob(MQTTConnectResponseKnob.class));
+        assertNull(selector.select(null, message, "mqtt.connect.sessionPresent", handler, false));
+    }
+
+    @Test
+    public void selectMQTTSubscribeGrantedQOSValue() {
+        final List<Integer> grantedQOS = Arrays.asList(1,2,0);
+        message.attachKnob(new MQTTSubscribeResponseKnob() {
+
+            @Override
+            public List<Integer> getGrantedQOS() {
+                return grantedQOS;
+            }
+
+            @Override
+            public void setGrantedQOS(List<Integer> grantedQOS) {
+
+            }
+        }, MQTTSubscribeResponseKnob.class);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "mqtt.subscribe.grantedQOS", handler, false);
+
+        assertNotNull(selection);
+        assertArrayEquals(new Integer[]{1,2,0}, ((List)selection.getSelectedValue()).toArray());
+    }
+
+    @Test
+    public void selectMQTTSubscribeGrantedQOSValueNullMQTTConnectResponseKnob() {
+        assertNull(message.getKnob(MQTTSubscribeResponseKnob.class));
+        assertNull(selector.select(null, message, "mqtt.subscribe.grantedQOS", handler, false));
+    }
+
     private void addJmsHeaders() {
         HashMap<String, String> headers = new HashMap<>();
         headers.put("h1", "h1value");

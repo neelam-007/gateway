@@ -294,6 +294,175 @@ public class ServerVariables {
                     return frk == null ? null : String.valueOf(frk.getReplyText());
                 }
             }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT + ".messageType", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    return mqttRequestKnob == null ? null : mqttRequestKnob.getMessageType().name();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT + ".clientIdentifier", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    return mqttRequestKnob == null ? null : mqttRequestKnob.getClientIdentifier();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT + ".userName", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    return mqttRequestKnob == null ? null : mqttRequestKnob.getUserName();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT + ".userPassword", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    return mqttRequestKnob == null ? null : mqttRequestKnob.getUserPassword();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".cleanSession", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null ? null : mqttConnectParameters.isCleanSession();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".keepAlive", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null ? null : mqttConnectParameters.getKeepAlive();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".will.present", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null ? null : mqttConnectParameters.isWillPresent();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".will.topic", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null || !mqttConnectParameters.isWillPresent() ? null : mqttConnectParameters.getWillTopic();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".will.message", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null || !mqttConnectParameters.isWillPresent() ? null : mqttConnectParameters.getWillMessage();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".will.qos", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null || !mqttConnectParameters.isWillPresent() ? null : mqttConnectParameters.getWillQOS();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_CONNECT + ".will.retain", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTConnectParameters mqttConnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTConnectParameters();
+                    return mqttConnectParameters == null || !mqttConnectParameters.isWillPresent() ? null : mqttConnectParameters.isWillRetain();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_PUBLISH + ".topic", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTPublishParameters mqttPublishParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTPublishParameters();
+                    return mqttPublishParameters == null ? null : mqttPublishParameters.getTopic();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_PUBLISH + ".qos", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTPublishParameters mqttPublishParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTPublishParameters();
+                    return mqttPublishParameters == null ? null : mqttPublishParameters.getQOS();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_PUBLISH + ".retain", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTPublishParameters mqttPublishParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTPublishParameters();
+                    return mqttPublishParameters == null ? null : mqttPublishParameters.isRetain();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_SUBSCRIBE + ".subscriptions", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTSubscribeParameters mqttSubscribeParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTSubscribeParameters();
+                    return mqttSubscribeParameters == null ? null : mqttSubscribeParameters.getSubscriptions();
+                }
+            }),
+            new SettableVariable(BuiltinVariables.PREFIX_RESPONSE_MQTT_CONNECT + ".responseCode", new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    MQTTConnectResponseKnob mqttConnectResponseKnob = context.getResponse().getKnob(MQTTConnectResponseKnob.class);
+                    return mqttConnectResponseKnob == null ? null : mqttConnectResponseKnob.getResponseCode();
+                }
+            }, new Setter() {
+                @Override
+                public void set(String name, Object value, PolicyEnforcementContext context) {
+                    int responseCode;
+                    try {
+                        responseCode = Integer.parseInt(value.toString());
+                    } catch (Throwable t) {
+                        throw new IllegalArgumentException("Could not convert value to integer for variable: '" + BuiltinVariables.PREFIX_RESPONSE_MQTT_CONNECT + ".responseCode'. Given: " + value.toString(), t);
+                    }
+                    MQTTConnectResponseKnob mqttConnectResponseKnob = getOrCreateMqttConnectionResponseKnob(context);
+                    mqttConnectResponseKnob.setResponseCode(responseCode);
+                }
+            }),
+            new SettableVariable(BuiltinVariables.PREFIX_RESPONSE_MQTT_CONNECT + ".sessionPresent", new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    MQTTConnectResponseKnob mqttConnectResponseKnob = context.getResponse().getKnob(MQTTConnectResponseKnob.class);
+                    return mqttConnectResponseKnob == null ? null : mqttConnectResponseKnob.isSessionPresent();
+                }
+            }, new Setter() {
+                @Override
+                public void set(String name, Object value, PolicyEnforcementContext context) {
+                    boolean sessionPresent = Boolean.parseBoolean(value.toString());
+                    MQTTConnectResponseKnob mqttConnectResponseKnob = getOrCreateMqttConnectionResponseKnob(context);
+                    mqttConnectResponseKnob.setSessionPresent(sessionPresent);
+                }
+            }),
+            new SettableVariable(BuiltinVariables.PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS", new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    MQTTSubscribeResponseKnob mqttSubscribeResponseKnob = context.getResponse().getKnob(MQTTSubscribeResponseKnob.class);
+                    return mqttSubscribeResponseKnob == null ? null : mqttSubscribeResponseKnob.getGrantedQOS();
+                }
+            }, new Setter() {
+                @Override
+                public void set(String name, Object value, PolicyEnforcementContext context) {
+                    List<Integer> grantedQOS;
+                    try {
+                        //noinspection unchecked
+                        grantedQOS = (List<Integer>) value;
+                    } catch (Throwable t) {
+                        throw new IllegalArgumentException("Could not convert value to list of String for variable: '" + BuiltinVariables.PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS'. Given: " + value.toString(), t);
+                    }
+                    MQTTSubscribeResponseKnob mqttSubscribeResponseKnob = getOrCreateMqttSubscribeResponseKnob(context);
+                    mqttSubscribeResponseKnob.setGrantedQOS(grantedQOS);
+                }
+            }),
             new Variable("request.ssh.path", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
@@ -1502,5 +1671,74 @@ public class ServerVariables {
     public static PolicyEnforcementContext getRootContext(PolicyEnforcementContext context) {
         PolicyEnforcementContext parent = getParentContext(context);
         return parent == null ? context : getRootContext(parent);
+    }
+
+    /**
+     * Returns the MQTTConnectResponseKnob attached to the response message. Or if there is no such knob attached an
+     * new one is created and attached
+     *
+     * @param context The PEC to get the response message from
+     * @return The MQTTConnectResponseKnob
+     */
+    @NotNull
+    private static MQTTConnectResponseKnob getOrCreateMqttConnectionResponseKnob(@NotNull final PolicyEnforcementContext context) {
+        MQTTConnectResponseKnob mqttConnectResponseKnob = context.getResponse().getKnob(MQTTConnectResponseKnob.class);
+        if (mqttConnectResponseKnob == null) {
+            mqttConnectResponseKnob = new MQTTConnectResponseKnob() {
+                private int responseCode = -1;
+                private Boolean sessionPresent;
+
+                @Override
+                public int getResponseCode() {
+                    return responseCode;
+                }
+
+                @Override
+                public void setResponseCode(int responseCode) {
+                    this.responseCode = responseCode;
+                }
+
+                @Override
+                public boolean isSessionPresent() {
+                    return sessionPresent;
+                }
+
+                @Override
+                public void setSessionPresent(boolean sessionPresent) {
+                    this.sessionPresent = sessionPresent;
+                }
+            };
+            context.getResponse().attachKnob(mqttConnectResponseKnob, MQTTConnectResponseKnob.class);
+        }
+        return mqttConnectResponseKnob;
+    }
+
+    /**
+     * Returns the MQTTSubscribeResponseKnob attached to the response message. Or if there is no such knob attached an
+     * new one is created and attached
+     *
+     * @param context The PEC to get the response message from
+     * @return The MQTTSubscribeResponseKnob
+     */
+    @NotNull
+    private static MQTTSubscribeResponseKnob getOrCreateMqttSubscribeResponseKnob(@NotNull final PolicyEnforcementContext context) {
+        MQTTSubscribeResponseKnob mqttSubscribeResponseKnob = context.getResponse().getKnob(MQTTSubscribeResponseKnob.class);
+        if (mqttSubscribeResponseKnob == null) {
+            mqttSubscribeResponseKnob = new MQTTSubscribeResponseKnob() {
+                List<Integer> grantedQOS;
+
+                @Override
+                public List<Integer> getGrantedQOS() {
+                    return grantedQOS;
+                }
+
+                @Override
+                public void setGrantedQOS(List<Integer> grantedQOS) {
+                    this.grantedQOS = grantedQOS;
+                }
+            };
+            context.getResponse().attachKnob(mqttSubscribeResponseKnob, MQTTSubscribeResponseKnob.class);
+        }
+        return mqttSubscribeResponseKnob;
     }
 }

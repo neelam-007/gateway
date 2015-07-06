@@ -26,6 +26,14 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_FTP = "request.ftp";
     public static final String PREFIX_RESPONSE_FTP = "response.ftp";
 
+    public static final String PREFIX_REQUEST_MQTT = "request.mqtt";
+    public static final String PREFIX_REQUEST_MQTT_CONNECT = PREFIX_REQUEST_MQTT + ".connect";
+    public static final String PREFIX_REQUEST_MQTT_PUBLISH = PREFIX_REQUEST_MQTT + ".publish";
+    public static final String PREFIX_REQUEST_MQTT_SUBSCRIBE = PREFIX_REQUEST_MQTT + ".subscribe";
+    public static final String PREFIX_RESPONSE_MQTT = "response.mqtt";
+    public static final String PREFIX_RESPONSE_MQTT_CONNECT = PREFIX_RESPONSE_MQTT + ".connect";
+    public static final String PREFIX_RESPONSE_MQTT_SUBSCRIBE = PREFIX_RESPONSE_MQTT + ".subscribe";
+
     public static final String PREFIX_REQUEST_SHARED = "request.shared";
 
     public static final String SSGNODE_NAME = "ssgnode.name";
@@ -152,6 +160,24 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_REQUEST_FTP + ".secure", false, false, null, false),
             new VariableMetadata(PREFIX_RESPONSE_FTP + ".replycode", false, false, null, true),
             new VariableMetadata(PREFIX_RESPONSE_FTP + ".replytext", false, false, null, true),
+            new VariableMetadata(PREFIX_REQUEST_MQTT + ".messageType", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT + ".clientIdentifier", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT + ".userName", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT + ".userPassword", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".cleanSession", false, false, null, false, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".keepAlive", false, false, null, false, DataType.INTEGER),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.present", false, false, null, false, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.topic", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.message", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.qos", false, false, null, false, DataType.INTEGER),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.retain", false, false, null, false, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".topic", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".qos", false, false, null, false, DataType.INTEGER),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".retain", false, false, null, false, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_SUBSCRIBE + ".subscriptions", false, false, null, false),
+            new VariableMetadata(PREFIX_RESPONSE_MQTT_CONNECT + ".responseCode", false, false, null, true, DataType.INTEGER),
+            new VariableMetadata(PREFIX_RESPONSE_MQTT_CONNECT + ".sessionPresent", false, false, null, true, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS", false, false, null, true, DataType.INTEGER),
             new VariableMetadata("request.ssh.path", false, false, null, false),
             new VariableMetadata("request.ssh.file", false, false, null, false),
             new VariableMetadata("auditLevel", false, false, null, true),

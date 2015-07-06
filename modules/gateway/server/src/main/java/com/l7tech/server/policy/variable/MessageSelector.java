@@ -133,6 +133,10 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String FTP_REPLY_CODE = "ftp.replycode";
     private static final String FTP_REPLY_TEXT = "ftp.replytext";
 
+    private static final String MQTT_CONNECT_RESPONSE_CODE = "mqtt.connect.responsecode";
+    private static final String MQTT_CONNECT_SESSION_PRESENT = "mqtt.connect.sessionpresent";
+    private static final String MQTT_SUBSCRIBE_GRANTED_QOS = "mqtt.subscribe.grantedqos";
+
     private static final String LISTENER_CONCURRENCY = "listener.concurrency";
 
     private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
@@ -282,6 +286,12 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = ftpReplyCodeSelector;
         } else if (lname.equals(FTP_REPLY_TEXT)) {
             selector = ftpReplyTextSelector;
+        } else if (lname.equals(MQTT_CONNECT_RESPONSE_CODE)) {
+            selector = mqttConnectResponseCodeSelector;
+        } else if (lname.equals(MQTT_CONNECT_SESSION_PRESENT)) {
+            selector = mqttConnectSessionPresentSelector;
+        } else if (lname.equals(MQTT_SUBSCRIBE_GRANTED_QOS)) {
+            selector = mqttSubscribeGrantedQOSSelector;
         } else if (selectorMap.get(prefix) != null) {
             selector = selectorMap.get(prefix);
         } else {
@@ -309,6 +319,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                 "http",
                 "jms",
                 "ftp",
+                "mqtt",
                 "command",
                 "mainpart",
                 "parts",
@@ -421,6 +432,51 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             }
 
             return new Selection(ftpResponseKnob.getReplyText());
+        }
+    };
+
+    private static final MessageAttributeSelector mqttConnectResponseCodeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            MQTTConnectResponseKnob mqttConnectResponseKnob = context.getKnob(MQTTConnectResponseKnob.class);
+
+            if (mqttConnectResponseKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
+            return new Selection(mqttConnectResponseKnob.getResponseCode());
+        }
+    };
+
+    private static final MessageAttributeSelector mqttConnectSessionPresentSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            MQTTConnectResponseKnob mqttConnectResponseKnob = context.getKnob(MQTTConnectResponseKnob.class);
+
+            if (mqttConnectResponseKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
+            return new Selection(mqttConnectResponseKnob.isSessionPresent());
+        }
+    };
+
+    private static final MessageAttributeSelector mqttSubscribeGrantedQOSSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            MQTTSubscribeResponseKnob mqttConnectionResponseKnob = context.getKnob(MQTTSubscribeResponseKnob.class);
+
+            if (mqttConnectionResponseKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
+            return new Selection(mqttConnectionResponseKnob.getGrantedQOS());
         }
     };
 
