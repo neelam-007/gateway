@@ -23,12 +23,12 @@ public interface MQTTConnectResponseKnob extends MessageKnob {
      *
      * @return true is a session is present on this connection, false otherwise.
      */
-    boolean isSessionPresent();
+    String isSessionPresent();
 
     /**
      * Sets the session present flag
      *
      * @param sessionPresent True if a session is present on this connection
      */
-    void setSessionPresent(boolean sessionPresent);
+    void setSessionPresent(String sessionPresent);
 }

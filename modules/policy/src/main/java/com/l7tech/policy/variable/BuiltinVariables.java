@@ -30,6 +30,7 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_MQTT_CONNECT = PREFIX_REQUEST_MQTT + ".connect";
     public static final String PREFIX_REQUEST_MQTT_PUBLISH = PREFIX_REQUEST_MQTT + ".publish";
     public static final String PREFIX_REQUEST_MQTT_SUBSCRIBE = PREFIX_REQUEST_MQTT + ".subscribe";
+    public static final String PREFIX_REQUEST_MQTT_UNSUBSCRIBE = PREFIX_REQUEST_MQTT + ".unsubscribe";
     public static final String PREFIX_RESPONSE_MQTT = "response.mqtt";
     public static final String PREFIX_RESPONSE_MQTT_CONNECT = PREFIX_RESPONSE_MQTT + ".connect";
     public static final String PREFIX_RESPONSE_MQTT_SUBSCRIBE = PREFIX_RESPONSE_MQTT + ".subscribe";
@@ -175,9 +176,11 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".qos", false, false, null, false, DataType.INTEGER),
             new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".retain", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata(PREFIX_REQUEST_MQTT_SUBSCRIBE + ".subscriptions", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_UNSUBSCRIBE + ".subscriptions", false, false, null, false),
+            //Settable variables must be either String, int or date/time otherwise they wont work with the set variable assertion (com.l7tech.server.policy.assertion.ServerSetVariableAssertion)
             new VariableMetadata(PREFIX_RESPONSE_MQTT_CONNECT + ".responseCode", false, false, null, true, DataType.INTEGER),
-            new VariableMetadata(PREFIX_RESPONSE_MQTT_CONNECT + ".sessionPresent", false, false, null, true, DataType.BOOLEAN),
-            new VariableMetadata(PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS", false, false, null, true, DataType.INTEGER),
+            new VariableMetadata(PREFIX_RESPONSE_MQTT_CONNECT + ".sessionPresent", false, false, null, true),
+            new VariableMetadata(PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS", false, false, null, true),
             new VariableMetadata("request.ssh.path", false, false, null, false),
             new VariableMetadata("request.ssh.file", false, false, null, false),
             new VariableMetadata("auditLevel", false, false, null, true),

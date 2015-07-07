@@ -1044,12 +1044,12 @@ public class MessageSelectorTest {
             }
 
             @Override
-            public boolean isSessionPresent() {
-                return false;
+            public String isSessionPresent() {
+                return "false";
             }
 
             @Override
-            public void setSessionPresent(boolean sessionPresent) {
+            public void setSessionPresent(String sessionPresent) {
 
             }
         }, MQTTConnectResponseKnob.class);
@@ -1068,7 +1068,7 @@ public class MessageSelectorTest {
 
     @Test
     public void selectMQTTConnectSessionPresentValue() {
-        final boolean session = true;
+        final String session = "true";
         message.attachKnob(new MQTTConnectResponseKnob() {
 
             @Override
@@ -1081,12 +1081,12 @@ public class MessageSelectorTest {
             }
 
             @Override
-            public boolean isSessionPresent() {
+            public String isSessionPresent() {
                 return session;
             }
 
             @Override
-            public void setSessionPresent(boolean sessionPresent) {
+            public void setSessionPresent(String sessionPresent) {
 
             }
         }, MQTTConnectResponseKnob.class);
@@ -1105,16 +1105,16 @@ public class MessageSelectorTest {
 
     @Test
     public void selectMQTTSubscribeGrantedQOSValue() {
-        final List<Integer> grantedQOS = Arrays.asList(1,2,0);
+        final String grantedQOS = "{1,2,0}";
         message.attachKnob(new MQTTSubscribeResponseKnob() {
 
             @Override
-            public List<Integer> getGrantedQOS() {
+            public String getGrantedQOS() {
                 return grantedQOS;
             }
 
             @Override
-            public void setGrantedQOS(List<Integer> grantedQOS) {
+            public void setGrantedQOS(String grantedQOS) {
 
             }
         }, MQTTSubscribeResponseKnob.class);
@@ -1122,7 +1122,7 @@ public class MessageSelectorTest {
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "mqtt.subscribe.grantedQOS", handler, false);
 
         assertNotNull(selection);
-        assertArrayEquals(new Integer[]{1,2,0}, ((List)selection.getSelectedValue()).toArray());
+        assertEquals("{1,2,0}", selection.getSelectedValue());
     }
 
     @Test

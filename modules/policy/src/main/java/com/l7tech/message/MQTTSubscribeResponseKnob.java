@@ -11,12 +11,12 @@ public interface MQTTSubscribeResponseKnob extends MessageKnob {
      *
      * @return The list of granted qos's
      */
-    List<Integer> getGrantedQOS();
+    String getGrantedQOS();
 
     /**
      * Sets the granted qos's
      *
      * @param grantedQOS The list of granted qos's
      */
-    void setGrantedQOS(List<Integer> grantedQOS);
+    void setGrantedQOS(String grantedQOS);
 }

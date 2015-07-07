@@ -69,6 +69,9 @@ public interface MQTTRequestKnob extends TcpKnob {
     @Nullable
     public MQTTSubscribeParameters getMQTTSubscribeParameters();
 
+    @Nullable
+    public MQTTUnsubscribeParameters getMQTTUnsubscribeParameters();
+
     /**
      * MQTT Publish parameters
      */
@@ -104,6 +107,19 @@ public interface MQTTRequestKnob extends TcpKnob {
          * {"<topic>":<qos>}, ...]
          *
          * @return The subscriptions requested represented as a json array
+         */
+        public String getSubscriptions();
+    }
+
+    /**
+     * Unsubscription parameters
+     */
+    public interface MQTTUnsubscribeParameters {
+        /**
+         * Gets the unsubscriptions requested. This is a json string in the following form: [{"<topic>":<qos>},
+         * {"<topic>":<qos>}, ...]
+         *
+         * @return The unsubscriptions requested represented as a json array
          */
         public String getSubscriptions();
     }

@@ -410,6 +410,14 @@ public class ServerVariables {
                     return mqttSubscribeParameters == null ? null : mqttSubscribeParameters.getSubscriptions();
                 }
             }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_UNSUBSCRIBE + ".subscriptions", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTUnsubscribeParameters mqttUnsubscribeParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTUnsubscribeParameters();
+                    return mqttUnsubscribeParameters == null ? null : mqttUnsubscribeParameters.getSubscriptions();
+                }
+            }),
             new SettableVariable(BuiltinVariables.PREFIX_RESPONSE_MQTT_CONNECT + ".responseCode", new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
@@ -438,9 +446,8 @@ public class ServerVariables {
             }, new Setter() {
                 @Override
                 public void set(String name, Object value, PolicyEnforcementContext context) {
-                    boolean sessionPresent = Boolean.parseBoolean(value.toString());
                     MQTTConnectResponseKnob mqttConnectResponseKnob = getOrCreateMqttConnectionResponseKnob(context);
-                    mqttConnectResponseKnob.setSessionPresent(sessionPresent);
+                    mqttConnectResponseKnob.setSessionPresent(value.toString());
                 }
             }),
             new SettableVariable(BuiltinVariables.PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS", new Getter() {
@@ -452,15 +459,8 @@ public class ServerVariables {
             }, new Setter() {
                 @Override
                 public void set(String name, Object value, PolicyEnforcementContext context) {
-                    List<Integer> grantedQOS;
-                    try {
-                        //noinspection unchecked
-                        grantedQOS = (List<Integer>) value;
-                    } catch (Throwable t) {
-                        throw new IllegalArgumentException("Could not convert value to list of String for variable: '" + BuiltinVariables.PREFIX_RESPONSE_MQTT_SUBSCRIBE + ".grantedQOS'. Given: " + value.toString(), t);
-                    }
                     MQTTSubscribeResponseKnob mqttSubscribeResponseKnob = getOrCreateMqttSubscribeResponseKnob(context);
-                    mqttSubscribeResponseKnob.setGrantedQOS(grantedQOS);
+                    mqttSubscribeResponseKnob.setGrantedQOS(value.toString());
                 }
             }),
             new Variable("request.ssh.path", new Getter() {
@@ -1686,7 +1686,7 @@ public class ServerVariables {
         if (mqttConnectResponseKnob == null) {
             mqttConnectResponseKnob = new MQTTConnectResponseKnob() {
                 private int responseCode = -1;
-                private Boolean sessionPresent;
+                private String sessionPresent;
 
                 @Override
                 public int getResponseCode() {
@@ -1699,12 +1699,12 @@ public class ServerVariables {
                 }
 
                 @Override
-                public boolean isSessionPresent() {
+                public String isSessionPresent() {
                     return sessionPresent;
                 }
 
                 @Override
-                public void setSessionPresent(boolean sessionPresent) {
+                public void setSessionPresent(String sessionPresent) {
                     this.sessionPresent = sessionPresent;
                 }
             };
@@ -1725,15 +1725,15 @@ public class ServerVariables {
         MQTTSubscribeResponseKnob mqttSubscribeResponseKnob = context.getResponse().getKnob(MQTTSubscribeResponseKnob.class);
         if (mqttSubscribeResponseKnob == null) {
             mqttSubscribeResponseKnob = new MQTTSubscribeResponseKnob() {
-                List<Integer> grantedQOS;
+                String grantedQOS;
 
                 @Override
-                public List<Integer> getGrantedQOS() {
+                public String getGrantedQOS() {
                     return grantedQOS;
                 }
 
                 @Override
-                public void setGrantedQOS(List<Integer> grantedQOS) {
+                public void setGrantedQOS(String grantedQOS) {
                     this.grantedQOS = grantedQOS;
                 }
             };

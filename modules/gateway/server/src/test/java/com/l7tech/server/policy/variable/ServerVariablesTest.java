@@ -1625,6 +1625,29 @@ public class ServerVariablesTest {
     }
 
     @Test
+    public void testRequestMQTTUnsubscribeSubscriptions() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTUnsubscribeParameters().setSubscriptions("MySubscriptions");
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals("MySubscriptions", context.getVariable("request.mqtt.unsubscribe.subscriptions"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTUnsubscribeSubscriptionsNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.unsubscribe.subscriptions");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTUnsubscribeSubscriptionsNoMQTTKnobConnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttUnsubscribeParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.unsubscribe.subscriptions");
+    }
+    @Test
     public void testResponseMQTTConnectResponseCodeGet() throws Exception {
         final PolicyEnforcementContext context = context();
         MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
@@ -1656,6 +1679,7 @@ public class ServerVariablesTest {
         context.setVariable("response.mqtt.connect.responseCode", 2);
         assertEquals(2, context.getVariable("response.mqtt.connect.responseCode"));
         assertNotNull(context.getResponse().getKnob(MQTTConnectResponseKnob.class));
+        //noinspection ConstantConditions
         assertEquals(2, context.getResponse().getKnob(MQTTConnectResponseKnob.class).getResponseCode());
     }
 
@@ -1670,9 +1694,9 @@ public class ServerVariablesTest {
         final PolicyEnforcementContext context = context();
         MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
         //noinspection ConstantConditions
-        mqttConnectResponseKnobStub.setSessionPresent(true);
+        mqttConnectResponseKnobStub.setSessionPresent("true");
         context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
-        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
+        assertEquals("true", context.getVariable("response.mqtt.connect.sessionPresent"));
     }
 
     @Test(expected = NoSuchVariableException.class)
@@ -1686,18 +1710,19 @@ public class ServerVariablesTest {
         MQTTConnectResponseKnobStub mqttConnectResponseKnobStub = new MQTTConnectResponseKnobStub();
         //noinspection ConstantConditions
         context.getResponse().attachKnob(mqttConnectResponseKnobStub, MQTTConnectResponseKnob.class);
-        context.setVariable("response.mqtt.connect.sessionPresent", true);
-        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
-        assertEquals(true, mqttConnectResponseKnobStub.isSessionPresent());
+        context.setVariable("response.mqtt.connect.sessionPresent", "true");
+        assertEquals("true", context.getVariable("response.mqtt.connect.sessionPresent"));
+        assertEquals("true", mqttConnectResponseKnobStub.isSessionPresent());
     }
 
     @Test
     public void testResponseMQTTConnectSessionPresentSetNoKnob() throws Exception {
         final PolicyEnforcementContext context = context();
-        context.setVariable("response.mqtt.connect.sessionPresent", true);
-        assertEquals(true, context.getVariable("response.mqtt.connect.sessionPresent"));
+        context.setVariable("response.mqtt.connect.sessionPresent", "true");
+        assertEquals("true", context.getVariable("response.mqtt.connect.sessionPresent"));
         assertNotNull(context.getResponse().getKnob(MQTTConnectResponseKnob.class));
-        assertEquals(true, context.getResponse().getKnob(MQTTConnectResponseKnob.class).isSessionPresent());
+        //noinspection ConstantConditions
+        assertEquals("true", context.getResponse().getKnob(MQTTConnectResponseKnob.class).isSessionPresent());
     }
 
 
@@ -1706,9 +1731,9 @@ public class ServerVariablesTest {
         final PolicyEnforcementContext context = context();
         MQTTSubscribeResponseKnobStub mqttSubscribeResponseKnobStub = new MQTTSubscribeResponseKnobStub();
         //noinspection ConstantConditions
-        mqttSubscribeResponseKnobStub.setGrantedQOS(Arrays.asList(1,2,0));
+        mqttSubscribeResponseKnobStub.setGrantedQOS("{1,2,0}");
         context.getResponse().attachKnob(mqttSubscribeResponseKnobStub, MQTTSubscribeResponseKnob.class);
-        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
+        assertEquals("{1,2,0}", context.getVariable("response.mqtt.subscribe.grantedQOS"));
     }
 
     @Test(expected = NoSuchVariableException.class)
@@ -1722,24 +1747,19 @@ public class ServerVariablesTest {
         MQTTSubscribeResponseKnobStub mqttSubscribeResponseKnobStub = new MQTTSubscribeResponseKnobStub();
         //noinspection ConstantConditions
         context.getResponse().attachKnob(mqttSubscribeResponseKnobStub, MQTTSubscribeResponseKnob.class);
-        context.setVariable("response.mqtt.subscribe.grantedQOS", Arrays.asList(1,2,0));
-        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
-        assertArrayEquals(new Integer[]{1,2,0}, mqttSubscribeResponseKnobStub.getGrantedQOS().toArray());
+        context.setVariable("response.mqtt.subscribe.grantedQOS", "{1,2,0}");
+        assertEquals("{1,2,0}", context.getVariable("response.mqtt.subscribe.grantedQOS"));
+        assertEquals("{1,2,0}", mqttSubscribeResponseKnobStub.getGrantedQOS());
     }
 
     @Test
     public void testResponseMQTTSubscribeGrantedQOSSetNoKnob() throws Exception {
         final PolicyEnforcementContext context = context();
-        context.setVariable("response.mqtt.subscribe.grantedQOS", Arrays.asList(1,2,0));
-        assertArrayEquals(new Integer[]{1,2,0}, ((List<Integer>)context.getVariable("response.mqtt.subscribe.grantedQOS")).toArray());
+        context.setVariable("response.mqtt.subscribe.grantedQOS", "{1,2,0}");
+        assertEquals("{1,2,0}", context.getVariable("response.mqtt.subscribe.grantedQOS"));
         assertNotNull(context.getResponse().getKnob(MQTTSubscribeResponseKnob.class));
-        assertArrayEquals(new Integer[]{1,2,0}, context.getResponse().getKnob(MQTTSubscribeResponseKnob.class).getGrantedQOS().toArray());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testResponseMQTTSubscribeGrantedQOSSetBadValue() throws Exception {
-        final PolicyEnforcementContext context = context();
-        context.setVariable("response.mqtt.subscribe.grantedQOS", "abc");
+        //noinspection ConstantConditions
+        assertEquals("{1,2,0}", context.getResponse().getKnob(MQTTSubscribeResponseKnob.class).getGrantedQOS());
     }
 
     // - PRIVATE
@@ -1907,6 +1927,7 @@ public class ServerVariablesTest {
         private MQTTConnectParametersStub mqttConnectParametersStub = new MQTTConnectParametersStub();
         private MQTTPublishParametersStub mqttPublishParametersStub = new MQTTPublishParametersStub();
         private MQTTSubscribeParametersStub mqttSubscribeParametersStub = new MQTTSubscribeParametersStub();
+        private MQTTUnsubscribeParametersStub mqttUnsubscribeParametersStub = new MQTTUnsubscribeParametersStub();
 
         @NotNull
         @Override
@@ -1960,6 +1981,16 @@ public class ServerVariablesTest {
 
         public void setMqttSubscribeParametersStub(MQTTSubscribeParametersStub mqttSubscribeParametersStub) {
             this.mqttSubscribeParametersStub = mqttSubscribeParametersStub;
+        }
+
+        @Nullable
+        @Override
+        public MQTTUnsubscribeParametersStub getMQTTUnsubscribeParameters() {
+            return mqttUnsubscribeParametersStub;
+        }
+
+        public void setMqttUnsubscribeParametersStub(MQTTUnsubscribeParametersStub mqttUnsubscribeParametersStub) {
+            this.mqttUnsubscribeParametersStub = mqttUnsubscribeParametersStub;
         }
 
         @Override
@@ -2131,11 +2162,24 @@ public class ServerVariablesTest {
                 this.subscriptions = subscriptions;
             }
         }
+
+        private class MQTTUnsubscribeParametersStub implements MQTTUnsubscribeParameters {
+            private String subscriptions;
+
+            @Override
+            public String getSubscriptions() {
+                return subscriptions;
+            }
+
+            public void setSubscriptions(String subscriptions) {
+                this.subscriptions = subscriptions;
+            }
+        }
     }
 
     private class MQTTConnectResponseKnobStub implements MQTTConnectResponseKnob {
         private int responseCode = -1;
-        private boolean sessionPresent;
+        private String sessionPresent;
 
         @Override
         public int getResponseCode() {
@@ -2148,26 +2192,26 @@ public class ServerVariablesTest {
         }
 
         @Override
-        public boolean isSessionPresent() {
+        public String isSessionPresent() {
             return sessionPresent;
         }
 
         @Override
-        public void setSessionPresent(boolean sessionPresent) {
+        public void setSessionPresent(String sessionPresent) {
             this.sessionPresent = sessionPresent;
         }
     }
 
     private class MQTTSubscribeResponseKnobStub implements MQTTSubscribeResponseKnob{
-        private List<Integer> grantedQOS;
+        private String grantedQOS;
 
         @Override
-        public List<Integer> getGrantedQOS() {
+        public String getGrantedQOS() {
             return grantedQOS;
         }
 
         @Override
-        public void setGrantedQOS(List<Integer> grantedQOS) {
+        public void setGrantedQOS(String grantedQOS) {
             this.grantedQOS = grantedQOS;
         }
     }
