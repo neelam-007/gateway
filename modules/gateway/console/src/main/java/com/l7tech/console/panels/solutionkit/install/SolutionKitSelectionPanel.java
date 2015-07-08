@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.bundles.ConflictDisplayerDialog;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -124,9 +125,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         //
         SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
 
-        // Double check if instance modifier is unique for a selected solution kit
-        boolean validInstanceModifierUsed = checkInstanceModifierUniqueness(solutionKit);
-        if (! validInstanceModifierUsed) return false;
+        // Check if instance modifier is unique for a selected solution kit.
+        // However, this checking will be ignored for any solution kit upgrade bundle.
+        final String bundle = settings.getBundleAsString(solutionKit);
+        if (settings.getSolutionKitToUpgrade() == null || !bundle.contains(ConflictDisplayerDialog.MappingAction.NewOrUpdate.toString())) {
+            boolean validInstanceModifierUsed = checkInstanceModifierUniqueness(solutionKit);
+            if (! validInstanceModifierUsed) return false;
+        }
 
         // invoke custom callback
         try {
@@ -136,7 +141,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         }
 
-        String bundle = settings.getBundleAsString(solutionKit);
         if (bundle == null) {
             DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit bundle.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
             return false;
