@@ -54,6 +54,14 @@ public interface MQTTRequestKnob extends TcpKnob {
     public MQTTConnectParameters getMQTTConnectParameters();
 
     /**
+     * Returns any disconnection parameters set on this knob
+     *
+     * @return Any mqtt disconnection parameters
+     */
+    @Nullable
+    public MQTTDisconnectParameters getMQTTDisconnectParameters();
+
+    /**
      * Returns any publish parameters set on this MQTT knob
      *
      * @return Any MQTT Publish parameters
@@ -177,5 +185,21 @@ public interface MQTTRequestKnob extends TcpKnob {
          * @return The will message retain flag
          */
         public boolean isWillRetain();
+    }
+
+    /**
+     * Disconnection parameters
+     */
+    public interface MQTTDisconnectParameters {
+
+        /**
+         * This says if this connection was forcefully made. If true that means that the socket connection from the
+         * client to the Gateway was closed without the client sending a disconnect message. If false then the client
+         * sent a disconnect message.
+         *
+         * @return True if the connection was closed without a disconnect message. False if a disconnect message was
+         * received.
+         */
+        public boolean isForced();
     }
 }

@@ -28,6 +28,7 @@ public class BuiltinVariables {
 
     public static final String PREFIX_REQUEST_MQTT = "request.mqtt";
     public static final String PREFIX_REQUEST_MQTT_CONNECT = PREFIX_REQUEST_MQTT + ".connect";
+    public static final String PREFIX_REQUEST_MQTT_DISCONNECT = PREFIX_REQUEST_MQTT + ".disconnect";
     public static final String PREFIX_REQUEST_MQTT_PUBLISH = PREFIX_REQUEST_MQTT + ".publish";
     public static final String PREFIX_REQUEST_MQTT_SUBSCRIBE = PREFIX_REQUEST_MQTT + ".subscribe";
     public static final String PREFIX_REQUEST_MQTT_UNSUBSCRIBE = PREFIX_REQUEST_MQTT + ".unsubscribe";
@@ -172,6 +173,7 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.message", false, false, null, false),
             new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.qos", false, false, null, false, DataType.INTEGER),
             new VariableMetadata(PREFIX_REQUEST_MQTT_CONNECT + ".will.retain", false, false, null, false, DataType.BOOLEAN),
+            new VariableMetadata(PREFIX_REQUEST_MQTT_DISCONNECT + ".forced", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".topic", false, false, null, false),
             new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".qos", false, false, null, false, DataType.INTEGER),
             new VariableMetadata(PREFIX_REQUEST_MQTT_PUBLISH + ".retain", false, false, null, false, DataType.BOOLEAN),

@@ -1529,6 +1529,30 @@ public class ServerVariablesTest {
     }
 
     @Test
+    public void testRequestMQTTDisconnectForced() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        //noinspection ConstantConditions
+        mqttRequestKnobStub.getMQTTDisconnectParameters().setForced(true);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        assertEquals(true, context.getVariable("request.mqtt.disconnect.forced"));
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTDisconnectForcedNoMQTTKnob() throws Exception {
+        context().getVariable("request.mqtt.disconnect.forced");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testRequestMQTTDisconnectForcedNoMQTTKnobDisconnectParameters() throws Exception {
+        final PolicyEnforcementContext context = context();
+        MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
+        mqttRequestKnobStub.setMqttDisconnectParametersStub(null);
+        context.getRequest().attachKnob(mqttRequestKnobStub, MQTTRequestKnob.class);
+        context().getVariable("request.mqtt.disconnect.forced");
+    }
+
+    @Test
     public void testRequestMQTTPublishTopic() throws Exception {
         final PolicyEnforcementContext context = context();
         MQTTRequestKnobStub mqttRequestKnobStub = new MQTTRequestKnobStub();
@@ -1928,6 +1952,7 @@ public class ServerVariablesTest {
         private MQTTPublishParametersStub mqttPublishParametersStub = new MQTTPublishParametersStub();
         private MQTTSubscribeParametersStub mqttSubscribeParametersStub = new MQTTSubscribeParametersStub();
         private MQTTUnsubscribeParametersStub mqttUnsubscribeParametersStub = new MQTTUnsubscribeParametersStub();
+        private MQTTDisconnectParametersStub mqttDisconnectParametersStub = new MQTTDisconnectParametersStub();
 
         @NotNull
         @Override
@@ -1961,6 +1986,16 @@ public class ServerVariablesTest {
 
         public void setMqttConnectParametersStub(MQTTConnectParametersStub mqttConnectParametersStub) {
             this.mqttConnectParametersStub = mqttConnectParametersStub;
+        }
+
+        @Nullable
+        @Override
+        public MQTTDisconnectParametersStub getMQTTDisconnectParameters() {
+            return mqttDisconnectParametersStub;
+        }
+
+        public void setMqttDisconnectParametersStub(MQTTDisconnectParametersStub mqttDisconnectParametersStub) {
+            this.mqttDisconnectParametersStub = mqttDisconnectParametersStub;
         }
 
         @Nullable
@@ -2174,6 +2209,20 @@ public class ServerVariablesTest {
             public void setSubscriptions(String subscriptions) {
                 this.subscriptions = subscriptions;
             }
+        }
+
+        private class MQTTDisconnectParametersStub implements MQTTDisconnectParameters{
+            private boolean forced;
+
+            @Override
+            public boolean isForced() {
+                return forced;
+            }
+
+            public void setForced(boolean forced) {
+                this.forced = forced;
+            }
+
         }
     }
 

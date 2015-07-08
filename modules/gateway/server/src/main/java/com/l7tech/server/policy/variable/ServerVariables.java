@@ -378,6 +378,14 @@ public class ServerVariables {
                     return mqttConnectParameters == null || !mqttConnectParameters.isWillPresent() ? null : mqttConnectParameters.isWillRetain();
                 }
             }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_DISCONNECT + ".forced", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    MQTTRequestKnob mqttRequestKnob = context.getRequest().getKnob(MQTTRequestKnob.class);
+                    MQTTRequestKnob.MQTTDisconnectParameters mqttDisconnectParameters = mqttRequestKnob == null ? null : mqttRequestKnob.getMQTTDisconnectParameters();
+                    return mqttDisconnectParameters == null ? null : mqttDisconnectParameters.isForced();
+                }
+            }),
             new Variable(BuiltinVariables.PREFIX_REQUEST_MQTT_PUBLISH + ".topic", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
