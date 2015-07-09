@@ -281,6 +281,9 @@
             <dropTable tableName="solution_kit"/>
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="rename_solution_kit_properties_field_by_using_dynamic_value">
+        <renameColumn tableName="solution_kit" oldColumnName="properties" newColumnName="${properties.column.name}" columnDataType="${mediumtext.type}" />
+    </changeSet>
     <changeSet author="gateway" id="scheduled_task-role-with-identity">
         <comment></comment>
         <insert tableName="rbac_permission">
