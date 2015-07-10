@@ -29,7 +29,7 @@ public class ManageSolutionKitsAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/unknown.gif";
+        return "com/l7tech/console/resources/check_list_in_box_16.png";
     }
 
     @Override
