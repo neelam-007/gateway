@@ -1,0 +1,41 @@
+ssg:
+  image: hbutow/ssg:9.0.00-1.svn20150713
+#  image: heinrichbutowatca/ssg:9.0-test
+#  mem_limit: 2147483648
+  mem_limit: 1073741824
+  expose:
+    - "2124"
+    - "8080"
+    - "8443"
+    - "9443"
+# if you want to map the ports from the container onto the host, use this form instead.
+#  ports:
+#    - "8080"
+#    - "8443"
+#    - "9443"
+  environment:
+    - SSG_CLUSTER_HOST=localhost
+    - SSG_CLUSTER_PASSWORD=7layer
+    - SSG_DATABASE_TYPE=mysql
+    - SSG_DATABASE_HOST=mysql
+    - SSG_DATABASE_PORT=3306
+    - SSG_DATABASE_NAME=ssg
+    - SSG_DATABASE_USER=gateway
+    - SSG_DATABASE_PASSWORD=7layer
+    - SSG_DATABASE_ADMIN_USER=root
+    - SSG_DATABASE_ADMIN_PASS=7layer
+    - SSG_ADMIN_USER=pmadmin
+    - SSG_ADMIN_PASS=7layer
+# we don't include the license here. It is expected that the machine that runs docker-compose will already have SSG_LICENSE set and the value of it is passed to each Docker Machine to put it its environment.
+# the variable is set by running something like:
+# export SSG_LICENSE="$(cat ~/workspace/uneasyrooster-trunk/trunk/DEVLICENSE.xml | gzip | base64)"
+    - SSG_LICENSE
+# the internal services to create. A space separated list of files to create as described at https://wiki.l7tech.com/mediawiki/index.php/Auto_Provision_Internal_Gateway_Service_Func_Spec
+    - SSG_INTERNAL_SERVICES="restman wsman"
+  links:
+    - mysql
+mysql:
+  image: mysql:5.5
+  mem_limit: 536870912
+  environment:
+    - MYSQL_ROOT_PASSWORD=7layer

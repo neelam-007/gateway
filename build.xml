@@ -370,6 +370,7 @@
         <property name="build.reports" value="${build.dir}/reports"/>
         <property name="build.installer" value="${build.dir}/installer"/>
         <property name="build.rpm" value="${build.dir}/rpm"/>
+        <property name="build.docker" value="${build.dir}/docker"/>
 
         <property name="src.installer" value="${src.root}/installer"/>
         <property name="dist.dir" value="${src.root}/dist"/>
@@ -415,6 +416,19 @@
             </and>
         </condition>
 
+        <condition property="makedocker.available">
+            <or>
+                <available file="docker" filepath="/bin:/usr/bin:/usr/local/bin"/>
+            </or>
+        </condition>
+        <condition property="makedocker.enabled">
+            <and>
+                <isset property="makedocker.available"/>
+                <isset property="makedocker"/>
+            </and>
+        </condition>
+
+
         <!-- Performance test config -->
         <property name="test.perf.from" value="teamcity@tyan64.l7tech.com"/>
         <property name="test.perf.to" value=""/>
@@ -435,13 +449,18 @@
         <condition property="echo.makerpm.enabled">
             <isset property="makerpm.enabled"/>
         </condition>
+        <condition property="echo.makedocker.enabled">
+            <isset property="makedocker.enabled"/>
+        </condition>
         <condition property="echo.makensis.enabled">
             <isset property="makensis.enabled"/>
         </condition>
         <property name="echo.makerpm.enabled" value="false" />
+        <property name="echo.makedocker.enabled" value="false" />
         <property name="echo.makensis.enabled" value="false" />
         <echo level="info">
         RPM Build Enabled               = ${echo.makerpm.enabled}
+        Docker Build Enabled               = ${echo.makedocker.enabled}
         Windows Installer Build Enabled = ${echo.makensis.enabled}
         </echo>
 
@@ -1237,6 +1256,7 @@
         <delete dir="${doc.root}"/>
         <delete dir="${build.dir}" failonerror="false"/>
         <delete dir="${build.rpm}"/>
+        <delete dir="${build.docker}"/>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*"/>
@@ -2248,6 +2268,32 @@
     -->
     <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.i386, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
+    </target>
+
+    <!--
+      Create the SSG Docker image
+    -->
+    <target name="docker" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance.x86_64" if="makedocker.enabled">
+       <echo level="info">Building Docker image</echo>
+       <mkdir dir="${build.rpm}/docker"/>
+       <copy file="etc/docker/Dockerfile" todir="${build.rpm}/docker"/>
+       <copy file="etc/docker/gateway-provision-and-run.sh" todir="${build.rpm}/docker"/>
+
+       <copy todir="${build.rpm}/docker" verbose="true">
+          <fileset dir="${dist.dir}">
+             <include name="**/ssg-*.noarch.rpm"/>
+             <include name="**/ssg-appliance*.x86_64.rpm"/>
+          </fileset>
+       </copy>
+
+       <!-- Run docker build -->
+       <exec executable="docker"
+          dir="${build.rpm}/docker/"
+          failonerror="true">
+          <arg value="build"/>
+          <arg value="--tag=&quot;${user.name}/ssg:${build.rpmversion}-${build.version.revision}${build.release}&quot;"/>
+          <arg value="."/>
+       </exec>
     </target>
 
     <target name="clean.ssgbackup.zip" description="Clean the ${build.dir}/gatewayconfig/SSGBackup.zip file">
@@ -3547,6 +3593,12 @@
     <target name="makerpm" description="Enable building of rpm installer(s)">
         <echo level="info">Enabling RPM installers for build.</echo>
         <property name="makerpm" value="true"/>
+        <property name="ssg.install.enabled" value="true"/>
+    </target>
+
+    <target name="makedocker" description="Enable building of Docker image">
+        <echo level="info">Enabling building Docker image.</echo>
+        <property name="makedocker" value="true"/>
         <property name="ssg.install.enabled" value="true"/>
     </target>
 
