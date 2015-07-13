@@ -11,8 +11,11 @@
 !ifndef J2RE_PATH
   !define J2RE_PATH "${J2RE_DIR}${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !endif
-!define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "Layer 7 Policy Manager" ;Define your own software name here
+!define COMPANY "CA Technologies"
+!define MUI_PRODUCT "CA API Gateway Policy Manager" ;Define your own software name here
+
+!define PREVIOUS_COMPANY_NAME "Layer 7 Technologies" ;Previous company and product name - for detecting old installations
+!define PREVIOUS_PRODUCT_NAME "Layer 7 Policy Manager"
 
 !ifndef MUI_VERSION
   ; Do not edit this version number
@@ -69,7 +72,7 @@
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU" 
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Layer 7 ${MUI_PRODUCT}"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "${COMPANY} ${MUI_PRODUCT}"
 
   !define TEMP $R0
 
@@ -95,22 +98,28 @@
 ; checks for previous installations and warns user if detected
 Function CheckPreviousInstalls
 
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME}" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME} 3.4.1" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME} 3.4" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME} 3.1" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME} 3.0" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${PREVIOUS_COMPANY_NAME}\${PREVIOUS_PRODUCT_NAME} HEAD" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
   ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
   StrCmp ${TEMP} "" 0 foundpreviousinstall
 
   ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
-  StrCmp ${TEMP} "" 0 foundpreviousinstall
-
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.4.1" ""
-  StrCmp ${TEMP} "" 0 foundpreviousinstall
-
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.4" ""
-  StrCmp ${TEMP} "" 0 foundpreviousinstall
-
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.1" ""
-  StrCmp ${TEMP} "" 0 foundpreviousinstall
-
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.0" ""
   StrCmp ${TEMP} "" 0 foundpreviousinstall
 
   ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} HEAD" ""
@@ -179,7 +188,7 @@ Section "Policy Editor" SecCopyUI
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "UninstallString" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "Publisher" "${COMPANY}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "URLInfoAbout" "http://www.layer7tech.com"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "URLInfoAbout" "http://www.ca.com"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "DisplayVersion" "${MUI_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "NoModify" "1"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "NoRepair" "1"
