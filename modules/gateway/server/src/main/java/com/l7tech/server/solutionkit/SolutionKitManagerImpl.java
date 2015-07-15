@@ -19,6 +19,7 @@ import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
+import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -32,9 +33,11 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +57,9 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
 
     private ServerAssertion serverRestGatewayManagementAssertion = null;
+
+    @Inject
+    private ProtectedEntityTracker protectedEntityTracker;
 
     public SolutionKitManagerImpl() {
     }
@@ -101,7 +107,24 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 pec.setVariable("RestGatewayMan.uri", "1.0/bundle?test=true");
             }
 
-            Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
+            // Allow solution kit installation/upgrade to "punch through" read-only entities
+            Pair<AssertionStatus, RestmanMessage> result;
+            try {
+                result = protectedEntityTracker.doWithEntityProtectionDisabled(
+                        new Callable<Pair<AssertionStatus, RestmanMessage>>() {
+                            @Override
+                            public Pair<AssertionStatus, RestmanMessage> call() throws Exception {
+                                return restmanInvoker.callManagementCheckInterrupted( pec, requestXml );
+                            }
+                        } );
+            } catch ( GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
+                    GatewayManagementDocumentUtilities.UnexpectedManagementResponse |
+                    InterruptedException e) {
+                throw e;
+            } catch ( Exception e ) {
+                throw new RuntimeException( e );
+            }
+
             if (AssertionStatus.NONE != result.left) {
                 String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
                 logger.log(Level.WARNING, msg);

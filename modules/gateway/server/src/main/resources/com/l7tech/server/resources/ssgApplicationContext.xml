@@ -604,6 +604,7 @@
             <bean class="com.l7tech.server.security.rbac.RbacServicesImpl">
                 <property name="roleManager" ref="roleManager"/>
                 <property name="entityFinder" ref="entityFinder"/>
+                <property name="protectedEntityTracker" ref="protectedEntityTracker"/>
             </bean>
         </constructor-arg>
     </bean>
@@ -2733,5 +2734,7 @@
     </bean>
 
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
+
+    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" />
 
 </beans>

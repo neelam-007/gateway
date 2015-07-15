@@ -146,6 +146,7 @@ public class SecuredEntityCrud implements EntityCrud {
             } else if (entity instanceof HasFolder && OperationType.UPDATE == operation &&
                     FolderSupportHibernateEntityManager.changesExistingFolder((HasFolder) entityCrud.find(EntityHeaderUtils.fromEntity(entity)), (HasFolder) entity) &&
                     !services.isPermittedForAnyEntityOfType(user, OperationType.DELETE, EntityType.FOLDER)) {
+                // TODO ensure that read-only folder does not get modified if this approval is given via blanket permission
                 deniedMsg = "Folder Update Denied";
             }
         } catch (FindException fe) {

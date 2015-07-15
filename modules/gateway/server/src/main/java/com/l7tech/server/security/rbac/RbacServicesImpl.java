@@ -39,11 +39,13 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
     private RoleManager roleManager;
     private EntityFinder entityFinder;
+    private ProtectedEntityTracker protectedEntityTracker;
     private ApplicationContext applicationContext;
 
-    public RbacServicesImpl(RoleManager roleManager, EntityFinder entityFinder) {
+    public RbacServicesImpl(RoleManager roleManager, EntityFinder entityFinder, ProtectedEntityTracker protectedEntityTracker) {
         this.roleManager = roleManager;
         this.entityFinder = entityFinder;
+        this.protectedEntityTracker = protectedEntityTracker;
     }
 
     public RbacServicesImpl() { }
@@ -237,6 +239,17 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                                 final OperationType attemptedOperation,
                                 final String otherOperationName)
     {
+        // TODO for now, read-only entities override all permissions.
+        // If we want to allow a special permission operation (or scope) that can "punch through" a read-only designation,
+        // this check would need to be changed (or possibly moved into the permission itself)
+        if ( entity != null &&
+                protectedEntityTracker != null &&
+                !OperationType.READ.equals( attemptedOperation ) &&
+                protectedEntityTracker.isEntityProtectionEnabled() &&
+                protectedEntityTracker.isReadOnlyEntity( entity ) ) {
+            return false;
+        }
+
         for (Role role : assignedRoles) {
             for (Permission perm : role.getPermissions()) {
                 if (!perm.matches(entity) || perm.getOperation() != attemptedOperation)
@@ -298,6 +311,10 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
     public void setEntityFinder(EntityFinder entityFinder) {
         this.entityFinder = entityFinder;
+    }
+
+    public void setProtectedEntityTracker( ProtectedEntityTracker protectedEntityTracker ) {
+        this.protectedEntityTracker = protectedEntityTracker;
     }
 
     @Override

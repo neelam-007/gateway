@@ -21,7 +21,7 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     private GroupManager groupManager;
 
     public MockRoleManager(EntityFinder entityFinder) {
-        rbacServices = new RbacServicesImpl(this, entityFinder);
+        rbacServices = new RbacServicesImpl(this, entityFinder, null);
     }
 
     private final RbacServices rbacServices;

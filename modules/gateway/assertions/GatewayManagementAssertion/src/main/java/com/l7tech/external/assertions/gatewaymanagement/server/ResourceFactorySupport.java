@@ -365,6 +365,11 @@ abstract class ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
         final List<ET> filteredEntities;
         final User user = JaasUtils.getCurrentUser();
 
+        // Collection filtering uses blanket permissions which do not honor read-only entities.
+        // Ensure that no future code ever attempts to do collection filtering for bulk UPDATE or DELETE purposes.
+        if ( OperationType.DELETE.equals( operationType ) || OperationType.UPDATE.equals( operationType ) )
+            throw new IllegalArgumentException( "Collection filtering may not be  for DELETE or UPDATE operations" );
+
         if ( user != null ) {
             if ( rbacServices.isPermittedForAnyEntityOfType(user, operationType, entityType) ) {
                 filteredEntities = entities;

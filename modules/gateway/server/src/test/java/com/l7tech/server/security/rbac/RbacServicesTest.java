@@ -28,7 +28,7 @@ public class RbacServicesTest {
 
     @Test
     public void testPermittedForEntity() throws Exception {
-        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
+        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder, null );
 
         final PublishedService service = new PublishedService();
         service.setGoid(new Goid(0,123));
@@ -55,7 +55,7 @@ public class RbacServicesTest {
 
     @Test
     public void testPermittedForAnyEntity() throws Exception {
-        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
+        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder, null );
 
         final boolean permitted1 = rbacServices.isPermittedForAnyEntityOfType( newUserBean("none"), OperationType.READ, EntityType.SERVICE );
         assertFalse("No permissions", permitted1);
@@ -75,7 +75,7 @@ public class RbacServicesTest {
 
     @Test
     public void testPermittedForSomeEntity() throws Exception {
-        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
+        final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder, null );
 
         final boolean permitted1 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("none"), OperationType.READ, EntityType.SERVICE );
         assertFalse("No permissions", permitted1);

@@ -169,7 +169,7 @@ public class RbacFolderTest {
         serviceManager = new ServiceManagerStub(policyManager, aService);
         EntityFinderStub entityFinder = new EntityFinderStub(policyManager, serviceManager, folderManager, policyAliasManager, serviceAliasManager);
         roleManager = new MockRoleManager(entityFinder);
-        rbacServices = new RbacServicesImpl(roleManager, entityFinder);
+        rbacServices = new RbacServicesImpl(roleManager, entityFinder, null);
         interceptor = new SecuredMethodInterceptor(rbacServices, entityFinder);
     }
 
