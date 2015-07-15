@@ -29,7 +29,7 @@
         <dependency org="org.odata4j" name="core4j" rev="0.5" force="true" conf="core"/>
         <dependency org="org.odata4j" name="joda-time" rev="2.1" force="true" conf="core"/>
         <dependency org="org.odata4j" name="jsr311-api" rev="1.1.1" force="true" conf="core"/>
-        <dependency org="org.odata4j" name="jersey-bundle" rev="1.17.1" force="true" conf="core"/>
+        <dependency org="org.odata4j" name="jersey-bundle" rev="1.19" force="true" conf="core"/>
         <dependency org="org.odata4j" name="xstream" rev="1.4.7" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
