@@ -4177,6 +4177,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         MainWindow.this.
                                 setInactivitiyTimeout(timeout);
                         MainWindow.this.fireConnected();
+                        ssmApplication.updateHelpUrl();
                         success = true;
                     } finally {
                         if (!success) {

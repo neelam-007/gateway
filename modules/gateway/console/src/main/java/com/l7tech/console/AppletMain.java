@@ -15,6 +15,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.gui.util.SaveErrorStrategy;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.util.ExceptionUtils;
@@ -46,9 +47,6 @@ public class AppletMain extends JApplet implements SheetHolder {
     /** Name we use to register the most recent instance of ourself under TopComponents. */
     public static final String COMPONENT_NAME = "appletMain";
 
-    /** Url we try to use for help topics if we aren't given an override as an applet param. */
-    private static final String DEFAULT_HELP_ROOT_RELATIVE_URL = "/ssg/webadmin/help/_start.htm";
-
     private static final String SESSION_ID_LOG_OFF = "LOGGED OFF";
     private String otherSessionId;
     private String sessionId;
@@ -60,7 +58,6 @@ public class AppletMain extends JApplet implements SheetHolder {
     private static JRootPane appletRootPane = null;
     private static final Map<AppletMain, Object> instances = Collections.synchronizedMap(new WeakHashMap<AppletMain, Object>());
 
-    private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
     private JRootPane placeholderRootPane = null;
     private String serviceUrl;
@@ -351,13 +348,6 @@ public class AppletMain extends JApplet implements SheetHolder {
         this.hostAndPort = hostname;
         this.helpTarget = "managerAppletHelp_" + hostname.replaceAll( "[^a-zA-Z0-9_]", "_" );
 
-        String helpRootUrl = getParameter("helpRootUrl");
-        if (helpRootUrl != null && helpRootUrl.trim().length() > 0) {
-            this.helpRootUrl = helpRootUrl;
-            logger.info("Help root URL: " + helpRootUrl);
-        } else
-            logger.info("Using default help root URL: " + this.helpRootUrl);
-
         String sessionId = getParameter("sessionId");
         if ( sessionId != null && sessionId.length() > 0 ) {
             try {
@@ -401,11 +391,10 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public void showHelpTopicsRoot() {
         try {
-            URL cb = getDocumentBase();
-            URL url = new URL(cb, helpRootUrl);
+            URL url = new URL( HelpUtil.getHelpUrl() );
             getAppletContext().showDocument(url, helpTarget);
         } catch (MalformedURLException e) {
-            logger.warning("Unable to display webhelp: bad webhelp URL: " + ExceptionUtils.getMessage(e));
+            logger.warning("Unable to display help: bad help URL: " + ExceptionUtils.getMessage(e));
         }
     }
 

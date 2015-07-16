@@ -1972,12 +1972,6 @@
               preservelastmodified="true"
               granularity="2000"/>
 
-        <!-- Help files -->
-        <unzip src="${src.root}/webhelp/ssb/help.zip"
-               dest="${build.installer}/Client-${build.version}"/>
-        <!-- allow for inconsistently named SSB help directory -->
-        <move file="${build.installer}/Client-${build.version}/WebHelp"
-                  tofile="${build.installer}/Client-${build.version}/help" failonerror="false"/>
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Client-${build.version}.tar.gz"
              compression="gzip">
@@ -2046,12 +2040,6 @@
               preservelastmodified="true"
               granularity="2000"/>
 
-        <!-- Help files -->
-        <unzip src="${src.root}/webhelp/ssm/help.zip"
-               dest="${build.installer}/Manager-${build.version}"/>
-        <!-- allow for inconsistently named SSB help directory -->
-        <move file="${build.installer}/Manager-${build.version}/WebHelp"
-                  tofile="${build.installer}/Manager-${build.version}/help" failonerror="false"/>
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Manager-${build.version}.tar.gz"
              compression="gzip">
@@ -3241,7 +3229,6 @@
                 <mkdir dir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.backuprestore.images}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
-                <mkdir dir="@{dir}/${install.src.ssg.help}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.libalt}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
@@ -3389,8 +3376,6 @@
                     <fileset dir="${build.dir}/managerapplet" includes="layer7-gateway-console-applet.jar*"/>
                 </copy>
 
-                <unzip src="${src.root}/webhelp/ssm/help.zip" dest="@{dir}/${install.src.ssg.help}"/>
-
                 <copy todir="@{dir}/${install.src.ssg.appletlib}">
                     <fileset dir="${build.dir}/managerapplet/lib"/>
                 </copy>
@@ -3407,17 +3392,6 @@
       Top level work target for official builds
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
-        <!-- Validate installation -->
-        <path id="ssmhelp.spacespath">
-            <fileset dir="${install.src.ssg}/${install.src.ssg.help}">
-                <include name="**/* *"/>
-            </fileset>
-        </path>
-        <condition property="ssmhelp.fail.path.with.spaces">
-            <length string="${toString:ssmhelp.spacespath}" when="greater" length="0" />
-        </condition>
-        <fail if="ssmhelp.fail.path.with.spaces">SSM help.zip contains path with spaces, please remove the spaces and try again.${line.separator}${toString:ssmhelp.spacespath}</fail>
-
         <!-- Create software tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>

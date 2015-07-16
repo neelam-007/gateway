@@ -115,11 +115,10 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
     /**
      * The "Help Topics".
-     * This procedure displays the WebHelp contents in the preferred browser for the system on which the SSM is running.
+     * This procedure displays the help contents in the preferred browser for the system on which the SSM is running.
      */
     public void showHelpTopicsRoot() {
-        String applicationHome = ConfigFactory.getProperty( APPLICATION_HOME_PROPERTY, new File( "." ).getAbsolutePath() );
-        HelpUtil.showHelpTopicsRoot(applicationHome, TopComponents.getInstance().getTopParent());
+        HelpUtil.showHelpTopicsRoot( TopComponents.getInstance().getTopParent() );
     }
 
     private void installAdditionalSecurityProviders() {

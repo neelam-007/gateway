@@ -1,8 +1,11 @@
 package com.l7tech.console;
 
+import com.l7tech.console.util.ClusterPropertyCrud;
+import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -20,6 +23,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
     private static final boolean SUPPRESS_AUTO_LNF = ConfigFactory.getBooleanProperty( "com.l7tech.console.SuppressAutoLookAndFeel", false );
+    private static final String PROP_HELP_URL = "help.url";
 
     private String resourcePath;
     private boolean trusted = true;
@@ -152,6 +156,15 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
             UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unable to update look-and-feel classloader", e );
+        }
+    }
+
+    public void updateHelpUrl() {
+        try {
+            String customUrl = ClusterPropertyCrud.getClusterProperty( PROP_HELP_URL );
+            HelpUtil.setHelpUrl( customUrl );
+        } catch ( Exception e ) {
+            logger.log( Level.INFO, "Unable to look up custom help URL: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
         }
     }
 

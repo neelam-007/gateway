@@ -14,6 +14,8 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -25,46 +27,55 @@ public class HelpUtil {
     private static final Logger logger = Logger.getLogger(HelpUtil.class.getName());
 
     /**
-     * the path to WebHelp start file, relative to the working dir.
+     * the default help URL.  May be overridden once we connect to the Gateway.
      */
-    public static final String HELP_FILE_NAME = "help/_start.htm";
+    public static final String DEFAULT_HELP_URL = "http://wiki.ca.com/gateway";
     private static BrowserLauncher browserLauncher;
+    private static String helpUrl = null;
+
+    /**
+     * Set a custom help url to override the default.
+     *
+     * @param helpUrl a new custom help URL, or null to clear it and use the default.
+     */
+    public static void setHelpUrl( String helpUrl ) {
+        HelpUtil.helpUrl = helpUrl;
+    }
+
+    /**
+     * @return the currently active help URL, which may be the default help URL.
+     */
+    public static String getHelpUrl() {
+        return helpUrl != null ? helpUrl : DEFAULT_HELP_URL;
+    }
 
     /**
      * Opens the root help topics in an external web browser.  If a browser is found, it is launched and this
      * method returns immediately.  If this operation fails, a modal error message dialog will be displayed
      * and this method will not return until the user acknowledges it.
      *
-     * @param homePath  the application home directory, that contains the "help" subdirectory.  Must not be null.
      * @param parentComponent  parent component if an error dialog must be displayed, or null to use the default
      *                         frame (same as JOptionPane)
      */
-    public static void showHelpTopicsRoot(String homePath, Frame parentComponent) {
-        String applicationHome = homePath;
-        if (!applicationHome.endsWith("/")) applicationHome += "/";
-        String helpPath =applicationHome + HELP_FILE_NAME;
-        File helpFile = new File(helpPath);
+    public static void showHelpTopicsRoot( Frame parentComponent ) {
         Exception problem = null;
 
         try {
-            String helpUrl = helpFile.getCanonicalFile().toURI().toURL().toExternalForm();
+            if ( helpUrl == null )
+                helpUrl = DEFAULT_HELP_URL;
             logger.info("Launching web help URL: " + helpUrl);
             BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
             Thread launcherThread = new Thread(runner);
             launcherThread.start();
-        } catch (BrowserLaunchingInitializingException e) {
-            problem = e;
-        } catch (UnsupportedOperatingSystemException e) {
-            problem = e;
-        } catch (IOException e) {
+        } catch (Exception e) {
             problem = e;
         }
 
         if (problem != null) {
-            logger.log(Level.WARNING, "Unable to launch browser for webhelp: " + ExceptionUtils.getMessage(problem), problem);
+            logger.log(Level.WARNING, "Unable to launch browser for help: " + ExceptionUtils.getMessage(problem), problem);
             JOptionPane.showMessageDialog(parentComponent,
-                                          "Unable to open the help system. To view the help system, open the following file\n" +
-                                                  "in your preferred web browser: \n\n  " + helpPath,
+                                          "Unable to open the help system. To view the help system, open the following URL\n" +
+                                                  "in your preferred web browser: \n\n  " + helpUrl,
                                           "Cannot Open Help",
                                           JOptionPane.WARNING_MESSAGE);
         }
