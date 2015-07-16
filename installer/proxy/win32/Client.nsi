@@ -166,7 +166,6 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   File "${BUILD_DIR}\..\installer\proxy\win32\SSXVCService.exe"
   File "${BUILD_DIR}\..\installer\proxy\win32\enableKerberos.reg"
   File "${PACKAGE_DIR}\logging.properties"
-  File /r "${PACKAGE_DIR}\help"
 
   RMDir /r "$INSTDIR/lib"
   File /r "${PACKAGE_DIR}\lib"
@@ -290,7 +289,6 @@ Section "Uninstall"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
   RMDir "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
-  RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\SSXVCService.exe"
   Delete "$INSTDIR\logging.properties"

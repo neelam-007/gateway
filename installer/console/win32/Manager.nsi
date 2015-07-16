@@ -150,7 +150,6 @@ Section "Policy Editor" SecCopyUI
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${PACKAGE_DIR}\logging.properties"
-  File /r "${PACKAGE_DIR}\help"
 
   RMDir /r "$INSTDIR/lib"
   File /r "${PACKAGE_DIR}\lib"
@@ -212,7 +211,6 @@ Section "Uninstall"
   Delete "$INSTDIR\Manager.jar"
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
-  RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\logging.properties"
 
