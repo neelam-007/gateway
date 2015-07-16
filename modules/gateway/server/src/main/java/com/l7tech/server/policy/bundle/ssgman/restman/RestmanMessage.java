@@ -474,15 +474,15 @@ public class RestmanMessage {
         return result;
     }
 
-    public void removeMappingByEntityType(String toBeIgnoredEntityType) {
+    public void removeMappingByEntityType(@NotNull final String toBeRemovedEntityType) {
         final List<Element> mappingsElements = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
-        if (mappingsElements.size() != 1) return;
+        if (mappingsElements.size() != 1) return;  // If more than one or less than one, ignore them.
 
-        final Element mappingParentElement = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap()).get(0);
-        final List<Element> toBeRemovedMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@type=\"" + toBeIgnoredEntityType + "\"]", getNamespaceMap());
+        final Element mappingsElement = mappingsElements.get(0);
+        final List<Element> toBeRemovedMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@type=\"" + toBeRemovedEntityType + "\"]", getNamespaceMap());
 
         for (Element tobeRemoved: toBeRemovedMappings) {
-            mappingParentElement.removeChild(tobeRemoved);
+            mappingsElement.removeChild(tobeRemoved);
         }
     }
 

@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -21,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +43,9 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private final SolutionKitAdmin solutionKitAdmin;
 
+    @Nullable
+    private Collection<SolutionKitHeader> solutionKitHeaders;
+
     /**
      * Create dialog.
      *
@@ -53,6 +58,11 @@ public class ManageSolutionKitsDialog extends JDialog {
         initialize();
         refreshSolutionKitsTable();
         refreshSolutionKitsTableButtons();
+    }
+
+    @Nullable
+    public Collection<SolutionKitHeader> getSolutionKitHeaders() {
+        return solutionKitHeaders;
     }
 
     private void initialize() {
@@ -236,7 +246,8 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private void refreshSolutionKitsTable() {
         try {
-            solutionKitTablePanel.setData(new ArrayList<>(solutionKitAdmin.findSolutionKits()));
+            solutionKitHeaders = solutionKitAdmin.findSolutionKits();
+            solutionKitTablePanel.setData(new ArrayList<>(solutionKitHeaders));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Error loading solution kits.", ExceptionUtils.getDebugException(e));
         }

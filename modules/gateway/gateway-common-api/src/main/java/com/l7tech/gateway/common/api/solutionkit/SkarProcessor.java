@@ -187,6 +187,9 @@ public class SkarProcessor {
             if (upgradeBundleSource.getNode() != null) {
                 final Bundle upgradeBundle = MarshallingUtils.unmarshal(Bundle.class, upgradeBundleSource, true);
                 bundle = mergeBundle(solutionKit, installBundle, upgradeBundle);
+                solutionKitsConfig.setUpgradeInfoProvided(true);
+            } else {
+                solutionKitsConfig.setUpgradeInfoProvided(false);
             }
 
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);

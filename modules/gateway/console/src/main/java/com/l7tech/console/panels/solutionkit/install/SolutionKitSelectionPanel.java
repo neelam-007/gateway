@@ -1,7 +1,6 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.panels.bundles.ConflictDisplayerDialog;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -14,16 +13,14 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.api.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -34,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -125,12 +123,17 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         //
         SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
 
-        // Check if instance modifier is unique for a selected solution kit.
+        // For installation, check if instance modifier is unique for a selected solution kit.
         // However, this checking will be ignored for any solution kit upgrade bundle.
         final String bundle = settings.getBundleAsString(solutionKit);
-        if (settings.getSolutionKitToUpgrade() == null || !bundle.contains(ConflictDisplayerDialog.MappingAction.NewOrUpdate.toString())) {
-            boolean validInstanceModifierUsed = checkInstanceModifierUniqueness(solutionKit);
-            if (! validInstanceModifierUsed) return false;
+
+        if (// Case 1: User runs Install
+            settings.getSolutionKitToUpgrade() == null ||
+            // Case 2: User runs Upgrade but the skar file does not contain UpgradeBundle.xml.  We treat this case same as Install.
+            !settings.isUpgradeInfoProvided()) {
+
+            final boolean duplicateInstanceModifierFound = ! checkInstanceModifierUniqueness(solutionKit);
+            if (duplicateInstanceModifierFound) return false;
         }
 
         // invoke custom callback
@@ -230,17 +233,17 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     if (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet)) {
                         return solutionKit.getName();
                     } else {
-                        return solutionKit.getName() + " (Unlicensed)";
+                        return "(Unlicensed) " + solutionKit.getName();
                     }
                 }
             }),
-            column("Version", 50, 100, 500, new Functions.Unary<String, SolutionKit>() {
+            column("Version", 50, 60, 500, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
                     return solutionKit.getSolutionKitVersion();
                 }
             }),
-            column("Instance Modifier", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
+            column("Instance Modifier", 50, 240, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
                     return solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
@@ -268,6 +271,21 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
         Utilities.setRowSorter(solutionKitsTable, solutionKitsModel, new int[]{0}, new boolean[]{true}, new Comparator[]{null});
+
+        //Set up tool tips for the table cells.
+        final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if(comp instanceof JComponent) {
+                    ((JComponent)comp).setToolTipText(String.valueOf(value));
+                }
+                return comp;
+            }
+        };
+        solutionKitsTable.getColumnModel().getColumn(1).setCellRenderer(renderer);
+        solutionKitsTable.getColumnModel().getColumn(2).setCellRenderer(renderer);
+        solutionKitsTable.getColumnModel().getColumn(3).setCellRenderer(renderer);
+        solutionKitsTable.getColumnModel().getColumn(4).setCellRenderer(renderer);
 
         setLayout(new BorderLayout());
         add(mainPanel);
@@ -360,44 +378,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
      */
     private int getMaxLengthForInstanceModifier() {
         Map<SolutionKit, Bundle> kitBundleMap = settings.getLoadedSolutionKits();
-        //todo: need code modification when implementing collection of skar files.
+        //todo: (gary) Need code modification when implementing collection of skar files.
         Bundle bundle = (Bundle) kitBundleMap.values().toArray()[0];
 
-        int maxAllowedLengthAllow = Integer.MAX_VALUE;
-        int allowedLength;
-        String entityName;
-        EntityType entityType;
-
-        final List<Item> items = bundle.getReferences();
-        for (Item item: items) {
-            entityName = item.getName();
-            entityType = EntityType.valueOf(item.getType());
-
-            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
-                // The format of a folder name is "<folder_name> <instance_modifier>".
-                // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
-                // The max length of a folder name or an encapsulated assertion name is 128.
-                allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.POLICY) {
-                // The format of a policy name is "<instance_modifier> <policy_name>".
-                // The max length of a policy name is 255.
-                allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.SERVICE) {
-                // The max length of a service routing uri is 128
-                // The format of a service routing uri is "/<instance_modifier>/<service_name>".
-                allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
-            }  else {
-                continue;
-            }
-
-            if (maxAllowedLengthAllow > allowedLength) {
-                maxAllowedLengthAllow = allowedLength;
-            }
-        }
-
-        if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
-
-        return maxAllowedLengthAllow;
+        return InstanceModifier.getMaxLengthForInstanceModifier(bundle.getReferences());
     }
 
     /**
@@ -407,20 +391,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
      * @return true if the instance modifier is valid.  That is, it does not violate the instance modifier uniqueness for a given solution kit.
      */
     private boolean checkInstanceModifierUniqueness(@NotNull final SolutionKit solutionKit) {
-        Map<String, List<String>> usedInstanceModifiersMap = new HashMap<>();
-        try {
-            for (SolutionKitHeader solutionKitHeader: solutionKitAdmin.findSolutionKits()) {
-                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
-                List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
-                if (usedInstanceModifiers == null) {
-                    usedInstanceModifiers = new ArrayList<>();
-                }
-                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
-                usedInstanceModifiersMap.put(solutionKitGuid, usedInstanceModifiers);
-            }
-        } catch (FindException e) {
-            logger.warning("Finding solution kits error: " + ExceptionUtils.getDebugException(e));
-        }
+        final Map<String, List<String>> usedInstanceModifiersMap = settings.getInstanceModifiers();
 
         final String solutionKitGuid = solutionKit.getSolutionKitGuid();
         if (usedInstanceModifiersMap.keySet().contains(solutionKitGuid)) {

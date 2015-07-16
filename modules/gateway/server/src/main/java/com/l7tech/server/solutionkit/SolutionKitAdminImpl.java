@@ -1,11 +1,8 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gateway.common.api.solutionkit.InstanceModifier;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
@@ -90,7 +87,13 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     solutionKit.setMappings(mappings);
 
                     // Update the delete mapping probably due to new entities created or an instance modifier specified.
-                    solutionKit.setUninstallBundle(updateUninstallBundle(solutionKit, mappings));
+                    final String uninstallBundle = solutionKit.getUninstallBundle();
+                    if (! StringUtils.isEmpty(uninstallBundle)) {
+                        solutionKit.setUninstallBundle(
+                            // Set 'targetId' in the uninstall bundle.
+                            updateUninstallBundleBySettingTargetIds(uninstallBundle, mappings)
+                        );
+                    }
 
                     if (isUpgrade) {
                         solutionKitManager.update(solutionKit);
@@ -124,17 +127,18 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     String uninstallBundle = solutionKit.getUninstallBundle();
                     if (uninstallBundle != null) {
                         final int numOfInstances = solutionKitManager.findBySolutionKitGuid(solutionKit.getSolutionKitGuid()).size();
+
                         // If there is more than one solution kit instance installed, then any instance uninstall should not
                         // delete those entities shared by other solution kit instances.  So need to remove the shared entities'
                         // mappings from the deletion mappings.  Otherwise, use the full deletion mappings without any changes.
                         if (numOfInstances > 1) {
                             final List<String> toBeIgnoredEntityTypes = new ArrayList<>();
-                            EntityType entityType;
+                            String entityTypeStr;
                             final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
                             for (Element element: uninstallMappingsMsg.getMappings()) {
-                                entityType = EntityType.valueOf(element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE));
-                                if (entityType != EntityType.FOLDER && entityType != EntityType.SERVICE && entityType != EntityType.POLICY && entityType != EntityType.ENCAPSULATED_ASSERTION) {
-                                    toBeIgnoredEntityTypes.add(entityType.toString());
+                                entityTypeStr = element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
+                                if (! InstanceModifier.isModifiableType(entityTypeStr)) {
+                                    toBeIgnoredEntityTypes.add(entityTypeStr);
                                 }
                             }
                             for (String toBeIgnored: toBeIgnoredEntityTypes) {
@@ -142,6 +146,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                             }
                             uninstallBundle = uninstallMappingsMsg.getAsString();
                         }
+
                         // Import the deletion bundle
                         resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
@@ -172,12 +177,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
      * will contains targetId to replace srcId. In this case, the original uninstall mappings should be updated based on
      * the given entity mappings.
      */
-    private String updateUninstallBundle(@NotNull final SolutionKit solutionKit, @NotNull final String mappings) throws SAXException, IOException {
+    private String updateUninstallBundleBySettingTargetIds(@NotNull final String uninstallBundle, @NotNull final String resultMappings) throws SAXException, IOException {
         final Map<String, String> idsMap = new HashMap<>();
         String srcId, targetId;
 
-        // Find all matches of srdId and targetId in "mappings" and save them in a map.
-        final RestmanMessage mappingsMsg = new RestmanMessage(mappings);
+        // Find all matches of srdId and targetId in result mappings and save them in a map.
+        final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
         for (Element element: mappingsMsg.getMappings()) {
             srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
             targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
@@ -186,7 +191,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         }
 
         // Add targetId in the uninstall mappings
-        final RestmanMessage uninstallMappingsMsg = new RestmanMessage(solutionKit.getUninstallBundle());
+        final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
         for (Element element: uninstallMappingsMsg.getMappings()) {
             srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
             if (idsMap.containsKey(srcId)) {

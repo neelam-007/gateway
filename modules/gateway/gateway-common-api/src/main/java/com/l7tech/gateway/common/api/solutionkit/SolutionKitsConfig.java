@@ -31,6 +31,8 @@ public class SolutionKitsConfig {
     @Nullable
     private SolutionKit solutionKitToUpgrade;
     private Map<SolutionKit, SolutionKitCustomization> customizations = new HashMap<>();
+    private Map<String, List<String>> instanceModifiers = new HashMap<>();
+    private boolean upgradeInfoProvided;
 
     public SolutionKitsConfig() {
     }
@@ -38,10 +40,6 @@ public class SolutionKitsConfig {
     @NotNull
     public Map<SolutionKit, Bundle> getLoadedSolutionKits() {
         return loaded;
-    }
-
-    public void setLoadedSolutionKits(@NotNull Map<SolutionKit, Bundle> loaded) {
-        this.loaded = loaded;
     }
 
     @Nullable
@@ -89,11 +87,6 @@ public class SolutionKitsConfig {
 
         // TODO fix duplicate HashMap bug where put(...) does not replace previous value
         loaded.put(solutionKit, MarshallingUtils.unmarshal(Bundle.class, bundleSource, true));
-    }
-
-    @NotNull
-    public Set<SolutionKit> getSelectedSolutionKits() {
-        return selected;
     }
 
     @Nullable
@@ -150,6 +143,18 @@ public class SolutionKitsConfig {
     @NotNull
     public Map<SolutionKit, SolutionKitCustomization> getCustomizations() {
         return customizations;
+    }
+
+    public boolean isUpgradeInfoProvided() {
+        return upgradeInfoProvided;
+    }
+
+    public void setUpgradeInfoProvided(boolean upgradeInfoProvided) {
+        this.upgradeInfoProvided = upgradeInfoProvided;
+    }
+
+    public Map<String, List<String>> getInstanceModifiers() {
+        return instanceModifiers;
     }
 
     public void clear(boolean nullSolutionKitToUpgrade) {

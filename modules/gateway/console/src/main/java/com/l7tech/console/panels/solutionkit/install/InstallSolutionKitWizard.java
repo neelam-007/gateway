@@ -3,9 +3,8 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.solutionkit.ManageSolutionKitsDialog;
 import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
-import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.api.Bundle;
@@ -13,9 +12,12 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
@@ -31,9 +33,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,7 +47,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     private SolutionKitAdmin solutionKitAdmin;
 
-    public static InstallSolutionKitWizard getInstance(@NotNull Window parent, @Nullable SolutionKit solutionKitToUpgrade) {
+    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
 
         final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel();
@@ -57,16 +58,32 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         solutionKitsConfig.setSolutionKitToUpgrade(solutionKitToUpgrade);
+        setInstanceModifiers(solutionKitsConfig.getInstanceModifiers(), parent.getSolutionKitHeaders());
+
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
 
-    public static InstallSolutionKitWizard getInstance(@NotNull Window parent) {
+    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent) {
         return getInstance(parent, null);
     }
 
     private InstallSolutionKitWizard(Window parent, WizardStepPanel<SolutionKitsConfig> panel, @NotNull SolutionKitsConfig solutionKitsConfig) {
         super(parent, panel, solutionKitsConfig);
         initialize();
+    }
+
+    private static void setInstanceModifiers(@NotNull final Map<String, List<String>> instanceModifiers, @Nullable final Collection<SolutionKitHeader> solutionKitHeaders) {
+        if (solutionKitHeaders != null) {
+            for (SolutionKitHeader solutionKitHeader: solutionKitHeaders) {
+                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
+                java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
+                if (usedInstanceModifiers == null) {
+                    usedInstanceModifiers = new ArrayList<>();
+                }
+                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
+                instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
+            }
+        }
     }
 
     @Override
