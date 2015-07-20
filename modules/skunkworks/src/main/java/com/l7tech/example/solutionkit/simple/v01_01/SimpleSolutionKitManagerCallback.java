@@ -16,24 +16,7 @@ import java.util.logging.Logger;
  * Simple example of callback code to execute before sending bundle into Gateway's restman API.
  * Shows how to use Gateway utility classes in layer7-policy.jar and layer7-utility.jar (XpathUtil and CollectionUtils respectively).
  *
- * How to build sample Customization.jar below:
- *
- * Depends on <l7_workspace>/modules/gateway/api/build/layer7-api.jar (e.g. ./build.sh moduled -Dmodule=layer7-api)
- *         and <l7_workspace>/modules/policy/build/layer7-policy.jar (e.g. ./build.sh moduled -Dmodule=layer7-policy)
- *         and <l7_workspace>/modules/utility/build/layer7-utility.jar (e.g. ./build.sh moduled -Dmodule=layer7-utility)
- *
- * prompt> cd <l7_workspace>/modules/skunkworks
- *
- * Make sure build/example/solutionkit/simple/v01_01 directory exists (e.g. mkdir -p build/example/solutionkit/simple/v01_01)
- *
- * prompt> javac -sourcepath src/main/java/ -classpath ../gateway/api/build/layer7-api.jar:../policy/build/layer7-policy.jar:../utility/build/layer7-utility.jar
- *          src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
- *
- * prompt> cd build/example/solutionkit/simple/v01_01
- *
- * prompt> jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi\$1.class
- *
- * Possible improvement: look into how to add this as a build target in the main build.xml.
+ * How to build sample Customization.jar: see modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/build.sh
  */
 public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback {
     private static final Logger logger = Logger.getLogger(SimpleSolutionKitManagerCallback.class.getName());

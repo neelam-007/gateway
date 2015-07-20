@@ -417,7 +417,7 @@
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b61" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61" type="POLICY"/>
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY"/>
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION"/>
-        <l7:Mapping action="AlwaysCreateNew" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/serverModuleFiles/37953ab3e89a8b7df721c055d4aeb6ad" type="SERVER_MODULE_FILE">
+        <l7:Mapping action="NewOrExisting" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/serverModuleFiles/37953ab3e89a8b7df721c055d4aeb6ad" type="SERVER_MODULE_FILE">
             <l7:Properties><l7:Property key="MapBy"><l7:StringValue>moduleSha256</l7:StringValue></l7:Property></l7:Properties>
         </l7:Mapping>
         <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71a6d" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d" type="SECURE_PASSWORD">
