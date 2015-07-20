@@ -52,6 +52,8 @@ import static org.apache.commons.lang.StringUtils.*;
 public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
+    protected static final String ID_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
+
     @SpringBean
     private SolutionKitManager solutionKitManager;
     @SpringBean
@@ -189,19 +191,22 @@ public class SolutionKitManagerResource {
     private void remapEntityIds(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> entityIdReplaces) throws UnsupportedEncodingException {
         if (entityIdReplaces != null) {
             Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces.size());
-            String entityIdReplaceStr, entityIdReplaceDecoded;
+            String entityIdReplaceStr;
             for (FormDataBodyPart entityIdReplace : entityIdReplaces) {
                 entityIdReplaceStr = entityIdReplace.getValue();
                 if (isNotEmpty(entityIdReplaceStr)) {
-                    entityIdReplaceDecoded = URLDecoder.decode(entityIdReplaceStr, CharEncoding.UTF_8);
-                    // colon separate ids; key_id : value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d : 66461b24787941053fc65a626546e4bd)
-                    entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, ":").trim(), substringAfter(entityIdReplaceDecoded, ":").trim());
+                    decodeSplitPut(entityIdReplaceStr, entityIdReplaceMap);
                 }
             }
             Map<SolutionKit, Map<String, String>> idRemapBySolutionKit = new HashMap<>(1);
             idRemapBySolutionKit.put(solutionKitsConfig.getSingleSelectedSolutionKit(), entityIdReplaceMap);
             solutionKitsConfig.setResolvedEntityIds(idRemapBySolutionKit);
         }
+    }
+
+    protected static void decodeSplitPut(@NotNull final String entityIdReplaceStr, @NotNull final Map<String, String> entityIdReplaceMap) throws UnsupportedEncodingException {
+        final String entityIdReplaceDecoded = URLDecoder.decode(entityIdReplaceStr, CharEncoding.UTF_8);
+        entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, ID_DELIMINATOR).trim(), substringAfter(entityIdReplaceDecoded, ID_DELIMINATOR).trim());
     }
 
     private void processJobResult(final SolutionKitAdmin solutionKitAdmin,
