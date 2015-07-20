@@ -81,7 +81,8 @@ public class ProtectedEntityTracker implements InitializingBean {
     }
 
     public boolean isReadOnlyEntity( @NotNull Entity e ) {
-        EntityProtection perm = getEntityProtection( e.getId() );
+        String id = e.getId();
+        EntityProtection perm = id == null ? null : getEntityProtection( id );
         return perm != null && perm.matchesTypeOf( e ) && perm.isReadOnly();
     }
 
