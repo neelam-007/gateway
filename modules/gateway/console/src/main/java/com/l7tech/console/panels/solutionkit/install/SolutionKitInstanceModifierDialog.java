@@ -30,7 +30,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
 
         setContentPane(mainPanel);
         Utilities.setEscKeyStrokeDisposes(this);
-        getRootPane().setDefaultButton(okCancelPanel.getCancelButton());
+        getRootPane().setDefaultButton(okCancelPanel.getOkButton());
 
         Utilities.setMaxLength(instanceModifierTextField.getDocument(), maxInstanceModifierLength);
 

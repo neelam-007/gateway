@@ -277,7 +277,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if(comp instanceof JComponent) {
-                    ((JComponent)comp).setToolTipText(String.valueOf(value));
+                    ((JComponent)comp).setToolTipText(value == null? "N/A": String.valueOf(value));
                 }
                 return comp;
             }
