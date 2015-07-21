@@ -149,9 +149,14 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             dlg.setDefaultSecurePassword(securePassword);
         }
 
-        dlg.pack();
+        DialogDisplayer.pack(dlg);
         Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
+            }
+        });
         securePasswordComboBox.reloadPasswordList();
     }
 
@@ -163,17 +168,27 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             dlg.setDefaultJdbcConnection(jdbcConnection);
         }
 
-        dlg.pack();
+        DialogDisplayer.pack(dlg);
         Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
+            }
+        });
         jdbcConnectionComboBox.reload();
     }
 
     private void managePrivateKeys() {
         PrivateKeyManagerWindow dlg = new PrivateKeyManagerWindow(this.getOwner());
-        dlg.pack();
+        DialogDisplayer.pack(dlg);
         Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
+            }
+        });
         privateKeysComboBox.repopulate();
     }
 
