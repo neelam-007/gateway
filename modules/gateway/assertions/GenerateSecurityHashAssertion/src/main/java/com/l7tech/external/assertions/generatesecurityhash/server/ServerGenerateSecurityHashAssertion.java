@@ -46,9 +46,9 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
         super(assertion);
         this.varsUsed = assertion.getVariablesUsed();
         this.expr = assertion.dataToSignText();
-        this.singleVarExpr = Syntax.isOnlyASingleVariableReferenced( expr );
+        this.singleVarExpr = expr != null && Syntax.isOnlyASingleVariableReferenced( expr );
         this.keyExpr = assertion.getKeyText();
-        this.singleVarKeyExpr = Syntax.isOnlyASingleVariableReferenced( keyExpr );
+        this.singleVarKeyExpr = keyExpr != null && Syntax.isOnlyASingleVariableReferenced( keyExpr );
     }
 
     @Override
@@ -59,7 +59,7 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
         if ( singleVarExpr ) {
             dataToSignObj = ExpandVariables.processSingleVariableAsObject( expr, vars, getAudit(), true );
         } else {
-            if(ExpandVariables.isVariableReferencedNotFound(assertion.dataToSignText(), vars, getAudit())){
+            if ( expr == null || ExpandVariables.isVariableReferencedNotFound(assertion.dataToSignText(), vars, getAudit() ) ) {
                 logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
                 return AssertionStatus.FAILED;
             }
@@ -144,7 +144,7 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
         if ( singleVarKeyExpr ) {
             keyObj = ExpandVariables.processSingleVariableAsObject( keyExpr, vars, getAudit(), true );
         } else {
-            if(ExpandVariables.isVariableReferencedNotFound( keyExpr, vars, getAudit())){
+            if ( keyExpr == null || ExpandVariables.isVariableReferencedNotFound( keyExpr, vars, getAudit() ) ) {
                 logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Key");
                 throw new AssertionStatusException( "Key variable not set" );
             }

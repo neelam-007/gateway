@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Test cases for {@link ServerGenerateSecurityHashAssertion}.
  *
@@ -102,7 +104,7 @@ public class ServerGenerateHashAssertionTest {
         try {
             setTestData("", "", "", "");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.FAILED, actual);
+            assertEquals( AssertionStatus.FAILED, actual );
         } catch (Exception e) {
             Assert.fail("testMissingVariables() failed: " + e.getMessage());
         }
@@ -113,7 +115,7 @@ public class ServerGenerateHashAssertionTest {
         try {
             setTestData("HmacSHA384", "", "ggasdfg", "gggg");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.FAILED, actual);
+            assertEquals( AssertionStatus.FAILED, actual );
         } catch (Exception e) {
             Assert.fail("testMissingKeyVariable() failed: " + e.getMessage());
         }
@@ -124,7 +126,7 @@ public class ServerGenerateHashAssertionTest {
         try {
             setTestData("7layer", "mykey", "ggasdfg", "gggg");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.FAILED, actual);
+            assertEquals( AssertionStatus.FAILED, actual );
         } catch (Exception e) {
             Assert.fail("testInvalidAlgorithm() failed: " + e.getMessage());
         }
@@ -136,9 +138,9 @@ public class ServerGenerateHashAssertionTest {
             try {
                 setTestData(ent.getKey(), "", TEST_DATA, OUTPUT_VARIABLE);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(AssertionStatus.NONE, actual);
+                assertEquals( AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " failed.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -152,9 +154,9 @@ public class ServerGenerateHashAssertionTest {
                 pec.setVariable(TEST_DATA_CONTEXT_VARIABLE, TEST_DATA);
                 setTestData(ent.getKey(), "", "${" + TEST_DATA_CONTEXT_VARIABLE + "}", OUTPUT_VARIABLE);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(AssertionStatus.NONE, actual);
+                assertEquals( AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " failed.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testDigestFromContextVariable() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -167,9 +169,9 @@ public class ServerGenerateHashAssertionTest {
             try {
                 setTestData(ent.getKey(), TEST_KEY, TEST_DATA, OUTPUT_VARIABLE);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(AssertionStatus.NONE, actual);
+                assertEquals( AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " failed.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testHmac() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -187,9 +189,9 @@ public class ServerGenerateHashAssertionTest {
                 serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
                 pec.setVariable( "binaryKey", TEST_KEY_BINARY );
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(AssertionStatus.NONE, actual);
+                assertEquals( AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " failed.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testHmac() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -203,9 +205,9 @@ public class ServerGenerateHashAssertionTest {
                 pec.setVariable(TEST_DATA_CONTEXT_VARIABLE, TEST_DATA);
                 setTestData(ent.getKey(), TEST_KEY, "${" + TEST_DATA_CONTEXT_VARIABLE + "}", OUTPUT_VARIABLE);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(AssertionStatus.NONE, actual);
+                assertEquals( AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " failed.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testHmacFromContextVariable() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -225,9 +227,9 @@ public class ServerGenerateHashAssertionTest {
                 assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
                 serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                assertEquals( ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -248,9 +250,9 @@ public class ServerGenerateHashAssertionTest {
                 assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
                 serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                assertEquals( ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
             }
@@ -272,13 +274,29 @@ public class ServerGenerateHashAssertionTest {
                 assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
                 serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
                 AssertionStatus actual = serverAssertion.checkRequest(pec);
-                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                assertEquals( ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual );
                 String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
-                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+                assertEquals( ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature );
             } catch (Exception e) {
                 Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
             }
         }
     }
 
+    @Test
+    @BugId( "SSG-11577" )
+    public void testEmptyContextVariablesInConstructor() throws Exception {
+        AssertionStatus result = new ServerGenerateSecurityHashAssertion( new GenerateSecurityHashAssertion() ).checkRequest( pec );
+        assertEquals( AssertionStatus.FAILED, result );
+    }
+
+    @Test
+    @BugId( "SSG-11577" )
+    public void testEmptyKeyVariablesInConstructor() throws Exception {
+        GenerateSecurityHashAssertion ass = new GenerateSecurityHashAssertion();
+        ass.setDataToSignText( "blah" );
+        ass.setAlgorithm( "HMAC-SHA256" );
+        AssertionStatus result = new ServerGenerateSecurityHashAssertion( ass ).checkRequest( pec );
+        assertEquals( AssertionStatus.FAILED, result );
+    }
 }
