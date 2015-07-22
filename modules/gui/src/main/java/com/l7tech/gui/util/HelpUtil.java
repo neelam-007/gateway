@@ -38,8 +38,21 @@ public class HelpUtil {
      *
      * @param helpUrl a new custom help URL, or null to clear it and use the default.
      */
-    public static void setHelpUrl( String helpUrl ) {
-        HelpUtil.helpUrl = helpUrl;
+    public static void setHelpUrl( String helpUrl ) throws IllegalArgumentException {
+
+        /**
+         * Using this Regex to validate that only http(s) urls are allowed for the help location.  Main reason
+         * for this is that otherwise opening this up through SSM Applet will allow access to the file system
+         * outside the JVM sandbox and could pose a security risk
+         */
+        if (helpUrl.matches("^https?://.*$"))
+                HelpUtil.helpUrl = helpUrl;
+        else {
+            String errorMsg = new String ("Unable to launch browser for help: does not use http(s) protocol");
+            logger.log(Level.WARNING, errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+
     }
 
     /**
