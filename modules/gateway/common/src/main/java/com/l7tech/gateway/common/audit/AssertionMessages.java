@@ -1194,8 +1194,10 @@ public class AssertionMessages extends Messages {
 
     public static final Messages.M GENERATE_HASH_VARIABLE_NOT_SET     = m(9635, Level.WARNING, "''{0}'' is not set.");
     public static final Messages.M GENERATE_HASH_UNSUPPORTED_ALGORITHM     = m(9636, Level.WARNING, "Unsupported Algorithm: ''{0}''");
-    public static final Messages.M GENERATE_HASH_INVALID_KEY     = m(9637, Level.WARNING, "Invalid key: ''{0}''");
+    @Deprecated
+    public static final Messages.M _UNUSED_GENERATE_HASH_INVALID_KEY     = m(9637, Level.WARNING, "Invalid key: ''{0}''"); // This detail code used to log key material
     public static final Messages.M GENERATE_HASH_ERROR     = m(9638, Level.WARNING, "Error generating hash signature.");
+    public static final Messages.M GENERATE_HASH_INVALID_KEY     = m(9639, Level.WARNING, "Invalid key: ''{0}''");
 
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_JSON     = m(9645, Level.WARNING, "Source is not a valid JSON.");
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EXPRESSION     = m(9646, Level.WARNING, "Invalid JSON Path expression: ''{0}''");

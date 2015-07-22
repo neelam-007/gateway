@@ -1,13 +1,20 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.message.Message;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Functions;
-import com.l7tech.util.TextUtils;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -19,6 +26,9 @@ import static com.l7tech.util.Functions.flatmap;
  *
  */
 public class ContextVariableUtils {
+    // Limit streams read into memory to 2mb by default.
+    private static final int DEFAULT_MAX_STREAM_BYTES =
+            SyspropUtil.getInteger( "com.l7tech.server.util.ContextVariableUtils.convertToBinary.stream.maxBytes", 2 * 1024 * 1024 );
 
     /**
      * Get all Strings referenced from the expression. This expression may be made up of variable and non variable
@@ -93,4 +103,95 @@ public class ContextVariableUtils {
             }
         });
     }
+
+    /**
+     * Exception thrown if a context variable value cannot be converted to binary by {@link #convertContextVariableValueToByteArray }.
+     */
+    public static class NoBinaryRepresentationException extends Exception {
+        public NoBinaryRepresentationException() {
+        }
+
+        public NoBinaryRepresentationException( String message ) {
+            super( message );
+        }
+
+        public NoBinaryRepresentationException( String message, Throwable cause ) {
+            super( message, cause );
+        }
+
+        public NoBinaryRepresentationException( Throwable cause ) {
+            super( cause );
+        }
+    }
+
+    /**
+     * Figure out how to convert the specified context variable value into a binary array.
+     * <p/>
+     * Things currently converted to binary by this method:
+     * <ul>
+     *     <li>Byte arrays: returned as-is</li>
+     *     <li>Message: entire message body stream (up to maxLength) is read into byte array and returned</li>
+     *     <li>PartInfo: entire message part body stream (up to maxLength) read into byte array and returned</li>
+     *     <li>java.security.cert.Certificate: returns encoded form of certificate (e.g. DER for an X.509 certificate)</li>
+     *     <li>String or CharSequence: converted to bytes using specified encoding</li>
+     * </ul>
+     * <p/>
+     * Examples of things that should <b>not</b> be converted to binary by this method:
+     * <ul>
+     *     <li>Arbitrary objects that implement Serializable: this is very Java-specific and not the kind of meaningful binary representation
+     *     we want to expose to users.
+     *     Also, there are objects like X509Certificate that are Serializable but whose meaningful binary representation differs.</li>
+     *     <li>Automatic decoding of encodings such as Base-64 or URL encoding.  Such encodings must be explicitly decoded
+     *     earlier in a policy, if this is desired.</li>
+     * </ul>
+     *
+     * @param obj object to convert to binary.  If null, this method will throw NoBinaryRepresentationException.
+     * @param maxLength maximum length of stream to read into memory, for value types that produce streams, or -1 to use default limit.
+     *                  <b>NOTE:</b> A limit of zero is <em>valid</em> and will forbid non-empty streams from being read.
+     * @param charset charset to use if a CharSequence must be encoded, or null to default to ISO-8859-1 (chosen
+     *                because it is the most common character encoding that is binary-transparent).
+     * @return a byte array containing a binary representation of the provided context variable value.  Never null.
+     * @throws IOException if the input value cannot be read or encoded.
+     * @throws NoSuchPartException if the input value is a Message or PartInfo whose body has been streamed away.
+     * @throws NoBinaryRepresentationException if no unambiguous and meaningful binary representation can be found
+     *                                         for the specified context variable value.
+     */
+    @NotNull
+    public static byte[] convertContextVariableValueToByteArray( @Nullable Object obj, int maxLength, @Nullable Charset charset )
+            throws IOException, NoSuchPartException, NoBinaryRepresentationException
+    {
+        if ( maxLength < 0 )
+            maxLength = DEFAULT_MAX_STREAM_BYTES;
+
+        if ( null == obj ) {
+            throw new NoBinaryRepresentationException( "Unable to find binary representation for null variable" );
+        } else if ( obj instanceof byte[] ) {
+            return (byte[]) obj;
+        } else if ( obj instanceof Message ) {
+            Message message = (Message) obj;
+            try ( InputStream stream = message.getMimeKnob().getEntireMessageBodyAsInputStream( false ) ) {
+                return IOUtils.slurpStream( stream, maxLength );
+            }
+        } else if ( obj instanceof PartInfo ) {
+            PartInfo partInfo = (PartInfo) obj;
+            try ( InputStream stream = partInfo.getInputStream( false ) ) {
+                return IOUtils.slurpStream( stream, maxLength);
+            }
+        } else if ( obj instanceof CharSequence ) {
+            CharSequence charSequence = (CharSequence) obj;
+            if ( null == charset )
+                charset = Charsets.ISO8859;
+            return charSequence.toString().getBytes( charset );
+        } else if ( obj instanceof Certificate ) {
+            Certificate certificate = (Certificate) obj;
+            try {
+                return certificate.getEncoded();
+            } catch ( CertificateEncodingException e ) {
+                throw new IOException( e );
+            }
+        } else {
+            throw new NoBinaryRepresentationException( "Unable to find binary representation for variable of type " + obj.getClass() );
+        }
+    }
+
 }

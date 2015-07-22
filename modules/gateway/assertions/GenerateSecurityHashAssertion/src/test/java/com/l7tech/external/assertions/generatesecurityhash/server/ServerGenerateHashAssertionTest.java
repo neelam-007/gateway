@@ -1,15 +1,23 @@
 package com.l7tech.external.assertions.generatesecurityhash.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,8 +31,26 @@ public class ServerGenerateHashAssertionTest {
 
     private static final String TEST_DATA_CONTEXT_VARIABLE = "input.data";
     private static final String TEST_KEY = "7dc51fcc-5103-4e5e-80df-525acaa4b8f4";
+    private static final byte[] TEST_KEY_BINARY = TEST_KEY.getBytes( Charsets.UTF8 );
     private static final String TEST_DATA = "http://sarek/mediawiki/index.php?title=REST_API_Security_Using_HMAC";
     private static final String OUTPUT_VARIABLE = "hash.output";
+
+    private static final Map<String, String> BINARY_DIGEST_TEST_DATA;
+    private static final byte[] TEST_DATA_BINARY;
+    static {
+        try {
+            TEST_DATA_BINARY = HexUtils.unHexDump( "0038BEFF00010477EFDD0000" );
+        } catch ( IOException e ) {
+            throw new RuntimeException( e );
+        }
+        Map<String, String> m = new HashMap<String, String>();
+        m.put( "MD5", HexUtils.encodeBase64( HexUtils.getMd5Digest( TEST_DATA_BINARY ), true ) );
+        m.put( "SHA-1", HexUtils.encodeBase64( HexUtils.getSha1Digest( TEST_DATA_BINARY ), true ) );
+        m.put( "SHA-256", HexUtils.encodeBase64( HexUtils.getSha256Digest( TEST_DATA_BINARY ), true ) );
+        m.put( "SHA-384", "wF0j1DWao7wDHW1Tjto8HuiaGmYMukI6mY1s93aRdsr2iNwg+M6bV1S8lKOZPWwl" );
+        m.put( "SHA-512", HexUtils.encodeBase64( HexUtils.getSha512Digest( TEST_DATA_BINARY ), true ) );
+        BINARY_DIGEST_TEST_DATA = Collections.unmodifiableMap( m );
+    }
 
     private static final Map<String, String> DIGEST_TEST_DATA;
     static {
@@ -61,7 +87,6 @@ public class ServerGenerateHashAssertionTest {
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument("<response />"));
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
     }
 
     private void setTestData(final String algorithm, final String key, final String data, final String outputVariable ) {
@@ -69,6 +94,7 @@ public class ServerGenerateHashAssertionTest {
         assertion.setKeyText(key);
         assertion.setDataToSignText(data);
         assertion.setTargetOutputVariable(outputVariable);
+        serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
     }
 
     @Test
@@ -151,6 +177,26 @@ public class ServerGenerateHashAssertionTest {
     }
 
     @Test
+    public void testHmac_binaryKey(){
+        for(Map.Entry<String, String> ent : HMAC_TEST_DATA.entrySet()){
+            try {
+                assertion.setAlgorithm( ent.getKey() );
+                assertion.setKeyText( "${binaryKey}" );
+                assertion.setDataToSignText( TEST_DATA );
+                assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
+                serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
+                pec.setVariable( "binaryKey", TEST_KEY_BINARY );
+                AssertionStatus actual = serverAssertion.checkRequest(pec);
+                Assert.assertEquals(AssertionStatus.NONE, actual);
+                String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
+                Assert.assertEquals(ent.getKey() + " failed.", ent.getValue(), actualSignature);
+            } catch (Exception e) {
+                Assert.fail("testHmac() failed (" + ent.getKey() + "): " + e.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void testHmacFromContextVariable(){
         for(Map.Entry<String, String> ent : HMAC_TEST_DATA.entrySet()){
             try {
@@ -165,4 +211,74 @@ public class ServerGenerateHashAssertionTest {
             }
         }
     }
+
+    @Test
+    @BugId( "SSG-9126" )
+    public void testHashFromByteArrayContextVariable() {
+        for(Map.Entry<String, String> ent : BINARY_DIGEST_TEST_DATA.entrySet()){
+            try {
+                byte[] dataToSignBytes = TEST_DATA_BINARY;
+                pec.setVariable( TEST_DATA_CONTEXT_VARIABLE, dataToSignBytes );
+                assertion.setAlgorithm( ent.getKey() );
+                assertion.setKeyText( "" );
+                assertion.setDataToSignText( "${" + TEST_DATA_CONTEXT_VARIABLE + "}" );
+                assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
+                serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
+                AssertionStatus actual = serverAssertion.checkRequest(pec);
+                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
+                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+            } catch (Exception e) {
+                Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    @BugId( "SSG-9126" )
+    public void testHashFromMessageContextVariable() {
+        for(Map.Entry<String, String> ent : BINARY_DIGEST_TEST_DATA.entrySet()){
+            try {
+                Message dataToSignMessage = new Message( new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                        new ByteArrayInputStream( TEST_DATA_BINARY ) );
+                pec.setVariable( TEST_DATA_CONTEXT_VARIABLE, dataToSignMessage );
+                assertion.setAlgorithm( ent.getKey() );
+                assertion.setKeyText( "" );
+                assertion.setDataToSignText( "${" + TEST_DATA_CONTEXT_VARIABLE + "}" );
+                assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
+                serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
+                AssertionStatus actual = serverAssertion.checkRequest(pec);
+                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
+                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+            } catch (Exception e) {
+                Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    @BugId( "SSG-9126" )
+    public void testHashFromMessagePartContextVariable() {
+        for(Map.Entry<String, String> ent : BINARY_DIGEST_TEST_DATA.entrySet()){
+            try {
+                Message dataToSignMessage = new Message( new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                        new ByteArrayInputStream( TEST_DATA_BINARY ) );
+                PartInfo dataToSignMessagePart = dataToSignMessage.getMimeKnob().getFirstPart();
+                pec.setVariable( TEST_DATA_CONTEXT_VARIABLE, dataToSignMessagePart );
+                assertion.setAlgorithm( ent.getKey() );
+                assertion.setKeyText( "" );
+                assertion.setDataToSignText( "${" + TEST_DATA_CONTEXT_VARIABLE + "}" );
+                assertion.setTargetOutputVariable( OUTPUT_VARIABLE );
+                serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
+                AssertionStatus actual = serverAssertion.checkRequest(pec);
+                Assert.assertEquals(ent.getKey() + " assertion failed.", AssertionStatus.NONE, actual);
+                String actualSignature = pec.getVariable(OUTPUT_VARIABLE).toString();
+                Assert.assertEquals(ent.getKey() + " hash value mismatch.", ent.getValue(), actualSignature);
+            } catch (Exception e) {
+                Assert.fail("testDigest() failed (" + ent.getKey() + "): " + e.getMessage());
+            }
+        }
+    }
+
 }
