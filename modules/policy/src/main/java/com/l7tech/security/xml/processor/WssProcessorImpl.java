@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.*;
@@ -1621,19 +1622,11 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void recordKerberosFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId) {
         try {
-            String spn;
-            try {
-                HttpRequestKnob requestKnob = message.getKnob(HttpRequestKnob.class);
-                if (requestKnob != null && requestKnob.getRequestURL() != null) {
-                    spn = KerberosClient.getKerberosAcceptPrincipal(requestKnob.getRequestURL().getProtocol(),
-                            requestKnob.getRequestURL().getHost(), false);
-                } else {
-                    spn = KerberosClient.getKerberosAcceptPrincipal(false);
-                }
-            }
-            catch(KerberosException ke) { // fallback to system property name
-                spn = KerberosClient.getGSSServiceName();
-            }
+            HttpRequestKnob requestKnob = message.getKnob(HttpRequestKnob.class);
+            URL requestUrl = requestKnob != null? requestKnob.getRequestURL(): null;
+            String remoteAddress = requestKnob != null? requestKnob.getRemoteAddress(): null;
+            String spn = KerberosUtils.extractSpnFromRequest(requestUrl, remoteAddress);
+
             securityTokens.add(new KerberosSigningSecurityTokenImpl(spn, new KerberosGSSAPReqTicket(decodedValue),
                                                                            getClientInetAddress(message),
                                                                            wsuId,

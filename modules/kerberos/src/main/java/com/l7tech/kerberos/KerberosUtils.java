@@ -3,16 +3,13 @@ package com.l7tech.kerberos;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.UnknownHostException;
-import java.security.Principal;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ktab.KeyTabEntry;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 /**
  * Kerberos Utility class.
@@ -189,6 +186,39 @@ public class KerberosUtils {
                 }
             }
         }
+    }
+
+    public static String extractSpnFromRequest(URL requestUrl, String remoteAddress) {
+        String configSpn = null;
+        try {
+            if (requestUrl != null) {
+                String host = null;
+                if(remoteAddress != null) {
+                    try {
+                        InetAddress inetAddress = InetAddress.getByName(remoteAddress);
+                        host = inetAddress.getHostName();
+                    } catch (UnknownHostException e) {
+                        //fallback: try to get the host from the request URL (which may not be accurate in this case)
+                        host = requestUrl.getHost();
+                    }
+                }
+                else {
+                    host = requestUrl.getHost();
+                }
+
+                configSpn = KerberosClient.getKerberosAcceptPrincipal(requestUrl.getProtocol(), host, false);
+            }
+
+            if(configSpn == null) {
+                configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
+            }
+        }
+        catch(KerberosException ke) { // fallback to system property name
+            // fallback to system property name
+            configSpn = KerberosClient.getGSSServiceName();
+        }
+
+        return configSpn;
     }
 
     //- PRIVATE

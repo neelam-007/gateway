@@ -27,6 +27,7 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.logging.Level;
 
 /**
@@ -82,28 +83,16 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
         String configSpn = requestWssKerberos.getServicePrincipalName();
         if (configSpn == null) {
-            try {
-                HttpRequestKnob requestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
-                if (requestKnob != null && requestKnob.getRequestURL() != null) {
-                    configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(requestKnob.getRequestURL().getProtocol(),
-                            requestKnob.getRequestURL().getHost(), false));
-                } else {
-                    configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
-                }
-            }
-            catch(KerberosException ke) {
-                // fallback to system property name
-            }
-            if (configSpn == null) {
-                configSpn = KerberosClient.getGSSServiceName();
-            }
+            HttpRequestKnob requestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
+            URL requestUrl = requestKnob != null? requestKnob.getRequestURL(): null;
+            String remoteAddress = requestKnob != null? requestKnob.getRemoteAddress(): null;
+            configSpn = KerberosUtils.toGssName(KerberosUtils.extractSpnFromRequest(requestUrl, remoteAddress));
         }
 
         KerberosSigningSecurityToken kerberosToken = null;
         for( XmlSecurityToken tok : tokens ) {
             if( tok instanceof KerberosSigningSecurityToken) {
                 KerberosSigningSecurityToken ksst = (KerberosSigningSecurityToken) tok;
-
                 if(!configSpn.equals(ksst.getServiceTicket().getServicePrincipalName())) {
                     logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+ksst.getServiceTicket().getServicePrincipalName()+"').");
                 } else {

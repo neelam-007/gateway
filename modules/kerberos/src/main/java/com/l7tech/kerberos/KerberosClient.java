@@ -311,8 +311,8 @@ public class KerberosClient {
                         GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
                         if (logger.isLoggable(Level.FINE))
                             logger.log(Level.FINE, "GSS name is '"+gssPrincipal+"'/'"+serviceName.canonicalize(kerberos5Oid)+"'.");
-                        scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerberos5Oid, GSSCredential.ACCEPT_ONLY);
-                        scontext = manager.createContext(scred);
+                        scred = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, kerberos5Oid, GSSCredential.ACCEPT_ONLY);
+                        scontext = manager.createContext(serviceName, kerberos5Oid, scred, KERBEROS_LIFETIME);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
                         KrbApReq apReq = buildKrbApReq( apReqBytes, scred, clientAddress );
