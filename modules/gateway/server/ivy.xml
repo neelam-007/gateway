@@ -40,7 +40,6 @@
         <dependency name="layer7-siteminder" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-rest-toolkit" rev="latest.integration" conf="core"/>
         <dependency name="layer7-cassandra" rev="latest.integration" conf="core"/>
-        <dependency name="layer7-gateway-common-api" rev="latest.integration" conf="core"/>
 
         <!-- Dependencies -->
         <dependency org="com.l7tech.lib" name="layer7-sun-jaxws" rev="1.0" conf="core"/> <!-- should be before CXF in classpath -->

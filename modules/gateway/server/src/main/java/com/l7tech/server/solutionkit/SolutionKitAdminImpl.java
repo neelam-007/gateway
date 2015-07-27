@@ -1,12 +1,12 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.api.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.Background;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -137,7 +137,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                             final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
                             for (Element element: uninstallMappingsMsg.getMappings()) {
                                 entityTypeStr = element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
-                                if (! InstanceModifier.isModifiableType(entityTypeStr)) {
+                                if (! VersionModifier.isModifiableType(entityTypeStr)) {
                                     toBeIgnoredEntityTypes.add(entityTypeStr);
                                 }
                             }

@@ -1,7 +1,6 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.api.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
@@ -19,6 +18,7 @@ import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
@@ -93,9 +93,9 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
 
         final String requestXml;
         try {
-            if (InstanceModifier.isValidVersionModifier(instanceModifier)) {
+            if (VersionModifier.isValidVersionModifier(instanceModifier)) {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
-                new InstanceModifier(requestMessage.getBundleReferenceItems(), instanceModifier).apply();
+                new VersionModifier(requestMessage.getBundleReferenceItems(), instanceModifier).apply();
                 requestXml = requestMessage.getAsString();
             } else {
                 requestXml = bundle;

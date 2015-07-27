@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.solutionkit.install;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
@@ -13,7 +14,6 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
-import com.l7tech.gateway.common.api.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
@@ -381,7 +381,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         //todo: (gary) Need code modification when implementing collection of skar files.
         Bundle bundle = (Bundle) kitBundleMap.values().toArray()[0];
 
-        return InstanceModifier.getMaxLengthForInstanceModifier(bundle.getReferences());
+        return getMaxLengthForInstanceModifier(bundle.getReferences());
     }
 
     /**
@@ -410,5 +410,50 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         return true;
+    }
+
+    /**
+     * Calculate what the max length of instance modifier could be.
+     * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
+     *
+     * TODO make this validation available to headless interface (i.e. SolutionKitManagerResource)
+     *
+     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
+     */
+    public static int getMaxLengthForInstanceModifier(@NotNull final List<Item> bundleReferenceItems) {
+        int maxAllowedLengthAllow = Integer.MAX_VALUE;
+        int allowedLength;
+        String entityName;
+        EntityType entityType;
+
+        for (Item item: bundleReferenceItems) {
+            entityName = item.getName();
+            entityType = EntityType.valueOf(item.getType());
+
+            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
+                // The format of a folder name is "<folder_name> <instance_modifier>".
+                // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
+                // The max length of a folder name or an encapsulated assertion name is 128.
+                allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
+            } else if (entityType == EntityType.POLICY) {
+                // The format of a policy name is "<instance_modifier> <policy_name>".
+                // The max length of a policy name is 255.
+                allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
+            } else if (entityType == EntityType.SERVICE) {
+                // The max length of a service routing uri is 128
+                // The format of a service routing uri is "/<instance_modifier>/<service_name>".
+                allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
+            }  else {
+                continue;
+            }
+
+            if (maxAllowedLengthAllow > allowedLength) {
+                maxAllowedLengthAllow = allowedLength;
+            }
+        }
+
+        if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
+
+        return maxAllowedLengthAllow;
     }
 }
