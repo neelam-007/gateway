@@ -39,54 +39,66 @@ public abstract class MigrationTestBase {
     @BeforeClass
     public static void beforeClass() throws Exception {
         if (!IgnoreOnDaily.isDaily() && !runInSuite) {
-            final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<Exception>());
-            final CountDownLatch enviromentsStarted = new CountDownLatch(2);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("srcgateway");
-                    } catch (IOException e) {
-                        exceptions.add(e);
-                    }
-                    enviromentsStarted.countDown();
+            createMigrationEnvironments();
+        }
+    }
+
+    protected static void createMigrationEnvironments() throws Exception {
+        final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<Exception>());
+        final CountDownLatch enviromentsStarted = new CountDownLatch(2);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("8003");
+                } catch (Exception e) {
+                    exceptions.add(e);
                 }
-            }).start();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("trggateway");
-                    } catch (IOException e) {
-                        exceptions.add(e);
-                    }
-                    enviromentsStarted.countDown();
-                }
-            }).start();
-            enviromentsStarted.await(5, TimeUnit.MINUTES);
-            if(!exceptions.isEmpty()){
-                throw exceptions.get(0);
+                enviromentsStarted.countDown();
             }
+        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("8004");
+                } catch (Exception e) {
+                    exceptions.add(e);
+                }
+                enviromentsStarted.countDown();
+            }
+        }).start();
+        enviromentsStarted.await(5, TimeUnit.MINUTES);
+        if(!exceptions.isEmpty()){
+            throw exceptions.get(0);
         }
     }
 
     @AfterClass
     public static void afterClass() {
-        if(!runInSuite) {
-            if (sourceEnvironment != null) {
-                sourceEnvironment.close();
-            }
-            if (targetEnvironment != null) {
-                targetEnvironment.close();
-            }
+        if(!IgnoreOnDaily.isDaily() && !runInSuite) {
+            destroyMigrationEnvironments();
+        }
+    }
+
+    protected static void destroyMigrationEnvironments() {
+        if (sourceEnvironment != null) {
+            sourceEnvironment.close();
+        }
+        if (targetEnvironment != null) {
+            targetEnvironment.close();
         }
     }
 
     public static JVMDatabaseBasedRestManagementEnvironment getSourceEnvironment() {
+        if ( sourceEnvironment == null )
+            throw new NullPointerException( "sourceEnvironment not set up" );
         return sourceEnvironment;
     }
 
     public static JVMDatabaseBasedRestManagementEnvironment getTargetEnvironment() {
+        if ( targetEnvironment == null )
+            throw new NullPointerException( "targetEnvironment not set up" );
         return targetEnvironment;
     }
 

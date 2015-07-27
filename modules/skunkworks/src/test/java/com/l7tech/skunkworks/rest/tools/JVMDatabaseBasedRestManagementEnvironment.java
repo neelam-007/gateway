@@ -42,9 +42,8 @@ public class JVMDatabaseBasedRestManagementEnvironment {
         command.add(javaBin);
         //increase memory otherwise it will not have enough on the build machine
         command.add("-Xmx1024m");
-        command.add("-XX:MaxPermSize=256m");
-        if(rdAddress != null && runFromIdea()){
-            command.add("-agentlib:jdwp=transport=dt_shmem,server=y,suspend=n,address=" + rdAddress);
+        if( rdAddress != null && runFromIdea() ){
+            command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + rdAddress);
         }
         command.add(className);
         ProcessBuilder builder = new ProcessBuilder(command);
