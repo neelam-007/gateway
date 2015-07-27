@@ -213,7 +213,7 @@ public class TrustedCertManagerImp
             if (expiryCheckerTask != null) expiryCheckerTask.cancel();
             expiryCheckerTask = new ExpiryCheckerTask();
         }
-        long delay = immediately?0: TimeUnit.MINUTES.toMillis(1);
+        long delay = immediately?0: TimeUnit.MINUTES.toMillis(10);
 
         timer.schedule(expiryCheckerTask, delay, period);
     }
