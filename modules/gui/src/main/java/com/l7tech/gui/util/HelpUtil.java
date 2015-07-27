@@ -29,7 +29,7 @@ public class HelpUtil {
     /**
      * the default help URL.  May be overridden once we connect to the Gateway.
      */
-    public static final String DEFAULT_HELP_URL = "http://wiki.ca.com/gateway";
+    public static final String DEFAULT_HELP_URL = "http://wiki.ca.com/display/gateway90";
     private static BrowserLauncher browserLauncher;
     private static String helpUrl = null;
 
