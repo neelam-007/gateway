@@ -1,15 +1,18 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.util.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -20,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,7 +102,68 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             ResourceUtils.closeQuietly(fis);
         }
 
+        // Check the license of the parent SKAR, before the next wizard step SolutionKitSelectionPanel proceeds.
+        final SolutionKit parentSK = solutionKitsConfig.getParentSolutionKit();
+        if (parentSK != null) {
+            final String featureSet = parentSK.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+            if (! (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet))) {
+                // If the parent SK is not licensed, then provide user an error dialog to resolve the missed license.
+                ResolveSolutionKitLicenseDialog dialog = new ResolveSolutionKitLicenseDialog(
+                    TopComponents.getInstance().getTopParent(),
+                    parentSK.getName(),
+                    parentSK.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY)
+                );
+                Utilities.centerOnParentWindow(dialog);
+                DialogDisplayer.display(dialog);
+
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    private class ResolveSolutionKitLicenseDialog extends JDialog {
+        private JButton manageLicensesButton;
+        private JButton cancelButton;
+        private JLabel unlicensedMessageLabel;
+        private JPanel mainPanel;
+
+        private ResolveSolutionKitLicenseDialog(@NotNull Frame owner, @NotNull final String solutionKitName, @NotNull final String featureSetName) {
+            super(owner, "Unlicensed Solution Kit Error", true);
+
+            setContentPane(mainPanel);
+
+            unlicensedMessageLabel.setText(
+                MessageFormat.format("The parent solution kit, \"{0}\" is unlicensed.  Required feature set is \"{1}\".", solutionKitName, featureSetName)
+            );
+
+            manageLicensesButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    onManageLicenses();
+                    dispose();
+                }
+            });
+
+            cancelButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                }
+            });
+
+            pack();
+        }
+    }
+
+    private void onManageLicenses() {
+        final Frame mainWindow = TopComponents.getInstance().getTopParent();
+        ManageLicensesDialog dialog = new ManageLicensesDialog(mainWindow);
+        dialog.pack();
+        Utilities.centerOnParentWindow(dialog);
+        dialog.setModal(true);
+        DialogDisplayer.display(dialog);
     }
 
     private void initialize() {

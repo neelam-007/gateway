@@ -25,14 +25,17 @@ public class SolutionKitsConfig {
     private static final Logger logger = Logger.getLogger(SolutionKitsConfig.class.getName());
 
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
-    private Set<SolutionKit> selected = new HashSet<>();
+    private Set<SolutionKit> selected = new TreeSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
     @Nullable
     private SolutionKit solutionKitToUpgrade;
     private Map<SolutionKit, SolutionKitCustomization> customizations = new HashMap<>();
     private Map<String, List<String>> instanceModifiers = new HashMap<>();
-    private boolean upgradeInfoProvided;
+    private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
+
+    @Nullable
+    private SolutionKit parentSolutionKit;
 
     public SolutionKitsConfig() {
     }
@@ -89,15 +92,9 @@ public class SolutionKitsConfig {
         loaded.put(solutionKit, MarshallingUtils.unmarshal(Bundle.class, bundleSource, true));
     }
 
-    @Nullable
-    public SolutionKit getSingleSelectedSolutionKit() {
-        if (!selected.isEmpty()) {
-            // todo (kpak): Multiple solution kits not supported. Return the first item.
-            // When multiple solution kits are supported, this method should be removed
-            // and replaced with #getSelectedSolutionKits().
-            return selected.iterator().next();
-        }
-        return null;
+    @NotNull
+    public Set<SolutionKit> getSelectedSolutionKits() {
+        return selected;
     }
 
     public void setSelectedSolutionKits(@NotNull Set<SolutionKit> selectedSolutionKits) {
@@ -145,16 +142,25 @@ public class SolutionKitsConfig {
         return customizations;
     }
 
-    public boolean isUpgradeInfoProvided() {
-        return upgradeInfoProvided;
+    public boolean isUpgradeInfoProvided(SolutionKit solutionKit) {
+        return upgradeInfoProvided.get(solutionKit);
     }
 
-    public void setUpgradeInfoProvided(boolean upgradeInfoProvided) {
-        this.upgradeInfoProvided = upgradeInfoProvided;
+    public void setUpgradeInfoProvided(SolutionKit solutionKit, boolean upgradeInfo) {
+        upgradeInfoProvided.put(solutionKit, upgradeInfo);
     }
 
     public Map<String, List<String>> getInstanceModifiers() {
         return instanceModifiers;
+    }
+
+    @Nullable
+    public SolutionKit getParentSolutionKit() {
+        return parentSolutionKit;
+    }
+
+    public void setParentSolutionKit(@Nullable SolutionKit parentSolutionKit) {
+        this.parentSolutionKit = parentSolutionKit;
     }
 
     public void clear(boolean nullSolutionKitToUpgrade) {

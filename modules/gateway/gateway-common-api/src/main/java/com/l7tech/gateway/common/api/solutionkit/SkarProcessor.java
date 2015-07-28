@@ -24,9 +24,7 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
 import java.io.*;
 import java.net.URL;
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Level;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -55,7 +53,7 @@ public class SkarProcessor {
     /**
      * Invoke custom callback code support read and write of Solution Kit metadata and bundle.
      */
-    public void invokeCustomCallback() throws SolutionKitException {
+    public void invokeCustomCallback(final SolutionKit solutionKit) throws SolutionKitException {
         try {
             Document metadataDoc, bundleDoc;
             SolutionKitManagerContext skContext;
@@ -64,38 +62,37 @@ public class SkarProcessor {
             SolutionKitManagerCallback customCallback;
             SolutionKitManagerUi customUi;
 
-            for (SolutionKit sk : solutionKitsConfig.getCustomizations().keySet()) {
-                customization = solutionKitsConfig.getCustomizations().get(sk);
+            customization = solutionKitsConfig.getCustomizations().get(solutionKit);
+            if (customization == null) return;
 
-                // implementer provides a callback
-                customCallback = customization.getCustomCallback();
-                if (customCallback != null) {
-                    customUi = customization.getCustomUi();
+            // implementer provides a callback
+            customCallback = customization.getCustomCallback();
+            if (customCallback == null) return;
 
-                    // if implementer provides a context
-                    skContext = customUi != null ? customUi.getContext() : null;
-                    if (skContext != null) {
-                        // get from selected
-                        metadataDoc = SolutionKitUtils.createDocument(sk);
-                        bundleDoc = solutionKitsConfig.getBundleAsDocument(sk);
+            customUi = customization.getCustomUi();
 
-                        // set to context
-                        skContext.setSolutionKitMetadata(metadataDoc);
-                        skContext.setMigrationBundle(bundleDoc);
+            // if implementer provides a context
+            skContext = customUi != null ? customUi.getContext() : null;
+            if (skContext != null) {
+                // get from selected
+                metadataDoc = SolutionKitUtils.createDocument(solutionKit);
+                bundleDoc = solutionKitsConfig.getBundleAsDocument(solutionKit);
 
-                        // execute callback
-                        customCallback.preMigrationBundleImport(skContext);
+                // set to context
+                skContext.setSolutionKitMetadata(metadataDoc);
+                skContext.setMigrationBundle(bundleDoc);
 
-                        // copy back metadata from xml version
-                        SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, sk);
+                // execute callback
+                customCallback.preMigrationBundleImport(skContext);
 
-                        // set (possible) changes made to metadata and bundle
-                        // TODO fix duplicate HashMap bug where put(...) does not replace previous value
-                        solutionKitsConfig.setBundle(sk, bundleDoc);
-                    } else  {
-                        customCallback.preMigrationBundleImport(null);
-                    }
-                }
+                // copy back metadata from xml version
+                SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, solutionKit);
+
+                // set (possible) changes made to metadata and bundle
+                // TODO fix duplicate HashMap bug where put(...) does not replace previous value
+                solutionKitsConfig.setBundle(solutionKit, bundleDoc);
+            } else  {
+                customCallback.preMigrationBundleImport(null);
             }
         } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
             throw new SolutionKitException("Unexpected error during custom callback invocation.", e);
@@ -105,12 +102,7 @@ public class SkarProcessor {
     /**
      * Install or upgrade the SKAR
      */
-    public AsyncAdminMethods.JobId<Goid> installOrUpgrade(@NotNull SolutionKitAdmin solutionKitAdmin) throws SolutionKitException {
-        SolutionKit solutionKit = solutionKitsConfig.getSingleSelectedSolutionKit();
-        if (solutionKit == null) {
-            throw new SolutionKitException("Unexpected error: unable to get selected Solution Kit.");
-        }
-
+    public AsyncAdminMethods.JobId<Goid> installOrUpgrade(@NotNull final SolutionKitAdmin solutionKitAdmin, @NotNull final SolutionKit solutionKit) throws SolutionKitException {
         // Update resolved mapping target IDs.
         Map<String, String> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit);
         Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
@@ -139,7 +131,7 @@ public class SkarProcessor {
         ZipInputStream zis = null;
         try {
             final SolutionKit solutionKit = new SolutionKit();
-            boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false;
+            boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false, foundChildSkar = false;
             final DOMSource installBundleSource = new DOMSource();
             final DOMSource upgradeBundleSource = new DOMSource();
             SolutionKitCustomizationClassLoader classLoader = null;
@@ -168,28 +160,45 @@ public class SkarProcessor {
                         case SK_CUSTOMIZATION_JAR_FILENAME:
                             classLoader = getCustomizationClassLoader(zis);
                             break;
-
                         default:
-                            logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
+                            if (fileName.endsWith(".skar")) {
+                                // Get the input bytes for a child SKAR, create a new input stream, and call recursively call the load method.
+                                load(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
+                                foundChildSkar = true;
+                            } else {
+                                logger.warning("Unexpected entry in solution kit: " + entry.getName());
+                            }
                             break;
                     }
                 } else {
-                    logger.log(Level.WARNING, "Unexpected entry in solution kit: " + entry.getName());
+                    logger.warning("Unexpected entry in solution kit: " + entry.getName());
                 }
                 zis.closeEntry();
                 entry = zis.getNextEntry();
             }
 
-            validate(hasRequiredSolutionKitFile, hasRequiredInstallBundleFile);
+            // Validate the SKAR structure
+            final boolean isCollection = Boolean.parseBoolean(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+            validate(isCollection, hasRequiredSolutionKitFile, hasRequiredInstallBundleFile, foundChildSkar);
+
+            // If the SKAR is a collection of SKARs, then the rest task (e.g., merge bundle, record upgrade info, etc.)
+            // should be ignored, since the rest task is done when recursively call the load method.
+            if (isCollection) {
+                // Save the parent solution kit. Just in case, we need to use the parent solution kit object.
+                solutionKitsConfig.setParentSolutionKit(solutionKit);
+                return;
+            }
+
+            // Continue the process when the SKAR is a SKAR without nesting other SKARs.
             final Bundle installBundle = MarshallingUtils.unmarshal(Bundle.class, installBundleSource, true);
             Bundle bundle = installBundle;
 
             if (upgradeBundleSource.getNode() != null) {
                 final Bundle upgradeBundle = MarshallingUtils.unmarshal(Bundle.class, upgradeBundleSource, true);
                 bundle = mergeBundle(solutionKit, installBundle, upgradeBundle);
-                solutionKitsConfig.setUpgradeInfoProvided(true);
+                solutionKitsConfig.setUpgradeInfoProvided(solutionKit, true);
             } else {
-                solutionKitsConfig.setUpgradeInfoProvided(false);
+                solutionKitsConfig.setUpgradeInfoProvided(solutionKit, false);
             }
 
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
@@ -202,11 +211,15 @@ public class SkarProcessor {
         }
     }
 
-    private void validate(boolean hasRequiredSolutionKitFile, boolean hasRequiredInstallBundleFile) throws SolutionKitException {
-        if (!hasRequiredSolutionKitFile) {
-            throw new SolutionKitException("Missing required file " + SK_FILENAME);
-        } else if (!hasRequiredInstallBundleFile) {
-            throw new SolutionKitException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
+    private void validate(boolean isCollection, boolean hasRequiredSolutionKitFile, boolean hasRequiredInstallBundleFile, boolean foundLeafSkar) throws SolutionKitException {
+        if (! isCollection) {
+            if (!hasRequiredSolutionKitFile) {
+                throw new SolutionKitException("Missing required file " + SK_FILENAME);
+            } else if (!hasRequiredInstallBundleFile) {
+                throw new SolutionKitException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
+            }
+        } else if (! foundLeafSkar) {
+            throw new SolutionKitException("Missing nested SKARs in the SKAR file.");
         }
     }
 

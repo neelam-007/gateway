@@ -28,7 +28,7 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_NAME = "Name";
     public static final String SK_ELE_DESC = "Description";
     public static final String SK_ELE_TIMESTAMP = "TimeStamp";
-//    public static final String SK_ELE_IS_COLLECTION = "IsCollection";
+    public static final String SK_ELE_IS_COLLECTION = "IsCollection";
     public static final String SK_ELE_CUSTOM_UI = "CustomUI";
     public static final String SK_ELE_CUSTOM_CALLBACK = "CustomCallback";
 //    public static final String SK_ELE_DEPENDENCIES = "Dependencies";
@@ -137,6 +137,11 @@ public final class SolutionKitUtils {
         solutionKit.setName(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME)));
         solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
         solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
+
+        final Element isCollectionElmt = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION);
+        if (isCollectionElmt != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, DomUtils.getTextValue(isCollectionElmt));
+        }
 
         final Element featureSetEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
         if (featureSetEle != null) {

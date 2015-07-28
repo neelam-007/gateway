@@ -139,6 +139,16 @@ public class SolutionKitMappingsPanel extends JPanel {
         mappingsTable.removeColumn(targetIdColumn);
     }
 
+    @NotNull
+    public Map<String, Item> getBundleItems() {
+        return bundleItems;
+    }
+
+    @NotNull
+    public Map<String, String> getResolvedEntityIds() {
+        return resolvedEntityIds;
+    }
+
     private void initialize() {
         mappingsModel = TableUtil.configureTable(mappingsTable,
             TableUtil.column("Name", 50, 200, 1000, new Functions.Unary<String, Mapping>() {
@@ -235,6 +245,7 @@ public class SolutionKitMappingsPanel extends JPanel {
             new boolean[]{true},
             new Comparator[]{null});
 
+        hideTargetIdColumn();
         setLayout(new BorderLayout());
         add(mainPanel);
     }

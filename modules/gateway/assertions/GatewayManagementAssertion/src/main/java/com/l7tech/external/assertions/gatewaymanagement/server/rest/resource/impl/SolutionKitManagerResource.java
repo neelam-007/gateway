@@ -96,16 +96,19 @@ public class SolutionKitManagerResource {
 
             // remap any entity id(s)
             // TODO express with restman mapping syntax instead?
+            //todo:ms Multiple skars modification: entityIdReplaces should be a map keyed by SolutionKit like this Map<SolutionKit, List<FormDataBodyPart>
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
             // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
-            skarProcessor.invokeCustomCallback();
 
-            // install or upgrade skar
-            SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager);
-            AsyncAdminMethods.JobId<Goid> jobId = skarProcessor.installOrUpgrade(solutionKitAdmin);
+            // install or upgrade skars
+            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager);
+            for (SolutionKit solutionKit: solutionKitsConfig.getCustomizations().keySet()) {
+                skarProcessor.invokeCustomCallback(solutionKit);
 
-            processJobResult(solutionKitAdmin, jobId);
+                AsyncAdminMethods.JobId<Goid> jobId = skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
+                processJobResult(solutionKitAdmin, jobId);
+            }
         } catch (SolutionKitManagerResourceException e) {
             return e.getResponse();
         } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
@@ -159,7 +162,7 @@ public class SolutionKitManagerResource {
 
     // set user selection(s)
     private void setUserSelections(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> solutionKitIdInstalls) throws SolutionKitManagerResourceException {
-        final Set<SolutionKit> loadedSolutionKits = solutionKitsConfig.getLoadedSolutionKits().keySet();
+        final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
         if (solutionKitIdInstalls == null || solutionKitIdInstalls.size() == 0) {
             // default install all
             solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
@@ -171,7 +174,7 @@ public class SolutionKitManagerResource {
             }
 
             // verify the user selected id(s) and build selection set
-            final Set<SolutionKit> selectedSolutionKitIdSet = new HashSet<>(solutionKitIdInstalls.size());
+            final Set<SolutionKit> selectedSolutionKitIdSet = new TreeSet<>();
             String selectedId;
             for (FormDataBodyPart solutionKitIdInstall : solutionKitIdInstalls) {
                 selectedId = solutionKitIdInstall.getValue();
@@ -189,7 +192,9 @@ public class SolutionKitManagerResource {
 
     // remap any entity id(s)
     private void remapEntityIds(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> entityIdReplaces) throws UnsupportedEncodingException {
+        //todo:ms Multiple skars modification: entityIdReplaces should be a map keyed by SolutionKit like this Map<SolutionKit, List<FormDataBodyPart>
         if (entityIdReplaces != null) {
+            //todo:ms Multiple skars modification: entityIdReplaceMap should be a map keyed by SolutionKit like this Map<SolutionKit, Map<String, String>>
             Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces.size());
             String entityIdReplaceStr;
             for (FormDataBodyPart entityIdReplace : entityIdReplaces) {
@@ -198,8 +203,11 @@ public class SolutionKitManagerResource {
                     decodeSplitPut(entityIdReplaceStr, entityIdReplaceMap);
                 }
             }
-            Map<SolutionKit, Map<String, String>> idRemapBySolutionKit = new HashMap<>(1);
-            idRemapBySolutionKit.put(solutionKitsConfig.getSingleSelectedSolutionKit(), entityIdReplaceMap);
+            //todo:ms Multiple skars modification: (A problem here is the same entityIdReplaceMap used for all solution kits.)
+            Map<SolutionKit, Map<String, String>> idRemapBySolutionKit = new HashMap<>();
+            for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
+                idRemapBySolutionKit.put(solutionKit, entityIdReplaceMap);
+            }
             solutionKitsConfig.setResolvedEntityIds(idRemapBySolutionKit);
         }
     }

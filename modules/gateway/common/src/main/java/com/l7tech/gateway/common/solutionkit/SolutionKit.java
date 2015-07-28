@@ -8,6 +8,7 @@ import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.SafeXMLDecoder;
 import com.l7tech.util.SafeXMLDecoderBuilder;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -23,7 +24,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="solution_kit")
-public class SolutionKit extends NamedEntityWithPropertiesImp {
+public class SolutionKit extends NamedEntityWithPropertiesImp implements Comparable<SolutionKit> {
     /**
      * Maximum allowed length of the name field.
      */
@@ -34,6 +35,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
 
     public static final String SK_PROP_DESC_KEY = "Description";
     public static final String SK_PROP_TIMESTAMP_KEY = "TimeStamp";
+    public static final String SK_PROP_IS_COLLECTION_KEY = "IsCollection";
     public static final String SK_PROP_FEATURE_SET_KEY = "FeatureSet";
     public static final String SK_PROP_CUSTOM_CALLBACK_KEY = "CustomCallback";
     public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";
@@ -216,5 +218,10 @@ public class SolutionKit extends NamedEntityWithPropertiesImp {
         result = 31 * result + (uninstallBundle != null ? uninstallBundle.hashCode() : 0);
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         return result;
+    }
+
+    @Override
+    public int compareTo(@NotNull SolutionKit o) {
+        return String.CASE_INSENSITIVE_ORDER.compare(getName(), o.getName());
     }
 }

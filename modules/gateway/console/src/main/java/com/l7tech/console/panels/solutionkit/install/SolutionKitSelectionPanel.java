@@ -29,6 +29,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -67,7 +69,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
-//    private boolean disableAutoNext = false;
+    private Map<SolutionKit, Integer> instanceModifierMaxLengthMap = new HashMap<>();
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -99,29 +101,33 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         testMappings.clear();
         solutionKitsModel.deselectAll();
-        settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
+        settings.setSelectedSolutionKits(new TreeSet<SolutionKit>());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
         this.settings = settings;
 
-        initializeInstanceModifierButton(getMaxLengthForInstanceModifier());
-
-        addCustomUis(customizableButtonPanel, settings);
+        initializeInstanceModifierButton();
+        addCustomUis(customizableButtonPanel, settings, null);
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        settings.setSelectedSolutionKits(new HashSet<>(solutionKitsModel.getSelected()));
+        settings.setSelectedSolutionKits(new TreeSet<>(solutionKitsModel.getSelected()));
         settings.setTestMappings(testMappings);
     }
 
     @Override
     public boolean onNextButton() {
+        for (SolutionKit solutionKit: solutionKitsModel.getSelected()) {
+            boolean success = testInstall(solutionKit);
+            if (! success) return false;
+        }
+
+        return true;
+    }
+
+    private boolean testInstall(final SolutionKit solutionKit) {
         boolean success = false;
         String errorMessage = "";
-
-        // todo (kpak) - handle multiple kits. for now, install first one.
-        //
-        SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
 
         // For installation, check if instance modifier is unique for a selected solution kit.
         // However, this checking will be ignored for any solution kit upgrade bundle.
@@ -130,7 +136,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         if (// Case 1: User runs Install
             settings.getSolutionKitToUpgrade() == null ||
             // Case 2: User runs Upgrade but the skar file does not contain UpgradeBundle.xml.  We treat this case same as Install.
-            !settings.isUpgradeInfoProvided()) {
+            !settings.isUpgradeInfoProvided(solutionKit)) {
 
             final boolean duplicateInstanceModifierFound = ! checkInstanceModifierUniqueness(solutionKit);
             if (duplicateInstanceModifierFound) return false;
@@ -138,7 +144,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // invoke custom callback
         try {
-            new SkarProcessor(settings).invokeCustomCallback();
+            new SkarProcessor(settings).invokeCustomCallback(solutionKit);
         } catch (SolutionKitException e) {
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
@@ -186,12 +192,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // auto next step the wizard for solution kit with single item
         if (solutionKitsModel.getRowCount() == 1) {
             solutionKitsModel.select(0);
-// todo auto next step bug: left step menu shows incorrect last step; comment out for now
-//            if (!disableAutoNext && owner instanceof InstallSolutionKitWizard) {
-//                ((InstallSolutionKitWizard) owner).clickButtonNext();
-//            }
         }
-//        disableAutoNext = true;
     }
 
     private void initialize() {
@@ -211,7 +212,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
-        manageLicensesButton.setEnabled(true);
         manageLicensesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -219,6 +219,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
+        //noinspection unchecked
         solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
             column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
                 @Override
@@ -258,19 +259,24 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         );
 
         solutionKitsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        solutionKitsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                final SolutionKit selectedSolutionKit = solutionKitsModel.getRowObject(solutionKitsTable.getSelectedRow());
+                addCustomUis(customizableButtonPanel, settings, selectedSolutionKit);
+                enableDisableInstanceModifierButton();
+            }
+        });
         solutionKitsModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
-                final boolean enabled = ! solutionKitsModel.getSelected().isEmpty();
-                instanceModifierButton.setEnabled(enabled);
-                for (Component component: customizableButtonPanel.getComponents()) {
-                    if (component instanceof JButton) component.setEnabled(enabled);
-                }
-
                 notifyListeners();
             }
         });
-        Utilities.setRowSorter(solutionKitsTable, solutionKitsModel, new int[]{0}, new boolean[]{true}, new Comparator[]{null});
+        Utilities.setRowSorter(solutionKitsTable, solutionKitsModel,
+            new int[]{1, 2, 3}, new boolean[]{true, true, true},
+            new Comparator[]{String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER}
+        );
 
         //Set up tool tips for the table cells.
         final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
@@ -291,20 +297,26 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         add(mainPanel);
     }
 
-    private void initializeInstanceModifierButton(final int maxInstanceModifierLength) {
+    private void enableDisableInstanceModifierButton() {
+        final boolean enabled = solutionKitsTable.getSelectedRow() != -1;
+        instanceModifierButton.setEnabled(enabled);
+    }
+
+    private void initializeInstanceModifierButton() {
         ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
         for (ActionListener actionListener: actionListeners) instanceModifierButton.removeActionListener(actionListener);
 
         instanceModifierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (solutionKitsModel.getSelected().isEmpty()) return;
+                final int selectedIdx = solutionKitsTable.getSelectedRow();
+                if (selectedIdx == -1) return;
 
-                final SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+                final SolutionKit solutionKit = solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(selectedIdx));
                 final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
                     TopComponents.getInstance().getTopParent(),
                     solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), // Old instance modifier
-                    maxInstanceModifierLength
+                    getMaxLengthForInstanceModifier(solutionKit)
                 );
                 instanceModifierDialog.pack();
                 Utilities.centerOnParentWindow(instanceModifierDialog);
@@ -313,26 +325,14 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 if (instanceModifierDialog.isOK()) {
                     final String newInstanceModifier = instanceModifierDialog.getInstanceModifier();
                     if (StringUtils.isEmpty(newInstanceModifier)) return;
-
-                    // Preserve bundle and customization corresponding to the specific solutionKit,
-                    // then remove old records from the two maps, loaded and customizations.
-                    final Map<SolutionKit, Bundle> loadedSolutionKits = settings.getLoadedSolutionKits();
-                    final Bundle bundle = loadedSolutionKits.get(solutionKit);
-                    loadedSolutionKits.remove(solutionKit);
-
-                    final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
-                    final SolutionKitCustomization customization = customizations.get(solutionKit);
-                    customizations.remove(solutionKit);
-
-                    // Add records with an updated solutionKit due to properties changed back to the maps
                     solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
-                    if (bundle != null) loadedSolutionKits.put(solutionKit, bundle);
-                    if (customization != null) customizations.put(solutionKit, customization);
 
                     solutionKitsModel.fireTableDataChanged();
                 }
             }
         });
+
+        enableDisableInstanceModifierButton();
     }
 
     private void onManageLicenses() {
@@ -344,22 +344,27 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         DialogDisplayer.display(dlg);
     }
 
-    private void addCustomUis(final JPanel customizableButtonPanel, final SolutionKitsConfig settings) {
+    private void addCustomUis(final JPanel customizableButtonPanel, final SolutionKitsConfig settings, final SolutionKit selectedSolutionKit) {
+        // Initially remove any button from customizableButtonPanel
         customizableButtonPanel.removeAll();
-        final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
 
-        // todo handle multiple kits
-        if (customizations.size() > 1) {
-            throw new IllegalArgumentException("Can't handle multiple kits.");
-        }
-
-        // add custom ui
-        for (SolutionKitCustomization customization : customizations.values()) {
-            SolutionKitManagerUi customUi = customization.getCustomUi();
-            if (customUi != null) {
-                customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
+        // If the selected solution kit has customization with a custom UI, then create a button via the custom UI.
+        if (selectedSolutionKit != null) {
+            final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
+            final SolutionKitCustomization customization = customizations.get(selectedSolutionKit);
+            if (customization != null) {
+                final SolutionKitManagerUi customUi = customization.getCustomUi();
+                if (customUi != null) {
+                    customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
+                    return;
+                }
             }
         }
+
+        // Otherwise, create a dummy button "Custom UI" for displaying purpose.
+        JButton dummyButton = new JButton("Custom UI");
+        dummyButton.setEnabled(false);
+        customizableButtonPanel.add(dummyButton);
     }
 
     /**
@@ -376,12 +381,21 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
      *
      * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
      */
-    private int getMaxLengthForInstanceModifier() {
-        Map<SolutionKit, Bundle> kitBundleMap = settings.getLoadedSolutionKits();
-        //todo: (gary) Need code modification when implementing collection of skar files.
-        Bundle bundle = (Bundle) kitBundleMap.values().toArray()[0];
+    private int getMaxLengthForInstanceModifier(@NotNull final SolutionKit solutionKit) {
+        Integer maxLength = instanceModifierMaxLengthMap.get(solutionKit);
 
-        return getMaxLengthForInstanceModifier(bundle.getReferences());
+        if (maxLength == null) {
+            Map<SolutionKit, Bundle> kitBundleMap = settings.getLoadedSolutionKits();
+            Bundle bundle = kitBundleMap.get(solutionKit);
+
+            // Compute a new max length
+            maxLength = getMaxLengthForInstanceModifier(bundle.getReferences());
+
+            // Save the max value for this solution kit in the map
+            instanceModifierMaxLengthMap.put(solutionKit, maxLength);
+        }
+
+        return maxLength;
     }
 
     /**

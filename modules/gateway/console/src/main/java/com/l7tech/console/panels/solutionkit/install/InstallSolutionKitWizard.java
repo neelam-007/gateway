@@ -22,6 +22,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -88,38 +89,44 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     @Override
     protected void finish(ActionEvent evt) {
-        if (wizardInput != null) {
-            this.getSelectedWizardPanel().storeSettings(getWizardInput());
+        if (wizardInput != null) { // wizardInput is a SolutionKitConfig object.
+            getSelectedWizardPanel().storeSettings(wizardInput);
         }
 
-        try {
-            Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
+        final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
+        for (SolutionKit solutionKit: wizardInput.getSelectedSolutionKits()) {
+            try {
+                Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                     solutionKitAdmin,
                     this.getOwner(),
                     "Install Solution Kit",
-                    "The gateway is installing selected solution kit(s)",
-                    new SkarProcessor(getWizardInput()).installOrUpgrade(solutionKitAdmin));
+                    "The gateway is installing the selected solution kit, \"" + solutionKit.getName() + "\".",
+                    new SkarProcessor(wizardInput).installOrUpgrade(solutionKitAdmin, solutionKit));
 
-            if (result.isLeft()) {
-                // Solution kit failed to install.
-                String msg = result.left();
-                logger.log(Level.WARNING, msg);
-                displayErrorDialog(msg);
-            } else if (result.isRight()) {
-                // Solution kit installed successfully.
-                getWizardInput().clear();
-                super.finish(evt);
+                if (result.isLeft()) {
+                    // Solution kit failed to install.
+                    String msg = result.left();
+                    logger.log(Level.WARNING, msg);
+                    errorKitList.add(new Pair<>(msg, solutionKit));
+                }
+            } catch (SolutionKitException e) {
+                String msg = ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            } catch (InvocationTargetException e) {
+                String msg = ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                errorKitList.add(new Pair<>(msg, solutionKit));
+            } catch (InterruptedException e) {
+                // user cancelled. do nothing.
             }
-        } catch (SolutionKitException e) {
-            String msg = ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
-        } catch (InvocationTargetException e) {
-            String msg = ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            displayErrorDialog(msg);
-        } catch (InterruptedException e) {
-            // user cancelled. do nothing.
+        }
+        // Finish installation successfully if no errors exist.  Otherwise, display errors if applicable
+        if (errorKitList.isEmpty()) {
+            wizardInput.clear();
+            super.finish(evt);
+        } else {
+            displayErrorDialog(errorKitList);
         }
     }
 
@@ -132,61 +139,60 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
      * Display a error dialog.
      * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundle API), then
      * display the mapping errors in a table format. Otherwise, display the msg string as-is.
-     *
-     * @param msg the message.
      */
-    private void displayErrorDialog(String msg) {
-        Mappings mappings = null;
-        try {
-            Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(msg)));
-            mappings = (Mappings)item.getContent();
-        } catch (IOException e) {
-            // msg is not a bundle mapping xml.
-        }
+    private void displayErrorDialog(@NotNull final List<Pair<String, SolutionKit>> errorKitMatchList) {
+        final JTabbedPane errorTabbedPane = new JTabbedPane();
 
-        final String dialogTitle = "Install Solution Kit Error";
-        if (mappings != null) {
-            // Only display mappings with errors.
-            //
-            java.util.List<Mapping> errorMappings = new ArrayList<>();
-            for (Mapping aMapping : mappings.getMappings()) {
-                if (aMapping.getErrorType() != null) {
-                    errorMappings.add(aMapping);
+        String msg;
+        SolutionKit solutionKit;
+        for (Pair<String, SolutionKit> errorKit: errorKitMatchList) {
+            msg = errorKit.left;
+            solutionKit = errorKit.right;
+
+            Mappings mappings = null;
+            try {
+                Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(msg)));
+                mappings = (Mappings)item.getContent();
+            } catch (IOException e) {
+                // msg is not a bundle mapping xml.
+            }
+
+            if (mappings != null) {
+                java.util.List<Mapping> errorMappings = new ArrayList<>();
+                for (Mapping aMapping : mappings.getMappings()) {
+                    if (aMapping.getErrorType() != null) {
+                        errorMappings.add(aMapping);
+                    }
                 }
+                mappings.setMappings(errorMappings);
+
+                // need the solution kit bundle
+                Bundle bundle = getWizardInput().getBundle(solutionKit);
+                if (bundle == null) {
+                    errorTabbedPane.add(solutionKit.getName(), new JLabel(msg));
+                    continue;
+                }
+
+                Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit);
+
+                JPanel errorPanel = new JPanel();
+                JLabel label = new JLabel("Failed to install solution kit(s) due to following entity conflicts:");
+                SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
+                solutionKitMappingsPanel.setPreferredSize(new Dimension(1000, 400));
+                solutionKitMappingsPanel.hideTargetIdColumn();
+                solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityId);
+
+                errorPanel.setLayout(new BorderLayout());
+                errorPanel.add(label, BorderLayout.NORTH);
+                errorPanel.add(solutionKitMappingsPanel, BorderLayout.CENTER);
+
+                errorTabbedPane.add(solutionKit.getName(), errorPanel);
+            } else {
+                errorTabbedPane.add(solutionKit.getName(), new JLabel(msg));
             }
-            mappings.setMappings(errorMappings);
-
-            // need the selected solution kit
-            SolutionKit solutionKit = getWizardInput().getSingleSelectedSolutionKit();
-            if (solutionKit == null) {
-                JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // need the solution kit bundle
-            Bundle bundle = getWizardInput().getBundle(solutionKit);
-            if (bundle == null) {
-                JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit);
-
-            JPanel errorPanel = new JPanel();
-            JLabel label = new JLabel("Failed to install solution kit(s) due to following entity conflicts:");
-            SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
-            solutionKitMappingsPanel.setPreferredSize(new Dimension(1000, 400));
-            solutionKitMappingsPanel.hideTargetIdColumn();
-            solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityId);
-
-            errorPanel.setLayout(new BorderLayout());
-            errorPanel.add(label, BorderLayout.NORTH);
-            errorPanel.add(solutionKitMappingsPanel, BorderLayout.CENTER);
-
-            DialogDisplayer.showMessageDialog(this.getOwner(), errorPanel, dialogTitle, JOptionPane.ERROR_MESSAGE, null);
-        } else {
-            JOptionPane.showMessageDialog(this.getOwner(), msg, dialogTitle, JOptionPane.ERROR_MESSAGE);
         }
+
+        DialogDisplayer.showMessageDialog(this.getOwner(), errorTabbedPane, "Install Solution Kit Error", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void initialize() {

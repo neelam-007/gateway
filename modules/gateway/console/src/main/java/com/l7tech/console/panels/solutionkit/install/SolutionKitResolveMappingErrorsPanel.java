@@ -4,12 +4,12 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.sun.istack.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -19,22 +19,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
  */
 public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<SolutionKitsConfig> {
-    private static final Logger logger = Logger.getLogger(SolutionKitResolveMappingErrorsPanel.class.getName());
     private static final String STEP_LABEL = "Resolve entity conflicts";
     private static final String STEP_DESC = "Resolve entity conflicts.";
 
     private JPanel mainPanel;
-    private SolutionKitMappingsPanel solutionKitMappingsPanel;
+    private JTabbedPane solutionKitMappingsTabbedPane;
     private JButton resolveButton;
 
-    private Map<String, Item> bundleItems = new HashMap<>();            // key = bundle reference item id. value = bundle reference item.
-    private Map<String, String> resolvedEntityIds = new HashMap<>();    // key = from id. value  = to id.
+    private Map<SolutionKit, Map<String, String>> resolvedEntityIdsMap = new HashMap<>();    // the map of a value: key = from id. value  = to id.
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
@@ -53,50 +50,54 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
     @Override
     public boolean canAdvance() {
-        // todo (kpak) - check all resolved.
         return super.canAdvance();
     }
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        SolutionKit solutionKit = settings.getSingleSelectedSolutionKit();
-        Bundle bundle = settings.getBundle(solutionKit);
-        Mappings mappings = settings.getTestMappings(solutionKit);
+        resolvedEntityIdsMap.clear();
+        solutionKitMappingsTabbedPane.removeAll();
 
-        bundleItems.clear();
-        for (Item aItem : bundle.getReferences()) {
-            bundleItems.put(aItem.getId(), aItem);
+        for (final SolutionKit solutionKit: settings.getSelectedSolutionKits()) {
+            Bundle bundle = settings.getBundle(solutionKit);
+            if (bundle == null) continue;
+
+            Mappings mappings = settings.getTestMappings(solutionKit);
+            if (mappings == null) continue;
+
+            Map<String, String> resolvedEntityIds = new HashMap<>();
+            resolvedEntityIdsMap.put(solutionKit, resolvedEntityIds);
+
+            final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
+            solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityIds);
+            solutionKitMappingsPanel.setDoubleClickAction(resolveButton);
+            solutionKitMappingsPanel.addListSelectionListener(new ListSelectionListener() {
+                @Override
+                public void valueChanged(ListSelectionEvent e) {
+                    refreshMappingsTableButtons();
+                }
+            });
+
+            solutionKitMappingsTabbedPane.add(solutionKit.getName(), solutionKitMappingsPanel);
         }
-        resolvedEntityIds.clear();
-        solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityIds);
+
         refreshMappingsTableButtons();
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        SolutionKit solutionKit = settings.getSingleSelectedSolutionKit();
-        Map<SolutionKit, Map<String, String>> map = new HashMap<>();
-        map.put(solutionKit, resolvedEntityIds);
-        settings.setResolvedEntityIds(map);
+        settings.setResolvedEntityIds(resolvedEntityIdsMap);
     }
 
     private void initialize() {
-        solutionKitMappingsPanel.hideTargetIdColumn();
-        solutionKitMappingsPanel.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                refreshMappingsTableButtons();
-            }
-        });
-
         resolveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onResolve();
+                final SolutionKitMappingsPanel selectedSKMappingsPanel =
+                    (SolutionKitMappingsPanel) solutionKitMappingsTabbedPane.getSelectedComponent();
+                onResolve(selectedSKMappingsPanel);
             }
         });
-
-        solutionKitMappingsPanel.setDoubleClickAction(resolveButton);
 
         setLayout(new BorderLayout());
         add(mainPanel);
@@ -104,17 +105,23 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
     private void refreshMappingsTableButtons() {
         boolean enabled = false;
-        Mapping mapping = solutionKitMappingsPanel.getSelectedMapping();
-        if (mapping != null) {
-            Mapping.ErrorType errorType = mapping.getErrorType();
-            if (errorType != null) {
-                enabled = true;
+        final Component selectedComponent = solutionKitMappingsTabbedPane.getSelectedComponent();
+
+        if (selectedComponent instanceof SolutionKitMappingsPanel) {
+            final SolutionKitMappingsPanel solutionKitMappingsPanel = (SolutionKitMappingsPanel) selectedComponent;
+            Mapping mapping = solutionKitMappingsPanel.getSelectedMapping();
+            if (mapping != null) {
+                Mapping.ErrorType errorType = mapping.getErrorType();
+                if (errorType != null) {
+                    enabled = true;
+                }
             }
         }
+
         resolveButton.setEnabled(enabled);
     }
 
-    private void onResolve() {
+    private void onResolve(@NotNull final SolutionKitMappingsPanel solutionKitMappingsPanel) {
         Mapping mapping = solutionKitMappingsPanel.getSelectedMapping();
         if (mapping == null) {
             return;
@@ -125,13 +132,15 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             return;
         }
 
-        final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping, bundleItems.get(mapping.getSrcId()));
+        final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping,
+            solutionKitMappingsPanel.getBundleItems().get(mapping.getSrcId())
+        );
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg);
 
         if (dlg.isConfirmed()) {
-            resolvedEntityIds.put(mapping.getSrcId(), dlg.getResolvedId());
+            solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
             solutionKitMappingsPanel.reload();
         }
     }
