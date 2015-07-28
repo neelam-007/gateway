@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,15 +15,7 @@ import java.util.concurrent.Callable;
 /**
  * A bean that keeps an in-memory list of entities which are protected from modification.
  */
-public class ProtectedEntityTracker implements InitializingBean {
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        // TODO for now, for testing, we hardcode a service Goid
-        setEntityProtection( EntityType.SERVICE, "708b8ff3ed7270d5fd6bcb15ca3a1862", true );
-        setEntityProtection( EntityType.POLICY, "a91fbf3b4c2d774e978af7944dfa60d7", true );
-        setEntityProtection( EntityType.SERVICE, "f1649a0664f1ebb6235ac238a6f71ba9", true  );
-    }
+public class ProtectedEntityTracker {
 
     public static class EntityProtection {
         private final EntityType entityType;
@@ -44,7 +35,8 @@ public class ProtectedEntityTracker implements InitializingBean {
         }
     }
 
-    private static final Map<String,EntityProtection> protectedEntityMap = new HashMap<>();
+    private static final Map<String, EntityProtection> protectedEntityMap = new HashMap<>();
+
     private static final ThreadLocal<Boolean> entityProtectionEnabled = new ThreadLocal<Boolean>() {
         @Override
         protected Boolean initialValue() {

@@ -35,4 +35,11 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws FindException
      */
     List<SolutionKit> findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
+
+    /**
+     * Reads and enables entity protection for all Solution Kit-owned entities. This method should be invoked
+     * after any EntityOwnershipDescriptors have been added e.g. in the process of Solution Kit installation/upgrade/removal.
+     * @throws FindException
+     */
+    void updateProtectedEntityTracking() throws FindException;
 }

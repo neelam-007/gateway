@@ -231,6 +231,7 @@
 
                 <!-- Solution Kit -->
                 <value>com.l7tech.gateway.common.solutionkit.SolutionKit</value>
+                <value>com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

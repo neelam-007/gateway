@@ -1,6 +1,7 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
@@ -36,6 +37,7 @@ import org.xml.sax.SAXException;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -65,6 +67,17 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     }
 
     @Override
+    public void initDao() throws Exception {
+        super.initDao();
+
+        if (null == protectedEntityTracker) {
+            throw new IllegalStateException("Protected Entity Tracker component is required.");
+        }
+
+        updateProtectedEntityTracking();
+    }
+
+    @Override
     public Class<? extends Entity> getImpClass() {
         return SolutionKit.class;
     }
@@ -79,6 +92,19 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     public void update(SolutionKit entity) throws UpdateException {
         entity.setLastUpdateTime(System.currentTimeMillis());
         super.update(entity);
+    }
+
+    @Override
+    public void updateProtectedEntityTracking() throws FindException {
+        List< Pair< EntityType, Goid> > solutionKitOwnedEntities = new ArrayList<>();
+
+        for (SolutionKit solutionKit : findAll()) {
+            for (EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
+                solutionKitOwnedEntities.add( new Pair<>( descriptor.getEntityType(), descriptor.getEntityGoid() ) );
+            }
+        }
+
+        protectedEntityTracker.bulkUpdateReadOnlyEntitiesList(solutionKitOwnedEntities);
     }
 
     /**

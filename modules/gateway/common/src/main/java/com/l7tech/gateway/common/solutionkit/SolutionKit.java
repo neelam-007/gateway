@@ -7,6 +7,8 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.SafeXMLDecoder;
 import com.l7tech.util.SafeXMLDecoderBuilder;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A persistent entity that holds information about an installed solution kit.
@@ -48,6 +51,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     private String mappings;
     private String uninstallBundle;
     private long lastUpdateTime;
+    private Set<EntityOwnershipDescriptor> entityOwnershipDescriptors;
 
     public SolutionKit() {
     }
@@ -174,6 +178,17 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
 
     public void setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
+    }
+
+    @Fetch(FetchMode.SUBSELECT)
+    @OneToMany(mappedBy="solutionKit", cascade=CascadeType.ALL, fetch=FetchType.EAGER, orphanRemoval=true)
+    public Set<EntityOwnershipDescriptor> getEntityOwnershipDescriptors() {
+        return entityOwnershipDescriptors;
+    }
+
+    public void setEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+        checkLocked();
+        this.entityOwnershipDescriptors = entityOwnershipDescriptors;
     }
 
     @Transient

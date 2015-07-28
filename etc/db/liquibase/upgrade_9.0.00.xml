@@ -303,4 +303,8 @@
             <column name="entity_type" value="USER"/>
         </insert>
     </changeSet>
+    <changeSet author="gateway" id="refactor_solution_kit_meta_columns">
+        <dropColumn tableName="solution_kit_meta" columnName="user_created" />
+        <renameColumn tableName="solution_kit_meta" oldColumnName="user_editable" newColumnName="read_only" columnDataType="${tinyint.type}" />
+    </changeSet>
 </databaseChangeLog>

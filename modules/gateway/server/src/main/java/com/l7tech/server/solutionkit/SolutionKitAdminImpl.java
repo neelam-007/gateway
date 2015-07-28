@@ -2,9 +2,12 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.server.bundling.EntityMappingInstructions;
+import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.util.Background;
@@ -19,7 +22,11 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.AlwaysCreateNew;
+import static com.l7tech.server.bundling.EntityMappingResult.MappingAction.CreatedNew;
 import static com.l7tech.server.event.AdminInfo.find;
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_ATTRIBUTE;
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_TAKEN_ATTRIBUTE;
 
 public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements SolutionKitAdmin {
     @Inject
@@ -97,9 +104,16 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
                     if (isUpgrade) {
                         solutionKitManager.update(solutionKit);
+                        // TODO jwilliams: update ownership descriptors
                         return solutionKit.getGoid();
                     } else {
-                        return solutionKitManager.save(solutionKit);
+                        Goid solutionKitGoid = solutionKitManager.save(solutionKit);
+
+                        createEntityOwnershipDescriptors(mappings, solutionKit);
+                        solutionKitManager.update(solutionKit);
+                        solutionKitManager.updateProtectedEntityTracking();
+
+                        return solutionKitGoid;
                     }
                 }
             }));
@@ -151,6 +165,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                         resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
                     solutionKitManager.delete(goid);
+                    solutionKitManager.updateProtectedEntityTracking();
                     return resultMappings;
                 }
             }));
@@ -170,6 +185,37 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
             throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
         }
+    }
+
+    /**
+     * Create EntityOwnershipDescriptors for each newly created entity.
+     */
+    private void createEntityOwnershipDescriptors(@NotNull final String resultMappings,
+                                                  @NotNull final SolutionKit solutionKit) throws SAXException, IOException {
+        Set<EntityOwnershipDescriptor> ownershipDescriptors = new HashSet<>();
+
+        String entityId, entityType;
+
+        // Find all matches of srdId and targetId in result mappings and save them in a map.
+        final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
+
+        for (Element mapping : mappingsMsg.getMappings()) {
+            if (AlwaysCreateNew != EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE)) ||
+                    CreatedNew != EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE))) {
+                continue;
+            }
+
+            entityId = mapping.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
+            entityType = mapping.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
+
+            if (!StringUtils.isEmpty(entityId) && !StringUtils.isEmpty(entityType)) {
+                EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit,
+                        Goid.parseGoid(entityId), EntityType.valueOf(entityType), true);
+                ownershipDescriptors.add(d);
+            }
+        }
+
+        solutionKit.setEntityOwnershipDescriptors(ownershipDescriptors);
     }
 
     /**

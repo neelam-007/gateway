@@ -31,4 +31,7 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     public List<SolutionKit> findBySolutionKitGuid(@NotNull String solutionKitGuid) throws FindException {
         return null;
     }
+
+    @Override
+    public void updateProtectedEntityTracking() throws FindException {}
 }
