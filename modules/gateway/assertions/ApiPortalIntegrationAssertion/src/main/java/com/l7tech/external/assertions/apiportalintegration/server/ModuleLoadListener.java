@@ -455,27 +455,8 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    /**
-     * Only creates the folder if it doesn't exist.
-     */
     private void createDeletedFolder() {
         try {
-            final Folder found = folderManager.findByUniqueName(API_DELETED_FOLDER_NAME);
-            if (found == null) {
-                final Folder rootFolder = folderManager.findByUniqueName(ROOT_FOLDER_NAME);
-                final Folder folder = new Folder(API_DELETED_FOLDER_NAME, rootFolder);
-                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-                    @Override
-                    protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
-                        try {
-                            folderManager.save(folder);
-                        } catch (final ObjectModelException e) {
-                            transactionStatus.setRollbackOnly();
-                            logger.log(Level.WARNING, "Error creating API Deleted folder. " + API_DELETED_FOLDER_NAME + " will not be available.", ExceptionUtils.getDebugException(e));
-                        }
-                    }
-                });
-            }
             final Folder folder = folderManager.findByUniqueName(API_DELETED_FOLDER_NAME);
             if (folder != null) {
                 createClusterPropertyIfNotExist(ModuleConstants.API_DELETED_FOLDER_ID, folder.getId().toString());
