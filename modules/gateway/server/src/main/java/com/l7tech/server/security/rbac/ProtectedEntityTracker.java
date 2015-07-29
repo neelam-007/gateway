@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +17,9 @@ import java.util.concurrent.Callable;
  * A bean that keeps an in-memory list of entities which are protected from modification.
  */
 public class ProtectedEntityTracker {
+
+    private static final String PROP_ENFORCEMENT_ENABLED = "com.l7tech.server.security.rbac.ProtectedEntityTracker.enabled";
+    private static final boolean ENFORCEMENT_ENABLED = SyspropUtil.getBoolean( PROP_ENFORCEMENT_ENABLED, false );
 
     public static class EntityProtection {
         private final EntityType entityType;
@@ -79,7 +83,7 @@ public class ProtectedEntityTracker {
     }
 
     public boolean isEntityProtectionEnabled() {
-        return entityProtectionEnabled.get();
+        return ENFORCEMENT_ENABLED && entityProtectionEnabled.get();
     }
 
     public <T> T doWithEntityProtectionDisabled( Callable<T> stuff ) throws Exception {
