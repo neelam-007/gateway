@@ -226,7 +226,11 @@ public class SkarProcessor {
     // load solution kit metadata
     private void loadSolutionKitXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
-        SolutionKitUtils.copyDocumentToSolutionKit(doc, solutionKit);
+        try {
+            SolutionKitUtils.copyDocumentToSolutionKit(doc, solutionKit);
+        } catch (MissingRequiredElementException e) {
+            throw new SolutionKitException(e.getMessage());
+        }
     }
 
     // load install bundle

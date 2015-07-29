@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
@@ -129,24 +130,50 @@ public final class SolutionKitUtils {
      * @throws TooManyChildElementsException
      * @throws MissingRequiredElementException
      */
-    public static void copyDocumentToSolutionKit(final Document doc, final SolutionKit solutionKit) throws TooManyChildElementsException, MissingRequiredElementException {
+    public static void copyDocumentToSolutionKit(final Document doc, final SolutionKit solutionKit) throws TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Element docEle = doc.getDocumentElement();
 
-        solutionKit.setSolutionKitGuid(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID)));
-        solutionKit.setSolutionKitVersion(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION)));
-        solutionKit.setName(DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME)));
-        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC)));
-        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP)));
+        String skId = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID));
+        if (skId != null && !skId.isEmpty())
+            solutionKit.setSolutionKitGuid(skId);
+        else
+            throw new SolutionKitException("Element <l7:Id> is required and its value cannot be empty");
 
-        final Element isCollectionElmt = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION);
-        if (isCollectionElmt != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, DomUtils.getTextValue(isCollectionElmt));
-        }
+        String skVersion = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION));
+        if (skVersion != null && !skVersion.isEmpty())
+            solutionKit.setSolutionKitVersion(skVersion);
+        else
+            throw new SolutionKitException("Element <l7:Version> is required and its value cannot be empty");
 
-        final Element featureSetEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
-        if (featureSetEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSetEle));
-        }
+        String skName = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME));
+        if (skName != null && !skName.isEmpty())
+            solutionKit.setName(skName);
+        else
+            throw new SolutionKitException("Element <l7:Name> is required and its value cannot be empty");
+
+        String skDescription = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC));
+        if (skDescription != null && !skDescription.isEmpty())
+            solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, skDescription);
+        else
+            throw new SolutionKitException("Element <l7:Description> is required and its value cannot be empty");
+
+        String skTimestamp = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP));
+        if (skTimestamp != null && !skTimestamp.isEmpty())
+            solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, skTimestamp);
+        else
+            throw new SolutionKitException("Element <l7:TimeStamp> is required and its value cannot be empty");
+
+        String skIsCollection = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION));
+        if (skIsCollection != null && !skIsCollection.isEmpty())
+            solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, skIsCollection);
+        else
+            throw new SolutionKitException("Element <l7:IsCollection> is required and its value cannot be empty");
+
+        String skFeatureSet = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET));
+        if (skFeatureSet != null && !skFeatureSet.isEmpty())
+            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, skFeatureSet);
+        else
+            throw new SolutionKitException("Element <l7:FeatureSet> is required and its value cannot be empty");
 
         final Element customCallbackEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_CALLBACK);
         if (customCallbackEle != null) {
