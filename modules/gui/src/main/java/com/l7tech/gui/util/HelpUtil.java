@@ -12,12 +12,9 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.BrowserLauncherRunner;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -42,28 +39,30 @@ public class HelpUtil {
      *
      * @param helpUrl a new custom help URL, or null to clear it and use the default.
      */
-    public static void setHelpUrl( String helpUrl ) throws IllegalArgumentException {
+    public static void setHelpUrl( @Nullable String helpUrl ) throws IllegalArgumentException {
 
         /**
          * Using this Regex to validate that only http(s) urls are allowed for the help location.  Main reason
          * for this is that otherwise opening this up through SSM Applet will allow access to the file system
          * outside the JVM sandbox and could pose a security risk
          */
-        if (helpUrl.matches("^https?://.*$"))
-                HelpUtil.helpUrl = helpUrl;
-        else {
-            String errorMsg = new String ("Unable to launch browser for help: does not use http(s) protocol");
+        if ( helpUrl == null ) {
+            HelpUtil.helpUrl = null;
+        } else if ( helpUrl.matches("^https?://.*$")) {
+            HelpUtil.helpUrl = helpUrl;
+        } else {
+            HelpUtil.helpUrl = null;
+            String errorMsg = "Unable to launch browser for help: does not use http(s) protocol";
             logger.log(Level.WARNING, errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
-
     }
 
     /**
      * @return the currently active help URL, which may be the default help URL.
      */
     public static String getHelpUrl() {
-        return helpUrl != null ? helpUrl : DEFAULT_HELP_URL;
+        return (helpUrl != null && helpUrl.trim().length() > 0) ? helpUrl : DEFAULT_HELP_URL;
     }
 
     /**
