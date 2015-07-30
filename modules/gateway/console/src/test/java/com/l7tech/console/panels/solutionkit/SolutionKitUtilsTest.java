@@ -21,8 +21,8 @@ public class SolutionKitUtilsTest {
                 "    <l7:Name>Simple Solution Kit</l7:Name>\n" +
                 "    <l7:Description>This is a simple Solution Kit.</l7:Description>\n" +
                 "    <l7:TimeStamp>2015-05-11T12:56:35.603-08:00</l7:TimeStamp>\n" +
-                "    <l7:FeatureSet>feature:FooBar</l7:FeatureSet>\n" +
                 "    <l7:IsCollection>false</l7:IsCollection>\n" +
+                "    <l7:FeatureSet>feature:FooBar</l7:FeatureSet>\n" +
                 "    <l7:CustomCallback>com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback</l7:CustomCallback>\n" +
                 "    <l7:CustomUI>com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi</l7:CustomUI>\n" +
                 "</l7:SolutionKit>\n";
@@ -33,8 +33,8 @@ public class SolutionKitUtilsTest {
         original.setName("Simple Solution Kit");
         original.setProperty(SolutionKit.SK_PROP_DESC_KEY, "This is a simple Solution Kit.");
         original.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "2015-05-11T12:56:35.603-08:00");
-        original.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "feature:FooBar");
         original.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "false");
+        original.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "feature:FooBar");
         original.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback");
         original.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi");
 

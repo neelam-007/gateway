@@ -10,6 +10,10 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
+import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
+import static com.l7tech.util.DomUtils.getTextValue;
+import static java.text.MessageFormat.format;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -132,18 +136,19 @@ public final class SolutionKitUtils {
      */
     public static void copyDocumentToSolutionKit(final Document doc, final SolutionKit solutionKit) throws TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Element docEle = doc.getDocumentElement();
+        final String requiredElementMessage = "Element <{0}:{1}> value cannot be empty.";
 
-        String skId = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID));
-        if (skId != null && !skId.isEmpty())
-            solutionKit.setSolutionKitGuid(skId);
-        else
-            throw new SolutionKitException("Element <l7:Id> is required and its value cannot be empty");
+        final String skId = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID));
+        if (isEmpty(skId)) {
+            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_ID));
+        }
+        solutionKit.setSolutionKitGuid(skId);
 
-        String skVersion = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION));
-        if (skVersion != null && !skVersion.isEmpty())
-            solutionKit.setSolutionKitVersion(skVersion);
-        else
-            throw new SolutionKitException("Element <l7:Version> is required and its value cannot be empty");
+        final String skVersion = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION));
+        if (isEmpty(skVersion)) {
+            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_VERSION));
+        }
+        solutionKit.setSolutionKitVersion(skVersion);
 
         String skName = DomUtils.getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME));
         if (skName != null && !skName.isEmpty())
@@ -202,6 +207,7 @@ public final class SolutionKitUtils {
         DomUtils.createAndAppendElement(docEle, SK_ELE_NAME).setTextContent(solutionKit.getName());
         DomUtils.createAndAppendElement(docEle, SK_ELE_DESC).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
         DomUtils.createAndAppendElement(docEle, SK_ELE_TIMESTAMP).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_IS_COLLECTION).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
 
         final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
         if (featureSet != null) {
