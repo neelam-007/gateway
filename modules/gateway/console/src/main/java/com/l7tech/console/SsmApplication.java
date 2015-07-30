@@ -165,6 +165,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
             HelpUtil.setHelpUrl( customUrl );
         } catch ( Exception e ) {
             logger.log( Level.INFO, "Unable to look up custom help URL: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            HelpUtil.setHelpUrl( null );
         }
     }
 
