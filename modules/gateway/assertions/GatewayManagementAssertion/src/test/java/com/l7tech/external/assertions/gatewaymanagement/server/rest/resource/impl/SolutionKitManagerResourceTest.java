@@ -29,4 +29,6 @@ public class SolutionKitManagerResourceTest {
         SolutionKitManagerResource.decodeSplitPut(entityIdOld + URLEncoder.encode(ID_DELIMINATOR, CharEncoding.UTF_8) + entityIdNew, entityIdReplaceMap);
         assertEquals(entityIdNew, entityIdReplaceMap.get(entityIdOld));
     }
+
+    // TODO more tests
 }

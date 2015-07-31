@@ -59,9 +59,11 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
 
     private ServerAssertion serverRestGatewayManagementAssertion = null;
+    private RestmanInvoker restmanInvoker;
 
     @Inject
     private ProtectedEntityTracker protectedEntityTracker;
+    private Callable<Pair<AssertionStatus, RestmanMessage>> protectedEntityTrackerCallable;
 
     public SolutionKitManagerImpl() {
     }
@@ -115,7 +117,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
-        final RestmanInvoker restmanInvoker = createRestmanInvoker();
+        final RestmanInvoker restmanInvoker = getRestmanInvoker();
 
         final String requestXml;
         try {
@@ -136,13 +138,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             // Allow solution kit installation/upgrade to "punch through" read-only entities
             Pair<AssertionStatus, RestmanMessage> result;
             try {
-                result = protectedEntityTracker.doWithEntityProtectionDisabled(
-                        new Callable<Pair<AssertionStatus, RestmanMessage>>() {
-                            @Override
-                            public Pair<AssertionStatus, RestmanMessage> call() throws Exception {
-                                return restmanInvoker.callManagementCheckInterrupted( pec, requestXml );
-                            }
-                        } );
+                result = protectedEntityTracker.doWithEntityProtectionDisabled(getProtectedEntityTrackerCallable(restmanInvoker, pec, requestXml));
             } catch ( GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
                     GatewayManagementDocumentUtilities.UnexpectedManagementResponse |
                     InterruptedException e) {
@@ -202,32 +198,63 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return UniqueType.NONE;
     }
 
-    private RestmanInvoker createRestmanInvoker() throws SolutionKitException {
-        if (serverRestGatewayManagementAssertion == null) {
-            WspReader wspReader = this.applicationContext.getBean("wspReader", WspReader.class);
-            ServerPolicyFactory serverPolicyFactory = this.applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
-            try {
-                Assertion assertion = wspReader.parseStrictly(REST_GATEWAY_MANAGEMENT_POLICY_XML, WspReader.Visibility.omitDisabled);
-                serverRestGatewayManagementAssertion = serverPolicyFactory.compilePolicy(assertion, false);
-            } catch (IOException | ServerPolicyException | LicenseException e) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                throw new SolutionKitException("Unable to initialize ServerRESTGatewayManagementAssertion.", e);
-            }
+    // used for unit testing
+    protected void setRestmanInvoker(final RestmanInvoker restmanInvoker) {
+        this.restmanInvoker = restmanInvoker;
+    }
+    protected void setProtectedEntityTracker(final ProtectedEntityTracker protectedEntityTracker) {
+        this.protectedEntityTracker = protectedEntityTracker;
+    }
+    protected void setProtectedEntityTrackerCallable(Callable<Pair<AssertionStatus, RestmanMessage>> protectedEntityTrackerCallable) {
+        this.protectedEntityTrackerCallable = protectedEntityTrackerCallable;
+    }
+
+    private Callable<Pair<AssertionStatus, RestmanMessage>> getProtectedEntityTrackerCallable(final RestmanInvoker restmanInvoker, final PolicyEnforcementContext pec, final String requestXml) {
+        if (protectedEntityTrackerCallable != null) {
+            // unit test callable
+            return protectedEntityTrackerCallable;
+        } else {
+            return new Callable<Pair<AssertionStatus, RestmanMessage>>() {
+                @Override
+                public Pair<AssertionStatus, RestmanMessage> call() throws Exception {
+                    return restmanInvoker.callManagementCheckInterrupted( pec, requestXml );
+                }
+            };
         }
+    }
 
-        GatewayManagementInvoker invoker = new GatewayManagementInvoker() {
-            @Override
-            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-                return serverRestGatewayManagementAssertion.checkRequest(context);
+    private RestmanInvoker getRestmanInvoker() throws SolutionKitException {
+        if (restmanInvoker != null) {
+            // unit test invoker
+            return restmanInvoker;
+        } else {
+            // create RestmanInvoker
+            if (serverRestGatewayManagementAssertion == null) {
+                WspReader wspReader = this.applicationContext.getBean("wspReader", WspReader.class);
+                ServerPolicyFactory serverPolicyFactory = this.applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
+                try {
+                    Assertion assertion = wspReader.parseStrictly(REST_GATEWAY_MANAGEMENT_POLICY_XML, WspReader.Visibility.omitDisabled);
+                    serverRestGatewayManagementAssertion = serverPolicyFactory.compilePolicy(assertion, false);
+                } catch (IOException | ServerPolicyException | LicenseException e) {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    throw new SolutionKitException("Unable to initialize ServerRESTGatewayManagementAssertion.", e);
+                }
             }
-        };
 
-        return new RestmanInvoker(new Functions.Nullary<Boolean>() {
-            @Override
-            public Boolean call() {
-                // nothing to do in cancelled callback.
-                return true;
-            }
-        }, invoker);
+            GatewayManagementInvoker invoker = new GatewayManagementInvoker() {
+                @Override
+                public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+                    return serverRestGatewayManagementAssertion.checkRequest(context);
+                }
+            };
+
+            return new RestmanInvoker(new Functions.Nullary<Boolean>() {
+                @Override
+                public Boolean call() {
+                    // nothing to do in cancelled callback.
+                    return true;
+                }
+            }, invoker);
+        }
     }
 }
