@@ -31,6 +31,7 @@ import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -45,9 +46,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.*;
 import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 
 import javax.net.ssl.HostnameVerifier;
@@ -91,6 +94,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public static final String PROP_CREDENTIAL_CHARSET = COMMONS_HTTP_CLIENT + ".credentialCharset";
     public static final String PROP_GZIP_STREAMING_THRESHOLD = COMMONS_HTTP_CLIENT + ".gzipStreamThreshold";
     public static final String PROP_NTLM_DEFAULT_FLAGS = "commons.httpclient.ntlm.flags";
+    public static final String PROP_TERMINATE_CONNECTION_WITHOUT_FIN = COMMONS_HTTP_CLIENT + ".terminateConnection";
+    public static final String PROP_KEEP_ALIVE_TIMEOUT = COMMONS_HTTP_CLIENT + ".keepAliveTimeout";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -303,6 +308,28 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         if (!params.isUseKeepAlives() && !useHttp1_0) {
             // default is to persist so add close
             clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "close")));//"http.default-headers"
+            if(ConfigFactory.getBooleanProperty(PROP_TERMINATE_CONNECTION_WITHOUT_FIN, false)){
+                client.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
+                    @Override
+                    public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+                        // Honor 'keep-alive' header
+                        HeaderElementIterator it = new BasicHeaderElementIterator(
+                                response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+                        while (it.hasNext()) {
+                            HeaderElement he = it.nextElement();
+                            String param = he.getName();
+                            String value = he.getValue();
+                            if (value != null && param.equalsIgnoreCase("timeout")) {
+                                try {
+                                    return Long.parseLong(value) * 1000;
+                                } catch(NumberFormatException ignore) {
+                                }
+                            }
+                        }
+                        return ConfigFactory.getLongProperty(PROP_KEEP_ALIVE_TIMEOUT, 1);//close after timeout or immediately if the property is not set
+                    }
+                });
+            }
         } else if (params.isUseKeepAlives() && useHttp1_0) {
             // default is to close so add keep-alive
             clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "keep-alive")));//"http.default-headers"
