@@ -2245,7 +2245,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         menuActions.addAll(this.getCustomAssertionActions());
 
         // Expose policy backed services if enabled
-        if ( haveAnyPolicyBackedServices() ) {
+        if ( haveAnyMultiMethodPolicyBackedServices() ) {
             menuActions.add( getManagePolicyBackedServicesAction() );
         }
 
@@ -2261,12 +2261,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.setEnabled(added);
     }
 
-    private boolean haveAnyPolicyBackedServices() {
+    private boolean haveAnyMultiMethodPolicyBackedServices() {
         try {
             if ( Registry.getDefault().isAdminContextPresent() ) {
-                Collection<String> templates = Registry.getDefault().getPolicyBackedServiceAdmin().findAllTemplateInterfaceNames();
-                //noinspection ConstantConditions
-                return templates != null && !templates.isEmpty();
+                return Registry.getDefault().getPolicyBackedServiceAdmin().isAnyMultiMethodPolicyBackedServiceRegistered();
             }
         } catch ( Exception e ) {
             log.log( Level.INFO, "Unable to check for policy backed services: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );

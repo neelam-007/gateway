@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,11 +12,17 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class PolicyBackedServiceAdminImpl implements PolicyBackedServiceAdmin {
+    private static final Logger logger = Logger.getLogger( PolicyBackedServiceAdminImpl.class.getName() );
+
     @Inject
     @Named( "policyBackedServiceManager" )
     private PolicyBackedServiceManager policyBackedServiceManager;
@@ -76,5 +83,26 @@ public class PolicyBackedServiceAdminImpl implements PolicyBackedServiceAdmin {
     @Override
     public void deletePolicyBackedService( @NotNull Goid goid ) throws FindException, DeleteException, ConstraintViolationException {
         policyBackedServiceManager.delete(goid);
+    }
+
+    @Override
+    public boolean isAnyMultiMethodPolicyBackedServiceRegistered() {
+        boolean sawMultiMethod = false;
+
+        Set<String> templates = policyBackedServiceRegistry.getPolicyBackedServiceTemplates();
+        for ( String template : templates ) {
+            try {
+                List<EncapsulatedAssertionConfig> methods = policyBackedServiceRegistry.getTemplateOperations( template );
+                if ( methods.size() > 1 ) {
+                    sawMultiMethod = true;
+                    break;
+                }
+            } catch ( ObjectNotFoundException e ) {
+                // Shouldn't happen
+                logger.log( Level.WARNING, "Unable to find supposedly-registered policy backed service description: " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
+        return sawMultiMethod;
     }
 }
