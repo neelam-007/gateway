@@ -42,6 +42,8 @@ public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     private static final long DB_CHECK_DELAY = 30;
     private static final String SYSPROP_STARTUPCHECKS = "com.l7tech.server.performStartupChecks";
+    private static final String PROP_STARTED_FILENAME = "com.l7tech.server.started.filename";
+    private static final String STARTED_FILENAME = SyspropUtil.getString( PROP_STARTED_FILENAME, "started" );
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
@@ -334,7 +336,19 @@ public class GatewayBoot {
     private void startListeners(String ipAddress) {
         final long startTime = System.currentTimeMillis();
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
+        touchStartedFile();
         logger.log( FINE, "Started listeners in {0}ms", System.currentTimeMillis() - startTime );
+    }
+
+    private void touchStartedFile() {
+        ServerConfig serverConfig = applicationContext.getBean( "serverConfig", ServerConfig.class );
+        File conf = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true );
+        File started = new File( conf, STARTED_FILENAME );
+        try {
+            FileUtils.touch( started );
+        } catch ( IOException e ) {
+            logger.log( Level.WARNING, "Unable to touch " + started + ": " + ExceptionUtils.getMessage( e ) );
+        }
     }
 
     private void addShutdownHook( final CountDownLatch shutdown, final CountDownLatch exitSync ) {
