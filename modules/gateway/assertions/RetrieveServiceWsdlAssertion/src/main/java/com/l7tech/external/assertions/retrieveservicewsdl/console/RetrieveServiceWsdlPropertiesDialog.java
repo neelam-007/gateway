@@ -24,6 +24,10 @@ import java.awt.event.ItemListener;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.SWAGGER_DOC_TYPE;
+import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DEPENDENCY_DOC_TYPE;
+import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DOC_TYPE;
+
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
  */
@@ -51,8 +55,8 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     private JPanel protocolVariablePanelHolder;
     private JCheckBox proxyDependenciesCheckBox;
     private JTextField serviceDocumentIdTextField;
-    private JRadioButton wsdlRadioButton;
-    private JRadioButton dependencyRadioButton;
+    private JComboBox<String> documentTypeComboBox;
+    private JTabbedPane tabbedPane;
     private TargetVariablePanel protocolVariablePanel;
     private TargetVariablePanel targetVariablePanel;
 
@@ -69,17 +73,21 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     protected void initComponents() {
         super.initComponents();
 
-        ItemListener retrievalTypeItemListener = new ItemListener() {
+        ItemListener documentTypeItemListener = new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                if (dependencyRadioButton.isSelected()) {
+                boolean wsdlTypeSelected = WSDL_DOC_TYPE.equals(documentTypeComboBox.getSelectedItem());
+                boolean wsdlDependencyTypeSelected = WSDL_DEPENDENCY_DOC_TYPE.equals(documentTypeComboBox.getSelectedItem());
+
+                if (wsdlDependencyTypeSelected) {
                     proxyDependenciesCheckBox.setSelected(true);
                 } else {
                     serviceDocumentIdTextField.setText("");
                 }
 
-                proxyDependenciesCheckBox.setEnabled(!dependencyRadioButton.isSelected());
-                serviceDocumentIdTextField.setEnabled(dependencyRadioButton.isSelected());
+                tabbedPane.setEnabledAt(1, wsdlTypeSelected || wsdlDependencyTypeSelected);
+                proxyDependenciesCheckBox.setEnabled(!wsdlDependencyTypeSelected);
+                serviceDocumentIdTextField.setEnabled(wsdlDependencyTypeSelected);
             }
         };
 
@@ -100,9 +108,12 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
             }
         };
 
-        // retrieval type
-        wsdlRadioButton.addItemListener(retrievalTypeItemListener);
-        dependencyRadioButton.addItemListener(retrievalTypeItemListener);
+        documentTypeComboBox.addItem(WSDL_DOC_TYPE);
+        documentTypeComboBox.addItem(WSDL_DEPENDENCY_DOC_TYPE);
+        documentTypeComboBox.addItem(SWAGGER_DOC_TYPE);
+
+        // update dialog fields based on document type selection
+        documentTypeComboBox.addItemListener(documentTypeItemListener);
 
         // protocol
         DefaultComboBoxModel<String> protocolComboBoxModel = new DefaultComboBoxModel<>();
@@ -195,7 +206,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (dependencyRadioButton.isSelected()) {
+                if (WSDL_DEPENDENCY_DOC_TYPE.equals(documentTypeComboBox.getSelectedItem())) {
                     String serviceDocumentId = serviceDocumentIdTextField.getText().trim();
 
                     if (serviceDocumentId.isEmpty()) {
@@ -275,12 +286,15 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         // service ID
         serviceIdTextField.setText(assertion.getServiceId());
 
-        // service document ID & retrieval type
-        if (assertion.isRetrieveDependency()) {
-            dependencyRadioButton.doClick(0);
+        // document type
+        if (null != assertion.getDocumentType()) {
+            documentTypeComboBox.setSelectedItem(assertion.getDocumentType());
+//            wsdlRadioButton.doClick(0);
+        }
+
+        if (WSDL_DEPENDENCY_DOC_TYPE.equals(assertion.getDocumentType())) {
+//            dependencyRadioButton.doClick(0);
             serviceDocumentIdTextField.setText(assertion.getServiceDocumentId());
-        } else {
-            wsdlRadioButton.doClick(0);
         }
 
         // endpoint fields
@@ -336,14 +350,14 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         assertion.setServiceId(serviceIdTextField.getText().trim());
 
         // service document ID
-        if (dependencyRadioButton.isSelected()) {
+        if (documentTypeComboBox.getSelectedItem().equals("WSDL Dependency")) {
             assertion.setServiceDocumentId(serviceDocumentIdTextField.getText());
         } else {
             assertion.setServiceDocumentId(null);
         }
 
         // retrieval type
-        assertion.setRetrieveDependency(dependencyRadioButton.isSelected());
+        assertion.setDocumentType((String) documentTypeComboBox.getSelectedItem());
 
         // endpoint fields
         if (protocolComboBox.getSelectedIndex() == PROTOCOL_FROM_VARIABLE_OPTION_INDEX) {

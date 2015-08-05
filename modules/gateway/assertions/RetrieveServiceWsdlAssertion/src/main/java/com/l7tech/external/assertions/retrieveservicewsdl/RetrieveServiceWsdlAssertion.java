@@ -8,19 +8,26 @@ import org.jetbrains.annotations.NotNull;
 import static com.l7tech.policy.assertion.AssertionMetadata.GLOBAL_ACTION_CLASSNAMES;
 
 /**
- * Retrieves a WSDL for a service and rewrites the endpoints and references.
+ * Retrieves a Metadata Document for a service.
+ *
+ * In the case of WSDLs and WSDL dependencies, the endpoints and references are rewritten.
  *
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
     private static final String ICON_FILE = "com/l7tech/external/assertions/retrieveservicewsdl/WSDL_File_16x16.png";
-    private final static String BASE_NAME = "Retrieve Service WSDL";
-    private final static String LONG_NAME = "Retrieve WSDL for Service";
+    private final static String BASE_NAME = "Retrieve Service Metadata Document";
+    private final static String LONG_NAME = "Retrieve Metadata Document for Service";
     private static final String META_INITIALIZED =
             RetrieveServiceWsdlAssertion.class.getName() + ".metadataInitialized";
 
     public static final int PORT_RANGE_START = 1;
     public static final int PORT_RANGE_END = 65535;
+
+    // supported document types
+    public static final String WSDL_DOC_TYPE = "WSDL";
+    public static final String WSDL_DEPENDENCY_DOC_TYPE = "WSDL Dependency";
+    public static final String SWAGGER_DOC_TYPE = "Swagger";
 
     @NotNull
     private String serviceId = "${service.oid}";
@@ -42,7 +49,7 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
 
     private boolean proxyDependencies = false;
 
-    private boolean retrieveDependency = false;
+    private String documentType = WSDL_DOC_TYPE;
 
     @NotNull
     public String getServiceId() {
@@ -112,12 +119,22 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
         this.proxyDependencies = proxyDependencies;
     }
 
-    public boolean isRetrieveDependency() {
-        return retrieveDependency;
+    @Deprecated // property replaced by "documentType"
+    @SuppressWarnings("UnusedDeclaration")
+    public void setRetrieveDependency(boolean retrieveDependency) {
+        if (retrieveDependency) {
+            documentType = WSDL_DEPENDENCY_DOC_TYPE;
+        } else {
+            documentType = WSDL_DOC_TYPE;
+        }
     }
 
-    public void setRetrieveDependency(boolean retrieveDependency) {
-        this.retrieveDependency = retrieveDependency;
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
     }
 
     @Override
@@ -172,9 +189,19 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
             public String getAssertionName(final RetrieveServiceWsdlAssertion assertion, final boolean decorate) {
                 if (!decorate) return BASE_NAME;
 
-                String baseDescription = assertion.isRetrieveDependency()
-                        ? "Retrieve WSDL Dependency [" + assertion.getServiceDocumentId() + "] for Service"
-                        : LONG_NAME;
+                String baseDescription;
+
+                switch (assertion.getDocumentType()) {
+                    case WSDL_DOC_TYPE:
+                        baseDescription = "Retrieve " + assertion.getDocumentType() + " for Service";
+                        break;
+                    case WSDL_DEPENDENCY_DOC_TYPE:
+                        baseDescription = "Retrieve WSDL Dependency [" + assertion.getServiceDocumentId() + "] for Service";
+                        break;
+                    case SWAGGER_DOC_TYPE:
+                    default:
+                        baseDescription = "Retrieve " + assertion.getDocumentType() + " Document for Service";
+                }
 
                 return baseDescription + " [" + assertion.getServiceId() + "]";
             }

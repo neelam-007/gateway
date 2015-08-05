@@ -1343,6 +1343,9 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
     public static final M RETRIEVE_WSDL_SERVICE_ID_BLANK = m(10715, Level.WARNING, "Service ID is empty.");
     public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_ID_BLANK = m(10716, Level.WARNING, "Service Document ID is empty.");
+    public static final M RETRIEVE_WSDL_UNRECOGNIZED_DOCUMENT_TYPE = m(10717, Level.WARNING, "Unrecognized document type: {0}");
+    public static final M RETRIEVE_WSDL_DOC_NOT_FOUND = m(10718, Level.WARNING, "Could not find {0} document for service with ID: {1}");
+    public static final M RETRIEVE_WSDL_UNEXPECTED_MULTIPLE_DOCS_FOUND = m(10719, Level.WARNING, "Expected single {0} document for service with ID: {1}; found {2}");
 
     public static final M JWT_MISSING_SOURCE_PAYLOAD = m(10800, Level.WARNING, "Source payload is required.");
     public static final M JWT_MISSING_HEADERS = m(10801, Level.WARNING, "Assertion was instructed to {0} headers, but no headers were found.");

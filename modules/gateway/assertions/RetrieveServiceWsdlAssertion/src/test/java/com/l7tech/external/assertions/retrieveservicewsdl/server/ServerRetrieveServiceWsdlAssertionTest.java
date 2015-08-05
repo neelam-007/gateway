@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.retrieveservicewsdl.server;
 
+import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DEPENDENCY_DOC_TYPE;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -554,7 +555,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_SpecifyingNonSoapService_ServiceNotSoapAudited() throws Exception {
+    public void testCheckRequest_SpecifyingWsdlForNonSoapService_ServiceNotSoapAudited() throws Exception {
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(service.isSoap()).thenReturn(false);
 
@@ -656,47 +657,8 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         // confirm the endpoints were rewritten correctly
         confirmEndpointsUpdated("http://localhost:8443/service/" + soapServiceId, storedWsdl);
     }
-
     @Test
-    public void testCheckRequest_SpecifyingValidServiceAndRequestTarget_WsdlStoredToRequest() throws Exception {
-        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
-
-        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
-
-        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
-        when(service.isSoap()).thenReturn(true);
-        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
-        when(service.getRoutingUri()).thenReturn("/svc");
-        when(service.getId()).thenReturn(soapServiceId);
-
-        PolicyEnforcementContext context = createPolicyEnforcementContext();
-
-        context.setVariable("serviceId", soapServiceId);
-        context.setVariable("portVar", "8443");
-
-        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
-
-        assertion.setServiceId("${serviceId}");
-        assertion.setHost("localhost");
-        assertion.setPort("${portVar}");
-        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, true));
-
-        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
-
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, status);
-
-        Document storedWsdl = context.getRequest().getXmlKnob().getDocumentReadOnly();
-
-        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
-
-        // confirm the endpoints were rewritten correctly
-        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
-    }
-
-    @Test
-    public void testCheckRequest_SpecifyingValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
+    public void testCheckRequest_RetrieveSwaggerDocToResponseTarget_DocStoredToResponse() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
         String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
@@ -734,7 +696,83 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_SpecifyingValidServiceAndVariableTarget_WsdlStoredToVariable() throws Exception {
+    public void testCheckRequest_SpecifyingWsdlForValidServiceAndRequestTarget_WsdlStoredToRequest() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
+        when(service.getId()).thenReturn(soapServiceId);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedWsdl = context.getRequest().getXmlKnob().getDocumentReadOnly();
+
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingWsdlForValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
+        when(service.getId()).thenReturn(soapServiceId);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedWsdl = context.getResponse().getXmlKnob().getDocumentReadOnly();
+
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingWsdlForValidServiceAndVariableTarget_WsdlStoredToVariable() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
         String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
@@ -890,7 +928,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("${serviceId}");
         assertion.setServiceDocumentId("${serviceDocumentId}");
@@ -952,7 +990,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("${serviceId}");
         assertion.setServiceDocumentId("${serviceDocumentId}");
@@ -982,7 +1020,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setHost("localhost");
@@ -1017,7 +1055,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("${" + serviceDocumentIdVariable + "}");
@@ -1055,7 +1093,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("${" + serviceDocumentIdVariable + "}");
@@ -1089,7 +1127,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("124b55f4e9320bdab071f5b4ffaf72b5");
@@ -1122,7 +1160,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId(invalidServiceDocumentId);
@@ -1158,7 +1196,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId(nonExistentServiceDocumentId);
@@ -1201,7 +1239,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setRetrieveDependency(true);
+        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
         assertion.setProxyDependencies(true);
         assertion.setServiceId(soapServiceId);
         assertion.setServiceDocumentId(serviceDocumentId);
