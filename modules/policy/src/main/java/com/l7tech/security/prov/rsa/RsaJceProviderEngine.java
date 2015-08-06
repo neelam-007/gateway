@@ -43,12 +43,6 @@ public class RsaJceProviderEngine extends JceProvider {
 
     static {
         try {
-            String randomAlg = SyspropUtil.getProperty( PROP_CRYPTOJ_DEFAULT_RANDOM_ALG );
-            if ( randomAlg == null ) {
-                // If no other default is selected, make sure the default is not Dual EC DRBG
-                SyspropUtil.setProperty( PROP_CRYPTOJ_DEFAULT_RANDOM_ALG, "FIPS186PRNG" );
-            }
-
             final boolean permafips = ConfigFactory.getBooleanProperty( PROP_PERMAFIPS, false );
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");

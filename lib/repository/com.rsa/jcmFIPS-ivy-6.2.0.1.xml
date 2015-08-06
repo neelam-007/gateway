@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.rsa"
 		module="jcmFIPS"
-		revision="6.1.2"
+		revision="6.2.0.1"
 		status="release"
-		publication="20140508165456"
+		publication="20150805180824"
 		default="true"
 	/>
 	<configurations>

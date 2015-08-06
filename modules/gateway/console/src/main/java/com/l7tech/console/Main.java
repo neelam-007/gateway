@@ -163,11 +163,6 @@ public class Main {
         // Set trust manager algorithm for HTTP remoting / RMI
         System.setProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", "L7TA");
 
-        // Crypto-J should use fast default PRNG (ignored when not using Crypto-J) (SSM-4718)
-        if ( null == System.getProperty( "com.rsa.crypto.default.random" ) ) {
-            System.setProperty( "com.rsa.crypto.default.random", "FIPS186PRNG" );
-        }
-
         // Disable ClassTailor optimization for JAXB (SSG-4654)
         if ( null == System.getProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize" ) ) {
             System.setProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize", "true" );

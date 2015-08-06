@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.rsa"
 		module="sslj"
-		revision="6.1.2"
+		revision="6.2"
 		status="release"
-		publication="20140508165502"
+		publication="20150805180641"
 		default="true"
 	/>
 	<configurations>

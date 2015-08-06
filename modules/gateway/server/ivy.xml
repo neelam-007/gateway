@@ -119,11 +119,11 @@
         <dependency org="org.quartz" name="quartz" rev="2.2.1" force="true" conf="core"/>
 
         <!-- RSA Software Crypto -->
-        <dependency org="com.rsa" name="jcmFIPS" rev="6.1.2" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.1.2" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.1.2" force="true" conf="core"/>
-        <dependency org="com.rsa" name="certj" rev="6.1.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.2.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.2.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.2.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="certj" rev="6.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.2" force="true" conf="core"/>
 
         <!-- Test dependencies -->
         <dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.5.11" force="true" conf="test"/>

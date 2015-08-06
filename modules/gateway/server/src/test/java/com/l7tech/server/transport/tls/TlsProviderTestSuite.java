@@ -311,9 +311,6 @@ public class TlsProviderTestSuite {
         } else if ("rsafips".equals(jceprov)) {
             addProv("com.rsa.jsafe.provider.JsafeJCE", true);
             initCryptoJFipsMode();
-            if (secureRandom == null) {
-                secureRandom = "FIPS186PRNG";
-            }
         } else if ("luna4".equals(jceprov)) {
             addProv("com.chrysalisits.cryptox.LunaJCEProvider", true);
             addProv("com.chrysalisits.crypto.LunaJCAProvider", true);

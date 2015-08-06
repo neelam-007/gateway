@@ -1636,7 +1636,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/apache-harmony-asn1-0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/bcprov-unsigned-jdk16-1.46.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/browser-launcher-1.0rc4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/certj-6.1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/certj-6.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-codec-1.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-collections-3.2.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/httpclient-4.2.5.jar"/>
@@ -1662,7 +1662,7 @@
         <!--
           Skip signed JARs
         -->
-        <!-- <pack-mac jarfile="${build.dir}/managerapplet/lib/jcmFIPS-6.1.2.jar"/> -->
+        <!-- <pack-mac jarfile="${build.dir}/managerapplet/lib/jcmFIPS-6.2.0.1.jar"/> -->
         <pack-mac jarfile="${build.dir}/managerapplet/lib/json-schema-validator-0.0.1-SNAPSHOT.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/kunststoff-2.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/layer7-uddi-lib-1.1.0.jar"/>
@@ -1688,7 +1688,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-orm-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-tx-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-web-3.0.7.RELEASE.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.1.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/stax-ex-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/streambuffer-0.8.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>
