@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="SwaggerAssertion"
+        status="integration"
+	>
+	</info>
+	<configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+	</configurations>
+	<publications>
+		<artifact name="SwaggerAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency name="swagger-models" org="io.swagger" rev="1.5.0" conf="core"/>
+        <dependency name="swagger-parser" org="io.swagger" rev="1.0.8" conf="core"/>
+        <dependency name="commons-io" org="commons-io" rev="2.3" conf="core"/>
+        <dependency name="commons-lang3" org="commons-lang3" rev="3.2.1" conf="core"/>
+        <dependency name="swagger-core" org="io.swagger" rev="1.5.0" conf="core"/>
+        <dependency name="swagger-annotations" org="io.swagger" rev="1.5.0" conf="core"/>
+        <dependency name="jackson-annotations" org="com.fasterxml.jackson.core" rev="2.1.4" conf="core"/>
+        <dependency name="jackson-core" org="com.fasterxml.jackson.core" rev="2.1.4" conf="core"/>
+        <dependency name="jackson-databind" org="com.fasterxml.jackson.core" rev="2.1.4" conf="core"/>
+	</dependencies>
+</ivy-module>

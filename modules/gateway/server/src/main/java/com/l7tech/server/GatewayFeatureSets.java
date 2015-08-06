@@ -810,6 +810,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to validate and protect OData messages",
                 mass("assertion:OdataValidation"));
 
+        GatewayFeatureSet swaggerAssertion = fsr("set:Swagger:Assertions",
+                "The necessary assertions to validate messages against Swagger document",
+                mass("assertion:Swagger"));
+
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
                 mass("assertion:UpgradePortal"),
@@ -1025,6 +1029,7 @@ public class GatewayFeatureSets {
             fs(cassandraConnections),
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
+            fs(swaggerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1098,6 +1103,7 @@ public class GatewayFeatureSets {
             fs(cassandraConnections),
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
+            fs(swaggerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1172,6 +1178,7 @@ public class GatewayFeatureSets {
             fs(cassandraConnections),
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
+            fs(swaggerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1226,6 +1233,7 @@ public class GatewayFeatureSets {
                 fs(cassandraConnections),
                 fs(cassandraAssertions),
                 fs(oDataValidationAssertion),
+                fs(swaggerAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),

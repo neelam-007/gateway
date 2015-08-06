@@ -1412,6 +1412,9 @@ public class AssertionMessages extends Messages {
     public static final M MQTT_CREDENTIAL_AUTH_USER = m(11341, Level.FINE, "Found credentials for user ''{0}''.");
     public static final M MQTT_CREDENTIAL_NO_AUTH = m(11342, Level.FINE, "Not authenticated.");
 
+    //SwaggerAssertion
+    public static final M SWAGGER_ASSERTION_INVALID_DOCUMENT = m(11400, Level.WARNING, "{0} - Invalid Swagger Document");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
 
