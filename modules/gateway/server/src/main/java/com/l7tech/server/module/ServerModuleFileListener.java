@@ -543,10 +543,11 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 if (moduleFile != null) {
                     // add it to the known modules cache
                     final StagedServerModuleFile moduleInfo = addToKnownModules(moduleFile);
-                    // process new or updated module only if upload is enabled
-                    if (isModuleUploadEnabled && ((op == EntityInvalidationEvent.CREATE) || ((op == EntityInvalidationEvent.UPDATE) && !ModuleState.LOADED.equals(getModuleState(moduleFile))))) {
+                    // threat create or updated events as create (see SSG-10351 for reference)
+                    // todo: correct logic once EntityVersionChecker (see SSG-10351) is properly fixed
+                    if (isModuleUploadEnabled && !ModuleState.LOADED.equals(getModuleState(moduleFile))) {
                         loadModule(moduleInfo);
-                    } else if (isModuleUploadEnabled && op == EntityInvalidationEvent.UPDATE) {
+                    } else if (isModuleUploadEnabled) {
                         updateModule(moduleInfo);
                     }
                 } else {
