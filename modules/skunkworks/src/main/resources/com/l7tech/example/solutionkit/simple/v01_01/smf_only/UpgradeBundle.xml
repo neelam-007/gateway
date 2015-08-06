@@ -1,0 +1,23 @@
+    <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+        <l7:Mappings>
+            <!-- Update action not supported for SERVER_MODULE_FILE; must delete then create (e.g. Delete action then AlwaysCreateNew action). However this sequence currently causes an error (likely a Server Module File bug).  For now use NewOrExisting action in this sample.-->
+            <l7:Mapping action="NewOrExisting" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/serverModuleFiles/37953ab3e89a8b7df721c055d4aeb6ad" type="SERVER_MODULE_FILE">
+                <l7:Properties>
+                    <l7:Property key="MapBy"><l7:StringValue>moduleSha256</l7:StringValue></l7:Property>
+                    <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            
+<!-- UNTESTED
+     Delete twice OK; second attempt ignored by RESTMAN.
+     <l7:Mapping action="Delete" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="SERVER_MODULE_FILE"/>
+     <l7:Mapping action="AlwaysCreateNew" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/serverModuleFiles/37953ab3e89a8b7df721c055d4aeb6ad" type="SERVER_MODULE_FILE">
+     <l7:Properties>
+     <l7:Property key="MapBy">
+     <l7:StringValue>moduleSha256</l7:StringValue>
+     </l7:Property>
+     </l7:Properties>
+     </l7:Mapping>
+ -->
+        </l7:Mappings>
+    </l7:Bundle>
