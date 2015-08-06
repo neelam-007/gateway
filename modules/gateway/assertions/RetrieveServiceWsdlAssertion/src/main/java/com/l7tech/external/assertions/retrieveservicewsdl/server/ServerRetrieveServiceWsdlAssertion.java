@@ -73,20 +73,17 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // parse service goid
         final PublishedService service = getService(vars);
 
-        // construct endpoint URL
-        final URL endpointUrl = getEndpointUrl(context, vars, service);
-
         // find target message to initialize
         Message targetMessage = getTargetMessage(context);
 
         // retrieve the requested document
         switch (assertion.getDocumentType()) {
             case WSDL_DEPENDENCY_DOC_TYPE:
-                Document wsdlDependencyDocument = retrieveWsdlDependencyDocument(context, vars, service, endpointUrl);
+                Document wsdlDependencyDocument = retrieveWsdlDependencyDocument(context, vars, service);
                 targetMessage.initialize(wsdlDependencyDocument, ContentTypeHeader.XML_DEFAULT);
                 break;
             case WSDL_DOC_TYPE:
-                Document wsdlDocument = retrieveWsdlDocument(context, service, endpointUrl);
+                Document wsdlDocument = retrieveWsdlDocument(context, vars, service);
                 targetMessage.initialize(wsdlDocument, ContentTypeHeader.XML_DEFAULT);
                 break;
             case SWAGGER_DOC_TYPE:
@@ -102,15 +99,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private String retrieveSwaggerDocument(PublishedService service) {
-        Collection<ServiceDocument> documents;
-
-        try {
-            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "SWAGGER");
-        } catch (FindException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
-        }
+        Collection<ServiceDocument> documents = getServiceDocuments(service, "SWAGGER");
 
         if (null == documents || documents.isEmpty()) {
             logAndAudit(AssertionMessages.RETRIEVE_WSDL_DOC_NOT_FOUND, assertion.getDocumentType(), service.getId());
@@ -127,9 +116,12 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private Document retrieveWsdlDependencyDocument(PolicyEnforcementContext context, Map<String, Object> vars,
-                                                    PublishedService service, URL endpointUrl) {
+                                                    PublishedService service) {
         // is it a SOAP service?
         validateServiceIsSoap(service);
+
+        // construct endpoint URL
+        final URL endpointUrl = getEndpointUrl(context, vars, service);
 
         Document document = null;
 
@@ -163,7 +155,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         // get any dependency service documents
-        final Collection<ServiceDocument> dependencyDocuments = getImportedWsdlDocumentsToProxy(service);
+        final Collection<ServiceDocument> dependencyDocuments = getServiceDocuments(service, "WSDL-IMPORT");
 
         for (ServiceDocument dependency : dependencyDocuments) {
             if (dependency.getGoid().equals(serviceDocumentGoid)) {
@@ -201,10 +193,13 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return document;
     }
 
-    private Document retrieveWsdlDocument(PolicyEnforcementContext context,
-                                          PublishedService service, URL endpointUrl) {
+    private Document retrieveWsdlDocument(PolicyEnforcementContext context, Map<String, Object> vars,
+                                          PublishedService service) {
         // is it a SOAP service?
         validateServiceIsSoap(service);
+
+        // construct endpoint URL
+        final URL endpointUrl = getEndpointUrl(context, vars, service);
 
         Document document;
 
@@ -220,7 +215,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // perform reference rewriting, if proxying is necessary or enabled
         if (isProxyingRequired(service)) {
             // get any dependency service documents
-            final Collection<ServiceDocument> dependencyDocuments = getImportedWsdlDocumentsToProxy(service);
+            final Collection<ServiceDocument> dependencyDocuments = getServiceDocuments(service, "WSDL-IMPORT");
 
             // get a routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
             String proxyUri = getDependencyProxyUri(context);
@@ -421,11 +416,11 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
                 wsdlDoc, dependencies, wsdlProxyUri, errorHandler, false);
     }
 
-    private Collection<ServiceDocument> getImportedWsdlDocumentsToProxy(PublishedService service) {
+    private Collection<ServiceDocument> getServiceDocuments(PublishedService service, String documentType) {
         Collection<ServiceDocument> documents;
 
         try {
-            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT");
+            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), documentType);
         } catch (FindException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
