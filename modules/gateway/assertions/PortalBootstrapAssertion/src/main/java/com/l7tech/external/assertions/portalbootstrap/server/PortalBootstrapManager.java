@@ -8,6 +8,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -18,6 +19,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -26,8 +29,11 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -97,6 +103,15 @@ public class PortalBootstrapManager {
     @Inject
     private ClusterInfoManager clusterInfoManager;
 
+    @Inject
+    private PolicyManager policyManager;
+
+    @Inject
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+
+    @Inject
+    private JdbcConnectionManager jdbcConnectionManager;
+
     private PortalBootstrapManager( ApplicationContext context ) {
         this.applicationContext = context;
     }
@@ -122,7 +137,7 @@ public class PortalBootstrapManager {
         }
     }
 
-    public void enrollWithPortal( String enrollmentUrl ) throws IOException {
+    public void enrollWithPortal(String enrollmentUrl) throws IOException {
         final User user = JaasUtils.getCurrentUser();
         if ( null == user )
             throw new IllegalStateException( "No administrative user authenticated" );
@@ -134,6 +149,8 @@ public class PortalBootstrapManager {
 
         if ( ENROLL_PORT != url.getPort() )
             throw new IOException( "Incorrect port." );
+
+        Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> otkEntities = getOtkEntities();
 
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
@@ -169,11 +186,56 @@ public class PortalBootstrapManager {
         connection.setDoOutput( true );
         connection.getOutputStream().write( postBody );
         boolean isBinary = ContentTypeHeader.parseValue(connection.getContentType()).matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
-        Document bundleDoc = setMappings( isBinary ? new GZIPInputStream(connection.getInputStream()):connection.getInputStream(), user);
+        Document bundleDoc = setMappings( isBinary ? new GZIPInputStream(connection.getInputStream()):connection.getInputStream(), user, otkEntities.right, otkEntities.left, otkEntities.middle);
         installBundle(bundleDoc, user);
+
+        // todo ack install
     }
 
-    private Document setMappings(InputStream inputStream, User currentUser) throws IOException {
+    public Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> getOtkEntities() throws IOException {
+
+        Policy otkPolicy;
+        EncapsulatedAssertionConfig otkEncass;
+        JdbcConnection jdbcConnection;
+
+        //        check for OTK policy to update for portal configuration
+        String otkPolicyName = "OTK Client DB GET";
+        try {
+            otkPolicy = policyManager.findByUniqueName(otkPolicyName);
+            if(otkPolicy == null){
+                throw new IOException( "OTK policy not found: "+otkPolicyName+"" );
+            }
+        } catch (FindException e) {
+            throw new IOException( "Error finding OTK policy: "+otkPolicyName+"", ExceptionUtils.getDebugException(e) );
+        }
+
+
+        // check for OTK encapsulated assertion used by portal entity
+        String OtkEncassName = "OTK Require OAuth 2.0 Token";
+        try {
+            otkEncass = encapsulatedAssertionConfigManager.findByUniqueName(OtkEncassName);
+            if(otkEncass == null){
+                throw new IOException( "OTK encapsulated assertion not found: "+OtkEncassName+"" );
+            }
+        } catch (FindException e) {
+            throw new IOException( "Error finding OTK encapsulated assertion: "+OtkEncassName+"", ExceptionUtils.getDebugException(e) );
+        }
+
+        // assume only 1 jdbc connection and its for the OTK db
+        try {
+            String oauthJdbcName = "OAuth";
+            jdbcConnection = jdbcConnectionManager.findByUniqueName(oauthJdbcName);
+            if (jdbcConnection == null) {
+                throw new IOException("Cannot find jdbc connection: " + oauthJdbcName);
+            }
+        } catch (FindException e) {
+            throw new IOException("Error finding OTK jdbc connection", ExceptionUtils.getDebugException(e));
+        }
+
+        return Triple.triple(otkPolicy,otkEncass,jdbcConnection);
+    }
+
+    private Document setMappings(InputStream inputStream, User currentUser, JdbcConnection jdbcConnection, Policy otkPolicy, EncapsulatedAssertionConfig otkEncass ) throws IOException {
         // maps the scheduled task user to the current user.
         try {
             Document bundle = XmlUtil.parse(inputStream);
@@ -186,6 +248,12 @@ public class PortalBootstrapManager {
 
                 } else if (node.getAttribute("srcId").equals("7d5bba18f6cb40000000786e2ce1e3d8")) {
                     node.setAttribute("targetId", currentUser.getProviderId().toString());
+                } else if (node.getAttribute("srcId").equals("4c5453d9a34fa56f13df266ac94826a1")) {
+                    node.setAttribute("targetId", jdbcConnection.getId());
+                } else if (node.getAttribute("srcId").equals("b90a9373efee906f052d969a6d5d8694")) {
+                    node.setAttribute("targetId", otkPolicy.getId());
+                } else if (node.getAttribute("srcId").equals("b90a9373efee906f052d969a6d5d8ad0")) {
+                    node.setAttribute("targetId", otkEncass.getId());
                 }
             }
             return bundle;
