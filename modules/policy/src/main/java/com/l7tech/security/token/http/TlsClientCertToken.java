@@ -8,11 +8,11 @@ import com.l7tech.security.token.SecurityTokenType;
 /**
  *
  */
-public class HttpClientCertToken implements X509SecurityToken {
+public class TlsClientCertToken implements X509SecurityToken {
 
     //- PUBLIC
 
-    public HttpClientCertToken( final X509Certificate certificate ) {
+    public TlsClientCertToken(final X509Certificate certificate) {
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
         // String certCN = getCachedClientCert.getSubjectDN().getName();
         // fla changed this to:

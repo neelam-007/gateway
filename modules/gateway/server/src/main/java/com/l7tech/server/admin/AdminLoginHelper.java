@@ -10,7 +10,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserDisabledException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -53,7 +53,7 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
         LoginCredentials creds = null;
         try {
             //make certificate login credentials
-            creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), null);
+            creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(cert), null);
             final AuthenticationResult authResult = sessionManager.authenticate(creds);
             final User user = (authResult != null)? authResult.getUser(): null;
 

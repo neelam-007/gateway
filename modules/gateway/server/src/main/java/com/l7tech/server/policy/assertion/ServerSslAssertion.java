@@ -1,63 +1,50 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.TlsKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.http.TlsClientCertToken;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
+import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 
 public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
 
 
     public ServerSslAssertion(SslAssertion data) {
         super(data);
-        serverHttpClientCert = new ServerHttpClientCert(new HttpClientCert(assertion.isCheckCertValidity()));
-    }
-
-    @Override
-    protected void injectDependencies() {
-        inject( serverHttpClientCert );
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        final HttpRequestKnob hsRequestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
-        final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : context.getRequest().getKnob(FtpRequestKnob.class);
-        if (hsRequestKnob == null && ftpRequestKnob == null) {
-            logger.info("Request not received over FTP or HTTP; don't know how to check for SSL");
-            context.setRequestPolicyViolated();
-            return AssertionStatus.BAD_REQUEST;
-        }
-        boolean ssl = hsRequestKnob != null ? hsRequestKnob.isSecure() : ftpRequestKnob.isSecure();
-        AssertionStatus status;
+        final TlsKnob tlsKnob = context.getRequest().getKnob(TlsKnob.class);
+        final boolean ssl = tlsKnob != null && tlsKnob.isSecure();
+        final AssertionStatus status;
 
-        SslAssertion.Option option = assertion.getOption();
+        final SslAssertion.Option option = assertion.getOption();
 
-        if ( option == SslAssertion.REQUIRED) {
+        if (option == SslAssertion.REQUIRED) {
             final boolean iscred = assertion.isCredentialSource();
-            if (ssl) {
+            if (ssl && iscred) {
+                status = processAsCredentialSourceAssertion(tlsKnob, context);
+            } else if (ssl) {
                 status = AssertionStatus.NONE;
                 logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
-                if (iscred && hsRequestKnob != null) {
-                    status = processAsCredentialSourceAssertion(context);
-                } else if (iscred) {
-                    status = AssertionStatus.FALSIFIED;
-                }
+            } else if (iscred) {
+                status = AssertionStatus.AUTH_REQUIRED;
+                logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
             } else {
-                if (iscred) {
-                    status = AssertionStatus.AUTH_REQUIRED;
-                    logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
-                } else {
-                    status = AssertionStatus.FALSIFIED;
-                    logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
-                }
+                status = AssertionStatus.FALSIFIED;
+                logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
             }
         } else if ( option == SslAssertion.FORBIDDEN) {
             if (ssl) {
@@ -83,22 +70,43 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
     }
 
     /**
-     * Process the SSL assertion as credential source. Look for the client side certificate over
-     * various protocols. Currently works only over http.
+     * Process the SSL assertion as credential source. Look for the client side certificate on the tlsknob.
      */
-    private AssertionStatus processAsCredentialSourceAssertion(PolicyEnforcementContext context)
+    private AssertionStatus processAsCredentialSourceAssertion(@NotNull final TlsKnob tlsKnob, PolicyEnforcementContext context)
       throws PolicyAssertionException, IOException {
-        Message request = context.getRequest();
-        HttpRequestKnob httpReq = request.getKnob(HttpRequestKnob.class);
-        if (httpReq != null) {
-            return serverHttpClientCert.checkRequest(context);
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        LoginCredentials pc = authContext.getLastCredentials();
+        // bugzilla #1884
+        if (pc != null && !pc.getCredentialSourceAssertion().equals(assertion.getClass())) {
+            pc = null;
         }
-        // add SSL support for different protocols
-        logger.info("Request not received over HTTP; cannot check for client certificate");
-        context.setAuthenticationMissing();
-        logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
-        return AssertionStatus.AUTH_REQUIRED;
+        if ( pc == null ) {
+            final X509Certificate[] certs = tlsKnob.getClientCertificate();
+            if (certs != null && certs.length > 0 && certs[0] != null) {
+                final TlsClientCertToken token = new TlsClientCertToken(certs[0]);
+                final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(token, SslAssertion.class);
+                authContext.addCredentials(credentials);
+                if (assertion.isCheckCertValidity()) {
+                    try {
+                        //checks if the certificate is expired or not yet valid
+                        certs[0].checkValidity();
+                    } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                        logAndAudit( AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
+                        context.setRequestPolicyViolated();
+                        return AssertionStatus.AUTH_FAILED;
+                    }
+                }
+                logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, certs[0].getIssuerDN() == null ? "" : certs[0].getIssuerDN().getName());
+                authContext.addCredentials(credentials);
+                return AssertionStatus.NONE;
+            } else {
+                logAndAudit(AssertionMessages.HTTPCLIENTCERT_NO_CERT);
+                context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
+            }
+        } else {
+            authContext.addCredentials( pc );
+            return AssertionStatus.NONE;
+        }
     }
-
-    private final ServerHttpClientCert serverHttpClientCert;
 }

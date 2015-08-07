@@ -35,6 +35,7 @@ import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -362,6 +363,12 @@ public abstract class AbstractFtpRequestProcessor implements FtpRequestProcessor
                 urlBuilder.append(argument);
 
                 return urlBuilder.toString();
+            }
+
+            @Override
+            public X509Certificate[] getClientCertificate() throws IOException {
+                //TODO: retrieve client certificates. See SSG-3827
+                return null;
             }
 
             @Override

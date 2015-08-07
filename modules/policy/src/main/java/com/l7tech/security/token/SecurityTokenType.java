@@ -4,10 +4,10 @@
 
 package com.l7tech.security.token;
 
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.http.HttpDigestToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -127,7 +127,7 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType HTTP_DIGEST =
             new SecurityTokenType(n++, "HTTP Digest", "Password", null, null, null, HttpDigestToken.class);
     public static final SecurityTokenType HTTP_CLIENT_CERT =
-            new SecurityTokenType(n++, "HTTPS Client Cert", "X.509", null, null, null, HttpClientCertToken.class);
+            new SecurityTokenType(n++, "HTTPS Client Cert", "X.509", null, null, null, TlsClientCertToken.class);
 
     public static final SecurityTokenType UNKNOWN =
             new SecurityTokenType(n++, "Unknown", "Unknown", null, null, null, SecurityToken.class);

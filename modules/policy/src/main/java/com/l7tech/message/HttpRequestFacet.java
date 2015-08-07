@@ -26,7 +26,7 @@ public class HttpRequestFacet extends PreservableFacet {
     }
 
     public MessageKnob getKnob(Class c) {
-        if (c == HttpRequestKnob.class || c == TcpKnob.class || c == HasSoapAction.class || c == UriKnob.class)
+        if (c == HttpRequestKnob.class|| c == TlsKnob.class || c == TcpKnob.class || c == HasSoapAction.class || c == UriKnob.class)
             return httpRequestKnob;
         if (c == HttpServletRequestKnob.class && httpRequestKnob instanceof HttpServletRequestKnob)
             return httpRequestKnob;

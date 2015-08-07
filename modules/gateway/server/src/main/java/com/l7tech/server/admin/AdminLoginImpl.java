@@ -22,7 +22,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
@@ -50,7 +50,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,7 +95,7 @@ public class AdminLoginImpl
                     throw new AccessControlException("Username and password or certificate is required.");
                 }
 
-                creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), null);
+                creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(cert), null);
                 login = creds.getLogin();
             }
 

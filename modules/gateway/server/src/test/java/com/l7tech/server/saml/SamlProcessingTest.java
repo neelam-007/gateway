@@ -5,7 +5,7 @@ import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.message.Message;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -37,7 +37,6 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.MockServletApi;
-import junit.extensions.TestSetup;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -108,7 +107,7 @@ public class SamlProcessingTest {
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
         SubjectStatement subjectStatement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class),
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class),
               SubjectStatement.HOLDER_OF_KEY,
               KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         for (ServiceDescriptor serviceDescriptor : serviceDescriptors) {
@@ -238,7 +237,7 @@ public class SamlProcessingTest {
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
-        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class);
+        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
           SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, "http://wheel", null, null, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
 

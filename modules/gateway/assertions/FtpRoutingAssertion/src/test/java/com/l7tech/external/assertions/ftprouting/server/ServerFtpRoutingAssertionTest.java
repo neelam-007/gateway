@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.nio.charset.Charset;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 
@@ -615,6 +616,12 @@ public class ServerFtpRoutingAssertionTest {
                         return urlBuffer.toString();
                     }
 
+                    @Nullable
+                    @Override
+                    public X509Certificate[] getClientCertificate() throws IOException {
+                        return null;
+                    }
+
                     @Override
                     public boolean isSecure() {
                         return secure;
@@ -727,6 +734,12 @@ public class ServerFtpRoutingAssertionTest {
                         urlBuffer.append(file);
 
                         return urlBuffer.toString();
+                    }
+
+                    @Nullable
+                    @Override
+                    public X509Certificate[] getClientCertificate() throws IOException {
+                        return null;
                     }
 
                     @Override

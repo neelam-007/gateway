@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends TcpKnob, UriKnob, HasSoapAction, HasHeaders {
+public interface HttpRequestKnob extends TlsKnob, UriKnob, HasSoapAction, HasHeaders {
     /**
      * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
      */
@@ -78,22 +78,6 @@ public interface HttpRequestKnob extends TcpKnob, UriKnob, HasSoapAction, HasHea
      * @throws IOException if the header is multivalued
      */
     String getHeaderSingleValue(String name) throws IOException;
-
-    /**
-     * Get the client certificate that was presented along with this request, if any.
-     *
-     * @return the X509Certificate chain that was presented in the SSL handshake,
-     *         or null if it was wasn't SSL or there was no cert.
-     * @throws IOException if the request contained a certificate type other than X.509
-     */
-    X509Certificate[] getClientCertificate() throws IOException;
-
-    /**
-     * Check if this request arrived over a secure connection.
-     *
-     * @return true iff. this request arrived over SSL
-     */
-    boolean isSecure();
 
     String getParameter(String name) throws IOException;
 

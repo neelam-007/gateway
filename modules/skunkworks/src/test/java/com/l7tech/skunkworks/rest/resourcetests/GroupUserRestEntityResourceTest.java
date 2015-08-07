@@ -21,7 +21,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -501,7 +501,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         // try login with new certificate
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(
-                new HttpClientCertToken(certificate), null);
+                new TlsClientCertToken(certificate), null);
         final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
         assertNotNull(providerAuthResult);
         assertNotNull(providerAuthResult.getUser());
@@ -537,7 +537,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         // try login with new certificate
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(
-                new HttpClientCertToken(certificate), null);
+                new TlsClientCertToken(certificate), null);
         AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
         assertNotNull(providerAuthResult);
         assertNotNull(providerAuthResult.getUser());

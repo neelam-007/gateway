@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The MQTT knob holds MQTT message options
  */
-public interface MQTTRequestKnob extends TcpKnob {
+public interface MQTTRequestKnob extends TlsKnob {
 
     public enum MessageType {
         CONNECT, PUBLISH, SUBSCRIBE, UNSUBSCRIBE, DISCONNECT

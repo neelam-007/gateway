@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
@@ -30,7 +30,7 @@ public class SamlValidationCommon {
     public SamlValidationCommon(RequireWssSaml templateSaml) throws Exception{
         this.templateSaml = templateSaml;
         final X509Certificate[] clientCertChain = {TestDocuments.getEttkClientCertificate()};
-        loginCredentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
+        loginCredentials = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(clientCertChain[0]), SslAssertion.class);
     }
 
     /**

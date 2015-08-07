@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.saml.*;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.message.AuthenticationContext;
@@ -282,7 +282,7 @@ public class ServerValidateNonSoapSamlTokenAssertionTest {
         final PolicyEnforcementContext context = getContext();
         final Message message = new Message(samlAssertion);
         final AuthenticationContext authContext = context.getAuthenticationContext(message);
-        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
         authContext.addCredentials(creds);
 
         context.setVariable("samlAssertion", message);
@@ -313,7 +313,7 @@ public class ServerValidateNonSoapSamlTokenAssertionTest {
         final PolicyEnforcementContext context = getContext();
         final Message message = new Message(samlAssertion);
         final AuthenticationContext authContext = context.getAuthenticationContext(message);
-        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
         authContext.addCredentials(creds);
 
         context.setVariable("samlAssertion", message);
@@ -344,7 +344,7 @@ public class ServerValidateNonSoapSamlTokenAssertionTest {
         final PolicyEnforcementContext context = getContext();
         final Message message = new Message(samlAssertion);
         final AuthenticationContext authContext = context.getAuthenticationContext(message);
-        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(TestDocuments.getEttkClientCertificate()), SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(TestDocuments.getEttkClientCertificate()), SslAssertion.class);
         authContext.addCredentials(creds);
 
         context.setVariable("samlAssertion", message);
@@ -364,7 +364,7 @@ public class ServerValidateNonSoapSamlTokenAssertionTest {
         SamlAssertionGenerator sag = new SamlAssertionGenerator(new SignerInfo(privateKey,
                 new X509Certificate[] { TestDocuments.getDotNetServerCertificate() }));
 
-        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(TestDocuments.getDotNetServerCertificate()), SslAssertion.class);
 
         final Attribute[] attributes = {
                 new Attribute("First Attr 32", "urn:me", "test value foo blah blartch"),

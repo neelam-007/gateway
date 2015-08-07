@@ -8,9 +8,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -61,6 +64,12 @@ public class ServerFtpCredentialAssertionTest {
 
                 @Override
                 public String getRequestUrl() {
+                    return null;
+                }
+
+                @Nullable
+                @Override
+                public X509Certificate[] getClientCertificate() throws IOException {
                     return null;
                 }
 

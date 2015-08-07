@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -111,7 +111,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -144,7 +144,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -292,7 +292,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -326,7 +326,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -361,7 +361,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -400,7 +400,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
@@ -434,7 +434,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
         when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
-        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
 
         when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();

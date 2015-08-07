@@ -12,11 +12,11 @@ import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
@@ -248,7 +248,7 @@ public class SamlGenerator {
             // Generate
             SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(issuerInfo);
             // this gets fixed up later
-            LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(subjectCertificate), SslAssertion.class);
+            LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(subjectCertificate), SslAssertion.class);
             SubjectStatement.Confirmation confirmationMethod = SubjectStatement.BEARER;
             if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjectConfirmation) ||
                 SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY.equals(subjectConfirmation)) {

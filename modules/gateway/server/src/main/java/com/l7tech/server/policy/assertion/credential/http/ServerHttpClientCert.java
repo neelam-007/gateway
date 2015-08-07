@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 
@@ -64,7 +64,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpCl
             throw new CredentialFinderException( "Client Certificate is not yet valid", cnyve, AssertionStatus.AUTH_FAILED );
         }
 
-        HttpClientCertToken token = new HttpClientCertToken(clientCert);
+        TlsClientCertToken token = new TlsClientCertToken(clientCert);
 
         logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, token.getCertCn() == null ? token.getCertDn() : token.getCertCn());
 

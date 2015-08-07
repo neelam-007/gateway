@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.audit.Auditor;
@@ -96,7 +96,7 @@ public class CertificateAuthenticatorJavaTest {
         user.setLogin("Alice");
 
         certificate = TestDocuments.getWssInteropAliceCert();
-        credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(certificate), SslAssertion.class);
+        credentials = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(certificate), SslAssertion.class);
     }
 
     @Before
@@ -260,7 +260,7 @@ public class CertificateAuthenticatorJavaTest {
     public void testAuthenticate_RequestCertMismatch_InvalidClientCertificateExceptionThrown() throws Exception {
         X509Certificate invalidCertificate = TestKeys.getCert(TestKeys.RSA_1024_CERT_X509_B64);
         LoginCredentials invalidCredentials =
-                LoginCredentials.makeLoginCredentials(new HttpClientCertToken(invalidCertificate), SslAssertion.class);
+                LoginCredentials.makeLoginCredentials(new TlsClientCertToken(invalidCertificate), SslAssertion.class);
 
         when(certValidationProcessor.check(
                 any(X509Certificate[].class), any(CertificateValidationType.class),

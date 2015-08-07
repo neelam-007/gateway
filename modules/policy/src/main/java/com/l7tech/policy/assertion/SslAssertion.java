@@ -114,15 +114,12 @@ public class SslAssertion extends ConfidentialityAssertion {
     /**
      * @return the <code>List</code> containing the SSL options
      */
-    public static final List options() {
+    public static List options() {
         return
         Arrays.asList(
-          new Option[]{
-              OPTIONAL,
-              REQUIRED,
-              FORBIDDEN
-            }
-        );
+                OPTIONAL,
+                REQUIRED,
+                FORBIDDEN);
     }
 
     /**

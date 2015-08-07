@@ -3,6 +3,7 @@ package com.l7tech.security.saml;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
@@ -16,7 +17,6 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -156,7 +156,7 @@ public class SignedSamlTest {
         samlOptions.setNotAfterSeconds(300);
         samlOptions.setProofOfPosessionRequired(false);
         SubjectStatement statement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class),
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(clientCertChain[0]), SslAssertion.class),
                                                          SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         ag.attachStatement(request, statement, samlOptions);
         return request;
@@ -179,7 +179,7 @@ public class SignedSamlTest {
 
         SubjectStatement statement =
                 SubjectStatement.createAuthenticationStatement(LoginCredentials.
-                        makeLoginCredentials(new HttpClientCertToken(testCertAndKey.left), SslAssertion.class),
+                        makeLoginCredentials(new TlsClientCertToken(testCertAndKey.left), SslAssertion.class),
                 SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.STR_SKI,
                 NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
 
@@ -198,7 +198,7 @@ public class SignedSamlTest {
         samlOptions.setNotAfterSeconds(300);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId("TestAssertionId-001");
-        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
+        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(clientCertChain[0]), SslAssertion.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);

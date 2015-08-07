@@ -62,6 +62,7 @@ import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -1976,6 +1977,17 @@ public class ServerVariablesTest {
         @Override
         public String getUserPassword() {
             return userPassword;
+        }
+
+        @Nullable
+        @Override
+        public X509Certificate[] getClientCertificate() throws IOException {
+            return null;
+        }
+
+        @Override
+        public boolean isSecure() {
+            return false;
         }
 
         @Nullable

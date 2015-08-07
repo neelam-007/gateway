@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -90,7 +90,7 @@ public class ServerCertificateAttributesAssertionTest {
         Message req = new Message();
         Message resp = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp);
-        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new TlsClientCertToken(cert), SslAssertion.class);
         context.getDefaultAuthenticationContext().addCredentials(creds);
         context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new UserBean(), creds.getSecurityTokens(), cert, false));
         return context;

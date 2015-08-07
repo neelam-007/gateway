@@ -23,7 +23,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -308,7 +308,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                             logger.finest("Valid client cert presented as part of request.");
                             authResults.add( new AuthenticationResult(
                                     authResult.getUser(),
-                                    new HttpClientCertToken(dbCertX509),
+                                    new TlsClientCertToken(dbCertX509),
                                     dbCertX509,
                                     clientCertManager.isCertPossiblyStale(dbCertX509)) );
                         } else {

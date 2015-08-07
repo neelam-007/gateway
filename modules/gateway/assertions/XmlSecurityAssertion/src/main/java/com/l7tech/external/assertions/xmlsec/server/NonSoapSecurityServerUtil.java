@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.external.assertions.xmlsec.VariableCredentialSourceAssertion;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.http.HttpClientCertToken;
 
 import java.security.cert.X509Certificate;
 
@@ -32,7 +32,7 @@ class NonSoapSecurityServerUtil {
             token = (SecurityToken) value;
         } else if (value instanceof X509Certificate) {
             X509Certificate certificate = (X509Certificate) value;
-            token = new HttpClientCertToken(certificate);
+            token = new TlsClientCertToken(certificate);
         } else {
             throw new UnsupportedTokenTypeException("Unsupported credential type: " + value.getClass().getSimpleName());
         }

@@ -5,7 +5,7 @@ package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.security.token.*;
-import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.TlsClientCertToken;
 import com.l7tech.security.token.http.HttpDigestToken;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.kerberos.KerberosServiceTicket;
@@ -89,8 +89,8 @@ public final class LoginCredentials implements Disposable {
                     isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource );
-        } else if ( securityToken instanceof HttpClientCertToken ) {
-            HttpClientCertToken sxst = (HttpClientCertToken) securityToken;
+        } else if ( securityToken instanceof TlsClientCertToken) {
+            TlsClientCertToken sxst = (TlsClientCertToken) securityToken;
             loginCredentials = new LoginCredentials(
                     sxst.getCertCn(),
                     null,
