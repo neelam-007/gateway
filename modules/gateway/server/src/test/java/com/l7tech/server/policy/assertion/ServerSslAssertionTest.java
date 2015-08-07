@@ -227,7 +227,7 @@ public class ServerSslAssertionTest {
             public int getLocalListenerPort() {
                 return 0;
             }
-        }, MQTTRequestKnob.class, TlsKnob.class);
+        }, MQTTRequestKnob.class, TlsKnob.class, TcpKnob.class);
 
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
     }

@@ -8,7 +8,7 @@ import java.security.cert.X509Certificate;
 /**
  * Information about a request that arrived over SSL/TLS.
  */
-public interface TlsKnob extends TcpKnob {
+public interface TlsKnob extends MessageKnob {
 
     /**
      * Get the client certificate that was presented along with this request, if any.

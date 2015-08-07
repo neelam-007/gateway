@@ -8,7 +8,7 @@ import java.net.PasswordAuthentication;
  * @author Steve Jones
  * @author Jamie Williams - jamie.williams2@ca.com
  */
-public interface FtpRequestKnob extends TlsKnob, UriKnob {
+public interface FtpRequestKnob extends TlsKnob, TcpKnob, UriKnob {
 
     /**
      * The raw FTP command.

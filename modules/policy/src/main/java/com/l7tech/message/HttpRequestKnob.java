@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends TlsKnob, UriKnob, HasSoapAction, HasHeaders {
+public interface HttpRequestKnob extends TlsKnob, TcpKnob, UriKnob, HasSoapAction, HasHeaders {
     /**
      * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
      */
