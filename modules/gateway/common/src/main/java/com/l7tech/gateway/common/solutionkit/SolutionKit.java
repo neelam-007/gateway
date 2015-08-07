@@ -237,6 +237,42 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
 
     @Override
     public int compareTo(@NotNull SolutionKit o) {
-        return String.CASE_INSENSITIVE_ORDER.compare(getName(), o.getName());
+        // Compare name
+        final int compareName = String.CASE_INSENSITIVE_ORDER.compare(getName(), o.getName());
+        if (compareName != 0) {
+            return compareName;
+        }
+        // Compare sk_version
+        else {
+            final int compareSKVersion = String.CASE_INSENSITIVE_ORDER.compare(getSolutionKitVersion(), o.getSolutionKitVersion());
+            if (compareSKVersion != 0) {
+                return compareSKVersion;
+            }
+            // Compare instance modifier
+            else {
+                // Instance modifier could be null, so reassign it as an empty string before passing it into the compare method.
+                String instanceModifier = getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
+                if (instanceModifier == null) instanceModifier = "";
+
+                String otherIM = o.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
+                if (otherIM == null) otherIM = "";
+
+                final int compareInstanceModifier = String.CASE_INSENSITIVE_ORDER.compare(instanceModifier, otherIM);
+                if (compareInstanceModifier != 0) {
+                    return compareInstanceModifier;
+                }
+                // Compare description
+                else {
+                    final int compareDescription = String.CASE_INSENSITIVE_ORDER.compare(getProperty(SK_PROP_DESC_KEY), o.getProperty(SK_PROP_DESC_KEY));
+                    if (compareDescription != 0) {
+                        return compareDescription;
+                    }
+                    // Compare update time
+                    else {
+                        return (int) (getLastUpdateTime() - o.getLastUpdateTime());
+                    }
+                }
+            }
+        }
     }
 }
