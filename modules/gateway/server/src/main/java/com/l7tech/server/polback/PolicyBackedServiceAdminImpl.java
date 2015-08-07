@@ -84,25 +84,4 @@ public class PolicyBackedServiceAdminImpl implements PolicyBackedServiceAdmin {
     public void deletePolicyBackedService( @NotNull Goid goid ) throws FindException, DeleteException, ConstraintViolationException {
         policyBackedServiceManager.delete(goid);
     }
-
-    @Override
-    public boolean isAnyMultiMethodPolicyBackedServiceRegistered() {
-        boolean sawMultiMethod = false;
-
-        Set<String> templates = policyBackedServiceRegistry.getPolicyBackedServiceTemplates();
-        for ( String template : templates ) {
-            try {
-                List<EncapsulatedAssertionConfig> methods = policyBackedServiceRegistry.getTemplateOperations( template );
-                if ( methods.size() > 1 ) {
-                    sawMultiMethod = true;
-                    break;
-                }
-            } catch ( ObjectNotFoundException e ) {
-                // Shouldn't happen
-                logger.log( Level.WARNING, "Unable to find supposedly-registered policy backed service description: " + ExceptionUtils.getMessage( e ),
-                        ExceptionUtils.getDebugException( e ) );
-            }
-        }
-        return sawMultiMethod;
-    }
 }

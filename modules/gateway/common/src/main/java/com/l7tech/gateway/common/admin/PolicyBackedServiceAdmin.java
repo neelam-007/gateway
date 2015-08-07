@@ -100,17 +100,4 @@ public interface PolicyBackedServiceAdmin {
      */
     @Secured(stereotype=DELETE_BY_ID)
     void deletePolicyBackedService( @NotNull Goid goid ) throws FindException, DeleteException, ConstraintViolationException;
-
-
-    /**
-     * Check if any policy backed services are currently registered on this node that provide more than one method
-     * that must be mapped to a policy.
-     * <p/>
-     * If at least one multi-method policy backed service is present then the "Manage policy backed services"
-     * dialog must be enabled in the Policy Manager UI so that methods can be mapped to backing policies.
-     *
-     * @return true if any policy backed service interfaces are currently registered that require method mapping.
-     */
-    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
-    boolean isAnyMultiMethodPolicyBackedServiceRegistered();
 }
