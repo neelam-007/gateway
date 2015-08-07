@@ -341,7 +341,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         dlg.setModal(true);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                solutionKitsModel.fireTableDataChanged();
+            }
+        });
     }
 
     private void addCustomUis(final JPanel customizableButtonPanel, final SolutionKitsConfig settings, final SolutionKit selectedSolutionKit) {
