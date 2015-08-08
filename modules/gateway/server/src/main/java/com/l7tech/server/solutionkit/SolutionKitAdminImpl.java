@@ -22,8 +22,9 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.AlwaysCreateNew;
+import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.Ignore;
 import static com.l7tech.server.bundling.EntityMappingResult.MappingAction.CreatedNew;
+import static com.l7tech.server.bundling.EntityMappingResult.MappingAction.Deleted;
 import static com.l7tech.server.event.AdminInfo.find;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_ATTRIBUTE;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_TAKEN_ATTRIBUTE;
@@ -103,16 +104,13 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                     }
 
                     if (isUpgrade) {
+                        updateEntityOwnershipDescriptors(mappings, solutionKit);
                         solutionKitManager.update(solutionKit);
-                        // TODO jwilliams: update ownership descriptors
                         return solutionKit.getGoid();
                     } else {
                         Goid solutionKitGoid = solutionKitManager.save(solutionKit);
-
-                        createEntityOwnershipDescriptors(mappings, solutionKit);
+                        updateEntityOwnershipDescriptors(mappings, solutionKit);
                         solutionKitManager.update(solutionKit);
-                        solutionKitManager.updateProtectedEntityTracking();
-
                         return solutionKitGoid;
                     }
                 }
@@ -165,7 +163,6 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                         resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
                     solutionKitManager.delete(goid);
-                    solutionKitManager.updateProtectedEntityTracking();
                     return resultMappings;
                 }
             }));
@@ -190,9 +187,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     /**
      * Create EntityOwnershipDescriptors for each newly created entity.
      */
-    private void createEntityOwnershipDescriptors(@NotNull final String resultMappings,
+    private void updateEntityOwnershipDescriptors(@NotNull final String resultMappings,
                                                   @NotNull final SolutionKit solutionKit) throws SAXException, IOException {
-        Set<EntityOwnershipDescriptor> ownershipDescriptors = new HashSet<>();
+        final HashMap<Goid, EntityType> deletedEntities = new HashMap<>();
+
+        final Set<EntityOwnershipDescriptor> newOwnershipDescriptors = new HashSet<>();
+        final Set<EntityOwnershipDescriptor> obsoleteOwnershipDescriptors = new HashSet<>();
 
         String entityId, entityType;
 
@@ -200,22 +200,49 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
 
         for (Element mapping : mappingsMsg.getMappings()) {
-            if (AlwaysCreateNew != EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE)) ||
-                    CreatedNew != EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE))) {
+            if (Ignore == EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE)))
                 continue;
-            }
 
             entityId = mapping.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
             entityType = mapping.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
 
             if (!StringUtils.isEmpty(entityId) && !StringUtils.isEmpty(entityType)) {
-                EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit,
-                        Goid.parseGoid(entityId), EntityType.valueOf(entityType), true);
-                ownershipDescriptors.add(d);
+                EntityMappingResult.MappingAction mappingResultAction =
+                        EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
+
+                if (Deleted == mappingResultAction) {
+                    deletedEntities.put(Goid.parseGoid(entityId), EntityType.valueOf(entityType));
+                } else if (CreatedNew == mappingResultAction) {
+                    EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit,
+                            Goid.parseGoid(entityId), EntityType.valueOf(entityType), true);
+                    newOwnershipDescriptors.add(d);
+                }
             }
         }
 
-        solutionKit.setEntityOwnershipDescriptors(ownershipDescriptors);
+        /**
+         * Look at each existing EntityOwnershipDescriptor to see if it is obsolete - check for the owned entity in
+         * the map of deleted ones. We'll remove each deleted entity from the deletedEntities map, and when it is
+         * empty we can stop iterating over the EntityOwnershipDescriptors; the Solution Kit is likely to have more
+         * entities than would be deleted in a upgrade scenario.
+         */
+        if (null != solutionKit.getEntityOwnershipDescriptors() && !deletedEntities.isEmpty()) {
+            for (EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
+                if (0 == deletedEntities.size())
+                    break;
+
+                EntityType deletedEntityType = deletedEntities.get(descriptor.getEntityGoid());
+
+                if (null != deletedEntityType) {
+                    obsoleteOwnershipDescriptors.add(descriptor);
+                    deletedEntities.remove(descriptor.getEntityGoid());
+                }
+            }
+
+            solutionKit.removeEntityOwnershipDescriptors(obsoleteOwnershipDescriptors);
+        }
+
+        solutionKit.addEntityOwnershipDescriptors(newOwnershipDescriptors);
     }
 
     /**

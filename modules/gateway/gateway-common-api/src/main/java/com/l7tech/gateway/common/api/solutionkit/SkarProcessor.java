@@ -201,6 +201,13 @@ public class SkarProcessor {
                 solutionKitsConfig.setUpgradeInfoProvided(solutionKit, false);
             }
 
+            // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
+            SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade();
+
+            if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
+                solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
+            }
+
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
 
             setCustomizationInstances(solutionKit, classLoader);

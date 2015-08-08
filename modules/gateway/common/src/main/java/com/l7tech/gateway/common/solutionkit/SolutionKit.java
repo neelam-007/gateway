@@ -17,9 +17,7 @@ import javax.validation.constraints.Size;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A persistent entity that holds information about an installed solution kit.
@@ -189,6 +187,23 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     public void setEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
         checkLocked();
         this.entityOwnershipDescriptors = entityOwnershipDescriptors;
+    }
+
+    public void addEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+        checkLocked();
+
+        if (null == this.entityOwnershipDescriptors) {
+            this.entityOwnershipDescriptors = new HashSet<>();
+        }
+
+        this.entityOwnershipDescriptors.addAll(entityOwnershipDescriptors);
+    }
+
+    public void removeEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+        if (null != this.entityOwnershipDescriptors) {
+            checkLocked();
+            this.entityOwnershipDescriptors.removeAll(entityOwnershipDescriptors);
+        }
     }
 
     @Transient

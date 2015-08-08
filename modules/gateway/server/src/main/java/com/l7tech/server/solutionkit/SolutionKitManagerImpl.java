@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -21,6 +22,7 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -30,6 +32,7 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
@@ -43,7 +46,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, SolutionKitHeader> implements SolutionKitManager {
+public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, SolutionKitHeader> implements SolutionKitManager, PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerImpl.class.getName());
 
     private static final String REST_GATEWAY_MANAGEMENT_POLICY_XML =
@@ -256,5 +259,24 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 }
             }, invoker);
         }
+    }
+
+    public void handleEvent(ApplicationEvent event) {
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
+            if (SolutionKit.class.equals(invalidationEvent.getEntityClass())) {
+                try {
+                    updateProtectedEntityTracking();
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Unable to update ProtectedEntityTracker: " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onApplicationEvent(final ApplicationEvent event) {
+        handleEvent(event);
     }
 }

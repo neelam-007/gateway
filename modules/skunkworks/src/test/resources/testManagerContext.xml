@@ -168,6 +168,7 @@
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="workQueueEntityManager"/>
+                <ref bean="solutionKitManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
