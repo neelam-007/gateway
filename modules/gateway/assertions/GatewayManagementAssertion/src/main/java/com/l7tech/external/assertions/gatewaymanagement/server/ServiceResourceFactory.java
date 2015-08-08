@@ -298,6 +298,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
                 return resource;
             }
         } );
+        final Collection<Resource> documentResources = resourceHelper.getResources(resourceSetMap, ResourceHelper.RESTFUL_TAG, false, null);
 
         final PublishedService service = new PublishedService();
         final Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
@@ -319,8 +320,15 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         }
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
         setSoapVersion( service, getProperty(serviceDetail.getProperties(), "soapVersion", Option.<String>none(), String.class) );
-        addWsdl( service, serviceDocuments, wsdlResources );
-        service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
+        if(service.isSoap()) {
+            addWsdl(service, serviceDocuments, wsdlResources);
+            service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
+        }
+        else {
+            for(Resource documentResource : documentResources) {
+                addServiceDocument(serviceDocuments, documentResource);
+            }
+        }
 
         // handle SecurityZone
         doSecurityZoneFromResource( serviceMO, service, strict );
@@ -328,8 +336,30 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         return new ServiceEntityBag( service, serviceDocuments );
     }
 
+    private void addServiceDocument(Collection<ServiceDocument> serviceDocuments, Resource documentResource) {
+        ServiceDocument document = new ServiceDocument();
+        document.setType(documentResource.getType());
+        switch (document.getType()) {
+            case ResourceHelper.SWAGGER_JSON_TYPE:
+                document.setContentType("application/json");
+                break;
+            case ResourceHelper.SWAGGER_YAML_TYPE:
+                document.setContentType("text/plain");
+                break;
+            default:
+                document.setContentType("application/octet-stream");
+        }
+
+        document.setUri(documentResource.getSourceUrl());
+        document.setContents(documentResource.getContent());
+
+        serviceDocuments.add(document);
+    }
+
     @Override
     protected EntityBag<PublishedService> loadEntityBag( final PublishedService entity ) throws ObjectModelException {
+        //TODO: determine the type of the service
+
         return new ServiceEntityBag( entity, serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT ) );
     }
 

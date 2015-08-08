@@ -53,6 +53,8 @@ import static com.l7tech.util.ExceptionUtils.getDebugException;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<RetrieveServiceWsdlAssertion> {
+
+    private static final String SWAGGER_JSON_TYPE =  "swagger-json";
     @Inject
     protected ServiceCache serviceCache;
     
@@ -99,7 +101,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private String retrieveSwaggerDocument(PublishedService service) {
-        Collection<ServiceDocument> documents = getServiceDocuments(service, "SWAGGER");
+        Collection<ServiceDocument> documents = getServiceDocuments(service, SWAGGER_JSON_TYPE);
 
         if (null == documents || documents.isEmpty()) {
             logAndAudit(AssertionMessages.RETRIEVE_WSDL_DOC_NOT_FOUND, assertion.getDocumentType(), service.getId());
