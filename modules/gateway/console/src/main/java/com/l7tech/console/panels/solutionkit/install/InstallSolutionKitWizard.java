@@ -45,7 +45,6 @@ import java.util.logging.Logger;
 public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(InstallSolutionKitWizard.class.getName());
     private static final String WIZARD_TITLE = "Solution Kit Installation Wizard";
-    private static final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
 
     public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
@@ -76,7 +75,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         final Map<String, List<String>> instanceModifiers = new HashMap<>();
 
         try {
-            final Collection<SolutionKitHeader> solutionKitHeaders = solutionKitAdmin.findSolutionKits();
+            final Collection<SolutionKitHeader> solutionKitHeaders = Registry.getDefault().getSolutionKitAdmin().findSolutionKits();
 
             for (SolutionKitHeader solutionKitHeader: solutionKitHeaders) {
                 String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
@@ -100,6 +99,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             getSelectedWizardPanel().storeSettings(wizardInput);
         }
 
+        final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
         final SolutionKit parentSK = wizardInput.getParentSolutionKit();
         Goid parentGoid = null;
