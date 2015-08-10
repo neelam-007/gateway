@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Charsets;
@@ -10,6 +11,7 @@ import com.l7tech.util.SafeXMLDecoderBuilder;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
@@ -42,6 +44,9 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";
     public static final String SK_PROP_INSTANCE_MODIFIER_KEY = "InstanceModifier";
 
+    public static final String PARENT_SOLUTION_KIT_DUMMY_MAPPINGS = "<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT";
+
+    private Goid parentGoid;
     private String sk_guid;
     private String sk_version;
     private transient String installXmlProperties;
@@ -49,9 +54,20 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     private String mappings;
     private String uninstallBundle;
     private long lastUpdateTime;
+    //private Set<SolutionKit> childrenSet;
     private Set<EntityOwnershipDescriptor> entityOwnershipDescriptors;
 
     public SolutionKit() {
+    }
+
+    @Column(name = "parent_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getParentGoid() {
+        return parentGoid;
+    }
+
+    public void setParentGoid(Goid parentGoid) {
+        this.parentGoid = parentGoid;
     }
 
     @Column(name = "sk_guid", nullable = false)
@@ -177,6 +193,16 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     public void setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
     }
+
+    /*@Fetch(FetchMode.SUBSELECT)
+    @OneToMany(mappedBy="solutionKit", cascade=CascadeType.ALL, fetch=FetchType.EAGER, orphanRemoval=true)
+    public Set<SolutionKit> getChildrenSet() {
+        return childrenSet;
+    }
+
+    public void setChildrenSet(Set<SolutionKit> childrenSet) {
+        this.childrenSet = childrenSet;
+    }*/
 
     @Fetch(FetchMode.SUBSELECT)
     @OneToMany(mappedBy="solutionKit", cascade=CascadeType.ALL, fetch=FetchType.EAGER, orphanRemoval=true)

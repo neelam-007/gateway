@@ -30,6 +30,7 @@ import com.l7tech.util.Pair;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
@@ -60,6 +61,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             "</wsp:Policy>";
 
     private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
+    private final String HQL_FIND_BY_PARENT_GOID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".parentGoid = ?";
 
     private ServerAssertion serverRestGatewayManagementAssertion = null;
     private RestmanInvoker restmanInvoker;
@@ -188,6 +190,82 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
         }
+    }
+
+    @Override
+    public List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
+                @Override
+                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    final Query q = session.createQuery(HQL_FIND_BY_PARENT_GOID);
+                    q.setParameter(0, parentGoid);
+                    return convertToHTList(q.list());
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    @Override
+    public List<SolutionKitHeader> findAllExcludingChildren() throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
+                @Override
+                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    return convertToHTList(
+                            session.createCriteria(SolutionKit.class).add(Restrictions.isNull("parentGoid")).list()
+                    );
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    @Override
+    public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
+        List<SolutionKitHeader> children = findChildSolutionKits();
+        List<String> parentGoidStrList = new ArrayList<>(children.size());
+        for (SolutionKitHeader child: children) {
+            String parentGoidStr = child.getParentGoid().toString();
+            if (parentGoidStrList.contains(parentGoidStr)) {
+                continue;
+            } else {
+                parentGoidStrList.add(parentGoidStr);
+            }
+        }
+
+        List<SolutionKitHeader> parentList = new ArrayList<>();
+        for (String goidStr: parentGoidStrList) {
+            parentList.add(new SolutionKitHeader(findByPrimaryKey(Goid.parseGoid(goidStr))));
+        }
+
+        return parentList;
+    }
+
+    private List<SolutionKitHeader> findChildSolutionKits() throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
+                @Override
+                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    return convertToHTList(
+                            session.createCriteria(SolutionKit.class).add(Restrictions.isNotNull("parentGoid")).list()
+                    );
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    private List<SolutionKitHeader> convertToHTList(@NotNull List<SolutionKit> skList) {
+        List<SolutionKitHeader>  htList = new ArrayList<>(skList.size());
+        for (SolutionKit solutionKit: skList) {
+            htList.add(new SolutionKitHeader(solutionKit));
+        }
+        return htList;
     }
 
     @Override

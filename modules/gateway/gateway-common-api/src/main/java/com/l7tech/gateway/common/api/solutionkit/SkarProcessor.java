@@ -185,6 +185,7 @@ public class SkarProcessor {
             // should be ignored, since the rest task is done when recursively call the load method.
             if (isCollection) {
                 // Save the parent solution kit. Just in case, we need to use the parent solution kit object.
+                solutionKit.setMappings(SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS); // Set a dummy mapping for a parent solution kit
                 solutionKitsConfig.setParentSolutionKit(solutionKit);
                 return;
             }

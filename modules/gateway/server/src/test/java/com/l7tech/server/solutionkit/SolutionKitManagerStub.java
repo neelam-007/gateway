@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
@@ -34,4 +35,19 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @Override
     public void updateProtectedEntityTracking() throws FindException {}
+
+    @Override
+    public List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public List<SolutionKitHeader> findAllExcludingChildren() throws FindException {
+        return null;
+    }
+
+    @Override
+    public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
+        return null;
+    }
 }

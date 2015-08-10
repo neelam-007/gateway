@@ -2,9 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.bundling.EntityMappingResult;
@@ -48,6 +46,24 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Override
     public Collection<SolutionKitHeader> findSolutionKits() throws FindException {
         return solutionKitManager.findAllHeaders();
+    }
+
+    @NotNull
+    @Override
+    public Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
+        return solutionKitManager.findAllChildrenByParentGoid(parentGoid);
+    }
+
+    @NotNull
+    @Override
+    public Collection<SolutionKitHeader> findAllExcludingChildren() throws FindException {
+        return solutionKitManager.findAllExcludingChildren();
+    }
+
+    @NotNull
+    @Override
+    public Collection<SolutionKitHeader> findParentSolutionKits() throws FindException {
+        return solutionKitManager.findParentSolutionKits();
     }
 
     @Override
@@ -175,6 +191,17 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         }, 0L);
 
         return registerJob(task, String.class);
+    }
+
+    @NotNull
+    @Override
+    public Goid saveSolutionKit(@NotNull SolutionKit solutionKit) throws SaveException {
+        return solutionKitManager.save(solutionKit);
+    }
+
+    @Override
+    public void deleteSolutionKit(@NotNull Goid goid) throws FindException, DeleteException {
+        solutionKitManager.delete(goid);
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {

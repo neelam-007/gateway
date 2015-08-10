@@ -42,4 +42,27 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws FindException
      */
     void updateProtectedEntityTracking() throws FindException;
+
+
+    /**
+     * Find all child solution kits of a parent solution kit given by a parent Goid.
+     * @param parentGoid: the Goid of a parent solution kit
+     * @return a list of child solution kits
+     * @throws FindException
+     */
+    List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException;
+
+    /**
+     * Find all solution kits but not including any child solution kits.
+     * @return a list of solution kits without any child solution kits.
+     * @throws FindException
+     */
+    List<SolutionKitHeader> findAllExcludingChildren() throws FindException;
+
+    /**
+     * Find all parent solution kits only
+     * @return a list of parent solution kits, which have child solution kit(s).
+     * @throws FindException
+     */
+    List<SolutionKitHeader> findParentSolutionKits() throws FindException;
 }

@@ -10,9 +10,11 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
-import org.jetbrains.annotations.Nullable;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -21,7 +23,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,9 +44,6 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private final SolutionKitAdmin solutionKitAdmin;
 
-    @Nullable
-    private Collection<SolutionKitHeader> solutionKitHeaders;
-
     /**
      * Create dialog.
      *
@@ -58,11 +56,6 @@ public class ManageSolutionKitsDialog extends JDialog {
         initialize();
         refreshSolutionKitsTable();
         refreshSolutionKitsTableButtons();
-    }
-
-    @Nullable
-    public Collection<SolutionKitHeader> getSolutionKitHeaders() {
-        return solutionKitHeaders;
     }
 
     private void initialize() {
@@ -153,40 +146,36 @@ public class ManageSolutionKitsDialog extends JDialog {
                     }
 
                     boolean cancelled = false;
-                    boolean successful = false;
-                    String msg = "";
+                    Pair<Boolean, String> result = new Pair<>(false, "");
                     try {
-                        Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
-                            solutionKitAdmin,
-                            ManageSolutionKitsDialog.this,
-                            "Uninstall Solution Kit",
-                            "The gateway is uninstalling selected solution kit",
-                            solutionKitAdmin.uninstall(header.getGoid()));
-
-                        if (result.isLeft()) {
-                            msg = result.left();
-                            logger.log(Level.WARNING, msg);
-                        } else if (result.isRight()) {
-                            if ("".equals(result.right())) {
-                                msg = "This solution kit requires a manual uninstall. The solution kit record has been deleted, please manually delete entities previously installed by this solution kit.";
-                            } else {
-                                msg = "Solution kit uninstalled successfully.";
+                        Collection<SolutionKitHeader> children = solutionKitAdmin.findAllChildrenByParentGoid(header.getGoid());
+                        if (! children.isEmpty()) {
+                            for (SolutionKitHeader child: children) {
+                                result = uninstallSolutionKit(child.getName(), child.getGoid());
+                                if (! result.left) break;
                             }
-                            successful = true;
                         }
-                    } catch (InvocationTargetException e) {
-                        msg = ExceptionUtils.getMessage(e);
-                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+
+                        final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
+                        if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
+                            solutionKitAdmin.deleteSolutionKit(header.getGoid());
+                        } else {
+                            result = uninstallSolutionKit(header.getName(), header.getGoid());
+                        }
                     } catch (InterruptedException e) {
                         // do nothing.
                         cancelled = true;
+                    } catch (Exception e) {
+                        String msg = ExceptionUtils.getMessage(e);
+                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                        result = new Pair<>(false, msg);
                     }
 
                     if (!cancelled) {
-                        if (successful) {
-                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, msg, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
+                        if (result.left) {
+                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, result.right, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
                         } else {
-                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, msg, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, result.right, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
                         }
                     }
 
@@ -194,6 +183,32 @@ public class ManageSolutionKitsDialog extends JDialog {
                 }
             }
         );
+    }
+
+    private Pair<Boolean, String> uninstallSolutionKit(@NotNull final String skName, @NotNull final Goid skGoid) throws InvocationTargetException, InterruptedException {
+        boolean successful = false;
+        String msg = "";
+
+        Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
+            solutionKitAdmin,
+            ManageSolutionKitsDialog.this,
+            "Uninstall Solution Kit",
+            "The gateway is uninstalling the solution kit, " + skName,
+            solutionKitAdmin.uninstall(skGoid));
+
+        if (result.isLeft()) {
+            msg = result.left();
+            logger.log(Level.WARNING, msg);
+        } else if (result.isRight()) {
+            if ("".equals(result.right())) {
+                msg = "This solution kit requires a manual uninstall. The solution kit record has been deleted, please manually delete entities previously installed by this solution kit.";
+            } else {
+                msg = "Solution kit uninstalled successfully.";
+            }
+            successful = true;
+        }
+
+        return new Pair<>(successful, msg);
     }
 
     private void onUpgrade() {
@@ -246,8 +261,7 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private void refreshSolutionKitsTable() {
         try {
-            solutionKitHeaders = solutionKitAdmin.findSolutionKits();
-            solutionKitTablePanel.setData(new ArrayList<>(solutionKitHeaders));
+            solutionKitTablePanel.refreshSolutionKitTable();
         } catch (FindException e) {
             logger.log(Level.WARNING, "Error loading solution kits.", ExceptionUtils.getDebugException(e));
         }

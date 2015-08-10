@@ -279,8 +279,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
         Utilities.setRowSorter(solutionKitsTable, solutionKitsModel,
-            new int[]{1, 2, 3}, new boolean[]{true, true, true},
-            new Comparator[]{String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER}
+            new int[]{1, 2, 3, 4}, new boolean[]{true, true, true, true},
+            new Comparator[]{String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER}
         );
 
         //Set up tool tips for the table cells.

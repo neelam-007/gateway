@@ -4,9 +4,7 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +30,39 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Collection<SolutionKitHeader> findSolutionKits() throws FindException;
+
+    /**
+     * Retrieve all child solution kits, whose parent's GOID is the same as a given parentGoid.
+     *
+     * @return a collection of child solution kits associated with parentGoid.
+     * @throws FindException
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException;
+
+    /**
+     * Retrieve all solution kits except child solution kits.
+     *
+     * @return a collection of solution kits except child solution kits.
+     * @throws FindException
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    Collection<SolutionKitHeader> findAllExcludingChildren() throws FindException;
+
+    /**
+     * Retrieve all solution kits, which have child solution kit(s).
+     *
+     * @return a collection of solution kits having child solution kit(s).
+     * @throws FindException
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    Collection<SolutionKitHeader> findParentSolutionKits() throws FindException;
 
     /**
      * Retrieve solution kit entity with the given ID.
@@ -77,4 +108,23 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @NotNull
     @Secured(stereotype = MethodStereotype.DELETE_BY_ID)
     JobId<String> uninstall(@NotNull Goid goid);
+
+    /**
+     * Save a solution kit
+     * @param solutionKit: a solution kit to be saved.
+     * @return a Goid of the saved sollution kit
+     * @throws SaveException
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE)
+    Goid saveSolutionKit(@NotNull SolutionKit solutionKit) throws SaveException;
+
+    /**
+     * Delete a solution kit by Goid
+     * @param goid: the Goid of the solution kit to be deleted.
+     * @throws FindException
+     * @throws DeleteException
+     */
+    @Secured(stereotype = MethodStereotype.DELETE_BY_ID)
+    void deleteSolutionKit(@NotNull Goid goid) throws FindException, DeleteException;
 }

@@ -16,10 +16,11 @@ import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -33,7 +34,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -45,8 +45,7 @@ import java.util.logging.Logger;
 public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(InstallSolutionKitWizard.class.getName());
     private static final String WIZARD_TITLE = "Solution Kit Installation Wizard";
-
-    private SolutionKitAdmin solutionKitAdmin;
+    private static final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
 
     public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
@@ -59,7 +58,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         solutionKitsConfig.setSolutionKitToUpgrade(solutionKitToUpgrade);
-        setInstanceModifiers(solutionKitsConfig.getInstanceModifiers(), parent.getSolutionKitHeaders());
+        solutionKitsConfig.setInstanceModifiers(getInstanceModifiers());
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
@@ -73,8 +72,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         initialize();
     }
 
-    private static void setInstanceModifiers(@NotNull final Map<String, List<String>> instanceModifiers, @Nullable final Collection<SolutionKitHeader> solutionKitHeaders) {
-        if (solutionKitHeaders != null) {
+    private static Map<String, List<String>> getInstanceModifiers() {
+        final Map<String, List<String>> instanceModifiers = new HashMap<>();
+
+        try {
+            final Collection<SolutionKitHeader> solutionKitHeaders = solutionKitAdmin.findSolutionKits();
+
             for (SolutionKitHeader solutionKitHeader: solutionKitHeaders) {
                 String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
                 java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
@@ -84,7 +87,11 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
                 instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
             }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
+
+        return instanceModifiers;
     }
 
     @Override
@@ -94,7 +101,23 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         }
 
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
+        final SolutionKit parentSK = wizardInput.getParentSolutionKit();
+        Goid parentGoid = null;
+
+        if (parentSK != null) {
+            try {
+                parentGoid = solutionKitAdmin.saveSolutionKit(parentSK);
+            } catch (SaveException e) {
+                String msg = ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                errorKitList.add(new Pair<>(msg, parentSK));
+            }
+        }
+
         for (SolutionKit solutionKit: wizardInput.getSelectedSolutionKits()) {
+            if (parentSK != null) {
+                solutionKit.setParentGoid(parentGoid);
+            }
             try {
                 Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                     solutionKitAdmin,
@@ -109,16 +132,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     logger.log(Level.WARNING, msg);
                     errorKitList.add(new Pair<>(msg, solutionKit));
                 }
-            } catch (SolutionKitException e) {
-                String msg = ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
-            } catch (InvocationTargetException e) {
+            } catch (InterruptedException e) {
+                // user cancelled. do nothing.
+            } catch (Exception e) {
                 String msg = ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
                 errorKitList.add(new Pair<>(msg, solutionKit));
-            } catch (InterruptedException e) {
-                // user cancelled. do nothing.
             }
         }
         // Finish installation successfully if no errors exist.  Otherwise, display errors if applicable
@@ -204,11 +223,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             }
         });
 
-        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
-
         // upgrade - find previously installed mappings where srcId differs from targetId (e.g. user resolved)
         SolutionKit solutionKitToUpgrade = getWizardInput().getSolutionKitToUpgrade();
-        if (solutionKitToUpgrade != null) {
+        if (solutionKitToUpgrade != null && !SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUpgrade.getMappings())) {
             try {
                 Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
                 Mappings mappings = (Mappings) item.getContent();

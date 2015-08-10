@@ -154,6 +154,10 @@ public class SolutionKitsConfig {
         return instanceModifiers;
     }
 
+    public void setInstanceModifiers(Map<String, List<String>> instanceModifiers) {
+        this.instanceModifiers = instanceModifiers;
+    }
+
     @Nullable
     public SolutionKit getParentSolutionKit() {
         return parentSolutionKit;
