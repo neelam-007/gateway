@@ -631,6 +631,7 @@
                 <ref bean="serviceManager" />
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
+                <ref bean="policyBackedServiceManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -723,6 +724,10 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SCHEDULED_TASK"/></key>
                     <bean class="com.l7tech.server.search.processors.ScheduledTaskDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
             </map>
         </constructor-arg>

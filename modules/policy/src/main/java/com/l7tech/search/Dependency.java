@@ -75,7 +75,8 @@ public @interface Dependency {
         SCHEDULED_TASK(EntityType.SCHEDULED_TASK),
         INTERFACE_TAG(EntityType.INTERFACE_TAG),
         WORK_QUEUE(EntityType.WORK_QUEUE),
-        SERVER_MODULE_FILE(EntityType.SERVER_MODULE_FILE);
+        SERVER_MODULE_FILE(EntityType.SERVER_MODULE_FILE),
+        POLICY_BACKED_SERVICE(EntityType.POLICY_BACKED_SERVICE);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

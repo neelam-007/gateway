@@ -324,6 +324,7 @@
                 <ref bean="genericEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="workQueueEntityManager"/>
+                <ref bean="policyBackedServiceManager"/>
             </list>
         </constructor-arg>
     </bean>

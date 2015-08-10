@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncry
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
+import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
@@ -22,7 +23,7 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @Component
-public class ScheduledTaskTransformer implements EntityAPITransformer<ScheduledTaskMO, ScheduledTask> {
+public class ScheduledTaskTransformer extends EntityManagerAPITransformer<ScheduledTaskMO, ScheduledTask> implements EntityAPITransformer<ScheduledTaskMO, ScheduledTask> {
 
     @Inject
     PolicyManager policyManager;
@@ -152,53 +153,6 @@ public class ScheduledTaskTransformer implements EntityAPITransformer<ScheduledT
         doSecurityZoneFromMO(scheduledTaskMO, scheduledTask, strict);
 
         return new EntityContainer<>(scheduledTask);
-    }
-
-    protected void doSecurityZoneToMO(ScheduledTaskMO resource, final ScheduledTask entity) {
-        if (entity instanceof ZoneableEntity) {
-
-            if (entity.getSecurityZone() != null) {
-                resource.setSecurityZoneId(entity.getSecurityZone().getId());
-                resource.setSecurityZone(entity.getSecurityZone().getName());
-            }
-        }
-    }
-
-    protected void doSecurityZoneFromMO(ScheduledTaskMO resource, final ScheduledTask entity, final boolean strict)
-            throws ResourceFactory.InvalidResourceException {
-        if (entity instanceof ZoneableEntity) {
-
-            if (resource.getSecurityZoneId() != null && !resource.getSecurityZoneId().isEmpty()) {
-                final Goid securityZoneId;
-                try {
-                    securityZoneId = GoidUpgradeMapper.mapId(EntityType.SECURITY_ZONE, resource.getSecurityZoneId());
-                } catch (IllegalArgumentException nfe) {
-                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                            "invalid or unknown security zone reference");
-                }
-                SecurityZone zone = null;
-                try {
-                    zone = securityZoneManager.findByPrimaryKey(securityZoneId);
-                } catch (FindException e) {
-                    if (strict)
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "invalid or unknown security zone reference");
-                }
-                if (strict) {
-                    if (zone == null)
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "invalid or unknown security zone reference");
-                    if (!zone.permitsEntityType(EntityType.findTypeByEntity(entity.getClass())))
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "entity type not permitted for referenced security zone");
-                } else if (zone == null) {
-                    zone = new SecurityZone();
-                    zone.setGoid(securityZoneId);
-                    zone.setName(resource.getSecurityZone());
-                }
-                entity.setSecurityZone(zone);
-            }
-        }
     }
 
     @NotNull

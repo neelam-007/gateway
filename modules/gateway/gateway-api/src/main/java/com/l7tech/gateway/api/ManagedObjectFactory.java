@@ -615,6 +615,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new PolicyBackedServiceMO instance.
+     *
+     * @return The new instance.
+     */
+    public static PolicyBackedServiceMO createPolicyBackedServiceMO() {
+        return new PolicyBackedServiceMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

@@ -3,20 +3,23 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.CassandraConnectionMO;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class CassandraConnectionTransformer implements EntityAPITransformer<CassandraConnectionMO, CassandraConnection> {
+public class CassandraConnectionTransformer extends EntityManagerAPITransformer<CassandraConnectionMO, CassandraConnection> implements EntityAPITransformer<CassandraConnectionMO, CassandraConnection> {
 
     @Inject
     ServiceManager serviceManager;
@@ -94,53 +97,6 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
         doSecurityZoneFromMO(cassandraConnectionMO, cassandraConnection, strict);
 
         return new EntityContainer<>(cassandraConnection);
-    }
-
-    protected void doSecurityZoneToMO(CassandraConnectionMO resource, final CassandraConnection entity) {
-        if (entity instanceof ZoneableEntity) {
-
-            if (entity.getSecurityZone() != null) {
-                resource.setSecurityZoneId(entity.getSecurityZone().getId());
-                resource.setSecurityZone(entity.getSecurityZone().getName());
-            }
-        }
-    }
-
-    protected void doSecurityZoneFromMO(CassandraConnectionMO resource, final CassandraConnection entity, final boolean strict)
-            throws ResourceFactory.InvalidResourceException {
-        if (entity instanceof ZoneableEntity) {
-
-            if (resource.getSecurityZoneId() != null && !resource.getSecurityZoneId().isEmpty()) {
-                final Goid securityZoneId;
-                try {
-                    securityZoneId = GoidUpgradeMapper.mapId(EntityType.SECURITY_ZONE, resource.getSecurityZoneId());
-                } catch (IllegalArgumentException nfe) {
-                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                            "invalid or unknown security zone reference");
-                }
-                SecurityZone zone = null;
-                try {
-                    zone = securityZoneManager.findByPrimaryKey(securityZoneId);
-                } catch (FindException e) {
-                    if (strict)
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "invalid or unknown security zone reference");
-                }
-                if (strict) {
-                    if (zone == null)
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "invalid or unknown security zone reference");
-                    if (!zone.permitsEntityType(EntityType.findTypeByEntity(entity.getClass())))
-                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
-                                "entity type not permitted for referenced security zone");
-                } else if (zone == null) {
-                    zone = new SecurityZone();
-                    zone.setGoid(securityZoneId);
-                    zone.setName(resource.getSecurityZone());
-                }
-                entity.setSecurityZone(zone);
-            }
-        }
     }
 
     @NotNull

@@ -61,3 +61,4 @@ SampleMessageMO
 ScheduledTaskMO
 WorkQueueMO
 ServerModuleFileMO
+PolicyBackedServiceMO

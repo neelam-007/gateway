@@ -565,6 +565,10 @@
                     </key>
                     <bean class="com.l7tech.server.search.processors.ScheduledTaskDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
@@ -757,6 +761,7 @@
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
+                <ref bean="policyBackedServiceManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -1747,4 +1752,10 @@
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 
     <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" />
+
+    <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
+    </bean>
 </beans>

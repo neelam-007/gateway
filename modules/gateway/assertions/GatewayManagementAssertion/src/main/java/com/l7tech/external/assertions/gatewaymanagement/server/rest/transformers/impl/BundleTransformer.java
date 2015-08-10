@@ -250,7 +250,10 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         if(!Goid.DEFAULT_GOID.toString().equals((entityMappingInstructions.getSourceEntityHeader().getStrId()))) {
             mapping.setSrcId(EntityType.ASSERTION_ACCESS.equals(entityMappingInstructions.getSourceEntityHeader().getType()) ? entityMappingInstructions.getSourceEntityHeader().getName() : entityMappingInstructions.getSourceEntityHeader().getStrId());
             final URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
-            mapping.setSrcUri(urlAccessible.getUrl(entityMappingInstructions.getSourceEntityHeader()));
+            //only add the url if this item is url accessible
+            if(urlAccessible != null) {
+                mapping.setSrcUri(urlAccessible.getUrl(entityMappingInstructions.getSourceEntityHeader()));
+            }
         }
         mapping.setAction(convertAction(entityMappingInstructions.getMappingAction()));
         if (entityMappingInstructions.shouldFailOnNew()) {

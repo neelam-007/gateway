@@ -115,6 +115,8 @@ public abstract class DependencyTestBaseClass {
     SsgKeyEntryDependencyProcessor ssgKeyEntryDependencyProcessor = new SsgKeyEntryDependencyProcessor();
     @InjectMocks
     ScheduledTaskDependencyProcessor scheduledTaskDependencyProcessor = new ScheduledTaskDependencyProcessor();
+    @InjectMocks
+    PolicyBackedServiceDependencyProcessor policyBackedServiceDependencyProcessor = new PolicyBackedServiceDependencyProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, InternalDependencyProcessor>builder()
@@ -133,6 +135,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.HTTP_CONFIGURATION, httpConfigurationDependencyProcessor)
             .put(Dependency.DependencyType.SSG_PRIVATE_KEY, ssgKeyEntryDependencyProcessor)
             .put(Dependency.DependencyType.SCHEDULED_TASK,scheduledTaskDependencyProcessor)
+            .put(Dependency.DependencyType.POLICY_BACKED_SERVICE, policyBackedServiceDependencyProcessor)
             .map());
 
     @InjectMocks

@@ -64,6 +64,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.logon.LogonInfoManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.polback.PolicyBackedServiceManagerStub;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
@@ -5697,6 +5698,7 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
         applicationContext.getBeanFactory().registerSingleton("cassandraEntityManager", new CassandraConnectionEntityManagerStub());
         applicationContext.getBeanFactory().registerSingleton("solutionKitManager", new SolutionKitManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("policyBackedServiceManager", new PolicyBackedServiceManagerStub());
 
         applicationContext.refresh();
 

@@ -34,6 +34,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.policy.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.EntityCrud;
@@ -89,6 +90,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SsgConnector.class,
             PolicyAlias.class,
             Policy.class,
+            PolicyBackedService.class,
             SsgKeyEntry.class,
             RevocationCheckPolicy.class,
             PublishedService.class,

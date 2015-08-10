@@ -2320,6 +2320,7 @@
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="workQueueEntityManager"/>
+                <ref bean="policyBackedServiceManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -2684,6 +2685,10 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SCHEDULED_TASK"/></key>
                     <bean class="com.l7tech.server.search.processors.ScheduledTaskDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>
