@@ -213,7 +213,7 @@ public class SkarProcessor {
 
             setCustomizationInstances(solutionKit, classLoader);
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
-            throw new SolutionKitException("Error loading skar file.", e);
+            throw new SolutionKitException("Error loading skar file :" + e.getMessage(), e);
         } finally {
             ResourceUtils.closeQuietly(zis);
         }
@@ -234,11 +234,7 @@ public class SkarProcessor {
     // load solution kit metadata
     private void loadSolutionKitXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
-        try {
-            SolutionKitUtils.copyDocumentToSolutionKit(doc, solutionKit);
-        } catch (MissingRequiredElementException e) {
-            throw new SolutionKitException(e.getMessage());
-        }
+        SolutionKitUtils.copyDocumentToSolutionKit(doc, solutionKit);
     }
 
     // load install bundle
