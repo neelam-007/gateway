@@ -124,7 +124,8 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     this.getOwner(),
                     "Install Solution Kit",
                     "The gateway is installing the selected solution kit, \"" + solutionKit.getName() + "\".",
-                    new SkarProcessor(wizardInput).installOrUpgrade(solutionKitAdmin, solutionKit));
+                    new SkarProcessor(wizardInput).installOrUpgrade(solutionKitAdmin, solutionKit),
+                    false);
 
                 if (result.isLeft()) {
                     // Solution kit failed to install.
