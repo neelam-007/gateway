@@ -178,7 +178,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                         // Import the deletion bundle
                         resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
                     }
-                    solutionKitManager.delete(goid);
+                    solutionKitManager.delete(solutionKit);
                     return resultMappings;
                 }
             }));

@@ -92,6 +92,8 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @Override
     public Goid save(SolutionKit entity) throws SaveException {
         entity.setLastUpdateTime(System.currentTimeMillis());
+        if (null != entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY))
+            logger.log(Level.INFO, "Solution Kit (" + entity.getName() + ") is about to be installed on Instance Modifier : " + entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         return super.save(entity);
     }
 
@@ -99,6 +101,16 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     public void update(SolutionKit entity) throws UpdateException {
         entity.setLastUpdateTime(System.currentTimeMillis());
         super.update(entity);
+        if (null != entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY))
+            logger.log(Level.INFO, "Solution Kit (" + entity.getName() + ") has been upgraded on Instance Modifier : " + entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+    }
+
+    @Override
+    public void delete(SolutionKit entity) throws DeleteException {
+        entity.setLastUpdateTime(System.currentTimeMillis());
+        super.delete(entity);
+        if (null != entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY))
+            logger.log(Level.INFO, "Solution Kit (" + entity.getName() + ") has been deleted on Instance Modifier : " + entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
     }
 
     @Override
