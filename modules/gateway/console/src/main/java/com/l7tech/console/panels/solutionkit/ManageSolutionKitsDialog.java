@@ -65,6 +65,29 @@ public class ManageSolutionKitsDialog extends JDialog {
                 refreshSolutionKitsTableButtons();
             }
         });
+        solutionKitTablePanel.addEnterKeyBinding(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final SolutionKitHeader solutionKitHT = solutionKitTablePanel.getSelectedSolutionKit();
+                try {
+                    // The solution kit is a parent solution kit
+                    if (solutionKitAdmin.findAllChildrenByParentGoid(solutionKitHT.getGoid()).size() > 0) {
+                        if (solutionKitTablePanel.findDisplayingType(solutionKitHT) == SolutionKitTablePanel.SolutionKitDisplayingType.PARENT_EXPENDED) {
+                            onProperties();
+                        } else {
+                            solutionKitTablePanel.insertChildren(solutionKitHT);
+                        }
+                    }
+                    // The solution kit is a child solution kit
+                    else {
+                        onProperties();
+                    }
+                } catch (FindException e1) {
+                    logger.warning(ExceptionUtils.getMessage(e1));
+                    DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, "Error on finding child solution kits of '" + solutionKitHT.getName() + "'", "Manage Solution Kits", JOptionPane.ERROR_MESSAGE, null);
+                }
+            }
+        });
 
         installButton.addActionListener(new ActionListener() {
             @Override

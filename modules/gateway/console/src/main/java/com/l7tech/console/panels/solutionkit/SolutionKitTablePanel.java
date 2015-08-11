@@ -16,6 +16,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,7 @@ import static com.l7tech.gui.util.TableUtil.column;
  * This panel contains a table that contains solution kits.
  */
 public class SolutionKitTablePanel extends JPanel {
-    private static enum SolutionKitDisplayingType {PARENT_COLLAPSED, PARENT_EXPENDED, CHILD, NEITHER_PARENT_NOR_CHILD}
+    static enum SolutionKitDisplayingType {PARENT_COLLAPSED, PARENT_EXPENDED, CHILD, NEITHER_PARENT_NOR_CHILD}
 
     private static final Logger logger = Logger.getLogger(SolutionKitTablePanel.class.getName());
     private final SolutionKitAdmin solutionKitAdmin;
@@ -105,6 +106,11 @@ public class SolutionKitTablePanel extends JPanel {
         solutionKitsTable.getSelectionModel().addListSelectionListener(listener);
     }
 
+    public void addEnterKeyBinding(final AbstractAction enterKeyAction) {
+        solutionKitsTable.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER,0), "PRESS_ENTER");
+        solutionKitsTable.getActionMap().put("PRESS_ENTER", enterKeyAction);
+    }
+
     private void initialize() {
         solutionKitsModel = TableUtil.configureTable(solutionKitsTable,
             column("", 30, 30, 30, new Functions.Unary<String, SolutionKitHeader>() {
@@ -117,7 +123,7 @@ public class SolutionKitTablePanel extends JPanel {
                         case PARENT_EXPENDED:
                             return "   --";
                         case CHILD:
-                            return "   |-";
+                            return "    |-";
                         case NEITHER_PARENT_NOR_CHILD:
                             return "";
                         default:
@@ -206,10 +212,12 @@ public class SolutionKitTablePanel extends JPanel {
     }
 
     /**
-     * Insert all children of the parent solution kit into solutionKitsDisplayed
+     * Insert all children of the parent solution kit into solutionKitsDisplayed.
+     * That is, expand the parent.
+     *
      * @param parent a solution kit has at least one child.
      */
-    private void insertChildren(SolutionKitHeader parent) {
+    void insertChildren(SolutionKitHeader parent) {
         try {
             final List<SolutionKitHeader> allChildren = (List<SolutionKitHeader>) solutionKitAdmin.findAllChildrenByParentGoid(parent.getGoid());
             Collections.sort(allChildren);
@@ -229,6 +237,8 @@ public class SolutionKitTablePanel extends JPanel {
 
     /**
      * Remove all children under the parent solution kit from solutionKitsDisplayed
+     * That is, collapse the parent.
+     *
      * @param parent a solution kit has at least one child.
      */
     private void removeChildren(SolutionKitHeader parent) {
@@ -258,7 +268,7 @@ public class SolutionKitTablePanel extends JPanel {
      * @param solutionKitHeader: a solution kit header, which will be checked for display type.
      * @return one of SolutionKitDisplayingType
      */
-    private SolutionKitDisplayingType findDisplayingType(@NotNull final SolutionKitHeader solutionKitHeader) {
+    public SolutionKitDisplayingType findDisplayingType(@NotNull final SolutionKitHeader solutionKitHeader) {
         if (parentSolutionKits.contains(solutionKitHeader)) {
             final int index = solutionKitsDisplayed.indexOf(solutionKitHeader);
 
