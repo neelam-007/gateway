@@ -2,7 +2,6 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
@@ -48,13 +47,12 @@ public class ProtectedEntityTracker {
         }
     };
 
-    public void bulkUpdateReadOnlyEntitiesList( Collection< Pair< EntityType, Goid> > readOnlyEntities ) {
+    public void bulkUpdateReadOnlyEntitiesList( Collection< Pair< EntityType, String> > readOnlyEntities ) {
         synchronized ( protectedEntityMap ) {
             protectedEntityMap.clear();
 
-            for ( Pair<EntityType, Goid> pair : readOnlyEntities ) {
-                String key = pair.right.toString();
-                protectedEntityMap.put( key, new EntityProtection( pair.left, true ) );
+            for ( Pair<EntityType, String> pair : readOnlyEntities ) {
+                protectedEntityMap.put( pair.right, new EntityProtection( pair.left, true ) );
             }
         }
     }

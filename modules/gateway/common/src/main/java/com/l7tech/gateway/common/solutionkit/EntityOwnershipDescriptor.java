@@ -1,10 +1,8 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
-import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
@@ -23,7 +21,7 @@ import javax.persistence.*;
 public class EntityOwnershipDescriptor extends PersistentEntityImp {
 
     private SolutionKit solutionKit;
-    private Goid entityGoid;
+    private String entityId;
     private EntityType entityType;
 
     private boolean readOnly = true;
@@ -32,10 +30,10 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     @SuppressWarnings("unused")
     protected EntityOwnershipDescriptor() {}
 
-    public EntityOwnershipDescriptor(@NotNull SolutionKit solutionKit, @NotNull Goid entityGoid,
+    public EntityOwnershipDescriptor(@NotNull SolutionKit solutionKit, @NotNull String entityId,
                                      @NotNull EntityType entityType, boolean readOnly) {
         this.solutionKit = solutionKit;
-        this.entityGoid = entityGoid;
+        this.entityId = entityId;
         this.entityType = entityType;
         this.readOnly = readOnly;
     }
@@ -50,14 +48,13 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         this.solutionKit = solutionKit;
     }
 
-    @Column(name="entity_goid", nullable=false)
-    @Type(type = "com.l7tech.server.util.GoidType")
-    public Goid getEntityGoid() {
-        return entityGoid;
+    @Column(name="entity_id", nullable=false)
+    public String getEntityId() {
+        return entityId;
     }
 
-    public void setEntityGoid(@NotNull Goid entityGoid) {
-        this.entityGoid = entityGoid;
+    public void setEntityId(@NotNull String entityId) {
+        this.entityId = entityId;
     }
 
     @Transient
@@ -103,7 +100,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         EntityOwnershipDescriptor that = (EntityOwnershipDescriptor) o;
 
         return !(solutionKit != null ? !solutionKit.getGoid().equals(that.solutionKit.getGoid()) : that.solutionKit.getGoid() != null)
-                && !(entityGoid != null ? !entityGoid.equals(that.entityGoid) : that.entityGoid != null)
+                && !(entityId != null ? !entityId.equals(that.entityId) : that.entityId != null)
                 && entityType == that.entityType
                 && readOnly == that.readOnly;
     }
@@ -112,7 +109,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     public int hashCode() {
         int result = super.hashCode();
         result = 197 * result + (solutionKit.getGoid() != null ? solutionKit.getGoid().hashCode() : 0);
-        result = 197 * result + (entityGoid != null ? entityGoid.hashCode() : 0);
+        result = 197 * result + (entityId != null ? entityId.hashCode() : 0);
         result = 197 * result + (entityType != null ? entityType.name().hashCode() : 0);
         result = 197 * result + (readOnly ? 1 : 0);
         return result;

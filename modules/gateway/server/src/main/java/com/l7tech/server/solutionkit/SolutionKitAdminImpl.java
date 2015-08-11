@@ -216,7 +216,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
      */
     private void updateEntityOwnershipDescriptors(@NotNull final String resultMappings,
                                                   @NotNull final SolutionKit solutionKit) throws SAXException, IOException {
-        final HashMap<Goid, EntityType> deletedEntities = new HashMap<>();
+        final HashMap<String, EntityType> deletedEntities = new HashMap<>();
 
         final Set<EntityOwnershipDescriptor> newOwnershipDescriptors = new HashSet<>();
         final Set<EntityOwnershipDescriptor> obsoleteOwnershipDescriptors = new HashSet<>();
@@ -238,10 +238,9 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                         EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
 
                 if (Deleted == mappingResultAction) {
-                    deletedEntities.put(Goid.parseGoid(entityId), EntityType.valueOf(entityType));
+                    deletedEntities.put(entityId, EntityType.valueOf(entityType));
                 } else if (CreatedNew == mappingResultAction) {
-                    EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit,
-                            Goid.parseGoid(entityId), EntityType.valueOf(entityType), true);
+                    EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), true);
                     newOwnershipDescriptors.add(d);
                 }
             }
@@ -258,11 +257,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                 if (0 == deletedEntities.size())
                     break;
 
-                EntityType deletedEntityType = deletedEntities.get(descriptor.getEntityGoid());
+                EntityType deletedEntityType = deletedEntities.get(descriptor.getEntityId());
 
                 if (null != deletedEntityType) {
                     obsoleteOwnershipDescriptors.add(descriptor);
-                    deletedEntities.remove(descriptor.getEntityGoid());
+                    deletedEntities.remove(descriptor.getEntityId());
                 }
             }
 

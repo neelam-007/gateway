@@ -103,11 +103,11 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
 
     @Override
     public void updateProtectedEntityTracking() throws FindException {
-        List< Pair< EntityType, Goid> > solutionKitOwnedEntities = new ArrayList<>();
+        List< Pair< EntityType, String> > solutionKitOwnedEntities = new ArrayList<>();
 
         for (SolutionKit solutionKit : findAll()) {
             for (EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
-                solutionKitOwnedEntities.add( new Pair<>( descriptor.getEntityType(), descriptor.getEntityGoid() ) );
+                solutionKitOwnedEntities.add( Pair.pair( descriptor.getEntityType(), descriptor.getEntityId() ) );
             }
         }
 

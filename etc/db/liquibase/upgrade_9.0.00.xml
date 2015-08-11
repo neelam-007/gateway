@@ -312,4 +312,25 @@
         <dropColumn tableName="solution_kit_meta" columnName="user_created" />
         <renameColumn tableName="solution_kit_meta" oldColumnName="user_editable" newColumnName="read_only" columnDataType="${tinyint.type}" />
     </changeSet>
+    <changeSet author="gateway" id="solution_kit_meta_remove_entity_goid_add_entity_id_instead">
+        <addColumn tableName="solution_kit_meta">
+            <column name="entity_id" type="VARCHAR(255)" defaultValue="">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql>
+            update solution_kit_meta set entity_id = goidToString(entity_goid)
+        </sql>
+        <dropDefaultValue tableName="solution_kit_meta" columnName="entity_id" />
+        <dropColumn tableName="solution_kit_meta" columnName="entity_goid"/>
+        <rollback>
+            <addColumn tableName="solution_kit_meta">
+                <column name="entity_goid" type="${goid.type}" defaultValue="toGoid(0, -1)"> <!-- rollback to default goid don't know how to convert from string to goid -->
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+            <dropDefaultValue tableName="solution_kit_meta" columnName="entity_goid" />
+            <dropColumn tableName="solution_kit_meta" columnName="entity_id"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
