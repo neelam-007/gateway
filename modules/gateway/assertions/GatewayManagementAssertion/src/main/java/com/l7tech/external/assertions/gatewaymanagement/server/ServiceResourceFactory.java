@@ -217,6 +217,9 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         if ( publishedService.isSoap() ) {
             resourceSets.add( buildWsdlResourceSet( publishedService, serviceDocuments ) );
         }
+        else if(!serviceDocuments.isEmpty()) {
+            resourceSets.add(buildRestResourceSet(serviceDocuments));
+        }
         service.setResourceSets( resourceSets );
 
         serviceDetail.setId( publishedService.getId() );
@@ -346,6 +349,12 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
             case ResourceHelper.SWAGGER_YAML_TYPE:
                 document.setContentType("text/plain");
                 break;
+            case ResourceHelper.RAML_TYPE:
+                document.setContentType("application/raml+yaml");
+                break;
+            case ResourceHelper.WADL_TYPE:
+                document.setContentType("application/vnd.sun.wadl+xml");
+                break;
             default:
                 document.setContentType("application/octet-stream");
         }
@@ -358,9 +367,15 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
 
     @Override
     protected EntityBag<PublishedService> loadEntityBag( final PublishedService entity ) throws ObjectModelException {
-        //TODO: determine the type of the service
-
-        return new ServiceEntityBag( entity, serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT ) );
+        Collection<ServiceDocument> serviceDocuments = null;
+        if(entity.isSoap()) {
+            serviceDocuments = serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT);
+        }
+        else {
+            //this is a REST service so get the documents
+            serviceDocuments = serviceDocumentManager.findByServiceId((entity.getGoid()));
+        }
+        return new ServiceEntityBag(entity, serviceDocuments);
     }
 
     @Override
@@ -578,6 +593,21 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
             includedResource.setContent( serviceDocument.getContents() );
             includedResource.setSourceUrl( serviceDocument.getUri() );
             resourceSet.getResources().add( includedResource );
+        }
+
+        return resourceSet;
+    }
+
+    private ResourceSet buildRestResourceSet(final Collection<ServiceDocument> serviceDocuments) {
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag(ResourceHelper.RESTFUL_TAG);
+        resourceSet.setResources(new ArrayList<Resource>());
+        for (ServiceDocument serviceDocument : serviceDocuments) {
+            final Resource resource = ManagedObjectFactory.createResource();
+            resource.setType(serviceDocument.getType());
+            resource.setSourceUrl(serviceDocument.getUri());
+            resource.setContent(serviceDocument.getContents());
+            resourceSet.getResources().add(resource);
         }
 
         return resourceSet;

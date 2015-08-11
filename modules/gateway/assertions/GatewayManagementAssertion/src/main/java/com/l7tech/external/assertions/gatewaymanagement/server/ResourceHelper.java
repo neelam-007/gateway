@@ -43,6 +43,8 @@ class ResourceHelper {
     static final String SCHEMA_TYPE = "xmlschema";
     static final String SWAGGER_JSON_TYPE = "swagger-json";
     static final String SWAGGER_YAML_TYPE = "swagger-yaml";
+    static final String RAML_TYPE = "raml";
+    static final String WADL_TYPE = "wadl";
 
     static final String POLICY_TAG = "policy";
     static final String WSDL_TAG = "wsdl";
