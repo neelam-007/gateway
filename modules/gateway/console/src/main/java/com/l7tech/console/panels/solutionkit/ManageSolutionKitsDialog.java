@@ -182,6 +182,7 @@ public class ManageSolutionKitsDialog extends JDialog {
                         final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
                         if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
                             solutionKitAdmin.deleteSolutionKit(header.getGoid());
+                            result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
                         } else {
                             result = uninstallSolutionKit(header.getName(), header.getGoid());
                         }
@@ -227,7 +228,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             if ("".equals(result.right())) {
                 msg = "This solution kit requires a manual uninstall. The solution kit record has been deleted, please manually delete entities previously installed by this solution kit.";
             } else {
-                msg = "Solution kit uninstalled successfully.";
+                msg = "Solution kit " + "'" + skName + "' uninstalled successfully.";
             }
             successful = true;
         }
