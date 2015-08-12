@@ -136,8 +136,6 @@ public class ModuleLoadListener implements ApplicationListener {
     private static final String ACCOUNT_PLANS_FRAGMENT_POLICY_XML = "AccountPlansFragment.xml";
     static final String ROOT_FOLDER_NAME = "Root Node";
     static final String API_DELETED_FOLDER_NAME = "APIs Deleted from Portal";
-    static final String OAUTH1X_FRAGMENT_POLICY_NAME = "Require OAuth 1.0 Token";
-    static final String OAUTH20_FRAGMENT_POLICY_NAME = "Require OAuth 2.0 Token";
     private final ApplicationEventProxy applicationEventProxy;
     private final ServiceTemplateManager serviceTemplateManager;
     private final PortalGenericEntityManager<ApiKeyData> apiKeysManager;
@@ -430,28 +428,6 @@ public class ModuleLoadListener implements ApplicationListener {
             }
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Error retrieving policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
-        }
-        try {
-            final Policy found = policyManager.findByUniqueName(OAUTH1X_FRAGMENT_POLICY_NAME);
-            if (found != null) {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH1X_FRAGMENT_GUID, found.getGuid());
-            } else {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH1X_FRAGMENT_GUID, ModuleConstants.NOT_INSTALLED_VALUE);
-                logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH1X_FRAGMENT_POLICY_NAME + ". defaulting to " + ModuleConstants.NOT_INSTALLED_VALUE);
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH1X_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
-        }
-        try {
-            final Policy found = policyManager.findByUniqueName(OAUTH20_FRAGMENT_POLICY_NAME);
-            if (found != null) {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH20_FRAGMENT_GUID, found.getGuid());
-            } else {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH20_FRAGMENT_GUID, ModuleConstants.NOT_INSTALLED_VALUE);
-                logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH20_FRAGMENT_POLICY_NAME + ". defaulting to " + ModuleConstants.NOT_INSTALLED_VALUE);
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH20_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
         }
     }
 
