@@ -19,13 +19,14 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import io.swagger.models.Swagger;
+import io.swagger.models.auth.AuthorizationValue;
+import io.swagger.parser.SwaggerParser;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,15 +34,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-
-import io.swagger.models.*;
-import io.swagger.models.auth.AuthorizationValue;
-import io.swagger.parser.SwaggerParser;
 
 /**
  * Server side implementation of the SwaggerAssertion.
@@ -112,6 +104,9 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
             if (httpRequestKnob == null) {
                 return AssertionStatus.FALSIFIED;
             }
+            String serviceBase = StringUtils.isNotBlank(assertion.getServiceBase())? assertion.getServiceBase() : getServiceRoutingUri(context.getService());
+            String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, "");//remove service from the request uri
+            context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_API_URI, apiUri);
             //TODO: do actual validation
 
         }
@@ -133,26 +128,13 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
     }
 
 
-    String getApiUriFromRequest(String requestUri, String serviceRoutingUri) {
-        String patternString = serviceRoutingUri.replace("*/", "[^/]+/").replace("*","");
-
-        if(patternString.isEmpty()) return requestUri;
-
-        Matcher m = Pattern.compile(patternString).matcher(requestUri);
-        if(m.find()) {
-            String apiUri = requestUri.replace(m.group(0), "");
-            return apiUri.startsWith("/")?apiUri : "/" + apiUri;
-        }
-        return requestUri;
-    }
-
     private String getServiceRoutingUri(PublishedService service) {
         String routingUri = service.getRoutingUri();
 
         if (routingUri == null || routingUri.length() < 1) {
             return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
         } else {
-            return routingUri;
+            return routingUri.replaceAll("/\\*.*$", "");
         }
     }
 

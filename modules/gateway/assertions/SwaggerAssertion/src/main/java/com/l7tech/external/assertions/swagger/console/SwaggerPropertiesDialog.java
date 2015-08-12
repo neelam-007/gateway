@@ -4,12 +4,8 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
-import com.l7tech.gui.util.ClipboardActions;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,6 +24,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private JCheckBox validateSchemeCheckBox;
     private JCheckBox validateRequestArgumentsCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
+    private JTextField serviceBaseTextField;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
 
     public SwaggerPropertiesDialog(final Window parent, final SwaggerAssertion assertion) {
@@ -39,6 +36,9 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     public void setData(SwaggerAssertion assertion) {
         if(assertion.getSwaggerDoc() != null) {
             swaggerDocumentVariable.setVariable(assertion.getSwaggerDoc());
+        }
+        if(assertion.getServiceBase() != null) {
+            serviceBaseTextField.setText(assertion.getServiceBase());
         }
         validateMethodCheckBox.setSelected(assertion.isValidateMethod());
         validatePathCheckBox.setSelected(assertion.isValidatePath());
@@ -57,6 +57,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         }
 
         assertion.setSwaggerDoc(swaggerDocumentVariable.getVariable());
+        assertion.setServiceBase(serviceBaseTextField.getText());
         assertion.setRequireSecurityCredentials(requireSecurityCredentialsToCheckBox.isSelected());
         assertion.setValidateMethod(validateMethodCheckBox.isSelected());
         assertion.setValidatePath(validatePathCheckBox.isSelected());

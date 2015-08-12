@@ -29,10 +29,12 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
     public static final String SWAGGER_BASE_URI = ".baseUri";
     public static final String SWAGGER_DOC = ".document";
     public static final String SWAGGER_HOST = ".host";
+    public static final String SWAGGER_API_URI = ".apiUri";
 
     private final MessageTargetableSupport messageTargetableSupport;
     private String prefix = DEFAULT_PREFIX;
     private String swaggerDoc;
+    private String serviceBase = "";
     private boolean validateMethod = true;
     private boolean validatePath = true;
     private boolean validateScheme = true;
@@ -101,6 +103,15 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
 
     public void setSwaggerDoc(String swaggerDoc) {
         this.swaggerDoc = swaggerDoc;
+    }
+
+
+    public String getServiceBase() {
+        return serviceBase;
+    }
+
+    public void setServiceBase(String serviceBase) {
+        this.serviceBase = serviceBase;
     }
 
 
@@ -192,8 +203,9 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
                 new VariableMetadata(prefix + RESULT_RESPONSE_CODE, false, true, prefix + RESULT_MESSAGE, false, DataType.STRING),
                 new VariableMetadata(prefix + RESULT_MESSAGE, false, true, prefix + RESULT_RESPONSE_CODE, false, DataType.STRING),
                 new VariableMetadata(prefix + RESULT_RESPONSE_TYPE, false, true, prefix + RESULT_RESPONSE_TYPE, false, DataType.STRING),
+                new VariableMetadata(prefix + SWAGGER_HOST, false, false, prefix + SWAGGER_HOST, false, DataType.STRING),
                 new VariableMetadata(prefix + SWAGGER_BASE_URI, false, false, prefix + SWAGGER_BASE_URI, false, DataType.STRING),
-                new VariableMetadata(prefix + SWAGGER_HOST, false, false, prefix + SWAGGER_HOST, false, DataType.STRING)
+                new VariableMetadata(prefix + SWAGGER_API_URI, false, false, prefix + SWAGGER_API_URI, false, DataType.STRING)
         };
     }
 

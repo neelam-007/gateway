@@ -1,35 +1,27 @@
 package com.l7tech.external.assertions.swagger.server;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.message.HttpRequestKnobStub;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
-import io.swagger.models.auth.AuthorizationValue;
-import io.swagger.parser.SwaggerParser;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * Test the SwaggerAssertion.
@@ -1081,6 +1073,8 @@ public class ServerSwaggerAssertionTest {
 
     @Mock
     PolicyEnforcementContext mockContext;
+    @Mock
+    HttpRequestKnob mockRequestKnob;
     Message requestMsg;
     Message responseMsg;
 
@@ -1092,7 +1086,7 @@ public class ServerSwaggerAssertionTest {
     public void setUp() throws Exception {
         //Setup Context
         requestMsg = new Message();
-        requestMsg.attachHttpRequestKnob(new HttpRequestKnobStub());
+        requestMsg.attachHttpRequestKnob(mockRequestKnob);
         responseMsg = new Message();
         responseMsg.attachHttpResponseKnob(new HttpResponseKnob() {
             @Override
@@ -1110,6 +1104,13 @@ public class ServerSwaggerAssertionTest {
                 return 0;
             }
         });
+
+
+        PublishedService service = new PublishedService();
+        service.setRoutingUri("/svr/*");
+        service.setSoap(false);
+        when(mockContext.getService()).thenReturn(service);
+
         assertion = new SwaggerAssertion();
         fixture = new ServerSwaggerAssertion(assertion);
     }
@@ -1131,6 +1132,7 @@ public class ServerSwaggerAssertionTest {
         assertion.setSwaggerDoc("swaggerDoc");
         Map<String,Object> varMap = new HashMap<>();
         varMap.put("swaggerdoc", TEST_SWAGGER_JSON);
+        when(mockRequestKnob.getRequestUri()).thenReturn("/svr/pet/findByStatus");
         when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
         when(mockContext.getVariable("swaggerDoc")).thenReturn(TEST_SWAGGER_JSON);
         when(mockContext.getTargetMessage(assertion)).thenReturn(requestMsg);
@@ -1138,6 +1140,7 @@ public class ServerSwaggerAssertionTest {
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(mockContext));
         verify(mockContext,times(1)).setVariable("sw.host","petstore.swagger.io:8080");
         verify(mockContext, times(1)).setVariable("sw.baseUri", "/v2");
+        verify(mockContext, times(1)).setVariable("sw.apiUri", "/pet/findByStatus");
     }
 
 }
