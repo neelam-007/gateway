@@ -9,7 +9,9 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.policy.Policy;
 import com.l7tech.server.entity.GenericEntityManager;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ConfigFactory;
@@ -45,6 +47,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
         serviceManager = applicationContext.getBean("serviceManager", ServiceManager.class);
         applicationEventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
+        policyManager = applicationContext.getBean("policyManager", PolicyManager.class);
     }
 
     public static PortalManagedServiceManager getInstance(@NotNull final ApplicationContext context) {
@@ -123,6 +126,29 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
             } catch (final SAXException e) {
                 throw new FindException("Error parsing Portal Managed Service properties for service with goid=" + serviceId, e);
             }
+        } else if(publishedService.getProperty(ModuleConstants.API_ID_SERVICE_PROPERTY_NAME) != null) {
+            //portalID is set when portal published api created on sync via restman
+            //portalID should match the same ID in the 'Set As Portal Managed Service' marker assertion
+            //portalID should also be the ID used as the GUID to create the portal published service fragment
+            String fragmentGuid = publishedService.getProperty(ModuleConstants.API_ID_SERVICE_PROPERTY_NAME);
+            Policy fragmentPolicy = policyManager.findByGuid(fragmentGuid);
+            //need to construct PortalManagedService using the fragment's policy
+            String fragmentPolicyXml = fragmentPolicy.getXml();
+            if (fragmentPolicyXml != null && (fragmentPolicyXml.contains(ModuleConstants.TEMP_PORTAL_MANAGED_SERVICE_INDICATOR) || fragmentPolicyXml.contains(ModuleConstants.PORTAL_MANAGED_SERVICE_INDICATOR))) {
+              try {
+                final PortalManagedService fromPolicy = createPortalManagedService(serviceId, fragmentPolicyXml);
+                if (fromPolicy != null && StringUtils.isNotBlank(fromPolicy.getName())) {
+                    portalManagedService = fromPolicy;
+                } else if (fromPolicy != null) {
+                  LOGGER.log(Level.WARNING, "Service with goid=" + serviceId + ", portalID=" + fragmentGuid + " and " +
+                          "fragmentGuid=" + fragmentGuid + " is not a valid Portal Managed " +
+                          "Service.");
+                }
+              } catch (final SAXException e) {
+                throw new FindException("Error parsing Portal Managed Service properties for service with goid=" + serviceId + ", portalID=" + fragmentGuid + " and " +
+                          "fragmentGuid=" + fragmentGuid, e);
+              }
+            }
         } else {
             LOGGER.log(Level.FINE, "Service with goid=" + serviceId + " is not a Portal Managed Service.");
         }
@@ -154,6 +180,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     private final ServiceManager serviceManager;
     private final ApplicationEventProxy applicationEventProxy;
     private static PortalManagedServiceManager instance;
+    private final PolicyManager policyManager;
 
     static final int NUM_UPDATE_LOCKS = ConfigFactory.getIntProperty("portalManagedServiceManager.numUpdateLocks", DEFAULT_NUM_UPDATE_LOCKS);
     static final Object[] updateLocks = new Object[NUM_UPDATE_LOCKS];
