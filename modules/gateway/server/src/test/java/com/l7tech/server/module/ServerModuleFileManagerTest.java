@@ -9,15 +9,19 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.EntityManagerTest;
 import com.l7tech.util.Charsets;
-import org.junit.Assert;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.LazyInitializationException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -25,6 +29,12 @@ import java.util.Random;
  * Test {@link ServerModuleFileManager}
  */
 public class ServerModuleFileManagerTest extends EntityManagerTest {
+
+    private static final String SAMPLE_CERT = "MIICAjCCAWugAwIBA...V2fcZJaZVGDMHk\\r\\nhc4xiQo\\=";
+    private static final String SAMPLE_SIGNATURE = "f/Ih+dqfkS03...nTJeI3YI8\\=/tREYl6Sl5U+y0\\=";
+    private static final String SAMPLE_SIGNATURE_PROPERTIES_STRING =
+            "signature=" + SAMPLE_SIGNATURE + "\n" +
+                    "cert=" + SAMPLE_CERT;
 
     private ServerModuleFileManager serverModuleFileManager;
     private String clusterNodeId;
@@ -121,7 +131,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
             final ModuleType type = ModuleType.values()[rnd.nextInt(typeLength)];
             newEntity.setName("module_" + i);
             newEntity.setModuleType(type);
-            newEntity.createData(String.valueOf("test_data_" + i).getBytes(Charsets.UTF8), "sha_" + i);
+            final byte[] bytes = String.valueOf("test_data_" + i).getBytes(Charsets.UTF8);
+            newEntity.createData(bytes, "sha_" + i, null); // unsigned; doesn't really matter for the manager
             if (i <= 3) newEntity.setStateForNode(clusterNodeId, ModuleState.UPLOADED);
             final Goid goid = new Goid(GOID_HI_START, i);
             serverModuleFileManager.save(goid, newEntity);
@@ -597,7 +608,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        entity.createData("test123".getBytes(), "non_existent_sha");
+        byte[] bytes = "test123".getBytes(Charsets.UTF8);
+        entity.createData(bytes, "non_existent_sha", null);
         entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
@@ -611,7 +623,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        entity.createData("test123".getBytes(), "sha_2");
+        bytes = "test123".getBytes(Charsets.UTF8);
+        entity.createData(bytes, "sha_2", null);
         entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
@@ -625,7 +638,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        entity.createData("test123".getBytes(), "sha_1");
+        bytes = "test123".getBytes(Charsets.UTF8);
+        entity.createData(bytes, "sha_1", null);
         entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
@@ -639,7 +653,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity = new ServerModuleFile();
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        entity.createData("test123".getBytes(), "sha_2");
+        bytes = "test123".getBytes(Charsets.UTF8);
+        entity.createData(bytes, "sha_2", null);
         entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         try {
             serverModuleFileManager.save(entity);
@@ -653,7 +668,8 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity = new ServerModuleFile();
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        entity.createData("test123".getBytes(), "non_existent_sha");
+        bytes = "test123".getBytes(Charsets.UTF8);
+        entity.createData(bytes, "non_existent_sha", null);
         entity.setStateForNode(clusterNodeId, ModuleState.ACCEPTED);
         Assert.assertNotNull(serverModuleFileManager.save(entity));
         flushSession();
@@ -694,5 +710,71 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         session.evict(entity); // remove from cache
         Assert.assertNotNull(entity.getStates());
         Assert.assertFalse(entity.getStates().isEmpty());
+    }
+
+    @Test
+    public void test_findModuleWithSha256() throws Exception {
+        insertSampleModules();
+
+        ServerModuleFile entity = serverModuleFileManager.findModuleWithSha256("sha_1");
+        Assert.assertNotNull(entity);
+        Assert.assertEquals(entity.getGoid(), new Goid(GOID_HI_START, 1));
+
+        entity = serverModuleFileManager.findModuleWithSha256("sha_2");
+        Assert.assertNotNull(entity);
+        Assert.assertEquals(entity.getGoid(), new Goid(GOID_HI_START, 2));
+
+        entity = serverModuleFileManager.findModuleWithSha256("sha_200");
+        Assert.assertNull(entity);
+    }
+
+    @Test
+    public void test_getModuleBytesAsStreamWithSignature() throws Exception {
+        insertSampleModules();
+
+        // add a signed module
+        final ServerModuleFile newEntity = new ServerModuleFile();
+        final ModuleType type = ModuleType.values()[rnd.nextInt(typeLength)];
+        newEntity.setName("module_" + 100);
+        newEntity.setModuleType(type);
+        final byte[] bytes = String.valueOf("test_data_" + 100).getBytes(Charsets.UTF8);
+        newEntity.createData(bytes, "sha_" + 100, SAMPLE_SIGNATURE_PROPERTIES_STRING);
+        final Goid goid = new Goid(GOID_HI_START, 100);
+        serverModuleFileManager.save(goid, newEntity);
+        Assert.assertEquals(goid, newEntity.getGoid());
+        flushSession();
+
+        // make sure module is saved successfully
+        ServerModuleFile entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 100));
+        Assert.assertNotNull(entity);
+        Assert.assertEquals(entity.getGoid(), new Goid(GOID_HI_START, 100));
+
+        // module_1
+        Pair<InputStream, String> streamWithSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(new Goid(GOID_HI_START, 1));
+        Assert.assertNotNull(streamWithSignature);
+        Assert.assertNotNull(streamWithSignature.left);
+        try (final InputStream is = streamWithSignature.left) {
+            Assert.assertTrue(Arrays.equals(IOUtils.slurpStream(is), "test_data_1".getBytes(Charsets.UTF8)));
+        }
+        Assert.assertNull(streamWithSignature.right);
+
+        // module_2
+        streamWithSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(new Goid(GOID_HI_START, 2));
+        Assert.assertNotNull(streamWithSignature);
+        Assert.assertNotNull(streamWithSignature.left);
+        try (final InputStream is = streamWithSignature.left) {
+            Assert.assertTrue(Arrays.equals(IOUtils.slurpStream(is), "test_data_2".getBytes(Charsets.UTF8)));
+        }
+        Assert.assertNull(streamWithSignature.right);
+
+        // module_100
+        streamWithSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(new Goid(GOID_HI_START, 100));
+        Assert.assertNotNull(streamWithSignature);
+        Assert.assertNotNull(streamWithSignature.left);
+        try (final InputStream is = streamWithSignature.left) {
+            Assert.assertTrue(Arrays.equals(IOUtils.slurpStream(is), bytes));
+        }
+        Assert.assertNotNull(streamWithSignature.right);
+        Assert.assertEquals(streamWithSignature.right, SAMPLE_SIGNATURE_PROPERTIES_STRING);
     }
 }

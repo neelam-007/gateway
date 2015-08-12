@@ -6,10 +6,15 @@ import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.policy.module.ModulesScannerTestBase;
+import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.Either;
+import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Ignore;
 
 import java.io.*;
 import java.util.*;
@@ -19,12 +24,60 @@ import java.util.*;
  * Provides common ways of creating {@code ServerModuleFile}'s.
  *
  */
-public class ServerModuleFileTestBase extends ModulesScannerTestBase {
+@SuppressWarnings("UnusedDeclaration")
+@Ignore
+public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
 
     // used to generate random GOID
     protected static final Random rnd = new Random();
     protected static final int typeLength = ModuleType.values().length;
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
+
+    // our signer utils object
+    protected static SignatureVerifier SIGNATURE_VERIFIER;
+    protected static final String[] SIGNER_CERT_DNS = {
+            "cn=signer.team1.apim.ca.com",
+            "cn=signer.team2.apim.ca.com",
+            "cn=signer.team3.apim.ca.com",
+            "cn=signer.team4.apim.ca.com"
+    };
+
+    protected static void beforeClass() throws Exception {
+        SignatureTestUtils.beforeClass();
+        SIGNATURE_VERIFIER = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
+    }
+
+    protected static void afterClass() throws Exception {
+        SignatureTestUtils.afterClass();
+    }
+
+    /**
+     * Utility method for signing the specified content {@code File} and getting the signature in one step.
+     */
+    protected static String signAndGetSignature(final File content, final String signerCertDn) throws Exception {
+        Assert.assertThat(content, Matchers.notNullValue());
+        Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
+        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+    }
+
+    /**
+     * Utility method for signing the specified content {@code InputStream} and getting the signature in one step.
+     */
+    protected static String signAndGetSignature(final InputStream content, final String signerCertDn) throws Exception {
+        Assert.assertThat(content, Matchers.notNullValue());
+        Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
+        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+    }
+
+    /**
+     * Utility method for signing the specified content byte array and getting the signature in one step.
+     */
+    protected static String signAndGetSignature(final byte[] content, final String signerCertDn) throws Exception {
+        Assert.assertThat(content, Matchers.notNullValue());
+        Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
+        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+    }
 
     /**
      * Utility class for storing the module bytes as a File.
@@ -32,18 +85,20 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
     @SuppressWarnings("serial")
     protected class MyServerModuleFile extends ServerModuleFile {
         private Either<File, byte[]> content;
-        public void setModuleContent(final Either<File, byte[]> content) {
+        private String signature;
+        public void setModuleContent(final Either<File, byte[]> content, final String signature) {
             Assert.assertNotNull(content);
             Assert.assertTrue(content.isLeft() || content.isRight());
             this.content = content;
+            this.signature = signature;
         }
-        public InputStream getModuleContentStream() throws FileNotFoundException {
+        public Pair<InputStream, String> getModuleContentStreamWithSignature() throws IOException {
             if (content != null) {
                 Assert.assertTrue(content.isLeft() || content.isRight());
                 if (content.isLeft()) {
-                    return new BufferedInputStream(new FileInputStream(content.left()));
+                    return Pair.<InputStream, String>pair(new BufferedInputStream(new FileInputStream(content.left())), signature);
                 } else {
-                    return new ByteArrayInputStream(content.right());
+                    return Pair.<InputStream, String>pair(new ByteArrayInputStream(content.right()), signature);
                 }
             }
             return null;
@@ -61,6 +116,7 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
         private ModuleType moduleType;
         private Either<File, byte[]> moduleContent;
         private String checkSum;
+        private String signature;
 
         /**
          * Pre-attached {@link MyServerModuleFile}.
@@ -122,6 +178,11 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
             return this;
         }
 
+        public ServerModuleFileBuilder signature(final String signature) {
+            this.signature = signature;
+            return this;
+        }
+
         public ServerModuleFileBuilder checkSum(final String checkSum) {
             this.checkSum = checkSum;
             return this;
@@ -150,6 +211,11 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
             return this;
         }
 
+        public ServerModuleFileBuilder clearProperties() {
+            this.properties.clear();
+            return this;
+        }
+
         public MyServerModuleFile build() {
             Assert.assertNotNull(moduleFile);
             if (goid != null) {
@@ -165,10 +231,10 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
                 moduleFile.setModuleType(moduleType);
             }
             if (moduleContent != null) {
-                moduleFile.setModuleContent(moduleContent);
                 try {
-                    moduleFile.setModuleSha256(ModuleDigest.digest(moduleFile.getModuleContentStream()));
-                } catch (final IOException e) {
+                    moduleFile.setModuleContent(moduleContent, signature);
+                    moduleFile.setModuleSha256(ModuleDigest.hexEncodedDigest(moduleFile.getModuleContentStreamWithSignature().left));
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -216,7 +282,7 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
      * @param moduleType    the module type either {@link ModuleType#MODULAR_ASSERTION} or {@link ModuleType#CUSTOM_ASSERTION}
      * @param moduleBytes   the module file containing the bytes, instead of loading the bytes in memory. Optional and can be {@code null}.
      */
-    protected MyServerModuleFile create_test_module_without_states(final long ordinal, ModuleType moduleType, final File moduleBytes) {
+    protected MyServerModuleFile create_test_module_without_states(final long ordinal, ModuleType moduleType, final File moduleBytes, final String signature) throws Exception {
         Assert.assertTrue(moduleBytes == null || moduleBytes.exists());
         moduleType = moduleType != null ? moduleType : ModuleType.values()[rnd.nextInt(typeLength)];
         return new ServerModuleFileBuilder()
@@ -225,6 +291,7 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
                 .version(0)
                 .moduleType(moduleType)
                 .content(moduleBytes)
+                .signature(signature)
                 .addProperty(ServerModuleFile.PROP_FILE_NAME, (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? "CustomAssertion" : "ModularAssertion") + "FileName" + ordinal + (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? ".jar" : ".aar"))
                 .addProperty(ServerModuleFile.PROP_ASSERTIONS, (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? "Custom" : "Modular") + "Assertion_" + ordinal)
                 .addProperty(ServerModuleFile.PROP_SIZE, String.valueOf(moduleBytes != null ? moduleBytes.length() : 0))
@@ -232,9 +299,9 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
     }
 
     /**
-     * @see #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, java.io.File)
+     * @see #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, java.io.File, java.lang.String)
      */
-    protected MyServerModuleFile create_test_module_without_states(final long ordinal, ModuleType moduleType, final byte[] moduleBytes) {
+    protected MyServerModuleFile create_test_module_without_states(final long ordinal, ModuleType moduleType, final byte[] moduleBytes, final String signature) throws Exception {
         moduleType = moduleType != null ? moduleType : ModuleType.values()[rnd.nextInt(typeLength)];
         return new ServerModuleFileBuilder()
                 .goid(new Goid(GOID_HI_START, ordinal))
@@ -242,9 +309,44 @@ public class ServerModuleFileTestBase extends ModulesScannerTestBase {
                 .version(0)
                 .moduleType(moduleType)
                 .content(moduleBytes)
+                .signature(signature)
                 .addProperty(ServerModuleFile.PROP_FILE_NAME, (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? "CustomAssertion" : "ModularAssertion") + "FileName" + ordinal + (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? ".jar" : ".aar"))
                 .addProperty(ServerModuleFile.PROP_ASSERTIONS, (ModuleType.CUSTOM_ASSERTION.equals(moduleType) ? "Custom" : "Modular") + "Assertion_" + ordinal)
                 .addProperty(ServerModuleFile.PROP_SIZE, String.valueOf(moduleBytes != null ? moduleBytes.length : 0))
                 .build();
+    }
+
+    /**
+     * Same as {@link #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, java.io.File, String)}
+     * but automatically sign the module content.
+     */
+    protected MyServerModuleFile create_and_sign_test_module_without_states(final long ordinal, ModuleType moduleType, final File moduleBytes, final String signatureDn) throws Exception {
+        return create_test_module_without_states(ordinal, moduleType, moduleBytes, signAndGetSignature(moduleBytes, signatureDn));
+    }
+
+    /**
+     * Same as {@link #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, byte[], String)}
+     * but automatically sign the module content.
+     */
+    protected MyServerModuleFile create_and_sign_test_module_without_states(final long ordinal, ModuleType moduleType, final byte[] moduleBytes, final String signatureDn) throws Exception {
+        return create_test_module_without_states(ordinal, moduleType, moduleBytes, signAndGetSignature(moduleBytes, signatureDn));
+    }
+
+    /**
+     * Creates unsigned {@code ServerModuleFile}.<br/>
+     * Same as {@link #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, java.io.File, String)}
+     * but pass {@code null} for signature.
+     */
+    protected MyServerModuleFile create_unsigned_test_module_without_states(final long ordinal, ModuleType moduleType, final File moduleBytes) throws Exception {
+        return create_test_module_without_states(ordinal, moduleType, moduleBytes, null);
+    }
+
+    /**
+     * Creates unsigned {@code ServerModuleFile}.<br/>
+     * Same as {@link #create_test_module_without_states(long, com.l7tech.gateway.common.module.ModuleType, byte[], String)}
+     * but pass {@code null} for signature.
+     */
+    protected MyServerModuleFile create_unsigned_test_module_without_states(final long ordinal, ModuleType moduleType, final byte[] moduleBytes) throws Exception {
+        return create_test_module_without_states(ordinal, moduleType, moduleBytes, null);
     }
 }

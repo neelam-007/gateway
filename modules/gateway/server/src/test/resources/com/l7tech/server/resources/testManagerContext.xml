@@ -27,9 +27,17 @@
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
 
+    <!-- ByteArrayStashManager is for the serverModuleFileManager bean, must be prototype -->
+    <bean id="byteArrayStashManager" class="com.l7tech.common.mime.ByteArrayStashManager" scope="prototype" />
+
     <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterNodeId"/>
+        <constructor-arg index="2">
+            <bean class="com.l7tech.server.StashManagerFactory">
+                <lookup-method name="createStashManager" bean="byteArrayStashManager" />
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">

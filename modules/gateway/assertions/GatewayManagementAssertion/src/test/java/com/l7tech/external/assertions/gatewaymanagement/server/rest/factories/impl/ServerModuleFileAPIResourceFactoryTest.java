@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.imp
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ServerModuleFileTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.EntityType;
@@ -16,10 +17,9 @@ import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -30,8 +30,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -71,7 +69,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 // Custom Assertions Modules
                 .put(
                         new Goid(GOID_HI_START, goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.CUSTOM_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -79,7 +77,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.CUSTOM_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -87,7 +85,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.CUSTOM_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -95,7 +93,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.CUSTOM_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -103,7 +101,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.CUSTOM_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -112,7 +110,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 // Modular Assertions Modules
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.MODULAR_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -120,7 +118,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.MODULAR_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -128,7 +126,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.MODULAR_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -136,7 +134,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.MODULAR_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -144,7 +142,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .put(
                         new Goid(GOID_HI_START, ++goidInc),
-                        create_test_module_without_states(
+                        create_unsigned_test_module_without_states(
                                 goidInc,
                                 ModuleType.MODULAR_ASSERTION,
                                 ("content for module " + goidInc).getBytes(Charsets.UTF8)
@@ -152,7 +150,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
                 )
                 .unmodifiableMap();
 
-        // mock ServerModuleFileManager findByPrimaryKey and getModuleBytesAsStream
+        // mock ServerModuleFileManager findByPrimaryKey and getModuleBytesAsStreamWithSignature
         Mockito.doAnswer(new Answer<ServerModuleFile>() {
             @Override
             public ServerModuleFile answer(final InvocationOnMock invocation) throws Throwable {
@@ -166,38 +164,52 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
             }
         }).when(manager).findByPrimaryKey(Mockito.<Goid>any());
 
-        Mockito.doAnswer(new Answer<InputStream>() {
+        Mockito.doAnswer(new Answer<Pair<InputStream, String>>() {
             @Override
-            public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+            public Pair<InputStream, String> answer(final InvocationOnMock invocation) throws Throwable {
                 assertThat("Only one param", invocation.getArguments().length, Matchers.is(1));
                 final Object param1 = invocation.getArguments()[0];
                 assertThat("First Param is Goid", param1, Matchers.instanceOf(Goid.class));
                 final Goid goid = (Goid)param1;
                 assertThat(goid, Matchers.notNullValue());
                 // get the module from our repository
-                return getModuleFileBytesStream(goid);
+                return getModuleFileBytesWithSignature(goid);
             }
-        }).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        }).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
     }
 
-    @Override
-    protected MyServerModuleFile create_test_module_without_states(long ordinal, ModuleType moduleType, File moduleBytes) {
-        return super.create_test_module_without_states(ordinal, moduleType, moduleBytes);
-    }
-
-    private InputStream getModuleFileBytesStream(final Goid goid) throws FileNotFoundException {
+    private Pair<InputStream, String> getModuleFileBytesWithSignature(final Goid goid) throws IOException {
         assertThat(goid, Matchers.notNullValue());
         final ServerModuleFile moduleFile = moduleFiles.get(goid);
         if (moduleFile != null) {
-            return getModuleFileBytes(moduleFile);
+            return getModuleFileBytesWithSignature(moduleFile);
         }
         return null;
     }
 
-    private InputStream getModuleFileBytes(final ServerModuleFile moduleFile) throws FileNotFoundException {
+    private Pair<InputStream, String> getModuleFileBytesWithSignature(final ServerModuleFile moduleFile) throws IOException {
         assertThat(moduleFile, Matchers.instanceOf(MyServerModuleFile.class));
-        assertThat(((MyServerModuleFile) moduleFile).getModuleContentStream(), Matchers.notNullValue());
-        return ((MyServerModuleFile) moduleFile).getModuleContentStream();
+        final MyServerModuleFile myServerModuleFile = (MyServerModuleFile)moduleFile;
+        assertThat(myServerModuleFile.getModuleContentStreamWithSignature(), Matchers.notNullValue());
+        return myServerModuleFile.getModuleContentStreamWithSignature();
+    }
+
+    private byte[] getModuleFileBytes(final Goid goid) throws IOException {
+        final Pair<InputStream, String> streamAndSignature = getModuleFileBytesWithSignature(goid);
+        if (streamAndSignature != null) {
+            assertThat(streamAndSignature.left, Matchers.notNullValue());
+            return IOUtils.slurpStream(streamAndSignature.left);
+        }
+        return null;
+    }
+
+    private byte[] getModuleFileBytes(final ServerModuleFile moduleFile) throws IOException {
+        final Pair<InputStream, String> streamAndSignature = getModuleFileBytesWithSignature(moduleFile);
+        if (streamAndSignature != null) {
+            assertThat(streamAndSignature.left, Matchers.notNullValue());
+            return IOUtils.slurpStream(streamAndSignature.left);
+        }
+        return null;
     }
 
     @Test
@@ -220,7 +232,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
 
         moduleFileMO = factory.getResource(testGoid.toString(), true);
         assertThat(moduleFileMO, Matchers.notNullValue());
-        assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(IOUtils.slurpStream(getModuleFileBytesStream(testGoid))));
+        assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(getModuleFileBytes(testGoid)));
     }
 
     @Test
@@ -247,7 +259,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
         final Goid testGoid = new Goid(GOID_HI_START, 0);
 
         // first throw FindException
-        Mockito.doThrow(FindException.class).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doThrow(FindException.class).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         // first make sure the module exists without gathering the module data
         final ServerModuleFileMO moduleFileMO = factory.getResource(testGoid.toString(), false);
@@ -263,7 +275,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
         }
 
         // second throw FindException
-        Mockito.doThrow(IOException.class).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doThrow(IOException.class).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         // now try to get the module data on the same module
         try {
@@ -274,7 +286,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
         }
 
         // finally return null
-        Mockito.doReturn(null).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doReturn(null).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         // now try to get the module data on the same module
         try {
@@ -295,7 +307,7 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
         moduleFileMO.setName("new custom assertion module 1");
         moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
         byte[] bytes = "new custom assertion module 1 bytes".getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
 
         // test POST (upload)
@@ -335,70 +347,70 @@ public class ServerModuleFileAPIResourceFactoryTest extends ServerModuleFileTest
     }
 
     @Test
-    public void testSetModuleData() throws Exception {
+    public void testSetModuleDataAndSignature() throws Exception {
         // test for null value
         try {
             //noinspection ConstantConditions
-            factory.setModuleData(null);
-            fail("setModuleData don't accept null");
+            factory.setModuleDataAndSignature(null);
+            fail("setModuleDataAndSignature don't accept null");
         } catch (IllegalArgumentException e) {
             // OK
         }
 
         // crate a new sample module file
-        final ServerModuleFile moduleFile = create_test_module_without_states(
+        final ServerModuleFile moduleFile = create_unsigned_test_module_without_states(
                 100,
                 ModuleType.MODULAR_ASSERTION,
                 "new test module 100".getBytes(Charsets.UTF8)
         );
         assertThat(moduleFile, Matchers.notNullValue());
-        // mock getModuleBytesAsStream to return InputStream towards our test module.
-        Mockito.doAnswer(new Answer<InputStream>() {
+        // mock getModuleBytesAsStreamWithSignature to return InputStream towards our test module.
+        Mockito.doAnswer(new Answer<Pair<InputStream, String>>() {
             @Override
-            public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+            public Pair<InputStream, String> answer(final InvocationOnMock invocation) throws Throwable {
                 assertThat("Only one param", invocation.getArguments().length, Matchers.is(1));
                 final Object param1 = invocation.getArguments()[0];
                 assertThat("First Param is Goid", param1, Matchers.instanceOf(Goid.class));
                 final Goid goid = (Goid)param1;
                 assertThat(goid, Matchers.equalTo(moduleFile.getGoid()));
-                return getModuleFileBytes(moduleFile);
+                return getModuleFileBytesWithSignature(moduleFile);
             }
-        }).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        }).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         ServerModuleFileMO moduleFileMO = transformer.convertToMO(moduleFile, false); // exclude bytes
         assertThat(moduleFileMO.getModuleData(), Matchers.nullValue());
-        factory.setModuleData(moduleFileMO); // now set the module data
-        assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(IOUtils.slurpStream(getModuleFileBytes(moduleFile))));
+        factory.setModuleDataAndSignature(moduleFileMO); // now set the module data
+        assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(getModuleFileBytes(moduleFile)));
 
         // throw FindException
-        Mockito.doThrow(FindException.class).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doThrow(FindException.class).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
         moduleFileMO = transformer.convertToMO(moduleFile, false); // exclude bytes
         // now try to get the module data on the same module
         try {
-            factory.setModuleData(moduleFileMO); // now set the module data
-            fail("setModuleData should have failed with ResourceNotFoundException");
+            factory.setModuleDataAndSignature(moduleFileMO); // now set the module data
+            fail("setModuleDataAndSignature should have failed with ResourceNotFoundException");
         } catch (ResourceFactory.ResourceNotFoundException e) {
             // OK
         }
 
         // throw IOException
-        Mockito.doThrow(IOException.class).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doThrow(IOException.class).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
         moduleFileMO = transformer.convertToMO(moduleFile, false); // exclude bytes
         // now try to get the module data on the same module
         try {
-            factory.setModuleData(moduleFileMO); // now set the module data
-            fail("setModuleData should have failed with ResourceAccessException");
+            factory.setModuleDataAndSignature(moduleFileMO); // now set the module data
+            fail("setModuleDataAndSignature should have failed with ResourceAccessException");
         } catch (ResourceFactory.ResourceAccessException e) {
             // OK
         }
 
         // finally return null
-        Mockito.doReturn(null).when(manager).getModuleBytesAsStream(Mockito.<Goid>any());
+        Mockito.doReturn(null).when(manager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
         moduleFileMO = transformer.convertToMO(moduleFile, false); // exclude bytes
         // now try to get the module data on the same module
         try {
-            factory.setModuleData(moduleFileMO); // now set the module data
-            fail("setModuleData should have failed with ResourceNotFoundException");
+            factory.setModuleDataAndSignature(moduleFileMO); // now set the module data
+            fail("setModuleDataAndSignature should have failed with ResourceNotFoundException");
         } catch (ResourceFactory.ResourceNotFoundException e) {
             // OK
         }

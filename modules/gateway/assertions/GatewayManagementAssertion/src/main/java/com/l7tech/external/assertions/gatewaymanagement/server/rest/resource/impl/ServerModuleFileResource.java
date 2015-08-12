@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServerModuleFileAPIResourceFactory;
@@ -9,6 +10,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.rest.SpringBean;
@@ -22,6 +24,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,7 +37,7 @@ import java.util.List;
 public class ServerModuleFileResource extends RestEntityResource<ServerModuleFileMO, ServerModuleFileAPIResourceFactory, ServerModuleFileTransformer> {
 
     private static final byte[] TEMPLATE_SAMPLE_BYTES = "base 64 encoded module bytes goes here".getBytes(Charsets.UTF8);
-    private static final String TEMPLATE_SAMPLE_SHA256 = ServerModuleFile.calcBytesChecksum(TEMPLATE_SAMPLE_BYTES);
+    private static final String TEMPLATE_SAMPLE_SHA256 = ModuleDigest.hexEncodedDigest(TEMPLATE_SAMPLE_BYTES);
 
     protected static final String serverModuleFiles_URI = "serverModuleFiles";
 
@@ -255,6 +258,18 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
         serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION);
         serverModuleFileMO.setModuleSha256(TEMPLATE_SAMPLE_SHA256);
         serverModuleFileMO.setModuleData(TEMPLATE_SAMPLE_BYTES);
+        final CollectionUtils.MapBuilder<String, String> builder = CollectionUtils.MapBuilder.builder();
+        for (final String key : SignerUtils.ALL_SIGNING_PROPERTIES) {
+            builder.put(
+                    key,
+                    "HPKkZ+bVCDJbtZxAcTKLNS+4OhC+AKIPvrihKaew9UJfkKa2u4pXZgp8CMTBgvGBBEtImjY5IUrI&#xD;\n" +
+                            "2cWHnw2t9ahaQ8wBq6nK4CwntLqExDeOxVMVAtBZu2PyLi7qnUPswO0r/ZKudlVrn9EnrieHu+ju&#xD;\n" +
+                            "vcXKDa36yTnNLS+Je6BA1cdAtuO9GBYjl2nr29pVwo69aHNpc1oNiZdxo5HmNrdrkMbUSUdP2XtX&#xD;\n" +
+                            "xOx0jecRhRJU7K4Yw7ONrP4zFpau1lYIfQJEAnnD7BHAIfNu8LgG1nvckSz/2DYpeA9mpQZVj1HJ&#xD;\n" +
+                            "rI0PoEjvI3O+mHCSxAPzqVMKNACQ+AYAx4NbIg=="
+            );
+        }
+        serverModuleFileMO.setProperties(Collections.unmodifiableMap(builder.map()));
         serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
                 .put(ServerModuleFile.PROP_SIZE, "4194378") // ~ 4 MB
                 .put(ServerModuleFile.PROP_ASSERTIONS, "TestAssertion1,TestAssertion2")

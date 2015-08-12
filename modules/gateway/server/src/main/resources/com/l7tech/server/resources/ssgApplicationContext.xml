@@ -2135,6 +2135,7 @@
     <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterNodeId"/>
+        <constructor-arg index="2" ref="stashManagerFactory"/>
     </bean>
 
     <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListener">
@@ -2143,6 +2144,7 @@
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3" ref="assertionRegistry"/>
         <constructor-arg index="4" ref="customAssertionRegistrar"/>
+        <constructor-arg index="5" ref="signatureVerifier"/>
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
@@ -2742,5 +2744,15 @@
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 
     <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" />
+
+    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierImpl" depends-on="systemProperties">
+        <constructor-arg index="0" type="java.io.File" value="file:${com.l7tech.server.configDirectory}${file.separator}trusted_signers"/>
+        <constructor-arg index="1" type="java.lang.String" value="jks"/>
+        <!--
+        Since we don't care about secrecy of certificates we will just use the string "changeit".
+        This also happens to be the passphrase used for the "cacerts" trust store file that comes with the JVM.
+        -->
+        <constructor-arg index="2" type="char[]" value="changeit"/>
+    </bean>
 
 </beans>

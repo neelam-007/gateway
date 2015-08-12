@@ -6,11 +6,12 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
-import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.licensing.CompositeLicense;
+import com.l7tech.gateway.common.licensing.FeatureLicense;
+import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ServerModuleConfig;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
+import java.security.SignatureException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -709,20 +711,19 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     void deleteServerModuleFile( @NotNull Goid id ) throws DeleteException;
 
     /**
-     * Get the {@link ServerModuleFileState state} of the current node.
-     * <p/>
-     * {@link ServerModuleFile} contains a list os states from all nodes in the cluster.
-     * This method is a convenience method for getting the module state, if any, for the current cluster node.
-     * This method will loop through the {@link ServerModuleFile#states states} list finding the state belonging to this node,
-     * this means that there are not going to be calls made into the DB.
+     * Checks signature and also verifies that signer cert is trusted.
      *
-     * @param moduleFile    the module file, holding the states.  Required.
-     * @return the {@link ServerModuleFileState state} for the current cluster node, or {@code null} is there is no state for this node.
+     * @param digest                 SHA-256 digest of the raw input material.  Required and cannot be {@code null}.
+     *                               Note: this MUST NOT just be the value claimed by the sender -- it must be a
+     *                               freshly computed value from hashing the information covered by the signature.
+     * @param signatureProperties    Signature properties reader, holding ASN.1 encoded X.509 certificate as Base64 string
+     *                               and ASN.1 encoded signature value as Base64 string.
+     * @throws java.security.SignatureException if signature cannot be validated or signer cert is not trusted.
      */
-    @Nullable
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @Secured(types = EntityType.SERVER_MODULE_FILE, stereotype = GET_PROPERTY_OF_ENTITY)
-    ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull final ServerModuleFile moduleFile);
+    @Administrative(licensed=false, background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
+    void verifyServerModuleFileSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
 
     /**
      * Get server module configurations.

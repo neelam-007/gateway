@@ -2292,7 +2292,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         final int prevNumDeployedModules = files.length;
 
         // simulate ServerModuleFile with staged file
-        final String moduleDigest = ModuleDigest.digest(stagedFile);
+        final String moduleDigest = ModuleDigest.hexEncodedDigest(stagedFile);
 
         // load the ServerModuleFile
         assertionsScanner.loadServerModuleFile(stagedFile, moduleDigest, entityName);
@@ -2344,7 +2344,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         final int prevNumDeployedModules = files.length;
 
         // simulate ServerModuleFile with staged file
-        final String moduleDigest = ModuleDigest.digest(stagedFile);
+        final String moduleDigest = ModuleDigest.hexEncodedDigest(stagedFile);
 
         // load the ServerModuleFile
         assertionsScanner.updateServerModuleFile(stagedFile, moduleDigest, newEntityName);
@@ -2396,7 +2396,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         final int prevNumDeployedModules = files.length;
 
         // simulate ServerModuleFile with staged file
-        final String moduleDigest = ModuleDigest.digest(stagedFile);
+        final String moduleDigest = ModuleDigest.hexEncodedDigest(stagedFile);
 
         // load the ServerModuleFile
         assertionsScanner.unloadServerModuleFile(stagedFile, moduleDigest, entityName);
@@ -2658,7 +2658,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // load the ServerModuleFile
         assertionsScanner.loadServerModuleFile(
                 stagedServerModuleFile,
-                ModuleDigest.digest(stagedServerModuleFile),
+                ModuleDigest.hexEncodedDigest(stagedServerModuleFile),
                 serverModuleFileEntityName
         );
         // verify the ServerModuleFile was loaded successfully

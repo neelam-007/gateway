@@ -10,6 +10,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
@@ -26,6 +27,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.*;
+import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,6 +60,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     @NotNull protected final Config config;
     @NotNull protected final ServerAssertionRegistry modularAssertionRegistrar;
     @NotNull protected final CustomAssertionsRegistrar customAssertionRegistrar;
+    @NotNull protected final SignatureVerifier signatureVerifier;
     private ApplicationContext applicationContext;
 
     /**
@@ -165,13 +168,15 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             @Nullable final PlatformTransactionManager transactionManager,
             @NotNull final Config config,
             @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
-            @NotNull final CustomAssertionsRegistrar customAssertionRegistrar
+            @NotNull final CustomAssertionsRegistrar customAssertionRegistrar,
+            @NotNull final SignatureVerifier signatureVerifier
     ) {
         this.serverModuleFileManager = serverModuleFileManager;
         this.transactionManager = transactionManager;
         this.config = config;
         this.modularAssertionRegistrar = modularAssertionRegistrar;
         this.customAssertionRegistrar = customAssertionRegistrar;
+        this.signatureVerifier = signatureVerifier;
         // create a single worker to guarantee that there will be no racing conditions
         this.eventHandlerExecutor = Executors.newSingleThreadExecutor();
     }
@@ -329,11 +334,18 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         String moduleStateError = null;
 
         try {
-            // download the module from DB into the staging folder
-            module.setStagingFile(downloadModule(module, getStagingDir()));
+            // download the module data and signature from DB
+            final Pair<InputStream, String> moduleDataAndSignature = downloadModuleDataAndSignature(module);
+            try {
+                // stage module data
+                module.setStagingFile(stageModule(module, moduleDataAndSignature.left, getStagingDir()));
 
-            // check module signature
-            verifySignature(module);
+                // verify module signature
+                verifySignature(module, moduleDataAndSignature.right);
+            } finally {
+                // close module data stream
+                ResourceUtils.closeQuietly(moduleDataAndSignature.left);
+            }
 
             // no exceptions => signature verified; module state is ACCEPTED
             moduleState = ModuleState.ACCEPTED;
@@ -377,7 +389,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             // delete the staging file
             module.deleteStagingFile();
             // log the error
-            logger.log(Level.WARNING, "Error while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Error while Loading Module \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         } catch (final RuntimeException e) {
             moduleState = ModuleState.ERROR;
             moduleStateError = StringUtils.isNotBlank(e.getMessage()) ? e.getMessage() : resources.getString("error.module.load.unhandled");
@@ -386,7 +398,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             // delete the staging file
             module.deleteStagingFile();
             // log the error
-            logger.log(Level.SEVERE, "Unhandled exception while Loading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.SEVERE, "Unhandled exception while Loading Module \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         } finally {
             // finally set the module state accordingly
             if (StringUtils.isNotBlank(moduleStateError)) {
@@ -401,65 +413,93 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
-     * Downloads the module content from the DB and save it into a staging folder.<br/>
-     * A temporary file will be created in the staging folder, with a deleteOnExit flag set.
-     * On error the file will be deleted.
+     * Downloads the module data and signature properties from the Database.
      *
-     * @param module        the module to download.  Required and cannot be {@code null}.
-     * @param stagingDir    the staging folder.  Required and cannot be {@code null}.
-     * @return Staging {@code File}, with a deleteOnExit flag set, holding the location of the downloaded module content,
-     * having a unequally generated file-name (a hex dump of the module goid and a 32bit random number),
-     * with extension either .aar or .jar depending on the module type, either {@link ModuleType#MODULAR_ASSERTION} or {@link ModuleType#CUSTOM_ASSERTION} respectively.
-     * @throws ModuleDownloadException if an error occurs while downloading the file from DB.
+     * @param module    the module to download.  Required and cannot be {@code null}.
+     * @return a {@code Pair} of {@code InputStream}, that delivers the module content, and a {@code String},
+     * that contains the module signature properties.
+     * @throws ModuleDownloadException if an error happens while downloading module data and signature properties.
+     * @see com.l7tech.server.module.ServerModuleFileManager#getModuleBytesAsStreamWithSignature(com.l7tech.objectmodel.Goid)
      */
     @NotNull
-    File downloadModule(
-            @NotNull final ServerModuleFile module,
-            @NotNull final File stagingDir
-    ) throws ModuleDownloadException {
+    Pair<InputStream, String> downloadModuleDataAndSignature(@NotNull final ServerModuleFile module) throws ModuleDownloadException {
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Downloading module; goid \"" + module.getGoid() + "\", stagingDir \"" + stagingDir + "\"");
+            logger.log(Level.FINE, "Downloading Module Data and Signature; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\"");
+        }
+        try {
+            final Pair<InputStream, String> streamAndSignature = Eithers.extract2(
+                    readOnlyTransaction(new Functions.Nullary<Eithers.E2<FindException, ModuleMissingContentsException, Pair<InputStream, String>>>() {
+                        @Override
+                        public Eithers.E2<FindException, ModuleMissingContentsException, Pair<InputStream, String>> call() {
+                            try {
+                                final Pair<InputStream, String> streamAndSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(module.getGoid());
+                                if (streamAndSignature != null)
+                                    return Eithers.right2(streamAndSignature);
+                                return Eithers.left2_2(new ModuleMissingContentsException());
+                            } catch (final FindException e) {
+                                return Eithers.left2_1(e);
+                            }
+                        }
+                    }));
+
+            // for debug purposes
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Module Data and Signature Downloaded Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name is \"");
+            }
+            // finally return the module data and signature
+            return streamAndSignature;
+        } catch (final FindException e) {
+            throw new ModuleDownloadException(e);
+        }
+    }
+
+    /**
+     * Saves the module content into a staging folder.<br/>
+     * A temporary file will be created in the staging folder, with a deleteOnExit flag set,
+     * having a unequally generated file-name (a hex dump of the module goid and a 32bit random number),
+     * with extension either .aar or .jar depending on the module type, either
+     * {@link ModuleType#MODULAR_ASSERTION} or {@link ModuleType#CUSTOM_ASSERTION} respectively.<br/>
+     * On error the file will be deleted.
+     *
+     * @param module        the module to stage.  Required and cannot be {@code null}.
+     * @param dataStream    the module data {@code InputStream}.  Required and cannot be {@code null}.
+     * @param stagingDir    the staging folder.  Required and cannot be {@code null}.
+     * @return A {@code Pair} of the staging {@code File}, holding the location of the downloaded module content, and a
+     * {@code String} containing the Signature information, never {@code null}.
+     * @throws ModuleStagingException if an error occurs while staging the module data {@code InputStream}.
+     */
+    @NotNull
+    File stageModule(
+            @NotNull final ServerModuleFile module,
+            @NotNull final InputStream dataStream,
+            @NotNull final File stagingDir
+    ) throws ModuleStagingException {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Staging module; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", stagingDir \"" + stagingDir + "\"");
         }
 
         File moduleFile = null;
         try {
             // generate unique random module file name inside staging dir, with deleteOnExit flag set
             moduleFile = generateRandomModuleFileName(stagingDir, module);
-
+            // write module data to file
             final OutputStream out = new BufferedOutputStream(new FileOutputStream(moduleFile));
             try {
-                final InputStream is = Eithers.extract2(
-                        readOnlyTransaction(new Functions.Nullary<Eithers.E2<FindException, ModuleMissingContentsException, InputStream>>() {
-                            @Override
-                            public Eithers.E2<FindException, ModuleMissingContentsException, InputStream> call() {
-                                try {
-                                    final InputStream bytesStream = serverModuleFileManager.getModuleBytesAsStream(module.getGoid());
-                                    if (bytesStream != null)
-                                        return Eithers.right2(bytesStream);
-                                    return Eithers.left2_2(new ModuleMissingContentsException());
-                                } catch (final FindException e) {
-                                    return Eithers.left2_1(e);
-                                }
-                            }
-                        }));
-                try {
-                    IOUtils.copyStream(is, out);
-                    out.flush();
-                } finally {
-                    ResourceUtils.closeQuietly(is);
-                }
+                IOUtils.copyStream(dataStream, out);
+                out.flush();
             } finally {
                 ResourceUtils.closeQuietly(out);
             }
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Module Downloaded Successfully; goid \"" + module.getGoid() + "\", staging file-name is \"" + moduleFile.getPath() + "\"");
+                logger.log(Level.FINE, "Module Staged Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name is \"" + moduleFile.getPath() + "\"");
             }
             // finally return the module file
             return moduleFile;
-        } catch (final IOException | FindException e) {
+        } catch (final IOException e) {
             //noinspection ConstantConditions
             if (moduleFile != null) {
                 try {
@@ -468,26 +508,49 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                     logger.log(Level.WARNING, "Failed to remove staged module file: " + moduleFile, ExceptionUtils.getDebugException(ex));
                 }
             }
-            throw new ModuleDownloadException(e);
+            throw new ModuleStagingException(e);
         }
     }
 
     /**
      * Verify module signature.
      *
-     * @param module           the module entity holding the signature.  Required and cannot be {@code null}
+     * @param module                the module entity holding the signature.  Required and cannot be {@code null}
+     * @param signatureProperties   module signature properties.  Optional and can be {@code null} if module is not signed.
      * @throws ModuleSignatureException when error happens while verifying module signature.
      */
-    void verifySignature(@NotNull final StagedServerModuleFile module) throws ModuleSignatureException {
+    void verifySignature(
+            @NotNull final StagedServerModuleFile module,
+            @Nullable final String signatureProperties
+    ) throws ModuleSignatureException {
         if (!module.hasStagingFile()) {
-            throw new IllegalArgumentException("module must contain a staging file");
-        }
-        // for debug purposes
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Verifying module signature; goid \"" + module.getGoid() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+            throw new ModuleSignatureException(resources.getString("error.signature.file.missing"));
         }
 
-        // TODO : add signature verification logic here
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Verifying module signature; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+        }
+
+        InputStream is = null;
+        try {
+            // get staged file InputStream
+            is = new BufferedInputStream(new FileInputStream(module.getStagingFile()));
+            // verify staged file signature
+            signatureVerifier.verify(is, signatureProperties);
+
+            // for debug purposes
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Module Verified Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", stagingDir \"" + module.getStagingFile() + "\"");
+            }
+        } catch (final FileNotFoundException e) {
+            // shouldn't happen though
+            throw new ModuleSignatureException(resources.getString("error.signature.file.missing"), e);
+        } catch (final SignatureException e) {
+            throw new ModuleRejectedException(e);
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
     }
 
     /**
@@ -602,7 +665,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             logger.log(Level.INFO, "Successfully updated module; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", type \"" + module.getModuleType() + "\"");
         } catch (final ModuleLoadingException e) {
-            logger.log(Level.WARNING, "Error while Updating Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Error while Updating Module \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -647,7 +710,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         } catch (ModuleLoadingException e) {
             // audit un-installation failure
             logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, module);
-            logger.log(Level.WARNING, "Error while Unloading Module \"" + module.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Error while Unloading Module \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -814,17 +877,17 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         if (file != null) {
             try {
                 if (!file.createNewFile()) {
-                    throw new ModuleUniqueFileNameException(resources.getString("error.create.unique.module.file"));
+                    throw new ModuleUniqueFileNameException(resources.getString("error.staging.create.unique.module.file"));
                 }
             } catch (final IOException e) {
-                throw new ModuleUniqueFileNameException(resources.getString("error.create.unique.module.file"), e);
+                throw new ModuleUniqueFileNameException(resources.getString("error.staging.create.unique.module.file"), e);
             }
             file.deleteOnExit();
             return file;
         }
 
         // otherwise throw
-        throw new ModuleUniqueFileNameException(resources.getString("error.unique.module.file.name"));
+        throw new ModuleUniqueFileNameException(resources.getString("error.staging.unique.module.file.name"));
     }
 
     /**
@@ -1022,7 +1085,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
-     * Indicates an error while downloading the module content from the DB into the staging folder.
+     * Indicates an error while downloading the module content and signature properties from the DB.
      */
     @SuppressWarnings("serial")
     static class ModuleDownloadException extends ModuleLoadingException {
@@ -1031,9 +1094,6 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         }
         ModuleDownloadException(@NotNull final String message) {
             super(message);
-        }
-        ModuleDownloadException(@NotNull final String message, @NotNull final Throwable cause) {
-            super(message, cause);
         }
     }
 
@@ -1048,10 +1108,26 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
+     * Indicates an error while saving the module content into the staging folder.
+     */
+    @SuppressWarnings("serial")
+    static class ModuleStagingException extends ModuleLoadingException {
+        ModuleStagingException(@NotNull final Throwable cause) {
+            super(resources.getString("error.module.staging.fail"), cause);
+        }
+        ModuleStagingException(@NotNull final String message) {
+            super(message);
+        }
+        ModuleStagingException(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
      * Failed to generate module unique filename inside staging folder.
      */
     @SuppressWarnings("serial")
-    static class ModuleUniqueFileNameException extends ModuleDownloadException {
+    static class ModuleUniqueFileNameException extends ModuleStagingException {
         ModuleUniqueFileNameException(@NotNull final String message) {
             super(message);
         }
@@ -1065,7 +1141,12 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      */
     @SuppressWarnings("serial")
     static class ModuleSignatureException extends ModuleLoadingException {
-        // TODO: Add impl here
+        ModuleSignatureException(@NotNull final String message) {
+            super(message);
+        }
+        ModuleSignatureException(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
     }
 
     /**
@@ -1073,6 +1154,16 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      */
     @SuppressWarnings("serial")
     static class ModuleRejectedException extends ModuleSignatureException {
-        // no impl needed
+        ModuleRejectedException() {
+            super(resources.getString("error.signature.rejected"));
+        }
+        ModuleRejectedException(@NotNull final Throwable cause) {
+            super(
+                    StringUtils.isNotBlank(ExceptionUtils.getMessage(cause))
+                            ? MessageFormat.format("{0}: {1}", resources.getString("error.signature.rejected"), ExceptionUtils.getMessage(cause))
+                            : resources.getString("error.signature.rejected"),
+                    cause
+            );
+        }
     }
 }

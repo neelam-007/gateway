@@ -17,14 +17,29 @@ public class ModuleDigest {
      * Calculates digest for the specified module {@code bytes}.
      *
      * @param bytes    module {@code byte array}.  Required and cannot be {@code null}.
-     * @return A {@code String} containing hex-dump of the module {@code bytes} digest.
+     * @return {@code byte array} containing module {@code bytes} digest.  Never {@code null}.
      * @see #digest(java.io.InputStream)
      */
     @NotNull
-    public static String digest(@NotNull final byte[] bytes) {
-        //return HexUtils.hexDump(HexUtils.getSha256Digest(bytes));
+    public static byte[] digest(@NotNull final byte[] bytes) {
         try {
             return digest(new ByteArrayInputStream(bytes));
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Calculates hex-encoded digest for the specified module {@code bytes}.
+     *
+     * @param bytes    module {@code byte array}.  Required and cannot be {@code null}.
+     * @return A {@code String} containing hex-encoded module {@code bytes} digest.  Never {@code null}.
+     * @see #hexEncodedDigest(java.io.InputStream)
+     */
+    @NotNull
+    public static String hexEncodedDigest(@NotNull final byte[] bytes) {
+        try {
+            return hexEncodedDigest(new ByteArrayInputStream(bytes));
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -34,26 +49,52 @@ public class ModuleDigest {
      * Calculates digest for the specified module {@code file}.
      *
      * @param file    module {@code File}.  Required and cannot be {@code null}.
-     * @return A {@code String} containing hex-dump of the module {@code file} digest.
+     * @return {@code byte array} containing module {@code file} digest.  Never {@code null}.
      * @throws IOException if an I/O error happens while reading file content.
      * @see #digest(java.io.InputStream)
      */
     @NotNull
-    public static String digest(@NotNull final File file) throws IOException {
+    public static byte[] digest(@NotNull final File file) throws IOException {
         return digest(new FileInputStream(file));
+    }
+
+    /**
+     * Calculates hex-encoded digest for the specified module {@code file}.
+     *
+     * @param file    module {@code File}.  Required and cannot be {@code null}.
+     * @return A {@code String} containing hex-encoded module {@code file} digest.  Never {@code null}.
+     * @throws IOException if an I/O error happens while reading file content.
+     * @see #hexEncodedDigest(java.io.InputStream)
+     */
+    @NotNull
+    public static String hexEncodedDigest(@NotNull final File file) throws IOException {
+        return hexEncodedDigest(new FileInputStream(file));
     }
 
     /**
      * Calculates digest for the specified module {@code inputStream} and automatically closes the {@code inputStream} when done.
      *
      * @param inputStream    module {@code InputStream}.  Required and cannot be {@code null}.
-     * @return A {@code String} containing hex-dump of the module {@code inputStream} digest.
+     * @return {@code byte array} containing module {@code inputStream} digest.  Never {@code null}.
      * @throws IOException if an I/O error happens while reading file content.
      * @see #digest(java.io.InputStream, boolean)
      */
     @NotNull
-    public static String digest(@NotNull final InputStream inputStream) throws IOException {
+    public static byte[] digest(@NotNull final InputStream inputStream) throws IOException {
         return digest(inputStream, true);
+    }
+
+    /**
+     * Calculates hex-encoded digest for the specified module {@code inputStream} and automatically closes the {@code inputStream} when done.
+     *
+     * @param inputStream    module {@code InputStream}.  Required and cannot be {@code null}.
+     * @return A {@code String} containing hex-encoded module {@code inputStream} digest.  Never {@code null}.
+     * @throws IOException if an I/O error happens while reading file content.
+     * @see #hexEncodedDigest(java.io.InputStream, boolean)
+     */
+    @NotNull
+    public static String hexEncodedDigest(@NotNull final InputStream inputStream) throws IOException {
+        return hexEncodedDigest(inputStream, true);
     }
 
     /**
@@ -61,11 +102,25 @@ public class ModuleDigest {
      *
      * @param inputStream    module {@code InputStream}.  Required and cannot be {@code null}.
      * @param closeStream    A flag indicating whether to close the {@code stream} when done.
-     * @return A {@code String} containing hex-dump of the module {@code inputStream} digest.
+     * @return {@code byte array} containing module {@code inputStream} digest.  Never {@code null}.
      * @throws IOException IOException if an I/O error happens while reading file content.
      */
     @NotNull
-    public static String digest(@NotNull final InputStream inputStream, final boolean closeStream) throws IOException {
-        return HexUtils.hexDump(HexUtils.getSha256Digest(inputStream, closeStream));
+    public static byte[] digest(@NotNull final InputStream inputStream, final boolean closeStream) throws IOException {
+        return HexUtils.getSha256Digest(inputStream, closeStream);
+    }
+
+    /**
+     * Calculates hex-encoded digest for the specified module {@code inputStream} and optionally closes the {@code inputStream} when done.
+     *
+     * @param inputStream    module {@code InputStream}.  Required and cannot be {@code null}.
+     * @param closeStream    A flag indicating whether to close the {@code stream} when done.
+     * @return A {@code String} containing hex-encoded module {@code inputStream} digest.  Never {@code null}.
+     * @throws IOException IOException if an I/O error happens while reading file content.
+     * @see #digest(java.io.InputStream, boolean)
+     */
+    @NotNull
+    public static String hexEncodedDigest(@NotNull final InputStream inputStream, final boolean closeStream) throws IOException {
+        return HexUtils.hexDump(digest(inputStream, closeStream));
     }
 }

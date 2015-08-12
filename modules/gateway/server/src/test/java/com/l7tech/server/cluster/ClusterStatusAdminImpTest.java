@@ -11,16 +11,17 @@ import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.licensing.UpdatableCompositeLicenseManager;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.module.ServerModuleFileManagerStub;
+import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.util.*;
-import org.junit.Assert;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -35,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * of the {@link ClusterStatusAdmin}.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ClusterStatusAdminImpTest {
+public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
 
     @Mock
     private ServiceUsageManager serviceUsageManager;
@@ -64,8 +65,19 @@ public class ClusterStatusAdminImpTest {
     private final Map<Goid, ServerModuleFile> moduleFiles = new HashMap<>(); // server module files initial repository
     private ClusterStatusAdmin admin;
 
+    @BeforeClass
+    public static void setUpOnce() throws Exception {
+        beforeClass();
+    }
+
+    @AfterClass
+    public static void cleanUpOnce() throws Exception {
+        afterClass();
+    }
+
     @Before
     public void setUp() throws Exception {
+        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
         final ClusterInfoManager clusterInfoManager = new ClusterInfoManagerStub() {
             @Override
             public String thisNodeId() {
@@ -90,12 +102,10 @@ public class ClusterStatusAdminImpTest {
                 );
         admin.setServerModuleFileManager(serverModuleFileManager);
         this.admin = admin;
+        // set module signer
+        Assert.assertThat(this.admin, Matchers.instanceOf(ClusterStatusAdminImp.class));
+        ((ClusterStatusAdminImp) this.admin).setSignatureVerifier(SIGNATURE_VERIFIER);
     }
-
-    // used to generate random GOID
-    private static final Random rnd = new Random();
-    private static final int typeLength = ModuleType.values().length;
-    private static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     /**
      * Creates sample modules with sample states for different cluster nodes:
@@ -144,7 +154,7 @@ public class ClusterStatusAdminImpTest {
      *      (empty)
      * ----------------------------------------
      */
-    public ServerModuleFile[] createSampleModules(final String clusterNodeId) {
+    public ServerModuleFile[] createSampleModules(final String clusterNodeId) throws Exception {
         ServerModuleFile entity;
         List<ServerModuleFileState> states;
 
@@ -156,7 +166,7 @@ public class ClusterStatusAdminImpTest {
             entity.setName("module_" + i);
             entity.setModuleType(type);
             final byte[] bytes = String.valueOf("test_data_" + i).getBytes(Charsets.UTF8);
-            entity.createData(bytes);
+            entity.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
             if (i < 4) entity.setStateForNode(clusterNodeId, ModuleState.UPLOADED);
             entity.setProperty(ServerModuleFile.PROP_FILE_NAME, "module_file_name_" + i);
             entity.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(i));
@@ -309,8 +319,10 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(orgModuleFile.getData().getDataBytes());
         if (dataBytesIncluded) {
             Assert.assertTrue(Arrays.equals(orgModuleFile.getData().getDataBytes(), moduleFile.getData().getDataBytes()));
+            Assert.assertThat(orgModuleFile.getData().getSignatureProperties(), Matchers.equalTo(moduleFile.getData().getSignatureProperties()));
         } else {
             Assert.assertNull(moduleFile.getData().getDataBytes()); // this is a copy so no data bytes
+            Assert.assertNull(moduleFile.getData().getSignatureProperties()); // this is a copy so no data bytes
         }
 
         // test the rest of the attributes
@@ -345,7 +357,8 @@ public class ClusterStatusAdminImpTest {
         assertThat(left.getXmlProperties(), equalTo(right.getXmlProperties()));
         assertThat(left.getHumanReadableFileSize(), equalTo(right.getHumanReadableFileSize()));
         assertThat(left.getStates(), equalTo(right.getStates()));
-        assertThat(left.getData(), equalTo(right.getData()));
+        // ignore data and signature as data is not copied from ServerModuleFile CollectionUpdateProducer
+        assertThat(left.getData().getGoid(), equalTo(right.getData().getGoid()));
     }
 
     private static ServerModuleFile findInAddRemoveModules(final ServerModuleFile module, final Collection<ServerModuleFile> modules) {
@@ -432,7 +445,8 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getGoid(), equalTo(Goid.DEFAULT_GOID));
         moduleFile.setName("test_module_1");
         moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        moduleFile.createData("test_data_1".getBytes(Charsets.UTF8));
+        byte[] bytes = "test_data_1".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
         // save
         Goid goid = admin.saveServerModuleFile(moduleFile);
         Assert.assertNotNull(goid);
@@ -488,7 +502,8 @@ public class ClusterStatusAdminImpTest {
             assertThat(addedModuleFiles[i].getGoid(), equalTo(Goid.DEFAULT_GOID));
             addedModuleFiles[i].setName("series_test_module_" + i);
             addedModuleFiles[i].setModuleType(ModuleType.CUSTOM_ASSERTION);
-            addedModuleFiles[i].createData(String.valueOf("series_test_data_" + i).getBytes(Charsets.UTF8));
+            final byte[] bytes = String.valueOf("series_test_data_" + i).getBytes(Charsets.UTF8);
+            addedModuleFiles[i].createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
             // save
             newGoids[i] = admin.saveServerModuleFile(addedModuleFiles[i]);
             Assert.assertNotNull(newGoids[i]);
@@ -601,6 +616,7 @@ public class ClusterStatusAdminImpTest {
         assertThat(addedModule.getModuleSha256(), equalTo(removedModule.getModuleSha256()));
         assertThat(addedModule.getStates(), equalTo(removedModule.getStates()));
         Assert.assertTrue(Arrays.equals(addedModule.getData().getDataBytes(), removedModule.getData().getDataBytes()));
+        Assert.assertThat(addedModule.getData().getSignatureProperties(), Matchers.equalTo(removedModule.getData().getSignatureProperties()));
         assertThat(addedModule.getName(), not(equalTo(removedModule.getName())));
         assertThat(addedModule.getName(), equalTo("new_new_new_name_123"));
         assertThat(removedModule.getName(), equalTo("module_0"));
@@ -620,7 +636,7 @@ public class ClusterStatusAdminImpTest {
         moduleFile = new ServerModuleFile();
         moduleFile.copyFrom(moduleFiles.get(new Goid(GOID_HI_START, 0)), false, true, true);
         byte[] bytes = "new_data_for_module_0".getBytes(Charsets.UTF8);
-        moduleFile.createData(bytes);
+        moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
         assertThat(moduleFile.getGoid(), not(equalTo(Goid.DEFAULT_GOID)));
         // update
         goid = admin.saveServerModuleFile(moduleFile);
@@ -649,8 +665,8 @@ public class ClusterStatusAdminImpTest {
         assertThat(addedModule.getName(), equalTo(removedModule.getName()));
         assertThat(addedModule.getModuleType(), equalTo(removedModule.getModuleType()));
         assertThat(addedModule.getModuleSha256(), not(equalTo(removedModule.getModuleSha256())));
-        assertThat(addedModule.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes)));
-        assertThat(removedModule.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_0".getBytes(Charsets.UTF8))));
+        assertThat(addedModule.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes)));
+        assertThat(removedModule.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_0".getBytes(Charsets.UTF8))));
         assertThat(addedModule.getXmlProperties(), not(equalTo(removedModule.getXmlProperties())));
         assertThat(addedModule.getProperty(ServerModuleFile.PROP_FILE_NAME), equalTo(removedModule.getProperty(ServerModuleFile.PROP_FILE_NAME)));
         assertThat(addedModule.getProperty(ServerModuleFile.PROP_ASSERTIONS), equalTo(removedModule.getProperty(ServerModuleFile.PROP_ASSERTIONS)));
@@ -1116,7 +1132,8 @@ public class ClusterStatusAdminImpTest {
             moduleFile.copyFrom(moduleFiles.get(updateGoid), true, true, true);
             assertThat(entry.getValue().left.getGoid(), equalTo(updateGoid));
             assertThat(entry.getValue().right.getGoid(), equalTo(updateGoid));
-            moduleFile.createData(String.valueOf("new_data_for_module_" + updateGoid.getLow()).getBytes(Charsets.UTF8));
+            final byte[] bytes = String.valueOf("new_data_for_module_" + updateGoid.getLow()).getBytes(Charsets.UTF8);
+            moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
             setNextModuleType(moduleFile);
             moduleFile.setName("new_name_for_module_" + updateGoid.getLow());
             Assert.assertNotNull(admin.findServerModuleFileById(updateGoid, false));
@@ -1338,7 +1355,8 @@ public class ClusterStatusAdminImpTest {
             assertThat(addedModuleFiles.get(i).getGoid(), equalTo(Goid.DEFAULT_GOID));
             addedModuleFiles.get(i).setName("add_add_test_module_" + i);
             addedModuleFiles.get(i).setModuleType(ModuleType.CUSTOM_ASSERTION);
-            addedModuleFiles.get(i).createData(String.valueOf("add_add_test_module_test_data_" + i).getBytes(Charsets.UTF8));
+            final byte[] bytes = String.valueOf("add_add_test_module_test_data_" + i).getBytes(Charsets.UTF8);
+            addedModuleFiles.get(i).createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
             // save
             Goid goid = admin.saveServerModuleFile(addedModuleFiles.get(i));
             Assert.assertNotNull(goid);
@@ -1385,7 +1403,8 @@ public class ClusterStatusAdminImpTest {
                 updatedModuleFile.copyFrom(originalModuleFile, true, true, true);
                 assertThat(entry.getValue().left.getGoid(), equalTo(updateGoid));
                 assertThat(entry.getValue().right.getGoid(), equalTo(updateGoid));
-                updatedModuleFile.createData(String.valueOf("new_data_for_module_" + updateGoid.getLow()).getBytes(Charsets.UTF8));
+                final byte[] bytes = String.valueOf("new_data_for_module_" + updateGoid.getLow()).getBytes(Charsets.UTF8);
+                updatedModuleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
                 setNextModuleType(updatedModuleFile);
                 updatedModuleFile.setName("new_name_for_module_" + updateGoid.getLow());
                 Assert.assertNotNull(admin.findServerModuleFileById(updateGoid, false));
@@ -1586,10 +1605,148 @@ public class ClusterStatusAdminImpTest {
         Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
         assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
 
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // signature tests
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // save test; unsigned data i.e. missing signature
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        byte[] bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", null);
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("signature is mandatory when creating a new ServerModuleFileEntity entity");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo("sha"));  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+
+        // save test; data tampering after signing
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
+        Assert.assertThat(bytes[3], Matchers.not(Matchers.is((byte)2)));
+        bytes[3] = 2;
+        moduleFile.getData().setDataBytes(bytes);
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("tampered with module data; attempt1");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo("sha"));  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+
+        // save test; another data tampering after signing
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        bytes = "new data".getBytes(Charsets.UTF8);
+        String signature = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFile.createData(bytes, "sha", signature);
+        bytes = Arrays.copyOf(bytes, bytes.length);
+        Assert.assertThat(bytes[3], Matchers.not(Matchers.is((byte)2)));
+        bytes[3] = 2;
+        String newSignature = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        Assert.assertThat(newSignature, Matchers.not(Matchers.equalTo(signature)));
+        moduleFile.getData().setSignatureProperties(newSignature);
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("tampered with module data; attempt2");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo("sha"));  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+
+        // save test; another data tampering after signing
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
+        Assert.assertThat(bytes[3], Matchers.not(Matchers.is((byte)2)));
+        bytes[3] = 2;
+        moduleFile.getData().setDataBytes(bytes);
+        moduleFile.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("tampered with module data; attempt3");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+
+        // save test; not trusted signer cert
+        // create another signer with same DN's
+        SignatureVerifier newSigner = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", SignatureTestUtils.signAndGetSignature(newSigner, bytes, SIGNER_CERT_DNS[0]));
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("signer not trusted; attempt1");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo("sha"));  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+
+        // save test; not trusted signer cert
+        // create another signer with new DN
+        newSigner = SignatureTestUtils.createSignatureVerifier("cn=new.cert.ca.com");
+        modulesSize = admin.findAllServerModuleFiles().size();
+        moduleFile = new ServerModuleFile();
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", SignatureTestUtils.signAndGetSignature(newSigner, bytes, "cn=new.cert.ca.com"));
+        try {
+            admin.saveServerModuleFile(moduleFile);
+            Assert.fail("signer not trusted; attempt1");
+        } catch (SaveException e) {
+            /* data-bytes are mandatory when creating a new ServerModuleFileEntity entity */
+        }
+        // make sure nothing was changed
+        assertThat(admin.findAllServerModuleFiles().size(), equalTo(modulesSize)); // no change
+        Assert.assertNull(moduleFile.getStates());  // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo("sha"));  // no change
+        Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));  // no change
+        assertThat(moduleFile.getModuleType(), equalTo(ModuleType.CUSTOM_ASSERTION));  // no change
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
         // save test; missing module type
         modulesSize = admin.findAllServerModuleFiles().size();
         moduleFile = new ServerModuleFile();
-        moduleFile.createData("new data".getBytes(Charsets.UTF8), "sha");
+        bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, "sha", signAndGetSignature(bytes, SIGNER_CERT_DNS[1]));
         try {
             admin.saveServerModuleFile(moduleFile);
             Assert.fail("module type is mandatory when creating a new ServerModuleFileEntity entity");
@@ -1606,8 +1763,9 @@ public class ClusterStatusAdminImpTest {
         // save test; empty entity
         modulesSize = admin.findAllServerModuleFiles().size();
         moduleFile = new ServerModuleFile();
-        byte[] bytes = "this is a new data".getBytes(Charsets.UTF8);
-        moduleFile.createData(bytes, "sha1"); // set wrong sha256, it should be corrected inside saveServerModuleFile
+        bytes = "this is a new data".getBytes(Charsets.UTF8);
+        signature = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFile.createData(bytes, "sha1", signature); // set wrong sha256, it should be corrected inside saveServerModuleFile
         moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
         // make sure everything else is default
         assertThat(moduleFile.getGoid(), equalTo(Goid.DEFAULT_GOID));
@@ -1615,6 +1773,7 @@ public class ClusterStatusAdminImpTest {
         Assert.assertTrue(StringUtils.isBlank(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));
         assertThat(moduleFile.getModuleSha256(), equalTo("sha1"));
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), bytes));
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
         // save the entity
         Goid goid = admin.saveServerModuleFile(moduleFile);
         Assert.assertNotNull(goid);
@@ -1625,8 +1784,9 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(moduleFile);
         // size and sha should be set by saveServerModuleFile
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), bytes));
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
         assertThat(moduleFile.getModuleSha256(), not(equalTo("sha1")));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes)));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes)));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo(String.valueOf(bytes.length)));
         Assert.assertNotNull(moduleFile.getStates());
         assertThat(moduleFile.getStates().size(), equalTo(1));
@@ -1662,9 +1822,11 @@ public class ClusterStatusAdminImpTest {
         moduleFile = admin.findServerModuleFileById(goid, true);
         Assert.assertNotNull(moduleFile);
         bytes = moduleFile.getData().getDataBytes();
+        signature = moduleFile.getData().getSignatureProperties();
         Assert.assertTrue(Arrays.equals(bytes, moduleFiles.get(new Goid(GOID_HI_START, 0)).getData().getDataBytes()));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes)));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes)));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo(String.valueOf(bytes.length)));
+        Assert.assertThat(signature, Matchers.equalTo(moduleFiles.get(new Goid(GOID_HI_START, 0)).getData().getSignatureProperties()));
         thisNodeState = getStateForThisNode(moduleFile);
         Assert.assertNotNull(thisNodeState);
         Assert.assertNotNull(getStateForThisNode(moduleFiles.get(new Goid(GOID_HI_START, 0))));
@@ -1728,12 +1890,13 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 3)));
         assertThat(moduleFile.getName(), equalTo("module_3"));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo(String.valueOf(3)));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_3".getBytes(Charsets.UTF8))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_3".getBytes(Charsets.UTF8))));
         // set updated values
         moduleFile.setName("new_module_3");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "100");
         moduleFile.setModuleSha256("new_sha_3");
         ModuleType newModuleType = setNextModuleType(moduleFile); // sort of increment the module type
+        signature = moduleFiles.get(new Goid(GOID_HI_START, 3)).getData().getSignatureProperties(); // get signature before save
         // no bytes so only the metadata and name will be changed
         goid = admin.saveServerModuleFile(moduleFile);
         assertThat(goid, equalTo(new Goid(GOID_HI_START, 3)));
@@ -1744,7 +1907,8 @@ public class ClusterStatusAdminImpTest {
         bytes = moduleFile.getData().getDataBytes();
         Assert.assertNotNull(bytes);
         Assert.assertTrue(Arrays.equals(bytes, "test_data_3".getBytes(Charsets.UTF8)));  // bytes are not changed
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes))); // since no bytes are specified sha256 will be unchanged
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes))); // since no bytes are specified sha256 will be unchanged
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3")); // since no bytes are specified size will be unchanged
         assertThat(moduleFile.getName(), equalTo("new_module_3")); // make sure name was updated accordingly
         assertThat(moduleFile.getModuleType(), equalTo(newModuleType)); // make sure type was updated accordingly
@@ -1768,10 +1932,11 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3"));
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), "test_data_3".getBytes(Charsets.UTF8)));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_3".getBytes(Charsets.UTF8))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_3".getBytes(Charsets.UTF8))));
         // set updated values
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "100");
         moduleFile.setModuleSha256("new_sha_3");
+        signature = moduleFiles.get(new Goid(GOID_HI_START, 3)).getData().getSignatureProperties(); // get signature before save
         // no bytes changes (sha and size will be ignored)
         goid = admin.saveServerModuleFile(moduleFile);
         assertThat(goid, equalTo(new Goid(GOID_HI_START, 3)));
@@ -1782,8 +1947,9 @@ public class ClusterStatusAdminImpTest {
         bytes = moduleFile.getData().getDataBytes();
         Assert.assertNotNull(bytes);
         Assert.assertTrue(Arrays.equals(bytes, "test_data_3".getBytes(Charsets.UTF8)));  // bytes are not changed
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
         assertThat(moduleFile.getModuleSha256(), not(equalTo("new_sha_3")));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes))); // since no bytes are changed sha256 will be unchanged
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes))); // since no bytes are changed sha256 will be unchanged
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3")); // since no bytes are changed size will be unchanged
         Assert.assertNotNull(getStateForThisNode(moduleFile));
         assertThat(getStateForThisNode(moduleFile).getState(), equalTo(ModuleState.REJECTED)); // no bytes changed so state is not changed to UPLOADED.
@@ -1805,12 +1971,13 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3"));
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), "test_data_3".getBytes(Charsets.UTF8)));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_3".getBytes(Charsets.UTF8))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_3".getBytes(Charsets.UTF8))));
         // set updated values
         moduleFile.setName("new_new_module_3");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "100");
         moduleFile.setModuleSha256("new_sha_3");
         newModuleType = setNextModuleType(moduleFile); // sort of increment the module type
+        signature = moduleFiles.get(new Goid(GOID_HI_START, 3)).getData().getSignatureProperties(); // get signature before save
         // no bytes changes (sha and size will be ignored), so only the name and type will be changed
         goid = admin.saveServerModuleFile(moduleFile);
         assertThat(goid, equalTo(new Goid(GOID_HI_START, 3)));
@@ -1822,8 +1989,9 @@ public class ClusterStatusAdminImpTest {
         bytes = moduleFile.getData().getDataBytes();
         Assert.assertNotNull(bytes);
         Assert.assertTrue(Arrays.equals(bytes, "test_data_3".getBytes(Charsets.UTF8))); // make sure bytes were not updated
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
         assertThat(moduleFile.getModuleSha256(), not(equalTo("new_sha_3")));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes))); // since no bytes are changed sha256 will be unchanged
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes))); // since no bytes are changed sha256 will be unchanged
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3")); // since no bytes are changed size will be unchanged
         assertThat(moduleFile.getName(), equalTo("new_new_module_3"));
         assertThat(moduleFile.getModuleType(), equalTo(newModuleType));
@@ -1847,10 +2015,11 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("3"));
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), "test_data_3".getBytes(Charsets.UTF8)));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_3".getBytes(Charsets.UTF8))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_3".getBytes(Charsets.UTF8))));
         // set updated values
         bytes = "new_test_data_3".getBytes(Charsets.UTF8);
-        moduleFile.createData(bytes);
+        signature = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFile.createData(bytes, signature);
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "100");
         moduleFile.setModuleSha256("new_sha_3");
         // bytes are changed, so sha and size will be corrected
@@ -1862,9 +2031,10 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(moduleFile);
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), bytes));  // bytes are changed
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature));
         assertThat(moduleFile.getModuleSha256(), not(equalTo("new_sha_3")));
-        assertThat(moduleFile.getModuleSha256(), not(equalTo(ServerModuleFile.calcBytesChecksum("test_data_3".getBytes(Charsets.UTF8)))));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes))); // sha is changed
+        assertThat(moduleFile.getModuleSha256(), not(equalTo(ModuleDigest.hexEncodedDigest("test_data_3".getBytes(Charsets.UTF8)))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes))); // sha is changed
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), not(equalTo("3")));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo(String.valueOf(bytes.length)));
         Assert.assertNotNull(getStateForThisNode(moduleFile));
@@ -1885,7 +2055,7 @@ public class ClusterStatusAdminImpTest {
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("5"));
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), "test_data_5".getBytes(Charsets.UTF8)));
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_5".getBytes(Charsets.UTF8))));
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_5".getBytes(Charsets.UTF8))));
         Assert.assertNull(getStateForThisNode(moduleFile)); // no state for this node
         Assert.assertNotNull(moduleFile.getStates());
         Assert.assertTrue(moduleFile.getStates().isEmpty());
@@ -1894,6 +2064,7 @@ public class ClusterStatusAdminImpTest {
         newModuleType = setNextModuleType(moduleFile); // sort of increment the module type
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "100");
         moduleFile.setModuleSha256("new_sha_5");
+        signature = moduleFile.getData().getSignatureProperties();
         // update module
         goid = admin.saveServerModuleFile(moduleFile);
         assertThat(goid, equalTo(new Goid(GOID_HI_START, 5)));
@@ -1903,7 +2074,8 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(moduleFile);
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), "test_data_5".getBytes(Charsets.UTF8))); // no change
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum("test_data_5".getBytes(Charsets.UTF8)))); // no change
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature)); // no change
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest("test_data_5".getBytes(Charsets.UTF8)))); // no change
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo("5")); // no change
         assertThat(moduleFile.getName(), equalTo("new_module_5")); // changed
         assertThat(moduleFile.getModuleType(), equalTo(newModuleType)); // changed
@@ -1931,7 +2103,8 @@ public class ClusterStatusAdminImpTest {
         Assert.assertTrue(moduleFile.getStates().isEmpty()); // no change
         // set updated values
         bytes = "new_test_data_5".getBytes(Charsets.UTF8);
-        moduleFile.createData(bytes);
+        signature = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFile.createData(bytes, signature);
         moduleFile.setModuleSha256("new_sha_5");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "101");
         // update module
@@ -1943,7 +2116,8 @@ public class ClusterStatusAdminImpTest {
         Assert.assertNotNull(moduleFile);
         Assert.assertNotNull(moduleFile.getData());
         Assert.assertTrue(Arrays.equals(moduleFile.getData().getDataBytes(), bytes)); // changed
-        assertThat(moduleFile.getModuleSha256(), equalTo(ServerModuleFile.calcBytesChecksum(bytes))); // changed
+        Assert.assertThat(moduleFile.getData().getSignatureProperties(), Matchers.equalTo(signature)); // changed
+        assertThat(moduleFile.getModuleSha256(), equalTo(ModuleDigest.hexEncodedDigest(bytes))); // changed
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), equalTo(String.valueOf(bytes.length))); // changed
         assertThat(moduleFile.getName(), equalTo("new_module_5")); // no change
         Assert.assertNotNull(moduleFile.getStates());

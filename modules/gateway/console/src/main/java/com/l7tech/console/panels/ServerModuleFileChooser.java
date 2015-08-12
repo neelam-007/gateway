@@ -2,8 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,13 +16,16 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.ResourceBundle;
-import java.util.jar.JarFile;
+import java.util.*;
+import java.util.jar.JarInputStream;
+import java.util.zip.ZipInputStream;
 
 /**
  * Utility class for choosing a Modular or Custom Assertion Module from the local File System.
@@ -33,8 +41,7 @@ public class ServerModuleFileChooser {
 
     private final CustomAssertionsScannerHelper customAssertionsScannerHelper;
     private final ModularAssertionsScannerHelper modularAssertionsScannerHelper;
-    private final FileFilter customAssertionFileFilter;
-    private final FileFilter modularAssertionFileFilter;
+    private final FileFilter signedFilesFilter;
 
     /**
      * The parent component of the dialog, can be {@code null}
@@ -55,8 +62,7 @@ public class ServerModuleFileChooser {
 
         this.customAssertionsScannerHelper = new CustomAssertionsScannerHelper(SERVER_MODULE_CONFIG.getCustomAssertionPropertyFileName());
         this.modularAssertionsScannerHelper = new ModularAssertionsScannerHelper(SERVER_MODULE_CONFIG.getModularAssertionManifestAssertionListKey());
-        this.customAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getCustomAssertionModulesExt(), resources.getString("custom.assertion.file.filter.desc"));
-        this.modularAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getModularAssertionModulesExt(), resources.getString("modular.assertion.file.filter.desc"));
+        this.signedFilesFilter = buildFileFilter(Collections.singleton(".signed"), resources.getString("signed.files.filter.desc"));
     }
 
     /**
@@ -83,9 +89,9 @@ public class ServerModuleFileChooser {
                         fc.setDialogTitle(resources.getString("dialog.title"));
                         fc.setDialogType(JFileChooser.OPEN_DIALOG);
                         fc.setMultiSelectionEnabled(false);
-                        fc.setAcceptAllFileFilterUsed(false);
-                        fc.addChoosableFileFilter(modularAssertionFileFilter);
-                        fc.addChoosableFileFilter(customAssertionFileFilter);
+                        fc.setAcceptAllFileFilterUsed(true);
+                        fc.addChoosableFileFilter(signedFilesFilter);
+                        fc.setFileFilter(signedFilesFilter);
                         if (StringUtils.isNotBlank(startupFolder)) {
                             //noinspection ConstantConditions
                             final File currentDir = new File(startupFolder);
@@ -115,6 +121,26 @@ public class ServerModuleFileChooser {
     }
 
     /**
+     * Helper class to collect multiple streams and close them all when {@link #close()} is invoked.
+     */
+    static class AutoCloseStreams implements Closeable {
+        private final Collection<InputStream> streams = new ArrayList<>(5); // 5 should be more than enough
+
+        @Override
+        public void close() throws IOException {
+            for (final InputStream is : streams) {
+                is.close();
+            }
+            streams.clear();
+        }
+
+        public <IS extends InputStream> IS add(@NotNull final IS is) {
+            streams.add(is);
+            return is;
+        }
+    }
+
+    /**
      * Utility function for creating a {@link ServerModuleFile} from the specified {@code file}.
      * <p/>
      * The method will create a new {@link ServerModuleFile} object and set its properties according to the specified {@code file}.<br/>
@@ -127,45 +153,120 @@ public class ServerModuleFileChooser {
     private ServerModuleFile createFromFile(@NotNull final File file) throws IOException {
         // sanity check the file
         if (file.isDirectory() || !file.isFile()) {
-            throw new IOException(MessageFormat.format(resources.getString("error.invalid.file"), file.getAbsolutePath()));
+            throw new IOException(MessageFormat.format(resources.getString("error.invalid.file"), file.getName()));
         }
         final long fileLength = file.length();
         if (fileLength == 0L) {
-            throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), file.getAbsolutePath()));
+            throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), file.getName()));
         }
         final long maxModuleFileSize = ServerModuleFileClusterPropertiesReader.getInstance().getModulesUploadMaxSize();
         if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
             throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFile.humanReadableBytes(maxModuleFileSize)));
         }
 
-        final ServerModuleFile serverModuleFile = new ServerModuleFile();
-        try (final JarFile jarFile = new JarFile(file, false)) {
-            if (modularAssertionsScannerHelper.isModularAssertion(jarFile)) {
-                serverModuleFile.setModuleType(ModuleType.MODULAR_ASSERTION);
-                serverModuleFile.setProperty(
-                        ServerModuleFile.PROP_ASSERTIONS,
-                        assertionsCollectionToCommaSeparatedString(
-                                modularAssertionsScannerHelper.getAssertions(jarFile)
-                        )
-                );
-            } else if (customAssertionsScannerHelper.isCustomAssertion(jarFile)) {
-                serverModuleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
-                serverModuleFile.setProperty(
-                        ServerModuleFile.PROP_ASSERTIONS,
-                        assertionsCollectionToCommaSeparatedString(
-                                customAssertionsScannerHelper.getAssertions(jarFile)
-                        )
-                );
-            } else {
-                throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.module.type"), file.getAbsolutePath()));
-            }
+        // get bytes and signature properties
+        final Pair<byte[], String> bytesAndSignature = getBytesAndSignatureFromSignedZip(file);
+        final byte[] bytes = bytesAndSignature.left;
+        final String signatureProperties = bytesAndSignature.right;
 
-            serverModuleFile.createData(IOUtils.slurpFile(file));
+        // if both module bytes and signature props have been extracted
+        if (bytes != null && signatureProperties != null) {
+            // create new server module file instance
+            final ServerModuleFile serverModuleFile = new ServerModuleFile();
+            // make sure the module is either modular or custom assertion
+            try (final AutoCloseStreams auto = new AutoCloseStreams()) {
+                if (modularAssertionsScannerHelper.isModularAssertion(auto.add(new JarInputStream(new ByteArrayInputStream(bytes))))) {
+                    serverModuleFile.setModuleType(ModuleType.MODULAR_ASSERTION);
+                    serverModuleFile.setProperty(
+                            ServerModuleFile.PROP_ASSERTIONS,
+                            assertionsCollectionToCommaSeparatedString(
+                                    modularAssertionsScannerHelper.getAssertions(auto.add(new JarInputStream(new ByteArrayInputStream(bytes))))
+                            )
+                    );
+                } else if (customAssertionsScannerHelper.isCustomAssertion(auto.add(new JarInputStream(new ByteArrayInputStream(bytes))))) {
+                    serverModuleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+                    serverModuleFile.setProperty(
+                            ServerModuleFile.PROP_ASSERTIONS,
+                            assertionsCollectionToCommaSeparatedString(
+                                    customAssertionsScannerHelper.getAssertions(auto.add(new JarInputStream(new ByteArrayInputStream(bytes))))
+                            )
+                    );
+                } else {
+                    throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.module.type"), file.getName()));
+                }
+            }
+            // set moduleFile props accordingly
             serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, file.getName());
             serverModuleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(fileLength));
+
+            // next create moduleFile data and verify that signature is valid
+
+            // create module data (this will calculate module sha as well)
+            serverModuleFile.createData(bytes, signatureProperties);
+
+            // finally verify module signature
+            try (final StringReader reader = new StringReader(serverModuleFile.getData().getSignatureProperties())) {
+                final Properties sigProps = new Properties();
+                sigProps.load(reader);
+                SignerUtils.verifySignatureWithDigest(
+                        HexUtils.unHexDump(serverModuleFile.getModuleSha256()),
+                        sigProps
+                );
+
+                // if all goes well return the moduleFile
+                return serverModuleFile;
+            } catch (final CertificateException | SignatureException | InvalidKeyException | NoSuchAlgorithmException e) {
+                throw new IOException(MessageFormat.format(resources.getString("error.signature.verification"), file.getName(), ExceptionUtils.getMessage(e)), e);
+            }
         }
 
-        return serverModuleFile;
+        // shouldn't happen though, just in case throw IOException
+        if (bytes == null && signatureProperties == null) {
+            throw new IOException(MessageFormat.format(resources.getString("error.zip.missing.bytes.and.signature.properties"), "Signed Data", "Signature Properties", file.getName()));
+        }
+        throw new IOException(MessageFormat.format(resources.getString("error.zip.missing.bytes.or.signature.properties"), (bytes == null) ? "Signed Data" : "Signature Properties", file.getName()));
+    }
+
+    /**
+     * Utility method for walking through the signed zip content and extracting the raw-bytes and signature properties {@code String}.
+     *
+     * @param file    the signed zip file.  Required and cannot be {@code null}.
+     * @return a {@code Pair} of raw-bytes and signature properties {@code String}, never {@code null}.
+     * @throws IOException if an IO error occurs while walking through the signed zip file contents.
+     */
+    private static Pair<byte[], String> getBytesAndSignatureFromSignedZip(@NotNull final File file) throws IOException {
+        return SignerUtils.walkSignedZip(
+                file,
+                new SignedZipVisitor<byte[], String>() {
+                    @Override
+                    public byte[] visitData(@NotNull final ZipInputStream zis) throws IOException {
+                        return IOUtils.slurpStream(zis);
+                    }
+
+                    @Override
+                    public String visitSignature(@NotNull final ZipInputStream zis) throws IOException {
+                        // read the signature properties
+                        final StringWriter writer = new StringWriter();
+                        try (
+                                final BufferedReader reader = new BufferedReader(
+                                        new InputStreamReader(
+                                                new FilterInputStream(zis) {
+                                                    @Override public void close() throws IOException {
+                                                        // don't close the zip input stream
+                                                    }
+                                                },
+                                                StandardCharsets.ISO_8859_1
+                                        )
+                                )
+                        ) {
+                            IOUtils.copyStream(reader, writer);
+                            writer.flush();
+                        }
+                        return writer.toString();
+                    }
+                },
+                true
+        );
     }
 
     /**

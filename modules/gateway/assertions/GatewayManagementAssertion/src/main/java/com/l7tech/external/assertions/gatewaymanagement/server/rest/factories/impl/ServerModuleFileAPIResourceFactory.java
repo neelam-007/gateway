@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -13,7 +14,9 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -23,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+
+import static com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ServerModuleFileTransformer.gatherSignatureProperties;
 
 /**
  * {@code ServerModuleFile} resource factory.
@@ -102,7 +107,7 @@ public class ServerModuleFileAPIResourceFactory extends EntityManagerAPIResource
             // have been deleted before downloading it's bytes.
             // Unfortunately there is nothing much that can be done in this case but throw runtime exception (i.e. ResourceAccessException)
             // as this entity cannot be skipped from here
-            setModuleData(mo);
+            setModuleDataAndSignature(mo);
         }
         return mo;
     }
@@ -143,24 +148,32 @@ public class ServerModuleFileAPIResourceFactory extends EntityManagerAPIResource
     }
 
     /**
-     * Gather the module data bytes to the specified {@link ServerModuleFileMO managed object}.
+     * Gather the module data bytes and signature for the specified {@link ServerModuleFileMO managed object}.
      * <p/>
      * Note that this is executed within a read-only transaction.
      *
      * @param mo    the managed object to set module data to.
      * @throws ResourceFactory.ResourceNotFoundException
      */
-    public void setModuleData(@NotNull final ServerModuleFileMO mo) throws ResourceFactory.ResourceNotFoundException {
+    public void setModuleDataAndSignature(@NotNull final ServerModuleFileMO mo) throws ResourceFactory.ResourceNotFoundException {
         final Goid goid = Goid.parseGoid(mo.getId());
         try {
-            final InputStream stream = manager.getModuleBytesAsStream(goid);
-            if (stream == null) {
+            final Pair<InputStream, String> streamAndSignature = manager.getModuleBytesAsStreamWithSignature(goid);
+            if (streamAndSignature == null) {
                 throw new ResourceFactory.ResourceNotFoundException("Unable to find ServerModuleFile with goid " + goid);
             }
             try {
-                mo.setModuleData(IOUtils.slurpStream(stream));
+                mo.setModuleData(IOUtils.slurpStream(streamAndSignature.left));
+                if (StringUtils.isNotBlank(streamAndSignature.right)) {
+                    mo.setSignatureProperties(
+                            gatherSignatureProperties(
+                                    streamAndSignature.right,
+                                    SignerUtils.ALL_SIGNING_PROPERTIES
+                            )
+                    );
+                }
             } finally {
-                ResourceUtils.closeQuietly(stream);
+                ResourceUtils.closeQuietly(streamAndSignature.left);
             }
         } catch (ObjectModelException e) {
             throw new ResourceFactory.ResourceNotFoundException("Unable to find ServerModuleFile.", e);

@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,28 +63,22 @@ public interface ServerModuleFileManager extends EntityManager<ServerModuleFile,
     boolean isModuleUploadEnabled();
 
     /**
-     * Retrieve module content as a stream of uninterpreted bytes in a read-only transaction. The value can then be read in chunks from the stream. <br/>
-     * Note: Current implementation of MySQL JDBC returns in-memory {@code java.io.ByteArrayInputStream}.<br/>
-     * Limitation: Will not work with Derby, as current implementation of Derby JDBC throws IOException exception, with cause stream closed.
+     * <p>Retrieve module content as a stream of uninterpreted bytes as well as module signature properties in a read-only transaction.<br/>
+     * Returned {@code InputStream} is backed-up with the Gateway's {@link com.l7tech.common.mime.StashManager StashManager},
+     * therefore it is <b>highly important</b> to close the stream after use, which will cause it to be properly un-stashed
+     * from the {@link com.l7tech.common.mime.StashManager StashManager}.
+     * </p>
+     * <p>Note: Current implementation of MySQL JDBC returns in-memory {@code java.io.ByteArrayInputStream}.</p>
+     * <p>Important: Again caller is responsible for <b>closing</b> the returned {@code InputStream}.</p>
      *
      * @param goid    the module {@link Goid}.  Required and cannot be {@code null}.
-     * @return A {@code InputStream} that delivers the module content as a stream of uninterpreted bytes
-     * or {@code null} if module specified with the {@code goid} cannot be found.
+     * @return {@code null} if the module with the specified {@code goid} doesn't exist or module data is empty,
+     * otherwise a {@code Pair} of {@code InputStream}, that delivers the module content, and a {@code String},
+     * that contains the module signature properties.
      * @throws FindException if an SQL error occurs while extracting module content.
      */
     @Nullable
-    InputStream getModuleBytesAsStream(@NotNull Goid goid) throws FindException;
-
-    /**
-     * Retrieve module content as a byte array, in a read-only transaction
-     *
-     * @param goid    the module {@link Goid}.  Required and cannot be {@code null}.
-     * @return A byte array that delivers the module content or {@code null} if module specified with the {@code goid} cannot be found.
-     * @throws FindException if an SQL error occurs while extracting module content.
-     */
-    @Nullable
-    byte[] getModuleBytes(@NotNull Goid goid) throws FindException;
-
+    Pair<InputStream, String> getModuleBytesAsStreamWithSignature(@NotNull Goid goid) throws FindException;
 
     /**
      * Locate a {@link ServerModuleFile} specified by it's {@code moduleSha256}.

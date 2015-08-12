@@ -54,7 +54,6 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      */
     public static final String PROP_ASSERTIONS = "moduleAssertions";
 
-
     /**
      * Convenient field holding all known property keys used by the {@link ServerModuleFile}.<br/>
      * Currently the following property keys are used:
@@ -63,6 +62,8 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      *     <li>{@link #PROP_SIZE}</li>
      *     <li>{@link #PROP_ASSERTIONS}</li>
      * </ul>
+     *
+     * Note: When adding new property keys, update this array!
      */
     private static final String[] ALL_PROPERTY_KEYS = {
             PROP_FILE_NAME,
@@ -70,14 +71,13 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
             PROP_ASSERTIONS
     };
 
-
     /**
      * Specifies the module {@link ModuleType type}.
      */
     private ModuleType moduleType;
 
     /**
-     * Module {@link ServerModuleFileData#dataBytes data-bytes} hash in SHA-256.
+     * Module {@link ServerModuleFileData#dataBytes data-bytes} SHA-256 digest hex-encoded.
      */
     private String moduleSha256;
 
@@ -88,7 +88,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      */
     private List<ServerModuleFileState> states;
     /**
-     * Module {@link ServerModuleFileData data}, data-bytes and hash.
+     * {@link ServerModuleFileData Data} object, holding module bytes and signature properties.
      */
     private ServerModuleFileData data;
 
@@ -124,7 +124,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * Get the SHA-256 of the {@link ServerModuleFileData#dataBytes data-bytes} as a hex string.<br/>
      * Note that executing this property getter method might cause the object to be fetched from the Database.
      *
-     * @return SHA-256 hash of data-bytes as hex string, or {@link null} if not yet saved.
+     * @return Hex-encoded SHA-256 digest of data-bytes, or {@link null} if not yet saved.
      */
     @Column(name = "module_sha256", length = 255, nullable = false, unique = true)
     public String getModuleSha256() {
@@ -155,7 +155,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
 
 
     /**
-     * Represents the server module data-bytes and data-bytes hash.
+     * Represents the module bytes and signature properties.
      * <p/>
      * This property have to be fetch lazy through hibernate proxy objects.
      * This is ONLY possible for a mandatory association between {@code server_module_file} and {@code server_module_file_data} tables.
@@ -176,44 +176,52 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
     }
 
     /**
-     * Convenient method for setting module data-bytes and calculating their checksum.
+     * Convenient method for setting module data-bytes, calculating data-bytes checksum and setting signature properties.
      *
-     * @param dataBytes    new module bytes.  Required.
+     * @param dataBytes              new module bytes.  Required and cannot be {@code null}.
+     * @param signatureProperties    new module signature properties.  Optional and can be {@code null} if the module is not signed.
      * @see #createData(byte[], String)
      */
-    public void createData(@NotNull final byte[] dataBytes) {
-        createData(dataBytes, calcBytesChecksum(dataBytes));
+    public void createData(@NotNull final byte[] dataBytes, @Nullable final String signatureProperties) {
+        createData(dataBytes, ModuleDigest.hexEncodedDigest(dataBytes), signatureProperties);
     }
 
     /**
-     * Creates a new module {@link ServerModuleFileData data}, using the specified {@code dataBytes} and {@code moduleSha256}.
+     * Creates a new module {@link ServerModuleFileData data}, using the specified {@code dataBytes}, {@code moduleSha256} and {@code signatureProperties}.
      * Existing module data will be updated.
      *
-     * @param dataBytes       new module bytes.  Required.
-     * @param moduleSha256    new module hash.  Required.
-     * @see #updateData(byte[], String)
+     * @param dataBytes              new module bytes.  Required and cannot be {@code null}.
+     * @param moduleSha256           new module bytes digest hex-encoded.  Required and cannot be {@code null}.
+     * @param signatureProperties    new module signature properties.  Optional and can be {@code null} if the module is not signed.
+     * @see #updateData(byte[], String, String)
      */
-    public void createData(@NotNull final byte[] dataBytes, @NotNull final String moduleSha256) {
+    public void createData(
+            @NotNull final byte[] dataBytes,
+            @NotNull final String moduleSha256,
+            @Nullable final String signatureProperties
+    ) {
         if (data == null) {
             data = new ServerModuleFileData(this);
         }
-        updateData(dataBytes, moduleSha256);
+        updateData(dataBytes, moduleSha256, signatureProperties);
     }
 
     /**
-     * Updates the module {@link ServerModuleFileData data}, using the specified {@code dataBytes} and {@code moduleSha256}.<br/>
+     * Updates the module {@link ServerModuleFileData data}, using the specified {@code dataBytes}, {@code moduleSha256} and {@code signatureProperties}.<br/>
      * It is expected that {@link #data} property is set before calling this method.
      *
-     * @param dataBytes       updated module bytes.  Required.
-     * @param moduleSha256    updated module hash.  Required.
+     * @param dataBytes              updated module bytes.
+     * @param moduleSha256           updated module bytes digest hex-encoded.
+     * @param signatureProperties    updated module signature properties.
      * @throws IllegalStateException if the {@link #data} property is not set.
      */
-    public void updateData(final byte[] dataBytes, final String moduleSha256) {
+    public void updateData(final byte[] dataBytes, final String moduleSha256, final String signatureProperties) {
         if (data == null) {
             throw new IllegalStateException("updateData cannot be called on uninitialized data object");
         }
 
         data.setDataBytes(dataBytes);
+        data.setSignatureProperties(signatureProperties);
         setModuleSha256(moduleSha256);
     }
 
@@ -223,7 +231,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * If the specified module {@code data} is {@code null}, then this module data will not be updated.
      * However, if this module doesn't have a data object then a blank one will be created.
      *
-     * @param data    The {@link ServerModuleFileData} object holding the new module bytes and hash.
+     * @param data    The {@link ServerModuleFileData} object holding the new module bytes and signature properties.
      */
     private void createData(@Nullable final ServerModuleFileData data) {
         if (this.data == null) {
@@ -325,8 +333,8 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * Copy data from specified {@code otherModule}.
      *
      * @param otherModule            the module from which to copy properties.  Required.
-     * @param includeData            flag indicating whether to copy data bytes and hash from the specified module.
-     * @param includeFileMetadata    flag indicating whether to copy module metadata (i.e. properties) from the specified module.
+     * @param includeData            flag indicating whether to copy data bytes and signature properties from the specified module.
+     * @param includeFileMetadata    flag indicating whether to copy module metadata (i.e. sha-256 and properties) from the specified module.
      * @param includeStates          flag indicating whether to copy all module states from the specified module.
      */
     public void copyFrom(
@@ -342,9 +350,9 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
 
         if (includeFileMetadata) {
             setModuleSha256(otherModule.getModuleSha256());
-            setProperty(PROP_SIZE, otherModule.getProperty(PROP_SIZE));
-            setProperty(PROP_FILE_NAME, otherModule.getProperty(PROP_FILE_NAME));
-            setProperty(PROP_ASSERTIONS, otherModule.getProperty(PROP_ASSERTIONS));
+            for (final String key : ALL_PROPERTY_KEYS) {
+                setProperty(key, otherModule.getProperty(key));
+            }
         }
 
         createData(includeData ? otherModule.getData() : null);
@@ -392,18 +400,6 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
         int exp = (int) (Math.log(bytes) / Math.log(unit));
         //noinspection SpellCheckingInspection
         return String.format("%.1f %cB", bytes / Math.pow(unit, exp), "KMGTPE".charAt(exp - 1));
-    }
-
-    /**
-     * Utility function for calculating data-bytes checksum.<br/>
-     * Currently the function returns the hex dump of the bytes sha265.
-     *
-     * @param bytes    the bytes array for which to calculate checksum.  Required.
-     * @return A String representation of the specified bytes checksum.  Never {@code null}.
-     */
-    @NotNull
-    public static String calcBytesChecksum(@NotNull final byte[] bytes) {
-        return ModuleDigest.digest(bytes);
     }
 
     /**

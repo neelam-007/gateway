@@ -359,7 +359,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
             if (file == null) {
                 throw new IllegalArgumentException("file cannot be null");
             }
-            return ModuleDigest.digest(new FileInputStream(file), closeFile);
+            return ModuleDigest.hexEncodedDigest(new FileInputStream(file), closeFile);
         }
     }
 

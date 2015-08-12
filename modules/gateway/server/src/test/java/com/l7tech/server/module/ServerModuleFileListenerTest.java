@@ -15,6 +15,8 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.module.*;
+import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
@@ -33,14 +35,14 @@ import org.springframework.context.ApplicationEvent;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-
-// TODO : Add signature verification tests
 
 /**
  * Test ServerModuleFileListener
@@ -96,8 +98,14 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     // emulate this cluster node
     private String currentNodeId = "currentClusterNode";
 
+    // untrusted signer and signer cert DN's
+    private static SignatureVerifier untrustedModuleSigner;
+    private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
+
     @BeforeClass
     public static void setUpOnce() throws Exception {
+        beforeClass();
+
         // On Windows platform jar files are locked by the JVM, therefore they cannot be cleaned up on exit.
         // On start, we will loop through all previously created temporary folders and delete them,
         // which means that at a worst case scenario we will only end up with files from a single run.
@@ -112,10 +120,18 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Assert.assertFalse("BROKEN_DESCRIPTOR_MODULES_EMPTY_DIR exists", StringUtils.isBlank(brokenDescriptorModulesEmptyDir = extractFolder(BROKEN_DESCRIPTOR_MODULES_EMPTY_DIR)));
         Assert.assertFalse("MODULES_ROOT_EMPTY_DIR exists", StringUtils.isBlank(modulesRootEmptyDir = extractFolder(MODULES_ROOT_EMPTY_DIR)));
         Assert.assertFalse("MODULES_COPY_ROOT_EMPTY_DIR exists", StringUtils.isBlank(modulesCopyRootEmptyDir = extractFolder(MODULES_COPY_ROOT_EMPTY_DIR)));
+
+        // combination of already trusted and untrusted DN's
+        // everything signed with this signer will not be trusted 
+        untrustedModuleSigner = SignatureTestUtils.createSignatureVerifier(
+                ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns)
+        );
     }
 
     @AfterClass
-    public static void cleanUpOnce() {
+    public static void cleanUpOnce() throws Exception {
+        afterClass();
+
         for (final File tmpDir : tmpFiles.values()) {
             FileUtils.deleteDir(tmpDir);
         }
@@ -172,6 +188,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         modularAssertionsScanner = Mockito.spy(new ModularAssertionsScanner(modulesConfig, modularAssertionCallbacks));
         mockServerModuleFileLoader(modularAssertionRegistrar, modularAssertionsScanner);
 
+        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
         // create modules listener spy
         modulesListener = Mockito.spy(
                 new ServerModuleFileListener(
@@ -179,7 +196,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         null,
                         config,
                         modularAssertionRegistrar,
-                        customAssertionRegistrar
+                        customAssertionRegistrar,
+                        SIGNATURE_VERIFIER
                 )
         );
     }
@@ -443,7 +461,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
      *-----------------------------------------------------------------
      */
     private ModuleState[] initialStates;
-    private void createSampleModules() {
+    private void createUnsignedSampleModules() throws Exception {
         moduleFiles = CollectionUtils.<Goid, ServerModuleFile>mapBuilder()
                 .put(
                         //-----------------------------------------------------------------
@@ -455,7 +473,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_3          => LOADED
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 0),
-                        new ServerModuleFileBuilder(create_test_module_without_states(0, ModuleType.CUSTOM_ASSERTION, new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest1.jar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(0, ModuleType.CUSTOM_ASSERTION, new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest1.jar")))
                                 .addState(currentNodeId, ModuleState.REJECTED)
                                 .addState("node_1", ModuleState.UPLOADED)
                                 .addState("node_3", ModuleState.LOADED)
@@ -472,7 +490,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_3          => UPLOADED
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 1),
-                        new ServerModuleFileBuilder(create_test_module_without_states(1, ModuleType.CUSTOM_ASSERTION, new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(1, ModuleType.CUSTOM_ASSERTION, new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar")))
                                 .addState(currentNodeId, ModuleState.UPLOADED)
                                 .addState("node_1", ModuleState.REJECTED)
                                 .addStateError("node_2", "Error loading module!")
@@ -488,7 +506,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_2          => UPLOADED
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 2),
-                        new ServerModuleFileBuilder(create_test_module_without_states(2, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(2, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar")))
                                 .addStateError(currentNodeId, "Error loading module")
                                 .addState("node_2", ModuleState.UPLOADED)
                                 .build()
@@ -503,7 +521,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_3          => LOADED
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 3),
-                        new ServerModuleFileBuilder(create_test_module_without_states(3, ModuleType.CUSTOM_ASSERTION, new File(dualModulesEmptyDir, "com.l7tech.DualAssertionsTest1.jar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(3, ModuleType.CUSTOM_ASSERTION, new File(dualModulesEmptyDir, "com.l7tech.DualAssertionsTest1.jar")))
                                 .addState(currentNodeId, ModuleState.LOADED)
                                 .addState("node_2", ModuleState.REJECTED)
                                 .addState("node_3", ModuleState.LOADED)
@@ -517,7 +535,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_3          => LOADED
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 4),
-                        new ServerModuleFileBuilder(create_test_module_without_states(4, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(4, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar")))
                                 .addState("node_3", ModuleState.LOADED)
                                 .build()
                 )
@@ -529,7 +547,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // (empty)
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 5),
-                        create_test_module_without_states(5, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"))
+                        create_unsigned_test_module_without_states(5, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"))
                 )
                 .put(
                         //-----------------------------------------------------------------
@@ -539,7 +557,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // (empty)
                         //-----------------------------------------------------------------
                         new Goid(GOID_HI_START, 6),
-                        create_test_module_without_states(6, ModuleType.CUSTOM_ASSERTION, new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest2.jar"))
+                        create_unsigned_test_module_without_states(6, ModuleType.CUSTOM_ASSERTION, new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest2.jar"))
                 )
                 .put(
                         // ----------------------------------------------------------------
@@ -550,7 +568,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_2          => REJECTED
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 7),
-                        new ServerModuleFileBuilder(create_test_module_without_states(7, ModuleType.CUSTOM_ASSERTION, new File(brokenDescriptorModulesEmptyDir, "com.l7tech.BrokenDescriptorTest1.jar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(7, ModuleType.CUSTOM_ASSERTION, new File(brokenDescriptorModulesEmptyDir, "com.l7tech.BrokenDescriptorTest1.jar")))
                                 .addState(currentNodeId, ModuleState.ACCEPTED)
                                 .addState("node_2", ModuleState.REJECTED)
                                 .build()
@@ -564,7 +582,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_3          => LOADED
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 8),
-                        new ServerModuleFileBuilder(create_test_module_without_states(8, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.InvalidAssertionClassTest1.aar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(8, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.InvalidAssertionClassTest1.aar")))
                                 .addState(currentNodeId, ModuleState.ACCEPTED)
                                 .addState("node_3", ModuleState.LOADED)
                                 .build()
@@ -577,7 +595,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // currentCluster  => REJECTED
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 9),
-                        new ServerModuleFileBuilder(create_test_module_without_states(9, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.NoAssertionsTest1.aar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(9, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.NoAssertionsTest1.aar")))
                                 .addState(currentNodeId, ModuleState.REJECTED)
                                 .build()
                 )
@@ -590,7 +608,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // node_1          => LOADED
                         // ----------------------------------------------------------------
                         new Goid(GOID_HI_START, 10),
-                        new ServerModuleFileBuilder(create_test_module_without_states(10, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar")))
+                        new ServerModuleFileBuilder(create_unsigned_test_module_without_states(10, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar")))
                                 .addState(currentNodeId, ModuleState.LOADED)
                                 .addState("node_1", ModuleState.LOADED)
                                 .build()
@@ -623,12 +641,427 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                 ModuleState.LOADED,
         };
     }
+
+    /**
+     * Use the {@link #untrustedModuleSigner} to sign this module
+     */
+    private MyServerModuleFile sign_with_untrusted_signer(
+            final long ordinal,
+            ModuleType moduleType,
+            final File moduleBytes,
+            final String signatureDn
+    ) throws Exception {
+        final String signatureProps = SignatureTestUtils.signAndGetSignature(untrustedModuleSigner, moduleBytes, signatureDn);
+        return create_test_module_without_states(
+                ordinal,
+                moduleType,
+                moduleBytes,
+                signatureProps
+        );
+    }
+
+    /**
+     * Simply use a different file for the module bytes and signature properties.
+     * Optionally use the original digest if specified.
+     */
+    private MyServerModuleFile tamper_with_module_bytes(
+            final long ordinal,
+            final ModuleType moduleType,
+            final File originalFile,
+            final File tamperedWithFile,
+            final String signatureDn,
+            final boolean useOriginalFileDigest
+    ) throws Exception {
+        // some sanity check
+        Assert.assertTrue(originalFile != null && originalFile.exists() && !originalFile.isDirectory());
+        Assert.assertTrue(tamperedWithFile != null && tamperedWithFile.exists() && !tamperedWithFile.isDirectory());
+        Assert.assertThat(signatureDn, Matchers.not(Matchers.isEmptyOrNullString()));
+        // sign using the original file
+        final String signatureProps = signAndGetSignature(originalFile, signatureDn);
+        // create the module using the tamperedWithFile
+        final MyServerModuleFile moduleFile = create_test_module_without_states(
+                ordinal,
+                moduleType,
+                tamperedWithFile,
+                signatureProps
+        );
+        if (useOriginalFileDigest) {
+            try (final BufferedInputStream is = new BufferedInputStream(new FileInputStream(originalFile))) {
+                final String newDigest = ModuleDigest.hexEncodedDigest(is);
+                Assert.assertThat(newDigest, Matchers.not(Matchers.equalTo(moduleFile.getModuleSha256())));
+                moduleFile.setModuleSha256(newDigest);
+            }
+        }
+        return moduleFile;
+    }
+
+    /**
+     * Creates sample signed modules with sample states for different cluster nodes:
+     *
+     *-----------------------------------------------------------------
+     * module_0: Goid(GOID_HI_START, 0); test data 0; CUSTOM_ASSERTION
+     * file: com.l7tech.NonDynamicCustomAssertionTest1.jar
+     * SIGNED with SIGNER_CERT_DNS[0]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_1: Goid(GOID_HI_START, 1); test data 1; CUSTOM_ASSERTION
+     * file: com.l7tech.DynamicCustomAssertionsTest1.jar
+     * SIGNED with SIGNER_CERT_DNS[1]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_2: Goid(GOID_HI_START, 2); test data 2; MODULAR_ASSERTION
+     * file: com.l7tech.WorkingTest1.aar
+     * SIGNED with with SIGNER_CERT_DNS[2]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_3: Goid(GOID_HI_START, 3); test data 3; CUSTOM_ASSERTION
+     * file: com.l7tech.DualAssertionsTest1.jar
+     * SIGNED with SIGNER_CERT_DNS[0]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_4: Goid(GOID_HI_START, 4); test data 4; MODULAR_ASSERTION
+     * file: com.l7tech.WorkingTest2.aar
+     * SIGNED with SIGNER_CERT_DNS[0]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_5: Goid(GOID_HI_START, 5); test data 5; MODULAR_ASSERTION
+     * file: com.l7tech.WorkingTest3.aar
+     * SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_6: Goid(GOID_HI_START, 6); test data 6; CUSTOM_ASSERTION
+     * file: com.l7tech.NonDynamicCustomAssertionTest2.jar
+     * UNSIGNED
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_7: Goid(GOID_HI_START, 7); test data 7; CUSTOM_ASSERTION
+     * file: com.l7tech.BrokenDescriptorTest1.jar (fail)
+     * SIGNED with SIGNER_CERT_DNS[3]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_8: Goid(GOID_HI_START, 8); test data 8; MODULAR_ASSERTION
+     * file: com.l7tech.InvalidAssertionClassTest1.aar (fail)
+     * SIGNED with SIGNER_CERT_DNS[3]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_9: Goid(GOID_HI_START, 9); test data 9; MODULAR_ASSERTION
+     * file: com.l7tech.NoAssertionsTest1.aar (fail)
+     * SIGNED with SIGNER_CERT_DNS[3]
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_10: Goid(GOID_HI_START, 10); test data 10; MODULAR_ASSERTION
+     * file: com.l7tech.WorkingTest4.aar
+     * SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_11: Goid(GOID_HI_START, 11); test data 11; CUSTOM_ASSERTION
+     * file: com.l7tech.DynamicCustomAssertionsTest2.jar
+     * SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     *
+     *-----------------------------------------------------------------
+     * module_12: Goid(GOID_HI_START, 12); test data 12; CUSTOM_ASSERTION
+     * file: com.l7tech.DynamicCustomAssertionsTest3.jar
+     * SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+     *-----------------------------------------------------------------
+     *      (empty)
+     *-----------------------------------------------------------------
+     */
+    private void createSignedSampleModules() throws Exception {
+        moduleFiles = CollectionUtils.<Goid, ServerModuleFile>mapBuilder()
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_0: Goid(GOID_HI_START, 0); test data 0; CUSTOM_ASSERTION
+                        // file: com.l7tech.NonDynamicCustomAssertionTest1.jar
+                        // SIGNED with SIGNER_CERT_DNS[0]
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 0),
+                        create_and_sign_test_module_without_states(
+                                0,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest1.jar"),
+                                SIGNER_CERT_DNS[0]
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_1: Goid(GOID_HI_START, 1); test data 1; CUSTOM_ASSERTION
+                        // file: com.l7tech.DynamicCustomAssertionsTest1.jar
+                        // SIGNED with SIGNER_CERT_DNS[1]
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 1),
+                        create_and_sign_test_module_without_states(
+                                1,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest1.jar"),
+                                SIGNER_CERT_DNS[1]
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_2: Goid(GOID_HI_START, 2); test data 2; MODULAR_ASSERTION
+                        // file: com.l7tech.WorkingTest1.aar
+                        // SIGNED with SIGNER_CERT_DNS[2]
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 2),
+                        create_and_sign_test_module_without_states(
+                                2,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest1.aar"),
+                                SIGNER_CERT_DNS[2]
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_3: Goid(GOID_HI_START, 3); test data 3; CUSTOM_ASSERTION
+                        // file: com.l7tech.DualAssertionsTest1.jar
+                        // SIGNED with SIGNER_CERT_DNS[0]
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 3),
+                        create_and_sign_test_module_without_states(
+                                3,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(dualModulesEmptyDir, "com.l7tech.DualAssertionsTest1.jar"),
+                                SIGNER_CERT_DNS[0]
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_4: Goid(GOID_HI_START, 4); test data 4; MODULAR_ASSERTION
+                        // file: com.l7tech.WorkingTest2.aar
+                        // SIGNED with SIGNER_CERT_DNS[0]
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 4),
+                        create_and_sign_test_module_without_states(
+                                4,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"),
+                                SIGNER_CERT_DNS[0]
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_5: Goid(GOID_HI_START, 5); test data 5; MODULAR_ASSERTION
+                        // file: com.l7tech.WorkingTest3.aar
+                        // SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 5),
+                        tamper_with_module_bytes(
+                                5,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest3.aar"),
+                                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest2.aar"),
+                                SIGNER_CERT_DNS[1],
+                                false // don't use the original file sha256
+                        )
+                )
+                .put(
+                        //-----------------------------------------------------------------
+                        // module_6: Goid(GOID_HI_START, 6); test data 6; CUSTOM_ASSERTION
+                        // file: com.l7tech.NonDynamicCustomAssertionTest2.jar
+                        // UNSIGNED
+                        //-----------------------------------------------------------------
+                        // (empty)
+                        //-----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 6),
+                        create_unsigned_test_module_without_states(
+                                6,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest2.jar")
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_7: Goid(GOID_HI_START, 7); test data 7; CUSTOM_ASSERTION
+                        // file: com.l7tech.BrokenDescriptorTest1.jar (fail)
+                        // SIGNED with SIGNER_CERT_DNS[3]
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 7),
+                        create_and_sign_test_module_without_states(
+                                7,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(brokenDescriptorModulesEmptyDir, "com.l7tech.BrokenDescriptorTest1.jar"),
+                                SIGNER_CERT_DNS[3]
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_8: Goid(GOID_HI_START, 8); test data 8; MODULAR_ASSERTION
+                        // file: com.l7tech.InvalidAssertionClassTest1.aar (fail)
+                        // SIGNED with SIGNER_CERT_DNS[3]
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 8),
+                        create_and_sign_test_module_without_states(
+                                8,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.InvalidAssertionClassTest1.aar"),
+                                SIGNER_CERT_DNS[3]
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_9: Goid(GOID_HI_START, 9); test data 9; MODULAR_ASSERTION
+                        // file: com.l7tech.NoAssertionsTest1.aar (fail)
+                        // SIGNED with SIGNER_CERT_DNS[3]
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 9),
+                        create_and_sign_test_module_without_states(
+                                9,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.NoAssertionsTest1.aar"),
+                                SIGNER_CERT_DNS[3]
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_10: Goid(GOID_HI_START, 10); test data 10; MODULAR_ASSERTION
+                        // file: com.l7tech.WorkingTest4.aar
+                        // SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 10),
+                        sign_with_untrusted_signer(
+                                10,
+                                ModuleType.MODULAR_ASSERTION,
+                                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar"),
+                                SIGNER_CERT_DNS[1]
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_11: Goid(GOID_HI_START, 11); test data 11; CUSTOM_ASSERTION
+                        // file: com.l7tech.DynamicCustomAssertionsTest2.jar
+                        // SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 11),
+                        sign_with_untrusted_signer(
+                                11,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest2.jar"),
+                                untrustedSignerCertDns[0]
+                        )
+                )
+                .put(
+                        // ----------------------------------------------------------------
+                        // module_12: Goid(GOID_HI_START, 12); test data 12; CUSTOM_ASSERTION
+                        // file: com.l7tech.DynamicCustomAssertionsTest3.jar
+                        // SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+                        // ----------------------------------------------------------------
+                        // (empty)
+                        // ----------------------------------------------------------------
+                        new Goid(GOID_HI_START, 12),
+                        tamper_with_module_bytes(
+                                12,
+                                ModuleType.CUSTOM_ASSERTION,
+                                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest3.jar"),
+                                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest4.jar"),
+                                SIGNER_CERT_DNS[0],
+                                true // use the original file sha256
+                        )
+                )
+                .map();
+
+        // modules in our repository with their state for current cluster node:
+        // module_0  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar      => SIGNED with SIGNER_CERT_DNS[0]
+        // module_1  => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar        => SIGNED with SIGNER_CERT_DNS[1]
+        // module_2  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                        => SIGNED with SIGNER_CERT_DNS[2]
+        // module_3  => <NONE> => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                 => SIGNED with SIGNER_CERT_DNS[0]
+        // module_4  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                        => SIGNED with SIGNER_CERT_DNS[0]
+        // module_5  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+        // module_6  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar      => UNSIGNED
+        // module_7  => <NONE> => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)        => SIGNED with SIGNER_CERT_DNS[3]
+        // module_8  => <NONE> => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)   => SIGNED with SIGNER_CERT_DNS[3]
+        // module_9  => <NONE> => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)            => SIGNED with SIGNER_CERT_DNS[3]
+        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+        // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+        initialStates = new ModuleState[]{
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+                ModuleState.UPLOADED,
+        };
+    }
     // failed modules
-    final Collection<Goid> failedModules = Arrays.asList(
+    final Collection<Goid> failedModules = Collections.unmodifiableCollection(Arrays.asList(
             new Goid(GOID_HI_START, 7),   // module_7  => ACCEPTED => CUSTOM_ASSERTION;  com.l7tech.BrokenDescriptorTest1.jar (fail)
             new Goid(GOID_HI_START, 8),   // module_8  => ACCEPTED => MODULAR_ASSERTION; com.l7tech.InvalidAssertionClassTest1.aar (fail)
             new Goid(GOID_HI_START, 9)    // module_9  => REJECTED => MODULAR_ASSERTION; com.l7tech.NoAssertionsTest1.aar (fail)
-    );
+    ));
+
+    // rejected modules (applies only when using createSignedSampleModules and not createUnsignedSampleModules)
+    final Collection<Goid> signedRejectedModules = Collections.unmodifiableCollection(Arrays.asList(
+            new Goid(GOID_HI_START, 5),   // module_5  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                    => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+            new Goid(GOID_HI_START, 6),   // module_6  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar  => UNSIGNED
+            new Goid(GOID_HI_START, 10),  // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                    => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+            new Goid(GOID_HI_START, 11),  // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar    => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+            new Goid(GOID_HI_START, 12)   // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar    => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+    ));
 
     /**
      * Common mockups for {@link ServerModuleFileManager}:<br/>
@@ -722,9 +1155,9 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                 }
         ).when(serverModuleFileManager).updateState(Mockito.<Goid>any(), Mockito.<ModuleState>any());
         Mockito.doAnswer(
-                new Answer<InputStream>() {
+                new Answer<Pair<InputStream, String>>() {
                     @Override
-                    public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+                    public Pair<InputStream, String> answer(final InvocationOnMock invocation) throws Throwable {
                         Assert.assertNotNull(invocation);
                         Assert.assertEquals("there is only one parameter for getModuleBytesAsStream", 1, invocation.getArguments().length);
                         final Object param1 = invocation.getArguments()[0];
@@ -735,13 +1168,13 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         final ServerModuleFile moduleFile = moduleFiles.get(goid);
                         if (moduleFile != null) {
                             Assert.assertTrue(moduleFile instanceof MyServerModuleFile);
-                            Assert.assertNotNull(((MyServerModuleFile) moduleFile).getModuleContentStream());
-                            return ((MyServerModuleFile) moduleFile).getModuleContentStream();
+                            Assert.assertNotNull(((MyServerModuleFile) moduleFile).getModuleContentStreamWithSignature());
+                            return ((MyServerModuleFile) moduleFile).getModuleContentStreamWithSignature();
                         }
                         return null;
                     }
                 }
-        ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
+        ).when(serverModuleFileManager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
     }
 
     /**
@@ -809,7 +1242,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_persistence_event_before_started() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -818,7 +1251,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         // new module with goid 100
         moduleFiles.put(
                 new Goid(GOID_HI_START, 100),
-                new ServerModuleFileBuilder(create_test_module_without_states(100, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar")))
+                new ServerModuleFileBuilder(create_unsigned_test_module_without_states(100, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar")))
                         .addState(currentNodeId, ModuleState.UPLOADED)
                         .build()
         );
@@ -853,7 +1286,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_upload_disabled() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(false);
 
         // initial scan for empty deploy folders
@@ -886,7 +1319,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         // new module with goid 100
         moduleFiles.put(
                 new Goid(GOID_HI_START, 100),
-                new ServerModuleFileBuilder(create_test_module_without_states(100, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar")))
+                new ServerModuleFileBuilder(create_unsigned_test_module_without_states(100, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar")))
                         .addState(currentNodeId, ModuleState.UPLOADED)
                         .build()
         );
@@ -951,7 +1384,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     }
 
     /**
-     * Utility function for checking that out modules (in the DB i.e. {@code moduleFiles}) have the expected states
+     * Utility function for checking that our modules (in the DB i.e. {@code moduleFiles}) have the expected states
      * @param expectedStates    array of module staes, ordert by module ordinal i.e. starting from module_0, module_1 etc.
      */
     private void verifyModulesState(final ModuleState[] expectedStates) {
@@ -1056,21 +1489,22 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
             @Override
             public Void answer(final InvocationOnMock invocation) throws Throwable {
                 Assert.assertNotNull(invocation);
-                Assert.assertEquals("there is only one parameter for verifySignature", 1, invocation.getArguments().length);
+                Assert.assertEquals("there are two parameters for verifySignature", 2, invocation.getArguments().length);
                 final Object param1 = invocation.getArguments()[0];
                 Assert.assertTrue("Param is ServerModuleFile", param1 instanceof ServerModuleFile);
                 final ServerModuleFile moduleFile = (ServerModuleFile) param1;
                 Assert.assertNotNull(moduleFile);
+
                 // check if module should be rejected, fail to verify signature or be accepted
                 if (rejectedModules.contains(moduleFile.getGoid())) {
                     throw new ServerModuleFileListener.ModuleRejectedException();
                 } else if (signatureErrorModules.contains(moduleFile.getGoid())) {
-                    throw new ServerModuleFileListener.ModuleSignatureException();
+                    throw new ServerModuleFileListener.ModuleSignatureException("signature error");
                 }
                 // the rest are accepted
                 return null;
             }
-        }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any(), Mockito.anyString());
 
         // calculate expected loaded based on rejectedModules and signatureErrorModules
         final Collection<ServerModuleFile> expectedLoaded = new ArrayList<>();
@@ -1147,7 +1581,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_started_event() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -1200,7 +1634,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @ConditionalIgnore(condition = RunsOnWindows.class)
     public void test_started_event_without_write_permissions_to_staging() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -1228,7 +1662,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                     },
                     Collections.<ServerModuleFile>emptyList()
             );
-            // doublecheck that every state is in ERROR
+            // double-check that every state is in ERROR
             for (final ServerModuleFile moduleFile : moduleFiles.values()) {
                 Assert.assertNotNull(modulesListener.getModuleState(moduleFile));
                 Assert.assertNotNull(modulesListener.getModuleState(moduleFile).equals(ModuleState.ERROR));
@@ -1238,6 +1672,29 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
             Assert.assertTrue(stagingFolder.setWritable(true));
         }
     }
+
+    /**
+     * Convenient module builder callback for creating unsigned {@code ServerModuleFile}'s.
+     */
+    private final Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception> DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK = new Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception>() {
+        @Override
+        public ServerModuleFileBuilder call(final Long ordinal, final ModuleType moduleType, final File moduleContent) throws Exception {
+            Assert.assertThat(ordinal, Matchers.notNullValue());
+            return new ServerModuleFileBuilder(create_unsigned_test_module_without_states(ordinal, moduleType, moduleContent));
+        }
+    };
+
+    /**
+     * Convenient module builder callback for creating signed {@code ServerModuleFile}'s.<br/>
+     * Default DN is SIGNER_CERT_DNS[0].
+     */
+    private final Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception> DEFAULT_SIGNED_MODULES_BUILDER_CALLBACK = new Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception>() {
+        @Override
+        public ServerModuleFileBuilder call(final Long ordinal, final ModuleType moduleType, final File moduleContent) throws Exception {
+            Assert.assertThat(ordinal, Matchers.notNullValue());
+            return new ServerModuleFileBuilder(create_and_sign_test_module_without_states(ordinal, moduleType, moduleContent, SIGNER_CERT_DNS[0]));
+        }
+    };
 
     /**
      * Convenient method for creating new ServerModuleFile entity, with the specified {@code ordinal},
@@ -1252,6 +1709,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
      *                                          Throw {@link ServerModuleFileListener.ModuleRejectedException} to indicate module has been rejected.
      *                                          Throw {@link ServerModuleFileListener.ModuleSignatureException} to indicate an error while verifying module signature.
      *                                          Not throwing means the module is accepted.
+     *                                          Specify {@code null} not to mock verifySignature
+     * @param moduleCreateCallback              a callback for creatung {@code ServerModuleFileBuilder}.
      */
     private void publishAndVerifyNewModuleFile(
             final long ordinal,
@@ -1259,29 +1718,32 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
             final ModuleState initialState,
             final File moduleContent,
             final ModuleState expectedStateAfterLoad,
-            final Functions.UnaryVoidThrows<ServerModuleFile, ServerModuleFileListener.ModuleSignatureException> signatureVerificationCallback
+            final Functions.UnaryVoidThrows<ServerModuleFile, ServerModuleFileListener.ModuleSignatureException> signatureVerificationCallback,
+            final Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception> moduleCreateCallback
     ) throws Exception {
         Assert.assertNotNull(moduleType);
         Assert.assertNotNull(moduleContent);
         Assert.assertTrue(moduleContent.exists());
         Assert.assertNotNull(expectedStateAfterLoad);
 
-        // simulate signature verification
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(final InvocationOnMock invocation) throws Throwable {
-                Assert.assertNotNull(invocation);
-                Assert.assertEquals("there is only one parameter for verifySignature", 1, invocation.getArguments().length);
-                final Object param1 = invocation.getArguments()[0];
-                Assert.assertTrue("Param is ServerModuleFile", param1 instanceof ServerModuleFile);
-                final ServerModuleFile moduleFile = (ServerModuleFile) param1;
-                Assert.assertNotNull(moduleFile);
-                // execute callback
-                signatureVerificationCallback.call(moduleFile);
-                // the rest are accepted
-                return null;
-            }
-        }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        if (signatureVerificationCallback != null) {
+            // simulate signature verification
+            Mockito.doAnswer(new Answer<Void>() {
+                @Override
+                public Void answer(final InvocationOnMock invocation) throws Throwable {
+                    Assert.assertNotNull(invocation);
+                    Assert.assertEquals("there are two parameters for verifySignature", 2, invocation.getArguments().length);
+                    final Object param1 = invocation.getArguments()[0];
+                    Assert.assertTrue("Param is ServerModuleFile", param1 instanceof ServerModuleFile);
+                    final ServerModuleFile moduleFile = (ServerModuleFile) param1;
+                    Assert.assertNotNull(moduleFile);
+                    // execute callback
+                    signatureVerificationCallback.call(moduleFile);
+                    // the rest are accepted
+                    return null;
+                }
+            }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any(), Mockito.anyString());
+        }
 
         // get the initial staged files count
         File[] files = stagingFolder.listFiles();
@@ -1295,7 +1757,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Assert.assertNull(moduleFiles.get(goid)); // new module shouldn't be existing
 
         // create the new module file
-        ServerModuleFile moduleFile = new ServerModuleFileBuilder(create_test_module_without_states(ordinal, moduleType, moduleContent))
+        ServerModuleFile moduleFile = moduleCreateCallback.call(ordinal, moduleType, moduleContent)
                 .addState(currentNodeId, initialState)
                 .build();
 
@@ -1376,7 +1838,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
             @Override
             public Void answer(final InvocationOnMock invocation) throws Throwable {
                 Assert.assertNotNull(invocation);
-                Assert.assertEquals("there is only one parameter for verifySignature", 1, invocation.getArguments().length);
+                Assert.assertEquals("there are two parameters for verifySignature", 2, invocation.getArguments().length);
                 final Object param1 = invocation.getArguments()[0];
                 Assert.assertTrue("Param is ServerModuleFile", param1 instanceof ServerModuleFile);
                 final ServerModuleFile moduleFile = (ServerModuleFile) param1;
@@ -1386,7 +1848,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                 // the rest are accepted
                 return null;
             }
-        }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        }).when(modulesListener).verifySignature(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any(), Mockito.anyString());
 
         // get current module state
         ServerModuleFile moduleFile = moduleFiles.get(goid);
@@ -1548,6 +2010,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Assert.assertNotNull(files);
         assertThat(files.length, Matchers.isOneOf(initialStagedFiles, initialStagedFiles - 1));
         // make sure module was deleted from the scanner as well
+        //noinspection ConstantConditions
         if (modulesScanner != null && stagedFileName != null) {
             Assert.assertNull(modulesScanner.getModule(stagedFileName));
         }
@@ -1556,7 +2019,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_entity_crud() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -1616,7 +2079,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         // accept nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // update module_5; com.l7tech.WorkingTest3.aar; was REJECTED, should be loaded again => LOADED
@@ -1644,7 +2108,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                     public void call(final ServerModuleFile moduleFile) throws ServerModuleFileListener.ModuleSignatureException {
                         Assert.assertNotNull(moduleFile);
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 2)));
-                        throw new ServerModuleFileListener.ModuleSignatureException();
+                        throw new ServerModuleFileListener.ModuleSignatureException("signature error");
                     }
                 }
         );
@@ -1720,7 +2184,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         throw new ServerModuleFileListener.ModuleRejectedException();
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_101; com.l7tech.WorkingTest1NewVersion.aar; (new version of module_2; com.l7tech.WorkingTest1.aar)
@@ -1738,7 +2203,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 101)));
                         // accept; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
 
@@ -1827,7 +2293,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         throw new ServerModuleFileListener.ModuleRejectedException();
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         final Goid goid100 = new Goid(GOID_HI_START, 100);
@@ -1843,7 +2310,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                     public void call(final ServerModuleFile moduleFile) throws ServerModuleFileListener.ModuleSignatureException {
                         Assert.assertNotNull(moduleFile);
                         Assert.assertThat(moduleFile.getGoid(), equalTo(goid100));
-                        throw new ServerModuleFileListener.ModuleSignatureException();
+                        throw new ServerModuleFileListener.ModuleSignatureException("signature error");
                     }
                 }
         );
@@ -1920,7 +2387,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 200)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
         assertThat("module_200", equalTo(moduleFiles.get(new Goid(GOID_HI_START, 200)).getName()));
 
@@ -1950,7 +2418,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                     public void call(final ServerModuleFile moduleFile) throws ServerModuleFileListener.ModuleSignatureException {
                         Assert.assertNotNull(moduleFile);
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 200)));
-                        throw new ServerModuleFileListener.ModuleSignatureException();
+                        throw new ServerModuleFileListener.ModuleSignatureException("signature error");
                     }
                 }
         );
@@ -2029,7 +2497,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_duplicate_modules() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // copy two non-dynamic custom assertions
@@ -2109,7 +2577,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_101; com.l7tech.DynamicCustomAssertionsTest5.jar;
@@ -2126,7 +2595,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 101)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_102; com.l7tech.NonDynamicCustomAssertionTest4.jar;
@@ -2143,7 +2613,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 102)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_103; com.l7tech.NonDynamicCustomAssertionTest5.jar;
@@ -2160,7 +2631,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 103)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_104; com.l7tech.NonDynamicCustomAssertionTest1.jar;
@@ -2177,7 +2649,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 104)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_105; com.l7tech.DynamicCustomAssertionsTest1.jar;
@@ -2194,7 +2667,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 105)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_106; com.l7tech.WorkingTest2.aar;
@@ -2211,7 +2685,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 106)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_107; com.l7tech.NonDynamicCustomAssertionTest2.jar
@@ -2228,7 +2703,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 107)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // add new entity module_108; com.l7tech.WorkingTest4.aar
@@ -2245,7 +2721,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 108)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // expected states after the started event is processed:
@@ -2270,7 +2747,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_ensure_non_dynamic_custom_assertion_modules_are_loaded_only_once() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // copy two non-dynamic custom assertions
@@ -2360,7 +2837,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2387,7 +2865,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 101)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // loading com.l7tech.DynamicCustomAssertionsTest1.jar again should fail
@@ -2404,7 +2883,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 102)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2425,7 +2905,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 103)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // loading com.l7tech.NonDynamicCustomAssertionTest5.jar should fail since its already deployed
@@ -2442,7 +2923,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 104)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // unload non-dynamic modules using the workaround (working on both windows and linux)
@@ -2507,7 +2989,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 105)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // loading com.l7tech.NonDynamicCustomAssertionTest5.jar should fail since its already deployed
@@ -2524,7 +3007,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 106)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2545,7 +3029,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 107)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // loading com.l7tech.DynamicCustomAssertionsTest5.jar should fail since its already deployed
@@ -2562,7 +3047,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 108)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // unload non-dynamic modules using the workaround (working on both windows and linux)
@@ -2626,7 +3112,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 109)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
         // loading com.l7tech.DynamicCustomAssertionsTest5.jar should succeed since its was removed from deploy folder
@@ -2643,7 +3130,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 110)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
 
     }
@@ -2652,7 +3140,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_runtime_exception_while_loading_module() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -2712,7 +3200,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         throw new RuntimeException("test runtime");
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
          );
     }
 
@@ -2720,7 +3209,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_delete_after_update() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -2800,7 +3289,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     @Test
     public void test_failed_to_download_from_db() throws Exception {
         Assert.assertNotNull(modulesListener);
-        createSampleModules();
+        createUnsignedSampleModules();
         mockServerModuleFileManager(true);
 
         // initial scan for empty deploy folders
@@ -2848,9 +3337,9 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
 
         // mock to return a stream throwing java.io.IOException
         Mockito.doAnswer(
-                new Answer<InputStream>() {
+                new Answer<Pair<InputStream, String>>() {
                     @Override
-                    public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+                    public Pair<InputStream, String> answer(final InvocationOnMock invocation) throws Throwable {
                         Assert.assertNotNull(invocation);
                         Assert.assertEquals("there is only one parameter for getModuleBytesAsStream", 1, invocation.getArguments().length);
                         final Object param1 = invocation.getArguments()[0];
@@ -2861,12 +3350,12 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
 
                         final ServerModuleFile moduleFile = moduleFiles.get(goid);
                         if (moduleFile != null) {
-                            return new IOExceptionThrowingInputStream(new IOException("simulated database I/O error"));
+                            return Pair.<InputStream, String>pair(new IOExceptionThrowingInputStream(new IOException("simulated database I/O error")), null);
                         }
                         return null;
                     }
                 }
-        ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
+        ).when(serverModuleFileManager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         // add new entity module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
         publishAndVerifyNewModuleFile(
@@ -2882,23 +3371,22 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 100)));
                         // accept nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
         Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
         Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
-
         // remove module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
         publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 100));
         // double-check module_100 was deleted
         Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
         Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
 
-
         // mock to return null
         Mockito.doAnswer(
-                new Answer<InputStream>() {
+                new Answer<Pair<InputStream, String>>() {
                     @Override
-                    public InputStream answer(final InvocationOnMock invocation) throws Throwable {
+                    public Pair<InputStream, String> answer(final InvocationOnMock invocation) throws Throwable {
                         Assert.assertNotNull(invocation);
                         Assert.assertEquals("there is only one parameter for getModuleBytesAsStream", 1, invocation.getArguments().length);
                         final Object param1 = invocation.getArguments()[0];
@@ -2910,7 +3398,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         return null;
                     }
                 }
-        ).when(serverModuleFileManager).getModuleBytesAsStream(Mockito.<Goid>any());
+        ).when(serverModuleFileManager).getModuleBytesAsStreamWithSignature(Mockito.<Goid>any());
 
         // add new entity module_200; com.l7tech.WorkingTest5.aar;
         publishAndVerifyNewModuleFile(
@@ -2926,15 +3414,223 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         Assert.assertThat(moduleFile.getGoid(), equalTo(new Goid(GOID_HI_START, 200)));
                         // accepted; nothing to do
                     }
-                }
+                },
+                DEFAULT_UNSIGNED_MODULES_BUILDER_CALLBACK
         );
         Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 200)));
         Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 200)));
-
         // remove module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
         publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 200));
         // double-check module_100 was deleted
         Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 200)));
         Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 200)));
+    }
+
+    @Test
+    public void test_modules_signature() throws Exception {
+        Assert.assertNotNull(modulesListener);
+        createSignedSampleModules();
+        mockServerModuleFileManager(true);
+
+        // initial scan for empty deploy folders
+        do_scanner_run(ArrayUtils.EMPTY_STRING_ARRAY, ArrayUtils.EMPTY_STRING_ARRAY);
+
+        // modules initial states:
+        // module_0  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar      => SIGNED with SIGNER_CERT_DNS[0]
+        // module_1  => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar        => SIGNED with SIGNER_CERT_DNS[1]
+        // module_2  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                        => SIGNED with SIGNER_CERT_DNS[2]
+        // module_3  => <NONE> => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                 => SIGNED with SIGNER_CERT_DNS[0]
+        // module_4  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                        => SIGNED with SIGNER_CERT_DNS[0]
+        // module_5  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+        // module_6  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar      => UNSIGNED
+        // module_7  => <NONE> => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)        => SIGNED with SIGNER_CERT_DNS[3]
+        // module_8  => <NONE> => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)   => SIGNED with SIGNER_CERT_DNS[3]
+        // module_9  => <NONE> => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)            => SIGNED with SIGNER_CERT_DNS[3]
+        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+        // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
+
+        // calculate expected loaded based on rejectedModules and signatureErrorModules
+        final Collection<ServerModuleFile> expectedLoaded = new ArrayList<>();
+        for (final ServerModuleFile serverModuleFile : moduleFiles.values()) {
+            Assert.assertNotNull(serverModuleFile.getGoid());
+            if (!signedRejectedModules.contains(serverModuleFile.getGoid()) && !failedModules.contains(serverModuleFile.getGoid())) {
+                expectedLoaded.add(serverModuleFile);
+            }
+        }
+
+        // we have:
+        publishInitialStartedEventAndVerifyResult(
+                new ModuleState[]{
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 0))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 0))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_0  => <NONE> => CUSTOM_ASSERTION; com.l7tech.NonDynamicCustomAssertionTest1.jar      => SIGNED with SIGNER_CERT_DNS[0]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 1))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 1))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_1  => <NONE> => CUSTOM_ASSERTION; com.l7tech.DynamicCustomAssertionsTest1.jar        => SIGNED with SIGNER_CERT_DNS[1]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 2))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 2))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_2  => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest1.aar                       => SIGNED with SIGNER_CERT_DNS[2]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 3))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 3))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  //module_3  => <NONE> => CUSTOM_ASSERTION; com.l7tech.DualAssertionsTest1.jar                  => SIGNED with SIGNER_CERT_DNS[0]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 4))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 4))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_4  => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest2.aar                       => SIGNED with SIGNER_CERT_DNS[0]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 5))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 5))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_5  => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest3.aar                       => SIGNATURE ERROR: DATA BYTES TAMPERED WITH  => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 6))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 6))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_6  => <NONE> => CUSTOM_ASSERTION; com.l7tech.NonDynamicCustomAssertionTest2.jar      => UNSIGNED                                   => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 7))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 7))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_7  => <NONE> => CUSTOM_ASSERTION; com.l7tech.BrokenDescriptorTest1.jar (fail)        => SIGNED with SIGNER_CERT_DNS[3]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 8))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 8))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_8  => <NONE> => MODULAR_ASSERTION; com.l7tech.InvalidAssertionClassTest1.aar (fail)  => SIGNED with SIGNER_CERT_DNS[3]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 9))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 9))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_9  => <NONE> => MODULAR_ASSERTION; com.l7tech.NoAssertionsTest1.aar (fail)           => SIGNED with SIGNER_CERT_DNS[3]             => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 10))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 10))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_10 => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                       => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner    => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 11))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 11))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED,  // module_11 => <NONE> => CUSTOM_ASSERTION; com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner    => REJECTED/ERROR/LOADED
+                        signedRejectedModules.contains(new Goid(GOID_HI_START, 12))
+                                ? ModuleState.REJECTED
+                                : failedModules.contains(new Goid(GOID_HI_START, 12))
+                                ? ModuleState.ERROR
+                                : ModuleState.LOADED   // module_12 => <NONE> => CUSTOM_ASSERTION; com.l7tech.DynamicCustomAssertionsTest3.jar        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH   => REJECTED/ERROR/LOADED
+                },
+                expectedLoaded
+        );
+
+        // expected states after the started event is processed:
+        verifyModulesState(
+                new ModuleState[]{
+                        ModuleState.LOADED,   // module_0  => CUSTOM_ASSERTION;  com.l7tech.NonDynamicCustomAssertionTest1.jar    SIGNED with SIGNER_CERT_DNS[0]            => LOADED
+                        ModuleState.LOADED,   // module_1  => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest1.jar      SIGNED with SIGNER_CERT_DNS[1]            => LOADED
+                        ModuleState.LOADED,   // module_2  => MODULAR_ASSERTION; com.l7tech.WorkingTest1.aar                      SIGNED with SIGNER_CERT_DNS[2]            => LOADED
+                        ModuleState.LOADED,   // module_3  => CUSTOM_ASSERTION;  com.l7tech.DualAssertionsTest1.jar               SIGNED with SIGNER_CERT_DNS[0]            => LOADED
+                        ModuleState.LOADED,   // module_4  => MODULAR_ASSERTION; com.l7tech.WorkingTest2.aar                      SIGNED with SIGNER_CERT_DNS[0]            => LOADED
+                        ModuleState.REJECTED, // module_5  => MODULAR_ASSERTION; com.l7tech.WorkingTest3.aar                      SIGNATURE ERROR: DATA BYTES TAMPERED WITH => REJECTED
+                        ModuleState.REJECTED, // module_6  => CUSTOM_ASSERTION;  com.l7tech.NonDynamicCustomAssertionTest2.jar    UNSIGNED                                  => REJECTED
+                        ModuleState.ERROR,    // module_7  => CUSTOM_ASSERTION;  com.l7tech.BrokenDescriptorTest1.jar (fail)      SIGNED with SIGNER_CERT_DNS[3]            => ERROR
+                        ModuleState.ERROR,    // module_8  => MODULAR_ASSERTION; com.l7tech.InvalidAssertionClassTest1.aar (fail) SIGNED with SIGNER_CERT_DNS[3]            => ERROR
+                        ModuleState.ERROR,    // module_9  => MODULAR_ASSERTION; com.l7tech.NoAssertionsTest1.aar (fail)          SIGNED with SIGNER_CERT_DNS[3]            => ERROR
+                        ModuleState.REJECTED, // module_10 => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                      SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner          => REJECTED
+                        ModuleState.REJECTED, // module_11 => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest2.aar      SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner   => REJECTED
+                        ModuleState.REJECTED  // module_12 => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest3.aar      SIGNATURE ERROR: DATA BYTES TAMPERED WITH => REJECTED
+                }
+        );
+
+        // add new entity module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;  SIGNED with SIGNER_CERT_DNS[0] => LOADED
+        publishAndVerifyNewModuleFile(
+                100,
+                ModuleType.CUSTOM_ASSERTION,
+                null,
+                new File(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest5.jar"),
+                ModuleState.LOADED,
+                null,
+                DEFAULT_SIGNED_MODULES_BUILDER_CALLBACK // SIGNED with SIGNER_CERT_DNS[0]
+        );
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
+        Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
+        // remove module_100; com.l7tech.DynamicCustomAssertionsTest5.jar;
+        publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 100));
+        // double-check module_100 was deleted
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
+        Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 100)));
+
+        // add new entity module_101; com.l7tech.WorkingTest5.aar;  TAMPER WITH BYTES => REJECTED
+        publishAndVerifyNewModuleFile(
+                101,
+                ModuleType.MODULAR_ASSERTION,
+                null,
+                new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar"),
+                ModuleState.REJECTED,
+                null,
+                new Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception>() {
+                    @Override
+                    public ServerModuleFileBuilder call(final Long ordinal, final ModuleType moduleType, final File moduleContent) throws Exception {
+                        Assert.assertThat(ordinal, Matchers.notNullValue());
+                        return new ServerModuleFileBuilder(
+                                tamper_with_module_bytes(
+                                        ordinal,
+                                        moduleType,
+                                        moduleContent,
+                                        new File(modulesRootEmptyDir, "com.l7tech.WorkingTest4.aar"),
+                                        SIGNER_CERT_DNS[2],
+                                        false
+                                )
+                        );
+                    }
+                }
+        );
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 101)));
+        Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 101)));
+        // remove module_101; com.l7tech.WorkingTest5.aar;
+        publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 101));
+        // double-check module_101 was deleted
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 101)));
+        Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 101)));
+
+
+        // add new entity module_102; com.l7tech.NonDynamicCustomAssertionTest5.jar;  UNTRUSTED SIGNER => REJECTED
+        publishAndVerifyNewModuleFile(
+                102,
+                ModuleType.CUSTOM_ASSERTION,
+                null,
+                new File(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest5.jar"),
+                ModuleState.REJECTED,
+                null,
+                new Functions.TernaryThrows<ServerModuleFileBuilder, Long, ModuleType, File, Exception>() {
+                    @Override
+                    public ServerModuleFileBuilder call(final Long ordinal, final ModuleType moduleType, final File moduleContent) throws Exception {
+                        Assert.assertThat(ordinal, Matchers.notNullValue());
+                        return new ServerModuleFileBuilder(
+                                sign_with_untrusted_signer(
+                                        ordinal,
+                                        moduleType,
+                                        moduleContent,
+                                        SIGNER_CERT_DNS[1]
+                                )
+                        );
+                    }
+                }
+        );
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 102)));
+        Assert.assertNotNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 102)));
+        // remove module_102; com.l7tech.NonDynamicCustomAssertionTest5.jar;
+        publishAndVerifyDeletedModuleFile(new Goid(GOID_HI_START, 102));
+        // double-check module_102 was deleted
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 102)));
+        Assert.assertNull(modulesListener.knownModuleFiles.get(new Goid(GOID_HI_START, 102)));
     }
 }

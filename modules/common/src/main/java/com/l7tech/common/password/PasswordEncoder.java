@@ -1,7 +1,6 @@
-package com.l7tech.skunkworks;
+package com.l7tech.common.password;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import com.l7tech.util.HexUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -15,11 +14,15 @@ import java.nio.charset.Charset;
 import java.security.*;
 
 /**
- * Stand-alone utility to obfuscate and un-obfuscate passwords. SKUNKWORKS -- NOT USED BY THE GATEWAY.
+ * Stand-alone utility to obfuscate and un-obfuscate passwords.
  */
 public class PasswordEncoder {
-    static final Charset ISO8859 = Charset.forName("ISO-8859-1");
-    static final SecureRandom random = new SecureRandom();
+    private static final Charset ISO8859 = Charset.forName("ISO-8859-1");
+    private static final SecureRandom random = new SecureRandom();
+
+    private PasswordEncoder() {
+        // do not construct
+    }
 
     /**
      * Obfuscate a password.
@@ -103,31 +106,11 @@ public class PasswordEncoder {
     }
 
     static String base64url( byte[] bytes ) {
-        return new BASE64Encoder().encode( bytes ).
-                replace( '+', '-' ).
-                replace( '/', '_' ).replaceAll( "\\s|=", "" );
+        return HexUtils.encodeBase64Url(bytes);
     }
 
     static byte[] unbase64url( String value ) throws IOException {
-        int npad = value.length() % 4;
-        final String pad;
-        switch ( npad ) {
-            case 0:
-                pad = "";
-                break;
-            case 1:
-                // Not actually possible/valid
-                pad = "===";
-                break;
-            case 2:
-                pad = "==";
-                break;
-            default:
-                pad = "=";
-                break;
-        }
-
-        return new BASE64Decoder().decodeBuffer( value.replace( '-', '+' ).replace( '_', '/' ) + pad );
+        return HexUtils.decodeBase64Url(value);
     }
 
     static Cipher newAesCbc() throws NoSuchPaddingException, NoSuchAlgorithmException {

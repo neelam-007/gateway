@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
 /**
@@ -24,7 +25,7 @@ public class ModularAssertionsScannerHelper {
     /**
      * Default constructor.
      *
-     * @param manifestHdrAssertionList    The jar manifest file header containing the Modular Assertion Names list.  Required.
+     * @param manifestHdrAssertionList    The jar manifest file header containing the Modular Assertion Names list.  Required and cannot be {@code null}.
      */
     public ModularAssertionsScannerHelper(@NotNull final String manifestHdrAssertionList) {
         this.manifestHdrAssertionList = manifestHdrAssertionList;
@@ -33,12 +34,24 @@ public class ModularAssertionsScannerHelper {
     /**
      * Determine whether the specified {@link JarFile} is a Custom Assertion.
      *
-     * @param jarFile    the module to process.  Required.
+     * @param jarFile    the module to process.  Required and cannot be {@code null}.
      * @return {@code true} if the specified {@code jarFile} is a modular assertion module, {@code false} otherwise
      * @throws IOException if an error occurs while reading the specified {@code jarFile}
      */
     public boolean isModularAssertion(@NotNull final JarFile jarFile) throws IOException {
-        return !getAssertions(jarFile).isEmpty();
+        return !getAssertions(jarFile.getManifest()).isEmpty();
+    }
+
+    /**
+     * Same as {@link #isModularAssertion(java.util.jar.JarFile)} but with {@code JarInputStream} instead of {@code JarFile}.
+     *
+     * @param jis    the module to process.  Required and cannot be {@code null}.
+     * @return {@code true} if the specified {@code JarInputStream} is a modular assertion module, {@code false} otherwise
+     * @throws IOException if an error occurs while reading the specified {@code JarInputStream}
+     * @see #isModularAssertion(java.util.jar.JarFile)
+     */
+    public boolean isModularAssertion(@NotNull final JarInputStream jis) throws IOException {
+        return !getAssertions(jis.getManifest()).isEmpty();
     }
 
     /**
@@ -46,12 +59,34 @@ public class ModularAssertionsScannerHelper {
      * <p/>
      * TODO: Modify {@code ModularAssertionsScanner} to use this logic.
      *
-     * @param jarFile    the {@code JarFile} to scan for Modular Assertions.  Required.
+     * @param jarFile    the {@code JarFile} to scan for Modular Assertions.  Required and cannot be {@code null}.
      * @return A read-only {@code Collection} of Modular Assertion Class Names within the specified {@code JarFile}.
      * @throws IOException if an error happens while reading the {@code JarFile}
      */
     public Collection<String> getAssertions(@NotNull final JarFile jarFile) throws IOException {
-        final Manifest manifest = jarFile.getManifest();
+        return getAssertions(jarFile.getManifest());
+    }
+
+    /**
+     * Same as {@link #getAssertions(java.util.jar.JarFile)} but with {@code JarInputStream} instead of {@code JarFile}.
+     *
+     * @param jis    the {@code JarInputStream} to scan for Modular Assertions.  Required and cannot be {@code null}.
+     * @return A read-only {@code Collection} of Modular Assertion Class Names within the specified {@code JarInputStream}.
+     * @throws IOException if an error happens while reading the {@code JarInputStream}
+     * @see #getAssertions(java.util.jar.JarFile)
+     */
+    public Collection<String> getAssertions(@NotNull final JarInputStream jis) throws IOException {
+        return getAssertions(jis.getManifest());
+    }
+
+    /**
+     * Extract all Modular Assertions contained within the specified {@code Manifest}.
+     *
+     * @param manifest    the Jar {@code Manifest} to process. Required and cannot be {@code null}.
+     * @return A read-only {@code Collection} of Modular Assertion Class Names within the specified {@code Manifest}.
+     * @throws java.io.IOException if an error happens while reading the {@code Manifest}
+     */
+    private Collection<String> getAssertions(final Manifest manifest) throws IOException {
         final Attributes attr = manifest != null ? manifest.getMainAttributes() : null;
         final String assertionNamesStr = attr != null ? attr.getValue(manifestHdrAssertionList) : null;
         return Collections.unmodifiableCollection(

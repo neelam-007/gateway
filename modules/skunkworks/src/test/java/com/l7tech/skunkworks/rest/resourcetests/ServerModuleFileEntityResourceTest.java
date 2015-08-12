@@ -6,19 +6,28 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ServerModuleFileTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.objectmodel.*;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileManager;
+import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierStub;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.entity.ContentType;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -26,6 +35,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamSource;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -48,18 +59,44 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     // read only set of initial modules SHA256
     private Set<String> moduleShas;
 
+    // our signer utils object
+    private static SignatureVerifier trustedSignatureVerifier;
+    private static final String[] SIGNER_CERT_DNS = {
+            "cn=signer.team1.apim.ca.com",
+            "cn=signer.team2.apim.ca.com",
+            "cn=signer.team3.apim.ca.com",
+            "cn=signer.team4.apim.ca.com"
+    };
+    // untrusted signers
+    private static SignatureVerifier untrustedSignatureVerifier;
+    private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         RestEntityTests.beforeClass();
+
+        SignatureTestUtils.beforeClass();
+        trustedSignatureVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        untrustedSignatureVerifier = SignatureTestUtils.createSignatureVerifier(ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns));
 
         // to make this test valid modules upload should be enabled by default
         SyspropUtil.setProperty(UPLOAD_ENABLED_SYS_PROP, String.valueOf(true));
     }
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+        SignatureTestUtils.afterClass();
+    }
+
     @Before
-    public void before() throws SaveException {
+    public void before() throws Exception {
         maxUploadSizeOverride = null;
         uploadEnabledOverride = null;
+
+        // change the default (stub) signature verifier with our own
+        final SignatureVerifierStub signatureVerifierStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("signatureVerifier", SignatureVerifierStub.class);
+        Assert.assertNotNull(signatureVerifierStub);
+        signatureVerifierStub.setProxyVerifier(trustedSignatureVerifier);
 
         serverModuleFileManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serverModuleFileManager", ServerModuleFileManager.class);
         Assert.assertThat(serverModuleFileManager, Matchers.notNullValue());
@@ -72,45 +109,62 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         final Set<String> moduleShas = new HashSet<>();
 
         // regular ServerModuleFile
-        ServerModuleFile serverModuleFile = new ServerModuleFile();
-        serverModuleFile.setName("module " + ++ordinal);
-        serverModuleFile.setModuleType(ModuleType.MODULAR_ASSERTION);
-        serverModuleFile.setStateForNode("node1", ModuleState.LOADED);
-        serverModuleFile.setStateErrorMessageForNode("node2", "test error 1");
         byte[] bytes = ("test bytes for module " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFile.createData(bytes);
+        ServerModuleFile serverModuleFile = createTestServerModuleFile(
+                "module " + ++ordinal,
+                ModuleType.MODULAR_ASSERTION,
+                Collections.unmodifiableCollection(CollectionUtils.list(
+                        Pair.pair("node1", Either.<ModuleState, String>left(ModuleState.LOADED)),
+                        Pair.pair("node2", Either.<ModuleState, String>right("test error 1"))
+                )),
+                bytes,
+                SIGNER_CERT_DNS[0],
+                Collections.unmodifiableCollection(CollectionUtils.list(
+                        Pair.pair(ServerModuleFile.PROP_FILE_NAME, "FileName" + ordinal + ".jar"),
+                        Pair.pair(ServerModuleFile.PROP_ASSERTIONS, "Assertion1"),
+                        Pair.pair(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
+                ))
+        );
         Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFile.getModuleSha256())));
         moduleShas.add(serverModuleFile.getModuleSha256());
-        serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, "FileName" + ordinal + ".jar");
-        serverModuleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1");
-        serverModuleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length));
         // add it
         serverModuleFileManager.save(serverModuleFile);
         serverModuleFiles.add(serverModuleFile);
 
         // another regular ServerModuleFile
-        serverModuleFile = new ServerModuleFile();
-        serverModuleFile.setName("module " + ++ordinal);
-        serverModuleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
-        serverModuleFile.setStateForNode("node1", ModuleState.LOADED);
-        serverModuleFile.setStateErrorMessageForNode("node2", "test error 1");
         bytes = ("test bytes for module " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFile.createData(bytes);
+        serverModuleFile = createTestServerModuleFile(
+                "module " + ++ordinal,
+                ModuleType.CUSTOM_ASSERTION,
+                Collections.unmodifiableCollection(CollectionUtils.list(
+                        Pair.pair("node1", Either.<ModuleState, String>left(ModuleState.LOADED)),
+                        Pair.pair("node2", Either.<ModuleState, String>right("test error 1"))
+                )),
+                bytes,
+                SIGNER_CERT_DNS[1],
+                Collections.unmodifiableCollection(CollectionUtils.list(
+                        Pair.pair(ServerModuleFile.PROP_FILE_NAME, "FileName" + ordinal + ".jar"),
+                        Pair.pair(ServerModuleFile.PROP_ASSERTIONS, "Assertion1"),
+                        Pair.pair(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
+                ))
+        );
         Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFile.getModuleSha256())));
         moduleShas.add(serverModuleFile.getModuleSha256());
-        serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, "FileName" + ordinal + ".jar");
-        serverModuleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1");
-        serverModuleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length));
         // add it
         serverModuleFileManager.save(serverModuleFile);
         serverModuleFiles.add(serverModuleFile);
 
         // ServerModuleFile without props
-        serverModuleFile = new ServerModuleFile();
-        serverModuleFile.setName("module " + ++ordinal);
-        serverModuleFile.setModuleType(ModuleType.MODULAR_ASSERTION);
         bytes = ("test bytes for module " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFile.createData(bytes);
+        //noinspection unchecked
+        serverModuleFile = createTestServerModuleFile(
+                "module " + ++ordinal,
+                ModuleType.MODULAR_ASSERTION,
+                (Collection)Collections.emptyList(),
+                bytes,
+                SIGNER_CERT_DNS[2],
+                (Collection)Collections.emptyList()
+        );
         Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFile.getModuleSha256())));
         moduleShas.add(serverModuleFile.getModuleSha256());
         // add it
@@ -118,6 +172,50 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         serverModuleFiles.add(serverModuleFile);
 
         this.moduleShas = Collections.unmodifiableSet(moduleShas);
+    }
+
+    /**
+     * Utility method for creating sample {@code ServerModuleFile} with the specified properties.
+     *
+     * @param name          the name of the module.
+     * @param type          the type of the module.
+     * @param states        the list of states per node of the module. A state is a {@code Pair} of node and {@code Either} state or error message.
+     * @param bytes         the module data bytes.
+     * @param signerDN      the module signer cert DN.
+     * @param properties    the module collection of properties.
+     * @return a sample {@code ServerModuleFile} with the specified properties, never {@code null}.
+     */
+    private static ServerModuleFile createTestServerModuleFile(
+            final String name,
+            final ModuleType type,
+            final Collection<
+                    Pair<   // state; a pair of node and either state-enum or error message
+                            String,   // node id
+                            Either<   // either state or error message
+                                    ModuleState,  // state
+                                    String        // error message
+                                    >
+                            >
+                    > states,
+            final byte[] bytes,
+            final String signerDN,
+            final Collection<Pair<String, String>> properties
+    ) throws Exception {
+        final ServerModuleFile serverModuleFile = new ServerModuleFile();
+        serverModuleFile.setName(name);
+        serverModuleFile.setModuleType(type);
+        for (final Pair<String, Either<ModuleState, String>> state : states) {
+            if (state.right.isLeft()) {
+                serverModuleFile.setStateForNode(state.left, state.right.left());
+            } else {
+                serverModuleFile.setStateErrorMessageForNode(state.left, state.right.right());
+            }
+        }
+        serverModuleFile.createData(bytes, trustedSignAndGetSignature(bytes, signerDN));
+        for (final Pair<String, String> property : properties) {
+            serverModuleFile.setProperty(property.left, property.right);
+        }
+        return serverModuleFile;
     }
 
     @After
@@ -140,6 +238,40 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         }
     }
 
+    /**
+     * Utility method for signing the specified content byte array and getting the signature in one step.
+     */
+    private static String signAndGetSignature(final SignatureVerifier verifier, final byte[] content, final String signerCertDn) {
+        Assert.assertThat(content, Matchers.notNullValue());
+        Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
+        try {
+            return SignatureTestUtils.signAndGetSignature(verifier, content, signerCertDn);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String trustedSignAndGetSignature(final byte[] content, final String signerCertDn) {
+        return signAndGetSignature(trustedSignatureVerifier, content, signerCertDn);
+    }
+
+    private static String untrustedSignAndGetSignature(final byte[] content, final String signerCertDn) {
+        return signAndGetSignature(untrustedSignatureVerifier, content, signerCertDn);
+    }
+
+    /**
+     * Utility method for signing the specified content byte array and getting the signature in one step.
+     */
+    private static Map<String, String> getSignatureMap(final String signatureProps) {
+        try {
+            return signatureProps != null
+                    ? ServerModuleFileTransformer.gatherSignatureProperties(signatureProps, SignerUtils.ALL_SIGNING_PROPERTIES)
+                    : null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public List<String> getRetrievableEntityIDs() throws FindException {
         return Functions.map(serverModuleFiles, new Functions.Unary<String, ServerModuleFile>() {
@@ -151,20 +283,52 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         });
     }
 
+    /**
+     * Utility method for creating sample {@code ServerModuleFileMO} ({@code ServerModuleFile} managed object) with the specified properties.
+     *
+     * @param id            module id
+     * @param name          module name
+     * @param type          module type
+     * @param bytes         module raw bytes
+     * @param signature     module signature properties string
+     * @param properties    module collection of properties
+     * @return a sample {@code ServerModuleFileMO} with the specified properties, never {@code null}.
+     */
+    private static ServerModuleFileMO createTestServerModuleFileMO(
+            @Nullable final String id,
+            @Nullable final String name,
+            @Nullable final ServerModuleFileMO.ServerModuleFileModuleType type,
+            @Nullable final byte[] bytes,
+            @Nullable final String signature,
+            @Nullable final Map<String, String> properties
+    ) {
+        final ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        if (id != null) serverModuleFileMO.setId(id);
+        if (name != null) serverModuleFileMO.setName(name);
+        if (type != null) serverModuleFileMO.setModuleType(type);
+        if (bytes != null) {
+            serverModuleFileMO.setModuleData(bytes);
+            serverModuleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        }
+        if (signature != null) serverModuleFileMO.setSignatureProperties(getSignatureMap(signature));
+        if (properties != null) serverModuleFileMO.setProperties(properties);
+        return serverModuleFileMO;
+    }
+
     @Override
     public List<ServerModuleFileMO> getCreatableManagedObjects() {
         final List<ServerModuleFileMO> serverModuleFileMOs = new ArrayList<>();
         int ordinal = 0;
 
         // this is a regular ServerModuleFile
-        ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION);
-        byte[] bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        byte[] bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        ServerModuleFileMO serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_FILE_NAME, "fileName" + ordinal + ".jar")
                         .put(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2")
                         .put(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
@@ -173,77 +337,80 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with null props
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[1]),
+                null
+        );
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with empty props
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().unmodifiableMap());
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[2]),
+                CollectionUtils.MapBuilder.<String, String>builder().unmodifiableMap()
+        );
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with only PROP_FILE_NAME
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[3]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_FILE_NAME, "fileName" + ordinal + ".jar")
                         .unmodifiableMap()
         );
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with only PROP_ASSERTIONS
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2")
                         .unmodifiableMap()
         );
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with only PROP_SIZE
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
                         .unmodifiableMap()
         );
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with missing PROP_FILE_NAME
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2")
                         .put(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
                         .unmodifiableMap()
@@ -251,14 +418,14 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with missing PROP_ASSERTIONS
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_FILE_NAME, "fileName" + ordinal + ".jar")
                         .put(ServerModuleFile.PROP_SIZE, String.valueOf(bytes.length))
                         .unmodifiableMap()
@@ -266,19 +433,21 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         serverModuleFileMOs.add(serverModuleFileMO);
 
         // this is a ServerModuleFile with missing PROP_SIZE
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(getGoid().toString());
-        serverModuleFileMO.setName("CreatedServerModuleFile" + ++ordinal);
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        bytes = ("test module data " + ordinal).getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
-        serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+        bytes = ("test module data " + ++ordinal).getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                getGoid().toString(),
+                "CreatedServerModuleFile" + ordinal,
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                CollectionUtils.MapBuilder.<String, String>builder()
                         .put(ServerModuleFile.PROP_FILE_NAME, "fileName" + ordinal + ".jar")
                         .put(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2")
                         .unmodifiableMap()
         );
         serverModuleFileMOs.add(serverModuleFileMO);
+
+        Assert.assertThat(ordinal, Matchers.is(serverModuleFileMOs.size()));
 
         return serverModuleFileMOs;
     }
@@ -293,20 +462,23 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
 
     @Override
     public Map<ServerModuleFileMO, Functions.BinaryVoid<ServerModuleFileMO, RestResponse>> getUnCreatableManagedObjects() {
-        CollectionUtils.MapBuilder<ServerModuleFileMO, Functions.BinaryVoid<ServerModuleFileMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
+        Map<ServerModuleFileMO, Functions.BinaryVoid<ServerModuleFileMO, RestResponse>> map = new LinkedHashMap<>();
 
         // make sure module 0 exists
         Assert.assertThat(serverModuleFiles.get(0), Matchers.notNullValue());
 
         // existing name
-        ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName(serverModuleFiles.get(0).getName());
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION);
         byte[] bytes = ("test data for test module 1").getBytes(Charsets.UTF8);
-        serverModuleFileMO.setModuleData(bytes);
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        ServerModuleFileMO serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                serverModuleFiles.get(0).getName(),
+                ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -317,13 +489,18 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         Assert.assertThat(serverModuleFiles.get(1), Matchers.notNullValue());
 
         // existing module sha256
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 1");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION);
-        serverModuleFileMO.setModuleData(serverModuleFiles.get(1).getData().getDataBytes());
+        bytes = serverModuleFiles.get(1).getData().getDataBytes();
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 1",
+                ServerModuleFileMO.ServerModuleFileModuleType.MODULAR_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         serverModuleFileMO.setModuleSha256(serverModuleFiles.get(1).getModuleSha256());
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -334,12 +511,18 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         Assert.assertThat(serverModuleFiles.get(1), Matchers.notNullValue());
 
         // missing module data
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 2");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        bytes = serverModuleFiles.get(1).getData().getDataBytes();
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 2",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                null,  // missing bytes
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         serverModuleFileMO.setModuleSha256(serverModuleFiles.get(1).getModuleSha256());
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -350,12 +533,18 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         Assert.assertThat(serverModuleFiles.get(1), Matchers.notNullValue());
 
         // missing module sha256
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 3");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
-        serverModuleFileMO.setModuleData(serverModuleFiles.get(1).getData().getDataBytes());
+        bytes = serverModuleFiles.get(1).getData().getDataBytes();
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 3",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
+        serverModuleFileMO.setModuleSha256(null);
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -363,11 +552,17 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         });
 
         // missing module sha256 and module data
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 3");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        bytes = serverModuleFiles.get(1).getData().getDataBytes();
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 4",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                null,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -378,13 +573,18 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         Assert.assertThat(serverModuleFiles.get(0).getModuleSha256(), Matchers.not(Matchers.equalTo(serverModuleFiles.get(1).getModuleSha256())));
 
         // module data mismatch sha256
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 4");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        bytes = serverModuleFiles.get(1).getData().getDataBytes();
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 5",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         serverModuleFileMO.setModuleSha256(serverModuleFiles.get(0).getModuleSha256());
-        serverModuleFileMO.setModuleData(serverModuleFiles.get(1).getData().getDataBytes());
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
@@ -394,22 +594,146 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         overrideMaxUploadSize(100L);
 
         // module data exceeding allowed size
-        serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setName("another test module 5");
-        serverModuleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
         bytes = new byte[101];
-        serverModuleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 6",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
         Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
-        serverModuleFileMO.setModuleData(bytes);
         // should fail with 400
-        builder.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
             @Override
             public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
                 Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
             }
         });
 
-        return builder.map();
+        // missing module signature / unsigned module
+        bytes = ("test data for test module 7").getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 7",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                null,
+                null
+        );
+        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        // module data tampered with 1
+        bytes = ("test data for test module 8").getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 8",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
+        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+        byte[] tamperedBytes = Arrays.copyOf(bytes, bytes.length);
+        Assert.assertThat(tamperedBytes[3], Matchers.not(Matchers.is((byte)2)));
+        tamperedBytes[3] = 2;
+        serverModuleFileMO.setModuleData(tamperedBytes);
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        // module data tampered with 2
+        bytes = ("test data for test module 9").getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 9",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
+        tamperedBytes = Arrays.copyOf(bytes, bytes.length);
+        Assert.assertThat(tamperedBytes[3], Matchers.not(Matchers.is((byte)2)));
+        tamperedBytes[3] = 2;
+        serverModuleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(tamperedBytes));
+        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+        serverModuleFileMO.setModuleData(tamperedBytes);
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        // module signed with untrusted signer 1
+        bytes = ("test data for test module 10").getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 10",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                untrustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                null
+        );
+        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        // module signed with untrusted signer 2
+        bytes = ("test data for test module 11").getBytes(Charsets.UTF8);
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 11",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                bytes,
+                untrustedSignAndGetSignature(bytes, untrustedSignerCertDns[0]),
+                null
+        );
+        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        // missing module sha256, module data and module signature
+        serverModuleFileMO = createTestServerModuleFileMO(
+                null,
+                "another test module 12",
+                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                null,
+                null,
+                null
+        );
+        // should fail with 400
+        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+            @Override
+            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+            }
+        });
+
+        return Collections.unmodifiableMap(map);
     }
 
     /**
@@ -441,19 +765,34 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     }
 
     private ServerModuleFileMO builderMO (final ServerModuleFile serverModuleFile) {
-        Assert.assertThat(serverModuleFile, Matchers.notNullValue());
-        ServerModuleFileMO serverModuleFileMO = ManagedObjectFactory.createServerModuleFileMO();
-        serverModuleFileMO.setId(serverModuleFile.getId());
-        serverModuleFileMO.setName(serverModuleFile.getName());
-        serverModuleFileMO.setModuleType(ServerModuleFileTransformer.convertModuleType(serverModuleFile.getModuleType()));
-        serverModuleFileMO.setProperties(ServerModuleFileTransformer.gatherProperties(serverModuleFile, ServerModuleFile.getPropertyKeys()));
-        serverModuleFileMO.setModuleSha256(serverModuleFile.getModuleSha256());
+        Assert.assertNotNull(serverModuleFile);
+
+        // extract module bytes and signature
+        final byte[] bytes;
+        final String sig;
         try {
-            serverModuleFileMO.setModuleData(serverModuleFileManager.getModuleBytes(serverModuleFile.getGoid()));
+            final Pair<InputStream, String> streamAndSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(serverModuleFile.getGoid());
+            Assert.assertNotNull(streamAndSignature);
+            Assert.assertNotNull(streamAndSignature.left);
+            try (final InputStream is = streamAndSignature.left) {
+                bytes = IOUtils.slurpStream(is);
+                sig = StringUtils.isNotBlank(streamAndSignature.right) ? streamAndSignature.right : null;
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
         } catch (final FindException e) {
             throw new RuntimeException(e);
         }
-        return serverModuleFileMO;
+
+        // create our mo
+        return createTestServerModuleFileMO(
+                serverModuleFile.getId(),
+                serverModuleFile.getName(),
+                ServerModuleFileTransformer.convertModuleType(serverModuleFile.getModuleType()),
+                bytes,
+                sig,
+                ServerModuleFileTransformer.gatherProperties(serverModuleFile, ServerModuleFile.getPropertyKeys())
+        );
     }
 
     @Override
@@ -546,19 +885,36 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
             Assert.assertNull(entity);
         } else {
             Assert.assertNotNull(entity);
-
             Assert.assertThat(managedObject.getId(), Matchers.equalTo(entity.getId()));
             Assert.assertThat(managedObject.getName(), Matchers.equalTo(entity.getName()));
             Assert.assertThat(managedObject.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(entity.getModuleType())));
             Assert.assertThat(managedObject.getModuleSha256(), Matchers.equalTo(entity.getModuleSha256()));
-            Assert.assertThat(
-                    managedObject.getModuleData(),
-                    Matchers.anyOf(
-                            Matchers.nullValue(byte[].class),
-                            Matchers.equalTo(serverModuleFileManager.getModuleBytes(entity.getGoid()))
-                    )
-            );
-
+            final Pair<InputStream, String> streamAndSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(entity.getGoid());
+            if (streamAndSignature == null) {
+                Assert.assertNull(managedObject.getModuleData());
+                Assert.assertNull(managedObject.getSignatureProperties());
+            } else {
+                try (final InputStream is = streamAndSignature.left) {
+                    Assert.assertThat(
+                        managedObject.getModuleData(),
+                        Matchers.anyOf(
+                                Matchers.nullValue(byte[].class),
+                                Matchers.equalTo(IOUtils.slurpStream(is))
+                        )
+                    );
+                }
+                if (StringUtils.isNotBlank(streamAndSignature.right)) {
+                    Assert.assertThat(
+                            managedObject.getSignatureProperties(),
+                            Matchers.anyOf(
+                                    Matchers.nullValue(Map.class),
+                                    Matchers.equalTo(getSignatureMap(streamAndSignature.right))
+                            )
+                    );
+                } else {
+                    Assert.assertNull(managedObject.getSignatureProperties());
+                }
+            }
             if (managedObject.getProperties() != null) {
                 for (final String key : managedObject.getProperties().keySet()) {
                     Assert.assertThat(entity.getProperty(key), Matchers.equalTo(managedObject.getProperties().get(key)));
@@ -606,10 +962,20 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     private void doTestEntityWithIncludeData(boolean includeData, final Item<ServerModuleFileMO> ref) throws Exception {
         Assert.assertThat(ref, Matchers.notNullValue());
         Assert.assertThat(ref.getContent(), Matchers.notNullValue());
-        Assert.assertThat(serverModuleFileManager.getModuleBytes(Goid.parseGoid(ref.getId())), Matchers.notNullValue());
+        final Pair<InputStream, String> streamAndSignature = serverModuleFileManager.getModuleBytesAsStreamWithSignature(Goid.parseGoid(ref.getId()));
+        Assert.assertNotNull(streamAndSignature);
+        Assert.assertNotNull(streamAndSignature.left);
+        try (final InputStream is = streamAndSignature.left) {
+            Assert.assertThat(
+                    ref.getContent().getModuleData(),
+                    includeData ? Matchers.equalTo(IOUtils.slurpStream(is)) : Matchers.nullValue(byte[].class)
+            );
+        }
         Assert.assertThat(
-                ref.getContent().getModuleData(),
-                includeData ? Matchers.equalTo(serverModuleFileManager.getModuleBytes(Goid.parseGoid(ref.getId()))) : Matchers.nullValue(byte[].class)
+                ref.getContent().getSignatureProperties(),
+                includeData
+                        ? Matchers.<Map>equalTo(getSignatureMap(streamAndSignature.right))
+                        : Matchers.nullValue(Map.class)
         );
     }
 
@@ -686,14 +1052,12 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         // test list
         doTestListWithIncludeData(false, "includeData=false");
         doTestListWithIncludeData(false, null); // default is false
-        // todo: since backend is using derby getting the module data will fail with IOException (see SSG-11350), re-enable the test below once fixed
-        //doTestListWithIncludeData(true, "includeData=true");
+        doTestListWithIncludeData(true, "includeData=true");
 
         // test get
         doTestGetWithIncludeData(false, "includeData=false");
         doTestGetWithIncludeData(false, null); // default is false
-        // todo: since backend is using derby getting the module data will fail with IOException (see SSG-11350), re-enable the test below once fixed
-        //doTestGetWithIncludeData(true, "includeData=true");
+        doTestGetWithIncludeData(true, "includeData=true");
     }
 
     @Test

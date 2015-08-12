@@ -61,6 +61,7 @@ public abstract class ModulesScannerTestBase {
         final long timeNow = (new Date()).getTime();
 
         // create the dates collection
+        //noinspection serial
         SortedSet<Long> dates = new TreeSet<Long>() {{
             for (int i = 1; i <= DATES_TO_PRESERVE; ++i) {
                 add(timeNow - i * MS_BETWEEN_DATES);

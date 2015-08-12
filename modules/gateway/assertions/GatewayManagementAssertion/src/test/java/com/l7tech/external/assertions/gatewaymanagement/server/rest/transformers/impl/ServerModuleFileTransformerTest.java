@@ -5,18 +5,23 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncry
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServerModuleFileAPIResourceFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.module.ServerModuleFileTestBase;
+import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -25,15 +30,17 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ServerModuleFileTransformerTest {
+public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
 
     @Mock
     private Config config;
@@ -47,8 +54,23 @@ public class ServerModuleFileTransformerTest {
     @InjectMocks
     private final ServerModuleFileTransformer transformer = new ServerModuleFileTransformer();
 
+    @BeforeClass
+    public static void setUpOnce() throws Exception {
+        beforeClass();
+    }
+
+    @AfterClass
+    public static void cleanUpOnce() throws Exception {
+        afterClass();
+    }
+
     @Before
     public void setUp() throws Exception {
+        // set module signer
+        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
+        transformer.setSignatureVerifier(SIGNATURE_VERIFIER);
+
+        // set upload size limit
         Mockito.doReturn(10*1024*1024L /* 10MB */).when(config).getLongProperty(Mockito.eq(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE), Mockito.anyLong());
     }
 
@@ -69,7 +91,8 @@ public class ServerModuleFileTransformerTest {
         moduleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "1000");
         moduleFile.setProperty("unknown", "unknown data"); // should be ignored
-        moduleFile.createData("new data".getBytes(Charsets.UTF8));
+        final byte[] bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
 
         Mockito.doAnswer(new Answer<Void>() {
             @Override
@@ -79,11 +102,19 @@ public class ServerModuleFileTransformerTest {
                 assertThat("First Param is ServerModuleFileMO", param1, Matchers.instanceOf(ServerModuleFileMO.class));
                 final ServerModuleFileMO serverModuleFileMO = (ServerModuleFileMO)param1;
                 assertThat("Same GOID as moduleFile", serverModuleFileMO.getId(), Matchers.equalTo(moduleFile.getId()));
-                final byte[] bytes = moduleFile.getData().getDataBytes();
+                final byte[] bytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
                 serverModuleFileMO.setModuleData(bytes != null ? Arrays.copyOf(bytes, bytes.length) : null);
+                serverModuleFileMO.setSignatureProperties(
+                        moduleFile.getData() != null && StringUtils.isNotBlank(moduleFile.getData().getSignatureProperties())
+                            ? ServerModuleFileTransformer.gatherSignatureProperties(
+                                    moduleFile.getData().getSignatureProperties(),
+                                    SignerUtils.ALL_SIGNING_PROPERTIES
+                            )
+                            : null
+                    );
                 return null;
             }
-        }).when(factory).setModuleData(Mockito.<ServerModuleFileMO>any());
+        }).when(factory).setModuleDataAndSignature(Mockito.<ServerModuleFileMO>any());
 
         // without data
         ServerModuleFileMO moduleFileMO = transformer.convertToMO(moduleFile);
@@ -94,6 +125,7 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFileMO.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFile.getModuleType())));
         assertThat(moduleFileMO.getModuleSha256(), Matchers.equalTo(moduleFile.getModuleSha256()));
         assertThat(moduleFileMO.getModuleData(), Matchers.nullValue());
+        assertThat(moduleFileMO.getSignatureProperties(), Matchers.nullValue());
 
         Map<String, String> moProperties = moduleFileMO.getProperties();
         assertThat(moProperties.get(ServerModuleFile.PROP_FILE_NAME), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)));
@@ -110,6 +142,86 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFileMO.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFile.getModuleType())));
         assertThat(moduleFileMO.getModuleSha256(), Matchers.equalTo(moduleFile.getModuleSha256()));
         assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(moduleFile.getData().getDataBytes()));
+
+        Map<String, String> moSignatureProps = moduleFileMO.getSignatureProperties();
+        try (final StringReader reader = new StringReader(moduleFile.getData().getSignatureProperties())) {
+            final Properties props = new Properties();
+            props.load(reader);
+            for (final String property : SignerUtils.ALL_SIGNING_PROPERTIES) {
+                assertThat(moSignatureProps.get(property), Matchers.equalTo(props.get(property)));
+            }
+        }
+
+        moProperties = moduleFileMO.getProperties();
+        assertThat(moProperties.get(ServerModuleFile.PROP_FILE_NAME), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)));
+        assertThat(moProperties.get(ServerModuleFile.PROP_ASSERTIONS), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_ASSERTIONS)));
+        assertThat(moProperties.get(ServerModuleFile.PROP_SIZE), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));
+        assertThat(moProperties.get("unknown"), Matchers.nullValue());
+    }
+
+    @Test
+    public void testConvertToMO_unsigned() throws Exception {
+        final ServerModuleFile moduleFile = new ServerModuleFile();
+        moduleFile.setGoid(new Goid(100, 101));
+        moduleFile.setName("test custom server module file");
+        moduleFile.setVersion(10);
+        moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
+        moduleFile.setStateForNode("node1", ModuleState.LOADED);  // states should be ignored by MO
+        moduleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, "module FileName");
+        moduleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2");
+        moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "1000");
+        moduleFile.setProperty("unknown", "unknown data"); // should be ignored
+        moduleFile.createData("new data".getBytes(Charsets.UTF8), null);
+
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                assertThat("Only one param", invocation.getArguments().length, Matchers.equalTo(1));
+                final Object param1 = invocation.getArguments()[0];
+                assertThat("First Param is ServerModuleFileMO", param1, Matchers.instanceOf(ServerModuleFileMO.class));
+                final ServerModuleFileMO serverModuleFileMO = (ServerModuleFileMO)param1;
+                assertThat("Same GOID as moduleFile", serverModuleFileMO.getId(), Matchers.equalTo(moduleFile.getId()));
+                final byte[] bytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
+                serverModuleFileMO.setModuleData(bytes != null ? Arrays.copyOf(bytes, bytes.length) : null);
+                serverModuleFileMO.setSignatureProperties(
+                        moduleFile.getData() != null && StringUtils.isNotBlank(moduleFile.getData().getSignatureProperties())
+                                ? ServerModuleFileTransformer.gatherSignatureProperties(
+                                moduleFile.getData().getSignatureProperties(),
+                                SignerUtils.ALL_SIGNING_PROPERTIES
+                        )
+                                : null
+                );
+                return null;
+            }
+        }).when(factory).setModuleDataAndSignature(Mockito.<ServerModuleFileMO>any());
+
+        // without data
+        ServerModuleFileMO moduleFileMO = transformer.convertToMO(moduleFile);
+
+        assertThat(moduleFileMO.getId(), Matchers.equalTo(moduleFile.getId()));
+        assertThat(moduleFileMO.getName(), Matchers.equalTo(moduleFile.getName()));
+        assertThat(moduleFileMO.getVersion(), Matchers.equalTo(moduleFile.getVersion()));
+        assertThat(moduleFileMO.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFile.getModuleType())));
+        assertThat(moduleFileMO.getModuleSha256(), Matchers.equalTo(moduleFile.getModuleSha256()));
+        assertThat(moduleFileMO.getModuleData(), Matchers.nullValue());
+        assertThat(moduleFileMO.getSignatureProperties(), Matchers.nullValue());
+
+        Map<String, String> moProperties = moduleFileMO.getProperties();
+        assertThat(moProperties.get(ServerModuleFile.PROP_FILE_NAME), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)));
+        assertThat(moProperties.get(ServerModuleFile.PROP_ASSERTIONS), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_ASSERTIONS)));
+        assertThat(moProperties.get(ServerModuleFile.PROP_SIZE), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_SIZE)));
+        assertThat(moProperties.get("unknown"), Matchers.nullValue());
+
+        // with data
+        moduleFileMO = transformer.convertToMO(moduleFile, true);
+
+        assertThat(moduleFileMO.getId(), Matchers.equalTo(moduleFile.getId()));
+        assertThat(moduleFileMO.getName(), Matchers.equalTo(moduleFile.getName()));
+        assertThat(moduleFileMO.getVersion(), Matchers.equalTo(moduleFile.getVersion()));
+        assertThat(moduleFileMO.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFile.getModuleType())));
+        assertThat(moduleFileMO.getModuleSha256(), Matchers.equalTo(moduleFile.getModuleSha256()));
+        assertThat(moduleFileMO.getModuleData(), Matchers.equalTo(moduleFile.getData().getDataBytes()));
+        assertThat(moduleFileMO.getSignatureProperties(), Matchers.nullValue());
 
         moProperties = moduleFileMO.getProperties();
         assertThat(moProperties.get(ServerModuleFile.PROP_FILE_NAME), Matchers.equalTo(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)));
@@ -130,9 +242,10 @@ public class ServerModuleFileTransformerTest {
         moduleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "1000");
         moduleFile.setProperty("unknown", "unknown data"); // should be ignored
-        moduleFile.createData("new data".getBytes(Charsets.UTF8));
+        final byte[] bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
 
-        Mockito.doThrow(ResourceFactory.ResourceNotFoundException.class).when(factory).setModuleData(Mockito.<ServerModuleFileMO>any());
+        Mockito.doThrow(ResourceFactory.ResourceNotFoundException.class).when(factory).setModuleDataAndSignature(Mockito.<ServerModuleFileMO>any());
 
         // without data
         ServerModuleFileMO moduleFileMO = transformer.convertToMO(moduleFile);
@@ -163,9 +276,10 @@ public class ServerModuleFileTransformerTest {
         moduleFile.setProperty(ServerModuleFile.PROP_ASSERTIONS, "Assertion1,Assertion2");
         moduleFile.setProperty(ServerModuleFile.PROP_SIZE, "1000");
         moduleFile.setProperty("unknown", "unknown data"); // should be ignored
-        moduleFile.createData("new data".getBytes(Charsets.UTF8));
+        final byte[] bytes = "new data".getBytes(Charsets.UTF8);
+        moduleFile.createData(bytes, signAndGetSignature(bytes, SIGNER_CERT_DNS[0]));
 
-        Mockito.doThrow(ResourceFactory.ResourceNotFoundException.class).when(factory).setModuleData(Mockito.<ServerModuleFileMO>any());
+        Mockito.doThrow(ResourceFactory.ResourceNotFoundException.class).when(factory).setModuleDataAndSignature(Mockito.<ServerModuleFileMO>any());
 
         // with data
         transformer.convertToMO(moduleFile, true);
@@ -193,8 +307,15 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         byte[] bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        String signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         ServerModuleFile moduleFile = transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
         assertThat(moduleFile.getId(), Matchers.equalTo(moduleFileMO.getId()));
@@ -203,6 +324,13 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFile.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFileMO.getModuleType())));
         assertThat(moduleFile.getModuleSha256(), Matchers.equalTo(moduleFileMO.getModuleSha256()));
         assertThat(moduleFile.getData().getDataBytes(), Matchers.equalTo(moduleFileMO.getModuleData()));
+        assertThat(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        moduleFile.getData().getSignatureProperties(),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                ),
+                Matchers.equalTo(moduleFileMO.getSignatureProperties())
+        );
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME), Matchers.equalTo(moduleFileMO.getProperties().get(ServerModuleFile.PROP_FILE_NAME)));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_ASSERTIONS), Matchers.equalTo(moduleFileMO.getProperties().get(ServerModuleFile.PROP_ASSERTIONS)));
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), Matchers.equalTo(moduleFileMO.getProperties().get(ServerModuleFile.PROP_SIZE)));
@@ -225,8 +353,15 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFileMO.getProperties().get(ServerModuleFile.PROP_SIZE), Matchers.nullValue());
         assertThat(moduleFileMO.getProperties().get("unknown"), Matchers.nullValue());
         bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         moduleFile = transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
         assertThat(moduleFile.getId(), Matchers.equalTo(moduleFileMO.getId()));
@@ -235,6 +370,13 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFile.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFileMO.getModuleType())));
         assertThat(moduleFile.getModuleSha256(), Matchers.equalTo(moduleFileMO.getModuleSha256()));
         assertThat(moduleFile.getData().getDataBytes(), Matchers.equalTo(moduleFileMO.getModuleData()));
+        assertThat(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        moduleFile.getData().getSignatureProperties(),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                ),
+                Matchers.equalTo(moduleFileMO.getSignatureProperties())
+        );
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME), Matchers.nullValue());
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_ASSERTIONS), Matchers.nullValue());
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), Matchers.is(String.valueOf(bytes.length)));
@@ -253,8 +395,15 @@ public class ServerModuleFileTransformerTest {
         //moduleFileMO.setProperties(null);
         assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
         bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         moduleFile = transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
         assertThat(moduleFile.getId(), Matchers.equalTo(moduleFileMO.getId()));
@@ -263,10 +412,170 @@ public class ServerModuleFileTransformerTest {
         assertThat(moduleFile.getModuleType(), Matchers.equalTo(ServerModuleFileTransformer.convertModuleType(moduleFileMO.getModuleType())));
         assertThat(moduleFile.getModuleSha256(), Matchers.equalTo(moduleFileMO.getModuleSha256()));
         assertThat(moduleFile.getData().getDataBytes(), Matchers.equalTo(moduleFileMO.getModuleData()));
+        assertThat(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        moduleFile.getData().getSignatureProperties(),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                ),
+                Matchers.equalTo(moduleFileMO.getSignatureProperties())
+        );
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME), Matchers.nullValue());
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_ASSERTIONS), Matchers.nullValue());
         assertThat(moduleFile.getProperty(ServerModuleFile.PROP_SIZE), Matchers.is(String.valueOf(bytes.length)));
         assertThat(moduleFile.getProperty("unknown"), Matchers.nullValue());
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test unsigned
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        moduleFileMO.setId(new Goid(++idInc, 101).toString());
+        moduleFileMO.setName("test custom server module file");
+        moduleFileMO.setVersion(10);
+        moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
+        bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        moduleFileMO.setModuleData(bytes);
+//        signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+//        moduleFileMO.setSignatureProperties(
+//                ServerModuleFileTransformer.gatherSignatureProperties(
+//                        signatureProperties,
+//                        SignerUtils.ALL_SIGNING_PROPERTIES
+//                )
+//        );
+
+        try {
+            transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
+            Assert.fail("unsigned module is not supported");
+        } catch (ResourceFactory.InvalidResourceException e) {
+            // OK
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test data tampering after signing
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        moduleFileMO.setId(new Goid(++idInc, 101).toString());
+        moduleFileMO.setName("test custom server module file");
+        moduleFileMO.setVersion(10);
+        moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
+        bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
+        Assert.assertThat(bytes[3], Matchers.not(Matchers.is((byte)2)));
+        bytes[3] = 2;
+        moduleFileMO.setModuleData(bytes);
+
+        try {
+            transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
+            Assert.fail("tampered with module data; attempt1");
+        } catch (ResourceFactory.InvalidResourceException e) {
+            // OK
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test another data tampering after signing
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        moduleFileMO.setId(new Goid(++idInc, 101).toString());
+        moduleFileMO.setName("test custom server module file");
+        moduleFileMO.setVersion(10);
+        moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
+        bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
+        signatureProperties = signAndGetSignature(bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
+        Assert.assertThat(bytes[3], Matchers.not(Matchers.is((byte)2)));
+        bytes[3] = 2;
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        moduleFileMO.setModuleData(bytes);
+
+        try {
+            transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
+            Assert.fail("tampered with module data; attempt2");
+        } catch (ResourceFactory.InvalidResourceException e) {
+            // OK
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test not trusted signer cert
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // create another signer with same DN's
+        SignatureVerifier newSigVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        moduleFileMO.setId(new Goid(++idInc, 101).toString());
+        moduleFileMO.setName("test custom server module file");
+        moduleFileMO.setVersion(10);
+        moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
+        bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        moduleFileMO.setModuleData(bytes);
+        signatureProperties = SignatureTestUtils.signAndGetSignature(newSigVerifier, bytes, SIGNER_CERT_DNS[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
+
+        try {
+            transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
+            Assert.fail("signer not trusted; attempt1");
+        } catch (ResourceFactory.InvalidResourceException e) {
+            // OK
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test not trusted signer cert
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // create another signer with new DN
+        newSigVerifier = SignatureTestUtils.createSignatureVerifier("cn=new.cert.ca.com");
+        moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
+        moduleFileMO.setId(new Goid(++idInc, 101).toString());
+        moduleFileMO.setName("test custom server module file");
+        moduleFileMO.setVersion(10);
+        moduleFileMO.setModuleType(ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION);
+        assertThat(moduleFileMO.getProperties(), Matchers.nullValue());
+        bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        moduleFileMO.setModuleData(bytes);
+        signatureProperties = SignatureTestUtils.signAndGetSignature(newSigVerifier, bytes, "cn=new.cert.ca.com");
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signatureProperties,
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
+
+        try {
+            transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
+            Assert.fail("signer not trusted; attempt2");
+        } catch (ResourceFactory.InvalidResourceException e) {
+            // OK
+        }
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
@@ -287,6 +596,12 @@ public class ServerModuleFileTransformerTest {
         );
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -311,6 +626,12 @@ public class ServerModuleFileTransformerTest {
         );
         // use same bytes
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -336,7 +657,13 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -359,8 +686,14 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         // use same bytes
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(new byte[0]);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -387,6 +720,12 @@ public class ServerModuleFileTransformerTest {
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
         moduleFileMO.setModuleSha256("bla bla");
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -419,6 +758,12 @@ public class ServerModuleFileTransformerTest {
         assertThat((long)bytes.length, Matchers.greaterThan(MAX_BYTES));
         moduleFileMO.setModuleSha256("bla bla");
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -443,8 +788,14 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         try {
             transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
@@ -469,8 +820,14 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         final ServerModuleFile moduleFile = transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
         assertThat(moduleFile.getId(), Matchers.is(Goid.DEFAULT_GOID.toString()));
@@ -491,8 +848,14 @@ public class ServerModuleFileTransformerTest {
                         .map())
         );
         final byte[] bytes = String.valueOf("data123").getBytes(Charsets.UTF8);
-        moduleFileMO.setModuleSha256(ServerModuleFile.calcBytesChecksum(bytes));
+        moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
+        moduleFileMO.setSignatureProperties(
+                ServerModuleFileTransformer.gatherSignatureProperties(
+                        signAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                        SignerUtils.ALL_SIGNING_PROPERTIES
+                )
+        );
 
         final ServerModuleFile moduleFile = transformer.convertFromMO(moduleFileMO, secretsEncryptor).getEntity();
         assertThat(moduleFile.getName(), Matchers.nullValue());

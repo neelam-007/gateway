@@ -813,4 +813,5 @@
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
+    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierStub" />
 </beans>

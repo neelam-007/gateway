@@ -5,6 +5,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
@@ -29,6 +30,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -366,9 +368,17 @@ public class ServerModuleFileManagerWindow extends JDialog {
                         public ServerModuleFile call() throws SaveException {
                             ServerModuleFile entity = moduleFile;
                             try {
+                                final byte[] bytes = entity.getData() != null ? entity.getData().getDataBytes() : null;
+                                if (bytes != null) {
+                                    final byte[] digest = ModuleDigest.digest(bytes);
+                                    if (!HexUtils.hexDump(digest).equals(entity.getModuleSha256())) {
+                                        throw new SaveException("Digest mismatch");
+                                    }
+                                    getClusterStatusAdmin().verifyServerModuleFileSignature(digest, entity.getData().getSignatureProperties());
+                                }
                                 final Goid id = getClusterStatusAdmin().saveServerModuleFile(entity);
                                 entity.setGoid(id);
-                            } catch (FindException | UpdateException e) {
+                            } catch (FindException | UpdateException | SignatureException e) {
                                 throw new SaveException(e);
                             }
 

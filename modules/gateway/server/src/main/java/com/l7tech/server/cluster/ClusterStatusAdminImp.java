@@ -36,12 +36,14 @@ import com.l7tech.server.policy.module.ModularAssertionModulesConfig;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
 import com.l7tech.server.security.keystore.luna.LunaProber;
 import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -52,9 +54,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.File;
-import java.io.Serializable;
+import java.io.*;
 import java.security.KeyStoreException;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -648,11 +650,37 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         return null;
     }
 
+    /**
+     * Method for verifying module signature, as well as making sure the module signer cert is trusted,
+     * and conveniently throwing {@code SaveException} if verification failed.
+     *
+     * @param digest                 module calculated digest.  Required and cannot be {@code null}.
+     * @param signatureProperties    signature properties or {@code null} if module is not signed.
+     * @throws SaveException if the signature is missing or signature verification fails or module signer is not trusted.
+     */
+    private void testModuleSignature(
+            @NotNull final byte[] digest,
+            @Nullable final String signatureProperties
+    ) throws SaveException {
+        if (StringUtils.isBlank(signatureProperties)) {
+            throw new SaveException("module file must be signed when uploading");
+        }
+        // calculate module digest
+        try {
+            // verify module signature
+            verifyServerModuleFileSignature(digest, signatureProperties);
+        } catch (final SignatureException e) {
+            throw new SaveException("module file is rejected as signature cannot be verified", e);
+        }
+    }
+
     @NotNull
     @Override
     public Goid saveServerModuleFile(@NotNull ServerModuleFile moduleFile) throws FindException, SaveException, UpdateException {
         Goid id = moduleFile.getGoid();
         final byte[] dataBytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
+        final byte[] digest = dataBytes != null ? ModuleDigest.digest(dataBytes) : null;
+        final String signatureProperties = moduleFile.getData() != null ? moduleFile.getData().getSignatureProperties() : null;
 
         if (Goid.isDefault(id)) {
             if (dataBytes == null) {
@@ -661,9 +689,11 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             if (moduleFile.getModuleType() == null) {
                 throw new SaveException( "module type must be provided when uploading a new module file" );
             }
+            // make sure the signature is verified and signer is trusted
+            testModuleSignature(digest, signatureProperties);
 
             // Save new module
-            moduleFile.setModuleSha256(ServerModuleFile.calcBytesChecksum(dataBytes));
+            moduleFile.setModuleSha256(HexUtils.hexDump(digest));
             moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
             moduleFile.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
             id = serverModuleFileManager.save(moduleFile);
@@ -681,8 +711,11 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
                 // TODO should we be copying the version from the new version here?
                 oldMod.copyFrom(moduleFile, false, false, false);
             } else {
+                // make sure the signature is verified and signer is trusted
+                testModuleSignature(digest, signatureProperties);
+
                 // New data-bytes included, ensure size and hash are up to date
-                final String byteSha256 = ServerModuleFile.calcBytesChecksum(dataBytes);
+                final String byteSha256 = HexUtils.hexDump(digest);
                 moduleFile.setModuleSha256(byteSha256);
                 moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
 
@@ -708,10 +741,12 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         }
     }
 
-    @Nullable
     @Override
-    public ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull final ServerModuleFile moduleFile) {
-        return serverModuleFileManager.findStateForCurrentNode(moduleFile);
+    public void verifyServerModuleFileSignature(
+            @NotNull final byte[] digest,
+            @Nullable final String signatureProperties
+    ) throws SignatureException {
+        signatureVerifier.verify(digest, signatureProperties);
     }
 
     @NotNull
@@ -776,6 +811,13 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         this.serverModuleFileManager = serverModuleFileManager;
     }
     private ServerModuleFileManager serverModuleFileManager;
+
+    @Inject
+    @Named( "signatureVerifier" )
+    final void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+        this.signatureVerifier = signatureVerifier;
+    }
+    private SignatureVerifier signatureVerifier;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

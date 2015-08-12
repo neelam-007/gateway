@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServerModuleFileAPIResourceFactory;
@@ -8,14 +9,14 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
+import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Config;
-import com.l7tech.util.Option;
+import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +24,12 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.io.*;
+import java.security.SignatureException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 
 import static com.l7tech.util.Option.*;
@@ -45,6 +50,13 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     @Inject
     @Named("serverConfig")
     private Config config;
+
+    private SignatureVerifier signatureVerifier;
+
+    @Inject
+    public void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+        this.signatureVerifier = signatureVerifier;
+    }
 
     private final static long DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = 20971520L;
 
@@ -115,7 +127,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
                 // have been deleted before downloading it's bytes.
                 // Unfortunately there is nothing much that can be done in this case but throw runtime exception (i.e. ResourceAccessException)
                 // as this entity cannot be skipped from here
-                factory.setModuleData(serverModuleFileMO);
+                factory.setModuleDataAndSignature(serverModuleFileMO);
             } catch (final ResourceFactory.ResourceNotFoundException e) {
                 // if the ServerModuleFile entity was deleted or we fail to download its data throw ResourceAccessException
                 throw new ResourceFactory.ResourceAccessException(e);
@@ -237,10 +249,10 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
      * Utility method for converting {@link com.l7tech.gateway.common.module.ServerModuleFile#getXmlProperties()} entity properties}
      * into {@link ServerModuleFileMO#properties MO properties}.
      *
-     * @param moduleFile    the {@code ServerModuleFile} entity to gather properties from.
-     * @param keys          the list of known {@code ServerModuleFile} properties (i.e. property keys).
-     * @return a {@code Map} of all specified {@code moduleFile} properties, or {@code null} if the
-     * specified {@code moduleFile} does not contain any properties.
+     * @param moduleFile    the {@code ServerModuleFile} entity to gather properties from.  Required and cannot be {@code null}.
+     * @param keys          array of known {@code ServerModuleFile} properties (i.e. property keys).  Required and cannot be {@code null}.
+     * @return read-only {@code Map} of all specified {@code moduleFile} properties, or {@code null} if the specified
+     * {@code moduleFile} does not contain any known property keys.
      */
     @Nullable
     public static Map<String, String> gatherProperties(@NotNull final ServerModuleFile moduleFile, @NotNull final String[] keys) {
@@ -251,7 +263,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
                 props.put(key, value);
             }
         }
-        return props.isEmpty() ? null : props;
+        return props.isEmpty() ? null : Collections.unmodifiableMap(props);
     }
 
     /**
@@ -334,8 +346,38 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     }
 
     /**
+     * Convenient method for gathering signature properties into a {@code Map} used by {@code ServerModuleFileMO}.
+     *
+     * @param signatureProperties    A {@code String} holding module signature Properties.  Required and cannot be {@code null}.
+     * @param keys                   Array of known signature properties.  Required and cannot be {@code null}.
+     * @return read-only {@code Map} of signature properties from the specified {@code signatureReaderOrStream},
+     * or {@code null} if the specified {@code signatureReaderOrStream} does not contain any known property keys.
+     * @throws IOException if an IO error happens while reading from the reader.
+     */
+    @Nullable
+    public static Map<String, String> gatherSignatureProperties(
+            @NotNull final String signatureProperties,
+            @NotNull final String[] keys
+    ) throws IOException {
+        // read the signature information
+        try (final StringReader reader = new StringReader(signatureProperties)) {
+            final Properties props = new Properties();
+            props.load(reader);
+
+            final Map<String, String> ret = new TreeMap<>();
+            for (final String key : keys) {
+                final String value = (String) props.get(key);
+                if (value != null) {
+                    ret.put(key, value);
+                }
+            }
+            return ret.isEmpty() ? null : Collections.unmodifiableMap(ret);
+        }
+    }
+
+    /**
      * Utility method for setting module data from {@link ServerModuleFileMO MO} into destination {@link ServerModuleFile internal entity}.<br/>
-     * Method will also validate the modules data bytes against the module sha256 in case module data is not omitted.
+     * Method will also verify the module signature and validate the module data bytes against the module sha256 in case module data is not omitted.
      *
      * @param serverModuleFileMO    Input {@link ServerModuleFileMO MO}.
      * @param serverModuleFile      Destination {@link ServerModuleFile internal entity}.
@@ -355,6 +397,8 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
         // initialize module data bytes and bytes length to null and zero
         byte[] moduleDataBytes = null;
         long fileLength = 0;
+        // initialize module signature
+        Map<String, String> signatureProps = null;
 
         // if module data is expected then make sure they are not blank
         if (isMandatory) {
@@ -370,6 +414,14 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
                 throw new ResourceFactory.InvalidResourceException(
                         ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
                         "Module data bytes must be set"
+                );
+            }
+
+            signatureProps = serverModuleFileMO.getSignatureProperties();
+            if (signatureProps == null) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                        "Module signature must be set"
                 );
             }
         }
@@ -397,16 +449,62 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
             }
 
             // verify that module SHA256 and data bytes match
-            final String calculatedDigest = ServerModuleFile.calcBytesChecksum(moduleDataBytes);
-            if (!calculatedDigest.equals(moduleSha256)) {
+            final byte[] calculatedDigest = ModuleDigest.digest(moduleDataBytes);
+            if (!HexUtils.hexDump(calculatedDigest).equals(moduleSha256)) {
                 throw new ResourceFactory.InvalidResourceException(
                         ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
                         "Module data bytes doesn't match SHA-256"
                 );
             }
 
-            // finally set the ServerModuleFile data
-            serverModuleFile.createData(moduleDataBytes, moduleSha256);
+            // verify module signature
+            signatureProps = signatureProps == null ? serverModuleFileMO.getSignatureProperties() : signatureProps;
+            if (signatureProps == null) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
+                        "Module signature must be set"
+                );
+            }
+
+            // verify module signature properties; make sure all properties are counted for
+            for (final String key : SignerUtils.ALL_SIGNING_PROPERTIES) {
+                final String value = signatureProps.get(key);
+                if (StringUtils.isBlank(value)) {
+                    throw new ResourceFactory.InvalidResourceException(
+                            ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                            "Module signature incomplete, property '" + key + "' is missing"
+                    );
+                }
+            }
+
+            // validate module signature
+            try (final StringWriter writer = new StringWriter()) {
+                // generate signature properties inside the writer
+                final Properties props = new Properties();
+                for (final String key : signatureProps.keySet()) {
+                    props.setProperty(key, signatureProps.get(key));
+                }
+                props.store(writer, "Signature");
+                writer.flush();
+
+                final String signatureProperties = writer.toString();
+
+                // verify signature
+                signatureVerifier.verify(calculatedDigest, signatureProperties);
+
+                // finally set the ServerModuleFile data
+                serverModuleFile.createData(moduleDataBytes, moduleSha256, signatureProperties);
+            } catch (final SignatureException e) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                        "Module signature cannot be verified: " + ExceptionUtils.getMessage(e)
+                );
+            } catch (Exception e) {
+                throw new ResourceFactory.InvalidResourceException(
+                        ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                        "Error while verifying module signature: " + ExceptionUtils.getMessageWithCause(e)
+                );
+            }
         }
 
         // TODO (tveninov) : optionally throw if moduleSha256 is blank but module data bytes are not

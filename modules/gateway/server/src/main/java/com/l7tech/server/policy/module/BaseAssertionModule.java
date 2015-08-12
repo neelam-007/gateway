@@ -68,7 +68,7 @@ public class BaseAssertionModule<T extends ClassLoader> {
     }
 
     /**
-     * @return the checksum of this assertion module file (currently SHA256).
+     * @return the hex-encoded digest of this assertion module file (currently SHA256).
      */
     @NotNull
     public String getDigest() {

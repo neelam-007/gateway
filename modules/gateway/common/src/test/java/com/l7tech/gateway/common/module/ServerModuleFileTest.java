@@ -7,22 +7,20 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Test for {@link ServerModuleFile}
  */
 public class ServerModuleFileTest {
     private static final String SAMPLE_CERT = "MIICAjCCAWugAwIBA...V2fcZJaZVGDMHk\\r\\nhc4xiQo\\=";
-    private static final String SAMPLE_DIGEST = "o7EFRG2JtBY9zGHbB3aRvyg0xJDOE/tREYl6Sl5U+y0\\=";
     private static final String SAMPLE_SIGNATURE = "f/Ih+dqfkS03...nTJeI3YI8\\=/tREYl6Sl5U+y0\\=";
     private static final String SAMPLE_SIGNATURE_PROPERTIES_STRING =
-        "signature=" + SAMPLE_SIGNATURE + "\n" +
-        "cert=" + SAMPLE_CERT + "\n" +
-        "digest=" + SAMPLE_DIGEST;
+            "signature=" + SAMPLE_SIGNATURE + "\n" +
+                    "cert=" + SAMPLE_CERT;
 
     /**
      * Create a test {@code ServerModuleFile}, having:
@@ -39,7 +37,7 @@ public class ServerModuleFileTest {
         entity.setName("module_name");
         entity.setVersion(12);
         entity.setModuleType(ModuleType.MODULAR_ASSERTION);
-        entity.createData("test_data".getBytes(Charsets.UTF8), "sha_for_data");
+        entity.createData("test_data".getBytes(Charsets.UTF8), "sha_for_data", SAMPLE_SIGNATURE_PROPERTIES_STRING);
         entity.setStateForNode("node1", ModuleState.UPLOADED);
         entity.setStateForNode("node2", ModuleState.ACCEPTED);
         entity.setStateErrorMessageForNode("node2", "error message");
@@ -72,8 +70,10 @@ public class ServerModuleFileTest {
         assertNotNull(original.getData().getDataBytes()); // original always has bytes
         if (dataIncluded) {
             assertTrue(Arrays.equals(original.getData().getDataBytes(), copy.getData().getDataBytes()));
+            assertEquals(original.getData().getSignatureProperties(), copy.getData().getSignatureProperties());
         } else {
             assertNull(copy.getData().getDataBytes());
+            assertNull(copy.getData().getSignatureProperties());
         }
 
         // test metadata
@@ -204,7 +204,7 @@ public class ServerModuleFileTest {
         entity = new ServerModuleFile();
         try {
             //noinspection ConstantConditions
-            entity.createData(null, "sha");
+            entity.createData(null, "sha", SAMPLE_SIGNATURE_PROPERTIES_STRING);
             fail("null not allowed for data-bytes param.");
         } catch (IllegalArgumentException e) {
             /* this is expected */
@@ -215,7 +215,7 @@ public class ServerModuleFileTest {
         entity = new ServerModuleFile();
         try {
             //noinspection ConstantConditions
-            entity.createData("test data".getBytes(Charsets.UTF8), null);
+            entity.createData("test data".getBytes(Charsets.UTF8), null, SAMPLE_SIGNATURE_PROPERTIES_STRING);
             fail("null not allowed for sha256 param");
         } catch (IllegalArgumentException e) {
             /* this is expected */
@@ -224,14 +224,15 @@ public class ServerModuleFileTest {
         assertNull(entity.getModuleSha256());
 
         entity = new ServerModuleFile();
-        entity.createData("test data".getBytes(Charsets.UTF8), "test sha256");
+        entity.createData("test data".getBytes(Charsets.UTF8), "test sha256", SAMPLE_SIGNATURE_PROPERTIES_STRING);
         assertNotNull(entity.getData());
         assertTrue(Arrays.equals("test data".getBytes(Charsets.UTF8), entity.getData().getDataBytes()));
         assertEquals("test sha256", entity.getModuleSha256());
+        assertEquals(SAMPLE_SIGNATURE_PROPERTIES_STRING, entity.getData().getSignatureProperties());
 
         entity = new ServerModuleFile();
         try {
-            entity.updateData("test data".getBytes(Charsets.UTF8), "test sha256");
+            entity.updateData("test data".getBytes(Charsets.UTF8), "test sha256", SAMPLE_SIGNATURE_PROPERTIES_STRING);
             fail("updateData not allowed when data-bytes are not created first.");
         } catch (IllegalStateException e) {
             /* this is expected */
@@ -241,14 +242,18 @@ public class ServerModuleFileTest {
 
         // Test signature properties
         entity = new ServerModuleFile();
-        entity.createData("test data".getBytes(Charsets.UTF8), "test sha256");
+        entity.createData("test data".getBytes(Charsets.UTF8), "test sha256", null);
         ServerModuleFileData entityData = entity.getData();
-        assertNull("Signature Properties is nullable", entityData.getSignatureProperties());
-
+        assertNotNull(entityData);
+        assertNull(entityData.getSignatureProperties());
         // Set signature properties
         entityData.setSignatureProperties(SAMPLE_SIGNATURE_PROPERTIES_STRING);
-
         // Verify signature properties
+        assertEquals(SAMPLE_SIGNATURE_PROPERTIES_STRING, entityData.getSignatureProperties());
+        // create data with signature properties
+        entity.createData("test data".getBytes(Charsets.UTF8), "test sha256", SAMPLE_SIGNATURE_PROPERTIES_STRING);
+        entityData = entity.getData();
+        assertNotNull(entityData);
         assertEquals(SAMPLE_SIGNATURE_PROPERTIES_STRING, entityData.getSignatureProperties());
     }
 
@@ -381,8 +386,8 @@ public class ServerModuleFileTest {
 
         entity = new ServerModuleFile();
         another = new ServerModuleFile();
-        entity.createData("entity bytes".getBytes(Charsets.UTF8), "sha1");
-        another.createData("another bytes".getBytes(Charsets.UTF8), "sha1");
+        entity.createData("entity bytes".getBytes(Charsets.UTF8), "sha1", SAMPLE_SIGNATURE_PROPERTIES_STRING);
+        another.createData("another bytes".getBytes(Charsets.UTF8), "sha1", SAMPLE_SIGNATURE_PROPERTIES_STRING);
         assertThat(entity, equalTo(another)); // data is not checked only the sha256
         assertThat(entity.hashCode(), equalTo(another.hashCode()));
 

@@ -20,7 +20,7 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
  * @see com.l7tech.gateway.api.ManagedObjectFactory#createServerModuleFileMO()
  */
 @XmlRootElement(name = "ServerModuleFile")
-@XmlType(name = "ServerModuleFileType", propOrder = {"name", "moduleType", "moduleSha256", "moduleDataValue", "properties", "extension", "extensions"})
+@XmlType(name = "ServerModuleFileType", propOrder = {"name", "moduleType", "moduleSha256", "moduleDataValue", "signatureProperties", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "serverModuleFiles")
 public class ServerModuleFileMO extends AccessibleObject {
 
@@ -118,6 +118,24 @@ public class ServerModuleFileMO extends AccessibleObject {
     }
 
     /**
+     * Get the {@code ServerModuleFile} signature properties.
+     *
+     * @return The signature properties (may be null)
+     */
+    @XmlElement(name = "Signature")
+    @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
+    public Map<String, String> getSignatureProperties() {
+        return signatureProperties;
+    }
+
+    /**
+     * Set the signature properties for this {@code ServerModuleFile}.
+     */
+    public void setSignatureProperties(final Map<String, String> signatureProperties) {
+        this.signatureProperties = signatureProperties;
+    }
+
+    /**
      * ModuleType
      */
     @XmlEnum(String.class)
@@ -176,4 +194,5 @@ public class ServerModuleFileMO extends AccessibleObject {
     private String moduleSha256;
     private AttributeExtensibleByteArray moduleData;
     private Map<String, String> properties;
+    private Map<String, String> signatureProperties;
 }

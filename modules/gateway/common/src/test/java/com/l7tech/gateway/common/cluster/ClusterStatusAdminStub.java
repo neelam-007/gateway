@@ -5,11 +5,12 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
-import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.licensing.CompositeLicense;
+import com.l7tech.gateway.common.licensing.FeatureLicense;
+import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.gateway.common.module.AssertionModuleInfo;
 import com.l7tech.gateway.common.module.ServerModuleConfig;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.*;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -365,10 +367,9 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     public void deleteServerModuleFile( @NotNull Goid id ) {
     }
 
-    @Nullable
     @Override
-    public ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull ServerModuleFile module) {
-        return null;
+    public void verifyServerModuleFileSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
+        // nothing to do; verified
     }
 
     @NotNull

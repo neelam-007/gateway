@@ -6,7 +6,7 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
-    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator, package.softwaredbextractor"/>
+    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator, package.softwaredbextractor, package.skarsigner"/>
 
     <!--
       Build a Jar containing all dependencies
@@ -228,5 +228,51 @@
                 <include name="BatchLicenseGenerator.jar"/>
             </tarfileset>
         </tar>
+    </target>
+
+
+    <!--
+      Package the SkarSigner
+    -->
+    <target name="package.skarsigner"
+            description="Compile and package the command line SKAR and SMF Signer utility."
+            depends="init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.skarsignerlibs.dir" value="${build.dir}/skarsigner"/>
+        <delete dir="${package.skarsignerlibs.dir}/lib"/>
+        <mkdir dir="${package.skarsignerlibs.dir}/lib"/>
+
+        <ivy:resolve file="skarsigner-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.skarsignerlibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.skarsignerlibs.dir}/lib/SkarSignerMain.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/signer/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/SkarSigner.jar"
+                 title="SKAR and SMF Signer Utility"
+                 main="com.l7tech.internal.signer.SkarSignerMain"
+                 libsDir="${package.skarsignerlibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <zip destfile="${src.root}/build/installer/SkarSigner-HEAD-${build.version}.zip">
+            <zipfileset dir="${src.root}/etc" prefix="SkarSigner-HEAD" filemode="755" dirmode="755">
+                <include name="jdk_utils.sh"/>
+            </zipfileset>
+            <zipfileset dir="${src.root}/etc/signer" prefix="SkarSigner-HEAD" filemode="755" dirmode="755">
+                <include name="skar_signer.sh"/>
+            </zipfileset>
+            <zipfileset dir="${src.root}/etc/signer" prefix="SkarSigner-HEAD" filemode="755" dirmode="755">
+                <include name="skar_signer.bat"/>
+            </zipfileset>
+            <zipfileset dir="${build.dir}" prefix="SkarSigner-HEAD" filemode="644" dirmode="755">
+                <include name="SkarSigner.jar"/>
+            </zipfileset>
+        </zip>
+        <!--<copy file="${build.dir}/SkarSigner.jar" todir="${src.root}/build/installer"/>-->
     </target>
 </project>

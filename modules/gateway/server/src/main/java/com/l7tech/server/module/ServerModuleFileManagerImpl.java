@@ -1,15 +1,19 @@
 package com.l7tech.server.module;
 
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.admin.ServerModuleFileAdminEvent;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -21,6 +25,8 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -52,6 +58,11 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     @NotNull protected final String clusterNodeId;
 
     /**
+     * Gateway's stash manager factory.
+     */
+    @NotNull protected final StashManagerFactory stashManagerFactory;
+
+    /**
      * Application event publisher
      */
     private ApplicationEventPublisher applicationEventPublisher;
@@ -64,9 +75,11 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
      */
     protected ServerModuleFileManagerImpl(
             @NotNull final Config config,
-            @NotNull final String clusterNodeId
+            @NotNull final String clusterNodeId,
+            @NotNull final StashManagerFactory stashManagerFactory
     ) {
         this.config = config;
+        this.stashManagerFactory = stashManagerFactory;
 
         this.clusterNodeId = clusterNodeId;
         if (StringUtils.isBlank(clusterNodeId)) {
@@ -143,7 +156,72 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
         return config.getBooleanProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE, false);
     }
 
-    private static final String SQL_GET_DATA_BYTES_FOR_MODULE_GOID = "SELECT data_bytes " +
+    /**
+     * Utility {@code InputStream} for using the {@code StashManager} to stash original stream and close the stash when closing this stream.
+     * <p/>
+     * It will stash the original {@code InputStream} (assuming that everything read until {@code originalStream} EOF) and
+     * create a {@code FilterInputStream} out of the stashed {@code InputStream}.<br/>
+     * {@link #close()} will un-stash the stream and close the {@code StashManager}
+     */
+    static class StashManagerBackedInputStream extends FilterInputStream {
+        @NotNull private final StashManager stashManager;
+
+        /**
+         * Default Constructor.
+         *
+         * @param stashManager     the {@code StashManager} to use.  Required and cannot be {@code null}.
+         * @param stashedStream    the stashed {@code InputStream}.  Required and cannot be {@code null}.
+         */
+        private StashManagerBackedInputStream(
+                @NotNull final StashManager stashManager,
+                @NotNull final InputStream stashedStream
+        ) {
+            super(stashedStream);
+            this.stashManager = stashManager;
+        }
+
+        /**
+         * Stash the original {@code InputStream} (assuming that everything read until {@code originalStream} EOF) and
+         * create a {@code FilterInputStream} i.e. {@code StashManagerBackedInputStream} out of the stashed {@code InputStream}.
+         *
+         * @param stashManager      the {@code StashManager} to use.  Required and cannot be {@code null}.
+         * @param originalStream    the original {@code InputStream}.  Required and cannot be {@code null}.
+         * @return An {@code InputStream} holding the stashed version of the {@code originalStream}.  Never {@code null}.
+         * @throws IOException if an IO error happens while reading the {@code originalStream}.
+         */
+        @NotNull
+        public static InputStream stash(
+                @NotNull final StashManager stashManager,
+                @NotNull final InputStream originalStream
+        ) throws IOException {
+            // first stash the original InputStream
+            stashManager.stash(0, originalStream);
+            try {
+                // recall the stashed InputStream
+                return new StashManagerBackedInputStream(stashManager, stashManager.recall(0));
+            } catch (final NoSuchPartException e) {
+                // shouldn't happen so throw invalid state
+                throw new IllegalStateException(e);
+            } catch (final IOException e) {
+                // stashed already and yet it throws IOException
+                // nothing else to do but un-stash and close stashManager
+                stashManager.unstash(0);
+                stashManager.close();
+                // finally rethrow
+                throw e;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            stashManager.unstash(0);
+            stashManager.close();
+        }
+    }
+
+    // SQL for getting module data and module signature
+    private static final String SQL_GET_DATA_BYTES_WITH_SIGNATURE_FOR_MODULE_GOID = "SELECT data_bytes, signature_properties " +
             "FROM server_module_file module " +
             "INNER JOIN server_module_file_data data " +
             "ON module.data_goid = data.goid " +
@@ -151,42 +229,26 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
 
     @Nullable
     @Override
-    @Transactional(readOnly=true)
-    public InputStream getModuleBytesAsStream(@NotNull final Goid goid) throws FindException {
+    public Pair<InputStream, String> getModuleBytesAsStreamWithSignature(@NotNull final Goid goid) throws FindException {
         try {
-            return doReadOnlyWork(new Functions.UnaryThrows<InputStream, Connection, SQLException>() {
+            return doReadOnlyWork(new Functions.UnaryThrows<Pair<InputStream, String>, Connection, SQLException>() {
                 @Override
-                public InputStream call(final Connection connection) throws SQLException {
-                    try (final PreparedStatement statement = connection.prepareStatement(SQL_GET_DATA_BYTES_FOR_MODULE_GOID)) {
+                public Pair<InputStream, String> call(final Connection connection) throws SQLException {
+                    try (final PreparedStatement statement = connection.prepareStatement(SQL_GET_DATA_BYTES_WITH_SIGNATURE_FOR_MODULE_GOID)) {
                         statement.setBytes(1, goid.getBytes());
                         try (final ResultSet rs = statement.executeQuery()) {
                             if (rs.next()) {
-                                return rs.getBinaryStream(1);
+                                final InputStream isData = rs.getBinaryStream(1);
+                                if (isData != null) {
+                                    return Pair.pair(
+                                            StashManagerBackedInputStream.stash(stashManagerFactory.createStashManager(), isData),
+                                            rs.getString(2)
+                                    );
+                                }
                             }
-                        }
-                    }
-                    return null;
-                }
-            });
-        } catch (final SQLException e) {
-            throw new FindException(e.toString(), e);
-        }
-    }
-
-    @Nullable
-    @Override
-    @Transactional(readOnly=true)
-    public byte[] getModuleBytes(@NotNull final Goid goid) throws FindException {
-        try {
-            return doReadOnlyWork(new Functions.UnaryThrows<byte[], Connection, SQLException>() {
-                @Override
-                public byte[] call(final Connection connection) throws SQLException {
-                    try (final PreparedStatement statement = connection.prepareStatement(SQL_GET_DATA_BYTES_FOR_MODULE_GOID)) {
-                        statement.setBytes(1, goid.getBytes());
-                        try (final ResultSet rs = statement.executeQuery()) {
-                            if (rs.next()) {
-                                return rs.getBytes(1);
-                            }
+                        } catch (final IOException e) {
+                            // re-throw as SQLException
+                            throw new SQLException(e);
                         }
                     }
                     return null;

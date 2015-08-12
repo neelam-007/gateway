@@ -1931,6 +1931,13 @@
             depends="package.internal"/>
 
     <!--
+      Package the command line SkarSigner utility (Aways invoked by hand)
+    -->
+    <target name="package.skarsigner"
+            description="Compile and package the command line SKAR and SMF Signer utility."
+            depends="package.internal"/>
+
+    <!--
       Build the windows installers
     -->
     <target name="package.installclients" unless="ssg.only" depends="package.installclient, package.installmanager">
@@ -2835,6 +2842,9 @@
         <copy file="etc/gatewaymanagement/gatewayManagementClient.sh"
               tofile="${build.dir}/GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
 
+        <copy file="etc/jdk_utils.sh"
+              tofile="${build.dir}/GatewayManagementClient-${build.version}/jdk_utils.sh"/>
+
         <copy file="modules/gateway/gateway-management-client/build/layer7-gateway-management-client.jar"
               tofile="${build.dir}/GatewayManagementClient-${build.version}/GatewayManagementClient.jar"/>
 
@@ -2848,9 +2858,13 @@
             <zipfileset dir="${build.dir}" filemode="555">
                 <include name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
             </zipfileset>
+            <zipfileset dir="${build.dir}" filemode="555">
+                <include name="GatewayManagementClient-${build.version}/jdk_utils.sh"/>
+            </zipfileset>
             <zipfileset dir="${build.dir}" filemode="444">
                 <include name="GatewayManagementClient-${build.version}/**/*"/>
                 <exclude name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+                <exclude name="GatewayManagementClient-${build.version}/jdk_utils.sh"/>
             </zipfileset>
         </zip>
     </target>
@@ -3281,6 +3295,9 @@
 
                 <!-- Copy modified / new files -->
                 <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.ssg.conf}/omp.dat"/>
+
+                <!-- Copy signer files; Trusted Store and Root APIM private key -->
+                <copy file="${src.root}/etc/signer/trusted_signers" tofile="@{dir}/${install.src.ssg.conf}/trusted_signers"/>
 
                 <!-- Copy Gateway.jar -->
                 <copy todir="@{dir}/${install.src.ssg.base}">

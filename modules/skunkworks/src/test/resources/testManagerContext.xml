@@ -32,6 +32,7 @@
           parent="hibernateBean">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterNodeId"/>
+        <constructor-arg index="2" ref="stashManagerFactory"/>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
@@ -1758,4 +1759,6 @@
 
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
     </bean>
+
+    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierStub" />
 </beans>

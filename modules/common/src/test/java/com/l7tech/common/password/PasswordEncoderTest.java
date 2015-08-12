@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks;
+package com.l7tech.common.password;
 
 import com.l7tech.test.BugId;
 import com.l7tech.util.HexUtils;
