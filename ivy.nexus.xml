@@ -1,5 +1,5 @@
 <ivy-module version="2.0">
-    <info organisation="com.layer7.portal" module="api-portal-assertion9.0" revision="3.0.0-SNAPSHOT" status="release" publication="20150610150305"/>
+    <info organisation="com.layer7.portal" module="api-portal-assertion9.0" revision="3.0.1-SNAPSHOT" status="release" publication="20150610150305"/>
     <publications>
         <artifact name="api-portal-assertion9.0" type="pom" ext="pom"/>
         <artifact name="api-portal-assertion9.0" type="aar" ext="aar"/>
