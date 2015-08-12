@@ -20,7 +20,10 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -57,6 +60,20 @@ public class InterfaceTagMigration extends com.l7tech.skunkworks.rest.tools.Migr
                 assertOkEmptyResponse(response);
             }
         }
+    }
+
+    @Test
+    public void testExportSingle() throws Exception {
+        Item<InterfaceTagMO> sourceInterfaceTagItem = createInterfaceTag(getSourceEnvironment(), "MyTag", Arrays.asList("1.1.1.1", "2.2.2.2"));
+
+        RestResponse response = getSourceEnvironment().processRequest("bundle?interfaceTag=" + sourceInterfaceTagItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A interfaceTag", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items. A interfaceTag", 1, bundleItem.getContent().getMappings().size());
     }
 
     @Test

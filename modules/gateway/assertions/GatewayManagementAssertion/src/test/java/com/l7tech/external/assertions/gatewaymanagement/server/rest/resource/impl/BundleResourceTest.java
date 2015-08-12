@@ -23,6 +23,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -70,7 +71,7 @@ public class BundleResourceTest {
     public void exportEncryptPasswords() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, true, null);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, true, true, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -86,7 +87,7 @@ public class BundleResourceTest {
         final String encodedPassphrase = HexUtils.encodeBase64("customPassphrase".getBytes());
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, false, encodedPassphrase);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, true, false, encodedPassphrase);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -101,7 +102,7 @@ public class BundleResourceTest {
     public void exportDoNotEncryptPasswords() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, false, null);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, false, false, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -116,7 +117,7 @@ public class BundleResourceTest {
     public void exportDoNotEncryptPasswordsIgnoresPassphrase() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, false, "should be ignored");
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, false, false, "should be ignored");
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -131,7 +132,7 @@ public class BundleResourceTest {
     public void exportEncryptPasswordsWithClusterPassphraseIgnoresCustomPassphrase() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, true, "should be ignored");
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, true, true, "should be ignored");
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -145,7 +146,7 @@ public class BundleResourceTest {
     @Test(expected = InvalidArgumentException.class)
     public void exportEncryptPasswordsWithoutClusterOrCustomPassphrase() throws Exception {
         try {
-            resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, false, null);
+            final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), true, false, true, false, null);
             fail("Expected InvalidArgumentException");
         } catch (final InvalidArgumentException e) {
             verify(bundleExporter, never()).exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString());

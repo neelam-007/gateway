@@ -12,25 +12,35 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+        ActiveConnectorMigration.class,
         AssertionAccessMigration.class,
         CassandraMigration.class,
         ClusterPropertyMigration.class,
+        CustomKeyValueMigration.class,
         DocumentResourceMigration.class,
+        EmailListenerMigration.class,
         EncapsulatedAssertionMigration.class,
+        FirewallRuleMigration.class,
         FolderMigration.class,
         FullGatewayMigration.class,
         GeneralMigration.class,
         GenericEntityMigration.class,
+        HttpConfigurationMigration.class,
+        IdentityProviderMigration.class,
         InterfaceTagMigration.class,
         JDBCMigration.class,
         JMSMigration.class,
+        ListenPortMigration.class,
         MQNativeActiveConnectorMigration.class,
         PolicyAliasMigration.class,
+        PolicyBackedServiceMigration.class,
         PolicyIncludeFragmentMigration.class,
         PolicyMigration.class,
         PrivateKeyMigration.class,
         RevocationCheckMigration.class,
+        RoleMigration.class,
         SampleMessageMigration.class,
+        ScheduledTaskMigration.class,
         SecurePasswordMigration.class,
         SecurityZoneMigration.class,
         ServiceAliasMigration.class,
@@ -38,7 +48,8 @@ import org.junit.runners.Suite;
         SiteminderConfigurationMigration.class,
         TransactionRollback.class,
         TrustedCertificateMigration.class,
-        UsersMigration.class
+        UsersMigration.class,
+        WorkQueueMigration.class
 })
 public class MigrationSuiteTest {
 

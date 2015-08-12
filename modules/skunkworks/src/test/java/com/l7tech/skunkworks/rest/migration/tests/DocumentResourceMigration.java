@@ -132,6 +132,18 @@ public class DocumentResourceMigration extends com.l7tech.skunkworks.rest.tools.
     }
 
     @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?resource=" + resourceDocItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 2 items.", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 2 items.", 2, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
     public void testImportNew() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());

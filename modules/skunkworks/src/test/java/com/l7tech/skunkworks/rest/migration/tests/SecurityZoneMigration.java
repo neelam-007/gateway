@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class SecurityZoneMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(SecurityZoneMigration.class.getName());
@@ -69,6 +71,18 @@ public class SecurityZoneMigration extends com.l7tech.skunkworks.rest.tools.Migr
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
+    }
+
+    @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?securityZone=" + securityZoneItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
     }
 
     @Test

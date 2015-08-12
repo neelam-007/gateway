@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  *
  */
@@ -125,6 +127,18 @@ public class RevocationCheckMigration extends MigrationTestBase {
 
         response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
+    }
+
+    @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?revocationCheckingPolicy=" + revCheckItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
     }
 
     @Test

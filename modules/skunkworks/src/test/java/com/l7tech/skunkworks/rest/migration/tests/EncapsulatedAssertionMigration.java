@@ -129,6 +129,18 @@ public class EncapsulatedAssertionMigration extends com.l7tech.skunkworks.rest.t
     }
 
     @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?encapsulatedAssertion=" + encassItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 2 items. An encass and policy", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 items. An encass and policy and a folder", 3, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
     public void testImportNew() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         assertOkResponse(response);

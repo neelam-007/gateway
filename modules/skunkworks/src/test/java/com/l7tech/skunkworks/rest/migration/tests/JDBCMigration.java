@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+
 /**
 * This will test migration using the rest api from one gateway to another.
 */
@@ -122,6 +124,18 @@ public class JDBCMigration extends com.l7tech.skunkworks.rest.tools.MigrationTes
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
+    }
+
+    @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?jdbcConnection=" + jdbcConnectionItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 2 items. A jdbcConnectionItem", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 2 items. A jdbcConnectionItem", 2, bundleItem.getContent().getMappings().size());
     }
 
     @Test

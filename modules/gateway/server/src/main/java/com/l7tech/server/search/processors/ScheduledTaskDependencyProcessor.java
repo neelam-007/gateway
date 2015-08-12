@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.task.ScheduledTask;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -39,10 +40,18 @@ public class ScheduledTaskDependencyProcessor extends DefaultDependencyProcessor
 
         if (scheduledTask.getIdProviderGoid() != null && scheduledTask.getUserId() != null) {
             //Get the user dependency
-            final User user = identityProviderFactory.getProvider(scheduledTask.getIdProviderGoid()).getUserManager().findByPrimaryKey(scheduledTask.getUserId());
-            final Dependency userDependency = finder.getDependency(DependencyFinder.FindResults.create(user, null));
-            if (userDependency != null) {
-                dependencies.add(userDependency);
+            IdentityProvider identityProvider = identityProviderFactory.getProvider(scheduledTask.getIdProviderGoid());
+            if(identityProvider != null) {
+                final User user = identityProvider.getUserManager().findByPrimaryKey(scheduledTask.getUserId());
+                final Dependency userDependency = finder.getDependency(DependencyFinder.FindResults.create(user, null));
+                if (userDependency != null) {
+                    dependencies.add(userDependency);
+                }
+            } else {
+                final Dependency idpDependency = finder.getDependency(DependencyFinder.FindResults.create(null, new EntityHeader(scheduledTask.getIdProviderGoid(), EntityType.ID_PROVIDER_CONFIG, null, null)));
+                if (idpDependency != null) {
+                    dependencies.add(idpDependency);
+                }
             }
         }
         return dependencies;

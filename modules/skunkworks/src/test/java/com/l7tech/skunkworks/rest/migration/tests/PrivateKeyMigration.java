@@ -229,6 +229,18 @@ public class PrivateKeyMigration extends com.l7tech.skunkworks.rest.tools.Migrat
     }
 
     @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?privateKey=" + privateKeyItem.getId()+ "&encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
     public void testImportNewFail() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());

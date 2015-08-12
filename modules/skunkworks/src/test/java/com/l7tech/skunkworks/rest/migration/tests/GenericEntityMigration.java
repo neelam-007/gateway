@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -151,6 +152,18 @@ public class GenericEntityMigration extends com.l7tech.skunkworks.rest.tools.Mig
 
         response = getSourceEnvironment().processRequest("genericEntities/" + genericEntityItem2.getId(), HttpMethod.DELETE, null, "");
         assertOkEmptyResponse(response);
+    }
+
+    @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?genericEntity=" + genericEntityItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A genericEntityItem", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items. A genericEntityItem", 1, bundleItem.getContent().getMappings().size());
     }
 
     @Test

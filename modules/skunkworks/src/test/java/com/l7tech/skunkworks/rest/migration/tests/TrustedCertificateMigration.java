@@ -105,6 +105,18 @@ public class TrustedCertificateMigration extends com.l7tech.skunkworks.rest.tool
     }
 
     @Test
+    public void testExportSingle() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?trustedCertificate=" + trustedCertItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A trustedCertificate", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 items. A trustedCertificate", 1, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
     public void testImportNew() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
