@@ -1,6 +1,5 @@
 package com.l7tech.console.panels.solutionkit.install;
 
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
@@ -13,6 +12,7 @@ import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -21,10 +21,10 @@ import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -367,6 +367,21 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             if (customization != null) {
                 final SolutionKitManagerUi customUi = customization.getCustomUi();
                 if (customUi != null) {
+
+                    // make metadata and bundle read-only to the custom UI; test for null b/c implementer can optionally null the context
+                    SolutionKitManagerContext skContext = customUi.getContext();
+                    if (skContext != null) {
+                        try {
+                            skContext.setSolutionKitMetadata(SolutionKitUtils.createDocument(selectedSolutionKit));
+                            skContext.setMigrationBundle(settings.getBundleAsDocument(selectedSolutionKit));
+                        } catch (TooManyChildElementsException | MissingRequiredElementException e) {
+                            final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
+                            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+                            DialogDisplayer.showMessageDialog(this, errorMessage + "  See Policy Manager log for more details.", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);
+                        }
+                    }
+
+                    // call button create logic
                     customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
                 }
             }

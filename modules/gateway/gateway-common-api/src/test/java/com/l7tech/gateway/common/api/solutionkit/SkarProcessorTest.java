@@ -1,9 +1,14 @@
 package com.l7tech.gateway.common.api.solutionkit;
 
 import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.EncapsulatedAssertionMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import org.hamcrest.CoreMatchers;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -84,7 +89,30 @@ public class SkarProcessorTest {
 
     @Test
     public void invokeCustomCallback() throws Exception {
-        // TODO
+        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom ui, SimpleSolutionKitManagerUi
+        final SolutionKitManagerUi ui = solutionKitsConfig.getCustomizations().get(solutionKit).getCustomUi();
+        assertNotNull(ui);
+
+        // set input value (e.g. like passing in a value from the custom ui)
+        final StringBuilder inputValue = new StringBuilder().append("CUSTOMIZED!");
+        ui.getContext().setCustomDataObject(inputValue);
+
+        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom callback, SimpleSolutionKitManagerCallback
+        skarProcessor.invokeCustomCallback(solutionKit);
+
+        // this callback is expected to prefix solution kit name with the input value
+        assertThat(solutionKit.getName(), CoreMatchers.startsWith(inputValue.toString()));
+
+        // this callback is expected to prefix encapsulated assertion description with the input value
+        final Bundle restmanBundle = solutionKitsConfig.getBundle(solutionKit);
+        assertNotNull(restmanBundle);
+        for (Item item : restmanBundle.getReferences()) {
+            if (EntityType.ENCAPSULATED_ASSERTION == EntityType.valueOf(item.getType())) {
+                assertThat(((EncapsulatedAssertionMO) item.getContent()).getProperties().get(EncapsulatedAssertionConfig.PROP_DESCRIPTION), CoreMatchers.startsWith(inputValue.toString()));
+            }
+        }
     }
 
     @Test

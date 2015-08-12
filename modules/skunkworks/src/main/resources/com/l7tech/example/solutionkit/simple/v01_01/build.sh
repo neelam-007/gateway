@@ -16,7 +16,7 @@ BUILD_DIR="modules/skunkworks/build/example/solutionkit/simple/v01_01"
 mkdir -p $BUILD_DIR
 
 cd modules/skunkworks
-javac -sourcepath src/main/java/ -classpath ../gateway/api/build/layer7-api.jar:../policy/build/layer7-policy.jar:../utility/build/layer7-utility.jar src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
+javac -sourcepath src/main/java/ -classpath ../gateway/api/build/layer7-api.jar:../policy/build/layer7-policy.jar:../utility/build/layer7-utility.jar:../../lib/repository/commons-lang/commons-lang-2.5.jar src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
 cd build/example/solutionkit/simple/v01_01
 jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi\$1.class
 
@@ -30,10 +30,10 @@ cd $BUILD_DIR
 zip -X SimpleServerModuleFile-1.1.skar ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/DeleteBundle.xml
 
 # build child skar for all other entities
-zip -X SimpleServiceAndOthers-1.1.skar ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/DeleteBundle.xml
+zip -X SimpleServiceAndOthers-1.1.skar Customization.jar -j ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/DeleteBundle.xml
 
 # build parent skar (container for child skars)
-zip -X SimpleSolutionKit-1.1.skar Customization.jar -j ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleServiceAndOthers-1.1.skar
+zip -X SimpleSolutionKit-1.1.skar ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleServiceAndOthers-1.1.skar
 
 pwd
 ls
