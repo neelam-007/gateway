@@ -333,4 +333,11 @@
             <dropColumn tableName="solution_kit_meta" columnName="entity_id"/>
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="add_execute_immediately_column_to_scheduled_task">
+        <addColumn tableName="scheduled_task">
+            <column name="execute_immediately" type="${tinyint.type}" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

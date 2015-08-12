@@ -18,6 +18,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.listeners.TriggerListenerSupport;
@@ -100,6 +101,10 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                             try {
                                 ScheduledTask task = scheduledTaskManager.findByPrimaryKey(goid);
                                 scheduleJob(task);
+                                if (op == EntityInvalidationEvent.CREATE && task.getJobType().equals(JobType.RECURRING)
+                                        && task.getJobStatus().equals(JobStatus.SCHEDULED) && task.isExecuteImmediately()) {
+                                    scheduleImmediateJob(task);
+                                }
                             } catch (FindException e) {
                                 if (logger.isLoggable(Level.WARNING)) {
                                     logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated scheduled task #{0}", goid), e);
@@ -213,6 +218,26 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     }
 
+    /**
+     * @param job the ScheduledTask to schedule for immediate execution.
+     */
+    private void scheduleImmediateJob(final ScheduledTask job) {
+        try {
+            Trigger trigger = populateTriggerDetails(job, newTrigger().startNow().withSchedule(simpleSchedule().withMisfireHandlingInstructionIgnoreMisfires()), "-immediate");
+
+            if (getScheduler().checkExists(trigger.getKey())) {
+                getScheduler().rescheduleJob(trigger.getKey(), trigger);
+                logger.log(Level.INFO, "Immediate job rescheduled for " + job.getName());
+
+            } else {
+                getScheduler().scheduleJob(trigger);
+                logger.log(Level.INFO, "Immediate job scheduled for " + job.getName());
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Fail to create immediate job for scheduled task " + job.getName(), ExceptionUtils.getDebugException(e));
+        }
+    }
+
     public void scheduleOneTimeJob(ScheduledTask job) {
         if (job.getJobStatus().equals(JobStatus.COMPLETED))
             return;
@@ -238,10 +263,10 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 .build();
     }
 
-
-    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder) {
+    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder, @Nullable final String identitySuffix) {
+        String identity = identitySuffix == null ? job.getId() : job.getId() + identitySuffix;
         return triggerBuilder
-                .withIdentity(job.getId())
+                .withIdentity(identity)
                 .usingJobData(JOB_DETAIL_NODE, job.isUseOneNode() ? JOB_DETAIL_NODE_ONE : JOB_DETAIL_NODE_ALL)
                 .usingJobData(JOB_DETAIL_NAME, job.getName())
                 .usingJobData(JOB_DETAIL_JOBTYPE, job.getJobType().toString())
@@ -252,6 +277,11 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                 .forJob(job.getId())
                 .build();
 
+    }
+
+
+    private Trigger populateTriggerDetails(ScheduledTask job, TriggerBuilder triggerBuilder) {
+        return populateTriggerDetails(job, triggerBuilder, null);
     }
 
     public void scheduleRecurringJob(ScheduledTask job) {

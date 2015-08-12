@@ -58,6 +58,7 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         scheduledTaskMO.setName(scheduledTask.getName());
         scheduledTaskMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, scheduledTask.getPolicyGoid().toString()));
         scheduledTaskMO.setUseOneNode(scheduledTask.isUseOneNode());
+        scheduledTaskMO.setExecuteImmediately(scheduledTask.isExecuteImmediately());
         switch (scheduledTask.getJobType()) {
             case ONE_TIME:
                 scheduledTaskMO.setJobType(ScheduledTaskMO.ScheduledTaskJobType.ONE_TIME);
@@ -122,6 +123,7 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         }
 
         scheduledTask.setUseOneNode(scheduledTaskMO.isUseOneNode());
+        scheduledTask.setExecuteImmediately(scheduledTaskMO.isExecuteImmediately());
         switch(scheduledTaskMO.getJobType()){
             case ONE_TIME:
                 scheduledTask.setJobType(JobType.ONE_TIME);
