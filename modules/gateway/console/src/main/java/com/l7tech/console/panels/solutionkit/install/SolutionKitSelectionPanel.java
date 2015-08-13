@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -184,7 +185,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         if (!success) {
-            DialogDisplayer.showMessageDialog(this, errorMessage, "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+            Throwable throwable = new Throwable(errorMessage);
+            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", throwable);
+            Utilities.centerOnParentWindow(errorMessageDialog);
+            DialogDisplayer.pack(errorMessageDialog);
+            DialogDisplayer.display(errorMessageDialog);
         }
 
         return success;

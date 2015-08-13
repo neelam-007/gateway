@@ -7,6 +7,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
@@ -199,7 +200,11 @@ public class ManageSolutionKitsDialog extends JDialog {
                         if (result.left) {
                             DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, result.right, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
                         } else {
-                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, result.right, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                            Throwable throwable = new Throwable(result.right);
+                            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, "Solution Kit Manager has encountered an unexpected error", throwable);
+                            Utilities.centerOnParentWindow(errorMessageDialog);
+                            DialogDisplayer.pack(errorMessageDialog);
+                            DialogDisplayer.display(errorMessageDialog);
                         }
                     }
 
