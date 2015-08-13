@@ -56,7 +56,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         first.setNextPanel(second);
 
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        solutionKitsConfig.setSolutionKitToUpgrade(solutionKitToUpgrade);
+        solutionKitsConfig.setSolutionKitsToUpgrade(getListOfSolutionKitsToUpgrade(solutionKitToUpgrade));
         solutionKitsConfig.setInstanceModifiers(getInstanceModifiers());
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
@@ -101,13 +101,35 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
-        final SolutionKit parentSK = wizardInput.getParentSolutionKit();
+        final SolutionKit parentSK = wizardInput.getParentSolutionKit(); // Note: The parent solution kit has a dummy default GOID.
         Goid parentGoid = null;
 
         if (parentSK != null) {
+            final List<SolutionKit> solutionKitsToUpgrade = wizardInput.getSolutionKitsToUpgrade();
+            final boolean isParentSKToUpgrade = (! solutionKitsToUpgrade.isEmpty()) && solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentSK.getSolutionKitGuid());
+
             try {
-                parentGoid = solutionKitAdmin.saveSolutionKit(parentSK);
-            } catch (SaveException e) {
+                // Case 1: Parent for upgrade
+                if (isParentSKToUpgrade) {
+                    final SolutionKit firstElement = solutionKitsToUpgrade.get(0); // The first element is a real parent solution kit.
+                    parentGoid = firstElement.getGoid();
+                    solutionKitAdmin.updateSolutionKit(firstElement);
+                }
+                // Case 2: Parent for install
+                else {
+                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSK.getSolutionKitGuid());
+                    // Case 2.1: Find the parent already installed on gateway
+                    if (solutionKitsExistingOnGateway.size() > 0) {
+                        final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
+                        parentGoid = parentExistingOnGateway.getGoid();
+                        solutionKitAdmin.updateSolutionKit(parentExistingOnGateway);
+                    }
+                    // Case 2.2: No such parent installed on gateway
+                    else {
+                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSK);
+                    }
+                }
+            } catch (Exception e) {
                 String msg = ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
                 errorKitList.add(new Pair<>(msg, parentSK));
@@ -225,23 +247,84 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         });
 
         // upgrade - find previously installed mappings where srcId differs from targetId (e.g. user resolved)
-        SolutionKit solutionKitToUpgrade = getWizardInput().getSolutionKitToUpgrade();
-        if (solutionKitToUpgrade != null && !SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUpgrade.getMappings())) {
-            try {
-                Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
-                Mappings mappings = (Mappings) item.getContent();
-                Map<String, String> previouslyResolvedIds = new HashMap<>();
-                for (Mapping mapping : mappings.getMappings()) {
-                    if (!mapping.getSrcId().equals(mapping.getTargetId()) ) {
-                        previouslyResolvedIds.put(mapping.getSrcId(), mapping.getTargetId());
+        final List<SolutionKit> solutionKitsToUpgrade = getWizardInput().getSolutionKitsToUpgrade();
+
+        // Note that if it is a collection of solution kits for upgrade, then the first element in solutionKitsToUpgrade is a parent solution kit, which should not be upgraded.
+        final int startIdx = solutionKitsToUpgrade.size() > 1? 1 : 0;
+
+        for (int i = startIdx; i < solutionKitsToUpgrade.size(); i++) {
+            SolutionKit solutionKitToUpgrade = solutionKitsToUpgrade.get(i);
+
+            if (solutionKitsToUpgrade != null && !SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUpgrade.getMappings())) {
+                try {
+                    Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
+                    Mappings mappings = (Mappings) item.getContent();
+                    Map<String, String> previouslyResolvedIds = new HashMap<>();
+                    for (Mapping mapping : mappings.getMappings()) {
+                        if (!mapping.getSrcId().equals(mapping.getTargetId()) ) {
+                            previouslyResolvedIds.put(mapping.getSrcId(), mapping.getTargetId());
+                        }
                     }
+                    if (!previouslyResolvedIds.isEmpty()) {
+                        getWizardInput().getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
+                    }
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
-                if (!previouslyResolvedIds.isEmpty()) {
-                    getWizardInput().getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
-                }
-            } catch (IOException e) {
-                throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
+    }
+
+    /**
+     * Get a list of solution kits for upgrade, depending on the following three cases:
+     * Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
+     * Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
+     * Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
+     *
+     * @param solutionKit: the selected solution kit, which user selects to upgrade.
+     * @return a list of solution kits for upgrade
+     */
+    private static List<SolutionKit> getListOfSolutionKitsToUpgrade(SolutionKit solutionKit) {
+        final List<SolutionKit> skList = new ArrayList<>();
+        if (solutionKit == null) return skList;
+
+        final SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+
+        // Case 1:
+        final Goid parentGoid = solutionKit.getParentGoid();
+        if (parentGoid != null) {
+            try {
+                final SolutionKit parent = solutionKitAdmin.get(parentGoid);
+                skList.add(parent);
+            } catch (FindException e) {
+                String errMsg = "Cannot retrieve the solution kit (GOID = '" + parentGoid + "')";
+                logger.warning(errMsg);
+                throw new RuntimeException(errMsg);
+            }
+        }
+
+        // Case 1 + Case 2 + Case 3:
+        skList.add(solutionKit);
+
+        // Case 3:
+        final Collection<SolutionKitHeader> children;
+        try {
+            children = solutionKitAdmin.findAllChildrenByParentGoid(solutionKit.getGoid());
+        } catch (FindException e) {
+            String errMsg = "Cannot find child solution kits for '" + solutionKit.getName() + "'";
+            logger.warning(errMsg);
+            throw new RuntimeException(errMsg);
+        }
+        for (SolutionKitHeader child: children) {
+            try {
+                skList.add(solutionKitAdmin.get(child.getGoid()));
+            } catch (FindException e) {
+                String errMsg = "Cannot find the solution kit, '" + child.getName() + "'";
+                logger.warning(errMsg);
+                throw new RuntimeException(errMsg);
+            }
+        }
+
+        return skList;
     }
 }

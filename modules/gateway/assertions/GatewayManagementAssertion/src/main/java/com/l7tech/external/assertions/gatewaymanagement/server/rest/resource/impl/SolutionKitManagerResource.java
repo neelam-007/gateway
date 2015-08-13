@@ -242,11 +242,16 @@ public class SolutionKitManagerResource {
     private void handleUpgrade(final SolutionKitsConfig solutionKitsConfig, final String upgradeGuid) throws SolutionKitManagerResourceException {
         if (StringUtils.isNotEmpty(upgradeGuid)) {
             try {
-                // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits,  The next line is temporarily changed to use the first returned element.  Please change the next line as needed.
-                solutionKitsConfig.setSolutionKitToUpgrade(solutionKitManager.findBySolutionKitGuid(upgradeGuid).get(0));
-                if (solutionKitsConfig.getSolutionKitToUpgrade() == null) {
+                //todo:ms need to re-work here for silently installation for a collection of skars
+                final List<SolutionKit> solutionKits = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
+                if (solutionKits == null || solutionKits.isEmpty()) {
                     throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + upgradeGuid + " found for upgrade." + lineSeparator()).build());
                 }
+
+                // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits,  The next line is temporarily changed to use the first returned element.  Please change the next line as needed.
+                List<SolutionKit> upgradeList = new ArrayList<>(1);
+                upgradeList.add(solutionKits.get(0));
+                solutionKitsConfig.setSolutionKitsToUpgrade(upgradeList);
             } catch (FindException e) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Error finding Solution Kit ID " + upgradeGuid + " for upgrade." + lineSeparator()).build());
             }

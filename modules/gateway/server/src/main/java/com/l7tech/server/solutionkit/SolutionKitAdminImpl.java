@@ -48,6 +48,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         return solutionKitManager.findAllHeaders();
     }
 
+    @Override
+    public Collection<SolutionKit> findBySolutionKitGuid(@NotNull String solutionKitGuid) throws FindException {
+        return solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
+    }
+
     @NotNull
     @Override
     public Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
@@ -197,6 +202,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Override
     public Goid saveSolutionKit(@NotNull SolutionKit solutionKit) throws SaveException {
         return solutionKitManager.save(solutionKit);
+    }
+
+    @Override
+    public void updateSolutionKit(@NotNull SolutionKit solutionKit) throws UpdateException {
+        solutionKitManager.update(solutionKit);
     }
 
     @Override

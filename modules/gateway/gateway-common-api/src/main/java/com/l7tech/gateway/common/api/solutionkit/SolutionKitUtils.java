@@ -14,10 +14,13 @@ import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
 import static java.text.MessageFormat.format;
 import static org.apache.commons.lang.StringUtils.isEmpty;
+
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -226,6 +229,21 @@ public final class SolutionKitUtils {
         }
 
         return doc;
+    }
+
+    /**
+     * Search a solution kit object from a list of solution kits, based on a given solution kit guid.
+     * @param guid: the solution kit GUID used to search
+     * @return a solution kit, whose GUID is the same as the GUID of one of solution kits in solutionKitsToUpgrade
+     */
+    public static SolutionKit searchSolutionKitByGuidToUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade, @NotNull final String guid) {
+        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
+            if (guid.equals(solutionKit.getSolutionKitGuid())) {
+                return solutionKit;
+            }
+        }
+
+        return null;
     }
 
     private SolutionKitUtils() {}

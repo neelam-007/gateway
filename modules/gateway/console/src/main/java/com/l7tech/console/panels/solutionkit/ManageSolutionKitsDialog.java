@@ -164,7 +164,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             new DialogDisplayer.OptionListener() {
                 @Override
                 public void reportResult(int option) {
-                    if (option == JOptionPane.NO_OPTION) {
+                    if (option == JOptionPane.NO_OPTION || option == JOptionPane.CLOSED_OPTION) {
                         return;
                     }
 

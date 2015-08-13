@@ -32,6 +32,17 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     Collection<SolutionKitHeader> findSolutionKits() throws FindException;
 
     /**
+     * Find a list of Solution Kits by a given GUID.
+     * @param solutionKitGuid Solution Kit's globally unique identifier (author specified)
+     * @return the list of Solution Kits, whose GUID matches the given GUID.
+     * @throws FindException
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_ENTITIES)
+    Collection<SolutionKit> findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
+
+    /**
      * Retrieve all child solution kits, whose parent's GOID is the same as a given parentGoid.
      *
      * @return a collection of child solution kits associated with parentGoid.
@@ -112,12 +123,21 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Save a solution kit
      * @param solutionKit: a solution kit to be saved.
-     * @return a Goid of the saved sollution kit
+     * @return a Goid of the saved solution kit
      * @throws SaveException
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
     Goid saveSolutionKit(@NotNull SolutionKit solutionKit) throws SaveException;
+
+    /**
+     * Update a solution kit
+     * @param solutionKit: a solution kit to be updated.
+     * @return a Goid of the updated solution kit
+     * @throws UpdateException
+     */
+    @Secured(stereotype = MethodStereotype.UPDATE)
+    void updateSolutionKit(@NotNull SolutionKit solutionKit) throws UpdateException;
 
     /**
      * Delete a solution kit by Goid

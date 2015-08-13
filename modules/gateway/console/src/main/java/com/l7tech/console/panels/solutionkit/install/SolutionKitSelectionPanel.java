@@ -38,6 +38,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
@@ -70,6 +71,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Map<SolutionKit, Integer> instanceModifierMaxLengthMap = new HashMap<>();
+    private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -103,6 +105,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         solutionKitsModel.deselectAll();
         settings.setSelectedSolutionKits(new TreeSet<SolutionKit>());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
+        solutionKitsToUpgrade = settings.getSolutionKitsToUpgrade();
         this.settings = settings;
 
         initializeInstanceModifierButton();
@@ -133,8 +136,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // However, this checking will be ignored for any solution kit upgrade bundle.
         final String bundle = settings.getBundleAsString(solutionKit);
 
+        //final List<SolutionKit> solutionKitsToUpgrade = settings.getSolutionKitsToUpgrade();
+        final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsToUpgrade, solutionKit.getSolutionKitGuid());
+
         if (// Case 1: User runs Install
-            settings.getSolutionKitToUpgrade() == null ||
+            solutionKitToUpgrade == null ||
             // Case 2: User runs Upgrade but the skar file does not contain UpgradeBundle.xml.  We treat this case same as Install.
             !settings.isUpgradeInfoProvided(solutionKit)) {
 
@@ -268,8 +274,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         solutionKitsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                final SolutionKit selectedSolutionKit = solutionKitsModel.getRowObject(solutionKitsTable.getSelectedRow());
-                addCustomUis(customizableButtonPanel, settings, selectedSolutionKit);
+                addCustomUis(customizableButtonPanel, settings, getSelectedSolutionKit());
                 enableDisableInstanceModifierButton();
             }
         });
@@ -288,9 +293,17 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if(comp instanceof JComponent) {
+
+                // If user chooses to upgrade, make sure that all rows not for upgrade should be disabled.
+                final SolutionKit solutionKit = getSolutionKitAtRow(row);
+                final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsToUpgrade, solutionKit.getSolutionKitGuid());
+                final boolean isEnabled = solutionKitsToUpgrade.isEmpty() || solutionKitToUpgrade != null;
+                comp.setEnabled(isEnabled);
+
+                if (column != 0 && comp instanceof JComponent) {
                     ((JComponent)comp).setToolTipText(value == null? "N/A": String.valueOf(value));
                 }
+
                 return comp;
             }
         };
@@ -301,6 +314,19 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         setLayout(new BorderLayout());
         add(mainPanel);
+    }
+
+    private SolutionKit getSelectedSolutionKit() {
+        final int selectedIdx = solutionKitsTable.getSelectedRow();
+        return selectedIdx == -1?
+            null :
+            solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(selectedIdx));
+    }
+
+    private SolutionKit getSolutionKitAtRow(final int row) {
+        return row == -1?
+            null :
+            solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(row));
     }
 
     private void enableDisableInstanceModifierButton() {
@@ -315,14 +341,15 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         instanceModifierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                //todo:ms do multiple selection for instance modifier
                 final int selectedIdx = solutionKitsTable.getSelectedRow();
                 if (selectedIdx == -1) return;
 
-                final SolutionKit solutionKit = solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(selectedIdx));
+                final SolutionKit selectedSolutionKit = getSelectedSolutionKit();
                 final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
                     TopComponents.getInstance().getTopParent(),
-                    solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), // Old instance modifier
-                    getMaxLengthForInstanceModifier(solutionKit)
+                    selectedSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), // Old instance modifier
+                    getMaxLengthForInstanceModifier(selectedSolutionKit)
                 );
                 instanceModifierDialog.pack();
                 Utilities.centerOnParentWindow(instanceModifierDialog);
@@ -331,7 +358,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 if (instanceModifierDialog.isOK()) {
                     final String newInstanceModifier = instanceModifierDialog.getInstanceModifier();
                     if (StringUtils.isEmpty(newInstanceModifier)) return;
-                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
+                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
 
                     solutionKitsModel.fireTableDataChanged();
                 }

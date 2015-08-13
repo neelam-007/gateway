@@ -134,7 +134,14 @@ public class SolutionKitTablePanel extends JPanel {
             column("Name", 50, 400, 5000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
-                    return solutionKitHeader.getName();
+                    String displayName = solutionKitHeader.getName();
+
+                    // If it is a child, then add an indentation at the front of the display name.
+                    if (SolutionKitDisplayingType.CHILD == findDisplayingType(solutionKitHeader)) {
+                        displayName = "     " + displayName;
+                    }
+
+                    return displayName;
                 }
             }),
             column("Version", 50, 60, 500, new Functions.Unary<String, SolutionKitHeader>() {

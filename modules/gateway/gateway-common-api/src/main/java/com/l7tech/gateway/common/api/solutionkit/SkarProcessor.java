@@ -115,7 +115,7 @@ public class SkarProcessor {
             }
         }
 
-        boolean isUpgrade = solutionKitsConfig.getSolutionKitToUpgrade() != null;
+        boolean isUpgrade =! solutionKitsConfig.getSolutionKitsToUpgrade().isEmpty();
         String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
         if (bundleXml == null) {
             throw new SolutionKitException("Unexpected error: unable to get Solution Kit bundle.");
@@ -184,7 +184,8 @@ public class SkarProcessor {
             // If the SKAR is a collection of SKARs, then the rest task (e.g., merge bundle, record upgrade info, etc.)
             // should be ignored, since the rest task is done when recursively call the load method.
             if (isCollection) {
-                // Save the parent solution kit. Just in case, we need to use the parent solution kit object.
+                // Save the parent solution kit into solutionKitsConfig. Just in case, we need to use the parent solution kit object.
+                // However, be aware that the parent solution kit has not been saved yet, so its GOID is a default dummy GOID.
                 solutionKit.setMappings(SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS); // Set a dummy mapping for a parent solution kit
                 solutionKitsConfig.setParentSolutionKit(solutionKit);
                 return;
@@ -203,9 +204,9 @@ public class SkarProcessor {
             }
 
             // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
-            SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade();
+            SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), solutionKit.getSolutionKitGuid());
 
-            if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
+            if (solutionKitToUpgrade != null) {
                 solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
             }
 
@@ -272,15 +273,15 @@ public class SkarProcessor {
 
     // merge bundles (if upgrade mappings exists, replace existing install mappings)
     private Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
-        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade();
-        if (solutionKitToUpgrade != null && solutionKitToUpgrade.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid()) && upgradeBundle.getMappings() != null) {
+        final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), solutionKit.getSolutionKitGuid());
+        if (solutionKitToUpgrade != null && upgradeBundle.getMappings() != null) {
 
             // set goid and version for upgrade
             solutionKit.setGoid(solutionKitToUpgrade.getGoid());
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
 
             // update previously resolved mapping target IDs
-            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitsConfig.getSolutionKitToUpgrade());
+            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitsConfig.getSolutionKitsToUpgrade());
             for (Mapping mapping : upgradeBundle.getMappings()) {
                 if (previouslyResolvedIds != null) {
                     String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());

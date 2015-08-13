@@ -28,8 +28,7 @@ public class SolutionKitsConfig {
     private Set<SolutionKit> selected = new TreeSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
-    @Nullable
-    private SolutionKit solutionKitToUpgrade;
+    private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
     private Map<SolutionKit, SolutionKitCustomization> customizations = new HashMap<>();
     private Map<String, List<String>> instanceModifiers = new HashMap<>();
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
@@ -128,13 +127,13 @@ public class SolutionKitsConfig {
         this.resolvedEntityIds = resolvedEntityIds;
     }
 
-    @Nullable
-    public SolutionKit getSolutionKitToUpgrade() {
-        return solutionKitToUpgrade;
+    @NotNull
+    public List<SolutionKit> getSolutionKitsToUpgrade() {
+        return solutionKitsToUpgrade;
     }
 
-    public void setSolutionKitToUpgrade(@Nullable SolutionKit solutionKitToUpgrade) {
-        this.solutionKitToUpgrade = solutionKitToUpgrade;
+    public void setSolutionKitsToUpgrade(@Nullable List<SolutionKit> solutionKitsToUpgrade) {
+        this.solutionKitsToUpgrade = solutionKitsToUpgrade;
     }
 
     @NotNull
@@ -173,7 +172,7 @@ public class SolutionKitsConfig {
         testMappings.clear();
         resolvedEntityIds.clear();
         if (nullSolutionKitToUpgrade) {
-            solutionKitToUpgrade = null;
+            solutionKitsToUpgrade.clear();
         }
         clearCustomizations();
     }
