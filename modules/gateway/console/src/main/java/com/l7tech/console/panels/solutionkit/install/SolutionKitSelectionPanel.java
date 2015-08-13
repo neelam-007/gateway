@@ -6,7 +6,6 @@ import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -21,7 +20,6 @@ import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
@@ -38,7 +36,6 @@ import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
@@ -70,7 +67,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
-    private Map<SolutionKit, Integer> instanceModifierMaxLengthMap = new HashMap<>();
     private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
 
     public SolutionKitSelectionPanel() {
@@ -213,6 +209,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             @Override
             public void actionPerformed(ActionEvent e) {
                 solutionKitsModel.selectAll();
+                enableDisableInstanceModifierButton();
             }
         });
 
@@ -221,6 +218,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             @Override
             public void actionPerformed(ActionEvent e) {
                 solutionKitsModel.deselectAll();
+                enableDisableInstanceModifierButton();
             }
         });
 
@@ -275,12 +273,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 addCustomUis(customizableButtonPanel, settings, getSelectedSolutionKit());
-                enableDisableInstanceModifierButton();
             }
         });
         solutionKitsModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
+                enableDisableInstanceModifierButton();
                 notifyListeners();
             }
         });
@@ -330,7 +328,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void enableDisableInstanceModifierButton() {
-        final boolean enabled = solutionKitsTable.getSelectedRow() != -1;
+        final boolean enabled = solutionKitsModel.getSelected().size() > 0;
         instanceModifierButton.setEnabled(enabled);
     }
 
@@ -341,27 +339,20 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         instanceModifierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //todo:ms do multiple selection for instance modifier
-                final int selectedIdx = solutionKitsTable.getSelectedRow();
-                if (selectedIdx == -1) return;
+                final List<SolutionKit> solutionKitsSelected = solutionKitsModel.getSelected();
+                if (solutionKitsSelected.isEmpty()) return;
 
-                final SolutionKit selectedSolutionKit = getSelectedSolutionKit();
                 final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
-                    TopComponents.getInstance().getTopParent(),
-                    selectedSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), // Old instance modifier
-                    getMaxLengthForInstanceModifier(selectedSolutionKit)
+                    TopComponents.getInstance().getTopParent(), solutionKitsSelected, settings
                 );
                 instanceModifierDialog.pack();
                 Utilities.centerOnParentWindow(instanceModifierDialog);
-                DialogDisplayer.display(instanceModifierDialog);
-
-                if (instanceModifierDialog.isOK()) {
-                    final String newInstanceModifier = instanceModifierDialog.getInstanceModifier();
-                    if (StringUtils.isEmpty(newInstanceModifier)) return;
-                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
-
-                    solutionKitsModel.fireTableDataChanged();
-                }
+                DialogDisplayer.display(instanceModifierDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        solutionKitsModel.fireTableDataChanged();
+                    }
+                });
             }
         });
 
@@ -424,29 +415,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     /**
-     * Calculate what the max length of instance modifier could be.
-     * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
-     *
-     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
-     */
-    private int getMaxLengthForInstanceModifier(@NotNull final SolutionKit solutionKit) {
-        Integer maxLength = instanceModifierMaxLengthMap.get(solutionKit);
-
-        if (maxLength == null) {
-            Map<SolutionKit, Bundle> kitBundleMap = settings.getLoadedSolutionKits();
-            Bundle bundle = kitBundleMap.get(solutionKit);
-
-            // Compute a new max length
-            maxLength = getMaxLengthForInstanceModifier(bundle.getReferences());
-
-            // Save the max value for this solution kit in the map
-            instanceModifierMaxLengthMap.put(solutionKit, maxLength);
-        }
-
-        return maxLength;
-    }
-
-    /**
      * Check if instance modifier is unique for a selected solution kit.
      *
      * @param solutionKit: a solution kit whose instance modifier will be checked.
@@ -472,50 +440,5 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         return true;
-    }
-
-    /**
-     * Calculate what the max length of instance modifier could be.
-     * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
-     *
-     * TODO make this validation available to headless interface (i.e. SolutionKitManagerResource)
-     *
-     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
-     */
-    public static int getMaxLengthForInstanceModifier(@NotNull final List<Item> bundleReferenceItems) {
-        int maxAllowedLengthAllow = Integer.MAX_VALUE;
-        int allowedLength;
-        String entityName;
-        EntityType entityType;
-
-        for (Item item: bundleReferenceItems) {
-            entityName = item.getName();
-            entityType = EntityType.valueOf(item.getType());
-
-            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
-                // The format of a folder name is "<folder_name> <instance_modifier>".
-                // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
-                // The max length of a folder name or an encapsulated assertion name is 128.
-                allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.POLICY) {
-                // The format of a policy name is "<instance_modifier> <policy_name>".
-                // The max length of a policy name is 255.
-                allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.SERVICE) {
-                // The max length of a service routing uri is 128
-                // The format of a service routing uri is "/<instance_modifier>/<service_name>".
-                allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
-            }  else {
-                continue;
-            }
-
-            if (maxAllowedLengthAllow > allowedLength) {
-                maxAllowedLengthAllow = allowedLength;
-            }
-        }
-
-        if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
-
-        return maxAllowedLengthAllow;
     }
 }
