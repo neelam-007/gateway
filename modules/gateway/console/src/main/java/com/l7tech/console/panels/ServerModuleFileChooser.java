@@ -25,7 +25,6 @@ import java.security.cert.CertificateException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.jar.JarInputStream;
-import java.util.zip.ZipInputStream;
 
 /**
  * Utility class for choosing a Modular or Custom Assertion Module from the local File System.
@@ -239,26 +238,15 @@ public class ServerModuleFileChooser {
                 file,
                 new SignedZipVisitor<byte[], String>() {
                     @Override
-                    public byte[] visitData(@NotNull final ZipInputStream zis) throws IOException {
-                        return IOUtils.slurpStream(zis);
+                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
+                        return IOUtils.slurpStream(inputStream);
                     }
 
                     @Override
-                    public String visitSignature(@NotNull final ZipInputStream zis) throws IOException {
+                    public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
                         // read the signature properties
                         final StringWriter writer = new StringWriter();
-                        try (
-                                final BufferedReader reader = new BufferedReader(
-                                        new InputStreamReader(
-                                                new FilterInputStream(zis) {
-                                                    @Override public void close() throws IOException {
-                                                        // don't close the zip input stream
-                                                    }
-                                                },
-                                                StandardCharsets.ISO_8859_1
-                                        )
-                                )
-                        ) {
+                        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
                             IOUtils.copyStream(reader, writer);
                             writer.flush();
                         }

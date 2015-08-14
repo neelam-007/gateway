@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -87,16 +86,16 @@ public class SignatureVerifierTest extends SignatureTestUtils {
                 signedZip,
                 new SignedZipVisitor<byte[], byte[]>() {
                     @Override
-                    public byte[] visitData(@NotNull final ZipInputStream zis) throws IOException {
-                        final byte[] dataBytes = IOUtils.slurpStream(zis);
+                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
+                        final byte[] dataBytes = IOUtils.slurpStream(inputStream);
                         Assert.assertNotNull(dataBytes);
                         Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
                         return dataBytes;
                     }
 
                     @Override
-                    public byte[] visitSignature(@NotNull final ZipInputStream zis) throws IOException {
-                        final byte[] signatureBytes = IOUtils.slurpStream(zis);
+                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                        final byte[] signatureBytes = IOUtils.slurpStream(inputStream);
                         Assert.assertNotNull(signatureBytes);
                         Assert.assertThat(signatureBytes.length, Matchers.greaterThan(0));
                         return signatureBytes;
@@ -366,14 +365,14 @@ public class SignatureVerifierTest extends SignatureTestUtils {
                                 new ByteArrayInputStream(trustedSignedZipBytes),
                                 new SignedZipVisitor<Void, byte[]>() {
                                     @Override
-                                    public Void visitData(@NotNull final ZipInputStream zis) throws IOException {
+                                    public Void visitData(@NotNull final InputStream inputStream) throws IOException {
                                         // don't care
                                         return null;
                                     }
 
                                     @Override
-                                    public byte[] visitSignature(@NotNull final ZipInputStream zis) throws IOException {
-                                        return IOUtils.slurpStream(zis);
+                                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                                        return IOUtils.slurpStream(inputStream);
                                     }
                                 },
                                 true

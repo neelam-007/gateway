@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.security.signer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.zip.ZipInputStream;
+import java.io.InputStream;
 
 /**
  * A visitor of the signed zip file entries.
@@ -15,17 +15,16 @@ public interface SignedZipVisitor<Data, SigProps> {
     /**
      * Invoked for the signed data zip-entry in the signed zip file.
      *
-     * @param zis    the signed data zip-entry {@code ZipInputStream}.  Required and cannot be {@code null}.
-     *               Note: Consumer MUST NOT close the stream.
+     * @param inputStream    the signed zip-entry data stream.  Required and cannot be {@code null}.
      * @throws IOException if an error happens while reading the stream
      */
-    Data visitData(@NotNull ZipInputStream zis) throws IOException;
+    Data visitData(@NotNull InputStream inputStream) throws IOException;
 
     /**
      * Invoked for the signature properties zip-entry in the signed zip file.
      *
-     * @param zis    the signature properties zip-entry {@code ZipInputStream}.  Required and cannot be {@code null}.
+     * @param inputStream    the signature properties stream.  Required and cannot be {@code null}.
      * @throws IOException if an error happens while reading the stream
      */
-    SigProps visitSignature(@NotNull ZipInputStream zis) throws IOException;
+    SigProps visitSignature(@NotNull InputStream inputStream) throws IOException;
 }

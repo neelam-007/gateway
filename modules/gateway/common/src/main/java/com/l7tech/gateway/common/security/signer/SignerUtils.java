@@ -318,17 +318,17 @@ public class SignerUtils {
                 zipToVerify,
                 new SignedZipVisitor<byte[], Properties>() {
                     @Override
-                    public byte[] visitData(@NotNull final ZipInputStream zis) throws IOException {
+                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
                         // calc SHA-256 of SIGNED_DATA_ZIP_ENTRY
-                        final DigestInputStream dis = new DigestInputStream(zis, messageDigest);
+                        final DigestInputStream dis = new DigestInputStream(inputStream, messageDigest);
                         IOUtils.copyStream(dis, new com.l7tech.common.io.NullOutputStream());
                         return dis.getMessageDigest().digest();
                     }
 
                     @Override
-                    public Properties visitSignature(@NotNull final ZipInputStream zis) throws IOException {
+                    public Properties visitSignature(@NotNull final InputStream inputStream) throws IOException {
                         final Properties signatureProperties = new Properties();
-                        signatureProperties.load(zis);
+                        signatureProperties.load(inputStream);
                         return signatureProperties;
                     }
                 },
@@ -375,9 +375,9 @@ public class SignerUtils {
      * Walks a signed zip file tree.
      *
      * <p>This method walks through each zip-entry in the specified signed zip {@code InputStream} (created using {@link #signZip} method).<br/>
-     * If the entry is the signed file contents then {@link com.l7tech.gateway.common.security.signer.SignedZipVisitor#visitData(java.util.zip.ZipInputStream)}
+     * If the entry is the signed file contents then {@link SignedZipVisitor#visitData(java.io.InputStream)}
      * is invoked with the entry's {@code ZipInputStream}, so that content can be read. <br/>
-     * If the entry is the signature properties then {@link com.l7tech.gateway.common.security.signer.SignedZipVisitor#visitSignature(java.util.zip.ZipInputStream)}
+     * If the entry is the signature properties then {@link SignedZipVisitor#visitSignature(java.io.InputStream)}
      * is invoked with the entry's {@code ZipInputStream}, so that content can be read. <br/>
      * When {@code strict} is specified the method will stop and throw {@code IOException} on any unexpected zip-entry in the signed zip.
      * </p>
@@ -412,12 +412,12 @@ public class SignerUtils {
                         if (SIGNED_DATA_ZIP_ENTRY.equals(entryName)) {
                             if (!foundSignedDat) {
                                 foundSignedDat = true;
-                                data = visitor.visitData(zis);
+                                data = visitor.visitData(new NonCloseableInputStream(zis));
                             }
                         } else if (SIGNATURE_PROPS_ZIP_ENTRY.equals(entryName)) {
                             if (!foundSigProps) {
                                 foundSigProps = true;
-                                sigProps = visitor.visitSignature(zis);
+                                sigProps = visitor.visitSignature(new NonCloseableInputStream(zis));
                             }
                         } else if (strict) {
                             // throw exception if this entry is a directory

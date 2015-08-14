@@ -18,7 +18,6 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.zip.ZipInputStream;
 
 /**
  */
@@ -342,27 +341,16 @@ public class SignatureTestUtils {
                     is,
                     new SignedZipVisitor<Void, String>() {
                         @Override
-                        public Void visitData(@NotNull final ZipInputStream zis) throws IOException {
+                        public Void visitData(@NotNull final InputStream inputStream) throws IOException {
                             // don't care
                             return null;
                         }
 
                         @Override
-                        public String visitSignature(@NotNull final ZipInputStream zis) throws IOException {
+                        public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
                             // read the signature
                             final StringWriter writer = new StringWriter();
-                            try (
-                                    final BufferedReader reader = new BufferedReader(
-                                            new InputStreamReader(
-                                                    new FilterInputStream(zis) {
-                                                        @Override public void close() throws IOException {
-                                                            // don't close the zip stream
-                                                        }
-                                                    },
-                                                    StandardCharsets.ISO_8859_1
-                                            )
-                                    )
-                            ) {
+                            try (final Reader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
                                 IOUtils.copyStream(reader, writer);
                                 writer.flush();
                             }

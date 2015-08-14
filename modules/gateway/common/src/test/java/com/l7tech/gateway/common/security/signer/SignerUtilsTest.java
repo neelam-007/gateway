@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.signer;
 
-import com.l7tech.common.io.TeeOutputStream;
+import com.l7tech.common.io.NonCloseableInputStream;
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.*;
@@ -9,7 +10,6 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
-import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -30,16 +30,6 @@ import java.util.zip.ZipOutputStream;
 
 public class SignerUtilsTest {
 
-    @ClassRule
-    public static TemporaryFolder tmpFolder;
-
-
-    @BeforeClass
-    public static void setUpOnce() throws Exception {
-        tmpFolder = new TemporaryFolder();
-        tmpFolder.create();
-    }
-
     @Before
     public void setUp() throws Exception {
         xPath = XPathFactory.newInstance().newXPath();
@@ -50,7 +40,6 @@ public class SignerUtilsTest {
 
     @After
     public void tearDown() throws Exception {
-
     }
 
     private Pair<X509Certificate, PrivateKey> generateSelfSignedKeyPair() throws Exception {
@@ -75,13 +64,13 @@ public class SignerUtilsTest {
                 signedZipStream,
                 new SignedZipVisitor<byte[], byte[]>() {
                     @Override
-                    public byte[] visitData(@NotNull final ZipInputStream zis) throws IOException {
-                        return IOUtils.slurpStream(zis);
+                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
+                        return IOUtils.slurpStream(inputStream);
                     }
 
                     @Override
-                    public byte[] visitSignature(@NotNull final ZipInputStream zis) throws IOException {
-                        return IOUtils.slurpStream(zis);
+                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                        return IOUtils.slurpStream(inputStream);
                     }
                 },
                 true
@@ -492,6 +481,45 @@ public class SignerUtilsTest {
         }
     }
 
+    @Test
+    public void testCloseStreamWhileWalkingSignedZip() throws Exception {
+        final byte[] testData = "some test data".getBytes(Charsets.UTF8);
+        final Pair<X509Certificate, PrivateKey> keyPair = generateSelfSignedKeyPair();
+
+        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            // sign content
+            SignerUtils.signZip(
+                    keyPair.left,
+                    keyPair.right,
+                    new ByteArrayInputStream(testData),
+                    baos
+            );
+
+            try (final ByteArrayInputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
+                final Pair<String, String> ret = SignerUtils.walkSignedZip(
+                        bis,
+                        new SignedZipVisitor<String, String>() {
+                            @Override
+                            public String visitData(@NotNull final InputStream inputStream) throws IOException {
+                                inputStream.close();
+                                return "data_closed";
+                            }
+
+                            @Override
+                            public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                                inputStream.close();
+                                return "sig_closed";
+                            }
+                        },
+                        true
+                );
+
+                Assert.assertThat(ret.left, Matchers.is("data_closed"));
+                Assert.assertThat(ret.right, Matchers.is("sig_closed"));
+            }
+        }
+    }
+
     /**
      * Convenient  unit test to sign {@code ServerModuleFile)'s within a SKAR file.<br/>
      * The output skar file will be in the same folder as the skarToSign suffixed with "-signed"<br/>
@@ -570,13 +598,7 @@ public class SignerUtilsTest {
                     if (!entry.isDirectory()) {
                         final String fileName = entry.getName();
                         if (SK_INSTALL_BUNDLE_FILENAME.equals(fileName)) {
-                            final Document doc = XmlUtil.parse(
-                                    new FilterInputStream(zis) {
-                                        @Override public void close() throws IOException {
-                                            // don't close the zip stream
-                                        }
-                                    }
-                            );
+                            final Document doc = XmlUtil.parse(new NonCloseableInputStream(zis));
                             // get all SERVER_MODULE_FILE nodes
                             final NodeList nodes = (NodeList)xPath.compile("/l7:Bundle/l7:References/l7:Item[l7:Type='SERVER_MODULE_FILE']/l7:Resource/l7:ServerModuleFile").evaluate(doc.getDocumentElement(), XPathConstants.NODESET);
                             for (int i = 0; i < nodes.getLength(); ++i) {
@@ -591,8 +613,8 @@ public class SignerUtilsTest {
                                                 final ByteArrayOutputStream bos = new ByteArrayOutputStream()
                                         ) {
                                             SignerUtils.signWithKeyStore(
-                                                    signerKeyStore, 
-                                                    storeType, 
+                                                    signerKeyStore,
+                                                    storeType,
                                                     storePass != null ? storePass.toCharArray() : null,
                                                     alias,
                                                     entryPass != null ? entryPass.toCharArray() : null,
@@ -616,44 +638,23 @@ public class SignerUtilsTest {
                                     }
                                 }
                             }
-
+                            // save the zip entry in the zip output stream
                             zos.putNextEntry(new ZipEntry(fileName));
-                            try (
-                                    final Reader reader = new StringReader(XmlUtil.nodeToFormattedString(doc));
-                                    final Writer writer = new BufferedWriter(new OutputStreamWriter(new FilterOutputStream(zos) {
-                                        @Override public void close() throws IOException {
-                                            // don't close the zip stream
-                                        }
-                                    }))
-                            ) {
-                                IOUtils.copyStream(reader, writer);
-                            }
-
+                            // save the modified doc content here
+                            XmlUtil.nodeToFormattedOutputStream(doc, zos);
                         } else if (StringUtils.isNotBlank(fileName) && fileName.toLowerCase().endsWith(".skar")) {
-                            // Get the input bytes for a child SKAR, create a new input stream, and call recursively call the load method.
-                            try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(tmpFolder.newFile()))) {
-                                // create the sip entry
-                                zos.putNextEntry(new ZipEntry(fileName));
-                                // don't close streams
-                                final TeeOutputStream tos = new TeeOutputStream(bos, new FilterOutputStream(zos){
-                                    @Override public void close() throws IOException {
-                                        // don't close the zip stream
-                                    }
-                                });
-                                signServerModuleFilesInsideSkar(
-                                        new FilterInputStream(zis) {
-                                            @Override public void close() throws IOException {
-                                                // don't close the zip stream
-                                            }
-                                        },
-                                        signerKeyStore,
-                                        storeType,
-                                        storePass,
-                                        alias,
-                                        entryPass,
-                                        tos
-                                );
-                            }
+                            // create the sip entry
+                            zos.putNextEntry(new ZipEntry(fileName));
+                            // Get the input bytes for a child SKAR, and  recursively call the this method.
+                            signServerModuleFilesInsideSkar(
+                                    new NonCloseableInputStream(zis),
+                                    signerKeyStore,
+                                    storeType,
+                                    storePass,
+                                    alias,
+                                    entryPass,
+                                    new NonCloseableOutputStream(zos)
+                            );
                         } else {
                             // anything else simply add to the zip
                             zos.putNextEntry(new ZipEntry(fileName));
@@ -700,16 +701,16 @@ public class SignerUtilsTest {
                     is,
                     new SignedZipVisitor<Void, Properties>() {
                         @Override
-                        public Void visitData(@NotNull final ZipInputStream zis) throws IOException {
+                        public Void visitData(@NotNull final InputStream inputStream) throws IOException {
                             // don't care
                             return null;
                         }
 
                         @Override
-                        public Properties visitSignature(@NotNull final ZipInputStream zis) throws IOException {
+                        public Properties visitSignature(@NotNull final InputStream inputStream) throws IOException {
                             // read the signature
                             final Properties sigProps = new Properties();
-                            sigProps.load(zis);
+                            sigProps.load(inputStream);
                             return sigProps;
                         }
                     },
