@@ -7,6 +7,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Test utility methods
  */
@@ -46,5 +49,37 @@ public class SolutionKitUtilsTest {
         SolutionKit copy = new SolutionKit();
         SolutionKitUtils.copyDocumentToSolutionKit(doc, copy);
         Assert.assertEquals(original, copy);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void testSearchSolutionKitByGuidToUpgrade() {
+        try {
+            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(null, "");
+        } catch (Exception e) {
+            Assert.assertTrue("Check first argument not null:", e.getMessage().startsWith("Argument 0 for @NotNull parameter"));
+        }
+
+        try {
+            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(new ArrayList<SolutionKit>(), null);
+        } catch (Exception e) {
+            Assert.assertTrue("Check second argument not null:", e.getMessage().startsWith("Argument 1 for @NotNull parameter"));
+        }
+
+        final List<SolutionKit> solutionKits = new ArrayList<>(2);
+        SolutionKit sk1 = new SolutionKit();
+        sk1.setSolutionKitGuid("33b16742-d62d-4095-8f8d-4db707e9ad52");
+        solutionKits.add(sk1);
+
+        SolutionKit sk2 = new SolutionKit();
+        sk2.setSolutionKitGuid("79b16742-d62d-4095-8f8d-4db707e0ad22");
+        solutionKits.add(sk2);
+
+        // Find a matched solution kit by guid
+        Assert.assertEquals(
+            "Find matched solution kit:",
+            "79b16742-d62d-4095-8f8d-4db707e0ad22",
+            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKits, "79b16742-d62d-4095-8f8d-4db707e0ad22").getSolutionKitGuid()
+        );
     }
 }
