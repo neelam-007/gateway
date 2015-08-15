@@ -48,13 +48,11 @@ import java.util.logging.Logger;
 public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerModuleFile, ServerModuleFileMO> {
     private static final Logger logger = Logger.getLogger(ServerModuleFileEntityResourceTest.class.getName());
 
-    private static final String MAX_UPLOAD_SIZE_SYS_PROP = "com.l7tech.server." + ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE;
     private static final String UPLOAD_ENABLED_SYS_PROP = "com.l7tech.server." + ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE;
 
     private Config config;
     private ServerModuleFileManager serverModuleFileManager;
     private List<ServerModuleFile> serverModuleFiles = new ArrayList<>();
-    private Long maxUploadSizeOverride = null;
     private Boolean uploadEnabledOverride = null;
     // read only set of initial modules SHA256
     private Set<String> moduleShas;
@@ -90,7 +88,6 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
 
     @Before
     public void before() throws Exception {
-        maxUploadSizeOverride = null;
         uploadEnabledOverride = null;
 
         // change the default (stub) signature verifier with our own
@@ -220,12 +217,6 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
 
     @After
     public void after() throws FindException, DeleteException {
-        // reset ServerModuleFile maxUploadSize property
-        if (maxUploadSizeOverride != null) {
-            SyspropUtil.setProperty(MAX_UPLOAD_SIZE_SYS_PROP, String.valueOf(maxUploadSizeOverride));
-            maxUploadSizeOverride = null;
-        }
-
         // reset ServerModuleFile uploadEnabled property
         if (uploadEnabledOverride != null) {
             SyspropUtil.setProperty(UPLOAD_ENABLED_SYS_PROP, String.valueOf(uploadEnabledOverride));
@@ -591,26 +582,29 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
             }
         });
 
-        overrideMaxUploadSize(100L);
+        final long maxSize = config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, 0L);
+        Assert.assertThat(maxSize, Matchers.greaterThanOrEqualTo(0L));
 
         // module data exceeding allowed size
-        bytes = new byte[101];
-        serverModuleFileMO = createTestServerModuleFileMO(
-                null,
-                "another test module 6",
-                ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
-                bytes,
-                trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
-                null
-        );
-        Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
-        // should fail with 400
-        map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
-            @Override
-            public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
-                Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
-            }
-        });
+        if (maxSize > 0) {
+            bytes = new byte[(int) maxSize + 2];
+            serverModuleFileMO = createTestServerModuleFileMO(
+                    null,
+                    "another test module 6",
+                    ServerModuleFileMO.ServerModuleFileModuleType.CUSTOM_ASSERTION,
+                    bytes,
+                    trustedSignAndGetSignature(bytes, SIGNER_CERT_DNS[0]),
+                    null
+            );
+            Assert.assertThat(moduleShas, Matchers.not(Matchers.hasItem(serverModuleFileMO.getModuleSha256())));
+            // should fail with 400
+            map.put(serverModuleFileMO, new Functions.BinaryVoid<ServerModuleFileMO, RestResponse>() {
+                @Override
+                public void call(final ServerModuleFileMO serverModuleFileMO, final RestResponse restResponse) {
+                    Assert.assertThat(restResponse.getStatus(), Matchers.is(400));
+                }
+            });
+        }
 
         // missing module signature / unsigned module
         bytes = ("test data for test module 7").getBytes(Charsets.UTF8);
@@ -734,20 +728,6 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         });
 
         return Collections.unmodifiableMap(map);
-    }
-
-    /**
-     * Utility method for overriding {@link ServerConfigParams#PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE}.<br/>
-     *
-     * @param newValue    the new value to set.
-     */
-    private void overrideMaxUploadSize(final long newValue) {
-        if (maxUploadSizeOverride == null) {
-            // get the original version
-            maxUploadSizeOverride = config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, 0L);
-        }
-        SyspropUtil.setProperty(MAX_UPLOAD_SIZE_SYS_PROP, String.valueOf(newValue));
-        Assert.assertThat(config.getLongProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE, 0L), Matchers.is(newValue));
     }
 
     /**

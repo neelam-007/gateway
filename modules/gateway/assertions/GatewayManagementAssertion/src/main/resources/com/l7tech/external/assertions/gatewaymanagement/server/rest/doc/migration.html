@@ -422,7 +422,7 @@
     errorType=&quot;TargetNotFound&quot; /&gt;
             </pre></div>
         </td></tr>
-        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name' or 'guid'. If this is not specified mapping is done by the ID. There is also a special mapping, 'mapByRoleEntity', this is used to map a auto created role to an auto created role on the target gateway. This mapping is automatically set when doing a full gateway export.</td></tr>
+        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name' or 'guid'. If this is not specified mapping is done by the ID. There is also a special mapping, 'mapByRoleEntity', this is used to map a auto created role to an auto created role on the target gateway. This mapping is automatically set when doing a full gateway export. Another special mapping, 'moduleSha256' is used to map a ServerModuleFile using its content digest on the target Gateway. This is the default mapping when exporting ServerModuleFile(s).</td></tr>
         <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapBy property.</td></tr>
     </table>
     <h4>Complex Mapping Examples</h4>

@@ -154,10 +154,14 @@ public class ServerModuleFileChooser {
         if (file.isDirectory() || !file.isFile()) {
             throw new IOException(MessageFormat.format(resources.getString("error.invalid.file"), file.getName()));
         }
-        final long fileLength = file.length();
+        // get the .signed file size
+        long fileLength = file.length();
         if (fileLength == 0L) {
             throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), file.getName()));
         }
+        // the max-size check is done against the .signed file size, instead of the raw bytes.
+        // the reason is that this way we can early fail if the input file is huge
+        // the .signed bytes size and raw bytes size should be very similar
         final long maxModuleFileSize = ServerModuleFileClusterPropertiesReader.getInstance().getModulesUploadMaxSize();
         if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
             throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFile.humanReadableBytes(maxModuleFileSize)));
@@ -170,6 +174,8 @@ public class ServerModuleFileChooser {
 
         // if both module bytes and signature props have been extracted
         if (bytes != null && signatureProperties != null) {
+            // get the actual raw bytes size
+            fileLength = bytes.length;
             // create new server module file instance
             final ServerModuleFile serverModuleFile = new ServerModuleFile();
             // make sure the module is either modular or custom assertion
