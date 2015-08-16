@@ -85,7 +85,6 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
             if (certs != null && certs.length > 0 && certs[0] != null) {
                 final TlsClientCertToken token = new TlsClientCertToken(certs[0]);
                 final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(token, SslAssertion.class);
-                authContext.addCredentials(credentials);
                 if (assertion.isCheckCertValidity()) {
                     try {
                         //checks if the certificate is expired or not yet valid
