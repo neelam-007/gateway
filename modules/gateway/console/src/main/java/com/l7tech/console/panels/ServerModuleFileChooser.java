@@ -40,6 +40,8 @@ public class ServerModuleFileChooser {
 
     private final CustomAssertionsScannerHelper customAssertionsScannerHelper;
     private final ModularAssertionsScannerHelper modularAssertionsScannerHelper;
+    private final FileFilter customAssertionFileFilter;
+    private final FileFilter modularAssertionFileFilter;
     private final FileFilter signedFilesFilter;
 
     /**
@@ -61,6 +63,8 @@ public class ServerModuleFileChooser {
 
         this.customAssertionsScannerHelper = new CustomAssertionsScannerHelper(SERVER_MODULE_CONFIG.getCustomAssertionPropertyFileName());
         this.modularAssertionsScannerHelper = new ModularAssertionsScannerHelper(SERVER_MODULE_CONFIG.getModularAssertionManifestAssertionListKey());
+        this.customAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getCustomAssertionModulesExt(), resources.getString("custom.assertion.file.filter.desc"));
+        this.modularAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getModularAssertionModulesExt(), resources.getString("modular.assertion.file.filter.desc"));
         this.signedFilesFilter = buildFileFilter(Collections.singleton(".signed"), resources.getString("signed.files.filter.desc"));
     }
 
@@ -90,6 +94,8 @@ public class ServerModuleFileChooser {
                         fc.setMultiSelectionEnabled(false);
                         fc.setAcceptAllFileFilterUsed(true);
                         fc.addChoosableFileFilter(signedFilesFilter);
+                        fc.addChoosableFileFilter(modularAssertionFileFilter);
+                        fc.addChoosableFileFilter(customAssertionFileFilter);
                         fc.setFileFilter(signedFilesFilter);
                         if (StringUtils.isNotBlank(startupFolder)) {
                             //noinspection ConstantConditions
