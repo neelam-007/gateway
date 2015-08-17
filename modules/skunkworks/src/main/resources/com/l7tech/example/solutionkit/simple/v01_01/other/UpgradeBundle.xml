@@ -1,9 +1,8 @@
     <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
         <l7:Mappings>
-<!-- UNTESTED
-            On upgrade from the previous version (SimpleSolutionKit-1.0.skar) we want to Delete Server Module File from SKAR ID = 33b16742-d62d-4095-8f8d-4db707e9ad52
+            <!-- On upgrade from the previous version (SimpleSolutionKit-1.0.skar) we want to Delete Server Module File from SKAR ID = 33b16742-d62d-4095-8f8d-4db707e9ad52 -->
             <l7:Mapping action="Delete" srcId="37953ab3e89a8b7df721c055d4aeb6ad" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="SERVER_MODULE_FILE"/>
--->
+
             <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
                 <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
             </l7:Mapping>

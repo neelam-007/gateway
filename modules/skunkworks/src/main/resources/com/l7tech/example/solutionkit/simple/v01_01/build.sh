@@ -27,13 +27,13 @@ cp -a modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simpl
 cd $BUILD_DIR
 
 # build child skar with only Server Module File
-zip -X SimpleServerModuleFile-1.1.skar ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/DeleteBundle.xml
+zip -X SimpleServerModuleFile-1.1.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/DeleteBundle.xml
 
 # build child skar for all other entities
-zip -X SimpleServiceAndOthers-1.1.skar Customization.jar -j ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/DeleteBundle.xml
+zip -X SimpleServiceAndOthers-1.1.skar Customization.jar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/DeleteBundle.xml
 
 # build parent skar (container for child skars)
-zip -X SimpleSolutionKit-1.1.skar ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleServiceAndOthers-1.1.skar
+zip -X SimpleSolutionKit-1.1.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleServiceAndOthers-1.1.skar
 
 pwd
 ls
