@@ -97,42 +97,43 @@ public class ScheduledTaskJobManagerTest {
     }
 
     @Test
-    public void onApplicationEventCreateRecurringJobExecuteImmediately() throws Exception {
+    public void onApplicationEventCreateRecurringJobExecuteOnCreate() throws Exception {
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
-        task.setExecuteImmediately(true);
+        task.setExecuteOnCreate(true);
         task.setCronExpression(CRON_EXPRESSION);
+        when(scheduler.checkExists(any(JobKey.class))).thenReturn(true);
 
         final EntityInvalidationEvent create = new EntityInvalidationEvent(this, ScheduledTask.class, new Goid[]{TASK_GOID}, new char[]{EntityInvalidationEvent.CREATE});
         jobManager.onApplicationEvent(create);
 
-        assertTrue(TestHandler.isAuditPresentContaining("Immediate job scheduled for " + TASK_NAME));
+        assertTrue(TestHandler.isAuditPresentContaining("One time job scheduled for " + TASK_NAME));
         verify(scheduler).scheduleJob(argThat(new JobDetailMatcher(TASK_GOID.toString())), argThat(new CronTriggerMatcher(CRON_EXPRESSION)));
-        verify(scheduler).scheduleJob(argThat(new SimpleTriggerMatcher(TASK_GOID.toString() + "-immediate")));
+        verify(scheduler).scheduleJob(argThat(new SimpleTriggerMatcher(TASK_GOID.toString() + ScheduledTaskJobManager.ON_CREATE_SUFFIX)));
     }
 
     @Test
-    public void onApplicationEventCreateRecurringJobExecuteImmediatelyRescheduled() throws Exception {
+    public void onApplicationEventCreateRecurringJobExecuteOnCreateRescheduled() throws Exception {
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
-        task.setExecuteImmediately(true);
+        task.setExecuteOnCreate(true);
         task.setCronExpression(CRON_EXPRESSION);
-        final TriggerKey triggerKey = TriggerKey.triggerKey(TASK_GOID.toString() + "-immediate");
+        final TriggerKey triggerKey = TriggerKey.triggerKey(TASK_GOID.toString() + ScheduledTaskJobManager.ON_CREATE_SUFFIX);
         when(scheduler.checkExists(triggerKey)).thenReturn(true);
 
         final EntityInvalidationEvent create = new EntityInvalidationEvent(this, ScheduledTask.class, new Goid[]{TASK_GOID}, new char[]{EntityInvalidationEvent.CREATE});
         jobManager.onApplicationEvent(create);
 
-        assertTrue(TestHandler.isAuditPresentContaining("Immediate job rescheduled for " + TASK_NAME));
-        verify(scheduler).rescheduleJob(eq(triggerKey), argThat(new SimpleTriggerMatcher(TASK_GOID.toString() + "-immediate")));
+        assertTrue(TestHandler.isAuditPresentContaining("One time job rescheduled for " + TASK_NAME));
+        verify(scheduler).rescheduleJob(eq(triggerKey), argThat(new SimpleTriggerMatcher(TASK_GOID.toString() + ScheduledTaskJobManager.ON_CREATE_SUFFIX)));
         verify(scheduler, never()).scheduleJob(any(Trigger.class));
     }
 
     @Test
-    public void onApplicationEventUpdateRecurringJobExecuteImmediatelyIgnored() throws Exception {
+    public void onApplicationEventUpdateRecurringJobExecuteOnCreateIgnored() throws Exception {
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
-        task.setExecuteImmediately(true); // should be ignored
+        task.setExecuteOnCreate(true); // should be ignored
         task.setCronExpression(CRON_EXPRESSION);
         when(scheduler.checkExists(any(TriggerKey.class))).thenReturn(true);
 
@@ -146,10 +147,10 @@ public class ScheduledTaskJobManagerTest {
     }
 
     @Test
-    public void onApplicationEventCreateOneTimeJobExecuteImmediatelyIgnored() throws Exception {
+    public void onApplicationEventCreateOneTimeJobExecuteOnCreateIgnored() throws Exception {
         task.setJobType(JobType.ONE_TIME);
         task.setJobStatus(JobStatus.SCHEDULED);
-        task.setExecuteImmediately(true); // should be ignored
+        task.setExecuteOnCreate(true); // should be ignored
         task.setExecutionDate(new Date().getTime());
 
         final EntityInvalidationEvent create = new EntityInvalidationEvent(this, ScheduledTask.class, new Goid[]{TASK_GOID}, new char[]{EntityInvalidationEvent.CREATE});
@@ -162,10 +163,10 @@ public class ScheduledTaskJobManagerTest {
     }
 
     @Test
-    public void onApplicationEventCreateRecurringDisabledJobExecuteImmediatelyIgnored() throws Exception {
+    public void onApplicationEventCreateRecurringDisabledJobExecuteOnCreateIgnored() throws Exception {
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.DISABLED);
-        task.setExecuteImmediately(true); // should be ignored
+        task.setExecuteOnCreate(true); // should be ignored
         task.setCronExpression(CRON_EXPRESSION);
 
         final EntityInvalidationEvent create = new EntityInvalidationEvent(this, ScheduledTask.class, new Goid[]{TASK_GOID}, new char[]{EntityInvalidationEvent.CREATE});
@@ -177,18 +178,18 @@ public class ScheduledTaskJobManagerTest {
     }
 
     @Test
-    public void onApplicationEventCreateRecurringJobExecuteImmediatelySchedulerException() throws Exception {
+    public void onApplicationEventCreateRecurringJobExecuteOnCreateSchedulerException() throws Exception {
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
-        task.setExecuteImmediately(true);
+        task.setExecuteOnCreate(true);
         task.setCronExpression(CRON_EXPRESSION);
-        when(scheduler.scheduleJob(any(Trigger.class))).thenThrow(new SchedulerException("mocking exception"));
+        when(scheduler.scheduleJob(any(JobDetail.class), any(Trigger.class))).thenThrow(new SchedulerException("mocking exception"));
 
         final EntityInvalidationEvent create = new EntityInvalidationEvent(this, ScheduledTask.class, new Goid[]{TASK_GOID}, new char[]{EntityInvalidationEvent.CREATE});
         jobManager.onApplicationEvent(create);
 
-        assertFalse(TestHandler.isAuditPresentContaining("Immediate job scheduled for " + TASK_NAME));
-        assertTrue(TestHandler.isAuditPresentContaining("WARNING: Fail to create immediate job for scheduled task Test Task"));
+        assertFalse(TestHandler.isAuditPresentContaining("One time job scheduled for " + TASK_NAME));
+        assertTrue(TestHandler.isAuditPresentContaining("WARNING: Fail to create one time job for scheduled task Test Task"));
     }
 
     private class JobDetailMatcher extends ArgumentMatcher<JobDetail> {
@@ -219,8 +220,12 @@ public class ScheduledTaskJobManagerTest {
 
         @Override
         public boolean matches(Object o) {
-            final CronTriggerImpl cronTrigger = (CronTriggerImpl) o;
-            return cronTrigger.getCronExpression().equals(cronExpression);
+            if (!(o instanceof CronTriggerImpl))  {
+                return false;
+            } else {
+                final CronTriggerImpl cronTrigger = (CronTriggerImpl) o;
+                return cronTrigger.getCronExpression().equals(cronExpression);
+            }
         }
 
         @Override
@@ -238,8 +243,12 @@ public class ScheduledTaskJobManagerTest {
 
         @Override
         public boolean matches(Object o) {
-            final SimpleTriggerImpl trigger = (SimpleTriggerImpl) o;
-            return trigger.getKey().getName().equals(triggerId);
+            if (!(o instanceof SimpleTriggerImpl)) {
+                return false;
+            } else {
+                final SimpleTriggerImpl trigger = (SimpleTriggerImpl) o;
+                return trigger.getKey().getName().equals(triggerId);
+            }
         }
 
         @Override

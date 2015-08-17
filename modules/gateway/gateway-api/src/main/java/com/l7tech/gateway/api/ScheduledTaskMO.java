@@ -22,7 +22,7 @@ import java.util.Map;
 
 @XmlRootElement(name = "ScheduledTask")
 @XmlType(name = "ScheduledTaskType",
-        propOrder = {"name",  "policyReference", "useOneNode", "jobType", "jobStatus", "executionDate", "cronExpression", "executeImmediately", "properties", "extension", "extensions"})
+        propOrder = {"name",  "policyReference", "useOneNode", "jobType", "jobStatus", "executionDate", "cronExpression", "executeOnCreate", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "scheduledTasks")
 public class ScheduledTaskMO extends ElementExtendableAccessibleObject {
 
@@ -138,22 +138,22 @@ public class ScheduledTaskMO extends ElementExtendableAccessibleObject {
     }
 
     /**
-     * Retrieves whether a recurring scheduled task should be executed immediately upon creation.
+     * Retrieves whether a recurring scheduled task should be executed upon creation.
      *
-     * @return whether a recurring scheduled task should be executed immediately upon creation.
+     * @return whether a recurring scheduled task should be executed upon creation.
      */
-    @XmlElement(name = "ExecuteImmediately")
-    public Boolean isExecuteImmediately() {
-        return executeImmediately;
+    @XmlElement(name = "ExecuteOnCreate")
+    public Boolean isExecuteOnCreate() {
+        return executeOnCreate;
     }
 
     /**
      * Sets whether a recurring scheduled task should be executed immediately upon creation.
      *
-     * @param executeImmediately true if the recurring scheduled task should be executed immediately upon creation.
+     * @param executeOnCreate true if the recurring scheduled task should be executed immediately upon creation.
      */
-    public void setExecuteImmediately(Boolean executeImmediately) {
-        this.executeImmediately = executeImmediately;
+    public void setExecuteOnCreate(Boolean executeOnCreate) {
+        this.executeOnCreate = executeOnCreate;
     }
 
     /**
@@ -252,7 +252,7 @@ public class ScheduledTaskMO extends ElementExtendableAccessibleObject {
     private ScheduledTaskJobType jobType;
     private ScheduledTaskJobStatus jobStatus;
     private Date executionDate;
-    private Boolean executeImmediately = false;
+    private Boolean executeOnCreate = false;
     private String cronExpression;
     private Map<String, String> properties;
 }

@@ -24,7 +24,7 @@ public class ScheduledTaskTest {
         task.setName(TASK_NAME);
         task.setPolicyGoid(POLICY_GOID);
         task.setUseOneNode(true);
-        task.setExecuteImmediately(true);
+        task.setExecuteOnCreate(true);
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
         task.setCronExpression(CRON_EXPRESSION);
@@ -39,7 +39,7 @@ public class ScheduledTaskTest {
         assertEquals(TASK_NAME, copy.getName());
         assertEquals(POLICY_GOID, copy.getPolicyGoid());
         assertTrue(copy.isUseOneNode());
-        assertTrue(copy.isExecuteImmediately());
+        assertTrue(copy.isExecuteOnCreate());
         assertEquals(JobType.RECURRING, copy.getJobType());
         assertEquals(JobStatus.SCHEDULED, copy.getJobStatus());
         assertEquals(CRON_EXPRESSION, copy.getCronExpression());

@@ -340,4 +340,7 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="gateway" id="rename_execute_immediately_column_to_execute_on_create">
+        <renameColumn tableName="scheduled_task" oldColumnName="execute_immediately" newColumnName="execute_on_create" columnDataType="${tinyint.type}"/>
+    </changeSet>
 </databaseChangeLog>

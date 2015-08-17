@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceManager;
@@ -65,7 +64,7 @@ public class ScheduledTaskTransformerTest {
         task.setName(TASK_NAME);
         task.setPolicyGoid(POLICY_GOID);
         task.setUseOneNode(true);
-        task.setExecuteImmediately(true);
+        task.setExecuteOnCreate(true);
         task.setJobType(JobType.RECURRING);
         task.setJobStatus(JobStatus.SCHEDULED);
         task.setCronExpression(CRON_EXPRESSION);
@@ -78,7 +77,7 @@ public class ScheduledTaskTransformerTest {
         assertEquals(TASK_NAME, mo.getName());
         assertEquals(POLICY_GOID.toString(), mo.getPolicyReference().getId());
         assertTrue(mo.isUseOneNode());
-        assertTrue(mo.isExecuteImmediately());
+        assertTrue(mo.isExecuteOnCreate());
         assertEquals(ScheduledTaskMO.ScheduledTaskJobType.RECURRING, mo.getJobType());
         assertEquals(ScheduledTaskMO.ScheduledTaskJobStatus.SCHEDULED, mo.getJobStatus());
         assertNull(mo.getExecutionDate());
@@ -95,7 +94,7 @@ public class ScheduledTaskTransformerTest {
         mo.setName(TASK_NAME);
         mo.setPolicyReference(new ManagedObjectReference(PolicyMO.class, POLICY_GOID.toString()));
         mo.setUseOneNode(true);
-        mo.setExecuteImmediately(true);
+        mo.setExecuteOnCreate(true);
         mo.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
         mo.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.SCHEDULED);
         mo.setCronExpression(CRON_EXPRESSION);
@@ -109,7 +108,7 @@ public class ScheduledTaskTransformerTest {
         assertEquals(TASK_NAME, task.getName());
         assertEquals(POLICY_GOID, task.getPolicyGoid());
         assertTrue(task.isUseOneNode());
-        assertTrue(task.isExecuteImmediately());
+        assertTrue(task.isExecuteOnCreate());
         assertEquals(JobType.RECURRING, task.getJobType());
         assertEquals(JobStatus.SCHEDULED, task.getJobStatus());
         assertEquals(CRON_EXPRESSION, task.getCronExpression());

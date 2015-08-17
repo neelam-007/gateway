@@ -18,6 +18,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
@@ -29,8 +30,7 @@ import org.springframework.context.ApplicationEvent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +54,9 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
     public static final String JOB_DETAIL_ID_PROVIDER_GOID = "idProviderGoid";
     public static final String JOB_DETAIL_NODE_ONE = "One";
     public static final String JOB_DETAIL_NODE_ALL = "All";
+    private static final int DEFAULT_DELAY_MILLIS = 16000;
+    private static final String DELAY_SYS_PROP = "com.l7tech.server.task.ScheduledTaskJobManager.create.delay.millis";
+    static final String ON_CREATE_SUFFIX = "-onCreate";
 
     @Inject
     protected ScheduledTaskManager scheduledTaskManager;
@@ -102,8 +105,8 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                                 ScheduledTask task = scheduledTaskManager.findByPrimaryKey(goid);
                                 scheduleJob(task);
                                 if (op == EntityInvalidationEvent.CREATE && task.getJobType().equals(JobType.RECURRING)
-                                        && task.getJobStatus().equals(JobStatus.SCHEDULED) && task.isExecuteImmediately()) {
-                                    scheduleImmediateJob(task);
+                                        && task.getJobStatus().equals(JobStatus.SCHEDULED) && task.isExecuteOnCreate()) {
+                                    scheduleOneTimeJob(task, getOnCreateDate(), ON_CREATE_SUFFIX);
                                 }
                             } catch (FindException e) {
                                 if (logger.isLoggable(Level.WARNING)) {
@@ -218,44 +221,42 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
 
     }
 
-    /**
-     * @param job the ScheduledTask to schedule for immediate execution.
-     */
-    private void scheduleImmediateJob(final ScheduledTask job) {
-        try {
-            Trigger trigger = populateTriggerDetails(job, newTrigger().startNow().withSchedule(simpleSchedule().withMisfireHandlingInstructionIgnoreMisfires()), "-immediate");
-
-            if (getScheduler().checkExists(trigger.getKey())) {
-                getScheduler().rescheduleJob(trigger.getKey(), trigger);
-                logger.log(Level.INFO, "Immediate job rescheduled for " + job.getName());
-
-            } else {
-                getScheduler().scheduleJob(trigger);
-                logger.log(Level.INFO, "Immediate job scheduled for " + job.getName());
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Fail to create immediate job for scheduled task " + job.getName(), ExceptionUtils.getDebugException(e));
-        }
+    public void scheduleOneTimeJob(ScheduledTask job) {
+        scheduleOneTimeJob(job, new Date(job.getExecutionDate()), null);
     }
 
-    public void scheduleOneTimeJob(ScheduledTask job) {
+    private void scheduleOneTimeJob(ScheduledTask job, final Date startAt, final String identitySuffix) {
         if (job.getJobStatus().equals(JobStatus.COMPLETED))
             return;
         try {
-            Trigger trigger = populateTriggerDetails(job, newTrigger().startAt(new Date(job.getExecutionDate())).withSchedule(simpleSchedule().withMisfireHandlingInstructionIgnoreMisfires()));
-            if (getScheduler().checkExists(TriggerKey.triggerKey(job.getId()))) {
-                getScheduler().rescheduleJob(TriggerKey.triggerKey(job.getId()), trigger);
+            final Trigger trigger = populateTriggerDetails(job, newTrigger().startAt(startAt).withSchedule(simpleSchedule().withMisfireHandlingInstructionIgnoreMisfires()), identitySuffix);
+            if (getScheduler().checkExists(trigger.getKey())) {
+                getScheduler().rescheduleJob(trigger.getKey(), trigger);
                 logger.log(Level.INFO, "One time job rescheduled for " + job.getName());
 
             } else {
-                getScheduler().scheduleJob(getJobDetail(job), trigger);
+                final JobDetail jobDetail = getJobDetail(job);
+                if (getScheduler().checkExists(jobDetail.getKey())) {
+                    // job has already been added with another trigger
+                    getScheduler().scheduleJob(trigger);
+                } else {
+                    getScheduler().scheduleJob(jobDetail, trigger);
+                }
                 logger.log(Level.INFO, "One time job scheduled for " + job.getName());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Fail to create one time job for scheduled task " + job.getName(), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Fail to create one time job for scheduled task " + job.getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
+    private Date getOnCreateDate() {
+        final Integer onCreateDelay = SyspropUtil.getInteger(DELAY_SYS_PROP, DEFAULT_DELAY_MILLIS);
+        logger.log(Level.INFO, "On create delay set to " + onCreateDelay + " milliseconds");
+        final GregorianCalendar cal = new GregorianCalendar();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        cal.add(java.util.Calendar.MILLISECOND, onCreateDelay);
+        return cal.getTime();
+    }
 
     private JobDetail getJobDetail(ScheduledTask job) {
         return newJob(ScheduledServiceQuartzJob.class)

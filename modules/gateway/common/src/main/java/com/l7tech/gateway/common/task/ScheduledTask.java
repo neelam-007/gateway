@@ -38,7 +38,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
     private String cronExpression;
     private String propertiesXml;
     private Map<String, String> properties = new TreeMap<>();
-    private boolean executeImmediately;
+    private boolean executeOnCreate;
 
     @RbacAttribute
     @Size(min = 1, max = 128)
@@ -170,13 +170,13 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         }
     }
 
-    @Column(name = "execute_immediately")
-    public boolean isExecuteImmediately() {
-        return executeImmediately;
+    @Column(name = "execute_on_create")
+    public boolean isExecuteOnCreate() {
+        return executeOnCreate;
     }
 
-    public void setExecuteImmediately(final boolean executeImmediately) {
-        this.executeImmediately = executeImmediately;
+    public void setExecuteOnCreate(final boolean executeOnCreate) {
+        this.executeOnCreate = executeOnCreate;
     }
 
     public int compareTo(Object o) {
@@ -202,7 +202,7 @@ public class ScheduledTask extends ZoneableNamedEntityImp {
         this.setExecutedDate(other.getExecutedDate());
         this.setExecutionDate(other.getExecutionDate());
         this.setCronExpression(other.getCronExpression());
-        this.setExecuteImmediately(other.isExecuteImmediately());
+        this.setExecuteOnCreate(other.isExecuteOnCreate());
         this.setProperties(other.getProperties());
     }
 

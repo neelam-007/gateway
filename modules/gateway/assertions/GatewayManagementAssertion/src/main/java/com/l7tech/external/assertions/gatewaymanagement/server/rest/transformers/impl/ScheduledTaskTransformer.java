@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncry
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
-import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
@@ -15,7 +14,6 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
-import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -58,7 +56,7 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         scheduledTaskMO.setName(scheduledTask.getName());
         scheduledTaskMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, scheduledTask.getPolicyGoid().toString()));
         scheduledTaskMO.setUseOneNode(scheduledTask.isUseOneNode());
-        scheduledTaskMO.setExecuteImmediately(scheduledTask.isExecuteImmediately());
+        scheduledTaskMO.setExecuteOnCreate(scheduledTask.isExecuteOnCreate());
         switch (scheduledTask.getJobType()) {
             case ONE_TIME:
                 scheduledTaskMO.setJobType(ScheduledTaskMO.ScheduledTaskJobType.ONE_TIME);
@@ -123,7 +121,7 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         }
 
         scheduledTask.setUseOneNode(scheduledTaskMO.isUseOneNode());
-        scheduledTask.setExecuteImmediately(scheduledTaskMO.isExecuteImmediately());
+        scheduledTask.setExecuteOnCreate(scheduledTaskMO.isExecuteOnCreate());
         switch(scheduledTaskMO.getJobType()){
             case ONE_TIME:
                 scheduledTask.setJobType(JobType.ONE_TIME);
