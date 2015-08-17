@@ -99,11 +99,11 @@ public class SolutionKitManagerResource {
             //todo:ms Multiple skars modification: entityIdReplaces should be a map keyed by SolutionKit like this Map<SolutionKit, List<FormDataBodyPart>
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
-            // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
-
             // install or upgrade skars
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager);
-            for (SolutionKit solutionKit: solutionKitsConfig.getCustomizations().keySet()) {
+            for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
+
+                // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
                 skarProcessor.invokeCustomCallback(solutionKit);
 
                 AsyncAdminMethods.JobId<Goid> jobId = skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
