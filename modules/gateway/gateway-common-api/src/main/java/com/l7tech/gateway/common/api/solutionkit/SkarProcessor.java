@@ -43,6 +43,8 @@ public class SkarProcessor {
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
 
+    public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
+
     @NotNull
     private final SolutionKitsConfig solutionKitsConfig;
 
@@ -107,10 +109,18 @@ public class SkarProcessor {
         Map<String, String> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit);
         Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
         if (bundle != null) {
+            String resolvedId;
+            Boolean allowOverride;
             for (Mapping mapping : bundle.getMappings()) {
-                String resolvedId = resolvedEntityIds.get(mapping.getSrcId());
+                resolvedId = resolvedEntityIds.get(mapping.getSrcId());
                 if (resolvedId != null) {
-                    mapping.setTargetId(resolvedId);
+                    allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+                    if (allowOverride != null && allowOverride) {
+                        mapping.setTargetId(resolvedId);
+                    } else {
+                        throw new SolutionKitException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
+                                ".  Replacement id=" + resolvedId + " requires the .skar author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
+                    }
                 }
             }
         }
@@ -281,7 +291,7 @@ public class SkarProcessor {
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
 
             // update previously resolved mapping target IDs
-            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitsConfig.getSolutionKitsToUpgrade());
+            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitToUpgrade);
             for (Mapping mapping : upgradeBundle.getMappings()) {
                 if (previouslyResolvedIds != null) {
                     String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());

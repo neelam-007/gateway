@@ -396,10 +396,16 @@
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY"/>
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION"/>
         <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71a6d" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d" type="SECURE_PASSWORD">
-            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_AllowMappingOverride"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
         </l7:Mapping>
         <l7:Mapping action="NewOrExisting" srcId="0567c6a8f0c4cc2c9fb331cb03b4de6f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f" type="JDBC_CONNECTION">
-            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_AllowMappingOverride"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
         </l7:Mapping>
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71b8f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f" type="POLICY"/>
         <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71ba3" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3" type="ENCAPSULATED_ASSERTION"/>

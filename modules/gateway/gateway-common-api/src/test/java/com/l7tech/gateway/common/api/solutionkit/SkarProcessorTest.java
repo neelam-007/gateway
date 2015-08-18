@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.api.solutionkit;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
@@ -18,6 +19,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.l7tech.gateway.common.api.solutionkit.SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
@@ -68,9 +70,9 @@ public class SkarProcessorTest {
         final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
-        // simulate remapping of IDs from the bundle (secure password and JDBC)
+        // simulate remapping of IDs in the bundle (secure password and JDBC)
         Map<String, String> entityIdReplaceMap = new HashMap<>(1);
-        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
         entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
         Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
         resolvedEntityIds.put(solutionKit, entityIdReplaceMap);
@@ -82,9 +84,38 @@ public class SkarProcessorTest {
         verify(solutionKitAdmin, times(1)).install(any(SolutionKit.class), anyString(), anyBoolean());
 
         // verify secure password and JDBC were resolved via mapping targetId in the bundle
-        final String bundle = solutionKitsConfig.getBundleAsString(solutionKit);
-        assertThat(bundle, CoreMatchers.containsString("targetId=\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
-        assertThat(bundle, CoreMatchers.containsString("targetId=\"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));
+        final String bundleStr = solutionKitsConfig.getBundleAsString(solutionKit);
+        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"));
+        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));
+    }
+
+    @Test
+    public  void notAllowedEntityIdReplace() throws Exception {
+        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        // set <l7:Property key="SkmEntityIdReplaceable"> to false
+        // simulating mapping not explicitly allowed as replaceable
+        Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
+        assertNotNull(bundle);
+        for (Mapping mapping : bundle.getMappings()) {
+            mapping.addProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE, false);
+        }
+
+        // simulate caller *trying* to remap IDs in the bundle
+        Map<String, String> entityIdReplaceMap = new HashMap<>(1);
+        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "www...www");
+        entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "xxx...xxx");
+        Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
+        resolvedEntityIds.put(solutionKit, entityIdReplaceMap);
+        solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
+
+        try {
+            skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
+            fail("Expected: mappings with property " + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
+        } catch (SolutionKitException e) {
+            assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
+        }
     }
 
     @Test

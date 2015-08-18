@@ -2,6 +2,7 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
+import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
@@ -129,6 +130,14 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
         Mapping.ErrorType errorType = mapping.getErrorType();
         if (errorType == null) {
+            return;
+        }
+
+        final Boolean allowOverride = mapping.getProperty(SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+        if (allowOverride == null || !allowOverride) {
+            DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
+                    "<br>This mapping requires the property '" + SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' be set to true by the .skar author.</html>",
+                    "Error Resolving Entity Conflict", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
