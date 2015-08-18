@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyMO;
@@ -8,7 +9,10 @@ import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.common.task.JobStatus;
 import com.l7tech.gateway.common.task.JobType;
 import com.l7tech.gateway.common.task.ScheduledTask;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -23,6 +27,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.HashMap;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 /**
  * @author alee, 8/11/2015
@@ -88,19 +93,7 @@ public class ScheduledTaskTransformerTest {
 
     @Test
     public void convertFromMO() throws Exception {
-        final ScheduledTaskMO mo = ManagedObjectFactory.createScheduledTaskMO();
-        mo.setId(TASK_GOID.toString());
-        mo.setVersion(1);
-        mo.setName(TASK_NAME);
-        mo.setPolicyReference(new ManagedObjectReference(PolicyMO.class, POLICY_GOID.toString()));
-        mo.setUseOneNode(true);
-        mo.setExecuteOnCreate(true);
-        mo.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
-        mo.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.SCHEDULED);
-        mo.setCronExpression(CRON_EXPRESSION);
-        mo.setProperties(new HashMap<String, String>());
-        mo.getProperties().put("userId", USER);
-        mo.getProperties().put("idProvider", PROVIDER_GOID.toString());
+        final ScheduledTaskMO mo = createDefaultMO();
         final ScheduledTask task = transformer.convertFromMO(mo, false, encryptor).getEntity();
 
         assertEquals(TASK_GOID, task.getGoid());
@@ -114,5 +107,86 @@ public class ScheduledTaskTransformerTest {
         assertEquals(CRON_EXPRESSION, task.getCronExpression());
         assertEquals(USER, task.getUserId());
         assertEquals(PROVIDER_GOID, task.getIdProviderGoid());
+    }
+
+    @Test
+    public void convertFromMOStrict() throws Exception {
+        final ScheduledTaskMO mo = createDefaultMO();
+        final Policy policy = buildTaskPolicy();
+        when(policyManager.findByPrimaryKey(POLICY_GOID)).thenReturn(policy);
+        final ScheduledTask task = transformer.convertFromMO(mo, true, encryptor).getEntity();
+
+        assertEquals(TASK_GOID, task.getGoid());
+        assertEquals(1, task.getVersion());
+        assertEquals(TASK_NAME, task.getName());
+        assertEquals(POLICY_GOID, task.getPolicyGoid());
+        assertTrue(task.isUseOneNode());
+        assertTrue(task.isExecuteOnCreate());
+        assertEquals(JobType.RECURRING, task.getJobType());
+        assertEquals(JobStatus.SCHEDULED, task.getJobStatus());
+        assertEquals(CRON_EXPRESSION, task.getCronExpression());
+        assertEquals(USER, task.getUserId());
+        assertEquals(PROVIDER_GOID, task.getIdProviderGoid());
+    }
+
+    @Test
+    public void convertFromMONullExecuteOnCreate() throws Exception {
+        final ScheduledTaskMO mo = createDefaultMO();
+        mo.setExecuteOnCreate(null);
+        final ScheduledTask task = transformer.convertFromMO(mo, false, encryptor).getEntity();
+        assertFalse(task.isExecuteOnCreate());
+    }
+
+    @Test(expected = ResourceFactory.InvalidResourceException.class)
+    public void convertFromMOStrictPolicyNotFound() throws Exception {
+        final ScheduledTaskMO mo = createDefaultMO();
+        when(policyManager.findByPrimaryKey(POLICY_GOID)).thenReturn(null);
+        try {
+            transformer.convertFromMO(mo, true, encryptor).getEntity();
+            fail("Expected InvalidResourceException");
+        } catch (final ResourceFactory.InvalidResourceException e) {
+            assertEquals(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, e.getType());
+            assertEquals("Resource validation failed due to 'INVALID_VALUES' Invalid or unknown policy reference '" + POLICY_GOID.toString() + "'.", e.getMessage());
+            throw e;
+        }
+    }
+
+    private Policy buildTaskPolicy() {
+        final Policy policy = new Policy(PolicyType.POLICY_BACKED_OPERATION, "Task Policy", "<xml/>", false);
+        policy.setGoid(POLICY_GOID);
+        policy.setInternalTag("com.l7tech.objectmodel.polback.BackgroundTask");
+        policy.setInternalSubTag("run");
+        return policy;
+    }
+
+    @Test(expected = ResourceFactory.InvalidResourceException.class)
+    public void convertFromMOStrictPolicyFindException() throws Exception {
+        final ScheduledTaskMO mo = createDefaultMO();
+        when(policyManager.findByPrimaryKey(POLICY_GOID)).thenThrow(new FindException("mocking exception"));
+        try {
+            transformer.convertFromMO(mo, true, encryptor).getEntity();
+            fail("Expected InvalidResourceException");
+        } catch (final ResourceFactory.InvalidResourceException e) {
+            assertEquals(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, e.getType());
+            assertEquals("Resource validation failed due to 'INVALID_VALUES' Invalid or unknown policy reference '" + POLICY_GOID.toString() + "'.", e.getMessage());
+            throw e;
+        }
+    }
+
+    private ScheduledTaskMO createDefaultMO() {
+        final ScheduledTaskMO mo = ManagedObjectFactory.createScheduledTaskMO();
+        mo.setId(TASK_GOID.toString());
+        mo.setVersion(1);
+        mo.setName(TASK_NAME);
+        mo.setPolicyReference(new ManagedObjectReference(PolicyMO.class, POLICY_GOID.toString()));
+        mo.setUseOneNode(true);
+        mo.setExecuteOnCreate(true);
+        mo.setJobType(ScheduledTaskMO.ScheduledTaskJobType.RECURRING);
+        mo.setJobStatus(ScheduledTaskMO.ScheduledTaskJobStatus.SCHEDULED);
+        mo.setCronExpression(CRON_EXPRESSION);
+        mo.setProperties(new HashMap<String, String>());
+        mo.getProperties().put("userId", USER);
+        mo.getProperties().put("idProvider", PROVIDER_GOID.toString());
+        return mo;
     }
 }

@@ -110,18 +110,21 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         if(strict){
             try {
                 Policy refPolicy = policyManager.findByPrimaryKey(scheduledTask.getPolicyGoid());
+                if(refPolicy == null) {
+                    throwPolicyNotFound(scheduledTaskMO);
+                }
                 if(!(PolicyType.POLICY_BACKED_OPERATION.equals(refPolicy.getType()) &&
                         "com.l7tech.objectmodel.polback.BackgroundTask".equals(refPolicy.getInternalTag())
                         && "run".equals(refPolicy.getInternalSubTag()))) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Policy referenced must be tagged Background task");
                 }
             } catch (FindException | IllegalArgumentException e) {
-                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid or unknown policy reference '" + scheduledTaskMO.getPolicyReference().getId() + "'.");
+                return throwPolicyNotFound(scheduledTaskMO);
             }
         }
 
         scheduledTask.setUseOneNode(scheduledTaskMO.isUseOneNode());
-        scheduledTask.setExecuteOnCreate(scheduledTaskMO.isExecuteOnCreate());
+        scheduledTask.setExecuteOnCreate(scheduledTaskMO.isExecuteOnCreate() == null ? false : scheduledTaskMO.isExecuteOnCreate());
         switch(scheduledTaskMO.getJobType()){
             case ONE_TIME:
                 scheduledTask.setJobType(JobType.ONE_TIME);
@@ -153,6 +156,10 @@ public class ScheduledTaskTransformer extends EntityManagerAPITransformer<Schedu
         doSecurityZoneFromMO(scheduledTaskMO, scheduledTask, strict);
 
         return new EntityContainer<>(scheduledTask);
+    }
+
+    private EntityContainer<ScheduledTask> throwPolicyNotFound(ScheduledTaskMO scheduledTaskMO) throws ResourceFactory.InvalidResourceException {
+        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid or unknown policy reference '" + scheduledTaskMO.getPolicyReference().getId() + "'.");
     }
 
     @NotNull
