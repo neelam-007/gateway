@@ -99,9 +99,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         testMappings.clear();
-        solutionKitsModel.deselectAll();
-        settings.setSelectedSolutionKits(new TreeSet<SolutionKit>());
-        solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
+
+        if  (settings.getSelectedSolutionKits().isEmpty()) {
+            solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
+        }
         solutionKitsToUpgrade = settings.getSolutionKitsToUpgrade();
         this.settings = settings;
 
