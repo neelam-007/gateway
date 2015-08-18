@@ -59,6 +59,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -179,17 +180,57 @@ public class PortalBootstrapManager {
             throw new IOException( e );
         }
 
-        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-        connection.setRequestMethod( "POST" );
-        connection.setSSLSocketFactory( socketFactory );
-        connection.setRequestProperty( "Content-Type", "application/json" );
-        connection.setDoOutput( true );
-        connection.getOutputStream().write( postBody );
-        boolean isBinary = ContentTypeHeader.parseValue(connection.getContentType()).matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
-        Document bundleDoc = setMappings( isBinary ? new GZIPInputStream(connection.getInputStream()):connection.getInputStream(), user, otkEntities.right, otkEntities.left, otkEntities.middle);
+        Document bundleDoc = null;
+        InputStream input = null;
+        OutputStream output = null;
+        HttpsURLConnection connection;
+        try {
+            connection = (HttpsURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setSSLSocketFactory(socketFactory);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            output = connection.getOutputStream();
+            output.write(postBody);
+
+            boolean isBinary = ContentTypeHeader.parseValue(connection.getContentType()).matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
+            if (isBinary) {
+                input = new GZIPInputStream(connection.getInputStream());
+            } else {
+                input = connection.getInputStream();
+            }
+
+            bundleDoc = setMappings(input, user, otkEntities.right, otkEntities.left, otkEntities.middle);
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+        }
+
         installBundle(bundleDoc, user);
 
-        // todo ack install
+        // Bundle installed, post back status
+        try {
+            connection = (HttpsURLConnection) new URL(enrollmentUrl + "&status=success").openConnection();
+            connection.setRequestMethod("POST");
+            connection.setSSLSocketFactory(socketFactory);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            output = connection.getOutputStream();
+            output.write(postBody);
+            final int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpsURLConnection.HTTP_OK) {
+                throw new IOException("Failed to post enrollment status to the portal.");
+            }
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
     }
 
     public Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> getOtkEntities() throws IOException {
