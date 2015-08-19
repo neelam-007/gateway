@@ -15,9 +15,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This panel contains a table that contains the mappings.
@@ -91,6 +89,10 @@ public class SolutionKitMappingsPanel extends JPanel {
 
         int modelIndex = mappingsTable.getRowSorter().convertRowIndexToModel(rowIndex);
         return mappingsModel.getRowObject(modelIndex);
+    }
+
+    public java.util.List<Mapping> getAllMappings() {
+        return mappingsModel.getRows();
     }
 
     /**

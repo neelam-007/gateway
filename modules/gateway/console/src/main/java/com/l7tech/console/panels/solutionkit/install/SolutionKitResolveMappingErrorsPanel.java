@@ -88,6 +88,13 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setResolvedEntityIds(resolvedEntityIdsMap);
+
+        // Do not allow any conflicts not resolved when installation starts.
+        if (! areAllConflictsResolved()) {
+            DialogDisplayer.showMessageDialog(this, "Please resolve all conflicts before installation starts.", "Solution Kit Installation Warning", JOptionPane.WARNING_MESSAGE, null);
+
+            throw new RuntimeException("All conflicts must be resolved before installation.");
+        }
     }
 
     private void initialize() {
@@ -122,6 +129,30 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         resolveButton.setEnabled(enabled);
     }
 
+    private boolean areAllConflictsResolved() {
+        int numOfErrors = 0;
+        for (Component component: solutionKitMappingsTabbedPane.getComponents()) {
+            if (component instanceof SolutionKitMappingsPanel) {
+                SolutionKitMappingsPanel solutionKitMappingsPanel = (SolutionKitMappingsPanel) component;
+                for (Mapping mapping: solutionKitMappingsPanel.getAllMappings()) {
+                    if (mapping != null) {
+                        Mapping.ErrorType errorType = mapping.getErrorType();
+                        if (errorType != null) {
+                            numOfErrors++;
+                        }
+                    }
+                }
+            }
+        }
+
+        int numOfResolved = 0;
+        for (Map<String, String> idsMap: resolvedEntityIdsMap.values()) {
+            numOfResolved += idsMap.size();
+        }
+
+        return numOfErrors == numOfResolved;
+    }
+
     private void onResolve(@NotNull final SolutionKitMappingsPanel solutionKitMappingsPanel) {
         Mapping mapping = solutionKitMappingsPanel.getSelectedMapping();
         if (mapping == null) {
@@ -133,13 +164,13 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             return;
         }
 
-        final Boolean allowOverride = mapping.getProperty(SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+        /*final Boolean allowOverride = mapping.getProperty(SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
         if (allowOverride == null || !allowOverride) {
             DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
                     "<br>This mapping requires the property '" + SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' be set to true by the .skar author.</html>",
                     "Error Resolving Entity Conflict", JOptionPane.ERROR_MESSAGE, null);
             return;
-        }
+        }*/
 
         final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping,
             solutionKitMappingsPanel.getBundleItems().get(mapping.getSrcId())

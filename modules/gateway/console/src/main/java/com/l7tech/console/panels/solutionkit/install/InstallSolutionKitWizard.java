@@ -96,7 +96,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     @Override
     protected void finish(ActionEvent evt) {
         if (wizardInput != null) { // wizardInput is a SolutionKitConfig object.
-            getSelectedWizardPanel().storeSettings(wizardInput);
+            try {
+                getSelectedWizardPanel().storeSettings(wizardInput);
+            } catch (Exception e) {
+                // do nothing, just exit "Finish" and the wizard still starts opened.
+                return;
+            }
         }
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
