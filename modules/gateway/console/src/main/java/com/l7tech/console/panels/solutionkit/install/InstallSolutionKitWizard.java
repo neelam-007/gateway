@@ -113,6 +113,11 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 if (isParentSKToUpgrade) {
                     final SolutionKit firstElement = solutionKitsToUpgrade.get(0); // The first element is a real parent solution kit.
                     parentGoid = firstElement.getGoid();
+                    // Update the parent solution kit attributes
+                    firstElement.setName(parentSK.getName());
+                    firstElement.setSolutionKitVersion(parentSK.getSolutionKitVersion());
+                    firstElement.setXmlProperties(parentSK.getXmlProperties());
+
                     solutionKitAdmin.updateSolutionKit(firstElement);
                 }
                 // Case 2: Parent for install
