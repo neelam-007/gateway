@@ -20,6 +20,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 /**
+ * Utility class for testing signing and signature validation
  */
 @Ignore
 public class SignatureTestUtils {

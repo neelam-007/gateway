@@ -6,8 +6,11 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SignatureException;
 import java.util.Collection;
 
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
@@ -147,4 +150,19 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      */
     @Secured(stereotype = MethodStereotype.DELETE_BY_ID)
     void deleteSolutionKit(@NotNull Goid goid) throws FindException, DeleteException;
+
+    /**
+     * Checks signature and also verifies that signer cert is trusted.
+     *
+     * @param digest                 SHA-256 digest of the raw input material (i.e. Skar file raw bytes).  Required and cannot be {@code null}.
+     *                               Note: this MUST NOT just be the value claimed by the sender -- it must be a freshly
+     *                               computed value from hashing the information covered by the signature.
+     * @param signatureProperties    Signature properties reader, holding ASN.1 encoded X.509 certificate as Base64 string
+     *                               and ASN.1 encoded signature value as Base64 string.
+     * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Administrative(licensed=false, background = true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+    void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
 }

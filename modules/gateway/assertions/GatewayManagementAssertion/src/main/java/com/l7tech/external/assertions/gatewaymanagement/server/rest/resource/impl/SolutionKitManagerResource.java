@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminImpl;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
@@ -58,6 +59,8 @@ public class SolutionKitManagerResource {
     private SolutionKitManager solutionKitManager;
     @SpringBean
     private LicenseManager licenseManager;
+    @SpringBean
+    private SignatureVerifier signatureVerifier;
 
     public SolutionKitManagerResource() {}
 
@@ -89,7 +92,8 @@ public class SolutionKitManagerResource {
 
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-            skarProcessor.load(fileInputStream);
+            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
+            skarProcessor.load(fileInputStream, solutionKitAdmin);
 
             // handle any user selection(s)
             setUserSelections(solutionKitsConfig, solutionKitSelects);
@@ -100,7 +104,6 @@ public class SolutionKitManagerResource {
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
             // install or upgrade skars
-            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager);
             for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
 
                 // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
@@ -147,7 +150,7 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
-            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager);
+            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
             final AsyncAdminMethods.JobId<String> jobId = solutionKitAdmin.uninstall(solutionKitToUninstall.getGoid());
             processJobResult(solutionKitAdmin, jobId);
         } catch (SolutionKitManagerResourceException e) {

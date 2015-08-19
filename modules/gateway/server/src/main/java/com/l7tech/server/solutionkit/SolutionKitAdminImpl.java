@@ -8,14 +8,18 @@ import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
+import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.Background;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -33,13 +37,21 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Inject
     private LicenseManager licenseManager;
 
+    @Inject
+    @Named( "signatureVerifier" )
+    final void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+        this.signatureVerifier = signatureVerifier;
+    }
+    private SignatureVerifier signatureVerifier;
+
 
     @SuppressWarnings("unused")   // used for spring configuration
     public SolutionKitAdminImpl() {}
 
-    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager) {
+    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager, SignatureVerifier signatureVerifier) {
         this.licenseManager = licenseManager;
         this.solutionKitManager = solutionKitManager;
+        this.signatureVerifier = signatureVerifier;
     }
 
     @NotNull
@@ -212,6 +224,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Override
     public void deleteSolutionKit(@NotNull Goid goid) throws FindException, DeleteException {
         solutionKitManager.delete(goid);
+    }
+
+    @Override
+    public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
+        signatureVerifier.verify(digest, signatureProperties);
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {

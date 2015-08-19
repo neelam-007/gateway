@@ -361,12 +361,13 @@ public class SignerUtils {
      *
      * @see #walkSignedZip(java.io.InputStream, SignedZipVisitor, boolean)
      */
+    @NotNull
     public static <Data, SigProps> Pair<Data, SigProps> walkSignedZip(
             @NotNull final File zipFile,
             @NotNull final SignedZipVisitor<Data, SigProps> visitor,
             final boolean strict
     ) throws IOException {
-        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(zipFile))) {
+        try (final InputStream bis = new BufferedInputStream(new FileInputStream(zipFile))) {
             return walkSignedZip(bis, visitor, strict);
         }
     }
@@ -389,6 +390,7 @@ public class SignerUtils {
      * @throws IOException if either signed data or signature properties entries have not been found in the signed zip
      * or an IO error happens while walking through the signed zip.
      */
+    @NotNull
     public static <Data, SigProps> Pair<Data, SigProps> walkSignedZip(
             @NotNull final InputStream zipFileStream,
             @NotNull final SignedZipVisitor<Data, SigProps> visitor,

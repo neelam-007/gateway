@@ -1,13 +1,17 @@
 package com.l7tech.gateway.common.api.solutionkit;
 
+import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.UntrustedSolutionKitException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
@@ -24,7 +28,13 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
 import java.io.*;
 import java.net.URL;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -135,9 +145,73 @@ public class SkarProcessor {
     }
 
     /**
-     * Load and process the files inside the SKAR.
+     * Load and process the files inside the SKAR.<br/>
+     * Note that the SKAR file must be signed with trusted signer.
+     *
+     * @param skarStream          An {@code InputStream} of signed SKAR file.  Required and cannot be {@code null}.
+     * @param solutionKitAdmin    Solution kit admin interface used to verify SKAR signature.  Required and cannot be {@code null}.
+     * @throws SolutionKitException if an error happens while processing the specified SKAR file
+     * @throws UntrustedSolutionKitException if the specified SKAR is not signed
+     * with trusted signer or SKAR file signature is not verified.
      */
-    public void load(@NotNull InputStream inputStream) throws SolutionKitException {
+    public void load(
+            @NotNull final InputStream skarStream,
+            @NotNull final SolutionKitAdmin solutionKitAdmin
+    ) throws SolutionKitException {
+        // todo: for now load in-memory, must revisit this logic later
+        // skarStream is not markable, therefore the stream cannot be read multiple times (once for verifying the signature, the other to load the content)
+        // perhaps use a temporary file to stash the raw bytes of the SKAR file (need to check if tmp file works from the applet)
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        try {
+            // get SHA-256 the message digest
+            final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
+            // process signed zip file to calculate digest
+            final Pair<byte[], String> digestAndSignature = SignerUtils.walkSignedZip(
+                    skarStream,
+                    new SignedZipVisitor<byte[], String>() {
+                        @Override
+                        public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
+                            // calc SHA-256 of SIGNED_DATA_ZIP_ENTRY
+                            final TeeInputStream tis = new TeeInputStream(inputStream, bos);
+                            final DigestInputStream dis = new DigestInputStream(tis, messageDigest);
+                            IOUtils.copyStream(dis, new com.l7tech.common.io.NullOutputStream());
+                            return dis.getMessageDigest().digest();
+                        }
+
+                        @Override
+                        public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                            // read the signature properties
+                            final StringWriter writer = new StringWriter();
+                            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
+                                IOUtils.copyStream(reader, writer);
+                                writer.flush();
+                            }
+                            return writer.toString();
+                        }
+                    },
+                    true
+            );
+
+            // verify SKAR signature
+            solutionKitAdmin.verifySkarSignature(digestAndSignature.left, digestAndSignature.right);
+
+        } catch (final IOException | NoSuchAlgorithmException | SignatureException e) {
+            throw new UntrustedSolutionKitException("Error loading signed skar file :" + e.getMessage(), e);
+        }
+
+        // finally load the SKAR file without the signature
+        loadWithoutSignatureCheck(new ByteArrayInputStream(bos.toByteArray()));
+    }
+
+    /**
+     * Load and process the files inside the SKAR.
+     *
+     * @param inputStream    SKAR file {@code InputStream}.  Required and cannot be {@code null}.
+     * @throws SolutionKitException if an error happens while processing the specified SKAR file.
+     */
+    private void loadWithoutSignatureCheck(@NotNull InputStream inputStream) throws SolutionKitException {
         ZipInputStream zis = null;
         try {
             final SolutionKit solutionKit = new SolutionKit();
@@ -173,7 +247,7 @@ public class SkarProcessor {
                         default:
                             if (fileName.endsWith(".skar")) {
                                 // Get the input bytes for a child SKAR, create a new input stream, and call recursively call the load method.
-                                load(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
+                                loadWithoutSignatureCheck(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
                                 foundChildSkar = true;
                             } else {
                                 logger.warning("Unexpected entry in solution kit: " + entry.getName());

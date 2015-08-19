@@ -3,10 +3,12 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.ExceptionUtils;
@@ -37,15 +39,18 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String STEP_DESC = "Specify the location of solution kit file (skar) to install.";
 
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
+    private static final FileFilter SIGNED_SK_FILE_FILTER = FileChooserUtil.buildFilter(".signed", "Signed Skar (*.signed)");
 
     private JPanel mainPanel;
     private JTextField fileTextField;
     private JButton fileButton;
 
     private SolutionKitsConfig solutionKitsConfig;
+    private final SolutionKitAdmin solutionKitAdmin;
 
     public SolutionKitLoadPanel() {
         super(null);
+        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         initialize();
     }
 
@@ -91,7 +96,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(file);
-            new SkarProcessor(solutionKitsConfig).load(fis);
+            new SkarProcessor(solutionKitsConfig).load(fis, solutionKitAdmin);
         } catch (IOException | SolutionKitException e) {
             solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
@@ -192,7 +197,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                 fc.setDialogTitle("Choose Solution Kit");
                 fc.setDialogType(JFileChooser.OPEN_DIALOG);
                 fc.setMultiSelectionEnabled(false);
-                fc.setFileFilter(SK_FILE_FILTER);
+                fc.addChoosableFileFilter(SK_FILE_FILTER);
+                fc.addChoosableFileFilter(SIGNED_SK_FILE_FILTER);
+                fc.setFileFilter(SIGNED_SK_FILE_FILTER);
 
                 int result = fc.showOpenDialog(SolutionKitLoadPanel.this);
                 if (JFileChooser.APPROVE_OPTION != result) {

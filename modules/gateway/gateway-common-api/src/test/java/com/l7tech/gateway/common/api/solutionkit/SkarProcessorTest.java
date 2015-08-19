@@ -7,13 +7,18 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.UntrustedSolutionKitException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -31,18 +36,22 @@ import static org.mockito.Mockito.verify;
  * .skar file reading i/o might make this test run relatively slow; if so use this annotation so tests only run for full build
  * // @ConditionalIgnore(condition = IgnoreOnDaily.class) //
  */
+@RunWith(MockitoJUnitRunner.class)
 public class SkarProcessorTest {
     private static final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
     private static final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
 
+
     @BeforeClass
     public static void load() throws Exception {
-        // IDEA does not copy test .skar resource files into the output directory
-        // https://www.jetbrains.com/idea/help/resource-files.html?search=Resource%20Files
-        // TODO Is there a way to configure with our build target? E.g. ./build.sh idea
-        // work around this by changing the suffix for now
-        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("SimpleSolutionKit-1.1.skar.xml");
-        skarProcessor.load(inputStream);
+        // get the input stream of a signed solution kit
+        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-signed.skar");
+        Assert.assertNotNull(inputStream);
+        // do nothing to verify signature (simulate skar is trusted)
+        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
+        // load the skar file
+        skarProcessor.load(inputStream, solutionKitAdmin);
     }
 
     @Test
@@ -148,12 +157,15 @@ public class SkarProcessorTest {
 
     @Test
     public void invalidLoads() throws Exception {
+        // mock SolutionKitAdmin
+        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
         // expect error message "... value cannot be empty."
         SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
         SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("SimpleSolutionKit-1.0-EmptyMetadataElements.skar.xml");
+        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements-signed.skar");
+        Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("value cannot be empty."));
@@ -162,9 +174,10 @@ public class SkarProcessorTest {
         // expect error message "Required element ... not found"
         invalidSolutionKitsConfig = new SolutionKitsConfig();
         invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("SimpleSolutionKit-1.0-MissingMetadataElements.skar.xml");
+        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements-signed.skar");
+        Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Required element"));
@@ -173,12 +186,31 @@ public class SkarProcessorTest {
         // expect error message "Missing required file ..."
         invalidSolutionKitsConfig = new SolutionKitsConfig();
         invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("SimpleSolutionKit-1.0-MissingInstallBundle.skar.xml");
+        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle-signed.skar");
+        Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Missing required file"));
+        }
+    }
+
+    @Test
+    public void unsignedSkar() throws Exception {
+        // mock SolutionKitAdmin
+        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+
+        // expect error message "... value cannot be empty."
+        SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
+        SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
+        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-unsigned.skar");
+        Assert.assertNotNull(invalidInputStream);
+        try {
+            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
+            fail("Expected: an invalid .skar file.");
+        } catch (UntrustedSolutionKitException e) {
+            assertThat(e.getMessage(), Matchers.containsString("Invalid signed Zip"));
         }
     }
 }
