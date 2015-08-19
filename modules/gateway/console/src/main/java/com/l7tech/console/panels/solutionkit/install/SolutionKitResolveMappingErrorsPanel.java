@@ -164,13 +164,13 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             return;
         }
 
-        /*final Boolean allowOverride = mapping.getProperty(SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+        final Boolean allowOverride = mapping.getProperty(SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
         if (allowOverride == null || !allowOverride) {
             DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
                     "<br>This mapping requires the property '" + SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' be set to true by the .skar author.</html>",
                     "Error Resolving Entity Conflict", JOptionPane.ERROR_MESSAGE, null);
             return;
-        }*/
+        }
 
         final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping,
             solutionKitMappingsPanel.getBundleItems().get(mapping.getSrcId())
