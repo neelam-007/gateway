@@ -127,7 +127,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private boolean testInstall(final SolutionKit solutionKit) {
-        boolean success = false;
         String errorMessage = "";
 
         // For installation, check if instance modifier is unique for a selected solution kit.
@@ -159,41 +158,37 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             return false;
         }
         try {
-            Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
+            final String result = AdminGuiUtils.doAsyncAdminWithException(
                     solutionKitAdmin,
                     this.getOwner(),
                     "Testing Solution Kit",
                     "The gateway is testing selected solution kit(s)",
                     solutionKitAdmin.testInstall(solutionKit, bundle),
-                    false);
+                    false
+            );
 
-            if (result.isLeft()) {
-                errorMessage = result.left();
-                logger.log(Level.WARNING, errorMessage);
-            } else if (result.isRight()) {
-                Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result.right())));
-                Mappings mappings = (Mappings)item.getContent();
-                testMappings.put(solutionKit, mappings);
-                success = true;
-            }
+            Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
+            Mappings mappings = (Mappings) item.getContent();
+            testMappings.put(solutionKit, mappings);
+
         } catch (InvocationTargetException | IOException e) {
             testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         } catch (InterruptedException e) {
             testMappings.clear();
-            return false;
-        }
-
-        if (!success) {
-            Throwable throwable = new Throwable(errorMessage);
-            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", throwable);
+        } catch (SolutionKitException t) {  //for expected and foreseeable errors, display to the user for correction
+            errorMessage = ExceptionUtils.getMessage(t);
+            logger.log(Level.WARNING, errorMessage);
+            DialogDisplayer.showMessageDialog(this, errorMessage + ".  See Policy Manager log for more details.", "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
+        } catch (Throwable t) { //for unexpected, unhandled exceptions, show the standard BIG ERROR dialog
+            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", t);
             Utilities.centerOnParentWindow(errorMessageDialog);
             DialogDisplayer.pack(errorMessageDialog);
             DialogDisplayer.display(errorMessageDialog);
         }
 
-        return success;
+        return true; //No errors, we're good to go
     }
 
     @Override

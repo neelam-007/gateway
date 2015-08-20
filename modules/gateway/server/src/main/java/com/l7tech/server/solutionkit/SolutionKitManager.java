@@ -26,7 +26,7 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws SolutionKitException
      */
     @NotNull
-    String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException;
+    String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws SaveException, SolutionKitException, Exception;
 
     /**
      * Find a list of Solution Kits by a given GUID.

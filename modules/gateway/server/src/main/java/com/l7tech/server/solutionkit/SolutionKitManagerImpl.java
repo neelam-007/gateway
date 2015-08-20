@@ -1,5 +1,6 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
@@ -24,9 +25,9 @@ import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
+import org.apache.commons.lang.UnhandledException;
+import org.apache.cxf.helpers.XMLUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -36,9 +37,13 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -133,7 +138,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
+    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException, Exception {
         final RestmanInvoker restmanInvoker = getRestmanInvoker();
 
         final String requestXml;
@@ -176,14 +181,41 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 throw new SolutionKitException(result.right.getAsString());
             }
             return result.right.getAsString();
-        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException | SAXException e) {
+        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | IOException | SAXException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new SolutionKitException(ExceptionUtils.getMessage(e), e);
+        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw getRestmanErrorDetail(e);
         } catch (InterruptedException e) {
             // do nothing.
         }
 
         return "";
+    }
+
+    /**
+     * This method will parse out the restman response and look for the <l7:Detail> tag to get the error message
+     * details.  If that string contains the word "Exception", it will create a new Exception based on that string
+     * value and throw it as a regular Exception (this is for unhandled exceptions).  Not the ideal way to
+     * do this, but given the SK codebase as is stands now, there isn't much of a choice.
+     *
+     * @param ex Restman exception
+     * @return The error message detail string
+     * @throws Exception
+     */
+    private SolutionKitException getRestmanErrorDetail(@NotNull GatewayManagementDocumentUtilities.UnexpectedManagementResponse ex) throws Exception {
+        try {
+            final Document doc = XmlUtil.parse(ExceptionUtils.getMessage(ex));
+            final Element msgDetailsNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Detail");
+            final String detailMsg = XmlUtil.getTextValue(msgDetailsNode, true);
+            if (detailMsg.contains("Exception"))
+                throw (new Exception(detailMsg));
+            else
+                return new SolutionKitException(detailMsg);
+        } catch (final SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
+            throw ex;
+        }
     }
 
     @NotNull
