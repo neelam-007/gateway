@@ -20,7 +20,6 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -106,28 +105,28 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
-        final SolutionKit parentSK = wizardInput.getParentSolutionKit(); // Note: The parent solution kit has a dummy default GOID.
+        final SolutionKit parentSKFromLoad = wizardInput.getParentSolutionKit(); // Note: The parent solution kit has a dummy default GOID.
         Goid parentGoid = null;
 
-        if (parentSK != null) {
+        if (parentSKFromLoad != null) {
             final List<SolutionKit> solutionKitsToUpgrade = wizardInput.getSolutionKitsToUpgrade();
-            final boolean isParentSKToUpgrade = (! solutionKitsToUpgrade.isEmpty()) && solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentSK.getSolutionKitGuid());
+            final boolean isParentSKToUpgrade = (! solutionKitsToUpgrade.isEmpty()) && solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentSKFromLoad.getSolutionKitGuid());
 
             try {
                 // Case 1: Parent for upgrade
                 if (isParentSKToUpgrade) {
-                    final SolutionKit firstElement = solutionKitsToUpgrade.get(0); // The first element is a real parent solution kit.
-                    parentGoid = firstElement.getGoid();
+                    final SolutionKit parentSKFromDB = solutionKitsToUpgrade.get(0); // The first element is a real parent solution kit.
+                    parentGoid = parentSKFromDB.getGoid();
                     // Update the parent solution kit attributes
-                    firstElement.setName(parentSK.getName());
-                    firstElement.setSolutionKitVersion(parentSK.getSolutionKitVersion());
-                    firstElement.setXmlProperties(parentSK.getXmlProperties());
+                    parentSKFromDB.setName(parentSKFromLoad.getName());
+                    parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
+                    parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
 
-                    solutionKitAdmin.updateSolutionKit(firstElement);
+                    solutionKitAdmin.updateSolutionKit(parentSKFromDB);
                 }
                 // Case 2: Parent for install
                 else {
-                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSK.getSolutionKitGuid());
+                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
                     // Case 2.1: Find the parent already installed on gateway
                     if (solutionKitsExistingOnGateway.size() > 0) {
                         final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
@@ -136,18 +135,18 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     }
                     // Case 2.2: No such parent installed on gateway
                     else {
-                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSK);
+                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSKFromLoad);
                     }
                 }
             } catch (Exception e) {
                 String msg = ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                errorKitList.add(new Pair<>(msg, parentSK));
+                errorKitList.add(new Pair<>(msg, parentSKFromLoad));
             }
         }
 
         for (SolutionKit solutionKit: wizardInput.getSelectedSolutionKits()) {
-            if (parentSK != null) {
+            if (parentSKFromLoad != null) {
                 solutionKit.setParentGoid(parentGoid);
             }
             try {

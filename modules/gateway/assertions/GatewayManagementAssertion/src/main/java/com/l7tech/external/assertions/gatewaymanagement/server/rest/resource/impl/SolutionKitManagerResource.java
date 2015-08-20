@@ -15,6 +15,8 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminImpl;
 import com.l7tech.server.solutionkit.SolutionKitManager;
@@ -95,16 +97,43 @@ public class SolutionKitManagerResource {
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
             skarProcessor.load(fileInputStream, solutionKitAdmin);
 
+            // Check if the loaded skar is a collection of skars
+            final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
+            Goid parentGoid = null;
+            if (parentSKFromLoad != null) {
+                // Case 1: Parent for upgrade
+                if (upgradeGuid != null) {
+                    // todo:ms this will be implemented soon in a separate sub-task, "Upgrade".
+                }
+                // Case 2: Parent for install
+                else {
+                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
+                    // Case 2.1: Find the parent already installed on gateway
+                    if (solutionKitsExistingOnGateway.size() > 0) {
+                        final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
+                        parentGoid = parentExistingOnGateway.getGoid();
+                        solutionKitAdmin.updateSolutionKit(parentExistingOnGateway);
+                    }
+                    // Case 2.2: No such parent installed on gateway
+                    else {
+                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSKFromLoad);
+                    }
+                }
+            }
+
             // handle any user selection(s)
             setUserSelections(solutionKitsConfig, solutionKitSelects);
 
             // remap any entity id(s)
             // TODO express with restman mapping syntax instead?
-            //todo:ms Multiple skars modification: entityIdReplaces should be a map keyed by SolutionKit like this Map<SolutionKit, List<FormDataBodyPart>
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
             // install or upgrade skars
             for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
+                // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
+                if (parentSKFromLoad != null) {
+                    solutionKit.setParentGoid(parentGoid);
+                }
 
                 // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
                 skarProcessor.invokeCustomCallback(solutionKit);
@@ -115,7 +144,8 @@ public class SolutionKitManagerResource {
         } catch (SolutionKitManagerResourceException e) {
             return e.getResponse();
         } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
-                AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException e) {
+                AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
+                SaveException | FindException | UpdateException e) {
             return status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         }
 
@@ -195,9 +225,7 @@ public class SolutionKitManagerResource {
 
     // remap any entity id(s)
     private void remapEntityIds(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> entityIdReplaces) throws UnsupportedEncodingException {
-        //todo:ms Multiple skars modification: entityIdReplaces should be a map keyed by SolutionKit like this Map<SolutionKit, List<FormDataBodyPart>
         if (entityIdReplaces != null) {
-            //todo:ms Multiple skars modification: entityIdReplaceMap should be a map keyed by SolutionKit like this Map<SolutionKit, Map<String, String>>
             Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces.size());
             String entityIdReplaceStr;
             for (FormDataBodyPart entityIdReplace : entityIdReplaces) {
@@ -206,7 +234,7 @@ public class SolutionKitManagerResource {
                     decodeSplitPut(entityIdReplaceStr, entityIdReplaceMap);
                 }
             }
-            //todo:ms Multiple skars modification: (A problem here is the same entityIdReplaceMap used for all solution kits.)
+
             Map<SolutionKit, Map<String, String>> idRemapBySolutionKit = new HashMap<>();
             for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
                 idRemapBySolutionKit.put(solutionKit, entityIdReplaceMap);
