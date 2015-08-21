@@ -39,16 +39,16 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @Override
     public List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
     public List<SolutionKitHeader> findAllExcludingChildren() throws FindException {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
     public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
-        return null;
+        return Collections.emptyList();
     }
 }
