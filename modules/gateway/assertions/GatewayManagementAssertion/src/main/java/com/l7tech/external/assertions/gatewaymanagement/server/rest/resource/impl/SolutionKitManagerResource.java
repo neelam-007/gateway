@@ -12,11 +12,9 @@ import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminImpl;
 import com.l7tech.server.solutionkit.SolutionKitManager;
@@ -107,16 +105,16 @@ public class SolutionKitManagerResource {
                 }
                 // Case 2: Parent for install
                 else {
-                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
+                    final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
                     // Case 2.1: Find the parent already installed on gateway
                     if (solutionKitsExistingOnGateway.size() > 0) {
                         final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
                         parentGoid = parentExistingOnGateway.getGoid();
-                        solutionKitAdmin.updateSolutionKit(parentExistingOnGateway);
+                        solutionKitManager.update(parentExistingOnGateway);
                     }
                     // Case 2.2: No such parent installed on gateway
                     else {
-                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSKFromLoad);
+                        parentGoid = solutionKitManager.save(parentSKFromLoad);
                     }
                 }
             }
@@ -160,12 +158,15 @@ public class SolutionKitManagerResource {
      * @return TODO
      */
     @DELETE
-    public Response uninstall(final @QueryParam("id") String deleteGuid) {
+    public Response uninstall(
+        final @QueryParam("id") String deleteGuid/*,
+        final @QueryParam("childId") List<String> childGuidsInQueryParam*/) {
 
         // Couldn't use Solution Kit ID in the URL to upgrade (i.e. @Path("{id}") and @PathParam("id")).
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
+        List<String> childGuidsInQueryParam = null;
         try {
             if (StringUtils.isEmpty(deleteGuid)) {
                 // HTTP DELETE, "no content" has no response body so we write the details into the log
@@ -173,19 +174,75 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
-            // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits, the next line is temporarily changed to use the first returned element.  Please change the next line as needed.
-            final SolutionKit solutionKitToUninstall = solutionKitManager.findBySolutionKitGuid(deleteGuid).get(0);
-            if (solutionKitToUninstall == null) {
+            final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(deleteGuid);
+            if (solutionKitsExistingOnGateway.isEmpty()) {
                 logger.info("No Solution Kit ID " + deleteGuid + " found for uninstall.");
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
-            final AsyncAdminMethods.JobId<String> jobId = solutionKitAdmin.uninstall(solutionKitToUninstall.getGoid());
-            processJobResult(solutionKitAdmin, jobId);
+
+            // Find the first solution kit matching the given guid, deleteGuid.
+            // todo: if there are multiple solution kits with the same guid, in future probably need to introduce a new query parameter, instance modifier to unify a solution kit.
+            final SolutionKit solutionKitToUninstall = solutionKitsExistingOnGateway.get(0);
+            final Collection<SolutionKitHeader> childrenHeaders = solutionKitManager.findAllChildrenByParentGoid(solutionKitToUninstall.getGoid());
+
+            // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
+            int numOfUninstalled = 0;
+            if (! childrenHeaders.isEmpty()) {
+                // There are no child guids specified in the query param, which means uninstall all child solution kits.
+                if (childGuidsInQueryParam.isEmpty()) {
+                    AsyncAdminMethods.JobId<String> jobId;
+                    for (SolutionKitHeader childHeader: childrenHeaders) {
+                        jobId = solutionKitAdmin.uninstall(childHeader.getGoid());
+                        processJobResult(solutionKitAdmin, jobId);
+                    }
+                }
+                // Otherwise, uninstall specified child solution kits.
+                else {
+                    Map<String, SolutionKitHeader> childSKMap = new HashMap<>(childrenHeaders.size());
+                    for (SolutionKitHeader childHeader: childrenHeaders) {
+                        childSKMap.put(childHeader.getSolutionKitGuid(), childHeader);
+                    }
+
+                    // Check if given child guild is valid or not.  If found any, stop uninstall and do not allow partial uninstallation until fix wrong guid.
+                    Set<String> allChildGuids = childSKMap.keySet();
+                    for (String givenChildGuid: childGuidsInQueryParam) {
+                        if (! allChildGuids.contains(givenChildGuid)) {
+                            logger.info("Child Solution Kit GUID " + givenChildGuid + " is not valid.");
+                            throw new SolutionKitManagerResourceException(Response.noContent().build());
+                        }
+                    }
+
+                    // Uninstall each child solution kit
+                    SolutionKitHeader childHeader;
+                    AsyncAdminMethods.JobId<String> jobId;
+                    for (String childGuidInParam: childGuidsInQueryParam) {
+                        childHeader = childSKMap.get(childGuidInParam);
+                        jobId = solutionKitAdmin.uninstall(childHeader.getGoid());
+                        processJobResult(solutionKitAdmin, jobId);
+                        numOfUninstalled++;
+                    }
+                }
+            } else if (! childGuidsInQueryParam.isEmpty()) {
+                // Just give an info and do not throw any error
+                // Ignore redundant given child guids.
+                logger.info("Redundant child solution kit guid(s) given, since there are not child solution kits associated with '" + solutionKitToUninstall.getName() + "'");
+            }
+
+            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUninstall.getMappings())) {
+                if (childGuidsInQueryParam.isEmpty() || numOfUninstalled == childrenHeaders.size()) {
+                    // Delete the parent solution kit, after all children are deleted at the above step.
+                    solutionKitManager.delete(solutionKitToUninstall.getGoid());
+                }
+            } else {
+                // Uninstall a non-parent solution kit
+                final AsyncAdminMethods.JobId<String> jobId = solutionKitAdmin.uninstall(solutionKitToUninstall.getGoid());
+                processJobResult(solutionKitAdmin, jobId);
+            }
         } catch (SolutionKitManagerResourceException e) {
             return e.getResponse();
-        } catch (SolutionKitException | InterruptedException | FindException |
+        } catch (SolutionKitException | InterruptedException | FindException | DeleteException|
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException e) {
             logger.warning(ExceptionUtils.getMessage(e));
             return Response.noContent().build();
