@@ -154,19 +154,19 @@ public class SolutionKitManagerResource {
 
     /**
      * Uninstall the Solution Kit record and the entities installed from the original SKAR (if delete mappings were provided by the SKAR author).
-     * @param deleteGuid Solution Kit ID to delete.
+     * @param deleteGuid Solution Kit GUID to delete.
+     * @param childGuidsInQueryParam GUIDs of child solution kits to delete
      * @return TODO
      */
     @DELETE
     public Response uninstall(
-        final @QueryParam("id") String deleteGuid/*,
-        final @QueryParam("childId") List<String> childGuidsInQueryParam*/) {
+        final @QueryParam("id") String deleteGuid,
+        final @QueryParam("childId") List<String> childGuidsInQueryParam) {
 
         // Couldn't use Solution Kit ID in the URL to upgrade (i.e. @Path("{id}") and @PathParam("id")).
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
-        List<String> childGuidsInQueryParam = null;
         try {
             if (StringUtils.isEmpty(deleteGuid)) {
                 // HTTP DELETE, "no content" has no response body so we write the details into the log
