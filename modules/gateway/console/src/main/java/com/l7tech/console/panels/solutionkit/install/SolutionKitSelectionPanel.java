@@ -127,6 +127,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private boolean testInstall(final SolutionKit solutionKit) {
+        boolean success = false;
         String errorMessage = "";
 
         // For installation, check if instance modifier is unique for a selected solution kit.
@@ -170,7 +171,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
             Mappings mappings = (Mappings) item.getContent();
             testMappings.put(solutionKit, mappings);
-
+            success = true;
         } catch (InvocationTargetException | IOException e) {
             testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
@@ -188,7 +189,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             DialogDisplayer.display(errorMessageDialog);
         }
 
-        return true; //No errors, we're good to go
+        return success;
     }
 
     @Override
