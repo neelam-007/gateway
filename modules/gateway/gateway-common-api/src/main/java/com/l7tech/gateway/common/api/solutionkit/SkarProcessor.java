@@ -211,7 +211,7 @@ public class SkarProcessor {
      * @param inputStream    SKAR file {@code InputStream}.  Required and cannot be {@code null}.
      * @throws SolutionKitException if an error happens while processing the specified SKAR file.
      */
-    private void loadWithoutSignatureCheck(@NotNull InputStream inputStream) throws SolutionKitException {
+    void loadWithoutSignatureCheck(@NotNull InputStream inputStream) throws SolutionKitException {
         ZipInputStream zis = null;
         try {
             final SolutionKit solutionKit = new SolutionKit();

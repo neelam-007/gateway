@@ -99,6 +99,8 @@ public class SignatureVerifierImpl implements SignatureVerifier {
         final X509Certificate sawSigner;
         try {
             sawSigner = SignerUtils.verifyZip(zipToVerify);
+        } catch (final SignatureException e) {
+            throw e;
         } catch (final Exception e) {
             throw new SignatureException("Failed to verify and extracts signer certificate", e);
         }
@@ -132,6 +134,8 @@ public class SignatureVerifierImpl implements SignatureVerifier {
             final Properties sigProps = new Properties();
             sigProps.load(reader);
             sawSigner = SignerUtils.verifySignatureWithDigest(digest, sigProps);
+        } catch (final SignatureException e) {
+            throw e;
         } catch (final Exception e) {
             throw new SignatureException("Failed to verify and extract signer certificate", e);
         }
@@ -170,22 +174,6 @@ public class SignatureVerifierImpl implements SignatureVerifier {
             throw new SignatureException("Failed to calculate content digest", e);
         }
 
-        // extract content signer cert
-        final X509Certificate sawSigner;
-        assert signatureProperties != null;
-        try (final StringReader reader = new StringReader(signatureProperties)) {
-            final Properties sigProps = new Properties();
-            sigProps.load(reader);
-            sawSigner = SignerUtils.verifySignatureWithDigest(computedDigest, sigProps);
-        } catch (final Exception e) {
-            throw new SignatureException("Failed to verify and extract signer certificate", e);
-        }
-
-        // verify that content signer cert is trusted
-        try {
-            SignerUtils.verifySignerCertIsTrusted(trustedSignersStore, trustedSignersStoreType, trustedSignersStorePassword, sawSigner);
-        } catch (final Exception e) {
-            throw new SignatureException("Failed to verify signer certificate", e);
-        }
+        verify(computedDigest, signatureProperties);
     }
 }

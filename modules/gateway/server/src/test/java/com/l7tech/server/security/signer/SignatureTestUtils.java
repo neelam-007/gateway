@@ -1,5 +1,6 @@
 package com.l7tech.server.security.signer;
 
+import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -18,6 +19,8 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Utility class for testing signing and signature validation
@@ -298,7 +301,6 @@ public class SignatureTestUtils {
         return Triple.triple(trustedStoreFile, rootCaKeyStoreFile, trustedCertKeyStores);
     }
 
-
     /**
      * Create a new instance of {@code SignatureVerifier} with optional trusted Signer Certs.<br/>
      * The {@code SignatureVerifier} will be backed up with a newly created trusted store holding a Root CA certificate,
@@ -318,13 +320,18 @@ public class SignatureTestUtils {
         );
     }
 
-    public static byte[] sign(final SignatureVerifier signer, final InputStream dataStream, final String teamDn) throws Exception {
+    /**
+     * Will sign the specified {@code dataStream} using the specified {@code signer} and {@code signerDn}.
+     *
+     * @return signed content raw-bytes.
+     */
+    public static byte[] sign(final SignatureVerifier signer, final InputStream dataStream, final String signerDn) throws Exception {
         Assert.assertThat(signer, Matchers.instanceOf(SignatureVerifierStub.class));
         final SignatureVerifierStub signerStub = (SignatureVerifierStub)signer;
         Assert.assertThat(dataStream, Matchers.notNullValue());
         Assert.assertThat(signerStub.getSignerCertKeyStores(), Matchers.notNullValue());
-        Assert.assertThat(signerStub.getSignerCertKeyStores(), Matchers.hasKey(teamDn));
-        final File teamKeyStoreFile = signerStub.getSignerCertKeyStores().get(teamDn);
+        Assert.assertThat(signerStub.getSignerCertKeyStores(), Matchers.hasKey(signerDn));
+        final File teamKeyStoreFile = signerStub.getSignerCertKeyStores().get(signerDn);
 
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             SignerUtils.signWithKeyStore(teamKeyStoreFile, SIGNER_STORE_TYPE, SIGNER_STORE_PASS, SIGNER_STORE_CERT_ALIAS, SIGNER_STORE_ENTRY_PASS, dataStream, baos);
@@ -332,15 +339,21 @@ public class SignatureTestUtils {
         }
     }
 
-    public static String getSignature(final byte[] signedContent) throws Exception {
-        Assert.assertThat(signedContent, Matchers.notNullValue());
-        try (final InputStream is = new ByteArrayInputStream(signedContent)) {
-            // signature properties (null initially)
-            //final AtomicReference<String> signature = new AtomicReference<>(null);
+    /**
+     * A generic method for extracting the signature properties using the {@code valueConverter},
+     * e.g. get the signature as {@code String} or as {@code Properties} etc.
+     */
+    public static <R> R getSignature(
+            final byte[] signedZipContent,
+            final Functions.UnaryThrows<R, InputStream, IOException> valueConverter
+    ) throws Exception {
+        Assert.assertNotNull(signedZipContent);
+        Assert.assertNotNull(valueConverter);
+        try (final InputStream is = new ByteArrayInputStream(signedZipContent)) {
             // process the signed zip file
-            final Pair<Void, String> signaturePair = SignerUtils.walkSignedZip(
+            final Pair<Void, R> signaturePair = SignerUtils.walkSignedZip(
                     is,
-                    new SignedZipVisitor<Void, String>() {
+                    new SignedZipVisitor<Void, R>() {
                         @Override
                         public Void visitData(@NotNull final InputStream inputStream) throws IOException {
                             // don't care
@@ -348,21 +361,16 @@ public class SignatureTestUtils {
                         }
 
                         @Override
-                        public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                        public R visitSignature(@NotNull final InputStream inputStream) throws IOException {
                             // read the signature
-                            final StringWriter writer = new StringWriter();
-                            try (final Reader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
-                                IOUtils.copyStream(reader, writer);
-                                writer.flush();
-                            }
-                            return writer.toString();
+                            return valueConverter.call(inputStream);
                         }
                     },
                     true
             );
 
             // get the signature props
-            final String signatureProps = signaturePair.right;
+            final R signatureProps = signaturePair.right;
             if (signatureProps == null) {
                 throw new IOException("Signature missing from signed Zip");
             }
@@ -370,19 +378,236 @@ public class SignatureTestUtils {
         }
     }
 
+    /**
+     * Convenient method for extracting the signature properties as raw-bytes
+     */
+    public static byte[] getSignatureBytes(final byte[] signedZipContent) throws Exception {
+        return getSignature(
+                signedZipContent,
+                new Functions.UnaryThrows<byte[], InputStream, IOException>() {
+                    @Override
+                    public byte[] call(final InputStream inputStream) throws IOException {
+                        return IOUtils.slurpStream(inputStream);
+                    }
+                }
+        );
+    }
+
+    /**
+     * Convenient method for extracting the signature properties as {@code Properties} object.
+     */
+    public static Properties getSignatureProperties(final byte[] signedZipContent) throws Exception {
+        return getSignature(
+                signedZipContent,
+                new Functions.UnaryThrows<Properties, InputStream, IOException>() {
+                    @Override
+                    public Properties call(final InputStream inputStream) throws IOException {
+                        final Properties sigProps = new Properties();
+                        sigProps.load(inputStream);
+                        return sigProps;
+                    }
+                }
+        );
+    }
+
+    /**
+     * Convenient method for extracting the signature properties as {@code String}.
+     */
+    public static String getSignatureString(final byte[] signedZipContent) throws Exception {
+        return getSignature(
+                signedZipContent,
+                new Functions.UnaryThrows<String, InputStream, IOException>() {
+                    @Override
+                    public String call(final InputStream inputStream) throws IOException {
+                        final StringWriter writer = new StringWriter();
+                        try (final Reader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
+                            IOUtils.copyStream(reader, writer);
+                            writer.flush();
+                        }
+                        return writer.toString();
+                    }
+                }
+        );
+    }
+
+    /**
+     * A generic method for extracting the signed raw-data from the {@code signedZipContent}
+     * and transform the data using {@code valueTransformer}, e.g. calculate raw-data digest etc.
+     */
+    public static <R> R getSignedData(
+            final byte[] signedZipContent,
+            final Functions.UnaryThrows<R, InputStream, IOException> valueTransformer
+    ) throws Exception {
+        Assert.assertNotNull(signedZipContent);
+        Assert.assertNotNull(valueTransformer);
+        try (final InputStream is = new ByteArrayInputStream(signedZipContent)) {
+            // process the signed zip file
+            final Pair<R, Void> rawBytesPair = SignerUtils.walkSignedZip(
+                    is,
+                    new SignedZipVisitor<R, Void>() {
+                        @Override
+                        public R visitData(@NotNull final InputStream inputStream) throws IOException {
+                            //return IOUtils.slurpStream(inputStream);
+                            return valueTransformer.call(inputStream);
+                        }
+
+                        @Override
+                        public Void visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                            // don't care
+                            return null;
+                        }
+                    },
+                    true
+            );
+
+            // get the signature props
+            final R signedDataRawBytes = rawBytesPair.left;
+            if (signedDataRawBytes == null) {
+                throw new IOException("signed data raw bytes missing from signed Zip");
+            }
+            return signedDataRawBytes;
+        }
+    }
+
+    /**
+     * Convenient method for extracting the signed raw-data from the {@code signedZipContent} and returning the calculated digest (SHA256 that is).
+     */
+    public static byte[] calcSignedDataDigest(final byte[] signedZipContent) throws Exception {
+        final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        return getSignedData(
+                signedZipContent,
+                new Functions.UnaryThrows<byte[], InputStream, IOException>() {
+                    @Override
+                    public byte[] call(final InputStream inputStream) throws IOException {
+                        final DigestInputStream dis = new DigestInputStream(inputStream, messageDigest);
+                        IOUtils.copyStream(dis, new NullOutputStream());
+                        return dis.getMessageDigest().digest();
+                    }
+                }
+        );
+    }
+
     public static String signAndGetSignature(final SignatureVerifier signer, final byte[] bytes, final String teamDn) throws Exception {
         try (final ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
-            return getSignature(sign(signer, bis, teamDn));
+            return getSignatureString(sign(signer, bis, teamDn));
         }
     }
 
     public static String signAndGetSignature(final SignatureVerifier signer, final InputStream dataStream, final String teamDn) throws Exception {
-        return getSignature(sign(signer, dataStream, teamDn));
+        return getSignatureString(sign(signer, dataStream, teamDn));
     }
 
     public static String signAndGetSignature(final SignatureVerifier signer, final File dataFile, final String teamDn) throws Exception {
         try (final BufferedInputStream is = new BufferedInputStream(new FileInputStream(dataFile))) {
-            return getSignature(sign(signer, is, teamDn));
+            return getSignatureString(sign(signer, is, teamDn));
         }
+    }
+
+    /**
+     * Sign specified {@code dataStream} using the specified {@code signer} and {@code signerDn}.
+     * Next extract raw data bytes and signature properties and pass them to the specified {@code modifyCallback} for tampering/modification.
+     * Returned {@code Pair} of data and signature properties are then written into the same zip.
+     *
+     * @return the modified signed zip bytes.
+     */
+    public static byte[] signAndTamperWithContent(
+            final InputStream dataStream, final SignatureVerifier signer, final String signerDn,
+            final Functions.BinaryThrows<Pair<byte[], Properties>, byte[], Properties, Exception> modifyCallback
+    ) throws Exception {
+        Assert.assertNotNull(signer);
+        Assert.assertNotNull(dataStream);
+        Assert.assertNotNull(modifyCallback);
+
+        // first sign the dataStream using the specified signer and signer DN (i.e. the team cert)
+        final byte[] signedContent = sign(signer, dataStream, signerDn);
+
+        // process the signed content and extract the raw bytes and signature properties
+        final Pair<
+                byte[], // data bytes
+                Properties  // signature properties
+                > signedDataAndSignatureBytes = SignerUtils.walkSignedZip(
+                new ByteArrayInputStream(signedContent),
+                new SignedZipVisitor<byte[], Properties>() {
+                    @Override
+                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
+                        final byte[] dataBytes = IOUtils.slurpStream(inputStream);
+                        Assert.assertNotNull(dataBytes);
+                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        return dataBytes;
+                    }
+
+                    @Override
+                    public Properties visitSignature(@NotNull final InputStream inputStream) throws IOException {
+                        final Properties sigProps = new Properties();
+                        sigProps.load(inputStream);
+                        return sigProps;
+                    }
+                },
+                true
+        );
+
+        // get signed data and signature properties bytes
+        final byte[] dataBytes = signedDataAndSignatureBytes.left;
+        final Properties sigProps = signedDataAndSignatureBytes.right;
+        // make sure both are read correctly
+        if (dataBytes == null || sigProps == null) {
+            Assert.fail("Invalid signed Zip file. Either 'Signed Data' or 'Signature Properties' or both are missing from signed Zip");
+        }
+
+        // do the modification
+        final Pair<byte[], Properties> dataAndSignature = modifyCallback.call(dataBytes, sigProps);
+        Assert.assertNotNull(dataAndSignature);
+        Assert.assertNotNull(dataAndSignature.left);
+        Assert.assertThat(dataAndSignature.left.length, Matchers.greaterThan(0));
+        Assert.assertNotNull(dataAndSignature.right);
+
+        // now repack the zip with modified bytes
+        final ByteArrayOutputStream outputZip = new ByteArrayOutputStream(1024);
+        try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
+            // first zip entry should be the signed data bytes
+            zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
+            // write the modified bytes into the first zip entry
+            IOUtils.copyStream(new ByteArrayInputStream(dataAndSignature.left), zos);
+
+            // next zip entry is the signature information
+            zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
+            dataAndSignature.right.store(zos, "Signature");
+        }
+
+        // return the modified zip bytes
+        return outputZip.toByteArray();
+    }
+
+
+    /**
+     * As the name says it'll flip a byte, of the specified byte array, at the specified position.
+     * @return the same (as not a copy of) but modified byte array.
+     */
+    public static byte[] flipByteAtPos(final byte[] bytes, final int byteToFlip) {
+        Assert.assertNotNull(bytes);
+        Assert.assertThat(bytes.length, Matchers.greaterThan(0));
+        Assert.assertThat(byteToFlip, Matchers.allOf(Matchers.greaterThanOrEqualTo(0), Matchers.lessThan(bytes.length)));
+        // flip specified byte byte
+        bytes[byteToFlip] = (byte) (~(bytes[byteToFlip]) & 0xff);
+        return bytes;
+    }
+
+    protected static final Random rnd = new Random();
+    /**
+     * As the name says it'll flip a random byte of the specified byte array.
+     * @return the same (as not a copy of) but modified byte array.
+     */
+    public static byte[] flipRandomByte(final byte[] bytes) {
+        Assert.assertNotNull(bytes);
+        Assert.assertThat(bytes.length, Matchers.greaterThan(0));
+        // flip random byte
+        for (int i = 0; i < 100; ++i) {  // 100 attempts should be more then enough
+            final int byteToFlip = rnd.nextInt(bytes.length - 1);
+            if (bytes[byteToFlip] != (byte) (~(bytes[byteToFlip]) & 0xff)) {
+                bytes[byteToFlip] = (byte) (~(bytes[byteToFlip]) & 0xff);
+                break;
+            }
+        }
+        return bytes;
     }
 }

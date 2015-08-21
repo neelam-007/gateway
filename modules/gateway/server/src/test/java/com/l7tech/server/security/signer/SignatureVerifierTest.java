@@ -13,7 +13,6 @@ import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -21,8 +20,6 @@ import java.util.zip.ZipOutputStream;
  * Testing modules signature verifier as well as signer.
  */
 public class SignatureVerifierTest extends SignatureTestUtils {
-
-    protected static final Random rnd = new Random();
 
     // we are going to treat this verifier (and holder of the signer certs) as trustworthy
     private static SignatureVerifier TRUSTED_VERIFIER;
@@ -144,24 +141,6 @@ public class SignatureVerifierTest extends SignatureTestUtils {
         } catch (SignatureException ignore) {
             // this is expected
         }
-    }
-
-    /**
-     * As the name says it'll flip a random byte of the specified byte array.
-     * @return the same (as not a copy of) but modified byte array.
-     */
-    private static byte[] flipRandomByte(final byte[] bytes) {
-        Assert.assertNotNull(bytes);
-        Assert.assertThat(bytes.length, Matchers.greaterThan(0));
-        // flip random byte
-        for (int i = 0; i < 100; ++i) {  // 100 attempts should be more then enough
-            final int byteToFlip = rnd.nextInt(bytes.length - 1);
-            if (bytes[byteToFlip] != (byte) (~(bytes[byteToFlip]) & 0xff)) {
-                bytes[byteToFlip] = (byte) (~(bytes[byteToFlip]) & 0xff);
-                break;
-            }
-        }
-        return bytes;
     }
 
     /**
@@ -348,7 +327,7 @@ public class SignatureVerifierTest extends SignatureTestUtils {
         }
         doTamperWithZip(untrustedSignedZipBytes);
 
-        // tamper with signer cert after signing (swap untrusted with trusted cert)
+        // tamper with signature properties after signing (swap untrusted with trusted signature properties raw-bytes)
         doTestModifyZipAndVerify(
                 new ByteArrayInputStream(untrustedSignedZipBytes),
                 new Functions.BinaryThrows<Pair<byte[], byte[]>, byte[], byte[], Exception>() {
@@ -358,39 +337,72 @@ public class SignatureVerifierTest extends SignatureTestUtils {
                         final Properties sigProps = new Properties();
                         sigProps.load(new ByteArrayInputStream(sigBytes));
                         final String signerCertB64 = (String)sigProps.get("cert");
+                        Assert.assertNotNull(signerCertB64);
                         final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
-                        // extract trusted signer cert
+                        Assert.assertNotNull(signerCertBytes);
 
-                        final Pair<Void, byte[]> signatureBytes = SignerUtils.walkSignedZip(
-                                new ByteArrayInputStream(trustedSignedZipBytes),
-                                new SignedZipVisitor<Void, byte[]>() {
-                                    @Override
-                                    public Void visitData(@NotNull final InputStream inputStream) throws IOException {
-                                        // don't care
-                                        return null;
-                                    }
+                        // get the trusted zip signature properties raw-bytes
+                        final Properties trustedSignatureProperties = SignatureTestUtils.getSignatureProperties(trustedSignedZipBytes);
+                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get("cert");
+                        Assert.assertNotNull(trustedSignerCertB64);
+                        final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
+                        Assert.assertNotNull(trustedSignerCertBytes);
 
-                                    @Override
-                                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                                        return IOUtils.slurpStream(inputStream);
-                                    }
-                                },
-                                true
-                        );
-
-                        // get the actual bytes
-                        final byte[] trustedSignatureBytes = signatureBytes.right;
-                        if (trustedSignatureBytes == null) {
-                            throw new IOException("Invalid signed Zip file. 'Signature Properties' missing from signed Zip");
-                        }
-
-                        Assert.assertFalse(Arrays.equals(signerCertBytes, trustedSignatureBytes));
-                        // store modified signature
-                        sigProps.setProperty("cert", HexUtils.encodeBase64(trustedSignatureBytes));
+                        // verify they are different than signerCertBytes
+                        Assert.assertFalse(Arrays.equals(signerCertBytes, trustedSignerCertBytes));
+                        // store modified signer cert
+                        sigProps.setProperty("cert", HexUtils.encodeBase64(trustedSignerCertBytes));
                         Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String)sigProps.get("cert"))));
                         // save the props
                         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                             sigProps.store(bos, "Signature");
+                            return Pair.pair(dataBytes, bos.toByteArray());
+                        }
+                    }
+                }
+        );
+
+        // tamper with signer cert after signing (swap untrusted with trusted cert)
+        final byte[] anotherBytes = "this is another test file".getBytes(Charsets.UTF8);
+        final byte[] anotherTrustedSignedZipBytes = SignatureTestUtils.sign(TRUSTED_VERIFIER, new ByteArrayInputStream(anotherBytes), TRUSTED_SIGNER_DNS[0]);
+        // verify signature can be verified
+        try (final InputStream signedZip = new ByteArrayInputStream(anotherTrustedSignedZipBytes)) {
+            TRUSTED_VERIFIER.verify(signedZip);
+        }
+        doTestModifyZipAndVerify(
+                new ByteArrayInputStream(untrustedSignedZipBytes),
+                new Functions.BinaryThrows<Pair<byte[], byte[]>, byte[], byte[], Exception>() {
+                    @Override
+                    public Pair<byte[], byte[]> call(final byte[] dataBytes, final byte[] sigBytes) throws Exception {
+                        // read the signature props (signature and signing cert)
+                        final Properties sigProps = new Properties();
+                        sigProps.load(new ByteArrayInputStream(sigBytes));
+                        final String signatureB64 = (String)sigProps.get("cert");
+                        Assert.assertNotNull(signatureB64);
+                        final byte[] signatureBytes = HexUtils.decodeBase64(signatureB64);
+                        Assert.assertNotNull(signatureBytes);
+                        final String signerCertB64 = (String)sigProps.get("cert");
+                        Assert.assertNotNull(signerCertB64);
+                        final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
+                        Assert.assertNotNull(signerCertBytes);
+
+                        // get the trusted zip signature properties raw-bytes
+                        final Properties trustedSignatureProperties = SignatureTestUtils.getSignatureProperties(anotherTrustedSignedZipBytes);
+                        final String trustedSignatureB64 = (String)trustedSignatureProperties.get("cert");
+                        Assert.assertNotNull(trustedSignatureB64);
+                        final byte[] trustedSignatureBytes = HexUtils.decodeBase64(trustedSignatureB64);
+                        Assert.assertNotNull(trustedSignatureBytes);
+                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get("cert");
+                        Assert.assertNotNull(trustedSignerCertB64);
+                        final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
+                        Assert.assertNotNull(trustedSignerCertBytes);
+                        // make sure bot signature and signing certs are different
+                        Assert.assertFalse(Arrays.equals(signatureBytes, trustedSignatureBytes));
+                        Assert.assertFalse(Arrays.equals(signerCertBytes, trustedSignerCertBytes));
+
+                        // save the props
+                        try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                            trustedSignatureProperties.store(bos, "Signature");
                             return Pair.pair(dataBytes, bos.toByteArray());
                         }
                     }

@@ -10,6 +10,7 @@ import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, SolutionKitHeader> implements SolutionKitManager {
@@ -30,7 +31,7 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @Override
     public List<SolutionKit> findBySolutionKitGuid(@NotNull String solutionKitGuid) throws FindException {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

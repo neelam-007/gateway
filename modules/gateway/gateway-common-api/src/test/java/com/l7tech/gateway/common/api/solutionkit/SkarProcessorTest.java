@@ -49,7 +49,7 @@ public class SkarProcessorTest {
         Assert.assertNotNull(inputStream);
         // do nothing to verify signature (simulate skar is trusted)
         final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.<byte[]>any(), Mockito.anyString());
         // load the skar file
         skarProcessor.load(inputStream, solutionKitAdmin);
     }
@@ -77,6 +77,7 @@ public class SkarProcessorTest {
     @Test
     public void installOrUpgrade() throws Exception {
         final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // simulate remapping of IDs in the bundle (secure password and JDBC)
@@ -159,6 +160,7 @@ public class SkarProcessorTest {
     public void invalidLoads() throws Exception {
         // mock SolutionKitAdmin
         final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
         // expect error message "... value cannot be empty."
         SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
         SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
@@ -200,17 +202,38 @@ public class SkarProcessorTest {
     public void unsignedSkar() throws Exception {
         // mock SolutionKitAdmin
         final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
 
-        // expect error message "... value cannot be empty."
-        SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
-        SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-unsigned.skar");
-        Assert.assertNotNull(invalidInputStream);
+        // expect error message "... Invalid signed Zip."
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+        final InputStream unsignedSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-unsigned.skar");
+        Assert.assertNotNull(unsignedSkarStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
+            skarProcessor.load(unsignedSkarStream, solutionKitAdmin);
             fail("Expected: an invalid .skar file.");
         } catch (UntrustedSolutionKitException e) {
             assertThat(e.getMessage(), Matchers.containsString("Invalid signed Zip"));
         }
+    }
+
+    @Test
+    public void signedSkarOfSkars() throws Exception {
+        // mock SolutionKitAdmin
+        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
+        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
+
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        final SkarProcessor skarProcessor = Mockito.spy(new SkarProcessor(solutionKitsConfig));
+        final InputStream signedSkarOfSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars-signed.skar");
+        Assert.assertNotNull(signedSkarOfSkarStream);
+
+        // load the skar-of-skars
+        skarProcessor.load(signedSkarOfSkarStream, solutionKitAdmin);
+        // verifySkarSignature is called only once
+        Mockito.verify(solutionKitAdmin, Mockito.times(1)).verifySkarSignature(Mockito.<byte[]>any(), Mockito.anyString());
+        Mockito.verify(skarProcessor, Mockito.times(1)).load(signedSkarOfSkarStream, solutionKitAdmin);
+        // 3 times; once for the parent and twice for two children
+        Mockito.verify(skarProcessor, Mockito.times(3)).loadWithoutSignatureCheck(Mockito.<InputStream>any());
     }
 }

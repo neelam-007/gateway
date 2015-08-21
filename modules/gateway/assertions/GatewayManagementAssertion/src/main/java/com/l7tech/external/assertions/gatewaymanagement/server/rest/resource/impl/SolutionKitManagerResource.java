@@ -55,12 +55,24 @@ public class SolutionKitManagerResource {
 
     protected static final String ID_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
 
-    @SpringBean
+
     private SolutionKitManager solutionKitManager;
     @SpringBean
+    public void setSolutionKitManager(final SolutionKitManager solutionKitManager) {
+        this.solutionKitManager = solutionKitManager;
+    }
+
     private LicenseManager licenseManager;
     @SpringBean
+    public void setLicenseManager(final LicenseManager licenseManager) {
+        this.licenseManager = licenseManager;
+    }
+
     private SignatureVerifier signatureVerifier;
+    @SpringBean
+    public void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+        this.signatureVerifier = signatureVerifier;
+    }
 
     public SolutionKitManagerResource() {}
 
