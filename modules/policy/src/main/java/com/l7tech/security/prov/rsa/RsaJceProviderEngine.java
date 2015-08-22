@@ -44,6 +44,7 @@ public class RsaJceProviderEngine extends JceProvider {
     static {
         try {
             final boolean permafips = ConfigFactory.getBooleanProperty( PROP_PERMAFIPS, false );
+            boolean fipsMode = false;
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
                 cryptoj = new CryptoJWrapper(true);
@@ -54,6 +55,7 @@ public class RsaJceProviderEngine extends JceProvider {
                     logger.severe("RSA library failed to initialize in FIPS 140 mode");
                     throw new RuntimeException("RSA JCE Provider is supposed to be in FIPS mode but is not");
                 }
+                fipsMode = true;
 
             } else {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
@@ -66,7 +68,7 @@ public class RsaJceProviderEngine extends JceProvider {
             logger.info("RSA Crypto-J version: " + String.valueOf(cryptoj.getVersion()));
             PKCS12_PROVIDER = findPkcs12Provider(cryptoj.provider.getClass().getClassLoader());
             PKIX_PROVIDER = findSunJsseProvider(cryptoj.provider.getClass().getClassLoader());
-            TLS10_PROVIDER = findTls10Provider(cryptoj.getClass().getClassLoader());
+            TLS10_PROVIDER = findTls10Provider(cryptoj.getClass().getClassLoader(), fipsMode);
             TLS12_PROVIDER = findTls12Provider();
             maybeChangeDefaultTlsProvider();
         } catch (NoSuchFieldException e) {
@@ -115,7 +117,7 @@ public class RsaJceProviderEngine extends JceProvider {
         return null;
     }
 
-    private static Provider findTls10Provider(ClassLoader cryptojClassLoader) throws InstantiationException, IllegalAccessException {
+    private static Provider findTls10Provider(ClassLoader cryptojClassLoader, boolean fipsMode) throws InstantiationException, IllegalAccessException {
         String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
         if (provName != null && provName.trim().length() > 0) {
             Provider prov = Security.getProvider(provName);
@@ -125,14 +127,15 @@ public class RsaJceProviderEngine extends JceProvider {
             }
         }
 
-        // Prefer SunJSSE as TLS 1.0 provider since it currently has cleaner TrustManager behavior
-        Provider prov = findSunJsseProvider( cryptojClassLoader );
+        // Prefer SunJSSE as TLS 1.0 provider for compatibility with previous behavior
+        // If running in FIPS mode, we currently avoid setting SunJSSE as default TLS 1.0 impl because of SSG-11747
+        Provider prov = fipsMode ? null : findSunJsseProvider( cryptojClassLoader );
         if (prov != null) {
             logger.fine("Using SunJSSE as TLS 1.0 provider");
             return prov;
         }
 
-        // If SunJSSE not available, try to use SSL-J (if available and compatible with current Crypto-J version)
+        // If SunJSSE not available or compatible, try to use SSL-J (if available and compatible with current Crypto-J version)
         prov = findRsaJsseProvider();
         if (prov != null) {
             logger.fine("Using RsaJsse as TLS 1.0 provider");
