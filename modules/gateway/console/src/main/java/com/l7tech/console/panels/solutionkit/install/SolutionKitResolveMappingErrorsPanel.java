@@ -10,6 +10,7 @@ import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Pair;
 import com.sun.istack.NotNull;
 
 import javax.swing.*;
@@ -32,7 +33,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     private JTabbedPane solutionKitMappingsTabbedPane;
     private JButton resolveButton;
 
-    private Map<SolutionKit, Map<String, String>> resolvedEntityIdsMap = new HashMap<>();    // the map of a value: key = from id. value  = to id.
+    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIdsMap = new HashMap<>();    // the map of a value: key = from id. value  = to id.
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
@@ -67,7 +68,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             if (mappings == null) continue;
 
             Map<String, String> resolvedEntityIds = new HashMap<>();
-            resolvedEntityIdsMap.put(solutionKit, resolvedEntityIds);
+            resolvedEntityIdsMap.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, resolvedEntityIds));
 
             final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
             solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityIds);
@@ -146,8 +147,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         }
 
         int numOfResolved = 0;
-        for (Map<String, String> idsMap: resolvedEntityIdsMap.values()) {
-            numOfResolved += idsMap.size();
+        for (Pair<SolutionKit, Map<String, String>> idsMap: resolvedEntityIdsMap.values()) {
+            numOfResolved += idsMap.right.size();
         }
 
         return numOfErrors == numOfResolved;

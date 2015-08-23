@@ -23,7 +23,7 @@ jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSol
 # cd <l7_workspace>
 cd ../../../../../../..
 
-cp -a modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/. modules/skunkworks/build/example/solutionkit/simple/v01_01/
+cp -a build/installer/SkarSigner-HEAD-9.0.00.zip modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/. modules/skunkworks/build/example/solutionkit/simple/v01_01/
 cd $BUILD_DIR
 
 # build child skar with only Server Module File
@@ -34,6 +34,11 @@ zip -X SimpleServiceAndOthers-1.1.skar Customization.jar --junk-paths ../../../.
 
 # build parent skar (container for child skars)
 zip -X SimpleSolutionKit-1.1.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleServiceAndOthers-1.1.skar
+
+unzip -u SkarSigner-HEAD-9.0.00.zip
+
+# 6fj1QDCbvjI.OBh1tzgR5MCLBQo72qH5gA generated from SkarSigner-HEAD/skar_signer.sh encodePassword -password 7layer
+SkarSigner-HEAD/skar_signer.sh  sign --storeFile "../../../../../../../etc/signer/gatewayKeyStore.p12" --storePass "6fj1QDCbvjI.OBh1tzgR5MCLBQo72qH5gA" --keyPass "6fj1QDCbvjI.OBh1tzgR5MCLBQo72qH5gA" --fileToSign "SimpleSolutionKit-1.1.skar"
 
 pwd
 ls

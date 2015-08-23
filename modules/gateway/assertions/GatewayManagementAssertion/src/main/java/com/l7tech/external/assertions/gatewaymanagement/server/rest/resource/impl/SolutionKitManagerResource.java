@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Sin
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
@@ -16,13 +17,17 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminImpl;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +45,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.PRECONDITION_FAILED;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
 
@@ -81,8 +87,9 @@ public class SolutionKitManagerResource {
      * Install or upgrade a SKAR file.
      * @param fileInputStream Input stream of the upload SKAR file.
      * @param solutionKitSelects Which Solution Kit ID(s) in the uploaded SKAR to install. If not provided, all Solution Kit(s) in the upload SKAR will be installed.
-     * @param entityIdReplaces Optional. To map one entity ID to another. Format <find_id>:<replace_with_id>.
-     * @param upgradeGuid Optional. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
+     * @param entityIdReplaces Optional. To map one entity ID to another. Format <find_id>::<replace_with_id>.
+     * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
+     * @param formDataMultiPart Internal use only.
      * @return TODO
      */
     @POST
@@ -90,7 +97,11 @@ public class SolutionKitManagerResource {
     public Response installOrUpgrade(final @FormDataParam("file") InputStream fileInputStream,
                                      final @FormDataParam("solutionKitSelect") List<FormDataBodyPart> solutionKitSelects,
                                      final @FormDataParam("entityIdReplace") List<FormDataBodyPart> entityIdReplaces,
-                                     final @QueryParam("id") String upgradeGuid) {
+                                     final @QueryParam("id") String upgradeGuid,
+                                     final FormDataMultiPart formDataMultiPart) {
+
+        // NOTE: if changing a @FormDataParam("name") name in method declaration above, also need to change in setCustomizationKeyValues() below
+        // Strings can't be made final static constants because Jersey annotations complains with error
 
         // Using POST to upgrade since HTML PUT does not support forms (and therefore does not support multipart file upload).
 
@@ -161,8 +172,10 @@ public class SolutionKitManagerResource {
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
             // remap any entity id(s)
-            // TODO express with restman mapping syntax instead?
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
+
+            // pass in form fields as input parameters to customizations
+            setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
             // install or upgrade skars
             // After processing the parent, process selected solution kits if applicable.
@@ -172,7 +185,6 @@ public class SolutionKitManagerResource {
                     solutionKit.setParentGoid(parentGoid);
                 }
 
-                // TODO pass in customized data to the callback method; for all Java primitive wrappers (e.g. Boolean, Integer, etc)? > 1 goes into a List.
                 skarProcessor.invokeCustomCallback(solutionKit);
 
                 AsyncAdminMethods.JobId<Goid> jobId = skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
@@ -333,9 +345,9 @@ public class SolutionKitManagerResource {
                 }
             }
 
-            Map<SolutionKit, Map<String, String>> idRemapBySolutionKit = new HashMap<>();
+            Map<String, Pair<SolutionKit, Map<String, String>>> idRemapBySolutionKit = new HashMap<>();
             for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
-                idRemapBySolutionKit.put(solutionKit, entityIdReplaceMap);
+                idRemapBySolutionKit.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
             }
             solutionKitsConfig.setResolvedEntityIds(idRemapBySolutionKit);
         }
@@ -364,6 +376,39 @@ public class SolutionKitManagerResource {
                 }
             } else {
                 Thread.sleep( 5000L );
+            }
+        }
+    }
+
+    private void setCustomizationKeyValues(@NotNull final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations, @NotNull FormDataMultiPart formDataMultiPart) throws SolutionKitException, UnsupportedEncodingException {
+        // pass on all unknown form fields as customization key-value input
+        final List<BodyPart> bodyParts = formDataMultiPart.getBodyParts();
+        final List<FormDataBodyPart> keyValues = new ArrayList<>(bodyParts.size());
+        for (BodyPart bodyPart : bodyParts) {
+            Map<String, String> parameters = bodyPart.getContentDisposition().getParameters();
+            final String name = parameters.get("name");
+
+            // NOTE: skip known form fields from method declaration above (strings not final static constants because Jersey annotations complains with error)
+            if (!"file".equals(name) && !"solutionKitSelect".equals(name) && !"entityIdReplace".equals(name)) {
+                keyValues.add(formDataMultiPart.getField(name));
+            }
+        }
+
+        // pass in any input key-values to the customizations
+        for (String solutionKitGuid : customizations.keySet()) {
+            Pair<SolutionKit, SolutionKitCustomization> customization = customizations.get(solutionKitGuid);
+            if (customization != null && customization.right != null) {
+                final SolutionKitManagerUi customUi = customization.right.getCustomUi();
+                if (customUi != null) {
+                    String customizationKey, customizationValue;
+                    for (FormDataBodyPart customizationKeyValue : keyValues) {
+                        customizationKey = URLDecoder.decode(customizationKeyValue.getName(), CharEncoding.UTF_8);
+                        customizationValue = URLDecoder.decode(customizationKeyValue.getValue(), CharEncoding.UTF_8);
+                        if (isNotEmpty(customizationKey) && isNotEmpty(customizationValue)) {
+                            customUi.getContext().getKeyValues().put(customizationKey, customizationValue);
+                        }
+                    }
+                }
             }
         }
     }

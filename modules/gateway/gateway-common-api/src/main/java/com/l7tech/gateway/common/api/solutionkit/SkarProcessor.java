@@ -70,18 +70,18 @@ public class SkarProcessor {
             Document metadataDoc, bundleDoc;
             SolutionKitManagerContext skContext;
 
-            SolutionKitCustomization customization;
+            Pair<SolutionKit, SolutionKitCustomization> customization;
             SolutionKitManagerCallback customCallback;
             SolutionKitManagerUi customUi;
 
-            customization = solutionKitsConfig.getCustomizations().get(solutionKit);
-            if (customization == null) return;
+            customization = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid());
+            if (customization == null || customization.right == null) return;
 
             // implementer provides a callback
-            customCallback = customization.getCustomCallback();
+            customCallback = customization.right.getCustomCallback();
             if (customCallback == null) return;
 
-            customUi = customization.getCustomUi();
+            customUi = customization.right.getCustomUi();
 
             // if implementer provides a context
             skContext = customUi != null ? customUi.getContext() : null;
@@ -101,7 +101,6 @@ public class SkarProcessor {
                 SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, solutionKit);
 
                 // set (possible) changes made to metadata and bundle
-                // TODO fix duplicate HashMap bug where put(...) does not replace previous value
                 solutionKitsConfig.setBundle(solutionKit, bundleDoc);
             } else  {
                 customCallback.preMigrationBundleImport(null);
@@ -116,13 +115,13 @@ public class SkarProcessor {
      */
     public AsyncAdminMethods.JobId<Goid> installOrUpgrade(@NotNull final SolutionKitAdmin solutionKitAdmin, @NotNull final SolutionKit solutionKit) throws SolutionKitException {
         // Update resolved mapping target IDs.
-        Map<String, String> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit);
+        Pair<SolutionKit, Map<String, String>> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit.getSolutionKitGuid());
         Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
         if (bundle != null) {
             String resolvedId;
             Boolean allowOverride;
             for (Mapping mapping : bundle.getMappings()) {
-                resolvedId = resolvedEntityIds.get(mapping.getSrcId());
+                resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
                 if (resolvedId != null) {
                     allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
                     if (allowOverride != null && allowOverride) {
@@ -365,10 +364,10 @@ public class SkarProcessor {
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
 
             // update previously resolved mapping target IDs
-            Map<String, String> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitToUpgrade);
+            Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitToUpgrade.getSolutionKitGuid());
             for (Mapping mapping : upgradeBundle.getMappings()) {
                 if (previouslyResolvedIds != null) {
-                    String resolvedId = previouslyResolvedIds.get(mapping.getSrcId());
+                    String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
                     if (resolvedId != null) {
                         mapping.setTargetId(resolvedId);
                     }
@@ -427,7 +426,7 @@ public class SkarProcessor {
                     customCallback = (SolutionKitManagerCallback) cls.newInstance();
                 }
                 if (customUi != null || customCallback != null) {
-                    solutionKitsConfig.getCustomizations().put(solutionKit, new SolutionKitCustomization(classLoader, customUi, customCallback));
+                    solutionKitsConfig.getCustomizations().put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, new SolutionKitCustomization(classLoader, customUi, customCallback)));
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new SolutionKitException("Error loading the customization class(es).", e);

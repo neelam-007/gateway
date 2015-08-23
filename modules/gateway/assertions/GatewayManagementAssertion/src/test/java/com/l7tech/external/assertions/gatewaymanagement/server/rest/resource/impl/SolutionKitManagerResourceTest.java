@@ -9,6 +9,7 @@ import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.util.*;
 import org.apache.commons.lang.CharEncoding;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
@@ -238,7 +239,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(sampleSkar),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);
@@ -271,7 +273,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(sampleSkar),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // should fail with INTERNAL_SERVER_ERROR and error message containing "Invalid signed Zip"
         Assert.assertNotNull(response);
@@ -297,7 +300,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    new FormDataMultiPart()
             );
             // SKAR is signed so it should succeed
             Assert.assertNotNull(response);
@@ -335,7 +339,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    new FormDataMultiPart()
             );
             // SKAR is signed so it should succeed
             Assert.assertNotNull(response);
@@ -373,7 +378,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    null // don't care about other form data
             );
             // SKAR is signed so it should succeed
             Assert.assertNotNull(response);
@@ -409,7 +415,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    null // don't care about other form data
             );
             // SKAR signer is not trusted so it should fail with INTERNAL_SERVER_ERROR
             Assert.assertNotNull(response);
@@ -447,7 +454,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    null // don't care about other form data
             );
             // SKAR signer is not trusted so it should fail with INTERNAL_SERVER_ERROR
             Assert.assertNotNull(response);
@@ -485,7 +493,8 @@ public class SolutionKitManagerResourceTest {
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
-                    null  // don't care about upgradeGuid
+                    null, // don't care about upgradeGuid
+                    null // don't care about other form data
             );
             // SKAR signer is not trusted so it should fail with INTERNAL_SERVER_ERROR
             Assert.assertNotNull(response);
@@ -546,7 +555,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // SKAR tampered with so it should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);
@@ -590,7 +600,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // SKAR tampered with so it should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);
@@ -633,7 +644,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // SKAR tampered with so it should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);
@@ -674,7 +686,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(signedTrustedAnotherSampleSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                new FormDataMultiPart()
         );
         // SKAR is signed so it should succeed
         Assert.assertNotNull(response);
@@ -735,7 +748,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // SKAR tampered with so it should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);
@@ -804,7 +818,8 @@ public class SolutionKitManagerResourceTest {
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
-                null  // don't care about upgradeGuid
+                null, // don't care about upgradeGuid
+                null // don't care about other form data
         );
         // SKAR tampered with so it should fail with INTERNAL_SERVER_ERROR
         Assert.assertNotNull(response);

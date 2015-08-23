@@ -2,13 +2,16 @@ package com.l7tech.policy.solutionkit;
 
 import org.w3c.dom.Document;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * WARNING: this class is under development and is currently for CA internal use only.
  * This interface contract may change without notice.
  *
  * Provides data transport between the your UI and callback code.
  */
-public class SolutionKitManagerContext {   // <T> {   // look into making this type safe
+public class SolutionKitManagerContext {
     /**
      * XML document representing the solution kit metadata (e.g. id, version, name, description, etc).
      */
@@ -26,11 +29,9 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
     private String instanceModifier;
 
     /**
-     * Optionally you can provide a custom data object to pass between your UI and callback code.
-     * Be sure to initialize your custom data object in your UI first, e.g. SolutionKitManagerUi.initialize().
+     * Optionally pass in key-value pairs from your GUI (or headless interface) to your callback code.
      */
-    private Object customDataObject;
-    //    T customDataObject;
+    private Map<String, String> keyValues = new HashMap<String, String>();
 
     public Document getSolutionKitMetadata() {
         return solutionKitMetadata;
@@ -48,12 +49,8 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
         this.instanceModifier = instanceModifier;
     }
 
-    public Object getCustomDataObject() {
-        return customDataObject;
-    }
-
-    public void setCustomDataObject(Object customDataObject) {
-        this.customDataObject = customDataObject;
+    public Map<String, String> getKeyValues() {
+        return keyValues;
     }
 
     public Document getMigrationBundle() {
@@ -63,12 +60,4 @@ public class SolutionKitManagerContext {   // <T> {   // look into making this t
     public void setMigrationBundle(Document migrationBundle) {
         this.migrationBundle = migrationBundle;
     }
-
-//    public T getCustomDataObject() {
-//        return customDataObject;
-//    }
-//
-//    public void setCustomDataObject(T customDataObject) {
-//        this.customDataObject = customDataObject;
-//    }
 }

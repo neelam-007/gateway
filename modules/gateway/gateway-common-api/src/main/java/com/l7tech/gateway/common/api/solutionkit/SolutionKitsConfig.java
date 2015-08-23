@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,9 +28,15 @@ public class SolutionKitsConfig {
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
     private Set<SolutionKit> selected = new TreeSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
-    private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
+
+    // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
+    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
+
     private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
-    private Map<SolutionKit, SolutionKitCustomization> customizations = new HashMap<>();
+
+    // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
+    private Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
+
     private Map<String, List<String>> instanceModifiers = new HashMap<>();
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
 
@@ -110,20 +117,21 @@ public class SolutionKitsConfig {
     }
 
     @NotNull
-    public Map<SolutionKit, Map<String, String>> getResolvedEntityIds() {
+    public Map<String, Pair<SolutionKit, Map<String, String>>> getResolvedEntityIds() {
         return resolvedEntityIds;
     }
 
     @NotNull
-    public Map<String, String> getResolvedEntityIds(@NotNull SolutionKit solutionKit) {
-        Map<String, String> result = resolvedEntityIds.get(solutionKit);
+    public Pair<SolutionKit, Map<String, String>> getResolvedEntityIds(@NotNull String solutionKitGuid) {
+        Pair<SolutionKit, Map<String, String>> result = resolvedEntityIds.get(solutionKitGuid);
         if (result == null) {
-            return Collections.emptyMap();
+            final Map<String, String> emptyMap = Collections.emptyMap();
+            return new Pair<>(null, emptyMap);
         }
         return result;
     }
 
-    public void setResolvedEntityIds(@NotNull Map<SolutionKit, Map<String, String>> resolvedEntityIds) {
+    public void setResolvedEntityIds(@NotNull Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds) {
         this.resolvedEntityIds = resolvedEntityIds;
     }
 
@@ -137,7 +145,7 @@ public class SolutionKitsConfig {
     }
 
     @NotNull
-    public Map<SolutionKit, SolutionKitCustomization> getCustomizations() {
+    public Map<String, Pair<SolutionKit, SolutionKitCustomization>> getCustomizations() {
         return customizations;
     }
 
@@ -182,8 +190,10 @@ public class SolutionKitsConfig {
     }
 
     private void clearCustomizations() {
-        for (final SolutionKitCustomization customization : customizations.values()) {
-            ResourceUtils.closeQuietly(customization.getClassLoader());
+        for (final Pair<SolutionKit, SolutionKitCustomization> customization : customizations.values()) {
+            if (customization.right != null) {
+                ResourceUtils.closeQuietly(customization.right.getClassLoader());
+            }
         }
         customizations.clear();
     }

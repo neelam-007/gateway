@@ -21,6 +21,8 @@ import java.util.logging.Logger;
 public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback {
     private static final Logger logger = Logger.getLogger(SimpleSolutionKitManagerCallback.class.getName());
 
+    public static final String MY_INPUT_TEXT_KEY = "MyInputTextKey";
+
     public static final Map<String, String> nsMap = CollectionUtils.MapBuilder.<String, String>builder()
             .put("l7", "http://ns.l7tech.com/2010/04/gateway-management")
             .unmodifiableMap();
@@ -41,23 +43,25 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
         final List<Element> itemElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item", getNamespaceMap());
         final List<Element> mappingElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());
 
-        final String message = "*** CUSTOM CODE CALLED FOR " + solutionKitName + " ***  # item(s) in bundle: " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".  " + context.getCustomDataObject();
+        // get user input text
+        final String input = context.getKeyValues().get(MY_INPUT_TEXT_KEY);
+
+        final String message = "*** CUSTOM CODE CALLED FOR " + solutionKitName + " ***  # item(s) in bundle: " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".  " + input;
         logger.info(message);
         System.out.println(message);
 
-        // get user input text
-        final StringBuilder customText = (StringBuilder)context.getCustomDataObject();
+        if (input != null) {
+            // modify name in metadata
+            if (nameElements.size() > 0) {
+                nameElements.get(0).setTextContent(input + " " + solutionKitName);
+            }
 
-        // modify name in metadata
-        if (nameElements.size() > 0) {
-            nameElements.get(0).setTextContent(customText.toString() + " " + solutionKitName);
-        }
-
-        // modify encass description in bundle
-        final List<Element> encassDescriptionItemElements = XpathUtil.findElements(restmanBundle.getDocumentElement(),
-                "//l7:Bundle/l7:References/l7:Item/l7:Resource/l7:EncapsulatedAssertion/l7:Properties/l7:Property[@key=\"description\"]/l7:StringValue", getNamespaceMap());
-        for (Element encassDescription : encassDescriptionItemElements) {
-            encassDescription.setTextContent(customText.toString() + " " + encassDescription.getTextContent());
+            // modify encass description in bundle
+            final List<Element> encassDescriptionItemElements = XpathUtil.findElements(restmanBundle.getDocumentElement(),
+                    "//l7:Bundle/l7:References/l7:Item/l7:Resource/l7:EncapsulatedAssertion/l7:Properties/l7:Property[@key=\"description\"]/l7:StringValue", getNamespaceMap());
+            for (Element encassDescription : encassDescriptionItemElements) {
+                encassDescription.setTextContent(input + " " + encassDescription.getTextContent());
+            }
         }
     }
 }

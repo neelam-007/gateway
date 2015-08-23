@@ -39,7 +39,7 @@ public abstract class SolutionKitManagerUi {
     abstract public JButton createButton(final JPanel parentPanel);
 
     /**
-     * Provide an opportunity to do initialization work (e.g. set your custom data object).
+     * Provide an opportunity to do initialization work.
      * @return an instance of itself
      */
     public SolutionKitManagerUi initialize() {

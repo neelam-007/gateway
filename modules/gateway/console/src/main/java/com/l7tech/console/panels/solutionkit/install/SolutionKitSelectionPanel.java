@@ -382,10 +382,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // If the selected solution kit has customization with a custom UI, then create a button via the custom UI.
         // Otherwise, there is not any button created.
         if (selectedSolutionKit != null) {
-            final Map<SolutionKit, SolutionKitCustomization> customizations = settings.getCustomizations();
-            final SolutionKitCustomization customization = customizations.get(selectedSolutionKit);
-            if (customization != null) {
-                final SolutionKitManagerUi customUi = customization.getCustomUi();
+            final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = settings.getCustomizations();
+            final Pair<SolutionKit, SolutionKitCustomization> customization = customizations.get(selectedSolutionKit.getSolutionKitGuid());
+            if (customization != null && customization.right != null) {
+                final SolutionKitManagerUi customUi = customization.right.getCustomUi();
                 if (customUi != null) {
 
                     // make metadata and bundle read-only to the custom UI; test for null b/c implementer can optionally null the context

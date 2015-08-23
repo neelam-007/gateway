@@ -225,7 +225,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     continue;
                 }
 
-                Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit);
+                Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit.getSolutionKitGuid()).right;
 
                 JPanel errorPanel = new JPanel();
                 JLabel label = new JLabel("Failed to install solution kit(s) due to following entity conflicts:");
@@ -276,7 +276,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                         }
                     }
                     if (!previouslyResolvedIds.isEmpty()) {
-                        getWizardInput().getResolvedEntityIds().put(solutionKitToUpgrade, previouslyResolvedIds);
+                        getWizardInput().getResolvedEntityIds().put(solutionKitToUpgrade.getSolutionKitGuid(), new Pair<>(solutionKitToUpgrade, previouslyResolvedIds));
                     }
                 } catch (IOException e) {
                     throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

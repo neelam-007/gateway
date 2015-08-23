@@ -1,5 +1,6 @@
 package com.l7tech.example.solutionkit.simple.v01_01.console;
 
+import com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
@@ -17,7 +18,6 @@ import static com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitMana
  * Simple example of a customized UI for the Solution Kit Manager.
  */
 public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
-    final StringBuilder customText = new StringBuilder();
 
     @Override
     public JButton createButton(final JPanel parentPanel) {
@@ -33,27 +33,23 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
 
         JButton button = new JButton("Custom UI: " + StringUtils.substring(solutionKitName, 0, 14));
         button.setLayout(new BorderLayout());
-        customText.setLength(0);
 
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String inputText = JOptionPane.showInputDialog(parentPanel,
-                        "<html>About this bundle: # item(s): " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".<br><br>Enter customization text below.<html>", "CUSTOMIZED!");
-                customText.append(inputText);
+                        "<html>About this bundle: # item(s): " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".<br><br>Prefix with customization text below.<html>", "CUSTOMIZED!");
+
+                // pass user input text to the callback e.g. to SimpleSolutionKitManagerCallback.preMigrationBundleImport()
+                if (inputText != null) {
+                    getContext().getKeyValues().put(SimpleSolutionKitManagerCallback.MY_INPUT_TEXT_KEY, inputText);
+                }
 
                 // Metadata and bundle are read-only, any modifications are ignored. Make modifications to the metadata and bundle in SimpleSolutionKitManagerCallback.
-                // Solution Kit Manager does not allow modification here in this UI to ensures that both the GUI and the headless interface executes the same
-                // SimpleSolutionKitManagerCallback.preMigrationBundleImport() on the server.
+                // Solution Kit Manager does not allow modification here to ensures that both the GUI and the headless interface executes the same SimpleSolutionKitManagerCallback.preMigrationBundleImport().
             }
         });
 
         return button;
-    }
-
-    @Override
-    public SolutionKitManagerUi initialize() {
-        getContext().setCustomDataObject(customText);
-        return this;
     }
 }

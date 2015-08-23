@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.imp
 import com.l7tech.util.Functions;
 import com.sun.research.ws.wadl.*;
 import org.apache.commons.lang.WordUtils;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.internal.LocalizationMessages;
 import org.glassfish.jersey.server.model.Parameter;
@@ -257,7 +258,7 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
             return new QName("http://www.w3.org/2001/XMLSchema", "string");
         }
 
-        if (StreamingOutput.class.equals(rawType)) {
+        if (StreamingOutput.class.equals(rawType) || FormDataMultiPart.class.equals(rawType)) {
             return null;
         }
 
