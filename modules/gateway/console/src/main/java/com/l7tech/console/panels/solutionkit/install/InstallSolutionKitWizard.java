@@ -13,6 +13,7 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -55,7 +56,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         first.setNextPanel(second);
 
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        solutionKitsConfig.setSolutionKitsToUpgrade(getListOfSolutionKitsToUpgrade(solutionKitToUpgrade));
+        solutionKitsConfig.setSolutionKitsToUpgrade(SolutionKitUtils.getListOfSolutionKitsToUpgrade(Registry.getDefault().getSolutionKitAdmin(), solutionKitToUpgrade));
         solutionKitsConfig.setInstanceModifiers(getInstanceModifiers());
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);

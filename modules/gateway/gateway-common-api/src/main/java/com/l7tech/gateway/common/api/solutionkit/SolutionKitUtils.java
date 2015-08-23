@@ -6,7 +6,11 @@ import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
@@ -19,14 +23,14 @@ import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * This class contains utility methods for the solution kit manager.
  */
 public final class SolutionKitUtils {
+    private static final Logger logger = Logger.getLogger(SolutionKitUtils.class.getName());
 
     public static final String SK_NS = "http://ns.l7tech.com/2010/04/gateway-management";
     public static final String SK_NS_PREFIX = "l7";
@@ -244,6 +248,57 @@ public final class SolutionKitUtils {
         }
 
         return null;
+    }
+
+    /**
+     * Get a list of solution kits for upgrade, depending on the following three cases:
+     * Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
+     * Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
+     * Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
+     *
+     * @param solutionKit: the selected solution kit, which user selects to upgrade.
+     * @return a list of solution kits for upgrade
+     */
+    public static List<SolutionKit> getListOfSolutionKitsToUpgrade(@NotNull final SolutionKitAdmin solutionKitAdmin, SolutionKit solutionKit) {
+        final List<SolutionKit> skList = new ArrayList<>();
+        if (solutionKit == null) return skList;
+
+        // Case 1:
+        final Goid parentGoid = solutionKit.getParentGoid();
+        if (parentGoid != null) {
+            try {
+                final SolutionKit parent = solutionKitAdmin.get(parentGoid);
+                skList.add(parent);
+            } catch (FindException e) {
+                String errMsg = "Cannot retrieve the solution kit (GOID = '" + parentGoid + "')";
+                logger.warning(errMsg);
+                throw new RuntimeException(errMsg);
+            }
+        }
+
+        // Case 1 + Case 2 + Case 3:
+        skList.add(solutionKit);
+
+        // Case 3:
+        final Collection<SolutionKitHeader> children;
+        try {
+            children = solutionKitAdmin.findAllChildrenByParentGoid(solutionKit.getGoid());
+        } catch (FindException e) {
+            String errMsg = "Cannot find child solution kits for '" + solutionKit.getName() + "'";
+            logger.warning(errMsg);
+            throw new RuntimeException(errMsg);
+        }
+        for (SolutionKitHeader child: children) {
+            try {
+                skList.add(solutionKitAdmin.get(child.getGoid()));
+            } catch (FindException e) {
+                String errMsg = "Cannot find the solution kit, '" + child.getName() + "'";
+                logger.warning(errMsg);
+                throw new RuntimeException(errMsg);
+            }
+        }
+
+        return skList;
     }
 
     private SolutionKitUtils() {}

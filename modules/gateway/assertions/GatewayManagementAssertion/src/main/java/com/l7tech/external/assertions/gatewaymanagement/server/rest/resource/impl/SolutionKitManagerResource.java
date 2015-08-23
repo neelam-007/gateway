@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Sin
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -39,7 +40,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
 
@@ -100,20 +101,44 @@ public class SolutionKitManagerResource {
         try {
             // handle upgrade
             final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-            handleUpgrade(solutionKitsConfig, upgradeGuid);
+            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
+            if (upgradeGuid != null) {
+                final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
+                if (solutionKitsExistingOnGateway.size() > 0) {
+                    solutionKitsConfig.setSolutionKitsToUpgrade(
+                        SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitsExistingOnGateway.get(0))
+                    );
+                }
+            }
 
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
             skarProcessor.load(fileInputStream, solutionKitAdmin);
 
             // Check if the loaded skar is a collection of skars
             final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
             Goid parentGoid = null;
+
+            // Process parent solution kit first, if a parent solution kit is loaded.
             if (parentSKFromLoad != null) {
                 // Case 1: Parent for upgrade
                 if (upgradeGuid != null) {
-                    // todo:ms this will be implemented soon in a separate sub-task, "Upgrade".
+                    final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitsToUpgrade().get(0); // The first element is a real parent solution kit.
+
+                    if (! upgradeGuid.equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
+                        String warningMsg = "The query parameter 'id' (" + upgradeGuid + ") does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
+                        logger.warning(warningMsg);
+
+                        throw new SolutionKitManagerResourceException(status(PRECONDITION_FAILED).entity(warningMsg + lineSeparator()).build());
+                    }
+
+                    // Update the parent solution kit attributes
+                    parentSKFromDB.setName(parentSKFromLoad.getName());
+                    parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
+                    parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
+
+                    parentGoid = parentSKFromDB.getGoid();
+                    solutionKitManager.update(parentSKFromDB);
                 }
                 // Case 2: Parent for install
                 else {
@@ -133,13 +158,15 @@ public class SolutionKitManagerResource {
 
             // handle any user selection(s)
             setUserSelections(solutionKitsConfig, solutionKitSelects);
+            final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
             // remap any entity id(s)
             // TODO express with restman mapping syntax instead?
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
             // install or upgrade skars
-            for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
+            // After processing the parent, process selected solution kits if applicable.
+            for (SolutionKit solutionKit: selectedSolutionKits) {
                 // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
                 if (parentSKFromLoad != null) {
                     solutionKit.setParentGoid(parentGoid);
@@ -182,13 +209,13 @@ public class SolutionKitManagerResource {
         try {
             if (StringUtils.isEmpty(deleteGuid)) {
                 // HTTP DELETE, "no content" has no response body so we write the details into the log
-                logger.info("Solution Kit ID to uninstall is empty.");
+                logger.warning("Solution Kit ID to uninstall is empty.");
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
             final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(deleteGuid);
             if (solutionKitsExistingOnGateway.isEmpty()) {
-                logger.info("No Solution Kit ID " + deleteGuid + " found for uninstall.");
+                logger.warning("No Solution Kit ID " + deleteGuid + " found for uninstall.");
                 throw new SolutionKitManagerResourceException(Response.noContent().build());
             }
 
@@ -217,7 +244,9 @@ public class SolutionKitManagerResource {
                         childSKMap.put(childHeader.getSolutionKitGuid(), childHeader);
                     }
 
-                    // Check if given child guild is valid or not.  If found any, stop uninstall and do not allow partial uninstallation until fix wrong guid.
+                    // Check if given child guild is valid or not.  If found any, stop uninstall. We do not allow partial uninstallation until fix the wrong guid.
+                    // The reason of not allowing partial uninstallation is if we silently swallow invalid/misused guid, the user would think uninstallation
+                    // was successful, but actually some expected solution kits are still existing.
                     Set<String> allChildGuids = childSKMap.keySet();
                     for (String givenChildGuid: childGuidsInQueryParam) {
                         if (! allChildGuids.contains(givenChildGuid)) {
@@ -265,7 +294,7 @@ public class SolutionKitManagerResource {
     // set user selection(s)
     private void setUserSelections(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> solutionKitIdInstalls) throws SolutionKitManagerResourceException {
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
-        if (solutionKitIdInstalls == null || solutionKitIdInstalls.size() == 0) {
+        if (solutionKitIdInstalls == null || solutionKitIdInstalls.isEmpty()) {
             // default install all
             solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
         } else {
@@ -335,25 +364,6 @@ public class SolutionKitManagerResource {
                 }
             } else {
                 Thread.sleep( 5000L );
-            }
-        }
-    }
-
-    private void handleUpgrade(final SolutionKitsConfig solutionKitsConfig, final String upgradeGuid) throws SolutionKitManagerResourceException {
-        if (StringUtils.isNotEmpty(upgradeGuid)) {
-            try {
-                //todo:ms need to re-work here for silently installation for a collection of skars
-                final List<SolutionKit> solutionKits = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
-                if (solutionKits == null || solutionKits.isEmpty()) {
-                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + upgradeGuid + " found for upgrade." + lineSeparator()).build());
-                }
-
-                // todo: After findBySolutionKitGuid is changed to return a list of installed solution kits,  The next line is temporarily changed to use the first returned element.  Please change the next line as needed.
-                List<SolutionKit> upgradeList = new ArrayList<>(1);
-                upgradeList.add(solutionKits.get(0));
-                solutionKitsConfig.setSolutionKitsToUpgrade(upgradeList);
-            } catch (FindException e) {
-                throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Error finding Solution Kit ID " + upgradeGuid + " for upgrade." + lineSeparator()).build());
             }
         }
     }
