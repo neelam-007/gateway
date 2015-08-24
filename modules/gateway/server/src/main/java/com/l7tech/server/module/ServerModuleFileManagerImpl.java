@@ -146,12 +146,13 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = Propagation.SUPPORTS)
     public ServerModuleFileState findStateForCurrentNode(@NotNull final ServerModuleFile moduleFile) {
         return moduleFile.getStateForNode(clusterNodeId);
     }
 
     @Override
+    @Transactional(propagation = Propagation.SUPPORTS)
     public boolean isModuleUploadEnabled() {
         return config.getBooleanProperty(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE, false);
     }

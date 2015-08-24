@@ -720,7 +720,7 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
      *                               and ASN.1 encoded signature value as Base64 string.
      * @throws java.security.SignatureException if signature cannot be validated or signer cert is not trusted.
      */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = Propagation.SUPPORTS)
     @Administrative(licensed=false, background = true)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     void verifyServerModuleFileSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
@@ -730,7 +730,7 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
      * @return Server configuration properties about custom and modular assertion setup.
      */
     @NotNull
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = Propagation.SUPPORTS)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     public ServerModuleConfig getServerModuleConfig();
 
