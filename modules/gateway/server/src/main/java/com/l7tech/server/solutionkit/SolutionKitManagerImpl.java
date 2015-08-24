@@ -138,7 +138,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws SaveException, SolutionKitException, Exception {
+    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws Exception {
         final RestmanInvoker restmanInvoker = getRestmanInvoker();
 
         final String requestXml;
