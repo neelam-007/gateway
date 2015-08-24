@@ -89,13 +89,11 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setResolvedEntityIds(resolvedEntityIdsMap);
+    }
 
-        // Do not allow any conflicts not resolved when installation starts.
-        if (! areAllConflictsResolved()) {
-            DialogDisplayer.showMessageDialog(this, "Please resolve all conflicts before installation starts.", "Solution Kit Installation Warning", JOptionPane.WARNING_MESSAGE, null);
-
-            throw new RuntimeException("All conflicts must be resolved before installation.");
-        }
+    @Override
+    public boolean canFinish() {
+        return areAllConflictsResolved();
     }
 
     private void initialize() {
@@ -105,6 +103,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
                 final SolutionKitMappingsPanel selectedSKMappingsPanel =
                     (SolutionKitMappingsPanel) solutionKitMappingsTabbedPane.getSelectedComponent();
                 onResolve(selectedSKMappingsPanel);
+                notifyListeners();
             }
         });
 
