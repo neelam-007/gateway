@@ -109,9 +109,9 @@ public class SolutionKitManagerResource {
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         try {
             // handle upgrade
-            final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
             if (upgradeGuid != null) {
                 final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
@@ -196,9 +196,9 @@ public class SolutionKitManagerResource {
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
                 SaveException | FindException | UpdateException e) {
             return status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
+        } finally {
+            solutionKitsConfig.clear();
         }
-
-        // TODO delete customization jar
 
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
@@ -300,6 +300,7 @@ public class SolutionKitManagerResource {
             logger.warning(ExceptionUtils.getMessage(e));
             return Response.noContent().build();
         }
+
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
 
