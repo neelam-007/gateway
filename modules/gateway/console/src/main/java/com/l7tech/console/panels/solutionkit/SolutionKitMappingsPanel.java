@@ -55,7 +55,9 @@ public class SolutionKitMappingsPanel extends JPanel {
         }
 
         this.resolvedEntityIds = resolvedEntityIds;
-        mappingsModel.setRows(mappings.getMappings());
+        if (mappings.getMappings() != null) {
+            mappingsModel.setRows(mappings.getMappings());
+        }
     }
 
     /**
@@ -66,7 +68,9 @@ public class SolutionKitMappingsPanel extends JPanel {
     public void setData(@NotNull Mappings mappings) {
         this.bundleItems = null;
         this.resolvedEntityIds = null;
-        mappingsModel.setRows(mappings.getMappings());
+        if (mappings.getMappings() != null) {
+            mappingsModel.setRows(mappings.getMappings());
+        }
     }
 
     /**
