@@ -46,7 +46,6 @@ import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.PRECONDITION_FAILED;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
 
@@ -138,7 +137,7 @@ public class SolutionKitManagerResource {
                 for (SolutionKit solutionKit: selectedSolutionKits) {
                     if (! SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
-                        return status(Response.Status.PRECONDITION_FAILED).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
+                        return status(Response.Status.INTERNAL_SERVER_ERROR).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
                     }
                 }
             }
@@ -157,7 +156,7 @@ public class SolutionKitManagerResource {
                         String warningMsg = "The query parameter 'id' (" + upgradeGuid + ") does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
                         logger.warning(warningMsg);
 
-                        throw new SolutionKitManagerResourceException(status(PRECONDITION_FAILED).entity(warningMsg + lineSeparator()).build());
+                        return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                     }
 
                     // Update the parent solution kit attributes
