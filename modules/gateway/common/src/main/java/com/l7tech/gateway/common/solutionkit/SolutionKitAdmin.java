@@ -161,7 +161,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      *                               and ASN.1 encoded signature value as Base64 string.
      * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
      */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = Propagation.SUPPORTS)
     @Administrative(licensed=false, background = true)
     @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
