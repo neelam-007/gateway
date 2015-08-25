@@ -11,10 +11,7 @@ import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
@@ -40,17 +37,20 @@ import javax.ws.rs.ext.Provider;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
 import java.net.URLDecoder;
 import java.util.*;
 import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
 
 /**
- * This resource exposes the Solution Kit Manager for no-GUI use cases (e.g. support auto provisioning scripting to upload and manage a .skar file).
+ * <p>This resource exposes the Solution Kit Manager for no-GUI use cases (e.g. support auto provisioning scripting to upload and manage a .skar file).</p>
+ * <p>To interact with this resource use a tool like Advanced Rest Client (for Chrome) or cURL. Note the Solution Kit ID is the GUID provided in SolutionKit.xml.</p>
  */
 @Provider
 @Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + "solutionKitManagers")
@@ -60,7 +60,7 @@ public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
     protected static final String ID_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
-
+    protected static final String ERROR_MSG_UNTRUSTED_SKAR_FILE = "Untrusted .skar file.";
 
     private SolutionKitManager solutionKitManager;
     @SpringBean
@@ -84,12 +84,49 @@ public class SolutionKitManagerResource {
 
     /**
      * Install or upgrade a SKAR file.
+     *
+     * <h5>To Install</h5>
+     * <ul>
+     * 	<li>Upload a SKAR file using a <code>POST</code> request.</li>
+     * 	<li>Set the encoding to <code>multipart/form-data</code>.</li>
+     * 	<li>Set the file upload form-field name as <code>file</code>.</li>
+     * 	<li>
+     * 	    Add other form-field name and value as needed.
+     * 	    <ul>
+     * 	        <li>
+     * 	            <code>entityIdReplace</code>. Optional. To map one entity ID to another. Format <i>find_id</i>::<i>replace_with_id</i></>.
+     * 	            <ul>
+     *                  <li>The Solution Kit Manager will replace the entity ID to the left of the double colon (::) with the entity ID to the right. E.g. set <code>entityIdReplace</code> to <code>f1649a0664f1ebb6235ac238a6f71a6d::66461b24787941053fc65a626546e4bd</code>.</li>
+     * 	                <li>Multiple values accepted (values from multiple fields with the same form-field name are treated as a list of values).</li>
+     * 	                <li><b>Mapping must be overridable</b> from the solution kit author (e.g. mapping with srcId=<find_id> has <code>SK_AllowMappingOverride = true</code>). An error occurs when attempting to replace an non-overridable mapping.</li>
+     * 	            </ul>
+     * 	        </li>
+     * 	        <li><code>solutionKitSelect</code>. Optional. To select which Solution Kit in the uploaded SKAR to install. A Solution Kit ID. If not provided, all Solution Kit(s) in the upload SKAR will be installed. Multiple values accepted (values from multiple fields with the same form-field name are treated as a list of values).</li>
+     * 	        <li>Passing values to the Custom Callback. Optional. All form-fields not listed above will be passed to the Custom Callback.
+     * 	    </ul>
+     * 	</li>
+     * </ul>
+     *
+     * <p>Here's a cURL example (note the use of the --insecure option for development only):</p>
+     * <code>
+     *     curl --user admin_user:the_password --insecure --form entityIdReplace=f1649a0664f1ebb6235ac238a6f71a6d::66461b24787941053fc65a626546e4bd --form entityIdReplace=0567c6a8f0c4cc2c9fb331cb03b4de6f::1e3299eab93e2935adafbf35860fc8d9 --form "file=@/<your_path>/SimpleSolutionKit-1.1-20150823.skar.signed" --form MyInputTextKey=Hello https://127.0.0.1:8443/restman/1.0/solutionKitManagers
+     * </code>
+     *
+     * <h5>To Upgrade</h5>
+     * Same as install above, and the following.
+     * <ul>
+     *     <li>Specify the previously installed Solution Kit ID to upgrade as a query parameter in the URL. For example:</li>
+     * </ul>
+     * <code>
+     *     https://127.0.0.1:8443/restman/1.0/solutionKitManagers?id=33b16742-d62d-4095-8f8d-4db707e9ad52
+     * </code>
+     *
      * @param fileInputStream Input stream of the upload SKAR file.
      * @param solutionKitSelects Which Solution Kit ID(s) in the uploaded SKAR to install. If not provided, all Solution Kit(s) in the upload SKAR will be installed.
      * @param entityIdReplaces Optional. To map one entity ID to another. Format <find_id>::<replace_with_id>.
      * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
-     * @param formDataMultiPart Internal use only.
-     * @return TODO
+     * @param formDataMultiPart See above.
+     * @return Output from the Solution Kit Manager.
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -110,13 +147,15 @@ public class SolutionKitManagerResource {
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         try {
+            validateParams(fileInputStream);
+
             // handle upgrade
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
             if (upgradeGuid != null) {
                 final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
                 if (solutionKitsExistingOnGateway.size() > 0) {
                     solutionKitsConfig.setSolutionKitsToUpgrade(
-                        SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitsExistingOnGateway.get(0))
+                            SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitsExistingOnGateway.get(0))
                     );
                 }
             }
@@ -134,8 +173,8 @@ public class SolutionKitManagerResource {
             // Note: This checking is only for install (not for upgrade).
             if (upgradeGuid == null) {
                 final Map<String, List<String>> usedInstanceModifiersMap = SolutionKitUtils.getInstanceModifiers(solutionKitAdmin);
-                for (SolutionKit solutionKit: selectedSolutionKits) {
-                    if (! SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
+                for (SolutionKit solutionKit : selectedSolutionKits) {
+                    if (!SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
                         return status(Response.Status.INTERNAL_SERVER_ERROR).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
                     }
@@ -152,7 +191,7 @@ public class SolutionKitManagerResource {
                 if (upgradeGuid != null) {
                     final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitsToUpgrade().get(0); // The first element is a real parent solution kit.
 
-                    if (! upgradeGuid.equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
+                    if (!upgradeGuid.equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
                         String warningMsg = "The query parameter 'id' (" + upgradeGuid + ") does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
                         logger.warning(warningMsg);
 
@@ -191,7 +230,7 @@ public class SolutionKitManagerResource {
 
             // install or upgrade skars
             // After processing the parent, process selected solution kits if applicable.
-            for (SolutionKit solutionKit: selectedSolutionKits) {
+            for (SolutionKit solutionKit : selectedSolutionKits) {
                 // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
                 if (parentSKFromLoad != null) {
                     solutionKit.setParentGoid(parentGoid);
@@ -204,6 +243,10 @@ public class SolutionKitManagerResource {
             }
         } catch (SolutionKitManagerResourceException e) {
             return e.getResponse();
+        } catch (SolutionKitMappingException e) {
+            return status(Response.Status.BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
+        } catch (UntrustedSolutionKitException e) {
+            return status(Response.Status.BAD_REQUEST).entity(ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator()).build();
         } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
                 SaveException | FindException | UpdateException e) {
@@ -217,9 +260,14 @@ public class SolutionKitManagerResource {
 
     /**
      * Uninstall the Solution Kit record and the entities installed from the original SKAR (if delete mappings were provided by the SKAR author).
+     * <ul>
+     *     <li>Use a <code>DELETE</code> request.</li>
+     *     <li>Specify the Solution Kit ID as a query parameter in the URL.</li>
+     * </ul>
+     *
      * @param deleteGuid Solution Kit GUID to delete.
      * @param childGuidsInQueryParam GUIDs of child solution kits to delete
-     * @return TODO
+     * @return Output from the Solution Kit Manager.
      */
     @DELETE
     public Response uninstall(
@@ -316,6 +364,14 @@ public class SolutionKitManagerResource {
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
 
+    // validate input params
+    private void validateParams(@Nullable final InputStream fileInputStream) throws SolutionKitManagerResourceException {
+        if (fileInputStream == null) {
+            throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(
+                    "Missing mandatory upload file.  Choose a file to upload with form data field named: 'file'." + lineSeparator()).build());
+        }
+    }
+
     // set user selection(s)
     private void setUserSelections(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> solutionKitIdInstalls) throws SolutionKitManagerResourceException {
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
@@ -373,8 +429,7 @@ public class SolutionKitManagerResource {
 
     private void processJobResult(final SolutionKitAdmin solutionKitAdmin,
                                   final AsyncAdminMethods.JobId<? extends Serializable> jobId) throws
-            InterruptedException, SolutionKitException, AsyncAdminMethods.UnknownJobException,
-            AsyncAdminMethods.JobStillActiveException, SolutionKitManagerResourceException {
+            InterruptedException, SolutionKitException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException {
 
         while( true ) {
             final String status = solutionKitAdmin.getJobStatus( jobId );
@@ -385,7 +440,19 @@ public class SolutionKitManagerResource {
                 if ( jobResult.result != null ) {
                     break; // job done
                 } else {
-                    throw new SolutionKitException(jobResult.throwableMessage);
+                    SolutionKitException solutionKitException;
+                    try {
+                        final Class throwableClass = this.getClass().getClassLoader().loadClass(jobResult.throwableClassname);
+                        if (SolutionKitException.class.isAssignableFrom(throwableClass)) {
+                            Constructor constructor = throwableClass.getDeclaredConstructor(String.class);
+                            solutionKitException = (SolutionKitException) constructor.newInstance(jobResult.throwableMessage);
+                        } else {
+                            solutionKitException = new SolutionKitException(jobResult.throwableMessage);
+                        }
+                    } catch (Exception e) {
+                        throw new SolutionKitException(jobResult.throwableMessage);
+                    }
+                    throw solutionKitException;
                 }
             } else {
                 Thread.sleep( 5000L );

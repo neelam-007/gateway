@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.solutionkit;
 
 /**
- *
+ * Indicates a top level error with the Solution Kit subsystem.
  */
 public class SolutionKitException extends Exception {
     public SolutionKitException(String message) {

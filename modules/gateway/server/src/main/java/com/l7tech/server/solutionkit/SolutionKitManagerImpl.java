@@ -2,10 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -26,8 +23,6 @@ import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.*;
-import org.apache.commons.lang.UnhandledException;
-import org.apache.cxf.helpers.XMLUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -39,11 +34,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -178,7 +171,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             if (!isTest && result.right.hasMappingError()) {
                 String msg = "Unable to install bundle due to mapping errors:\n" + result.right.getAsString();
                 logger.log(Level.WARNING, msg);
-                throw new SolutionKitException(result.right.getAsString());
+                throw new SolutionKitMappingException(result.right.getAsString());
             }
             return result.right.getAsString();
         } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | IOException | SAXException e) {
