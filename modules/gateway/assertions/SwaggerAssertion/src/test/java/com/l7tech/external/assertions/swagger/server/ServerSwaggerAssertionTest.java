@@ -1135,7 +1135,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getRequestUri()).thenReturn("/svr/pet/findByStatus");
         when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
         when(mockContext.getVariable("swaggerDoc")).thenReturn(TEST_SWAGGER_JSON);
-        when(mockContext.getTargetMessage(assertion)).thenReturn(requestMsg);
+        when(mockContext.getRequest()).thenReturn(requestMsg);
         fixture = new ServerSwaggerAssertion(assertion);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(mockContext));
         verify(mockContext,times(1)).setVariable("sw.host","petstore.swagger.io:8080");

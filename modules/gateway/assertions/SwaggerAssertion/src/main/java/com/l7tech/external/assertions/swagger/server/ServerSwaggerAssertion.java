@@ -9,16 +9,14 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -29,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,39 +39,34 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @see com.l7tech.external.assertions.swagger.SwaggerAssertion
  */
-public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAssertion<SwaggerAssertion> {
+public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAssertion> {
     private final String[] variablesUsed;
-    private String swaggerDocument = null;
     private Swagger swaggerModel = null;
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
-
-// DELETEME example for dependency injection
-//    @Inject
-//    @Named("foo") -- The name is not usually required and should be left out if possible
-//    private Foo foo;
+    private final LinkedList<SwaggerValidator> validators = new LinkedList<>();
 
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
+        if ( assertion.isValidateMethod() ) validators.add(new MethodValidator());
     }
 
-    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
-                                              final Message message,
-                                              final String messageDescription,
-                                              final AuthenticationContext authContext )
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String doc = extractContextVarValue(assertion.getSwaggerDoc(), variableMap, getAudit());
 
-        if(doc == null) {
-            logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
+        if (doc == null) {
+            logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT,
+                    (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
             return AssertionStatus.FALSIFIED;
         }
 
-        //TODO: the document value must be hashed and stored as an atomic int so we can compare with another one
-        if(swaggerDocumentHash.get() == 0 || swaggerDocumentHash.get() != doc.hashCode()) {
+        // store a hash of the document value so we can avoid redundant parsing
+        if (swaggerDocumentHash.get() == 0 || swaggerDocumentHash.get() != doc.hashCode()) {
             lock.lock();
             //TODO: this block must be synchronized so we don't have concurrency issue
             try {
@@ -80,15 +74,15 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
                 List<AuthorizationValue> authorizationValues = new ArrayList<>();
                 authorizationValues.add(new AuthorizationValue());
                 swaggerModel = parser.parse(doc, authorizationValues);
+
                 //check if the document parsed properly
                 if (swaggerModel != null) {
-                    swaggerDocument = doc;
-                    swaggerDocumentHash.set(swaggerDocument.hashCode());
+                    swaggerDocumentHash.set(doc.hashCode());
                 } else {
                     swaggerModel = null;
-                    swaggerDocument = null;
                     swaggerDocumentHash.set(0);
-                    logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
+                    logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT,
+                            (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
                     return AssertionStatus.FALSIFIED;
                 }
             } finally {
@@ -97,36 +91,32 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
             }
         }
 
+        final Message message = context.getRequest();
+
         AssertionStatus status = AssertionStatus.NONE;
 
-        if(message.isHttpRequest()) {
-            HttpRequestKnob httpRequestKnob = message.getHttpRequestKnob();
-            if (httpRequestKnob == null) {
-                return AssertionStatus.FALSIFIED;
-            }
-            String serviceBase = StringUtils.isNotBlank(assertion.getServiceBase())? assertion.getServiceBase() : getServiceRoutingUri(context.getService());
-            String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, "");//remove service from the request uri
-            context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_API_URI, apiUri);
-            //TODO: do actual validation
+        HttpRequestKnob httpRequestKnob = message.getHttpRequestKnob();
 
-        }
-        else if(message.isHttpResponse()) {
-            HttpResponseKnob httpResponseKnob = message.getHttpResponseKnob();
-            if(httpResponseKnob == null) {
-                return AssertionStatus.FALSIFIED;
-            }
-
-            // TODO: do actual validation on response
+        if (message.getHttpRequestKnob() == null) {
+            // TODO jwilliams: audit failure
+            return AssertionStatus.FALSIFIED;
         }
 
+        String serviceBase = StringUtils.isNotBlank(assertion.getServiceBase()) ? assertion.getServiceBase() : getServiceRoutingUri(context.getService());
+        String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, ""); // remove service from the request uri
 
-        //TODO: set context variables regardless of the validation results
+        // set context variables regardless of the validation results
+        context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_API_URI, apiUri);
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_HOST, swaggerModel.getHost());
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_BASE_URI, swaggerModel.getBasePath());
 
+        // perform the validation
+        for (SwaggerValidator v : validators) {
+            if (!v.validate()) return AssertionStatus.FALSIFIED;
+        }
+
         return status;
     }
-
 
     private String getServiceRoutingUri(PublishedService service) {
         String routingUri = service.getRoutingUri();
@@ -136,17 +126,6 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
         } else {
             return routingUri.replaceAll("/\\*.*$", "");
         }
-    }
-
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     *
-     * DELETEME if not required.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
     }
 
     private String extractContextVarValue(String var, Map<String, Object> varMap, Audit audit) {
@@ -171,5 +150,17 @@ public class ServerSwaggerAssertion extends AbstractMessageTargetableServerAsser
             }
         }
         return null;
+    }
+
+    interface SwaggerValidator {
+            boolean validate();
+    }
+
+    final class MethodValidator implements SwaggerValidator {
+
+        @Override
+        public boolean validate() {
+           return true;
+        }
     }
 }
