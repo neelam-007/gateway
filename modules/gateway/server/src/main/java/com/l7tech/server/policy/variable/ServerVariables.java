@@ -753,6 +753,16 @@ public class ServerVariables {
                 }
             }),
 
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_RESOLUTIONURI, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final PublishedService service = context.getService();
+                    if (service == null)
+                        return null;
+                    return service.getRoutingUri();
+                }
+            }),
+
             new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_POLICY_GUID, new Getter() {
                 @Override
                 public Object get( final String name, final PolicyEnforcementContext context) {

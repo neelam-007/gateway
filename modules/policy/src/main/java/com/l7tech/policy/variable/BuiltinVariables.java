@@ -71,6 +71,7 @@ public class BuiltinVariables {
     public static final String SERVICE_SUFFIX_NAME = "name";
     public static final String SERVICE_SUFFIX_OID = "oid";
     public static final String SERVICE_SUFFIX_ROUTINGURL = "defaultRoutingURL";
+    public static final String SERVICE_SUFFIX_RESOLUTIONURI = "resolutionUri";
     public static final String SERVICE_SUFFIX_POLICY_GUID = "policy.guid";
     public static final String SERVICE_SUFFIX_POLICY_VERSION = "policy.version";
     public static final String SERVICE_SUFFIX_PROPERTIES = "property";
@@ -209,6 +210,7 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_PROPERTIES, true, true, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_OID, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
+            new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_RESOLUTIONURI, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_POLICY_GUID, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_POLICY_VERSION, false, false, null, false, DataType.INTEGER),
 

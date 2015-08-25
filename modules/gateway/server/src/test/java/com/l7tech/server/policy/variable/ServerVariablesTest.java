@@ -112,9 +112,11 @@ public class ServerVariablesTest {
         final PublishedService ps = new PublishedService();
         ps.setGoid(new Goid(0,123456L));
         ps.setName( "testServiceNameContextVariable" );
-        ps.getPolicy().setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a66");
+        ps.getPolicy().setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a66" );
         ps.putProperty( "prop1", "prop1val" );
         ps.putProperty( "prop2", "prop2val" );
+        ps.setDefaultRoutingUrl( "http://example.com/foo/bar/defaultRoutingUrl/*" );
+        ps.setRoutingUri( "/foo/bar/routingUri/*" );
         pec.setService(ps);
         pec.setServicePolicyMetadata(new PolicyMetadataStub() {
             @Override
@@ -143,6 +145,12 @@ public class ServerVariablesTest {
         Set<String> names = new HashSet<>( Arrays.asList( propsList ) );
         assertTrue( names.contains( "prop1" ) );
         assertTrue( names.contains( "prop2" ) );
+
+        final String resolutionUri = (String) ServerVariables.get( "service.resolutionUri", pec );
+        assertEquals( "/foo/bar/routingUri/*", resolutionUri );
+
+        final String routingUrl = (String) ServerVariables.get( "service.defaultRoutingURL", pec );
+        assertEquals( "http://example.com/foo/bar/defaultRoutingUrl/*", routingUrl );
     }
 
     @Test
