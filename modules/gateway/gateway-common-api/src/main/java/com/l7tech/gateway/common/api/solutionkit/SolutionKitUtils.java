@@ -9,9 +9,11 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
@@ -24,6 +26,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -299,6 +302,58 @@ public final class SolutionKitUtils {
         }
 
         return skList;
+    }
+
+    /**
+     * Check if the instance modifier of a selected solution kit is unique or not.
+     *
+     * @param solutionKit: a solution kit whose instance modifier will be checked.
+     * @param usedInstanceModifiersMap: a map of solution kit guid and a list of instance modifiers used by all solution kits with such guid.
+     * @return true if the instance modifier is unique.  That is, the instance modifier is not used by other solution kit instances.
+     */
+    public static boolean checkInstanceModifierUniqueness(@NotNull final SolutionKit solutionKit, @NotNull final Map<String, List<String>> usedInstanceModifiersMap) {
+        final String solutionKitGuid = solutionKit.getSolutionKitGuid();
+        if (usedInstanceModifiersMap.keySet().contains(solutionKitGuid)) {
+            final List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
+            final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+            if (usedInstanceModifiers != null && usedInstanceModifiers.contains(newInstanceModifier)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Find all instance modifiers used by all solution kit instances.
+     *
+     * @param solutionKitAdmin: the solution kit Admin API used to find solution kit headers
+     * @return a map of solution kit guid and a list of instance modifiers used by all solution kits with such guid.
+     */
+    public static Map<String, List<String>> getInstanceModifiers(@NotNull final SolutionKitAdmin solutionKitAdmin) {
+        final Map<String, List<String>> instanceModifiers = new HashMap<>();
+
+        try {
+            final Collection<SolutionKitHeader> solutionKitHeaders = solutionKitAdmin.findSolutionKits();
+
+            for (EntityHeader header: solutionKitHeaders) {
+                if (! (header instanceof SolutionKitHeader)) continue;  // This line is to avoid to break the test, signedSkar() in SolutionKitManagerResourceTest.
+
+                SolutionKitHeader solutionKitHeader = (SolutionKitHeader) header;
+                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
+                java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
+                if (usedInstanceModifiers == null) {
+                    usedInstanceModifiers = new ArrayList<>();
+                }
+                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
+                instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        return instanceModifiers;
     }
 
     private SolutionKitUtils() {}

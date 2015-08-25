@@ -126,6 +126,23 @@ public class SolutionKitManagerResource {
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
             skarProcessor.load(fileInputStream, solutionKitAdmin);
 
+            // handle any user selection(s) - child solution kits
+            setUserSelections(solutionKitsConfig, solutionKitSelects);
+            final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
+
+            // Check instance modifier uniqueness for installing child solution kits.  If any child solution kits violate
+            // the uniqueness rule, stop install any solution kits and do not allow any partial installation.
+            // Note: This checking is only for install (not for upgrade).
+            if (upgradeGuid == null) {
+                final Map<String, List<String>> usedInstanceModifiersMap = SolutionKitUtils.getInstanceModifiers(solutionKitAdmin);
+                for (SolutionKit solutionKit: selectedSolutionKits) {
+                    if (! SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
+                        // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
+                        return status(Response.Status.PRECONDITION_FAILED).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
+                    }
+                }
+            }
+
             // Check if the loaded skar is a collection of skars
             final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
             Goid parentGoid = null;
@@ -166,10 +183,6 @@ public class SolutionKitManagerResource {
                     }
                 }
             }
-
-            // handle any user selection(s)
-            setUserSelections(solutionKitsConfig, solutionKitSelects);
-            final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
             // remap any entity id(s)
             remapEntityIds(solutionKitsConfig, entityIdReplaces);

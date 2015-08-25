@@ -25,7 +25,6 @@ import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -142,8 +141,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             // Case 2: User runs Upgrade but the skar file does not contain UpgradeBundle.xml.  We treat this case same as Install.
             !settings.isUpgradeInfoProvided(solutionKit)) {
 
-            final boolean duplicateInstanceModifierFound = ! checkInstanceModifierUniqueness(solutionKit);
-            if (duplicateInstanceModifierFound) return false;
+            final boolean duplicateInstanceModifierFound = ! SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, settings.getInstanceModifiers());
+            if (duplicateInstanceModifierFound) {
+                final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "The solution kit '" + solutionKit.getName() + "' has already used " +
+                        (newInstanceModifier == null? "an empty instance modifier" : "the instance modifier, '" + newInstanceModifier + "'") +
+                        ".\nPlease specify a different instance modifier to continue installation.",
+                    "Duplicate Instance Modifier Warning", JOptionPane.WARNING_MESSAGE, null);
+
+                return false;
+            }
         }
 
         // invoke custom callback
@@ -419,33 +428,5 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private void createUIComponents() {
         customizableButtonPanel = new JPanel();
         customizableButtonPanel.setLayout(new BorderLayout());
-    }
-
-    /**
-     * Check if instance modifier is unique for a selected solution kit.
-     *
-     * @param solutionKit: a solution kit whose instance modifier will be checked.
-     * @return true if the instance modifier is valid.  That is, it does not violate the instance modifier uniqueness for a given solution kit.
-     */
-    private boolean checkInstanceModifierUniqueness(@NotNull final SolutionKit solutionKit) {
-        final Map<String, List<String>> usedInstanceModifiersMap = settings.getInstanceModifiers();
-
-        final String solutionKitGuid = solutionKit.getSolutionKitGuid();
-        if (usedInstanceModifiersMap.keySet().contains(solutionKitGuid)) {
-            final List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
-            final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-            if (usedInstanceModifiers != null && usedInstanceModifiers.contains(newInstanceModifier)) {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "The solution kit '" + solutionKit.getName() + "' has already used " +
-                        (newInstanceModifier == null? "an empty instance modifier" : "the instance modifier, '" + newInstanceModifier + "'") +
-                        ".\nPlease specify a different instance modifier to continue installation.",
-                    "Duplicate Instance Modifier Warning", JOptionPane.WARNING_MESSAGE, null);
-
-                return false;
-            }
-        }
-
-        return true;
     }
 }

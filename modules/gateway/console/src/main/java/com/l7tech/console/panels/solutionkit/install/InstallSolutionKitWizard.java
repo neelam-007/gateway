@@ -55,9 +55,10 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         final SolutionKitLoadPanel first = new SolutionKitLoadPanel();
         first.setNextPanel(second);
 
+        final SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        solutionKitsConfig.setSolutionKitsToUpgrade(SolutionKitUtils.getListOfSolutionKitsToUpgrade(Registry.getDefault().getSolutionKitAdmin(), solutionKitToUpgrade));
-        solutionKitsConfig.setInstanceModifiers(getInstanceModifiers());
+        solutionKitsConfig.setSolutionKitsToUpgrade(SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitToUpgrade));
+        solutionKitsConfig.setInstanceModifiers(SolutionKitUtils.getInstanceModifiers(solutionKitAdmin));
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
@@ -69,28 +70,6 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private InstallSolutionKitWizard(Window parent, WizardStepPanel<SolutionKitsConfig> panel, @NotNull SolutionKitsConfig solutionKitsConfig) {
         super(parent, panel, solutionKitsConfig);
         initialize();
-    }
-
-    private static Map<String, List<String>> getInstanceModifiers() {
-        final Map<String, List<String>> instanceModifiers = new HashMap<>();
-
-        try {
-            final Collection<SolutionKitHeader> solutionKitHeaders = Registry.getDefault().getSolutionKitAdmin().findSolutionKits();
-
-            for (SolutionKitHeader solutionKitHeader: solutionKitHeaders) {
-                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
-                java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
-                if (usedInstanceModifiers == null) {
-                    usedInstanceModifiers = new ArrayList<>();
-                }
-                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
-                instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        }
-
-        return instanceModifiers;
     }
 
     @Override
