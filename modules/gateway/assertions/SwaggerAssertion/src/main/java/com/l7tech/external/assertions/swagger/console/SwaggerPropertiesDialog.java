@@ -1,20 +1,21 @@
 package com.l7tech.external.assertions.swagger.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
-import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  * Created by moiyu01 on 15-07-24.
  */
 public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<SwaggerAssertion> {
-
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle(SwaggerPropertiesDialog.class.getName());
+       
     private JPanel mainPanel;
     private JPanel prefixPanel;
     private TargetVariablePanel swaggerPrefix;
@@ -25,7 +26,9 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private JCheckBox validateRequestArgumentsCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
     private JTextField serviceBaseTextField;
-    private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
+    private JLabel swaggerDocumentLabel;
+    private JLabel prefixLabel;
+    private InputValidator validator;
 
     public SwaggerPropertiesDialog(final Window parent, final SwaggerAssertion assertion) {
         super(SwaggerAssertion.class, parent, assertion, true);
@@ -46,16 +49,10 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validateRequestArgumentsCheckBox.setSelected(assertion.isValidateRequestArguments());
         requireSecurityCredentialsToCheckBox.setSelected(assertion.isRequireSecurityCredentials());
         swaggerPrefix.setVariable(assertion.getPrefix());
-
-        updateTargetModel(assertion);
     }
 
     @Override
     public SwaggerAssertion getData(SwaggerAssertion assertion) throws ValidationException {
-        if ( !targetMessagePanel.isValidTarget() ) {
-            throw new ValidationException("Invalid Target Message: " + targetMessagePanel.check());
-        }
-
         assertion.setSwaggerDoc(swaggerDocumentVariable.getVariable());
         assertion.setServiceBase(serviceBaseTextField.getText());
         assertion.setRequireSecurityCredentials(requireSecurityCredentialsToCheckBox.isSelected());
@@ -64,18 +61,67 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         assertion.setValidateScheme(validateSchemeCheckBox.isSelected());
         assertion.setValidateRequestArguments(validateRequestArgumentsCheckBox.isSelected());
         assertion.setPrefix(swaggerPrefix.getVariable());
-        targetMessagePanel.updateModel(assertion);
         return assertion;
     }
 
 
     protected void initComponents(final SwaggerAssertion assertion) {
+        super.initComponents();
+        swaggerDocumentVariable.setAcceptEmpty(false);
+        swaggerPrefix.setAcceptEmpty(false);
+
         validateMethodCheckBox.setSelected(true);
         validatePathCheckBox.setSelected(true);
         validateRequestArgumentsCheckBox.setSelected(true);
         validateSchemeCheckBox.setSelected(true);
         requireSecurityCredentialsToCheckBox.setSelected(true);
-        super.initComponents();
+
+        validator = new InputValidator(this, getTitle());
+        validator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(!swaggerDocumentVariable.isEntryValid()) {
+                    return resourceBundle.getString("swaggerDocumentInvalidEntryErrMsg");
+                }
+                return null;
+            }
+        });
+
+        validator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(!swaggerPrefix.isEntryValid()) {
+                    return resourceBundle.getString("variablePrefixInvalidErrMsg");
+                }
+                return null;
+            }
+        });
+
+        validator.attachToButton(getOkButton(), super.createOkAction());
+
+        RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
+            @Override
+            public void run() {
+                enableDisableComponents();
+            }
+        };
+
+        validatePathCheckBox.addChangeListener(enableDisableListener);
+        validateMethodCheckBox.addChangeListener(enableDisableListener);
+    }
+
+    private void enableDisableComponents() {
+        validateMethodCheckBox.setEnabled(validatePathCheckBox.isSelected());
+        validateRequestArgumentsCheckBox.setEnabled(validateMethodCheckBox.isSelected());
+        requireSecurityCredentialsToCheckBox.setEnabled(validateMethodCheckBox.isSelected());
+
+        if(!validatePathCheckBox.isSelected()) {
+            validateMethodCheckBox.setSelected(false);
+        }
+        if(!validateMethodCheckBox.isSelected()){
+            validateRequestArgumentsCheckBox.setSelected(false);
+            requireSecurityCredentialsToCheckBox.setSelected(false);
+        }
     }
 
     @Override
@@ -88,16 +134,9 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         swaggerDocumentVariable = new TargetVariablePanel();
     }
 
-
-    private void updateTargetModel(final SwaggerAssertion assertion) {
-        targetMessagePanel.setModel(new MessageTargetableAssertion() {{
-            TargetMessageType targetMessageType = assertion.getTarget();
-            if ( targetMessageType != null ) {
-                setTarget(targetMessageType);
-            } else {
-                clearTarget();
-            }
-            setOtherTargetMessageVariable(assertion.getOtherTargetMessageVariable());
-        }},getPreviousAssertion());
+    @Override
+    protected ActionListener createOkAction() {
+        return new RunOnChangeListener();
     }
+
 }
