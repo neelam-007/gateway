@@ -18,7 +18,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 /**
  * 
  */
-public class SwaggerAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables {
+public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(SwaggerAssertion.class.getName());
 
     public static final String DEFAULT_PREFIX = "sw";
@@ -31,7 +31,6 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
     public static final String SWAGGER_HOST = ".host";
     public static final String SWAGGER_API_URI = ".apiUri";
 
-    private final MessageTargetableSupport messageTargetableSupport;
     private String prefix = DEFAULT_PREFIX;
     private String swaggerDoc;
     private String serviceBase = "";
@@ -40,14 +39,6 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
     private boolean validateScheme = true;
     private boolean validateRequestArguments = true;
     private boolean requireSecurityCredentials = true;
-
-    public SwaggerAssertion() {
-        this( TargetMessageType.REQUEST );
-    }
-
-    public SwaggerAssertion(TargetMessageType defaultTargetMessageType) {
-        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, false);
-    }
 
     public boolean isValidateMethod() {
         return validateMethod;
@@ -134,7 +125,7 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT
@@ -207,62 +198,6 @@ public class SwaggerAssertion extends Assertion implements MessageTargetable, Us
                 new VariableMetadata(prefix + SWAGGER_BASE_URI, false, false, prefix + SWAGGER_BASE_URI, false, DataType.STRING),
                 new VariableMetadata(prefix + SWAGGER_API_URI, false, false, prefix + SWAGGER_API_URI, false, DataType.STRING)
         };
-    }
-
-
-    /**
-     * The type of message this assertion targets.  Defaults to {@link com.l7tech.policy.assertion.TargetMessageType#REQUEST}. Never null.
-     */
-    @Override
-    public TargetMessageType getTarget() {
-        return messageTargetableSupport.getTarget();
-    }
-
-    /**
-     * The type of message this assertion targets.  Defaults to {@link com.l7tech.policy.assertion.TargetMessageType#REQUEST}. Never null.
-     */
-    @Override
-    public void setTarget(TargetMessageType target) {
-        messageTargetableSupport.setTarget(target);
-    }
-
-    /**
-     * If {@link #getTarget} is {@link com.l7tech.policy.assertion.TargetMessageType#OTHER}, the name of some other message-typed variable to use as
-     * this assertion's target.
-     */
-    @Override
-    public String getOtherTargetMessageVariable() {
-        return messageTargetableSupport.getOtherTargetMessageVariable();
-    }
-
-    /**
-     * If {@link #getTarget} is {@link com.l7tech.policy.assertion.TargetMessageType#OTHER}, the name of some other message-typed variable to use as
-     * this assertion's target.
-     */
-    @Override
-    public void setOtherTargetMessageVariable(String otherMessageVariable) {
-        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
-    }
-
-    /**
-     * A short, descriptive name for the target, i.e. "request", "response" or {@link #getOtherTargetMessageVariable()}
-     * <p/>
-     * <p>Almost all MessageTargetable implementations will never return null,
-     * in a few null is necessary for backwards compatibility.</p>
-     *
-     * @return the target name or null if no target is set.
-     */
-    @Override
-    public String getTargetName() {
-        return messageTargetableSupport.getTargetName();
-    }
-
-    /**
-     * @return true if the target message might be modified; false if the assertion only reads the target message.
-     */
-    @Override
-    public boolean isTargetModifiedByGateway() {
-        return false;
     }
 
 }
