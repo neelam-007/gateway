@@ -421,7 +421,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
             if (signatureProps == null) {
                 throw new ResourceFactory.InvalidResourceException(
                         ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
-                        "Module signature must be set"
+                        "Module must be signed"
                 );
             }
         }
@@ -462,7 +462,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
             if (signatureProps == null) {
                 throw new ResourceFactory.InvalidResourceException(
                         ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES,
-                        "Module signature must be set"
+                        "Module must be signed"
                 );
             }
 

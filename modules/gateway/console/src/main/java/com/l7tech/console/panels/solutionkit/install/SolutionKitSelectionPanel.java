@@ -190,7 +190,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         } catch (SolutionKitException t) {  //for expected and foreseeable errors, display to the user for correction
             errorMessage = ExceptionUtils.getMessage(t);
             logger.log(Level.WARNING, errorMessage);
-            DialogDisplayer.showMessageDialog(this, errorMessage + ".  See Policy Manager log for more details.", "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
         } catch (Throwable t) { //for unexpected, unhandled exceptions, show the standard BIG ERROR dialog
             ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", t);
             Utilities.centerOnParentWindow(errorMessageDialog);
@@ -411,7 +411,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                         } catch (TooManyChildElementsException | MissingRequiredElementException e) {
                             final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
                             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
-                            DialogDisplayer.showMessageDialog(this, errorMessage + "  See Policy Manager log for more details.", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);
+                            DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);
                         }
                     }
 
