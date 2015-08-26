@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -19,15 +18,9 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * 
  */
 public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVariables {
-    protected static final Logger logger = Logger.getLogger(SwaggerAssertion.class.getName());
 
     public static final String DEFAULT_PREFIX = "sw";
-    public static final String RESULT_CODE = ".result.code";
-    public static final String RESULT_RESPONSE_CODE = ".result.response.code";
-    public static final String RESULT_RESPONSE_TYPE = ".result.response.contentType";
-    public static final String RESULT_MESSAGE = ".result.message";
     public static final String SWAGGER_BASE_URI = ".baseUri";
-    public static final String SWAGGER_DOC = ".document";
     public static final String SWAGGER_HOST = ".host";
     public static final String SWAGGER_API_URI = ".apiUri";
 
@@ -190,10 +183,6 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-        new VariableMetadata(prefix + RESULT_CODE, false, true, prefix + RESULT_CODE, false, DataType.INTEGER),
-                new VariableMetadata(prefix + RESULT_RESPONSE_CODE, false, true, prefix + RESULT_MESSAGE, false, DataType.STRING),
-                new VariableMetadata(prefix + RESULT_MESSAGE, false, true, prefix + RESULT_RESPONSE_CODE, false, DataType.STRING),
-                new VariableMetadata(prefix + RESULT_RESPONSE_TYPE, false, true, prefix + RESULT_RESPONSE_TYPE, false, DataType.STRING),
                 new VariableMetadata(prefix + SWAGGER_HOST, false, false, prefix + SWAGGER_HOST, false, DataType.STRING),
                 new VariableMetadata(prefix + SWAGGER_BASE_URI, false, false, prefix + SWAGGER_BASE_URI, false, DataType.STRING),
                 new VariableMetadata(prefix + SWAGGER_API_URI, false, false, prefix + SWAGGER_API_URI, false, DataType.STRING)
