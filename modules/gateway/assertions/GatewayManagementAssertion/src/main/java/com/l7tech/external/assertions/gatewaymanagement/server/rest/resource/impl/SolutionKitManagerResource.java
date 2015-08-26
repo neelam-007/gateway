@@ -40,10 +40,12 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
@@ -60,7 +62,6 @@ public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
     protected static final String ID_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
-    protected static final String ERROR_MSG_UNTRUSTED_SKAR_FILE = "Untrusted .skar file.";
 
     private SolutionKitManager solutionKitManager;
     @SpringBean
@@ -176,7 +177,7 @@ public class SolutionKitManagerResource {
                 for (SolutionKit solutionKit : selectedSolutionKits) {
                     if (!SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
-                        return status(Response.Status.INTERNAL_SERVER_ERROR).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
+                        return status(INTERNAL_SERVER_ERROR).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
                     }
                 }
             }
@@ -242,15 +243,19 @@ public class SolutionKitManagerResource {
                 processJobResult(solutionKitAdmin, jobId);
             }
         } catch (SolutionKitManagerResourceException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
         } catch (SolutionKitMappingException e) {
-            return status(Response.Status.BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (UntrustedSolutionKitException e) {
-            return status(Response.Status.BAD_REQUEST).entity(ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator()).build();
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
                 SaveException | FindException | UpdateException e) {
-            return status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return status(INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         } finally {
             solutionKitsConfig.clear();
         }
@@ -354,10 +359,11 @@ public class SolutionKitManagerResource {
                 processJobResult(solutionKitAdmin, jobId);
             }
         } catch (SolutionKitManagerResourceException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
         } catch (SolutionKitException | InterruptedException | FindException | DeleteException|
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException e) {
-            logger.warning(ExceptionUtils.getMessage(e));
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return Response.noContent().build();
         }
 

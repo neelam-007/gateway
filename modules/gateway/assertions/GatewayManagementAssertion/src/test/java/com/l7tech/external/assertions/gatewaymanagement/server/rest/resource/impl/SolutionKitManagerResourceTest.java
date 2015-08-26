@@ -33,9 +33,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.ERROR_MSG_UNTRUSTED_SKAR_FILE;
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.ID_DELIMINATOR;
-import static java.lang.System.lineSeparator;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -250,7 +248,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
 
         // test unsigned skar of skars
 
@@ -284,7 +282,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
     }
 
     @Test
@@ -426,7 +424,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children unsigned)
@@ -465,7 +463,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children signed)
@@ -504,7 +502,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
         }
     }
 
@@ -566,7 +564,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -611,7 +609,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.either(Matchers.containsString("Signature not verified")).or(Matchers.containsString("Could not verify signature")));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -655,7 +653,14 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat(
+                (String) response.getEntity(),
+                Matchers.anyOf(
+                        Matchers.containsString("Failed to verify signer certificate"),
+                        Matchers.containsString("Signature not verified"),
+                        Matchers.containsString("Failed to verify and extract signer certificate")
+                )
+        );
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -752,7 +757,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -822,7 +827,7 @@ public class SolutionKitManagerResourceTest {
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
         Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
         Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertEquals(response.getEntity(), ERROR_MSG_UNTRUSTED_SKAR_FILE + lineSeparator());
+        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
