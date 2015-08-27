@@ -1,8 +1,9 @@
 ssg:
-  image: hbutow/ssg:9.0.00-1.svn20150713
-#  image: heinrichbutowatca/ssg:9.0-test
+  image: heinrichbutowatca/ssg:9.0-test2
 #  mem_limit: 2147483648
-  mem_limit: 1073741824
+#  mem_limit: 1073741824
+#  mem_limit: 1024m
+#  memswap_limit: 0m
   expose:
     - "2124"
     - "8080"
@@ -13,25 +14,28 @@ ssg:
 #    - "8080"
 #    - "8443"
 #    - "9443"
+# for the environment, we use a YAML dictionary instead of an array as this lets us use a quoted string with a space in it for SSG_INTERNAL_SERVICES
   environment:
-    - SSG_CLUSTER_HOST=localhost
-    - SSG_CLUSTER_PASSWORD=7layer
-    - SSG_DATABASE_TYPE=mysql
-    - SSG_DATABASE_HOST=mysql
-    - SSG_DATABASE_PORT=3306
-    - SSG_DATABASE_NAME=ssg
-    - SSG_DATABASE_USER=gateway
-    - SSG_DATABASE_PASSWORD=7layer
-    - SSG_DATABASE_ADMIN_USER=root
-    - SSG_DATABASE_ADMIN_PASS=7layer
-    - SSG_ADMIN_USER=pmadmin
-    - SSG_ADMIN_PASS=7layer
+    SSG_CLUSTER_HOST: localhost
+    SSG_CLUSTER_PASSWORD: 7layer
+    SSG_DATABASE_TYPE: mysql
+    SSG_DATABASE_HOST: mysql
+    SSG_DATABASE_PORT: 3306
+    SSG_DATABASE_NAME: ssg
+    SSG_DATABASE_USER: gateway
+    SSG_DATABASE_PASSWORD: 7layer
+    SSG_DATABASE_ADMIN_USER: root
+    SSG_DATABASE_ADMIN_PASS: 7layer
+    SSG_ADMIN_USER: pmadmin
+    SSG_ADMIN_PASS: 7layer
 # we don't include the license here. It is expected that the machine that runs docker-compose will already have SSG_LICENSE set and the value of it is passed to each Docker Machine to put it its environment.
 # the variable is set by running something like:
 # export SSG_LICENSE="$(cat ~/workspace/uneasyrooster-trunk/trunk/DEVLICENSE.xml | gzip | base64)"
-    - SSG_LICENSE
+    SSG_LICENSE:
 # the internal services to create. A space separated list of files to create as described at https://wiki.l7tech.com/mediawiki/index.php/Auto_Provision_Internal_Gateway_Service_Func_Spec
-    - SSG_INTERNAL_SERVICES="restman wsman"
+    SSG_INTERNAL_SERVICES: "restman wsman"
+# this should ensure that the ssg containers are scheduled by Docker Swarm on different Docker hosts 
+#    affinity: 'container!=~*ssg*'
   links:
     - mysql
 mysql:
