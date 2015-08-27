@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * text when url decoding fails)</p>
  */
 public class ParameterizedString {
-    private static final int MAX_FIELD_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.http.maxParameterLength", 600000 );
+    private static final int MAX_FIELD_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.http.maxParameterLength", 1000000 );
     private static final boolean SEMICOLON_AS_SEPARATOR = ConfigFactory.getBooleanProperty("com.l7tech.http.useSemicolonAsSeparator", false);
     //- PUBLIC
 

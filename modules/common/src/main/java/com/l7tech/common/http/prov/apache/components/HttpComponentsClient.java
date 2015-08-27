@@ -562,11 +562,11 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        return ConfigFactory.getIntProperty(PROP_MAX_CONN_PER_HOST, 200);
+        return ConfigFactory.getIntProperty(PROP_MAX_CONN_PER_HOST, 1500);
     }
 
     public static int getDefaultMaxTotalConnections() {
-        return ConfigFactory.getIntProperty(PROP_MAX_TOTAL_CONN, 2000);
+        return ConfigFactory.getIntProperty(PROP_MAX_TOTAL_CONN, 3000);
     }
 
     private void stampBindingIdentity() {

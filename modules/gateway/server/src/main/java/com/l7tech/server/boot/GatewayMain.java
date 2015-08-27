@@ -44,7 +44,10 @@ public class GatewayMain {
     }
 
     private static void configureOtherSystemProperties() {
+        // Configure system properties here that must be set extremely early, before we start creating the application context
+        // Other system property defaults can be set in the resource file com/l7tech/server/resources/system.properties
         if ( null == System.getProperty( JAXB_CLASS_TAILOR ) ) {
+            // This could probably be moved to the system.properties resource file
             System.setProperty( JAXB_CLASS_TAILOR, "true" );
         }
     }
