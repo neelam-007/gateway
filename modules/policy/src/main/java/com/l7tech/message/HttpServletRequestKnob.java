@@ -49,7 +49,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     private URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
-    private static final int MAX_FORM_POST = ConfigFactory.getIntProperty( "com.l7tech.message.httpParamsMaxFormPost", 512 * 1024 );
+    private static final String PARAM_MAX_FORM_POST = "io.httpParamsMaxFormPostBytes";
     private static final boolean VALIDATE_PARAMETERS = ConfigFactory.getBooleanProperty( "com.l7tech.message.httpParamsValidate", true );
 
     public HttpServletRequestKnob(HttpServletRequest request) {
@@ -134,7 +134,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
         // Check size
         int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", len));
+        int maxLen = ConfigFactory.getIntProperty( PARAM_MAX_FORM_POST, 512 * 1024 );
+        if (len > maxLen) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", len));
         if (len == -1) {
             nobody();
             return;
