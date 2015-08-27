@@ -88,11 +88,18 @@ else
 fi
 
 # create the services files
+if [ -d "$GATEWAY_SERVICES_DIR" ]; then
+        logInfo "found gateway services dir at \"$GATEWAY_SERVICES_DIR\". Continuing."
+else
+        logInfo "no gateway services dir found at \"$GATEWAY_SERVICES_DIR\". Creating it."
+        mkdir "$GATEWAY_SERVICES_DIR" || logErrorAndExit "could not create directory \"$GATEWAY_SERVICES_DIR\""
+        chmod 755 "$GATEWAY_SERVICES_DIR" || logErrorAndExit "could not chmod directory \"$GATEWAY_SERVICES_DIR\""
+fi
+logInfo "DEBUG: SSG_INTERNAL_SERVICES=\"$SSG_INTERNAL_SERVICES\""
 for SSG_INTERNAL_SERVICE in `echo "$SSG_INTERNAL_SERVICES"`; do
 	touch "$GATEWAY_SERVICES_DIR/$SSG_INTERNAL_SERVICE" &> /dev/null
 	if [ $? -ne 0 ]; then
-		logInfo "could not create gateway internal service file at \"$GATEWAY_SERVICES_DIR/$SSG_INTERNAL_SERVICE\""
-		exit 1
+		logErrorAndExit "could not create gateway internal service file at \"$GATEWAY_SERVICES_DIR/$SSG_INTERNAL_SERVICE\""
 	fi
 done
 
