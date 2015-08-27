@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.swagger.server;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -8,6 +9,7 @@ import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import io.swagger.models.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,9 +18,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathDefinitionResolver;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -28,8 +31,6 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ServerSwaggerAssertionTest {
-
-    private static final Logger log = Logger.getLogger(ServerSwaggerAssertionTest.class.getName());
 
     private static final String TEST_SWAGGER_JSON = "{\n" +
             "   \"swagger\":\"2.0\",\n" +
@@ -1133,6 +1134,7 @@ public class ServerSwaggerAssertionTest {
         Map<String,Object> varMap = new HashMap<>();
         varMap.put("swaggerdoc", TEST_SWAGGER_JSON);
         when(mockRequestKnob.getRequestUri()).thenReturn("/svr/pet/findByStatus");
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
         when(mockContext.getVariable("swaggerDoc")).thenReturn(TEST_SWAGGER_JSON);
         when(mockContext.getRequest()).thenReturn(requestMsg);
@@ -1141,6 +1143,17 @@ public class ServerSwaggerAssertionTest {
         verify(mockContext,times(1)).setVariable("sw.host","petstore.swagger.io:8080");
         verify(mockContext, times(1)).setVariable("sw.baseUri", "/v2");
         verify(mockContext, times(1)).setVariable("sw.apiUri", "/pet/findByStatus");
+    }
+
+    // TODO jwilliams: test for empty requestUri, empty path definition cases - does UriTemplate still match correctly?
+
+    @Test
+    public void testPathMatching() {
+        PathDefinitionResolver resolver = new PathDefinitionResolver(fixture.parseSwaggerJson(TEST_SWAGGER_JSON));
+
+        Path path = resolver.getPathForRequestUri("/pet/1234");
+
+        assertNotNull(path);
     }
 
 }
