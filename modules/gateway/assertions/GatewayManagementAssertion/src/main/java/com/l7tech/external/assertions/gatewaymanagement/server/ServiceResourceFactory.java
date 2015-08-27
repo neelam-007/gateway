@@ -217,9 +217,6 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         if ( publishedService.isSoap() ) {
             resourceSets.add( buildWsdlResourceSet( publishedService, serviceDocuments ) );
         }
-        else if(!serviceDocuments.isEmpty()) {
-            resourceSets.add(buildRestResourceSet(serviceDocuments));
-        }
         service.setResourceSets( resourceSets );
 
         serviceDetail.setId( publishedService.getId() );
@@ -301,7 +298,6 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
                 return resource;
             }
         } );
-        final Collection<Resource> documentResources = resourceHelper.getResources(resourceSetMap, ResourceHelper.RESTFUL_TAG, false, null);
 
         final PublishedService service = new PublishedService();
         final Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
@@ -323,15 +319,8 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         }
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
         setSoapVersion( service, getProperty(serviceDetail.getProperties(), "soapVersion", Option.<String>none(), String.class) );
-        if(service.isSoap()) {
-            addWsdl(service, serviceDocuments, wsdlResources);
-            service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
-        }
-        else {
-            for(Resource documentResource : documentResources) {
-                addServiceDocument(serviceDocuments, documentResource);
-            }
-        }
+        addWsdl( service, serviceDocuments, wsdlResources );
+        service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
         // handle SecurityZone
         doSecurityZoneFromResource( serviceMO, service, strict );
@@ -339,43 +328,9 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         return new ServiceEntityBag( service, serviceDocuments );
     }
 
-    private void addServiceDocument(Collection<ServiceDocument> serviceDocuments, Resource documentResource) {
-        ServiceDocument document = new ServiceDocument();
-        document.setType(documentResource.getType());
-        switch (document.getType()) {
-            case ResourceHelper.SWAGGER_JSON_TYPE:
-                document.setContentType("application/json");
-                break;
-            case ResourceHelper.SWAGGER_YAML_TYPE:
-                document.setContentType("text/plain");
-                break;
-            case ResourceHelper.RAML_TYPE:
-                document.setContentType("application/raml+yaml");
-                break;
-            case ResourceHelper.WADL_TYPE:
-                document.setContentType("application/vnd.sun.wadl+xml");
-                break;
-            default:
-                document.setContentType("application/octet-stream");
-        }
-
-        document.setUri(documentResource.getSourceUrl());
-        document.setContents(documentResource.getContent());
-
-        serviceDocuments.add(document);
-    }
-
     @Override
     protected EntityBag<PublishedService> loadEntityBag( final PublishedService entity ) throws ObjectModelException {
-        Collection<ServiceDocument> serviceDocuments = null;
-        if(entity.isSoap()) {
-            serviceDocuments = serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT);
-        }
-        else {
-            //this is a REST service so get the documents
-            serviceDocuments = serviceDocumentManager.findByServiceId((entity.getGoid()));
-        }
-        return new ServiceEntityBag(entity, serviceDocuments);
+        return new ServiceEntityBag( entity, serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT ) );
     }
 
     @Override
@@ -593,21 +548,6 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
             includedResource.setContent( serviceDocument.getContents() );
             includedResource.setSourceUrl( serviceDocument.getUri() );
             resourceSet.getResources().add( includedResource );
-        }
-
-        return resourceSet;
-    }
-
-    private ResourceSet buildRestResourceSet(final Collection<ServiceDocument> serviceDocuments) {
-        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
-        resourceSet.setTag(ResourceHelper.RESTFUL_TAG);
-        resourceSet.setResources(new ArrayList<Resource>());
-        for (ServiceDocument serviceDocument : serviceDocuments) {
-            final Resource resource = ManagedObjectFactory.createResource();
-            resource.setType(serviceDocument.getType());
-            resource.setSourceUrl(serviceDocument.getUri());
-            resource.setContent(serviceDocument.getContents());
-            resourceSet.getResources().add(resource);
         }
 
         return resourceSet;
