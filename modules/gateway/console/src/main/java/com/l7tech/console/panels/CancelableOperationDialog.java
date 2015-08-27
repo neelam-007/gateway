@@ -7,8 +7,7 @@ import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Callable;
 
@@ -74,6 +73,8 @@ public class CancelableOperationDialog extends JDialog {
                             GridBagConstraints.NONE,
                             new Insets(0, 0, 5, 5), 0, 0)
             );
+        } else{
+            this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         }
         if (this.progressBar != null) {
             p.add(progressBar,

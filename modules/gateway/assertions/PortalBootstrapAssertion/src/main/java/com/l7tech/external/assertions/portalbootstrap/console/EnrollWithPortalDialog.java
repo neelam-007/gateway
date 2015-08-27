@@ -71,7 +71,7 @@ public class EnrollWithPortalDialog extends JDialog {
                 }
 
                 DialogDisplayer.showConfirmDialog( EnrollWithPortalDialog.this,
-                        "Allow API Portal to install portal-specific software on this Gateway?",
+                        new JLabel("<html>Portal enrollment cannot be reversed. Please do not cancel or exit this process.<br/>Allow API Portal to install portal-specific software on this Gateway?</html>"),
                         "Confirm Enrollment",
                         JOptionPane.OK_CANCEL_OPTION,
                         JOptionPane.PLAIN_MESSAGE,
