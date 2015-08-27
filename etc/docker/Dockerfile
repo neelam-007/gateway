@@ -5,7 +5,7 @@ MAINTAINER Heinrich Butow <heinrich.butow@ca.com>
 # the list of ports that we will expose between containers
 # this should only contain the ports that gateway nodes need to communicate with each other
 # container ports are made available on the host via e.g. "docker run -p 8080:8080 -p 8443:8443"
-EXPOSE 2124 8080 8443 9443
+#EXPOSE 2124 8080 8443 9443
 
 # who the RUN commands listed below should run as
 # if commands need to run as someone else, add an additional USER stanza just above the command you add
