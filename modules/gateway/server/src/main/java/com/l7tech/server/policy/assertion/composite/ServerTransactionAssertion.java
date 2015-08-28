@@ -10,8 +10,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.TransactionAssertion;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -60,29 +63,40 @@ public class ServerTransactionAssertion extends ServerCompositeAssertion<Transac
         final DataSource ds;
         try {
             ds = jdbcConnectionPoolManager.getDataSource( connectionName );
-        } catch ( SQLException e ) {
-            logAndAudit( AssertionMessages.JDBC_CONNECTION_ERROR, connectionName );
-            return AssertionStatus.SERVER_ERROR;
-        } catch ( NamingException e ) {
-            logAndAudit( AssertionMessages.JDBC_CONNECTION_ERROR, connectionName );
+        } catch ( SQLException|NamingException e ) {
+            logAndAudit( AssertionMessages.JDBC_CONNECTION_ERROR, "connection name \"" + connectionName + "\": " +
+                    ExceptionUtils.getMessage( e ) );
             return AssertionStatus.SERVER_ERROR;
         }
 
-        TransactionTemplate transactionTemplate = new TransactionTemplate( new DataSourceTransactionManager( ds ) );
-        return transactionTemplate.execute( new TransactionCallback<AssertionStatus>() {
-            @Override
-            public AssertionStatus doInTransaction( TransactionStatus transactionStatus ) {
-                try {
-                    AssertionStatus status = iterateChildren( context, assertionResultListener );
-                    if ( status != AssertionStatus.NONE )
+        if ( ds == null ) {
+            logAndAudit( AssertionMessages.JDBC_CONNECTION_ERROR, "connection name \"" + connectionName + "\": " +
+                    "JDBC connection data source not found" );
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        try {
+            TransactionTemplate transactionTemplate = new TransactionTemplate( new DataSourceTransactionManager( ds ) );
+            return transactionTemplate.execute( new TransactionCallback<AssertionStatus>() {
+                @Override
+                public AssertionStatus doInTransaction( TransactionStatus transactionStatus ) {
+                    try {
+                        AssertionStatus status = iterateChildren( context, assertionResultListener );
+                        if ( status != AssertionStatus.NONE )
+                            transactionStatus.setRollbackOnly();
+                        return status;
+                    } catch (PolicyAssertionException | IOException e ) {
                         transactionStatus.setRollbackOnly();
-                    return status;
-                } catch (PolicyAssertionException | IOException e ) {
-                    transactionStatus.setRollbackOnly();
+                    }
+                    return AssertionStatus.FAILED;
                 }
-                return AssertionStatus.FAILED;
-            }
-        } );
+            } );
+        } catch ( TransactionException | DataAccessException e ) {
+            String message = ExceptionUtils.getMessage( e );
+            logAndAudit( AssertionMessages.JDBC_CONNECTION_ERROR, "connection name \"" + connectionName + "\": " +
+                    "Transaction failed: " + message );
+            return AssertionStatus.FAILED;
+        }
     }
 
     // Hack -- get connection names by scanning children
