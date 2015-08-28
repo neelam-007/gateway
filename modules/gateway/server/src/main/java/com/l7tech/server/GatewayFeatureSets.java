@@ -56,9 +56,6 @@ public class GatewayFeatureSets {
     /** The ultimate Product Profile that enables every possible feature. */
     public static final GatewayFeatureSet PROFILE_ALL;
 
-    /** Feature set to use for (usually old) licenses that, while valid, do not explicitly name any feature sets. */
-    public static final String PROFILE_LICENSE_NAMES_NO_FEATURES = "set:Profile:Compat:Pre36License";
-
     // Constants for service names
     public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
     public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
@@ -692,7 +689,8 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet jdbcQueryAssertions =
         fsr("set:JdbcQuery:Assertions", "The necessary assertions to enable JDBC Query functionality",
-            mass("assertion:JdbcQuery"));
+            mass("assertion:JdbcQuery"),
+            mass("assertion:composite.Transaction"));
 
         GatewayFeatureSet icapAntivirusScannerAssertions =
         fsr("set:IcapAntivirusScanner:Assertions", "The necessary assertions to enable ICAP Antivirus scanning functionality",
@@ -1330,15 +1328,6 @@ public class GatewayFeatureSets {
                 fs(ncesFeaturePack),
                 fs(mobileFeaturePack),
                 fs(masFeaturePack));
-
-        // For now, if a license names no features explicitly, we will enable all features.
-        // TODO we should enable only those features that existed in 3.5.
-        fsp(PROFILE_LICENSE_NAMES_NO_FEATURES, "Profile for old license files that don't name any feature sets",
-                "Backward compatibility with license files that lack featureset elements, but would " +
-                        "otherwise be perfectly valid. Such licenses were intended to allow upgrades " +
-                        "(within their version and date constraints) and should enable at least all features " +
-                        "that were enabled by a valid 3.5 license.",
-                fs(PROFILE_ALL));
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */

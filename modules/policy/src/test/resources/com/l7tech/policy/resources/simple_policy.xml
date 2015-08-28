@@ -176,6 +176,9 @@
                 <L7p:MapValue/>
                 <L7p:RaiseError/>
                 <L7p:InvokePolicyAsync/>
+                <L7p:Transaction L7p:Usage="Required">
+                    <L7p:FalseAssertion/>
+                </L7p:Transaction>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

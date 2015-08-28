@@ -117,6 +117,7 @@ public class AllAssertions {
         new MapValueAssertion(),
         new RaiseErrorAssertion(),
         new InvokePolicyAsyncAssertion(),
+        new TransactionAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
     };
 
 
@@ -220,5 +221,6 @@ public class AllAssertions {
         new MapValueAssertion(),
         new RaiseErrorAssertion(),
         new InvokePolicyAsyncAssertion(),
+        new TransactionAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
     };
 }

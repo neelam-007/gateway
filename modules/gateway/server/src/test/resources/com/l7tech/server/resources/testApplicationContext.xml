@@ -537,6 +537,10 @@
         </constructor-arg>
     </bean>
 
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
+        <constructor-arg ref="jdbcConnectionManager" />
+    </bean>
+
     <bean id="resourceEntryManager" class="com.l7tech.server.globalresources.ResourceEntryManagerStub" />
     <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerStub" />
     <bean id="policyExporterImporterManager" class="com.l7tech.server.export.PolicyExporterImporterManagerStub" />
