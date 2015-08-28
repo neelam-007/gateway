@@ -132,7 +132,10 @@ public class ManageSolutionKitsDialog extends JDialog {
             }
         });
 
-        solutionKitTablePanel.setDoubleClickAction(propertiesButton);
+        // disable features causing permission exceptions in the applet security manager
+        if (!TopComponents.getInstance().isApplet()) {
+            solutionKitTablePanel.setDoubleClickAction(propertiesButton);
+        }
 
         Utilities.setEscKeyStrokeDisposes(this);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -300,7 +303,15 @@ public class ManageSolutionKitsDialog extends JDialog {
     private void refreshSolutionKitsTableButtons() {
         boolean selected = solutionKitTablePanel.isSolutionKitSelected();
         uninstallButton.setEnabled(selected);
-        upgradeButton.setEnabled(selected);
-        propertiesButton.setEnabled(selected);
+
+        // disable features causing permission exceptions in the applet security manager
+        if (TopComponents.getInstance().isApplet()) {
+            installButton.setEnabled(false);
+            upgradeButton.setEnabled(false);
+            propertiesButton.setEnabled(false);
+        } else {
+            upgradeButton.setEnabled(selected);
+            propertiesButton.setEnabled(selected);
+        }
     }
 }
