@@ -39,9 +39,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.SWAGGER_DOC_TYPE;
-import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DEPENDENCY_DOC_TYPE;
-import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DOC_TYPE;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 
@@ -67,62 +64,34 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         // parse service goid
         final PublishedService service = getService(vars);
 
-        // find target message to initialize
-        Message targetMessage = getTargetMessage(context);
+        // construct endpoint URL
+        final URL endpointUrl = getEndpointUrl(context, vars, service);
 
         // retrieve the requested document
-        switch (assertion.getDocumentType()) {
-            case WSDL_DEPENDENCY_DOC_TYPE:
-                Document wsdlDependencyDocument = retrieveWsdlDependencyDocument(context, vars, service);
-                targetMessage.initialize(wsdlDependencyDocument, ContentTypeHeader.XML_DEFAULT);
-                break;
-            case WSDL_DOC_TYPE:
-                Document wsdlDocument = retrieveWsdlDocument(context, vars, service);
-                targetMessage.initialize(wsdlDocument, ContentTypeHeader.XML_DEFAULT);
-                break;
-            case SWAGGER_DOC_TYPE:
-                String swaggerDocument = retrieveSwaggerDocument(service);
-                targetMessage.initialize(ContentTypeHeader.APPLICATION_JSON, swaggerDocument.getBytes());
-                break;
-            default:
-                logAndAudit(AssertionMessages.RETRIEVE_WSDL_UNRECOGNIZED_DOCUMENT_TYPE, assertion.getDocumentType());
-                return AssertionStatus.FAILED;
+        Document document;
+
+        if (assertion.isRetrieveDependency()) {
+            document = retrieveWsdlDependencyDocument(context, vars, service, endpointUrl);
+        } else {
+            document = retrieveWsdlDocument(context, service, endpointUrl);
         }
+
+        // save document to target message
+        Message targetMessage = getTargetMessage(context);
+
+        targetMessage.initialize(document, ContentTypeHeader.XML_DEFAULT);
 
         return AssertionStatus.NONE;
     }
 
-    private String retrieveSwaggerDocument(PublishedService service) {
-        Collection<ServiceDocument> documents = getServiceDocuments(service, "SWAGGER");
-
-        if (null == documents || documents.isEmpty()) {
-            logAndAudit(AssertionMessages.RETRIEVE_WSDL_DOC_NOT_FOUND, assertion.getDocumentType(), service.getId());
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        } else if (documents.size() > 1) {
-            logAndAudit(AssertionMessages.RETRIEVE_WSDL_UNEXPECTED_MULTIPLE_DOCS_FOUND,
-                    assertion.getDocumentType(), service.getId(), Integer.toString(documents.size()));
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
-
-        ServiceDocument swaggerDoc = documents.iterator().next();
-
-        return swaggerDoc.getContents();
-    }
-
     private Document retrieveWsdlDependencyDocument(PolicyEnforcementContext context, Map<String, Object> vars,
-                                                    PublishedService service) {
-        // is it a SOAP service?
-        validateServiceIsSoap(service);
-
-        // construct endpoint URL
-        final URL endpointUrl = getEndpointUrl(context, vars, service);
-
+                                                    PublishedService service, URL endpointUrl) {
         Document document = null;
 
         // get service document goid
@@ -155,7 +124,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         // get any dependency service documents
-        final Collection<ServiceDocument> dependencyDocuments = getServiceDocuments(service, "WSDL-IMPORT");
+        final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
 
         for (ServiceDocument dependency : dependencyDocuments) {
             if (dependency.getGoid().equals(serviceDocumentGoid)) {
@@ -193,14 +162,8 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return document;
     }
 
-    private Document retrieveWsdlDocument(PolicyEnforcementContext context, Map<String, Object> vars,
-                                          PublishedService service) {
-        // is it a SOAP service?
-        validateServiceIsSoap(service);
-
-        // construct endpoint URL
-        final URL endpointUrl = getEndpointUrl(context, vars, service);
-
+    private Document retrieveWsdlDocument(PolicyEnforcementContext context,
+                                          PublishedService service, URL endpointUrl) {
         Document document;
 
         // parse service WSDL xml
@@ -215,7 +178,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // perform reference rewriting, if proxying is necessary or enabled
         if (isProxyingRequired(service)) {
             // get any dependency service documents
-            final Collection<ServiceDocument> dependencyDocuments = getServiceDocuments(service, "WSDL-IMPORT");
+            final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
 
             // get a routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
             String proxyUri = getDependencyProxyUri(context);
@@ -234,13 +197,6 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         WsdlUtil.addOrUpdateEndpoints(document, endpointUrl, service.getId());
 
         return document;
-    }
-
-    private void validateServiceIsSoap(PublishedService service) {
-        if (!service.isSoap()) {
-            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_SOAP);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
     }
 
     private String getDependencyProxyUri(PolicyEnforcementContext context) {
@@ -284,6 +240,12 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
 
         if (null == service) {
             logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_FOUND, serviceGoid.toString());
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // does the service have a WSDL?
+        if (!service.isSoap()) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_SOAP);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
@@ -416,11 +378,11 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
                 wsdlDoc, dependencies, wsdlProxyUri, errorHandler, false);
     }
 
-    private Collection<ServiceDocument> getServiceDocuments(PublishedService service, String documentType) {
+    private Collection<ServiceDocument> getImportedDocumentsToProxy(PublishedService service) {
         Collection<ServiceDocument> documents;
 
         try {
-            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), documentType);
+            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT");
         } catch (FindException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));

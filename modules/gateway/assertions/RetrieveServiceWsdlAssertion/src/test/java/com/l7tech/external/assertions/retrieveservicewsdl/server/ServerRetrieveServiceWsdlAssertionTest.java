@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.retrieveservicewsdl.server;
 
-import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.SWAGGER_DOC_TYPE;
-import static com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion.WSDL_DEPENDENCY_DOC_TYPE;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -14,7 +12,6 @@ import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.json.JSONData;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
@@ -48,7 +45,6 @@ import org.w3c.dom.NodeList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * Test the RetrieveServiceWsdlAssertion.
@@ -60,7 +56,6 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     private static final String ID_SERVICE_WSDL = "IDService.wsdl";
     private static final String ID_SERVICE_XSD_1 = "IDService_1.xsd";
     private static final String ID_SERVICE_XSD_2 = "IDService_2.xsd";
-    private static final String PETSTORE_SWAGGER = "petstore.json";
 
     private static final String WSDL_QUERY_HANDLER_SERVICE_ID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static final String WSDL_QUERY_HANDLER_SERVICE_ROUTING_URI = "/wsdlHandler";
@@ -559,7 +554,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_SpecifyingWsdlForNonSoapService_ServiceNotSoapAudited() throws Exception {
+    public void testCheckRequest_SpecifyingNonSoapService_ServiceNotSoapAudited() throws Exception {
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(service.isSoap()).thenReturn(false);
 
@@ -663,121 +658,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_RetrieveSwaggerDocToResponseTarget_DocStoredToResponse() throws Exception {
-        String petstoreSwagger = getTestDocumentAsString(PETSTORE_SWAGGER);
-
-        String serviceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching service
-
-        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
-        ServiceDocument swaggerDocument = mock(ServiceDocument.class);
-        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
-                .thenReturn(Arrays.asList(swaggerDocument));
-        when(swaggerDocument.getContents()).thenReturn(petstoreSwagger);
-
-        PolicyEnforcementContext context = createPolicyEnforcementContext();
-
-        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
-
-        assertion.setServiceId(serviceId);
-        assertion.setDocumentType(SWAGGER_DOC_TYPE);
-        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
-
-        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
-
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, status);
-
-        JSONData storedSwaggerDoc = context.getResponse().getJsonKnob().getJsonData();
-
-        assertTrue(storedSwaggerDoc.getJsonData().equals(petstoreSwagger));
-    }
-
-    @Test
-    public void testCheckRequest_RetrieveSwaggerSpecifyingServiceWithNoSwaggerDocs_DocNotFoundAudited() throws Exception {
-        String serviceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching service
-
-        when(service.getId()).thenReturn(serviceId);
-        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
-        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
-                .thenReturn(new HashSet<ServiceDocument>());    // empty results - no documents present
-
-        PolicyEnforcementContext context = createPolicyEnforcementContext();
-
-        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
-
-        assertion.setServiceId(serviceId);
-        assertion.setDocumentType(SWAGGER_DOC_TYPE);
-        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
-
-        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
-
-        try {
-            serverAssertion.checkRequest(context);
-            fail("Expected AssertionStatusException");
-        } catch (AssertionStatusException e) {
-            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
-            assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.RETRIEVE_WSDL_DOC_NOT_FOUND,
-                    SWAGGER_DOC_TYPE, serviceId));
-        }
-    }
-
-    @Test
-    public void testCheckRequest_RetrieveSwaggerMultipleSwaggerDocsFound_UnexpectedMultipleDocsAudited() throws Exception {
-        String serviceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching service
-
-        when(service.getId()).thenReturn(serviceId);
-        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
-        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
-                .thenReturn(Arrays.asList(mock(ServiceDocument.class), mock(ServiceDocument.class), mock(ServiceDocument.class)));
-
-        PolicyEnforcementContext context = createPolicyEnforcementContext();
-
-        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
-
-        assertion.setServiceId(serviceId);
-        assertion.setDocumentType(SWAGGER_DOC_TYPE);
-        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
-
-        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
-
-        try {
-            serverAssertion.checkRequest(context);
-            fail("Expected AssertionStatusException");
-        } catch (AssertionStatusException e) {
-            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
-            assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.RETRIEVE_WSDL_UNEXPECTED_MULTIPLE_DOCS_FOUND,
-                    SWAGGER_DOC_TYPE, serviceId, "3"));
-        }
-    }
-
-    @Test
-    public void testCheckRequest_SpecifyingUnsupportedDocumentType_UnrecognizedDocumentTypeAudited() throws Exception {
-        String invalidDocType = "INVALID";
-
-        String serviceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching service
-
-        when(service.getId()).thenReturn(serviceId);
-        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
-
-        PolicyEnforcementContext context = createPolicyEnforcementContext();
-
-        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
-
-        assertion.setServiceId(serviceId);
-        assertion.setDocumentType(invalidDocType);
-        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
-
-        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
-
-        AssertionStatus status = serverAssertion.checkRequest(context);
-        assertEquals(AssertionStatus.FAILED, status);
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.RETRIEVE_WSDL_UNRECOGNIZED_DOCUMENT_TYPE,
-                invalidDocType));
-    }
-
-    @Test
-    public void testCheckRequest_SpecifyingWsdlForValidServiceAndRequestTarget_WsdlStoredToRequest() throws Exception {
+    public void testCheckRequest_SpecifyingValidServiceAndRequestTarget_WsdlStoredToRequest() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
         String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
@@ -815,7 +696,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_SpecifyingWsdlForValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
+    public void testCheckRequest_SpecifyingValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
         String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
@@ -853,7 +734,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
-    public void testCheckRequest_SpecifyingWsdlForValidServiceAndVariableTarget_WsdlStoredToVariable() throws Exception {
+    public void testCheckRequest_SpecifyingValidServiceAndVariableTarget_WsdlStoredToVariable() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
         String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
@@ -1009,7 +890,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("${serviceId}");
         assertion.setServiceDocumentId("${serviceDocumentId}");
@@ -1071,7 +952,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("${serviceId}");
         assertion.setServiceDocumentId("${serviceDocumentId}");
@@ -1101,7 +982,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setHost("localhost");
@@ -1136,7 +1017,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("${" + serviceDocumentIdVariable + "}");
@@ -1174,7 +1055,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("${" + serviceDocumentIdVariable + "}");
@@ -1208,7 +1089,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId("124b55f4e9320bdab071f5b4ffaf72b5");
@@ -1241,7 +1122,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProtocol("http");
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId(invalidServiceDocumentId);
@@ -1277,7 +1158,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProxyDependencies(true);
         assertion.setServiceId("ffffffffffffffffffffffffffffffff");
         assertion.setServiceDocumentId(nonExistentServiceDocumentId);
@@ -1320,7 +1201,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setDocumentType(WSDL_DEPENDENCY_DOC_TYPE);
+        assertion.setRetrieveDependency(true);
         assertion.setProxyDependencies(true);
         assertion.setServiceId(soapServiceId);
         assertion.setServiceDocumentId(serviceDocumentId);
