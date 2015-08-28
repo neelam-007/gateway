@@ -1124,7 +1124,7 @@ public class ServerSwaggerAssertionTest {
         when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
         when(mockContext.getVariable("swaggerDoc")).thenReturn(INVALID_SWAGGER_JSON);
         fixture = new ServerSwaggerAssertion(assertion);
-        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(mockContext));
+        assertEquals(AssertionStatus.FAILED, fixture.checkRequest(mockContext));
 
     }
 

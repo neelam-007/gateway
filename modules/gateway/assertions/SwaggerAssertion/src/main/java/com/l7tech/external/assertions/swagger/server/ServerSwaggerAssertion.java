@@ -65,9 +65,9 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         String doc = extractContextVarValue(assertion.getSwaggerDoc(), variableMap, getAudit());
 
         if (doc == null) {
-            logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT,
+            logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
                     (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.FAILED;
         }
 
         // store a hash of the document value so we can avoid redundant parsing
@@ -85,9 +85,9 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     swaggerModel = null;
                     pathDefinitionResolver = null;
                     swaggerDocumentHash.set(0);
-                    logAndAudit(AssertionMessages.SWAGGER_ASSERTION_INVALID_DOCUMENT,
+                    logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
                             (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
-                    return AssertionStatus.FALSIFIED;
+                    return AssertionStatus.FAILED;
                 }
             } finally {
                 //release the lock
@@ -95,14 +95,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             }
         }
 
-        final Message message = context.getRequest();
-
-        HttpRequestKnob httpRequestKnob = message.getHttpRequestKnob();
-
-        if (message.getHttpRequestKnob() == null) {
-            // TODO jwilliams: audit failure
-            return AssertionStatus.FALSIFIED;
-        }
+        HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
 
         String serviceBase = StringUtils.isNotBlank(assertion.getServiceBase()) ? assertion.getServiceBase() : getServiceRoutingUri(context.getService());
         String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, ""); // remove service from the request uri
@@ -118,7 +111,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             Path requestPath = pathDefinitionResolver.getPathForRequestUri(apiUri);
 
             if (null == requestPath) {  // no matching path template
-                // TODO jwilliams: audit
+                logAndAudit(AssertionMessages.SWAGGER_INVALID_PATH, apiUri);
                 return AssertionStatus.FALSIFIED;
             }
 

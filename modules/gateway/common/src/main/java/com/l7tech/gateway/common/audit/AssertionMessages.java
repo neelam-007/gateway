@@ -1413,7 +1413,8 @@ public class AssertionMessages extends Messages {
     public static final M MQTT_CREDENTIAL_NO_AUTH = m(11342, Level.FINE, "Not authenticated.");
 
     //SwaggerAssertion
-    public static final M SWAGGER_ASSERTION_INVALID_DOCUMENT = m(11400, Level.WARNING, "{0} - Invalid Swagger Document");
+    public static final M SWAGGER_INVALID_DOCUMENT = m(11400, Level.WARNING, "{0} - Invalid Swagger Document");
+    public static final M SWAGGER_INVALID_PATH = m(11401, Level.WARNING, "Request path does not match any defined template: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
