@@ -264,7 +264,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         initializeInterfaceComboBox();
 
-        this.cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(this.cipherSuiteList, defaultCipherListButton, uncheckAllButton, null, moveUpButton, moveDownButton);
+        this.cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(this.cipherSuiteList, false, defaultCipherListButton, uncheckAllButton, null, moveUpButton, moveDownButton);
 
         propertyList.setModel(propertyListModel);
         propertyList.setCellRenderer(new DefaultListCellRenderer() {

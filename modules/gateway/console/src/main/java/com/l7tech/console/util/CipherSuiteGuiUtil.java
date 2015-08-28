@@ -34,6 +34,7 @@ public final class CipherSuiteGuiUtil {
      * when clicked.
      *
      * @param cipherSuiteList  a JList to configure.  Required.
+     * @param outbound true if the cipher suites will be used for outbound TLS.  If so, additional SCSV values might be included.
      * @param defaultCipherListButton  a button to use for the "Use Default Ciphers" button, or null to disable this functionality.
      * @param selectNoneButton a button to use for the "Un-check all cipher suites" button, or null to disable this functionality.
      * @param selectAllButton a button to use for the "Check all cipher suites" button, or null to disable this functionality.
@@ -41,8 +42,9 @@ public final class CipherSuiteGuiUtil {
      * @param moveDownButton  a button to use for the "Move Down" functionality, or null to disable this functionality.
      * @return the new CipherSuiteListModel.  Never null.
      */
-    public static CipherSuiteListModel createCipherSuiteListModel(final JList cipherSuiteList, final @Nullable JButton defaultCipherListButton, final @Nullable JButton selectNoneButton, final @Nullable JButton selectAllButton, final @Nullable JButton moveUpButton, final @Nullable JButton moveDownButton) {
-        String[] allCiphers = getCipherSuiteNames();
+    public static CipherSuiteListModel createCipherSuiteListModel(final JList cipherSuiteList, boolean outbound,
+            final @Nullable JButton defaultCipherListButton, final @Nullable JButton selectNoneButton, final @Nullable JButton selectAllButton, final @Nullable JButton moveUpButton, final @Nullable JButton moveDownButton) {
+        String[] allCiphers = getCipherSuiteNames( outbound );
         Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
         for (String cipher : new ArrayList<String>(defaultCiphers)) {
@@ -143,23 +145,29 @@ public final class CipherSuiteGuiUtil {
             moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
     }
 
-    public static String[] getCipherSuiteNames() {
+    public static String[] getCipherSuiteNames( boolean outbound ) {
         String[] unfiltered = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
-        if (INCLUDE_ALL_CIPHERS)
-            return unfiltered;
-
         List<String> ret = new ArrayList<String>();
-        for (String name : unfiltered) {
-            if (cipherSuiteShouldBeVisible(name))
-                ret.add(name);
+
+        if ( INCLUDE_ALL_CIPHERS ) {
+            ret.addAll( Arrays.asList( unfiltered ) );
+        } else {
+            for (String name : unfiltered) {
+                if (cipherSuiteShouldBeVisible(name))
+                    ret.add(name);
+            }
         }
+
+        if ( outbound )
+            ret.add( "TLS_EMPTY_RENEGOTIATION_INFO_SCSV" );
+
         return ret.toArray(new String[ret.size()]);
     }
 
     /**
      * Check if the specified cipher suite should be shown or hidden in the UI.
      * <P/>
-     * Currently a cipher suite is shown if is RSA or ECDSA based, as long as it is neither _WITH_NULL_ (which
+     * Currently a cipher suite is shown if is RSA or ECDSA based (or an SCSV), as long as it is neither _WITH_NULL_ (which
      * does no encryption) nor _anon_ (which does no authentication) nor _EXPORT_ (which uses a 40 bit key so weak it is
      * nowadays effectively equivalent to _WITH_NULL_).
      *
@@ -170,7 +178,8 @@ public final class CipherSuiteGuiUtil {
     public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
         return !cipherSuiteName.contains("_WITH_NULL_") && !cipherSuiteName.contains("_anon_") && !cipherSuiteName.contains("_EXPORT_") && (
                 cipherSuiteName.contains("_RSA_") ||
-                cipherSuiteName.contains("_ECDSA_")
+                cipherSuiteName.contains("_ECDSA_") ||
+                cipherSuiteName.contains("_SCSV")
         );
     }
 
