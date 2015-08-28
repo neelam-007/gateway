@@ -16,6 +16,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -2044,6 +2045,12 @@ public class ServerVariablesTest {
             return mqttUnsubscribeParametersStub;
         }
 
+        @Nullable
+        @Override
+        public MQTTQOS2Proxy getMQTTQOS2Proxy() {
+            return null;
+        }
+
         public void setMqttUnsubscribeParametersStub(MQTTUnsubscribeParametersStub mqttUnsubscribeParametersStub) {
             this.mqttUnsubscribeParametersStub = mqttUnsubscribeParametersStub;
         }
@@ -2268,6 +2275,12 @@ public class ServerVariablesTest {
         @Override
         public void setSessionPresent(String sessionPresent) {
             this.sessionPresent = sessionPresent;
+        }
+
+        @Nullable
+        @Override
+        public MQTTQOS2Proxy getMQTTQOS2Proxy() {
+            return null;
         }
     }
 

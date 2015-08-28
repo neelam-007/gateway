@@ -12,6 +12,7 @@ import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -31,6 +32,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
@@ -1724,6 +1726,13 @@ public class ServerVariables {
                 @Override
                 public void setSessionPresent(String sessionPresent) {
                     this.sessionPresent = sessionPresent;
+                }
+
+                @Nullable
+                @Override
+                public MQTTQOS2Proxy getMQTTQOS2Proxy() {
+                    //When creating a connection response in this way the qos2 proxy can be null since there isn't one available.
+                    return null;
                 }
             };
             context.getResponse().attachKnob(mqttConnectResponseKnob, MQTTConnectResponseKnob.class);

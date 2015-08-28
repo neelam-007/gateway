@@ -13,6 +13,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -21,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -1052,6 +1054,12 @@ public class MessageSelectorTest {
             public void setSessionPresent(String sessionPresent) {
 
             }
+
+            @Nullable
+            @Override
+            public MQTTQOS2Proxy getMQTTQOS2Proxy() {
+                return null;
+            }
         }, MQTTConnectResponseKnob.class);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "mqtt.connect.responseCode", handler, false);
@@ -1088,6 +1096,12 @@ public class MessageSelectorTest {
             @Override
             public void setSessionPresent(String sessionPresent) {
 
+            }
+
+            @Nullable
+            @Override
+            public MQTTQOS2Proxy getMQTTQOS2Proxy() {
+                return null;
             }
         }, MQTTConnectResponseKnob.class);
 

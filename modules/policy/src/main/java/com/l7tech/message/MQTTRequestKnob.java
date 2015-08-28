@@ -1,5 +1,6 @@
 package com.l7tech.message;
 
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,6 +80,13 @@ public interface MQTTRequestKnob extends TlsKnob, TcpKnob {
 
     @Nullable
     public MQTTUnsubscribeParameters getMQTTUnsubscribeParameters();
+
+    /**
+     * This returns the QOS2 proxy used to proxy qos2 publish messages between the listen port and the publish
+     * assertion.
+     */
+    @Nullable
+    public MQTTQOS2Proxy getMQTTQOS2Proxy();
 
     /**
      * MQTT Publish parameters

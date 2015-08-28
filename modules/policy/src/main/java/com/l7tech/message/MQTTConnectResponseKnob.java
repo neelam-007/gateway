@@ -1,5 +1,8 @@
 package com.l7tech.message;
 
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * The MQTTConnectResponseKnob is used to hold properties set from a connection response.
  */
@@ -31,4 +34,13 @@ public interface MQTTConnectResponseKnob extends MessageKnob {
      * @param sessionPresent True if a session is present on this connection
      */
     void setSessionPresent(String sessionPresent);
+
+    /**
+     * Returns the QOS2 proxy that is associated with this connection response. The qos 2 proxy is used to proxy qos2
+     * publish messages
+     *
+     * @return The qos2 proxy associated with this connection response.
+     */
+    @Nullable
+    MQTTQOS2Proxy getMQTTQOS2Proxy();
 }

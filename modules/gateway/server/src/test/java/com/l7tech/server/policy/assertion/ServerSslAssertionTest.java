@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.mqtt.MQTTQOS2Proxy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -190,6 +191,12 @@ public class ServerSslAssertionTest {
             @Nullable
             @Override
             public MQTTUnsubscribeParameters getMQTTUnsubscribeParameters() {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public MQTTQOS2Proxy getMQTTQOS2Proxy() {
                 return null;
             }
 
