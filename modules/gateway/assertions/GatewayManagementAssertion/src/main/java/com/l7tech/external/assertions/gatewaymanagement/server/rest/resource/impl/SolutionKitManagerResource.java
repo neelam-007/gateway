@@ -285,15 +285,13 @@ public class SolutionKitManagerResource {
 
         try {
             if (StringUtils.isEmpty(deleteGuid)) {
-                // HTTP DELETE, "no content" has no response body so we write the details into the log
-                logger.warning("Solution Kit ID to uninstall is empty.");
-                throw new SolutionKitManagerResourceException(Response.noContent().build());
+                // HTTP DELETE, using 404 not found to be consistent with other restman resources
+                throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Solution Kit ID to uninstall is empty." + lineSeparator()).build());
             }
 
             final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(deleteGuid);
             if (solutionKitsExistingOnGateway.isEmpty()) {
-                logger.warning("No Solution Kit ID " + deleteGuid + " found for uninstall.");
-                throw new SolutionKitManagerResourceException(Response.noContent().build());
+                throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + deleteGuid + " found for uninstall." + lineSeparator()).build());
             }
 
             final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
@@ -327,8 +325,7 @@ public class SolutionKitManagerResource {
                     Set<String> allChildGuids = childSKMap.keySet();
                     for (String givenChildGuid: childGuidsInQueryParam) {
                         if (! allChildGuids.contains(givenChildGuid)) {
-                            logger.info("Child Solution Kit GUID " + givenChildGuid + " is not valid.");
-                            throw new SolutionKitManagerResourceException(Response.noContent().build());
+                            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Child Solution Kit GUID " + givenChildGuid + " is not valid." + lineSeparator()).build());
                         }
                     }
 
@@ -364,10 +361,10 @@ public class SolutionKitManagerResource {
         } catch (SolutionKitException | InterruptedException | FindException | DeleteException|
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return Response.noContent().build();
+            return status(INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         }
 
-        return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
+        return Response.noContent().build();
     }
 
     // validate input params
