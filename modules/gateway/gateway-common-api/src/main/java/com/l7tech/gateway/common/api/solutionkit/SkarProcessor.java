@@ -385,11 +385,12 @@ public class SkarProcessor {
     private SolutionKitCustomizationClassLoader getCustomizationClassLoader(final ZipInputStream zis) throws SolutionKitException {
         SolutionKitCustomizationClassLoader classLoader = null;
 
-        File outFile = new File("Customization-" + UUID.randomUUID() + ".jar");   // can we do this without writing to disk?
+        // temporarily write customization jar to a temp directory
+        File outFile = new File(SyspropUtil.getProperty("java.io.tmpdir"), "Customization-" + UUID.randomUUID() + ".jar");   // can we do this without writing to disk?
         OutputStream entryOut = null;
         try {
-            logger.fine("JAR FILE: " + outFile.getCanonicalPath());
-            // System.out.println("JAR FILE: " + outFile.getCanonicalPath());
+            logger.fine("Customization jar file: " + outFile.getCanonicalPath());
+            // System.out.println("Customization jar file: " + outFile.getCanonicalPath());
 
             entryOut = new BufferedOutputStream(new FileOutputStream(outFile));
             IOUtils.copyStream(zis, entryOut);
