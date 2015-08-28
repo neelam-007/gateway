@@ -139,6 +139,8 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
             setContentPane(mainPanel);
 
+            Utilities.setEscKeyStrokeDisposes(this);
+
             unlicensedMessageLabel.setText(
                 MessageFormat.format("The parent solution kit, \"{0}\" is unlicensed.  Required feature set is \"{1}\".", solutionKitName, featureSetName)
             );
