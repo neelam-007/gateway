@@ -1235,7 +1235,7 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private String[] getCipherSuites(){
-        final String[] suites = CipherSuiteGuiUtil.getCipherSuiteNames();
+        final String[] suites = CipherSuiteGuiUtil.getCipherSuiteNames( true );
         sort( suites, CASE_INSENSITIVE_ORDER );
         return suites;
     }
