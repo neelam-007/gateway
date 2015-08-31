@@ -23,7 +23,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private JCheckBox validateMethodCheckBox;
     private JCheckBox validatePathCheckBox;
     private JCheckBox validateSchemeCheckBox;
-    private JCheckBox validateRequestArgumentsCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
     private JTextField serviceBaseTextField;
     private JLabel swaggerDocumentLabel;
@@ -46,7 +45,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validateMethodCheckBox.setSelected(assertion.isValidateMethod());
         validatePathCheckBox.setSelected(assertion.isValidatePath());
         validateSchemeCheckBox.setSelected(assertion.isValidateScheme());
-        validateRequestArgumentsCheckBox.setSelected(assertion.isValidateRequestArguments());
         requireSecurityCredentialsToCheckBox.setSelected(assertion.isRequireSecurityCredentials());
         swaggerPrefix.setVariable(assertion.getPrefix());
     }
@@ -59,7 +57,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         assertion.setValidateMethod(validateMethodCheckBox.isSelected());
         assertion.setValidatePath(validatePathCheckBox.isSelected());
         assertion.setValidateScheme(validateSchemeCheckBox.isSelected());
-        assertion.setValidateRequestArguments(validateRequestArgumentsCheckBox.isSelected());
         assertion.setPrefix(swaggerPrefix.getVariable());
         return assertion;
     }
@@ -72,7 +69,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
 
         validateMethodCheckBox.setSelected(true);
         validatePathCheckBox.setSelected(true);
-        validateRequestArgumentsCheckBox.setSelected(true);
         validateSchemeCheckBox.setSelected(true);
         requireSecurityCredentialsToCheckBox.setSelected(true);
 
@@ -112,14 +108,12 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
 
     private void enableDisableComponents() {
         validateMethodCheckBox.setEnabled(validatePathCheckBox.isSelected());
-        validateRequestArgumentsCheckBox.setEnabled(validateMethodCheckBox.isSelected());
         requireSecurityCredentialsToCheckBox.setEnabled(validateMethodCheckBox.isSelected());
 
         if(!validatePathCheckBox.isSelected()) {
             validateMethodCheckBox.setSelected(false);
         }
         if(!validateMethodCheckBox.isSelected()){
-            validateRequestArgumentsCheckBox.setSelected(false);
             requireSecurityCredentialsToCheckBox.setSelected(false);
         }
     }
