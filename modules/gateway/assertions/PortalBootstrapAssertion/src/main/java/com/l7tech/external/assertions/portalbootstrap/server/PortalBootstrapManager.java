@@ -82,6 +82,20 @@ import java.util.zip.GZIPInputStream;
  */
 public class PortalBootstrapManager {
     private static final Logger logger = Logger.getLogger( PortalBootstrapManager.class.getName() );
+    static final String CLUSTER_NAME = "cluster_name";
+    static final String VERSION = "version";
+    static final String BUILD_INFO = "build_info";
+    static final String ADMINUSER_PROVIDERID = "adminuser_providerid";
+    static final String ADMINUSER_ID = "adminuser_id";
+    static final String OTK_CLIENT_DB_GET_POLICY = "otk_client_db_get_policy";
+    static final String OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS = "otk_require_oauth_2_token_encass";
+    static final String OTK_JDBC_CONN = "otk_jdbc_conn";
+    static final String NODE_COUNT = "node_count";
+    static final String NODE_INFO = "nodeInfo";
+    static final String NAME = "name";
+    static final String OTK_CLIENT_DB_GET = "OTK Client DB GET";
+    static final String OTK_REQUIRE_OAUTH_2_0_TOKEN = "OTK Require OAuth 2.0 Token";
+    static final String OAUTH = "OAuth";
 
     private static PortalBootstrapManager instance = null;
     private static int ENROLL_PORT = 9446;
@@ -112,6 +126,8 @@ public class PortalBootstrapManager {
 
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
+
+    private Config config = ConfigFactory.getCachedConfig();
 
     private PortalBootstrapManager( ApplicationContext context ) {
         this.applicationContext = context;
@@ -240,34 +256,31 @@ public class PortalBootstrapManager {
         JdbcConnection jdbcConnection;
 
         //        check for OTK policy to update for portal configuration
-        String otkPolicyName = "OTK Client DB GET";
         try {
-            otkPolicy = policyManager.findByUniqueName(otkPolicyName);
+            otkPolicy = policyManager.findByUniqueName(OTK_CLIENT_DB_GET);
             if(otkPolicy == null){
-                throw new IOException( "OTK policy not found: "+otkPolicyName+"" );
+                throw new IOException( "OTK policy not found: "+OTK_CLIENT_DB_GET+"" );
             }
         } catch (FindException e) {
-            throw new IOException( "Error finding OTK policy: "+otkPolicyName+"", ExceptionUtils.getDebugException(e) );
+            throw new IOException( "Error finding OTK policy: "+OTK_CLIENT_DB_GET+"", ExceptionUtils.getDebugException(e) );
         }
 
 
         // check for OTK encapsulated assertion used by portal entity
-        String OtkEncassName = "OTK Require OAuth 2.0 Token";
         try {
-            otkEncass = encapsulatedAssertionConfigManager.findByUniqueName(OtkEncassName);
+            otkEncass = encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN);
             if(otkEncass == null){
-                throw new IOException( "OTK encapsulated assertion not found: "+OtkEncassName+"" );
+                throw new IOException( "OTK encapsulated assertion not found: "+OTK_REQUIRE_OAUTH_2_0_TOKEN+"" );
             }
         } catch (FindException e) {
-            throw new IOException( "Error finding OTK encapsulated assertion: "+OtkEncassName+"", ExceptionUtils.getDebugException(e) );
+            throw new IOException( "Error finding OTK encapsulated assertion: "+OTK_REQUIRE_OAUTH_2_0_TOKEN+"", ExceptionUtils.getDebugException(e) );
         }
 
         // assume only 1 jdbc connection and its for the OTK db
         try {
-            String oauthJdbcName = "OAuth";
-            jdbcConnection = jdbcConnectionManager.findByUniqueName(oauthJdbcName);
+            jdbcConnection = jdbcConnectionManager.findByUniqueName(OAUTH);
             if (jdbcConnection == null) {
-                throw new IOException("Cannot find jdbc connection: " + oauthJdbcName);
+                throw new IOException("Cannot find jdbc connection: " + OAUTH);
             }
         } catch (FindException e) {
             throw new IOException("Error finding OTK jdbc connection", ExceptionUtils.getDebugException(e));
@@ -276,6 +289,13 @@ public class PortalBootstrapManager {
         return Triple.triple(otkPolicy,otkEncass,jdbcConnection);
     }
 
+    void setConfig(final Config config) {
+        this.config = config;
+    }
+
+    /**
+     * DELETE ME ONCE THESE HARDCODED VALUES ARE REMOVED FROM ENROLLMENT BUNDLE
+     */
     private Document setMappings(InputStream inputStream, User currentUser, JdbcConnection jdbcConnection, Policy otkPolicy, EncapsulatedAssertionConfig otkEncass ) throws IOException {
         // maps the scheduled task user to the current user.
         try {
@@ -304,8 +324,7 @@ public class PortalBootstrapManager {
 
     }
 
-    private byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
-        Config config = ConfigFactory.getCachedConfig();
+    byte[] buildEnrollmentPostBody( User adminUser ) throws IOException {
         String clusterName = config.getProperty( "clusterHost", "" );
         String buildInfo = BuildInfo.getLongBuildString();
         String ssgVersion = BuildInfo.getProductVersion();
@@ -317,25 +336,30 @@ public class PortalBootstrapManager {
             throw new IOException( "Unable to load cluster info: " + ExceptionUtils.getMessage( e ), e );
         }
 
+        final Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> otkEntities = getOtkEntities();
+
         String nodeCount = String.valueOf( infos.size() );
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonFactory jsonFactory = new JsonFactory();
         JsonGenerator gen = jsonFactory.createJsonGenerator( baos );
         gen.writeStartObject();
-        gen.writeStringField( "cluster_name", clusterName );
-        gen.writeStringField( "version", ssgVersion );
-        gen.writeStringField( "build_info", buildInfo );
-        gen.writeStringField( "adminuser_providerid", adminUser.getProviderId().toString() );
-        gen.writeStringField( "adminuser_id", adminUser.getId() );
-        gen.writeStringField( "node_count", nodeCount );
-        gen.writeFieldName( "nodeInfo" );
+        gen.writeStringField(CLUSTER_NAME, clusterName );
+        gen.writeStringField(VERSION, ssgVersion );
+        gen.writeStringField(BUILD_INFO, buildInfo );
+        gen.writeStringField(ADMINUSER_PROVIDERID, adminUser.getProviderId().toString() );
+        gen.writeStringField(ADMINUSER_ID, adminUser.getId() );
+        gen.writeStringField(OTK_CLIENT_DB_GET_POLICY, otkEntities.left.getId());
+        gen.writeStringField(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS, otkEntities.middle.getId());
+        gen.writeStringField(OTK_JDBC_CONN, otkEntities.right.getId());
+        gen.writeStringField(NODE_COUNT, nodeCount );
+        gen.writeFieldName(NODE_INFO);
         gen.writeStartArray();
         gen.flush();
 
         for ( ClusterNodeInfo info : infos ) {
             gen.writeStartObject();
-            gen.writeStringField( "name", info.getName() );
+            gen.writeStringField(NAME, info.getName() );
             gen.writeEndObject();
         }
 
