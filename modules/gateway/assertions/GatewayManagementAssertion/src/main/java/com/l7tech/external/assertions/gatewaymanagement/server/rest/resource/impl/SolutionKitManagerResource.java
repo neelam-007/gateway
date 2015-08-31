@@ -44,9 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.System.lineSeparator;
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.status;
 import static org.apache.commons.lang.StringUtils.*;
 
@@ -177,7 +175,7 @@ public class SolutionKitManagerResource {
                 for (SolutionKit solutionKit : selectedSolutionKits) {
                     if (!SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
-                        return status(INTERNAL_SERVER_ERROR).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
+                        return status(CONFLICT).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
                     }
                 }
             }
