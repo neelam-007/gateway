@@ -14,7 +14,7 @@
                     <L7p:Detail stringValue="username: ${request.username}"/>
                 </L7p:AuditDetailAssertion>
                 <L7p:Authentication>
-                    <L7p:IdentityProviderOid longValue="-2"/>
+                    <L7p:IdentityProviderOid goidValue="0000000000000000fffffffffffffffe"/>
                 </L7p:Authentication>
             </wsp:All>
             <wsp:All wsp:Usage="Required">
@@ -24,7 +24,7 @@
                     <L7p:Detail stringValue="username: ${request.username}"/>
                 </L7p:AuditDetailAssertion>
                 <L7p:Authentication>
-                    <L7p:IdentityProviderOid longValue="-2"/>
+                    <L7p:IdentityProviderOid goidValue="0000000000000000fffffffffffffffe"/>
                 </L7p:Authentication>
             </wsp:All>
         </wsp:OneOrMore>
@@ -954,7 +954,7 @@
                                                         <L7p:CachePeriod longValue="1"/>
                                                         <L7p:CacheSize intValue="100"/>
 
-                                                        <L7p:LdapProviderOid longValue="27262976"/>
+                                                        <L7p:LdapProviderOid goidValue="27262976"/>
 
                                                         <L7p:QueryMappings queryAttributeMappings="included">
                                                             <L7p:item mapping="included">

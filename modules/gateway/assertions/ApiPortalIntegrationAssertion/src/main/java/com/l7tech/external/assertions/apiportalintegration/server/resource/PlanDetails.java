@@ -8,11 +8,14 @@ import javax.xml.bind.annotation.XmlElement;
 public class PlanDetails {
     @XmlElement(name = "ThroughputQuota", namespace = JAXBResourceMarshaller.NAMESPACE)
     private ThroughputQuotaDetails throughputQuota = new ThroughputQuotaDetails();
+    @XmlElement(name = "RateLimit", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private RateLimitDetails rateLimit = new RateLimitDetails();
 
     public PlanDetails() {}
 
-    public PlanDetails(final ThroughputQuotaDetails throughputQuota) {
+    public PlanDetails(final ThroughputQuotaDetails throughputQuota, final RateLimitDetails rateLimit) {
         setThroughputQuota(throughputQuota);
+        setRateLimit(rateLimit);
     }
 
     public ThroughputQuotaDetails getThroughputQuota() {
@@ -24,6 +27,18 @@ public class PlanDetails {
             this.throughputQuota= new ThroughputQuotaDetails();
         } else {
             this.throughputQuota = throughputQuota;
+        }
+    }
+
+    public RateLimitDetails getRateLimit() {
+        return rateLimit;
+    }
+
+    public void setRateLimit(RateLimitDetails rateLimit) {
+        if (rateLimit == null) {
+            this.rateLimit = new RateLimitDetails();
+        } else {
+            this.rateLimit = rateLimit;
         }
     }
 }

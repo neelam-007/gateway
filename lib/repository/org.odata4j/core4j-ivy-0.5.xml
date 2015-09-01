@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.odata4j"
+		module="core4j"
+		revision="0.5"
+		status="release"
+		publication="20150831163845"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="core4j" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

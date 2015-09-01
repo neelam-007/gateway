@@ -191,6 +191,7 @@ public class ServerLookupApiKeyAssertion extends AbstractServerAssertion<LookupA
         context.setVariable(prefix + "." + LookupApiKeyAssertion.OAUTH_SCOPE_SUFFIX, checkString(apiKeyData.getOauthScope()));
         context.setVariable(prefix + "." + LookupApiKeyAssertion.OAUTH_TYPE_SUFFIX, checkString(apiKeyData.getOauthType()));
         context.setVariable(prefix + "." + LookupApiKeyAssertion.ACCOUNT_PLAN_MAPPING_ID_SUFFIX, checkString(apiKeyData.getAccountPlanMappingId()));
+        context.setVariable(prefix + "." + LookupApiKeyAssertion.APPLICATION_ID_SUFFIX, checkString(apiKeyData.getApplicationId()));
         if (StringUtils.isNotBlank(serviceId)) {
             context.setVariable(prefix + "." + LookupApiKeyAssertion.SERVICE_SUFFIX, serviceId);
             context.setVariable(prefix + "." + LookupApiKeyAssertion.PLAN_SUFFIX, apiKeyData.getServiceIds().get(serviceId));
@@ -212,6 +213,7 @@ public class ServerLookupApiKeyAssertion extends AbstractServerAssertion<LookupA
         context.setVariable(prefix + "." + LookupApiKeyAssertion.OAUTH_SCOPE_SUFFIX, checkString(key.getOauthScope()));
         context.setVariable(prefix + "." + LookupApiKeyAssertion.OAUTH_TYPE_SUFFIX, checkString(key.getOauthType()));
         context.setVariable(prefix + "." + LookupApiKeyAssertion.ACCOUNT_PLAN_MAPPING_ID_SUFFIX, checkString(key.getAccountPlanMappingId()));
+        context.setVariable(prefix + "." + LookupApiKeyAssertion.APPLICATION_ID_SUFFIX, checkString(key.getApplicationId()));
         final ApiKeyResource resource = transformer.entityToResource(key);
         context.setVariable(prefix + "." + LookupApiKeyAssertion.XML_SUFFIX, marshaller.marshal(resource));
         if (StringUtils.isNotBlank(serviceId)) {
@@ -238,6 +240,7 @@ public class ServerLookupApiKeyAssertion extends AbstractServerAssertion<LookupA
         context.setVariable(prefix + "." + LookupApiKeyAssertion.OAUTH_TYPE_SUFFIX, StringUtils.EMPTY);
         context.setVariable(prefix + "." + LookupApiKeyAssertion.VERSION_SUFFIX, StringUtils.EMPTY);
         context.setVariable(prefix + "." + LookupApiKeyAssertion.ACCOUNT_PLAN_MAPPING_ID_SUFFIX, StringUtils.EMPTY);
+        context.setVariable(prefix + "." + LookupApiKeyAssertion.APPLICATION_ID_SUFFIX, StringUtils.EMPTY);
     }
 
     private void validateAssertion(final LookupApiKeyAssertion assertion) throws PolicyAssertionException {

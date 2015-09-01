@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.apiportalintegration.server;
 import com.l7tech.external.assertions.apiportalintegration.ApiPortalIntegrationAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManagerFactory;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManagerImpl;
+import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedEncassManager;
+import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedEncassManagerImpl;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedServiceManager;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedServiceManagerImpl;
 import com.l7tech.gateway.common.LicenseManager;
@@ -11,15 +13,17 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.event.system.LicenseChangeEvent;
+import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
@@ -49,7 +53,7 @@ import java.util.logging.Logger;
 public class ModuleLoadListener implements ApplicationListener {
     public ModuleLoadListener(final ApplicationContext context) {
         this(context, ApiKeyManagerFactory.getInstance() == null ? new ApiKeyManagerImpl(context) : ApiKeyManagerFactory.getInstance(),
-                PortalManagedServiceManagerImpl.getInstance(context), API_KEY_MANAGEMENT_SERVICE_POLICY_XML, API_PORTAL_INTEGRATION_POLICY_XML);
+                PortalManagedServiceManagerImpl.getInstance(context), PortalManagedEncassManagerImpl.getInstance(context), API_KEY_MANAGEMENT_SERVICE_POLICY_XML, API_PORTAL_INTEGRATION_POLICY_XML);
         if (ApiKeyManagerFactory.getInstance() == null) {
             ApiKeyManagerFactory.setInstance(apiKeysManager);
         }
@@ -85,13 +89,13 @@ public class ModuleLoadListener implements ApplicationListener {
         if (applicationEvent instanceof ReadyForMessages) {
             // init portal managed services
             refreshAllPortalManagedServices();
-        } else if (applicationEvent instanceof LicenseChangeEvent) {
+            refreshAllPortalManagedEncasses();
+        //TODO: confirm if this should be LicenseEvent or LicenseChangeEvent
+        } else if (applicationEvent instanceof LicenseEvent) {
             registerServiceTemplates();
         } else if (applicationEvent instanceof EntityInvalidationEvent) {
             final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
-            if (PublishedService.class.equals(event.getEntityClass())) {
-                handlePublishedServiceInvalidationEvent(event);
-            }
+            handleEntityInvalidationEvent(event);
         }
     }
 
@@ -99,13 +103,14 @@ public class ModuleLoadListener implements ApplicationListener {
      * Constructor for mocked unit tests.
      */
     ModuleLoadListener(final ApplicationContext context, final PortalGenericEntityManager<ApiKeyData> apiKeyManager,
-                       final PortalManagedServiceManager portalManagedServiceManager, final String apiKeyManagementPolicyXmlFile, final String apiPortalIntegrationPolicyXmlFile) {
+                       final PortalManagedServiceManager portalManagedServiceManager, final PortalManagedEncassManager portalManagedEncassManager, final String apiKeyManagementPolicyXmlFile, final String apiPortalIntegrationPolicyXmlFile) {
         serviceTemplateManager = getBean(context, "serviceTemplateManager", ServiceTemplateManager.class);
         licenseManager = getBean(context, "licenseManager", LicenseManager.class);
         serverConfig = getBean(context, "serverConfig", ServerConfig.class);
         serviceManager = getBean(context, "serviceManager", ServiceManager.class);
         transactionManager = getBean(context, "transactionManager", PlatformTransactionManager.class);
         policyManager = getBean(context, "policyManager", PolicyManager.class);
+        encapsulatedAssertionConfigManager = getBean(context, "encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
         policyVersionManager = getBean(context, "policyVersionManager", PolicyVersionManager.class);
         folderManager = getBean(context, "folderManager", FolderManager.class);
         clusterPropertyManager = getBean(context, "clusterPropertyManager", ClusterPropertyManager.class);
@@ -115,6 +120,7 @@ public class ModuleLoadListener implements ApplicationListener {
         apiPortalIntegrationServiceTemplate = createServiceTemplate(apiPortalIntegrationPolicyXmlFile, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_URI_PREFIX);
         this.apiKeysManager = apiKeyManager;
         this.portalManagedServiceManager = portalManagedServiceManager;
+        this.portalManagedEncassManager = portalManagedEncassManager;
     }
 
     static final String API_KEY_MANAGEMENT_SERVICE_POLICY_XML = "APIKeyManagementServicePolicy.xml";
@@ -130,8 +136,6 @@ public class ModuleLoadListener implements ApplicationListener {
     private static final String ACCOUNT_PLANS_FRAGMENT_POLICY_XML = "AccountPlansFragment.xml";
     static final String ROOT_FOLDER_NAME = "Root Node";
     static final String API_DELETED_FOLDER_NAME = "APIs Deleted from Portal";
-    static final String OAUTH1X_FRAGMENT_POLICY_NAME = "Require OAuth 1.0 Token";
-    static final String OAUTH20_FRAGMENT_POLICY_NAME = "Require OAuth 2.0 Token";
     private final ApplicationEventProxy applicationEventProxy;
     private final ServiceTemplateManager serviceTemplateManager;
     private final PortalGenericEntityManager<ApiKeyData> apiKeysManager;
@@ -139,9 +143,11 @@ public class ModuleLoadListener implements ApplicationListener {
     private final ServiceManager serviceManager;
     private final PlatformTransactionManager transactionManager;
     private final PolicyManager policyManager;
+    private final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private final PolicyVersionManager policyVersionManager;
     private static ModuleLoadListener instance = null;
     private static PortalManagedServiceManager portalManagedServiceManager;
+    private static PortalManagedEncassManager portalManagedEncassManager;
     private static LicenseManager licenseManager;
     private static FolderManager folderManager;
     private static ClusterPropertyManager clusterPropertyManager;
@@ -157,37 +163,57 @@ public class ModuleLoadListener implements ApplicationListener {
     private final ServiceTemplate apiPortalIntegrationServiceTemplate;
 
 
-    private void handlePublishedServiceInvalidationEvent(final EntityInvalidationEvent event) {
-        final Goid[] entityIds = event.getEntityIds();
-        final char[] entityOperations = event.getEntityOperations();
-        for (int i = 0; i < entityIds.length; i++) {
-            final Goid entityId = entityIds[i];
-            final char entityOperation = entityOperations[i];
-            try {
-                switch (entityOperation) {
-                    case EntityInvalidationEvent.CREATE: {
-                        handleCreate(entityId);
-                        break;
+    private void handleEntityInvalidationEvent(final EntityInvalidationEvent event) {
+        if (PublishedService.class.equals(event.getEntityClass()) || Policy.class.equals(event.getEntityClass()) || EncapsulatedAssertionConfig.class.equals(event.getEntityClass())){
+            final Goid[] entityIds = event.getEntityIds();
+            final char[] entityOperations = event.getEntityOperations();
+            for (int i = 0; i < entityIds.length; i++) {
+                final Goid entityId = entityIds[i];
+                final char entityOperation = entityOperations[i];
+                try {
+                    switch (entityOperation) {
+                        case EntityInvalidationEvent.CREATE: {
+                            if(PublishedService.class.equals(event.getEntityClass())){
+                                handleCreatePublishedService(entityId);
+                            } else if(Policy.class.equals(event.getEntityClass())){
+                                handleCreatePolicy(entityId);
+                            } else if(EncapsulatedAssertionConfig.class.equals(event.getEntityClass())) {
+                                handleCreateEncass(entityId);
+                            }
+                            break;
+                        }
+                        case EntityInvalidationEvent.UPDATE: {
+                            if(PublishedService.class.equals(event.getEntityClass())){
+                                handleUpdatePublishedService(entityId);
+                            } else if(Policy.class.equals(event.getEntityClass())){
+                                handleUpdatePolicy(entityId);
+                            } else if(EncapsulatedAssertionConfig.class.equals(event.getEntityClass())) {
+                                handleUpdateEncass(entityId);
+                            }
+                            break;
+                        }
+                        case EntityInvalidationEvent.DELETE: {
+                            if(PublishedService.class.equals(event.getEntityClass())){
+                                deletePortalManagedServiceIfFound(entityId);
+                            } else if(Policy.class.equals(event.getEntityClass())){
+                                deletePortalManagedEncassByPolicyIfFound(entityId);
+                            } else if(EncapsulatedAssertionConfig.class.equals(event.getEntityClass())) {
+                                deletePortalManagedEncassByEncassIdIfFound(entityId);
+                            }
+                            break;
+                        }
+                        default: {
+                            logger.log(Level.WARNING, "Unsupported operation: " + entityOperation);
+                        }
                     }
-                    case EntityInvalidationEvent.UPDATE: {
-                        handleUpdate(entityId);
-                        break;
-                    }
-                    case EntityInvalidationEvent.DELETE: {
-                        deletePortalManagedServiceIfFound(entityId);
-                        break;
-                    }
-                    default: {
-                        logger.log(Level.WARNING, "Unsupported operation: " + entityOperation);
-                    }
+                } catch (final ObjectModelException e) {
+                    logger.log(Level.WARNING, "Error processing entity invalidation event for service with oid=" + entityId, ExceptionUtils.getDebugException(e));
                 }
-            } catch (final ObjectModelException e) {
-                logger.log(Level.WARNING, "Error processing entity invalidation event for service with oid=" + entityId, ExceptionUtils.getDebugException(e));
             }
         }
     }
 
-    private void handleUpdate(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
+    private void handleUpdatePublishedService(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
         if (service == null) {
             // service has been deleted
@@ -220,7 +246,30 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    private void handleCreate(final Goid entityId) throws FindException, SaveException, UpdateException {
+    private void handleUpdatePolicy(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
+        Collection<EncapsulatedAssertionConfig> encapsulatedAssertionConfigs = encapsulatedAssertionConfigManager.findByPolicyGoid(entityId);
+        if(!encapsulatedAssertionConfigs.isEmpty()) {
+            for(EncapsulatedAssertionConfig encapsulatedAssertionConfig : encapsulatedAssertionConfigs) {
+                handleUpdateEncass(encapsulatedAssertionConfig.getGoid());
+            }
+        }
+    }
+
+    private void handleUpdateEncass(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
+        final EncapsulatedAssertionConfig encapsulatedAssertionConfig = encapsulatedAssertionConfigManager.findByPrimaryKey(entityId);
+        if(encapsulatedAssertionConfig!=null){
+            final PortalManagedEncass portalManagedEncass = portalManagedEncassManager.fromEncass(encapsulatedAssertionConfig);
+            if (portalManagedEncass != null ) {
+                // Encass is portal managed
+                portalManagedEncassManager.addOrUpdate(portalManagedEncass);
+            } else {
+                // updated policy is not portal managed
+                deletePortalManagedEncassByEncassGuidIfFound(encapsulatedAssertionConfig.getGuid());
+            }
+        }
+    }
+
+    private void handleCreatePublishedService(final Goid entityId) throws FindException, SaveException, UpdateException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
         if (API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME.equals(service.getName())) {
             createPolicyFragments();
@@ -234,9 +283,48 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    private void deletePortalManagedServiceIfFound(final Goid serviceId) throws FindException, DeleteException {
-        for (final PortalManagedService remove : findByServiceGoid(serviceId)) {
+    private void handleCreatePolicy(final Goid entityId) throws FindException, SaveException, UpdateException {
+        Collection<EncapsulatedAssertionConfig> encapsulatedAssertionConfigs = encapsulatedAssertionConfigManager.findByPolicyGoid(entityId);
+        if(!encapsulatedAssertionConfigs.isEmpty()) {
+            for(EncapsulatedAssertionConfig encapsulatedAssertionConfig : encapsulatedAssertionConfigs) {
+                final PortalManagedEncass portalManagedEncass = portalManagedEncassManager.fromEncass(encapsulatedAssertionConfig);
+                if (portalManagedEncass != null) {
+                    portalManagedEncassManager.addOrUpdate(portalManagedEncass);
+                }
+            }
+        }
+    }
+
+    private void handleCreateEncass(final Goid entityId) throws FindException, SaveException, UpdateException {
+        final EncapsulatedAssertionConfig encapsulatedAssertionConfig = encapsulatedAssertionConfigManager.findByPrimaryKey(entityId);
+        final PortalManagedEncass portalManagedEncass = portalManagedEncassManager.fromEncass(encapsulatedAssertionConfig);
+        if (portalManagedEncass != null) {
+            portalManagedEncassManager.addOrUpdate(portalManagedEncass);
+        }
+    }
+
+    private void deletePortalManagedServiceIfFound(final Goid serviceGoid) throws FindException, DeleteException {
+        for (final PortalManagedService remove : findByServiceGoid(serviceGoid)) {
             portalManagedServiceManager.delete(remove.getName());
+        }
+    }
+
+    private void deletePortalManagedEncassByEncassIdIfFound(final Goid encassId) throws FindException, DeleteException {
+        for (final PortalManagedEncass remove : findPortalManagedEncassByEncassId(encassId)) {
+            portalManagedEncassManager.delete(remove.getEncassGuid());
+        }
+    }
+
+    private void deletePortalManagedEncassByEncassGuidIfFound(final String encassGuid) throws FindException, DeleteException {
+        portalManagedEncassManager.delete(encassGuid);
+    }
+
+    private void deletePortalManagedEncassByPolicyIfFound(final Goid policyId) throws FindException, DeleteException {
+        Collection<EncapsulatedAssertionConfig> encasses = encapsulatedAssertionConfigManager.findByPolicyGoid(policyId);
+        if(!encasses.isEmpty()){
+            for(EncapsulatedAssertionConfig encass : encasses){
+                deletePortalManagedEncassByEncassGuidIfFound(encass.getGuid());
+            }
         }
     }
 
@@ -247,6 +335,18 @@ public class ModuleLoadListener implements ApplicationListener {
         for (final PortalManagedService portalManagedService : all) {
             if (String.valueOf(serviceId).equalsIgnoreCase(portalManagedService.getDescription())) {
                 subset.add(portalManagedService);
+            }
+        }
+        return subset;
+    }
+
+    private List<PortalManagedEncass> findPortalManagedEncassByEncassId(final Goid encassId) throws FindException {
+        // unfortunately we don't have a more efficient way of retrieving portal managed encasses by encass id
+        final List<PortalManagedEncass> all = portalManagedEncassManager.findAll();
+        final List<PortalManagedEncass> subset = new ArrayList<>();
+        for (final PortalManagedEncass portalManagedEncass : all) {
+            if (portalManagedEncass.getEncassId() != null && String.valueOf(encassId).equalsIgnoreCase(portalManagedEncass.getEncassId())) {
+                subset.add(portalManagedEncass);
             }
         }
         return subset;
@@ -329,51 +429,10 @@ public class ModuleLoadListener implements ApplicationListener {
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Error retrieving policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
         }
-        try {
-            final Policy found = policyManager.findByUniqueName(OAUTH1X_FRAGMENT_POLICY_NAME);
-            if (found != null) {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH1X_FRAGMENT_GUID, found.getGuid());
-            } else {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH1X_FRAGMENT_GUID, ModuleConstants.NOT_INSTALLED_VALUE);
-                logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH1X_FRAGMENT_POLICY_NAME + ". defaulting to " + ModuleConstants.NOT_INSTALLED_VALUE);
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH1X_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
-        }
-        try {
-            final Policy found = policyManager.findByUniqueName(OAUTH20_FRAGMENT_POLICY_NAME);
-            if (found != null) {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH20_FRAGMENT_GUID, found.getGuid());
-            } else {
-                createClusterPropertyIfNotExist(ModuleConstants.OAUTH20_FRAGMENT_GUID, ModuleConstants.NOT_INSTALLED_VALUE);
-                logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH20_FRAGMENT_POLICY_NAME + ". defaulting to " + ModuleConstants.NOT_INSTALLED_VALUE);
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, "Error retrieving policy fragment. " + OAUTH20_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
-        }
     }
 
-    /**
-     * Only creates the folder if it doesn't exist.
-     */
     private void createDeletedFolder() {
         try {
-            final Folder found = folderManager.findByUniqueName(API_DELETED_FOLDER_NAME);
-            if (found == null) {
-                final Folder rootFolder = folderManager.findByUniqueName(ROOT_FOLDER_NAME);
-                final Folder folder = new Folder(API_DELETED_FOLDER_NAME, rootFolder);
-                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-                    @Override
-                    protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
-                        try {
-                            folderManager.save(folder);
-                        } catch (final ObjectModelException e) {
-                            transactionStatus.setRollbackOnly();
-                            logger.log(Level.WARNING, "Error creating API Deleted folder. " + API_DELETED_FOLDER_NAME + " will not be available.", ExceptionUtils.getDebugException(e));
-                        }
-                    }
-                });
-            }
             final Folder folder = folderManager.findByUniqueName(API_DELETED_FOLDER_NAME);
             if (folder != null) {
                 createClusterPropertyIfNotExist(ModuleConstants.API_DELETED_FOLDER_ID, folder.getId().toString());
@@ -442,7 +501,39 @@ public class ModuleLoadListener implements ApplicationListener {
         serviceTemplateManager.unregister(apiPortalIntegrationServiceTemplate);
     }
 
-    private void refreshAllPortalManagedServices() {
+    private void refreshAllPortalManagedEncasses() {
+        List<PortalManagedEncass> fromEncass = new ArrayList<>();
+        List<PortalManagedEncass> fromDatabase = new ArrayList<>();
+        try {
+            fromEncass.addAll(portalManagedEncassManager.findAllFromEncass());
+            fromDatabase.addAll(portalManagedEncassManager.findAll());
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Error retrieving Portal Managed Services: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+        final Set<String> guidsFromEncass = new HashSet<>();
+        for (final PortalManagedEncass portalManagedEncass : fromEncass) {
+            try {
+                guidsFromEncass.add(portalManagedEncass.getEncassGuid());
+                portalManagedEncassManager.addOrUpdate(portalManagedEncass);
+            } catch (final ObjectModelException e) {
+                logger.log(Level.WARNING, "Error adding/updating Portal Managed Encass with guid=" + portalManagedEncass.getEncassGuid() + ": " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        for (final PortalManagedEncass encassFromDatabase : fromDatabase) {
+            final String encassGuid = encassFromDatabase.getEncassGuid();
+            if (!guidsFromEncass.contains(encassGuid)) {
+                logger.log(Level.FINE, "Detected Portal Managed Encass in database that does not exist in policy with guid=" + encassGuid);
+                try {
+                    portalManagedEncassManager.delete(encassGuid);
+                } catch (final ObjectModelException e) {
+                    logger.log(Level.WARNING, "Error deleting Portal Managed Encass with guid=" + encassGuid + ": " + e.getMessage(), ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+    }
+
+    private void refreshAllPortalManagedServices(){
         List<PortalManagedService> fromPolicy = new ArrayList<PortalManagedService>();
         List<PortalManagedService> fromDatabase = new ArrayList<PortalManagedService>();
         try {

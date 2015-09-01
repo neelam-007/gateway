@@ -51,7 +51,7 @@
                 <L7p:VariableToSet stringValue="open_ldap_group_search_filter"/>
             </L7p:SetVariable>
             <L7p:Authentication>
-                <L7p:IdentityProviderOid longValue="27262976"/>
+                <L7p:IdentityProviderOid goidValue="27262976"/>
             </L7p:Authentication>
             <wsp:OneOrMore wsp:Usage="Required">
                 <wsp:All wsp:Usage="Required">
@@ -83,7 +83,7 @@
                         </L7p:AttrNames>
                         <L7p:CacheSize intValue="100"/>
                         <L7p:EnableCache booleanValue="false"/>
-                        <L7p:LdapProviderOid longValue="27262976"/>
+                        <L7p:LdapProviderOid goidValue="27262976"/>
                         <L7p:QueryMappings queryAttributeMappings="included">
                             <L7p:item mapping="included">
                                 <L7p:AttributeName stringValue="mail"/>
@@ -155,7 +155,7 @@
                             <L7p:item stringValue="cn"/>
                         </L7p:AttrNames>
                         <L7p:CacheSize intValue="100"/>
-                        <L7p:LdapProviderOid longValue="27262976"/>
+                        <L7p:LdapProviderOid goidValue="27262976"/>
                         <L7p:QueryMappings queryAttributeMappings="included">
                             <L7p:item mapping="included">
                                 <L7p:AttributeName stringValue="cn"/>

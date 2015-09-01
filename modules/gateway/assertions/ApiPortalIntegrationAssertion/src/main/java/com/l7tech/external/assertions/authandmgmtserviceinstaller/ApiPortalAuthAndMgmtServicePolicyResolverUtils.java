@@ -92,14 +92,14 @@ public class ApiPortalAuthAndMgmtServicePolicyResolverUtils {
             } catch (Exception e) {
                 throw new Exception("Error during processing the element 'LdapProviderOid' in the policy file");
             }
-            ldapProviderOidElm.setAttribute("longValue", ldapProviderId);
+            ldapProviderOidElm.setAttribute("goidValue", ldapProviderId);
         }
     }
 
     public static void updateLdapProviderIdByElementName(Document authPolicyDocument, String elementName, String ldapProviderId) {//throws TooManyChildElementsException, MissingRequiredElementException {
-        final List<Element> foundComments = findElements(authPolicyDocument.getDocumentElement(), ".//L7p:" + elementName + "[@longValue]", getNamespaceMap());
+        final List<Element> foundComments = findElements(authPolicyDocument.getDocumentElement(), ".//L7p:" + elementName + "[@goidValue]", getNamespaceMap());
         for (Element ldapProviderOidElm : foundComments) {
-            ldapProviderOidElm.setAttribute("longValue", ldapProviderId);
+            ldapProviderOidElm.setAttribute("goidValue", ldapProviderId);
         }
     }
 

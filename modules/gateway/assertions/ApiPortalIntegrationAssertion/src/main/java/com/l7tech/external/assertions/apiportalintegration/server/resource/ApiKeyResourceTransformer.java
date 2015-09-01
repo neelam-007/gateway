@@ -24,7 +24,9 @@ public class ApiKeyResourceTransformer implements ResourceTransformer<ApiKeyReso
         entity.setServiceIds(resource.getApis());
         entity.setLastUpdate(resource.getLastUpdate());
         entity.setAccountPlanMappingId(resource.getAccountPlanMappingId());
+        entity.setAccountPlanMappingName(resource.getAccountPlanMappingName());
         entity.setCustomMetaData(resource.getCustomMetaData());
+        entity.setApplicationId(resource.getApplicationId());
         if (resource.getSecurity() != null && resource.getSecurity().getOauth() != null) {
             entity.setOauthCallbackUrl(resource.getSecurity().getOauth().getCallbackUrl());
             entity.setOauthScope(resource.getSecurity().getOauth().getScope());
@@ -44,7 +46,9 @@ public class ApiKeyResourceTransformer implements ResourceTransformer<ApiKeyReso
         resource.setApis(entity.getServiceIds());
         resource.setLastUpdate(entity.getLastUpdate());
         resource.setAccountPlanMappingId(entity.getAccountPlanMappingId());
+        resource.setAccountPlanMappingName(entity.getAccountPlanMappingName());
         resource.setCustomMetaData(entity.getCustomMetaData());
+        resource.setApplicationId(entity.getApplicationId());
         if (entity.getOauthCallbackUrl() == null && entity.getOauthScope() == null && entity.getOauthType() == null) {
             resource.setSecurity(new SecurityDetails());
         } else {

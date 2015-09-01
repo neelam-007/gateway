@@ -44,7 +44,7 @@ public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
     ApiKeyManager(final ApplicationContext context) {
         super(context);
         GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
-        gem.registerClass(ApiKey.class);
+        gem.registerClass(ApiKey.class, PORTAL_GENERIC_ENTITY_METADATA);
         entityManager = gem.getEntityManager(ApiKey.class);
     }
 

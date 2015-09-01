@@ -27,6 +27,183 @@
             <wsp:All wsp:Usage="Required">
                 <L7p:ComparisonAssertion>
                     <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${accountPlanMappingId}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:Negated booleanValue="true"/>
+                            <L7p:Operator operator="EMPTY"/>
+                            <L7p:RightValue stringValue=""/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${apiAuthzDetails}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:RightValue stringValue="Not Set"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="NGMzNWY5Y2QtOGViMi0xMWUzLWFlNmItMDAwYzI5MTFhNGRi"/>
+                            <L7p:VariableToSet stringValue="orgIds"/>
+                        </L7p:SetVariable>
+                        <L7p:Split>
+                            <L7p:IgnoreEmptyValues booleanValue="true"/>
+                            <L7p:InputVariable stringValue="orgIds"/>
+                            <L7p:OutputVariable stringValue="orgIdsSplit"/>
+                        </L7p:Split>
+                        <L7p:IndexLookupByItem>
+                            <L7p:MultivaluedVariableName stringValue="orgIdsSplit"/>
+                            <L7p:OutputVariableName stringValue="matchIndex"/>
+                            <L7p:ValueToSearchForVariableName stringValue="accountPlanMappingId"/>
+                        </L7p:IndexLookupByItem>
+                    </wsp:All>
+                </wsp:OneOrMore>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9fCR7YXBpS2V5fXwke2FjY291bnRQbGFuTWFwcGluZ0lkfXxxdW90YT8="/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="MA=="/>
+                            <L7p:VariableToSet stringValue="quota"/>
+                        </L7p:SetVariable>
+                        <L7p:ThroughputQuota>
+                            <L7p:CounterName stringValue="${accountPlanMappingId}"/>
+                            <L7p:Enabled booleanValue="false"/>
+                            <L7p:Global booleanValue="true"/>
+                            <L7p:Quota stringValue="${quota}"/>
+                            <L7p:Synchronous booleanValue="false"/>
+                        </L7p:ThroughputQuota>
+                        <L7p:RateLimit>
+                            <L7p:CounterName stringValue="${accountPlanMappingId}"/>
+                            <L7p:Enabled booleanValue="false"/>
+                            <L7p:HardLimit booleanValue="true"/>
+                            <L7p:WindowSizeInSeconds stringValue="60"/>
+                        </L7p:RateLimit>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9b2t8cmF0ZT8="/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="dHJ1ZQ=="/>
+                            <L7p:VariableToSet stringValue="apiAuthz"/>
+                        </L7p:SetVariable>
+                    </wsp:All>
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9ZmFpbGVk"/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                    </wsp:All>
+                </wsp:OneOrMore>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="Internal+Plan:71ec8a37-9362-11e3-b742-000c2911a4db"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${accountPlanMappingId}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:Negated booleanValue="true"/>
+                            <L7p:Operator operator="EMPTY"/>
+                            <L7p:RightValue stringValue=""/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${apiAuthzDetails}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:RightValue stringValue="Not Set"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <L7p:TrueAssertion/>
+                </wsp:OneOrMore>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9fCR7YXBpS2V5fXwke2FjY291bnRQbGFuTWFwcGluZ0lkfXxxdW90YT8="/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="MTAw"/>
+                            <L7p:VariableToSet stringValue="quota"/>
+                        </L7p:SetVariable>
+                        <L7p:ThroughputQuota>
+                            <L7p:CounterName stringValue="${accountPlanMappingId}"/>
+                            <L7p:Global booleanValue="true"/>
+                            <L7p:Quota stringValue="${quota}"/>
+                            <L7p:Synchronous booleanValue="false"/>
+                            <L7p:TimeUnit intValue="4"/>
+                        </L7p:ThroughputQuota>
+                        <L7p:RateLimit>
+                            <L7p:CounterName stringValue="${accountPlanMappingId}"/>
+                            <L7p:HardLimit booleanValue="true"/>
+                            <L7p:MaxRequestsPerSecond stringValue="1"/>
+                            <L7p:WindowSizeInSeconds stringValue="60"/>
+                        </L7p:RateLimit>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9b2t8cmF0ZT8="/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="dHJ1ZQ=="/>
+                            <L7p:VariableToSet stringValue="apiAuthz"/>
+                        </L7p:SetVariable>
+                    </wsp:All>
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHthcGlBdXRoekRldGFpbHN9ZmFpbGVk"/>
+                            <L7p:VariableToSet stringValue="apiAuthzDetails"/>
+                        </L7p:SetVariable>
+                    </wsp:All>
+                </wsp:OneOrMore>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="Bronze+Account+Plan:00000001-9362-11e3-b742-000drahcir00(Default)"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
                     <L7p:Expression1 stringValue="${apiAuthzDetails}"/>
                     <L7p:Operator operatorNull="null"/>
                     <L7p:Predicates predicates="included">
@@ -43,7 +220,7 @@
                     <L7p:VariableToSet stringValue="apiAuthz"/>
                 </L7p:SetVariable>
                 <L7p:SetVariable>
-                    <L7p:Base64Expression stringValue="JHthcGlLZXl9fCR7b3JnSWR9IEFjY291bnRQbGFuTWFwcGluZ0lkIG5vdCBmb3VuZA=="/>
+                    <L7p:Base64Expression stringValue="JHthcGlLZXl9fCR7YWNjb3VudFBsYW5NYXBwaW5nSWR9IEFjY291bnRQbGFuTWFwcGluZ0lkIG5vdCBmb3VuZA=="/>
                     <L7p:VariableToSet stringValue="apiAuthzDetails"/>
                 </L7p:SetVariable>
                 <L7p:assertionComment>
@@ -56,6 +233,9 @@
                 </L7p:assertionComment>
             </wsp:All>
         </wsp:OneOrMore>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Updated on Wed Jun 04 16:38:04 PDT 2014"/>
+        </L7p:CommentAssertion>
         <L7p:ExportVariables>
             <L7p:ExportedVars stringArrayValue="included">
                 <L7p:item stringValue="apiAuthz"/>

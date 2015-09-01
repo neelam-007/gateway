@@ -15,6 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +62,8 @@ public class ServerManagePlansTest {
     @Mock
     private AccountPlanResourceHandler accountPlanResourceHandler;
     @Mock
+    private ApiFragmentResourceHandler apiFragmentResourceHandler;
+    @Mock
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
@@ -80,7 +83,8 @@ public class ServerManagePlansTest {
         policyHelper = new PolicyHelper(policyManager,policyVersionManager,transactionManager,licenseManager,policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
                 resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
-                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
+                keyLegacyResourceHandler, accountPlanResourceHandler, apiFragmentResourceHandler, policyHelper,
+                policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         apiPlanResources = new ArrayList<ApiPlanResource>();
         expectedFilters = new HashMap<String, String>();
@@ -409,6 +413,30 @@ public class ServerManagePlansTest {
         assertEquals(new Integer(200), (Integer) policyContext.getVariable(RESPONSE_STATUS));
         assertEquals(SUCCESS, (String) policyContext.getVariable(RESPONSE_DETAIL));
         assertEquals(xml, (String) policyContext.getVariable(RESPONSE_RESOURCE));
+    }
+
+    @BugId("APIM-522")
+    @Test
+    public void checkRequestAddOrUpdateApiPlansNoneRemoveOmitted() throws Exception {
+        final String xml = "<l7:ApiPlans xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\"></l7:ApiPlans>";
+        policyContext.setVariable(OPERATION, "PUT");
+        policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
+        policyContext.setVariable(RESOURCE, xml);
+        policyContext.setVariable(OPTION_REMOVE_OMITTED, "true");
+        apiPlanResources.clear();
+        final ApiPlanListResource listResource = new ApiPlanListResource(apiPlanResources);
+        when(resourceUnmarshaller.unmarshal(xml, ApiPlanListResource.class)).thenReturn(listResource);
+        when(resourceMarshaller.marshal(any(ApiPlanListResource.class))).thenReturn(xml);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        verify(resourceUnmarshaller).unmarshal(xml, ApiPlanListResource.class);
+        verify(planResourceHandler).put(apiPlanResources, true);
+        verify(resourceMarshaller).marshal(argThat(new ApiPlanListResourceMatcher()));
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(new Integer(200), policyContext.getVariable(RESPONSE_STATUS));
+        assertEquals(SUCCESS, policyContext.getVariable(RESPONSE_DETAIL));
+        assertEquals(xml, policyContext.getVariable(RESPONSE_RESOURCE));
     }
 
     @Test

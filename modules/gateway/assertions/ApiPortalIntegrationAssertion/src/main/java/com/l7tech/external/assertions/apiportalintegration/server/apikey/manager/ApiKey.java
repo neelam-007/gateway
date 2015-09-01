@@ -24,8 +24,13 @@ public class ApiKey extends AbstractPortalGenericEntity {
 
     private Date lastUpdate;
     private String accountPlanMappingId;
+    /**
+     * Organization name.
+     */
+    private String accountPlanMappingName;
     //private String xmlRepresentation;
     private String customMetaData;
+    private String applicationId;
 
     public Map<String, String> getServiceIds() {
         return serviceIds;
@@ -107,7 +112,15 @@ public class ApiKey extends AbstractPortalGenericEntity {
         this.accountPlanMappingId = accountPlanMappingId;
     }
 
-//    public String getXmlRepresentation() {
+    public String getAccountPlanMappingName() {
+        return accountPlanMappingName;
+    }
+
+    public void setAccountPlanMappingName(final String accountPlanMappingName) {
+        this.accountPlanMappingName = accountPlanMappingName;
+    }
+
+    //    public String getXmlRepresentation() {
 //        return xmlRepresentation;
 //    }
 //
@@ -121,6 +134,14 @@ public class ApiKey extends AbstractPortalGenericEntity {
 
     public void setCustomMetaData(String customMetaData) {
         this.customMetaData = customMetaData;
+    }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
     }
 
     @Override
@@ -138,8 +159,10 @@ public class ApiKey extends AbstractPortalGenericEntity {
         readOnly.setOauthType(this.getOauthType());
         readOnly.setLastUpdate(this.getLastUpdate());
         readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
+        readOnly.setAccountPlanMappingName(this.getAccountPlanMappingName());
 //        readOnly.setXmlRepresentation(this.getXmlRepresentation());
         readOnly.setCustomMetaData(this.getCustomMetaData());
+        readOnly.setApplicationId(this.getApplicationId());
         readOnly.lock();
         return readOnly;
     }

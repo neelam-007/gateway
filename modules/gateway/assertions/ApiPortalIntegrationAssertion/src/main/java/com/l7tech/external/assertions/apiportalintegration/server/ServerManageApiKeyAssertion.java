@@ -52,7 +52,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                                 @Nullable final PortalGenericEntityManager<ApiKeyData> apiKeyManager,
                                 @NotNull final ApiKeyResourceHandler keyResourceHandler,
                                 @NotNull final ApiKeyDataResourceHandler keyLegacyResourceHandler
-                                ) throws PolicyAssertionException {
+    ) throws PolicyAssertionException {
         super(assertion);
 
         this.assertion = assertion;
@@ -109,11 +109,11 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                 ApiKeyResource apiKeyResource = ApiKeyDataResourceTransformer.getInstance().entityToResource(data);
 
                 try {
-                    if(data1!=null){
+                    if (data1 != null) {
                         keyLegacyResourceHandler.delete(apiKey);
                         keyResourceHandler.put(data1);
                     }
-                    if(data1!=null || data2!=null){
+                    if (data1 != null || data2 != null) {
                         throw new DuplicateObjectException();
                     }
                     keyResourceHandler.put(apiKeyResource);
@@ -148,6 +148,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                     final String platform = ExpandVariables.process("${" + API_PLATFORM + "}", context.getVariableMap(getUpdateVars(), getAudit()), getAudit());
                     final String accountPlanMappingId = ExpandVariables.process("${" + API_ACCOUNT_PLAN_MAPPING_ID + "}", context.getVariableMap(getUpdateVars(), getAudit()), getAudit());
                     final String customMetaData = ExpandVariables.process("${" + API_CUSTOM_METADATA + "}", context.getVariableMap(getUpdateVars(), getAudit()), getAudit());
+                    final String applicationId = ExpandVariables.process("${" + API_APPLICATION_ID + "}", context.getVariableMap(getUpdateVars(), getAudit()), getAudit());
                     if (StringUtils.isNotBlank(assignApis)) {
                         Map<String, String> services = new HashMap<String, String>();
                         if (assignApis.length() > 0) {
@@ -172,10 +173,11 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                         securityDetails.setOauth(oAuthDetails);
                         data2.setSecurity(securityDetails);
                         //fail safe that the accountPlanMappingId will never be empty on update
-                        if(accountPlanMappingId!=null && accountPlanMappingId.length()>0){
+                        if (accountPlanMappingId != null && accountPlanMappingId.length() > 0) {
                             data2.setAccountPlanMappingId(accountPlanMappingId);
                         }
                         data2.setCustomMetaData(customMetaData);
+                        data2.setApplicationId(applicationId);
                     }
                     keyResourceHandler.put(data2);
                 } catch (ObjectNotFoundException e) {
@@ -193,7 +195,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                     if (data2 != null) {
                         keyResourceHandler.delete(apiKey);
                     }
-                    if(data1==null && data2==null){
+                    if (data1 == null && data2 == null) {
                         throw new ObjectNotFoundException();
                     }
                 } catch (ObjectNotFoundException e) {
@@ -206,7 +208,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
                 logger.log(Level.WARNING, "Unknown ACTION [{0}]: assertion mis-configured", assertion.getAction());
             }
 
-            logger.log(Level.FINER, "Manage API Keys: action={0}, key={1}, asXml={2}", new Object[] {action, apiKey, apiKeyXml});
+            logger.log(Level.FINER, "Manage API Keys: action={0}, key={1}, asXml={2}", new Object[]{action, apiKey, apiKeyXml});
 
         } catch (Exception ex) {
             final String errorMsg = "Error performing manage API key operation: " + action;
@@ -217,7 +219,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
     }
 
     private String[] getUpdateVars() {
-        return new String[]{API_KEY_SECRET, API_KEY_STATUS, ASSIGN_APIS, API_LABEL, API_CALLBACK_URL, API_OAUTH_SCOPE, API_OAUTH_TYPE, API_PLATFORM, API_ACCOUNT_PLAN_MAPPING_ID, API_CUSTOM_METADATA};
+        return new String[]{API_KEY_SECRET, API_KEY_STATUS, ASSIGN_APIS, API_LABEL, API_CALLBACK_URL, API_OAUTH_SCOPE, API_OAUTH_TYPE, API_PLATFORM, API_ACCOUNT_PLAN_MAPPING_ID, API_CUSTOM_METADATA, API_APPLICATION_ID};
     }
 
     public static final String API_KEY_SECRET = "pman.options.apikeySecret";
@@ -230,5 +232,6 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
     public static final String API_PLATFORM = "pman.options.platform";
     public static final String API_ACCOUNT_PLAN_MAPPING_ID = "pman.options.accountPlanMappingId";
     public static final String API_CUSTOM_METADATA = "pman.options.customMetaData";
+    public static final String API_APPLICATION_ID = "pman.options.applicationId";
 
 }

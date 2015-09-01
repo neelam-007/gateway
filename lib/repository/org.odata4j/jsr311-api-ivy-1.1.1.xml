@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.odata4j"
+		module="jsr311-api"
+		revision="1.1.1"
+		status="release"
+		publication="20150831164002"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jsr311-api" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

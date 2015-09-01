@@ -29,6 +29,12 @@ public class AccountPlanResourceTransformer implements ResourceTransformer<Accou
         plan.setTimeUnit(quotaDetails.getTimeUnit());
         plan.setCounterStrategy(quotaDetails.getCounterStrategy());
 
+        RateLimitDetails rateLimitDetails = resource.getPlanDetails().getRateLimit();
+        plan.setRateLimitEnabled(rateLimitDetails.isEnabled());
+        plan.setMaxRequestRate(rateLimitDetails.getMaxRequestRate());
+        plan.setWindowSizeInSeconds(rateLimitDetails.getWindowSizeInSeconds());
+        plan.setHardLimit(rateLimitDetails.isHardLimit());
+
         plan.setIds(resource.getPlanMapping().getIds());
         return plan;
     }
@@ -41,7 +47,13 @@ public class AccountPlanResourceTransformer implements ResourceTransformer<Accou
                         entity.isThroughputQuotaEnabled(),
                         entity.getQuota(),
                         entity.getTimeUnit(),
-                        entity.getCounterStrategy())
+                        entity.getCounterStrategy()),
+                    new RateLimitDetails(
+                        entity.isRateLimitEnabled(),
+                        entity.getMaxRequestRate(),
+                        entity.getWindowSizeInSeconds(),
+                        entity.isHardLimit()
+                    )
                 ),
                 new AccountPlanMapping(entity.getIds()), entity.getPolicyXml());
     }

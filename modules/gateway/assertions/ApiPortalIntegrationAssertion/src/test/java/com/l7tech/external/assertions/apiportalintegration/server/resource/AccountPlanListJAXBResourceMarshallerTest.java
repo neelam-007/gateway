@@ -19,12 +19,8 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     // this is not the EXACT format that jaxb uses by default - jaxb actually adds a colon to the time zone
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static final ThroughputQuotaDetails QUOTA_DETAILS = new ThroughputQuotaDetails(true, 100, 1, 2);
-    private static final List<String> ORG_IDS = new ArrayList<String>();
-    static {
-        ORG_IDS.add("o1");
-        ORG_IDS.add("o2");
-        ORG_IDS.add("o3");
-    }
+    private static final RateLimitDetails RATE_LIMIT_DETAILS = new RateLimitDetails(true, 100, 60, true);
+    private static final String ORG_IDS = "o1,o2,o3";
 
     private DefaultJAXBResourceMarshaller marshaller;
     private AccountPlanListResource planList;
@@ -41,9 +37,9 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     @Test
     public void marshall() throws Exception {
         plans.add(new AccountPlanResource("p1", "pName1", new Date(), false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml 1"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml 1"));
         plans.add(new AccountPlanResource("p2", "pName2", new Date(), false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml 2"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml 2"));
 
         final String xml = marshaller.marshal(planList);
 
@@ -71,7 +67,7 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     @Test
     public void marshallNullPlanId() throws Exception {
         plans.add(new AccountPlanResource(null, "pName", new Date(), false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
 
         final String xml = marshaller.marshal(planList);
 
@@ -81,7 +77,7 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     @Test
     public void marshallNullPlanName() throws Exception {
         plans.add(new AccountPlanResource("p1", null, new Date(), false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
 
         final String xml = marshaller.marshal(planList);
 
@@ -91,7 +87,7 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     @Test
     public void marshallNullLastUpdated() throws Exception {
         plans.add(new AccountPlanResource("p1", "pName", null, false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
 
         final String xml = marshaller.marshal(planList);
 
@@ -101,7 +97,7 @@ public class AccountPlanListJAXBResourceMarshallerTest {
     @Test
     public void marshallNullPolicyXml() throws Exception {
         plans.add(new AccountPlanResource("p1", "pName", new Date(), false,
-                new PlanDetails(QUOTA_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
+                new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS), new AccountPlanMapping(ORG_IDS), "the xml"));
 
         final String xml = marshaller.marshal(planList);
 
@@ -142,12 +138,22 @@ public class AccountPlanListJAXBResourceMarshallerTest {
                 stringBuilder.append(details.getCounterStrategy());
                 stringBuilder.append("</l7:CounterStrategy>");
                 stringBuilder.append("</l7:ThroughputQuota>");
+                RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+                stringBuilder.append("<l7:RateLimit l7:enabled=\"" + (rateLimitDetails.isEnabled() ? "true" : "false") + "\">");
+                stringBuilder.append("<l7:MaxRequestRate>");
+                stringBuilder.append(rateLimitDetails.getMaxRequestRate());
+                stringBuilder.append("</l7:MaxRequestRate>");
+                stringBuilder.append("<l7:WindowSizeInSeconds>");
+                stringBuilder.append(rateLimitDetails.getWindowSizeInSeconds());
+                stringBuilder.append("</l7:WindowSizeInSeconds>");
+                stringBuilder.append("<l7:HardLimit>");
+                stringBuilder.append(rateLimitDetails.isHardLimit());
+                stringBuilder.append("</l7:HardLimit>");
+                stringBuilder.append("</l7:RateLimit>");
                 stringBuilder.append("</l7:PlanDetails>");
-                if(plan.getPlanMapping().getIds().size() > 0) {
+                if(plan.getPlanMapping().getIds().length() > 0) {
                     stringBuilder.append("<l7:PlanMapping>");
-                    for(String org : plan.getPlanMapping().getIds()) {
-                        stringBuilder.append("<l7:Id>" + org + "</l7:Id>");
-                    }
+                    stringBuilder.append("<l7:Ids>").append(plan.getPlanMapping().getIds()).append("</l7:Ids>");
                     stringBuilder.append("</l7:PlanMapping>");
                 } else {
                     stringBuilder.append("<l7:PlanMapping/>");

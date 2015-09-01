@@ -20,6 +20,7 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
     private String oauthType;
     private String accountPlanMappingId;
     private String customMetaData;
+    private String applicationId;
 
     public ApiKeyData() {
         this(null);
@@ -126,6 +127,14 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         this.customMetaData = customMetaData;
     }
 
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
+    }
+
     @Override
     public ApiKeyData getReadOnlyCopy() {
         final ApiKeyData readOnly = new ApiKeyData();
@@ -142,6 +151,7 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         readOnly.setOauthType(this.getOauthType());
         readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
         readOnly.setCustomMetaData(this.getCustomMetaData());
+        readOnly.setApplicationId(this.getApplicationId());
         readOnly.lock();
         return readOnly;
     }
@@ -166,8 +176,12 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         if (status != null ? !status.equals(that.status) : that.status != null) return false;
         if (xmlRepresentation != null ? !xmlRepresentation.equals(that.xmlRepresentation) : that.xmlRepresentation != null)
             return false;
-        if (accountPlanMappingId != null ? !accountPlanMappingId.equals(that.accountPlanMappingId) : that.accountPlanMappingId != null) return false;
-        if (customMetaData != null ? !customMetaData.equals(that.customMetaData) : that.customMetaData != null) return false;
+        if (accountPlanMappingId != null ? !accountPlanMappingId.equals(that.accountPlanMappingId) : that.accountPlanMappingId != null)
+            return false;
+        if (customMetaData != null ? !customMetaData.equals(that.customMetaData) : that.customMetaData != null)
+            return false;
+        if (applicationId != null ? !applicationId.equals(that.applicationId) : that.applicationId != null)
+            return false;
 
         return true;
     }
@@ -187,6 +201,8 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         result = 31 * result + (oauthType != null ? oauthType.hashCode() : 0);
         result = 31 * result + (accountPlanMappingId != null ? accountPlanMappingId.hashCode() : 0);
         result = 31 * result + (customMetaData != null ? customMetaData.hashCode() : 0);
+        result = 31 * result + (applicationId != null ? applicationId.hashCode() : 0);
         return result;
     }
+
 }

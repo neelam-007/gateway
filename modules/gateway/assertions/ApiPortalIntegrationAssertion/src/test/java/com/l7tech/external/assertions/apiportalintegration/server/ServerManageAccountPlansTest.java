@@ -15,6 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,11 +39,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerManageAccountPlansTest {
-    private static final List<String> ORG_IDS = new ArrayList<String>(2);
-    static {
-        ORG_IDS.add("1");
-        ORG_IDS.add("2");
-    }
+    private static final String ORG_IDS = "1,2";
     public static final boolean DEFAULT_PLAN_ENABLED = true;
     public static final boolean THROUGHPUT_QUOTA_ENABLED = true;
     public static final int QUOTA_10 = 10;
@@ -71,6 +68,8 @@ public class ServerManageAccountPlansTest {
     @Mock
     private AccountPlanResourceHandler accountPlanResourceHandler;
     @Mock
+    private ApiFragmentResourceHandler apiFragmentResourceHandler;
+    @Mock
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
@@ -90,7 +89,8 @@ public class ServerManageAccountPlansTest {
         policyHelper = new PolicyHelper(policyManager,policyVersionManager,transactionManager,licenseManager,policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
                 resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
-                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
+                keyLegacyResourceHandler, accountPlanResourceHandler, apiFragmentResourceHandler, policyHelper,
+                policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         accountPlanResources = new ArrayList<AccountPlanResource>();
         expectedFilters = new HashMap<String, String>();
@@ -432,6 +432,30 @@ public class ServerManageAccountPlansTest {
         assertEquals(xml, (String) policyContext.getVariable(RESPONSE_RESOURCE));
     }
 
+    @BugId("APIM-522")
+    @Test
+    public void checkRequestAddOrUpdateAccountPlansNoneRemoveOmitted() throws Exception {
+        final String xml = "<l7:AccountPlans xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\"></l7:AccountPlans>";
+        policyContext.setVariable(OPERATION, "PUT");
+        policyContext.setVariable(RESOURCE_URI, ROOT_URI + "account/plans");
+        policyContext.setVariable(RESOURCE, xml);
+        policyContext.setVariable(OPTION_REMOVE_OMITTED, "true");
+        accountPlanResources.clear();
+        final AccountPlanListResource listResource = new AccountPlanListResource(accountPlanResources);
+        when(resourceUnmarshaller.unmarshal(xml, AccountPlanListResource.class)).thenReturn(listResource);
+        when(resourceMarshaller.marshal(any(AccountPlanListResource.class))).thenReturn(xml);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        verify(resourceUnmarshaller).unmarshal(xml, AccountPlanListResource.class);
+        verify(accountPlanResourceHandler).put(accountPlanResources, true);
+        verify(resourceMarshaller).marshal(argThat(new AccountPlanListResourceMatcher()));
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(new Integer(200), policyContext.getVariable(RESPONSE_STATUS));
+        assertEquals(SUCCESS, policyContext.getVariable(RESPONSE_DETAIL));
+        assertEquals(xml, policyContext.getVariable(RESPONSE_RESOURCE));
+    }
+
     @Test
     public void checkRequestAddOrUpdatAccountPlansUpdateException() throws Exception {
         policyContext.setVariable(OPERATION, "PUT");
@@ -608,7 +632,7 @@ public class ServerManageAccountPlansTest {
     private AccountPlanResource createAccountPlanResource(final String planId, final String planName,
                                                           final Date lastUpdate, final String policyXml, final boolean defaultPlan,
                                                           final boolean throughputQuotaEnabled, final int quota, final int timeUnit,
-                                                          final int counterStrategy, final List<String> organizationIds) {
+                                                          final int counterStrategy, final String organizationIds) {
         final AccountPlanResource resource = new AccountPlanResource();
         resource.setPlanId(planId);
         resource.setPlanName(planName);

@@ -24,10 +24,14 @@ public final class ModuleConstants {
     public static final String OAUTHTYPE_ATTRIBUTE_NAME = "type";
     public static final String ACCOUNTPLANMAPPINGID_ELEMENT_NAME = "AccountPlanMappingId";
     public static final String CUSTOMMETADATA_ELEMENT_NAME = "CustomMetaData";
+    public static final String APPLICATIONID_ELEMENT_NAME = "ApplicationId";
+    public static final String API_ID_SERVICE_PROPERTY_NAME = "portalID";
 
     public static final String PORTAL_API_PLANS_UI_PROPERTY = "portal.apiplans"; // should really be portal.api.plans
     public static final String TEMP_PORTAL_MANAGED_SERVICE_INDICATOR = "L7p:ApiPortalManagedServiceAssertion";
+    public static final String TEMP_PORTAL_MANAGED_ENCASS_INDICATOR = "L7p:ApiPortalManagedEncassAssertion";
     public static final String PORTAL_MANAGED_SERVICE_INDICATOR = "L7p:ApiPortalIntegration";
+    public static final String PORTAL_MANAGED_ENCASS_INDICATOR = "L7p:ApiPortalEncassIntegration";
     public static final String PORTAL_MANAGED_SERVICES_UI_PROPERTY = "portal.managed.services";
 
     // Cluster-Property for API Portal Integration required by publish API wizard.

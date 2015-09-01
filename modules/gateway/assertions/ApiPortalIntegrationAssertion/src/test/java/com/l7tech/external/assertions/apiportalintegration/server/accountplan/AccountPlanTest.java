@@ -40,8 +40,16 @@ public class AccountPlanTest {
         plan2.setTimeUnit(1);
         plan1.setCounterStrategy(1);
         plan2.setCounterStrategy(1);
-        plan1.setIds(new ArrayList<String>());
-        plan2.setIds(new ArrayList<String>());
+        plan1.setIds("");
+        plan2.setIds("");
+        plan1.setRateLimitEnabled(true);
+        plan2.setRateLimitEnabled(true);
+        plan1.setWindowSizeInSeconds(60);
+        plan2.setWindowSizeInSeconds(60);
+        plan1.setMaxRequestRate(100);
+        plan2.setMaxRequestRate(100);
+        plan1.setHardLimit(true);
+        plan2.setHardLimit(true);
 
         // these fields shouldn't matter
         plan1.setGoid(new Goid(0,1234L));
@@ -126,6 +134,42 @@ public class AccountPlanTest {
     }
 
     @Test
+    public void notEqualDifferentRateLimitEnabled() {
+        plan1.setRateLimitEnabled(true);
+        plan2.setRateLimitEnabled(false);
+
+        assertFalse(plan1.equals(plan2));
+        assertFalse(plan2.equals(plan1));
+    }
+
+    @Test
+    public void notEqualDifferentMaxRequestRate() {
+        plan1.setMaxRequestRate(1);
+        plan2.setMaxRequestRate(2);
+
+        assertFalse(plan1.equals(plan2));
+        assertFalse(plan2.equals(plan1));
+    }
+
+    @Test
+    public void notEqualDifferentWindowSize() {
+        plan1.setWindowSizeInSeconds(1);
+        plan2.setWindowSizeInSeconds(2);
+
+        assertFalse(plan1.equals(plan2));
+        assertFalse(plan2.equals(plan1));
+    }
+
+    @Test
+    public void notEqualDifferentHardLimit() {
+        plan1.setHardLimit(true);
+        plan2.setHardLimit(false);
+
+        assertFalse(plan1.equals(plan2));
+        assertFalse(plan2.equals(plan1));
+    }
+
+    @Test
     public void equalOrganizationIds() {
         //test both empty
         assertTrue(plan1.equals(plan2));
@@ -135,8 +179,8 @@ public class AccountPlanTest {
         List<String> list1 = new ArrayList<String>();
         List<String> list2 = new ArrayList<String>();
 
-        plan1.setIds(list1);
-        plan2.setIds(list2);
+        plan1.setIds("");
+        plan2.setIds("");
 
         assertTrue(plan1.equals(plan2));
         assertTrue(plan2.equals(plan1));
@@ -147,8 +191,8 @@ public class AccountPlanTest {
         list2.add("e1");
         list2.add("e2");
 
-        plan1.setIds(list1);
-        plan2.setIds(list2);
+        plan1.setIds("e1,e2");
+        plan2.setIds("e1,e2");
 
         assertTrue(plan1.equals(plan2));
         assertTrue(plan2.equals(plan1));
@@ -164,8 +208,8 @@ public class AccountPlanTest {
         list2.add("e2");
         list2.add("e1");
 
-        plan1.setIds(list1);
-        plan2.setIds(list2);
+        plan1.setIds("e1,e3,e2");
+        plan2.setIds("e3,e2,e1");
 
         assertTrue(plan1.equals(plan2));
         assertTrue(plan2.equals(plan1));
@@ -176,7 +220,7 @@ public class AccountPlanTest {
         //test one null
         List<String> list1 = new ArrayList<String>();
 
-        plan1.setIds(list1);
+        plan1.setIds("");
         plan2.setIds(null);
 
         assertFalse(plan1.equals(plan2));
@@ -184,16 +228,16 @@ public class AccountPlanTest {
 
         List<String> list2 = new ArrayList<String>();
         list2.add("ele1");
-        plan1.setIds(list1);
-        plan2.setIds(list2);
+        plan1.setIds("");
+        plan2.setIds("ele1");
 
         assertFalse(plan1.equals(plan2));
         assertFalse(plan2.equals(plan1));
 
         list1.add("ele1");
         list1.add("ele2");
-        plan1.setIds(list1);
-        plan2.setIds(list2);
+        plan1.setIds("ele1,ele2");
+        plan2.setIds("ele1");
 
         assertFalse(plan1.equals(plan2));
         assertFalse(plan2.equals(plan1));
@@ -215,6 +259,24 @@ public class AccountPlanTest {
         plan2.setPolicyXml("policy");
         plan1.setDefaultPlan(true);
         plan2.setDefaultPlan(true);
+        plan1.setQuota(100);
+        plan2.setQuota(100);
+        plan1.setThroughputQuotaEnabled(true);
+        plan2.setThroughputQuotaEnabled(true);
+        plan1.setTimeUnit(1);
+        plan2.setTimeUnit(1);
+        plan1.setCounterStrategy(1);
+        plan2.setCounterStrategy(1);
+        plan1.setIds("");
+        plan2.setIds("");
+        plan1.setRateLimitEnabled(true);
+        plan2.setRateLimitEnabled(true);
+        plan1.setWindowSizeInSeconds(60);
+        plan2.setWindowSizeInSeconds(60);
+        plan1.setMaxRequestRate(100);
+        plan2.setMaxRequestRate(100);
+        plan1.setHardLimit(true);
+        plan2.setHardLimit(true);
 
         // these fields shouldn't matter
         plan1.setGoid(new Goid(0,1234L));

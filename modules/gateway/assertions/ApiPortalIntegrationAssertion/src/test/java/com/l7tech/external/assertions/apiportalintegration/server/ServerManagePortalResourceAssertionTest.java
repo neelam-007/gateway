@@ -60,6 +60,8 @@ public class ServerManagePortalResourceAssertionTest {
     @Mock
     private AccountPlanResourceHandler accountPlanResourceHandler;
     @Mock
+    private ApiFragmentResourceHandler apiFragmentResourceHandler;
+    @Mock
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
@@ -79,7 +81,8 @@ public class ServerManagePortalResourceAssertionTest {
         policyHelper = new PolicyHelper(policyManager, policyVersionManager, transactionManager, licenseManager, policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
                 resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
-                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
+                keyLegacyResourceHandler, accountPlanResourceHandler, apiFragmentResourceHandler, policyHelper,
+                policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
@@ -195,10 +198,14 @@ public class ServerManagePortalResourceAssertionTest {
         verify(planResourceHandler).get(anyMap());
         verify(keyResourceHandler).get(anyMap());
         verify(keyLegacyResourceHandler).get(anyMap());
+        verify(accountPlanResourceHandler).get(anyMap());
+        verify(apiFragmentResourceHandler).get(anyMap());
         verify(apiResourceHandler).getCacheItems();
         verify(planResourceHandler).getCacheItems();
         verify(keyResourceHandler).getCacheItems();
         verify(keyLegacyResourceHandler).getCacheItems();
+        verify(accountPlanResourceHandler).getCacheItems();
+        verify(apiFragmentResourceHandler).getCacheItems();
         verify(resourceMarshaller).marshal(any(GatewayResource.class));
     }
 
@@ -217,10 +224,14 @@ public class ServerManagePortalResourceAssertionTest {
         verify(planResourceHandler, never()).get(anyMap());
         verify(keyResourceHandler, never()).get(anyMap());
         verify(keyLegacyResourceHandler, never()).get(anyMap());
+        verify(accountPlanResourceHandler, never()).get(anyMap());
+        verify(apiFragmentResourceHandler, never()).get(anyMap());
         verify(apiResourceHandler, never()).getCacheItems();
         verify(planResourceHandler, never()).getCacheItems();
         verify(keyResourceHandler, never()).getCacheItems();
         verify(keyLegacyResourceHandler, never()).getCacheItems();
+        verify(accountPlanResourceHandler, never()).getCacheItems();
+        verify(apiFragmentResourceHandler, never()).getCacheItems();
         verify(resourceMarshaller, never()).marshal(any(GatewayResource.class));
     }
 
