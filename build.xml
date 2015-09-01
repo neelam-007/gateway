@@ -3763,4 +3763,18 @@
         <copy file="DEVLICENSE.xml" todir="build/deploy/Gateway/node/default/etc/bootstrap/license"/>
         <touch file="build/deploy/Gateway/node/default/etc/bootstrap/services/restman" />
     </target>
+
+    <!--
+        Target to sign .aar file.
+    -->
+    <target name="sign-aar" depends="package.skarsigner" description="Sign AAR files">
+        <java jar="${src.root}/modules/internal/build/SkarSigner.jar" fork="true" failonerror="true">
+            <arg line="sign"/>
+            <arg line="-f &quot;${src.root}/etc/signer/portalKeyStore.p12&quot;"/>
+            <arg line="-p &quot;szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw&quot;"/>
+            <arg line="-k &quot;szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw&quot;"/>
+            <arg line="-s &quot;${src.root}/modules/gateway/assertions/ApiPortalIntegrationAssertion/build/ApiPortalIntegrationAssertion.aar&quot;"/>
+            <arg line="-o &quot;${src.root}/modules/gateway/assertions/ApiPortalIntegrationAssertion/build/ApiPortalIntegrationAssertion.saar&quot;"/>
+        </java>
+    </target>
 </project>
