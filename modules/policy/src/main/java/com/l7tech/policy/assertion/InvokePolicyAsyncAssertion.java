@@ -30,7 +30,9 @@ public class InvokePolicyAsyncAssertion extends Assertion implements UsesEntitie
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.InvokePolicyAsyncAssertionDialog");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/polback16.gif");
-        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
+
+        // TODO SSG-11880 hide in GUI for now
+        //meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
 
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<InvokePolicyAsyncAssertion>() {

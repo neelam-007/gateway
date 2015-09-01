@@ -101,6 +101,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private static final long PING_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.console.sessionPingInterval", 50000L );
 
+    // TODO SSG-11880 hide in GUI for now
+    private static final boolean OFFER_MANAGE_WORK_QUEUES = SyspropUtil.getBoolean( "com.l7tech.console.enableManageWorkQueues", false );
+
     /**
      * the resource bundle name
      */
@@ -1086,7 +1089,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageEncapsulatedAssertionsAction());
             menu.add(getSiteMinderConfigurationAction());
             menu.add(getManageServerModuleFilesAction());
-            menu.add(getManageWorkQueuesAction());
+            if ( OFFER_MANAGE_WORK_QUEUES )
+                menu.add(getManageWorkQueuesAction());
             menu.add(getManageSolutionKitsAction());
 
             menu.add(getCustomGlobalActionsMenu());
@@ -2807,7 +2811,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
                 manageMenu.add(getManageServerModuleFilesAction());
-                manageMenu.add(getManageWorkQueuesAction());
+                if ( OFFER_MANAGE_WORK_QUEUES )
+                    manageMenu.add(getManageWorkQueuesAction());
                 manageMenu.add(getManageSolutionKitsAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
