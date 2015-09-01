@@ -5,10 +5,7 @@ import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -16,11 +13,6 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
-import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
-import static com.l7tech.util.DomUtils.getTextValue;
-import static java.text.MessageFormat.format;
-import static org.apache.commons.lang.StringUtils.isEmpty;
-
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -28,6 +20,11 @@ import org.w3c.dom.Element;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
+import static com.l7tech.util.DomUtils.getTextValue;
+import static java.text.MessageFormat.format;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * This class contains utility methods for the solution kit manager.
@@ -152,37 +149,37 @@ public final class SolutionKitUtils {
 
         final String skId = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_ID));
         if (isEmpty(skId)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_ID));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_ID));
         }
         solutionKit.setSolutionKitGuid(skId);
 
         final String skVersion = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_VERSION));
         if (isEmpty(skVersion)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_VERSION));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_VERSION));
         }
         solutionKit.setSolutionKitVersion(skVersion);
 
         final String skName = getTextValue(DomUtils.findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_NAME));
         if (isEmpty(skName)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_NAME));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_NAME));
         }
         solutionKit.setName(skName);
 
         final String skDescription = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_DESC));
         if (isEmpty(skDescription)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_DESC));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_DESC));
         }
         solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, skDescription);
 
         final String skTimestamp = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP));
         if (isEmpty(skTimestamp)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_TIMESTAMP));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_TIMESTAMP));
         }
         solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, skTimestamp);
 
         final String skIsCollection = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION));
         if (isEmpty(skIsCollection)) {
-            throw new SolutionKitException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_IS_COLLECTION));
+            throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_IS_COLLECTION));
         }
         solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, skIsCollection);
 

@@ -11,6 +11,8 @@ import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.BadRequestException;
+import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.*;
@@ -243,12 +245,15 @@ public class SolutionKitManagerResource {
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
-        } catch (SolutionKitMappingException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (UntrustedSolutionKitException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
+        } catch (ForbiddenException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return Response.status(FORBIDDEN).entity(e.getMessage()).build();
+        } catch (BadRequestException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
         } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
                 AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
                 SaveException | FindException | UpdateException e) {

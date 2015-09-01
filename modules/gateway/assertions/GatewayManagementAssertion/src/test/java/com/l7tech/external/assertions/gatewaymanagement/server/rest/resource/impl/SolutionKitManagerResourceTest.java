@@ -385,7 +385,7 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()));
+            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
             Assert.assertThat((String) response.getEntity(), Matchers.containsString("Missing required file SolutionKit.xml"));
         }

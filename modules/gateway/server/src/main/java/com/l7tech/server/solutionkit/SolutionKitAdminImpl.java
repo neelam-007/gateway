@@ -60,6 +60,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         return solutionKitManager.findAllHeaders();
     }
 
+    @NotNull
     @Override
     public Collection<SolutionKit> findBySolutionKitGuid(@NotNull String solutionKitGuid) throws FindException {
         return solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
@@ -234,7 +235,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
         final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
         if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
-            throw new SolutionKitException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
+            throw new ForbiddenException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
         }
     }
 

@@ -154,7 +154,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             Pair<AssertionStatus, RestmanMessage> result;
             try {
                 result = protectedEntityTracker.doWithEntityProtectionDisabled(getProtectedEntityTrackerCallable(restmanInvoker, pec, requestXml));
-            } catch ( GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
+            } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
                     GatewayManagementDocumentUtilities.UnexpectedManagementResponse |
                     InterruptedException e) {
                 throw e;
@@ -171,7 +171,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             if (!isTest && result.right.hasMappingError()) {
                 String msg = "Unable to install bundle due to mapping errors:\n" + result.right.getAsString();
                 logger.log(Level.WARNING, msg);
-                throw new SolutionKitMappingException(result.right.getAsString());
+                throw new BadRequestException(result.right.getAsString());
             }
             return result.right.getAsString();
         } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | IOException | SAXException e) {
@@ -202,10 +202,13 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             final Document doc = XmlUtil.parse(ExceptionUtils.getMessage(ex));
             final Element msgDetailsNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Detail");
             final String detailMsg = XmlUtil.getTextValue(msgDetailsNode, true);
-            if (detailMsg.contains("Exception"))
-                throw (new Exception(detailMsg));
-            else
+            if (detailMsg.contains("Exception")) {
+                throw new Exception(detailMsg);
+            } else if (detailMsg.contains("Module must be signed")) {
+                return new BadRequestException(detailMsg);
+            } else {
                 return new SolutionKitException(detailMsg);
+            }
         } catch (final SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
             throw ex;
         }
@@ -267,9 +270,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         List<String> parentGoidStrList = new ArrayList<>(children.size());
         for (SolutionKitHeader child: children) {
             String parentGoidStr = child.getParentGoid().toString();
-            if (parentGoidStrList.contains(parentGoidStr)) {
-                continue;
-            } else {
+            if (!parentGoidStrList.contains(parentGoidStr)) {
                 parentGoidStrList.add(parentGoidStr);
             }
         }

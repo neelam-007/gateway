@@ -8,10 +8,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.UntrustedSolutionKitException;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
@@ -106,7 +103,7 @@ public class SkarProcessor {
                 customCallback.preMigrationBundleImport(null);
             }
         } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
-            throw new SolutionKitException("Unexpected error during custom callback invocation.", e);
+            throw new BadRequestException("Unexpected error during custom callback invocation.", e);
         }
     }
 
@@ -127,7 +124,7 @@ public class SkarProcessor {
                     if (allowOverride != null && allowOverride) {
                         mapping.setTargetId(resolvedId);
                     } else {
-                        throw new SolutionKitException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
+                        throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
                                 ".  Replacement id=" + resolvedId + " requires the .skar author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
                     }
                 }
@@ -137,7 +134,7 @@ public class SkarProcessor {
         boolean isUpgrade =! solutionKitsConfig.getSolutionKitsToUpgrade().isEmpty();
         String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
         if (bundleXml == null) {
-            throw new SolutionKitException("Unexpected error: unable to get Solution Kit bundle.");
+            throw new BadRequestException("Unexpected error: unable to get Solution Kit bundle.");
         }
 
         return solutionKitAdmin.install(solutionKit, bundleXml, isUpgrade);
@@ -296,7 +293,9 @@ public class SkarProcessor {
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
 
             setCustomizationInstances(solutionKit, classLoader);
-        } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
+        } catch (SAXException| MissingRequiredElementException | TooManyChildElementsException e) {
+            throw new BadRequestException("Error loading skar file :" + e.getMessage(), e);
+        } catch (IOException e) {
             throw new SolutionKitException("Error loading skar file :" + e.getMessage(), e);
         } finally {
             ResourceUtils.closeQuietly(zis);
@@ -306,12 +305,12 @@ public class SkarProcessor {
     private void validate(boolean isCollection, boolean hasRequiredSolutionKitFile, boolean hasRequiredInstallBundleFile, boolean foundLeafSkar) throws SolutionKitException {
         if (! isCollection) {
             if (!hasRequiredSolutionKitFile) {
-                throw new SolutionKitException("Missing required file " + SK_FILENAME);
+                throw new BadRequestException("Missing required file " + SK_FILENAME);
             } else if (!hasRequiredInstallBundleFile) {
-                throw new SolutionKitException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
+                throw new BadRequestException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
             }
         } else if (! foundLeafSkar) {
-            throw new SolutionKitException("Missing nested SKARs in the SKAR file.");
+            throw new BadRequestException("Missing nested SKARs in the SKAR file.");
         }
     }
 
@@ -341,7 +340,7 @@ public class SkarProcessor {
         // find upgrade mappings to replace install mappings with upgrade mappings
         Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeBundleEle, null, BUNDLE_ELE_MAPPINGS);
         if (upgradeMappingEle == null) {
-            throw new SolutionKitException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
+            throw new BadRequestException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
         }
 
         upgradeBundleSource.setNode(upgradeBundleEle);
