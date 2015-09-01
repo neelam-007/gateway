@@ -5,6 +5,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
@@ -36,8 +40,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.net.URLDecoder;
@@ -179,6 +185,32 @@ public class SolutionKitManagerResource {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
                         return status(CONFLICT).entity("The solution kit '" + solutionKit.getName() + "' has been installed on gateway already." + lineSeparator()).build();
                     }
+                }
+            }
+
+            // Test all selected (child) solution kit(s) before actual installation.  This step is to prevent partial installation/upgrade
+            for (SolutionKit solutionKit: selectedSolutionKits) {
+                try {
+                    String mappingsStr = solutionKitManager.importBundle(solutionKitsConfig.getBundleAsString(solutionKit), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
+                    Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(mappingsStr)));
+                    Mappings mappings = (Mappings) item.getContent();
+                    if (mappings == null || mappings.getMappings() == null) continue;
+
+                    StringBuilder errorSB = new StringBuilder();
+                    for (Mapping mapping: mappings.getMappings()) {
+                        Mapping.ErrorType errorType = mapping.getErrorType();
+                        if (errorType != null) {
+                            errorSB.append(errorType.toString()).append(": ").append(mapping.getProperties().get("ErrorMessage")).append(lineSeparator());
+                        }
+                    }
+                    if (errorSB.length() > 0) {
+                        String errorMessage = errorSB.toString();
+                        logger.warning(errorMessage);
+                        return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator() + errorMessage + lineSeparator()).build();
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator()  + e.getMessage() + lineSeparator()).build();
                 }
             }
 
