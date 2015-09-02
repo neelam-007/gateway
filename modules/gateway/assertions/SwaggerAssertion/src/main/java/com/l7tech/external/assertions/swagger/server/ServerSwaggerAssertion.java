@@ -21,7 +21,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
 import io.swagger.models.Scheme;
@@ -32,11 +31,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.UriTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -47,8 +44,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAssertion> {
     private final String[] variablesUsed;
-    private Swagger swaggerModel = null;
-    private PathDefinitionResolver pathDefinitionResolver = null;
+    private AtomicReference<Swagger> swaggerModel = new AtomicReference<>(null);
+    private AtomicReference<PathResolver> pathResolver = new AtomicReference<>(null);
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
 
@@ -70,29 +67,37 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             return AssertionStatus.FAILED;
         }
 
-        // store a hash of the document value so we can avoid redundant parsing
-        if (swaggerDocumentHash.get() == 0 || swaggerDocumentHash.get() != doc.hashCode()) {
-            lock.lock();
-            //TODO: this block must be synchronized so we don't have concurrency issue
-            try {
-                swaggerModel = parseSwaggerJson(doc);
+        Swagger model;
+        PathResolver resolver;
+
+        lock.lock();
+
+        try {
+            // store a hash of the document value so we can avoid redundant parsing
+            if (swaggerDocumentHash.get() == 0 || swaggerDocumentHash.get() != doc.hashCode()) {
+                model = parseSwaggerJson(doc);
 
                 //check if the document parsed properly
-                if (swaggerModel != null) {
-                    pathDefinitionResolver = new PathDefinitionResolver(swaggerModel);
+                if (model != null) {
+                    resolver = new PathResolver(model);
+                    pathResolver.set(resolver);
+                    swaggerModel.set(model);
                     swaggerDocumentHash.set(doc.hashCode());
                 } else {
-                    swaggerModel = null;
-                    pathDefinitionResolver = null;
+                    swaggerModel.set(null);
+                    pathResolver.set(null);
                     swaggerDocumentHash.set(0);
                     logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
                             (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
                     return AssertionStatus.FAILED;
                 }
-            } finally {
-                //release the lock
-                lock.unlock();
+            } else {
+                model = swaggerModel.get();
+                resolver = pathResolver.get();
             }
+        } finally {
+            //release the lock
+            lock.unlock();
         }
 
         HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
@@ -102,18 +107,20 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
         // set context variables regardless of the validation results
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_API_URI, apiUri);
-        context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_HOST, swaggerModel.getHost());
-        context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_BASE_URI, swaggerModel.getBasePath());
+        context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_HOST, model.getHost());
+        context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_BASE_URI, model.getBasePath());
 
         // perform the validation
 
         if (assertion.isValidatePath()) {
-            Path requestPath = pathDefinitionResolver.getPathForRequestUri(apiUri);
+            PathDefinition requestPathDefinition = resolver.getPathForRequestUri(apiUri);
 
-            if (null == requestPath) {  // no matching path template
+            if (null == requestPathDefinition) {  // no matching path template
                 logAndAudit(AssertionMessages.SWAGGER_INVALID_PATH, apiUri);
                 return AssertionStatus.FALSIFIED;
             }
+
+            Path requestPathModel = model.getPath(requestPathDefinition.path);
 
             if (assertion.isValidateMethod()) {
                 HttpMethod method = httpRequestKnob.getMethod();
@@ -122,22 +129,22 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
                 switch (method) {
                     case GET:
-                        operation = requestPath.getGet();
+                        operation = requestPathModel.getGet();
                         break;
                     case POST:
-                        operation = requestPath.getPost();
+                        operation = requestPathModel.getPost();
                         break;
                     case PUT:
-                        operation = requestPath.getPut();
+                        operation = requestPathModel.getPut();
                         break;
                     case PATCH:
-                        operation = requestPath.getPatch();
+                        operation = requestPathModel.getPatch();
                         break;
                     case DELETE:
-                        operation = requestPath.getDelete();
+                        operation = requestPathModel.getDelete();
                         break;
                     case OPTIONS:
-                        operation = requestPath.getOptions();
+                        operation = requestPathModel.getOptions();
                         break;
                     case HEAD:
                     case OTHER:
@@ -155,7 +162,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     List<Scheme> schemes = operation.getSchemes();
 
                     if (null == schemes) {
-                        schemes = swaggerModel.getSchemes();
+                        schemes = model.getSchemes();
                         // TODO jwilliams: this uses top level scheme definition - must take into account overriding at operation level
                     }
 
@@ -214,34 +221,78 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         return null;
     }
 
-    static class PathDefinitionResolver {
+    static class PathResolver {
         private final Swagger swaggerDefinition;
-        private final List<Pair<UriTemplate, Path>> paths;
+        private final ArrayList<PathDefinition> pathDefinitions;
 
-        public PathDefinitionResolver(Swagger definition) {
+        public PathResolver(Swagger definition) {
             this.swaggerDefinition = definition;
-            paths = new ArrayList<>();
+            pathDefinitions = new ArrayList<>();
 
             populatePathMap();
         }
 
-        public Path getPathForRequestUri(String requestUri) {
-            for (Pair<UriTemplate, Path> templatePathPair : paths) {
-                if (templatePathPair.left.matches(requestUri)) {
-                    return templatePathPair.right;   // TODO jwilliams: find a more efficient way of doing this - seems kludgy and slow
+        public PathDefinition getPathForRequestUri(String requestUri) {
+            if (null == requestUri || requestUri.isEmpty())
+                return null;
+
+            PathDefinition requestPath = new PathDefinition(requestUri);
+
+            PathDefinition closestMatch = null;
+
+            for (PathDefinition p : pathDefinitions) {
+                if (p.segments.size() == requestPath.segments.size()) {
+                    if (p.equals(requestPath))
+                        return p;
+
+                    if (p.matches(requestPath)) {
+                        if (null == closestMatch ||
+                                closestMatch.getVariableNames().size() > p.getVariableNames().size()) {
+                            closestMatch = p;
+                        }
+                    }
                 }
             }
 
-            return null;
+            return closestMatch;
         }
 
         private void populatePathMap() {
-            List<String> definitionPaths = new ArrayList<>(swaggerDefinition.getPaths().keySet());
-            Collections.sort(definitionPaths, Collections.reverseOrder());
-
-            for (String path : definitionPaths) {
-                paths.add(new Pair<>(new UriTemplate(path), swaggerDefinition.getPath(path)));
+            for (String path : swaggerDefinition.getPaths().keySet()) {
+                PathDefinition pathDefinition = new PathDefinition(path);
+                pathDefinitions.add(pathDefinition);
             }
+        }
+    }
+
+    static class PathDefinition {
+        final String path;
+        final UriTemplate uriTemplate;
+        final List<String> segments = new ArrayList<>();
+
+        public PathDefinition(String path) {
+            this.path = path;
+            this.uriTemplate = new UriTemplate(this.path);
+
+            Collections.addAll(segments, path.split("/"));
+        }
+
+        public boolean matches(PathDefinition that) {
+            return uriTemplate.matches(that.path);
+        }
+
+        public List<String> getVariableNames() {
+            return uriTemplate.getVariableNames();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PathDefinition that = (PathDefinition) o;
+
+            return this.path.equals(that.path) && this.segments.equals(that.segments);
         }
     }
 }

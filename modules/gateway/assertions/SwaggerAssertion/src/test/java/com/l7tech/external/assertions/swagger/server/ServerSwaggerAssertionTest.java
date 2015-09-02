@@ -9,19 +9,21 @@ import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import io.swagger.models.Path;
+import io.swagger.models.Swagger;
+import io.swagger.models.auth.AuthorizationValue;
+import io.swagger.parser.SwaggerParser;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathDefinitionResolver;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathDefinition;
+import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathResolver;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -1082,6 +1084,18 @@ public class ServerSwaggerAssertionTest {
     SwaggerAssertion assertion;
     ServerSwaggerAssertion fixture;
 
+    private static Swagger testModel;
+    private static PathResolver testModelPathResolver;
+
+    @BeforeClass
+    public static void init() throws Exception {
+        SwaggerParser parser = new SwaggerParser();
+        List<AuthorizationValue> authorizationValues = new ArrayList<>();
+        authorizationValues.add(new AuthorizationValue());
+
+        testModel = parser.parse(TEST_SWAGGER_JSON, authorizationValues);
+        testModelPathResolver = new PathResolver(testModel);
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -1145,15 +1159,49 @@ public class ServerSwaggerAssertionTest {
         verify(mockContext, times(1)).setVariable("sw.apiUri", "/pet/findByStatus");
     }
 
-    // TODO jwilliams: test for empty requestUri, empty path definition cases - does UriTemplate still match correctly?
-
     @Test
-    public void testPathMatching() {
-        PathDefinitionResolver resolver = new PathDefinitionResolver(fixture.parseSwaggerJson(TEST_SWAGGER_JSON));
-
-        Path path = resolver.getPathForRequestUri("/pet/1234");
+    public void testPathDefinitionResolver_ValidRequestUriForPathWithNoVariables_PathFound() {
+        String requestUri = "/store/order";
+        PathDefinition path = testModelPathResolver.getPathForRequestUri(requestUri); // matches path template "/pet/{id}"
 
         assertNotNull(path);
+        assertEquals(requestUri, path.path);
     }
 
+    @Test
+    public void testPathDefinitionResolver_ValidRequestUriForPathWithVariables_PathFound() {
+        String requestUri = "/pet/1234/uploadImage";
+        PathDefinition path = testModelPathResolver.getPathForRequestUri(requestUri); // matches path template "/pet/{id}"
+
+        assertNotNull(path);
+        assertEquals("/pet/{petId}/uploadImage", path.path);
+    }
+
+    @Test
+    public void testPathDefinitionResolver_UndefinedRequestUri_PathNotFound() {
+        PathDefinition path = testModelPathResolver.getPathForRequestUri("/pets"); // erroneous trailing 's'
+
+        assertNull(path);
+    }
+
+    @Test
+    public void testPathDefinitionResolver_ZeroLengthRequestUri_PathNotFound() {
+        PathDefinition path = testModelPathResolver.getPathForRequestUri(""); // zero-length - shouldn't match anything
+
+        assertNull(path);
+    }
+
+    @Test
+    public void testPathDefinitionResolver_NullRequestUri_PathNotFound() {
+        PathDefinition path = testModelPathResolver.getPathForRequestUri(null); // null - shouldn't match anything
+
+        assertNull(path);
+    }
+
+    @Test
+    public void test() {
+        PathDefinition definition = new PathDefinition("/pet/{petId}/uploadImage");
+        System.out.println(definition.getVariableNames().size());
+        System.out.println(definition.getVariableNames());
+    }
 }
