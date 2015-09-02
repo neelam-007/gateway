@@ -3768,12 +3768,21 @@
         Target to sign .aar file.
     -->
     <target name="sign-aar" depends="package.skarsigner" description="Sign an AAR file">
+        <fail unless="assertion" message="assertion is a required property (assertion name)"/>
+        <fail unless="keystore" message="keystore is a required property (keystore file name)"/>
+        <fail unless="access.password" message="access.password is a required property (encoded keystore access password)"/>
+        <fail unless="load.password" message="load.password is a required property (encoded keystore load password)"/>
+
+        <!-- Defaults that could be overridden -->
+        <property name="input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.aar"/>
+        <property name="output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar"/>
+
         <java jar="${src.root}/modules/internal/build/SkarSigner.jar" fork="true" failonerror="true">
             <arg line="sign"/>
             <arg line="-f &quot;${src.root}/etc/signer/${keystore}&quot;"/>
             <arg line="-p &quot;${access.password}&quot;"/>
             <arg line="-k &quot;${load.password}&quot;"/>
-            <arg line="-s &quot;${src.root}/modules/gateway/assertions/${assertion}/build/${assertion}.aar&quot;"/>
+            <arg line="-s &quot;${src.root}/${input}&quot;"/>
             <arg line="-o &quot;${src.root}/${output}&quot;"/>
         </java>
     </target>
