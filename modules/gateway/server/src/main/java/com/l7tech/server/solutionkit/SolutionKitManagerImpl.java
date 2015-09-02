@@ -283,27 +283,23 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return parentList;
     }
 
-    private List<SolutionKitHeader> findChildSolutionKits() throws FindException {
-        try {
-            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
-                @Override
-                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
-                    return convertToHTList(
-                            session.createCriteria(SolutionKit.class).add(Restrictions.isNotNull("parentGoid")).list()
-                    );
+    public void handleEvent(ApplicationEvent event) {
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
+            if (SolutionKit.class.equals(invalidationEvent.getEntityClass())) {
+                try {
+                    updateProtectedEntityTracking();
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Unable to update ProtectedEntityTracker: " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
                 }
-            });
-        } catch (Exception e) {
-            throw new FindException(e.toString(), e);
+            }
         }
     }
 
-    private List<SolutionKitHeader> convertToHTList(@NotNull List<SolutionKit> skList) {
-        List<SolutionKitHeader>  htList = new ArrayList<>(skList.size());
-        for (SolutionKit solutionKit: skList) {
-            htList.add(new SolutionKitHeader(solutionKit));
-        }
-        return htList;
+    @Override
+    public void onApplicationEvent(final ApplicationEvent event) {
+        handleEvent(event);
     }
 
     @Override
@@ -377,22 +373,26 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
     }
 
-    public void handleEvent(ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
-            if (SolutionKit.class.equals(invalidationEvent.getEntityClass())) {
-                try {
-                    updateProtectedEntityTracking();
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "Unable to update ProtectedEntityTracker: " + ExceptionUtils.getMessage(e),
-                            ExceptionUtils.getDebugException(e));
+    private List<SolutionKitHeader> findChildSolutionKits() throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
+                @Override
+                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    return convertToHTList(
+                            session.createCriteria(SolutionKit.class).add(Restrictions.isNotNull("parentGoid")).list()
+                    );
                 }
-            }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
         }
     }
 
-    @Override
-    public void onApplicationEvent(final ApplicationEvent event) {
-        handleEvent(event);
+    private List<SolutionKitHeader> convertToHTList(@NotNull List<SolutionKit> skList) {
+        List<SolutionKitHeader>  htList = new ArrayList<>(skList.size());
+        for (SolutionKit solutionKit: skList) {
+            htList.add(new SolutionKitHeader(solutionKit));
+        }
+        return htList;
     }
 }

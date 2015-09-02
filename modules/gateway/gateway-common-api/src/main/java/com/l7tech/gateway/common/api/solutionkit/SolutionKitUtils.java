@@ -5,12 +5,12 @@ import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.solutionkit.*;
+import com.l7tech.gateway.common.solutionkit.BadRequestException;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
@@ -251,57 +250,6 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Get a list of solution kits for upgrade, depending on the following three cases:
-     * Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
-     * Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
-     * Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
-     *
-     * @param solutionKit: the selected solution kit, which user selects to upgrade.
-     * @return a list of solution kits for upgrade
-     */
-    public static List<SolutionKit> getListOfSolutionKitsToUpgrade(@NotNull final SolutionKitAdmin solutionKitAdmin, SolutionKit solutionKit) {
-        final List<SolutionKit> skList = new ArrayList<>();
-        if (solutionKit == null) return skList;
-
-        // Case 1:
-        final Goid parentGoid = solutionKit.getParentGoid();
-        if (parentGoid != null) {
-            try {
-                final SolutionKit parent = solutionKitAdmin.get(parentGoid);
-                skList.add(parent);
-            } catch (FindException e) {
-                String errMsg = "Cannot retrieve the solution kit (GOID = '" + parentGoid + "')";
-                logger.warning(errMsg);
-                throw new RuntimeException(errMsg);
-            }
-        }
-
-        // Case 1 + Case 2 + Case 3:
-        skList.add(solutionKit);
-
-        // Case 3:
-        final Collection<SolutionKitHeader> children;
-        try {
-            children = solutionKitAdmin.findAllChildrenByParentGoid(solutionKit.getGoid());
-        } catch (FindException e) {
-            String errMsg = "Cannot find child solution kits for '" + solutionKit.getName() + "'";
-            logger.warning(errMsg);
-            throw new RuntimeException(errMsg);
-        }
-        for (SolutionKitHeader child: children) {
-            try {
-                skList.add(solutionKitAdmin.get(child.getGoid()));
-            } catch (FindException e) {
-                String errMsg = "Cannot find the solution kit, '" + child.getName() + "'";
-                logger.warning(errMsg);
-                throw new RuntimeException(errMsg);
-            }
-        }
-
-        return skList;
-    }
-
-    /**
      * Check if the instance modifier of a selected solution kit is unique or not.
      *
      * @param solutionKit: a solution kit whose instance modifier will be checked.
@@ -325,29 +273,23 @@ public final class SolutionKitUtils {
     /**
      * Find all instance modifiers used by all solution kit instances.
      *
-     * @param solutionKitAdmin: the solution kit Admin API used to find solution kit headers
+     * @param solutionKitHeaders: solution kit headers
      * @return a map of solution kit guid and a list of instance modifiers used by all solution kits with such guid.
      */
-    public static Map<String, List<String>> getInstanceModifiers(@NotNull final SolutionKitAdmin solutionKitAdmin) {
+    public static Map<String, List<String>> getInstanceModifiers(@NotNull final Collection<SolutionKitHeader> solutionKitHeaders) {
         final Map<String, List<String>> instanceModifiers = new HashMap<>();
 
-        try {
-            final Collection<SolutionKitHeader> solutionKitHeaders = solutionKitAdmin.findSolutionKits();
+        for (EntityHeader header: solutionKitHeaders) {
+            if (! (header instanceof SolutionKitHeader)) continue;  // This line is to avoid to break the test, signedSkar() in SolutionKitManagerResourceTest.
 
-            for (EntityHeader header: solutionKitHeaders) {
-                if (! (header instanceof SolutionKitHeader)) continue;  // This line is to avoid to break the test, signedSkar() in SolutionKitManagerResourceTest.
-
-                SolutionKitHeader solutionKitHeader = (SolutionKitHeader) header;
-                String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
-                java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
-                if (usedInstanceModifiers == null) {
-                    usedInstanceModifiers = new ArrayList<>();
-                }
-                usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
-                instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
+            SolutionKitHeader solutionKitHeader = (SolutionKitHeader) header;
+            String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
+            java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
+            if (usedInstanceModifiers == null) {
+                usedInstanceModifiers = new ArrayList<>();
             }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
+            instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
         }
 
         return instanceModifiers;

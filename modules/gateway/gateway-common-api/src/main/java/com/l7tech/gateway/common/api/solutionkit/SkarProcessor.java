@@ -5,11 +5,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.gateway.common.solutionkit.*;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
@@ -29,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -110,7 +107,7 @@ public class SkarProcessor {
     /**
      * Install or upgrade the SKAR
      */
-    public AsyncAdminMethods.JobId<Goid> installOrUpgrade(@NotNull final SolutionKitAdmin solutionKitAdmin, @NotNull final SolutionKit solutionKit) throws SolutionKitException {
+    public Triple<SolutionKit, String, Boolean> installOrUpgrade(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
         // Update resolved mapping target IDs.
         Pair<SolutionKit, Map<String, String>> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit.getSolutionKitGuid());
         Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
@@ -137,7 +134,7 @@ public class SkarProcessor {
             throw new BadRequestException("Unexpected error: unable to get Solution Kit bundle.");
         }
 
-        return solutionKitAdmin.install(solutionKit, bundleXml, isUpgrade);
+        return new Triple<>(solutionKit, bundleXml, isUpgrade);
     }
 
     /**
@@ -150,21 +147,19 @@ public class SkarProcessor {
      * @throws UntrustedSolutionKitException if the specified SKAR is not signed
      * with trusted signer or SKAR file signature is not verified.
      */
-    public void load(
-            @NotNull final InputStream skarStream,
-            @NotNull final SolutionKitAdmin solutionKitAdmin
-    ) throws SolutionKitException {
+    public Pair<byte[], String> load(@NotNull final InputStream skarStream) throws SolutionKitException {
         // todo: for now load in-memory, must revisit this logic later
         // skarStream is not markable, therefore the stream cannot be read multiple times (once for verifying the signature, the other to load the content)
         // perhaps use a temporary file to stash the raw bytes of the SKAR file (need to check if tmp file works from the applet)
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
+        Pair<byte[], String> digestAndSignature;
         try {
             // get SHA-256 the message digest
             final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
             // process signed zip file to calculate digest
-            final Pair<byte[], String> digestAndSignature = SignerUtils.walkSignedZip(
+            digestAndSignature = SignerUtils.walkSignedZip(
                     skarStream,
                     new SignedZipVisitor<byte[], String>() {
                         @Override
@@ -189,16 +184,14 @@ public class SkarProcessor {
                     },
                     true
             );
-
-            // verify SKAR signature
-            solutionKitAdmin.verifySkarSignature(digestAndSignature.left, digestAndSignature.right);
-
-        } catch (final IOException | NoSuchAlgorithmException | SignatureException e) {
+        } catch (final IOException | NoSuchAlgorithmException e) {
             throw new UntrustedSolutionKitException("Error loading signed skar file :" + e.getMessage(), e);
         }
 
         // finally load the SKAR file without the signature
         loadWithoutSignatureCheck(new ByteArrayInputStream(bos.toByteArray()));
+
+        return digestAndSignature;
     }
 
     /**

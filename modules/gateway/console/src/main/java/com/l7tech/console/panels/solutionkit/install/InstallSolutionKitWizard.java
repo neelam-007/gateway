@@ -24,6 +24,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,8 +58,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        solutionKitsConfig.setSolutionKitsToUpgrade(SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitToUpgrade));
-        solutionKitsConfig.setInstanceModifiers(SolutionKitUtils.getInstanceModifiers(solutionKitAdmin));
+        solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdmin.getSolutionKitsToUpgrade(solutionKitToUpgrade));
+        try {
+            solutionKitsConfig.setInstanceModifiers(SolutionKitUtils.getInstanceModifiers(solutionKitAdmin.findSolutionKits()));
+        } catch (FindException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
@@ -130,12 +135,13 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 solutionKit.setParentGoid(parentGoid);
             }
             try {
+                Triple<SolutionKit, String, Boolean> loaded = new SkarProcessor(wizardInput).installOrUpgrade(solutionKit);
                 Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                     solutionKitAdmin,
                     this.getOwner(),
                     "Install Solution Kit",
                     "The gateway is installing the selected solution kit, \"" + solutionKit.getName() + "\".",
-                    new SkarProcessor(wizardInput).installOrUpgrade(solutionKitAdmin, solutionKit),
+                    solutionKitAdmin.install(loaded.left, loaded.middle, loaded.right),
                     false);
 
                 if (result.isLeft()) {

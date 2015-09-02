@@ -5,10 +5,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.Mappings;
-import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
@@ -19,13 +15,14 @@ import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.security.signer.SignatureVerifier;
-import com.l7tech.server.solutionkit.SolutionKitAdminImpl;
+import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.Triple;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -40,13 +37,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
-import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
-import java.io.Serializable;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Constructor;
 import java.net.URLDecoder;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -157,19 +151,20 @@ public class SolutionKitManagerResource {
             validateParams(fileInputStream);
 
             // handle upgrade
-            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
+            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
             if (upgradeGuid != null) {
                 final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
                 if (solutionKitsExistingOnGateway.size() > 0) {
                     solutionKitsConfig.setSolutionKitsToUpgrade(
-                            SolutionKitUtils.getListOfSolutionKitsToUpgrade(solutionKitAdmin, solutionKitsExistingOnGateway.get(0))
+                            solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitsExistingOnGateway.get(0))
                     );
                 }
             }
 
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-            skarProcessor.load(fileInputStream, solutionKitAdmin);
+            final Pair<byte[], String> digestAndSignature = skarProcessor.load(fileInputStream);
+            solutionKitAdminHelper.verifySkarSignature(digestAndSignature.left, digestAndSignature.right);
 
             // handle any user selection(s) - child solution kits
             setUserSelections(solutionKitsConfig, solutionKitSelects);
@@ -179,7 +174,7 @@ public class SolutionKitManagerResource {
             // the uniqueness rule, stop install any solution kits and do not allow any partial installation.
             // Note: This checking is only for install (not for upgrade).
             if (upgradeGuid == null) {
-                final Map<String, List<String>> usedInstanceModifiersMap = SolutionKitUtils.getInstanceModifiers(solutionKitAdmin);
+                final Map<String, List<String>> usedInstanceModifiersMap = SolutionKitUtils.getInstanceModifiers(solutionKitAdminHelper.findSolutionKits());
                 for (SolutionKit solutionKit : selectedSolutionKits) {
                     if (!SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
                         // TODO: If in future, headless installation uses instance modifier, we should modify the below warning message to say the instance modifier is not unique and try other different instance modifier.
@@ -188,31 +183,32 @@ public class SolutionKitManagerResource {
                 }
             }
 
+// TODO tveninov has a proper fix.  Will probably cleanup by moving to a private method (e.g. testBundleImports(..))
             // Test all selected (child) solution kit(s) before actual installation.  This step is to prevent partial installation/upgrade
-            for (SolutionKit solutionKit: selectedSolutionKits) {
-                try {
-                    String mappingsStr = solutionKitManager.importBundle(solutionKitsConfig.getBundleAsString(solutionKit), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
-                    Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(mappingsStr)));
-                    Mappings mappings = (Mappings) item.getContent();
-                    if (mappings == null || mappings.getMappings() == null) continue;
-
-                    StringBuilder errorSB = new StringBuilder();
-                    for (Mapping mapping: mappings.getMappings()) {
-                        Mapping.ErrorType errorType = mapping.getErrorType();
-                        if (errorType != null) {
-                            errorSB.append(errorType.toString()).append(": ").append(mapping.getProperties().get("ErrorMessage")).append(lineSeparator());
-                        }
-                    }
-                    if (errorSB.length() > 0) {
-                        String errorMessage = errorSB.toString();
-                        logger.warning(errorMessage);
-                        return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator() + errorMessage + lineSeparator()).build();
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator()  + e.getMessage() + lineSeparator()).build();
-                }
-            }
+//            for (SolutionKit solutionKit: selectedSolutionKits) {
+//                try {
+//                    String mappingsStr = solutionKitManager.importBundle(solutionKitsConfig.getBundleAsString(solutionKit), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
+//                    Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(mappingsStr)));
+//                    Mappings mappings = (Mappings) item.getContent();
+//                    if (mappings == null || mappings.getMappings() == null) continue;
+//
+//                    StringBuilder errorSB = new StringBuilder();
+//                    for (Mapping mapping: mappings.getMappings()) {
+//                        Mapping.ErrorType errorType = mapping.getErrorType();
+//                        if (errorType != null) {
+//                            errorSB.append(errorType.toString()).append(": ").append(mapping.getProperties().get("ErrorMessage")).append(lineSeparator());
+//                        }
+//                    }
+//                    if (errorSB.length() > 0) {
+//                        String errorMessage = errorSB.toString();
+//                        logger.warning(errorMessage);
+//                        return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator() + errorMessage + lineSeparator()).build();
+//                    }
+//                } catch (Exception e) {
+//                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+//                    return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator()  + e.getMessage() + lineSeparator()).build();
+//                }
+//            }
 
             // Check if the loaded skar is a collection of skars
             final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
@@ -271,13 +267,13 @@ public class SolutionKitManagerResource {
 
                 skarProcessor.invokeCustomCallback(solutionKit);
 
-                AsyncAdminMethods.JobId<Goid> jobId = skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
-                processJobResult(solutionKitAdmin, jobId);
+                Triple<SolutionKit, String, Boolean> triple = skarProcessor.installOrUpgrade(solutionKit);
+                solutionKitAdminHelper.install(triple.left, triple.middle, triple.right);
             }
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
-        } catch (UntrustedSolutionKitException e) {
+        } catch (UntrustedSolutionKitException | SignatureException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (ForbiddenException e) {
@@ -286,10 +282,8 @@ public class SolutionKitManagerResource {
         } catch (BadRequestException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
-        } catch (SolutionKitException | UnsupportedEncodingException | InterruptedException |
-                AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException |
-                SaveException | FindException | UpdateException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);   // log full exception for unexpected errors
             return status(INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         } finally {
             solutionKitsConfig.clear();
@@ -329,7 +323,7 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + deleteGuid + " found for uninstall." + lineSeparator()).build());
             }
 
-            final SolutionKitAdmin solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, signatureVerifier);
+            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
 
             // Find the first solution kit matching the given guid, deleteGuid.
             // todo: if there are multiple solution kits with the same guid, in future probably need to introduce a new query parameter, instance modifier to unify a solution kit.
@@ -343,8 +337,7 @@ public class SolutionKitManagerResource {
                 if (childGuidsInQueryParam.isEmpty()) {
                     AsyncAdminMethods.JobId<String> jobId;
                     for (SolutionKitHeader childHeader: childrenHeaders) {
-                        jobId = solutionKitAdmin.uninstall(childHeader.getGoid());
-                        processJobResult(solutionKitAdmin, jobId);
+                        solutionKitAdminHelper.uninstall(childHeader.getGoid());
                     }
                 }
                 // Otherwise, uninstall specified child solution kits.
@@ -354,8 +347,8 @@ public class SolutionKitManagerResource {
                         childSKMap.put(childHeader.getSolutionKitGuid(), childHeader);
                     }
 
-                    // Check if given child guild is valid or not.  If found any, stop uninstall. We do not allow partial uninstallation until fix the wrong guid.
-                    // The reason of not allowing partial uninstallation is if we silently swallow invalid/misused guid, the user would think uninstallation
+                    // Check if given child guild is valid or not.  If found any, stop uninstall. We do not allow partial uninstall until fix the wrong guid.
+                    // The reason of not allowing partial uninstall is if we silently swallow invalid/misused guid, the user would think uninstall
                     // was successful, but actually some expected solution kits are still existing.
                     Set<String> allChildGuids = childSKMap.keySet();
                     for (String givenChildGuid: childGuidsInQueryParam) {
@@ -369,8 +362,7 @@ public class SolutionKitManagerResource {
                     AsyncAdminMethods.JobId<String> jobId;
                     for (String childGuidInParam: childGuidsInQueryParam) {
                         childHeader = childSKMap.get(childGuidInParam);
-                        jobId = solutionKitAdmin.uninstall(childHeader.getGoid());
-                        processJobResult(solutionKitAdmin, jobId);
+                        solutionKitAdminHelper.uninstall(childHeader.getGoid());
                         numOfUninstalled++;
                     }
                 }
@@ -387,15 +379,13 @@ public class SolutionKitManagerResource {
                 }
             } else {
                 // Uninstall a non-parent solution kit
-                final AsyncAdminMethods.JobId<String> jobId = solutionKitAdmin.uninstall(solutionKitToUninstall.getGoid());
-                processJobResult(solutionKitAdmin, jobId);
+                solutionKitAdminHelper.uninstall(solutionKitToUninstall.getGoid());
             }
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
-        } catch (SolutionKitException | InterruptedException | FindException | DeleteException|
-                AsyncAdminMethods.UnknownJobException | AsyncAdminMethods.JobStillActiveException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);    // log full exception for unexpected errors
             return status(INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         }
 
@@ -463,39 +453,6 @@ public class SolutionKitManagerResource {
     protected static void decodeSplitPut(@NotNull final String entityIdReplaceStr, @NotNull final Map<String, String> entityIdReplaceMap) throws UnsupportedEncodingException {
         final String entityIdReplaceDecoded = URLDecoder.decode(entityIdReplaceStr, CharEncoding.UTF_8);
         entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, ID_DELIMINATOR).trim(), substringAfter(entityIdReplaceDecoded, ID_DELIMINATOR).trim());
-    }
-
-    private void processJobResult(final SolutionKitAdmin solutionKitAdmin,
-                                  final AsyncAdminMethods.JobId<? extends Serializable> jobId) throws
-            InterruptedException, SolutionKitException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException {
-
-        while( true ) {
-            final String status = solutionKitAdmin.getJobStatus( jobId );
-            if ( status == null ) {
-                throw new SolutionKitException("Unknown jobid: " + jobId);
-            } else if ( !status.startsWith( "a" ) ) {
-                final AsyncAdminMethods.JobResult<? extends Serializable> jobResult = solutionKitAdmin.getJobResult( jobId );
-                if ( jobResult.result != null ) {
-                    break; // job done
-                } else {
-                    SolutionKitException solutionKitException;
-                    try {
-                        final Class throwableClass = this.getClass().getClassLoader().loadClass(jobResult.throwableClassname);
-                        if (SolutionKitException.class.isAssignableFrom(throwableClass)) {
-                            Constructor constructor = throwableClass.getDeclaredConstructor(String.class);
-                            solutionKitException = (SolutionKitException) constructor.newInstance(jobResult.throwableMessage);
-                        } else {
-                            solutionKitException = new SolutionKitException(jobResult.throwableMessage);
-                        }
-                    } catch (Exception e) {
-                        throw new SolutionKitException(jobResult.throwableMessage);
-                    }
-                    throw solutionKitException;
-                }
-            } else {
-                Thread.sleep( 5000L );
-            }
-        }
     }
 
     private void setCustomizationKeyValues(@NotNull final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations, @NotNull FormDataMultiPart formDataMultiPart) throws SolutionKitException, UnsupportedEncodingException {

@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,8 +98,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(file);
-            new SkarProcessor(solutionKitsConfig).load(fis, solutionKitAdmin);
-        } catch (IOException | SolutionKitException e) {
+            final Pair<byte[], String> digestAndSignature = new SkarProcessor(solutionKitsConfig).load(fis);
+            solutionKitAdmin.verifySkarSignature(digestAndSignature.left, digestAndSignature.right);
+        } catch (IOException | SolutionKitException | SignatureException e) {
             solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));

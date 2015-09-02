@@ -28,9 +28,6 @@ import java.util.Map;
 import static com.l7tech.gateway.common.api.solutionkit.SkarProcessor.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * Skar Processor Tests
@@ -48,11 +45,8 @@ public class SkarProcessorTest {
         // get the input stream of a signed solution kit
         final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
         Assert.assertNotNull(inputStream);
-        // do nothing to verify signature (simulate skar is trusted)
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.<byte[]>any(), Mockito.anyString());
         // load the skar file
-        skarProcessor.load(inputStream, solutionKitAdmin);
+        skarProcessor.load(inputStream);
     }
 
     @Test
@@ -77,8 +71,6 @@ public class SkarProcessorTest {
 
     @Test
     public void installOrUpgrade() throws Exception {
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // simulate remapping of IDs in the bundle (secure password and JDBC)
@@ -89,10 +81,7 @@ public class SkarProcessorTest {
         resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
-        skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
-
-        // verify solutionKitAdmin.install() called
-        verify(solutionKitAdmin, times(1)).install(any(SolutionKit.class), anyString(), anyBoolean());
+        skarProcessor.installOrUpgrade(solutionKit);
 
         // verify secure password and JDBC were resolved via mapping targetId in the bundle
         final String bundleStr = solutionKitsConfig.getBundleAsString(solutionKit);
@@ -102,7 +91,6 @@ public class SkarProcessorTest {
 
     @Test
     public  void notAllowedEntityIdReplace() throws Exception {
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // set <l7:Property key="SkmEntityIdReplaceable"> to false
@@ -122,7 +110,7 @@ public class SkarProcessorTest {
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
         try {
-            skarProcessor.installOrUpgrade(solutionKitAdmin, solutionKit);
+            skarProcessor.installOrUpgrade(solutionKit);
             fail("Expected: mappings with property " + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
@@ -159,16 +147,13 @@ public class SkarProcessorTest {
 
     @Test
     public void invalidLoads() throws Exception {
-        // mock SolutionKitAdmin
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
         // expect error message "... value cannot be empty."
         SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
         SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
         InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements-signed.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("value cannot be empty."));
@@ -180,7 +165,7 @@ public class SkarProcessorTest {
         invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements-signed.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Required element"));
@@ -192,7 +177,7 @@ public class SkarProcessorTest {
         invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle-signed.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, solutionKitAdmin);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Missing required file"));
@@ -211,7 +196,7 @@ public class SkarProcessorTest {
         final InputStream unsignedSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-unsigned.skar");
         Assert.assertNotNull(unsignedSkarStream);
         try {
-            skarProcessor.load(unsignedSkarStream, solutionKitAdmin);
+            skarProcessor.load(unsignedSkarStream);
             fail("Expected: an invalid .skar file.");
         } catch (UntrustedSolutionKitException e) {
             assertThat(e.getMessage(), Matchers.containsString("Invalid signed Zip"));
@@ -220,20 +205,15 @@ public class SkarProcessorTest {
 
     @Test
     public void signedSkarOfSkars() throws Exception {
-        // mock SolutionKitAdmin
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
-
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         final SkarProcessor skarProcessor = Mockito.spy(new SkarProcessor(solutionKitsConfig));
         final InputStream signedSkarOfSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars-signed.skar");
         Assert.assertNotNull(signedSkarOfSkarStream);
 
         // load the skar-of-skars
-        skarProcessor.load(signedSkarOfSkarStream, solutionKitAdmin);
+        skarProcessor.load(signedSkarOfSkarStream);
         // verifySkarSignature is called only once
-        Mockito.verify(solutionKitAdmin, Mockito.times(1)).verifySkarSignature(Mockito.<byte[]>any(), Mockito.anyString());
-        Mockito.verify(skarProcessor, Mockito.times(1)).load(signedSkarOfSkarStream, solutionKitAdmin);
+        Mockito.verify(skarProcessor, Mockito.times(1)).load(signedSkarOfSkarStream);
         // 3 times; once for the parent and twice for two children
         Mockito.verify(skarProcessor, Mockito.times(3)).loadWithoutSignatureCheck(Mockito.<InputStream>any());
     }

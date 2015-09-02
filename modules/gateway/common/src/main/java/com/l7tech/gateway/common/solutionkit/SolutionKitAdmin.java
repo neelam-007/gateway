@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SignatureException;
 import java.util.Collection;
+import java.util.List;
 
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
@@ -165,4 +166,17 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Administrative(licensed=false, background = true)
     @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
+
+    /**
+     * Get a list of solution kits for upgrade, depending on the following three cases:
+     * Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
+     * Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
+     * Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
+     *
+     * @param solutionKit: the selected solution kit, which user selects to upgrade.
+     * @return a list of solution kits for upgrade
+     */
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_ENTITIES)
+    List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit);
 }
