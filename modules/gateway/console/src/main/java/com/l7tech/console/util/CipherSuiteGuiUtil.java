@@ -194,7 +194,8 @@ public final class CipherSuiteGuiUtil {
     public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
         return cipherSuiteShouldBeVisible(cipherSuiteName) &&
                 !cipherSuiteName.contains( "_WITH_RC4_" ) &&
-                !cipherSuiteName.contains( "_WITH_DES_" );
+                !cipherSuiteName.contains( "_WITH_DES_" ) &&
+                !cipherSuiteName.equals( "TLS_EMPTY_RENEGOTIATION_INFO_SCSV" );
     }
 
     /**
