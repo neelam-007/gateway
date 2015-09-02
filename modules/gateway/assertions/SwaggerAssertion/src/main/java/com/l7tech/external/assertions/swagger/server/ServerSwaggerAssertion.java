@@ -111,13 +111,18 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_BASE_URI, model.getBasePath());
 
         // perform the validation
+        boolean valid = validate(model, resolver, httpRequestKnob, apiUri);
 
+        return valid ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+    }
+
+    protected boolean validate(Swagger model, PathResolver resolver, HttpRequestKnob httpRequestKnob, String apiUri) {
         if (assertion.isValidatePath()) {
             PathDefinition requestPathDefinition = resolver.getPathForRequestUri(apiUri);
 
             if (null == requestPathDefinition) {  // no matching path template
                 logAndAudit(AssertionMessages.SWAGGER_INVALID_PATH, apiUri);
-                return AssertionStatus.FALSIFIED;
+                return false;
             }
 
             Path requestPathModel = model.getPath(requestPathDefinition.path);
@@ -125,7 +130,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             if (assertion.isValidateMethod()) {
                 HttpMethod method = httpRequestKnob.getMethod();
 
-                Operation operation;
+                Operation operation = null;
 
                 switch (method) {
                     case GET:
@@ -149,13 +154,12 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     case HEAD:
                     case OTHER:
                     default:
-                        // TODO jwilliams: invalid operation - audit
-                        return AssertionStatus.FALSIFIED;
+                        break;
                 }
 
                 if (null == operation) {    // no operation found for method; nothing defined
-                    // TODO jwilliams: audit
-                    return AssertionStatus.FALSIFIED;
+                    logAndAudit(AssertionMessages.SWAGGER_INVALID_METHOD, method.name(), requestPathDefinition.path);
+                    return false;
                 }
 
                 if (assertion.isValidateScheme()) {
@@ -170,14 +174,14 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
                     if (null != schemes && !schemes.contains(requestScheme)) { // request scheme is not defined for operation
                         // TODO jwilliams: audit
-                        return AssertionStatus.FALSIFIED;
+                        return false;
                         // TODO jwilliams: check specification and decide on behaviour for default scheme validation
                     }
                 }
             }
         }
 
-        return AssertionStatus.NONE;
+        return true;
     }
 
     protected Swagger parseSwaggerJson(String doc) {
