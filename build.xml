@@ -3767,14 +3767,14 @@
     <!--
         Target to sign .aar file.
     -->
-    <target name="sign-aar" depends="package.skarsigner" description="Sign AAR files">
+    <target name="sign-aar" depends="package.skarsigner" description="Sign an AAR file">
         <java jar="${src.root}/modules/internal/build/SkarSigner.jar" fork="true" failonerror="true">
             <arg line="sign"/>
-            <arg line="-f &quot;${src.root}/etc/signer/portalKeyStore.p12&quot;"/>
-            <arg line="-p &quot;szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw&quot;"/>
-            <arg line="-k &quot;szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw&quot;"/>
-            <arg line="-s &quot;${src.root}/modules/gateway/assertions/ApiPortalIntegrationAssertion/build/ApiPortalIntegrationAssertion.aar&quot;"/>
-            <arg line="-o &quot;${src.root}/modules/gateway/assertions/ApiPortalIntegrationAssertion/build/ApiPortalIntegrationAssertion.saar&quot;"/>
+            <arg line="-f &quot;${src.root}/etc/signer/${keystore}&quot;"/>
+            <arg line="-p &quot;${access.password}&quot;"/>
+            <arg line="-k &quot;${load.password}&quot;"/>
+            <arg line="-s &quot;${src.root}/modules/gateway/assertions/${assertion}/build/${assertion}.aar&quot;"/>
+            <arg line="-o &quot;${src.root}/${output}&quot;"/>
         </java>
     </target>
 </project>
