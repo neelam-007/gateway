@@ -167,8 +167,6 @@ public class PortalBootstrapManager {
         if ( ENROLL_PORT != url.getPort() )
             throw new IOException( "Incorrect port." );
 
-        Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> otkEntities = getOtkEntities();
-
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
         Matcher pinMatcher = pinExtractor.matcher( query );
@@ -216,7 +214,7 @@ public class PortalBootstrapManager {
                 input = connection.getInputStream();
             }
 
-            bundleDoc = setMappings(input, user, otkEntities.right, otkEntities.left, otkEntities.middle);
+            bundleDoc = toDocument(input);
         } finally {
             if (input != null) {
                 input.close();
@@ -293,30 +291,9 @@ public class PortalBootstrapManager {
         this.config = config;
     }
 
-    /**
-     * DELETE ME ONCE THESE HARDCODED VALUES ARE REMOVED FROM ENROLLMENT BUNDLE
-     */
-    private Document setMappings(InputStream inputStream, User currentUser, JdbcConnection jdbcConnection, Policy otkPolicy, EncapsulatedAssertionConfig otkEncass ) throws IOException {
-        // maps the scheduled task user to the current user.
+    private Document toDocument(final InputStream inputStream) throws IOException {
         try {
             Document bundle = XmlUtil.parse(inputStream);
-
-            NodeList refItemNodeList = bundle.getElementsByTagNameNS("http://ns.l7tech.com/2010/04/gateway-management", "Mapping");
-            for (int i = 0; i < refItemNodeList.getLength(); i++) {
-                Element node = (Element) refItemNodeList.item(i);
-                if (node.getAttribute("srcId").equals("7d5bba18f6cb40000000786e2ce1e3d9")) {
-                    node.setAttribute("targetId", currentUser.getId());
-
-                } else if (node.getAttribute("srcId").equals("7d5bba18f6cb40000000786e2ce1e3d8")) {
-                    node.setAttribute("targetId", currentUser.getProviderId().toString());
-                } else if (node.getAttribute("srcId").equals("4c5453d9a34fa56f13df266ac94826a1")) {
-                    node.setAttribute("targetId", jdbcConnection.getId());
-                } else if (node.getAttribute("srcId").equals("b90a9373efee906f052d969a6d5d8694")) {
-                    node.setAttribute("targetId", otkPolicy.getId());
-                } else if (node.getAttribute("srcId").equals("b90a9373efee906f052d969a6d5d8ad0")) {
-                    node.setAttribute("targetId", otkEncass.getId());
-                }
-            }
             return bundle;
         } catch (SAXException e) {
             throw new IOException(e);
