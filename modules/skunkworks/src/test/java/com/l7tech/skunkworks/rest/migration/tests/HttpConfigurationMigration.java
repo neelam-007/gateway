@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -60,5 +61,18 @@ public class HttpConfigurationMigration extends com.l7tech.skunkworks.rest.tools
 
         assertEquals("The bundle should have 1 items. A httpConfiguration", 1, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 2 items. A httpConfiguration and a private key", 2, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnoreHttpConfigurationDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?httpConfiguration=" + httpConfigurationItem.getId() + "&requireHttpConfiguration=" + httpConfigurationItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A httpConfiguration", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A httpConfiguration", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 }

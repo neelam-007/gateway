@@ -10,7 +10,6 @@ import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -19,9 +18,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.FileNotFoundException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -65,39 +63,39 @@ public class BundleExporterTest {
     public void exportBundleEncryptPasswords() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class))).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class), any(List.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, true, null));
-        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class));
+        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class), any(List.class));
     }
 
     @Test
     public void exportBundleEncryptPasswordsWithPassphrase() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class))).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class), any(List.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, true, ENCODED_PASSPHRASE));
-        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class));
+        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class), any(List.class));
     }
 
     @Test
     public void exportBundleDoNotEncryptPasswords() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(entityBundle, null)).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), isNull(SecretsEncryptor.class), any(List.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, false, null));
-        verify(bundleTransformer).convertToMO(entityBundle, null);
+        verify(bundleTransformer).convertToMO(eq(entityBundle), isNull(SecretsEncryptor.class), any(List.class));
     }
 
     @Test
     public void exportBundleDoNotEncryptPasswordsIgnoresPassphrase() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(entityBundle, null)).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), isNull(SecretsEncryptor.class), any(List.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, false, ENCODED_PASSPHRASE));
-        verify(bundleTransformer).convertToMO(entityBundle, null);
+        verify(bundleTransformer).convertToMO(eq(entityBundle), isNull(SecretsEncryptor.class), any(List.class));
     }
 }

@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
 import java.security.GeneralSecurityException;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -27,6 +28,7 @@ public class BundleExporter {
     public static final String DefaultMappingActionOption = "DefaultMappingAction";
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    public static final String IgnoreDependenciesOption = "IgnoreDependencies";
     public static final String EncryptSecrets = "EncryptSecrets";
     public static final String ServiceUsed = "ServiceUsed";
     @Inject
@@ -66,7 +68,7 @@ public class BundleExporter {
     public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptSecrets, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         final SecretsEncryptor secretsEncryptor = encryptSecrets ? secretsEncryptorFactory.createSecretsEncryptor( encodedKeyPassphrase): null;
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
-        Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
+        Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor, (List<EntityHeader>) bundleExportOptions.get(BundleExporter.IgnoreDependenciesOption));
         if (includeDependencies) {
             final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults(), true);
             bundle.setDependencyGraph(dependencyMOs);

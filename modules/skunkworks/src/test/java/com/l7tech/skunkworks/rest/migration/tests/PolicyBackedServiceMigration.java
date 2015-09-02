@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -119,6 +120,19 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
 
         assertEquals("The bundle should have 2 items.", 2, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 3 items.", 3, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnorePolicyBackedServiceDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?policyBackedService=" + policyBackedServiceItem.getId() + "&requirePolicyBackedService=" + policyBackedServiceItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A policyBackedService", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A policyBackedService", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 
     @Test

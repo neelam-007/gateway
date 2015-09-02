@@ -67,7 +67,19 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The Bundle
      */
     @NotNull
-    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, SecretsEncryptor secretsEncryptor) {
+    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, SecretsEncryptor secretsEncryptor){
+        return convertToMO(entityBundle, secretsEncryptor, Collections.<EntityHeader>emptyList());
+    }
+
+    /**
+     * Converts a Entity bundle into a Bundle
+     *
+     * @param entityBundle The entity bundle to convert to a Bundle
+     * @param secretsEncryptor for encrypting and including the passwords in the bundle. Null for not encrypting and including.
+     * @return The Bundle
+     */
+    @NotNull
+    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, SecretsEncryptor secretsEncryptor, @NotNull final List<EntityHeader> forceFailOnNew) {
         final ArrayList<Item> items = new ArrayList<>();
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
@@ -101,7 +113,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
 
             //convert the mapping
-            mappings.add(convertEntityMappingInstructionsToMapping(entityMappingInstruction));
+            mappings.add(convertEntityMappingInstructionsToMapping(entityMappingInstruction, forceFailOnNew));
         }
 
         final Bundle bundle = ManagedObjectFactory.createBundle();
@@ -241,10 +253,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * com.l7tech.gateway.api.Mapping} object
      *
      * @param entityMappingInstructions The entity mapping instructions to convert
+     * @param forceFailOnNew            These items will have fail on new set to true
      * @return The mappings object
      */
     @NotNull
-    private Mapping convertEntityMappingInstructionsToMapping(@NotNull final EntityMappingInstructions entityMappingInstructions) {
+    private Mapping convertEntityMappingInstructionsToMapping(@NotNull final EntityMappingInstructions entityMappingInstructions, @NotNull final List<EntityHeader> forceFailOnNew) {
         final Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setType(entityMappingInstructions.getSourceEntityHeader().getType().toString());
         if(!Goid.DEFAULT_GOID.toString().equals((entityMappingInstructions.getSourceEntityHeader().getStrId()))) {
@@ -256,7 +269,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
         }
         mapping.setAction(convertAction(entityMappingInstructions.getMappingAction()));
-        if (entityMappingInstructions.shouldFailOnNew()) {
+        if (entityMappingInstructions.shouldFailOnNew() || forceFailOnNew.contains(entityMappingInstructions.getSourceEntityHeader())) {
             mapping.addProperty(FailOnNew, Boolean.TRUE);
         }
         if (entityMappingInstructions.shouldFailOnExisting()) {

@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -66,6 +67,19 @@ public class ActiveConnectorMigration extends com.l7tech.skunkworks.rest.tools.M
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         assertEquals("The bundle should have 1 items. An Active Connector", 1, bundleItem.getContent().getReferences().size());
-        assertEquals("The bundle should have 2 items. An Active Connector and a service", 2, bundleItem.getContent().getMappings().size());
+        assertEquals("The bundle should have 2 mappings. An Active Connector and a service", 2, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnoreActiveConnectorDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?activeConnector=" + activeConnectorItem.getId() + "&requireActiveConnector=" + activeConnectorItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. An Active Connector", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. An Active Connector", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 }

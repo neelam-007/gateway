@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class SecurityZoneMigration extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
@@ -83,6 +84,19 @@ public class SecurityZoneMigration extends com.l7tech.skunkworks.rest.tools.Migr
 
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnoreSecurityZoneDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?securityZone=" + securityZoneItem.getId() + "&requireSecurityZone=" + securityZoneItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A securityZone", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A securityZone", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 
     @Test

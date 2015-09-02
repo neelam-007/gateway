@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -139,6 +140,19 @@ public class RevocationCheckMigration extends MigrationTestBase {
 
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnoreRevocationCheckingPolicyDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?revocationCheckingPolicy=" + revCheckItem.getId() + "&requireRevocationCheckingPolicy=" + revCheckItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A revocationCheckingPolicy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A revocationCheckingPolicy", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 
     @Test

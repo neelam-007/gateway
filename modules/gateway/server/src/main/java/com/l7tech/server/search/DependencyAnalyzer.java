@@ -51,6 +51,12 @@ public interface DependencyAnalyzer {
     public static final String IgnoreSearchOptionKey = "Ignore";
 
     /**
+     * You can specify a list of headers to have their dependencies ignored and not return and not search for dependencies. The Default is
+     * an empty list
+     */
+    public static final String IgnoreDependenciesSearchOptionKey = "IgnoreDependencies";
+
+    /**
      * This enables or disables finding secure password dependencies from the ${secpass.name.plaintext} context
      * variable. The default is true
      */

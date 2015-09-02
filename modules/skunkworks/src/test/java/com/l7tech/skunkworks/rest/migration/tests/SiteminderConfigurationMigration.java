@@ -142,6 +142,19 @@ public class SiteminderConfigurationMigration extends com.l7tech.skunkworks.rest
     }
 
     @Test
+    public void testIgnoreSiteMinderConfigurationDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?siteMinderConfiguration=" + siteminderItem.getId() + "&requireSiteMinderConfiguration=" + siteminderItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A siteMinderConfiguration", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A siteMinderConfiguration", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
+    }
+
+    @Test
     public void testImportNew() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());

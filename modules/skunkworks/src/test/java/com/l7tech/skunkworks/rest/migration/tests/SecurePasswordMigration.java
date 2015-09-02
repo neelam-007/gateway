@@ -139,6 +139,19 @@ public class SecurePasswordMigration extends com.l7tech.skunkworks.rest.tools.Mi
     }
 
     @Test
+    public void testIgnorePasswordDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?password=" + securePasswordItem.getId() + "&requirePassword=" + securePasswordItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A password", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A password", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
+    }
+
+    @Test
     public void testImportNew() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());

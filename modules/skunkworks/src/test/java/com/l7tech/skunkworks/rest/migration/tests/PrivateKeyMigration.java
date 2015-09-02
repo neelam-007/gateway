@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -238,6 +239,19 @@ public class PrivateKeyMigration extends com.l7tech.skunkworks.rest.tools.Migrat
 
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 1 items.", 1, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnorePrivateKeyDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?privateKey=" + privateKeyItem.getId() + "&requirePrivateKey=" + privateKeyItem.getId()+ "&encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A privateKey", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A privateKey", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 
     @Test

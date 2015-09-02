@@ -47,6 +47,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     public static final String DefaultMappingActionOption = "DefaultMappingAction";
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    public static final String IgnoreDependenciesOption = "IgnoreDependencies";
     public static final String ServiceUsed = "ServiceUsed"; // service id used to access this exporter
     private static final String IncludeRequestFolder = "false";
     private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
@@ -69,6 +70,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         final CollectionUtils.MapBuilder<String, Object> optionBuilder = CollectionUtils.MapBuilder.builder();
         if (bundleExportProperties.containsKey(IgnoredEntityIdsOption)) {
             optionBuilder.put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(bundleExportProperties.getProperty(IgnoredEntityIdsOption).split(",")));
+        }
+        if (bundleExportProperties.containsKey(IgnoreDependenciesOption)) {
+            optionBuilder.put(DependencyAnalyzer.IgnoreDependenciesSearchOptionKey, bundleExportProperties.get(IgnoreDependenciesOption));
         }
         // do not need assertion dependency results for building export bundle
         optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
@@ -187,7 +191,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
      * @param entity                 The entity that this dependent object is for
      */
     private void addMapping(@NotNull final Properties bundleExportProperties, @NotNull final ArrayList<EntityMappingInstructions> mappings, @NotNull final DependentEntity dependentObject, @NotNull final Entity entity) {
-        if (entity instanceof HasFolder) {
+        if (entity instanceof HasFolder && !(bundleExportProperties.containsKey(IgnoreDependenciesOption) && ((List)bundleExportProperties.get(IgnoreDependenciesOption)).contains(EntityHeaderUtils.fromEntity(entity)))) {
             // include parent folder mapping if not already in mapping.
             final Folder parentFolder = ((HasFolder) entity).getFolder();
             if(parentFolder != null) {

@@ -32,10 +32,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /*
  * Do not make this a @Provider the will make allow
@@ -85,57 +82,123 @@ public class BundleResource {
         this.containerRequest = containerRequest;
     }
 
+    //TODO:This method had a huge number of parameters! write it so it gets all its paramaters from uriInfo
     /**
      * Returns the bundle for the given resources. This API call is capable of returning a bundle created from multiple
      * resources.
      *
-     * @param defaultAction                      Default bundling action. By default this is NewOrExisting
-     * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
-     *                                           default.
-     * @param activeConnectorIds                 Active Connectors to export
-     * @param cassandraConnectionIds             Cassandra Connections to export
-     * @param trustedCertificateIds              Trusted Certificated to export
-     * @param clusterPropertyIds                 Cluster properties to export
-     * @param customKeyValueIds                  Custom Key Values to export
-     * @param emailListenerIds                   Email listeners to export
-     * @param encapsulatedAssertionIds           Encapsulated Assertions to export
-     * @param firewallRuleIds                    Firewall rules to export
-     * @param folderIds                          Folders to export
-     * @param genericEntityIds                   Generic entities to export
-     * @param httpConfigurationIds               Http Configurations to export
-     * @param identityProviderIds                Identity providers to export
-     * @param interfaceTagIds                    Interface Tags to export
-     * @param jdbcConnectionIds                  JDBC Connections to export
-     * @param jmsDestinationIds                  JMS Destinations to Export
-     * @param listenPortIds                      Listen Ports to export
-     * @param policyIds                          Policies to export
-     * @param policyAliasIds                     PolicyAliases to export
-     * @param policyBackedServiceIds             Policy Backed Services to export
-     * @param privateKeyIds                      Private Keys to export
-     * @param serviceIds                         Services to export
-     * @param serviceAliasIds                    Service Aliases to export
-     * @param resourceIds                        Resources to export
-     * @param revocationCheckingPolicyIds        Checking Policies to export
-     * @param roleIds                            Roles to export
-     * @param sampleMessageIds                   Sample Messages to export
-     * @param scheduledTaskIds                   Scheduled Tasks to export
-     * @param passwordIds                        Passwords to export
-     * @param securityZoneIds                    Security Zones to export
-     * @param serverModuleFileIds                Server Modules Files to export
-     * @param siteMinderConfigurationIds         Siteminder Configurations to export
-     * @param workQueueIds                       Work Queues to export
-     * @param fullGateway                        True to export the full gateway. False by default
-     * @param includeDependencies                True to export with dependencies. False by default
-     * @param encryptSecrets                     True to export with encrypted secrets. False by default.
-     * @param encryptUsingClusterPassphrase      True to use the cluster passphrase if encrypting secrets. False by
-     *                                           default.
-     * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key
-     *                                           when encrypting secrets.
+     * @param defaultAction                       Default bundling action. By default this is NewOrExisting
+     * @param exportGatewayRestManagementService  If true the gateway management service will be exported too. False by
+     *                                            default.
+     * @param activeConnectorIds                  Active Connectors to export
+     * @param cassandraConnectionIds              Cassandra Connections to export
+     * @param trustedCertificateIds               Trusted Certificates to export
+     * @param clusterPropertyIds                  Cluster properties to export
+     * @param customKeyValueIds                   Custom Key Values to export
+     * @param emailListenerIds                    Email listeners to export
+     * @param encapsulatedAssertionIds            Encapsulated Assertions to export
+     * @param firewallRuleIds                     Firewall rules to export
+     * @param folderIds                           Folders to export
+     * @param genericEntityIds                    Generic entities to export
+     * @param httpConfigurationIds                Http Configurations to export
+     * @param identityProviderIds                 Identity providers to export
+     * @param interfaceTagIds                     Interface Tags to export
+     * @param jdbcConnectionIds                   JDBC Connections to export
+     * @param jmsDestinationIds                   JMS Destinations to Export
+     * @param listenPortIds                       Listen Ports to export
+     * @param policyIds                           Policies to export
+     * @param policyAliasIds                      Policy Aliases to export
+     * @param policyBackedServiceIds              Policy Backed Services to export
+     * @param privateKeyIds                       Private Keys to export
+     * @param serviceIds                          Services to export
+     * @param serviceAliasIds                     Service Aliases to export
+     * @param resourceIds                         Resources to export
+     * @param revocationCheckingPolicyIds         Revocation Checking Policies to export
+     * @param roleIds                             Roles to export
+     * @param sampleMessageIds                    Sample Messages to export
+     * @param scheduledTaskIds                    Scheduled Tasks to export
+     * @param passwordIds                         Passwords to export
+     * @param securityZoneIds                     Security Zones to export
+     * @param serverModuleFileIds                 Server Modules Files to export
+     * @param siteMinderConfigurationIds          Siteminder Configurations to export
+     * @param workQueueIds                        Work Queues to export
+     * @param requiredActiveConnectorIds          Marks these Active Connectors as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredCassandraConnectionIds      Marks these Cassandra Connections as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredTrustedCertificateIds       Marks these Trusted Certificates as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredClusterPropertyIds          Marks these Cluster properties as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredCustomKeyValueIds           Marks these Custom Key Values as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredEmailListenerIds            Marks these Email listeners as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredEncapsulatedAssertionIds    Marks these Encapsulated Assertions as required in the bundle (does
+     *                                            not export their dependencies and FailOnNew is set to true)
+     * @param requiredFirewallRuleIds             Marks these Firewall rules as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredFolderIds                   Marks these Folders as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredGenericEntityIds            Marks these Generic entities as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredHttpConfigurationIds        Marks these Http Configurations as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredIdentityProviderIds         Marks these Identity providers as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredInterfaceTagIds             Marks these Interface Tags as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredJdbcConnectionIds           Marks these JDBC Connections as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredJmsDestinationIds           Marks these JMS Destinations as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredListenPortIds               Marks these Listen Ports as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredPolicyIds                   Marks these Policies as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredPolicyAliasIds              Marks these Policy Aliases as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredPolicyBackedServiceIds      Marks these Policy Backed Services as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredPrivateKeyIds               Marks these Private Keys as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredServiceIds                  Marks these Services as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredServiceAliasIds             Marks these Service Aliases as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredResourceIds                 Marks these Resources as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredRevocationCheckingPolicyIds Marks these Revocation Checking Policies as required in the bundle
+     *                                            (does not export their dependencies and FailOnNew is set to true)
+     * @param requiredRoleIds                     Marks these Roles as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredSampleMessageIds            Marks these Sample Messages as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredScheduledTaskIds            Marks these Scheduled Tasks as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredPasswordIds                 Marks these Passwords as required in the bundle (does not export their
+     *                                            dependencies and FailOnNew is set to true)
+     * @param requiredSecurityZoneIds             Marks these Security Zones as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredServerModuleFileIds         Marks these Server Modules Files as required in the bundle (does not
+     *                                            export their dependencies and FailOnNew is set to true)
+     * @param requiredSiteMinderConfigurationIds  Marks these Siteminder Configurations as required in the bundle (does
+     *                                            not export their dependencies and FailOnNew is set to true)
+     * @param requiredWorkQueueIds                Marks these Work Queues as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
+     * @param fullGateway                         True to export the full gateway. False by default
+     * @param includeDependencies                 True to export with dependencies. False by default
+     * @param encryptSecrets                      True to export with encrypted secrets. False by default.
+     * @param encryptUsingClusterPassphrase       True to use the cluster passphrase if encrypting secrets. False by
+     *                                            default.
+     * @param encodedKeyPassphrase                The optional base-64 encoded passphrase to use for the encryption key
+     *                                            when encrypting secrets.
      * @return The bundle for the resources
      */
     @GET
     public Item<Bundle> exportBundle(@QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
                                      @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
+                                     //These are the entities to export
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("activeConnector") List<String> activeConnectorIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("cassandraConnection") List<String> cassandraConnectionIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("trustedCertificate") List<String> trustedCertificateIds,
@@ -168,6 +231,40 @@ public class BundleResource {
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("serverModuleFile") List<String> serverModuleFileIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("siteMinderConfiguration") List<String> siteMinderConfigurationIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("workQueue") List<String> workQueueIds,
+                                     //These are the entities that will be required on import
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireActiveConnector") List<String> requiredActiveConnectorIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireCassandraConnection") List<String> requiredCassandraConnectionIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireTrustedCertificate") List<String> requiredTrustedCertificateIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireClusterProperty") List<String> requiredClusterPropertyIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireCustomKeyValue") List<String> requiredCustomKeyValueIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireEmailListener") List<String> requiredEmailListenerIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireEncapsulatedAssertion") List<String> requiredEncapsulatedAssertionIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireFirewallRule") List<String> requiredFirewallRuleIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireFolder") List<String> requiredFolderIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireGenericEntity") List<String> requiredGenericEntityIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireHttpConfiguration") List<String> requiredHttpConfigurationIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireIdentityProvider") List<String> requiredIdentityProviderIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireInterfaceTag") List<String> requiredInterfaceTagIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireJdbcConnection") List<String> requiredJdbcConnectionIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireJmsDestination") List<String> requiredJmsDestinationIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireListenPort") List<String> requiredListenPortIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requirePolicy") List<String> requiredPolicyIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requirePolicyAlias") List<String> requiredPolicyAliasIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requirePolicyBackedService") List<String> requiredPolicyBackedServiceIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requirePrivateKey") List<String> requiredPrivateKeyIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireService") List<String> requiredServiceIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireServiceAlias") List<String> requiredServiceAliasIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireResource") List<String> requiredResourceIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireRevocationCheckingPolicy") List<String> requiredRevocationCheckingPolicyIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireRole") List<String> requiredRoleIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSampleMessage") List<String> requiredSampleMessageIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireScheduledTask") List<String> requiredScheduledTaskIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requirePassword") List<String> requiredPasswordIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSecurityZone") List<String> requiredSecurityZoneIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireServerModuleFile") List<String> requiredServerModuleFileIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSiteMinderConfiguration") List<String> requiredSiteMinderConfigurationIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireWorkQueue") List<String> requiredWorkQueueIds,
+
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
                                      @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
                                      @QueryParam("encryptSecrets") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptSecrets,
@@ -207,6 +304,39 @@ public class BundleResource {
                 "serverModuleFile",
                 "siteMinderConfiguration",
                 "workQueue",
+
+                "requireActiveConnector",
+                "requireCassandraConnection",
+                "requireTrustedCertificate",
+                "requireClusterProperty",
+                "requireCustomKeyValue",
+                "requireEmailListener",
+                "requireEncapsulatedAssertion",
+                "requireFirewallRule",
+                "requireFolder",
+                "requireGenericEntity",
+                "requireHttpConfiguration",
+                "requireIdentityProvider",
+                "requireInterfaceTag",
+                "requireJdbcConnection",
+                "requireJmsDestination",
+                "requireListenPort",
+                "requirePolicy",
+                "requirePolicyAlias",
+                "requirePolicyBackedService",
+                "requirePrivateKey",
+                "requireService",
+                "requireServiceAlias",
+                "requireResource",
+                "requireRevocationCheckingPolicy",
+                "requireRole",
+                "requireSampleMessage",
+                "requireScheduledTask",
+                "requirePassword",
+                "requireSecurityZone",
+                "requireServerModuleFile",
+                "requireSiteMinderConfiguration",
+                "requireWorkQueue",
                 "all", "includeDependencies", "encryptSecrets", "encryptUsingClusterPassphrase"));
         final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
@@ -217,54 +347,88 @@ public class BundleResource {
             throw new InvalidArgumentException("Must specify at least one entity to export");
         }
 
-        List<EntityHeader> entityHeaders = new ArrayList<>();
+        List<EntityHeader> entityHeadersToExport = new ArrayList<>();
 
-        buildEntityHeaders(activeConnectorIds, entityHeaders, EntityType.SSG_ACTIVE_CONNECTOR);
-        buildEntityHeaders(cassandraConnectionIds, entityHeaders, EntityType.CASSANDRA_CONFIGURATION);
-        buildEntityHeaders(trustedCertificateIds, entityHeaders, EntityType.TRUSTED_CERT);
-        buildEntityHeaders(clusterPropertyIds, entityHeaders, EntityType.CLUSTER_PROPERTY);
-        buildEntityHeaders(customKeyValueIds, entityHeaders, EntityType.CUSTOM_KEY_VALUE_STORE);
-        buildEntityHeaders(emailListenerIds, entityHeaders, EntityType.EMAIL_LISTENER);
-        buildEntityHeaders(encapsulatedAssertionIds, entityHeaders, EntityType.ENCAPSULATED_ASSERTION);
-        buildEntityHeaders(firewallRuleIds, entityHeaders, EntityType.FIREWALL_RULE);
-        buildEntityHeaders(folderIds, entityHeaders, EntityType.FOLDER);
-        buildEntityHeaders(genericEntityIds, entityHeaders, EntityType.GENERIC);
-        buildEntityHeaders(httpConfigurationIds, entityHeaders, EntityType.HTTP_CONFIGURATION);
-        buildEntityHeaders(identityProviderIds, entityHeaders, EntityType.ID_PROVIDER_CONFIG);
-        buildEntityHeaders(interfaceTagIds, entityHeaders, EntityType.INTERFACE_TAG);
-        buildEntityHeaders(jdbcConnectionIds, entityHeaders, EntityType.JDBC_CONNECTION);
-        buildEntityHeaders(jmsDestinationIds, entityHeaders, EntityType.JMS_ENDPOINT);
-        buildEntityHeaders(listenPortIds, entityHeaders, EntityType.SSG_CONNECTOR);
-        buildEntityHeaders(policyIds, entityHeaders, EntityType.POLICY);
-        buildEntityHeaders(policyAliasIds, entityHeaders, EntityType.POLICY_ALIAS);
-        buildEntityHeaders(policyBackedServiceIds, entityHeaders, EntityType.POLICY_BACKED_SERVICE);
-        buildEntityHeaders(privateKeyIds, entityHeaders, EntityType.SSG_KEY_ENTRY);
-        buildEntityHeaders(serviceIds, entityHeaders, EntityType.SERVICE);
-        buildEntityHeaders(serviceAliasIds, entityHeaders, EntityType.SERVICE_ALIAS);
-        buildEntityHeaders(resourceIds, entityHeaders, EntityType.RESOURCE_ENTRY);
-        buildEntityHeaders(revocationCheckingPolicyIds, entityHeaders, EntityType.REVOCATION_CHECK_POLICY);
-        buildEntityHeaders(roleIds, entityHeaders, EntityType.RBAC_ROLE);
-        buildEntityHeaders(sampleMessageIds, entityHeaders, EntityType.SAMPLE_MESSAGE);
-        buildEntityHeaders(scheduledTaskIds, entityHeaders, EntityType.SCHEDULED_TASK);
-        buildEntityHeaders(passwordIds, entityHeaders, EntityType.SECURE_PASSWORD);
-        buildEntityHeaders(securityZoneIds, entityHeaders, EntityType.SECURITY_ZONE);
-        buildEntityHeaders(serverModuleFileIds, entityHeaders, EntityType.SERVER_MODULE_FILE);
-        buildEntityHeaders(siteMinderConfigurationIds, entityHeaders, EntityType.SITEMINDER_CONFIGURATION);
-        buildEntityHeaders(workQueueIds, entityHeaders, EntityType.WORK_QUEUE);
+        buildEntityHeaders(activeConnectorIds, entityHeadersToExport, EntityType.SSG_ACTIVE_CONNECTOR);
+        buildEntityHeaders(cassandraConnectionIds, entityHeadersToExport, EntityType.CASSANDRA_CONFIGURATION);
+        buildEntityHeaders(trustedCertificateIds, entityHeadersToExport, EntityType.TRUSTED_CERT);
+        buildEntityHeaders(clusterPropertyIds, entityHeadersToExport, EntityType.CLUSTER_PROPERTY);
+        buildEntityHeaders(customKeyValueIds, entityHeadersToExport, EntityType.CUSTOM_KEY_VALUE_STORE);
+        buildEntityHeaders(emailListenerIds, entityHeadersToExport, EntityType.EMAIL_LISTENER);
+        buildEntityHeaders(encapsulatedAssertionIds, entityHeadersToExport, EntityType.ENCAPSULATED_ASSERTION);
+        buildEntityHeaders(firewallRuleIds, entityHeadersToExport, EntityType.FIREWALL_RULE);
+        buildEntityHeaders(folderIds, entityHeadersToExport, EntityType.FOLDER);
+        buildEntityHeaders(genericEntityIds, entityHeadersToExport, EntityType.GENERIC);
+        buildEntityHeaders(httpConfigurationIds, entityHeadersToExport, EntityType.HTTP_CONFIGURATION);
+        buildEntityHeaders(identityProviderIds, entityHeadersToExport, EntityType.ID_PROVIDER_CONFIG);
+        buildEntityHeaders(interfaceTagIds, entityHeadersToExport, EntityType.INTERFACE_TAG);
+        buildEntityHeaders(jdbcConnectionIds, entityHeadersToExport, EntityType.JDBC_CONNECTION);
+        buildEntityHeaders(jmsDestinationIds, entityHeadersToExport, EntityType.JMS_ENDPOINT);
+        buildEntityHeaders(listenPortIds, entityHeadersToExport, EntityType.SSG_CONNECTOR);
+        buildEntityHeaders(policyIds, entityHeadersToExport, EntityType.POLICY);
+        buildEntityHeaders(policyAliasIds, entityHeadersToExport, EntityType.POLICY_ALIAS);
+        buildEntityHeaders(policyBackedServiceIds, entityHeadersToExport, EntityType.POLICY_BACKED_SERVICE);
+        buildEntityHeaders(privateKeyIds, entityHeadersToExport, EntityType.SSG_KEY_ENTRY);
+        buildEntityHeaders(serviceIds, entityHeadersToExport, EntityType.SERVICE);
+        buildEntityHeaders(serviceAliasIds, entityHeadersToExport, EntityType.SERVICE_ALIAS);
+        buildEntityHeaders(resourceIds, entityHeadersToExport, EntityType.RESOURCE_ENTRY);
+        buildEntityHeaders(revocationCheckingPolicyIds, entityHeadersToExport, EntityType.REVOCATION_CHECK_POLICY);
+        buildEntityHeaders(roleIds, entityHeadersToExport, EntityType.RBAC_ROLE);
+        buildEntityHeaders(sampleMessageIds, entityHeadersToExport, EntityType.SAMPLE_MESSAGE);
+        buildEntityHeaders(scheduledTaskIds, entityHeadersToExport, EntityType.SCHEDULED_TASK);
+        buildEntityHeaders(passwordIds, entityHeadersToExport, EntityType.SECURE_PASSWORD);
+        buildEntityHeaders(securityZoneIds, entityHeadersToExport, EntityType.SECURITY_ZONE);
+        buildEntityHeaders(serverModuleFileIds, entityHeadersToExport, EntityType.SERVER_MODULE_FILE);
+        buildEntityHeaders(siteMinderConfigurationIds, entityHeadersToExport, EntityType.SITEMINDER_CONFIGURATION);
+        buildEntityHeaders(workQueueIds, entityHeadersToExport, EntityType.WORK_QUEUE);
 
-        if (fullGateway && !entityHeaders.isEmpty()) {
+        List<EntityHeader> entityHeadersToIgnoreDependencies = new ArrayList<>();
+        buildEntityHeaders(requiredActiveConnectorIds, entityHeadersToIgnoreDependencies, EntityType.SSG_ACTIVE_CONNECTOR);
+        buildEntityHeaders(requiredCassandraConnectionIds, entityHeadersToIgnoreDependencies, EntityType.CASSANDRA_CONFIGURATION);
+        buildEntityHeaders(requiredTrustedCertificateIds, entityHeadersToIgnoreDependencies, EntityType.TRUSTED_CERT);
+        buildEntityHeaders(requiredClusterPropertyIds, entityHeadersToIgnoreDependencies, EntityType.CLUSTER_PROPERTY);
+        buildEntityHeaders(requiredCustomKeyValueIds, entityHeadersToIgnoreDependencies, EntityType.CUSTOM_KEY_VALUE_STORE);
+        buildEntityHeaders(requiredEmailListenerIds, entityHeadersToIgnoreDependencies, EntityType.EMAIL_LISTENER);
+        buildEntityHeaders(requiredEncapsulatedAssertionIds, entityHeadersToIgnoreDependencies, EntityType.ENCAPSULATED_ASSERTION);
+        buildEntityHeaders(requiredFirewallRuleIds, entityHeadersToIgnoreDependencies, EntityType.FIREWALL_RULE);
+        buildEntityHeaders(requiredFolderIds, entityHeadersToIgnoreDependencies, EntityType.FOLDER);
+        buildEntityHeaders(requiredGenericEntityIds, entityHeadersToIgnoreDependencies, EntityType.GENERIC);
+        buildEntityHeaders(requiredHttpConfigurationIds, entityHeadersToIgnoreDependencies, EntityType.HTTP_CONFIGURATION);
+        buildEntityHeaders(requiredIdentityProviderIds, entityHeadersToIgnoreDependencies, EntityType.ID_PROVIDER_CONFIG);
+        buildEntityHeaders(requiredInterfaceTagIds, entityHeadersToIgnoreDependencies, EntityType.INTERFACE_TAG);
+        buildEntityHeaders(requiredJdbcConnectionIds, entityHeadersToIgnoreDependencies, EntityType.JDBC_CONNECTION);
+        buildEntityHeaders(requiredJmsDestinationIds, entityHeadersToIgnoreDependencies, EntityType.JMS_ENDPOINT);
+        buildEntityHeaders(requiredListenPortIds, entityHeadersToIgnoreDependencies, EntityType.SSG_CONNECTOR);
+        buildEntityHeaders(requiredPolicyIds, entityHeadersToIgnoreDependencies, EntityType.POLICY);
+        buildEntityHeaders(requiredPolicyAliasIds, entityHeadersToIgnoreDependencies, EntityType.POLICY_ALIAS);
+        buildEntityHeaders(requiredPolicyBackedServiceIds, entityHeadersToIgnoreDependencies, EntityType.POLICY_BACKED_SERVICE);
+        buildEntityHeaders(requiredPrivateKeyIds, entityHeadersToIgnoreDependencies, EntityType.SSG_KEY_ENTRY);
+        buildEntityHeaders(requiredServiceIds, entityHeadersToIgnoreDependencies, EntityType.SERVICE);
+        buildEntityHeaders(requiredServiceAliasIds, entityHeadersToIgnoreDependencies, EntityType.SERVICE_ALIAS);
+        buildEntityHeaders(requiredResourceIds, entityHeadersToIgnoreDependencies, EntityType.RESOURCE_ENTRY);
+        buildEntityHeaders(requiredRevocationCheckingPolicyIds, entityHeadersToIgnoreDependencies, EntityType.REVOCATION_CHECK_POLICY);
+        buildEntityHeaders(requiredRoleIds, entityHeadersToIgnoreDependencies, EntityType.RBAC_ROLE);
+        buildEntityHeaders(requiredSampleMessageIds, entityHeadersToIgnoreDependencies, EntityType.SAMPLE_MESSAGE);
+        buildEntityHeaders(requiredScheduledTaskIds, entityHeadersToIgnoreDependencies, EntityType.SCHEDULED_TASK);
+        buildEntityHeaders(requiredPasswordIds, entityHeadersToIgnoreDependencies, EntityType.SECURE_PASSWORD);
+        buildEntityHeaders(requiredSecurityZoneIds, entityHeadersToIgnoreDependencies, EntityType.SECURITY_ZONE);
+        buildEntityHeaders(requiredServerModuleFileIds, entityHeadersToIgnoreDependencies, EntityType.SERVER_MODULE_FILE);
+        buildEntityHeaders(requiredSiteMinderConfigurationIds, entityHeadersToIgnoreDependencies, EntityType.SITEMINDER_CONFIGURATION);
+        buildEntityHeaders(requiredWorkQueueIds, entityHeadersToIgnoreDependencies, EntityType.WORK_QUEUE);
+
+        if (fullGateway && !entityHeadersToExport.isEmpty()) {
             throw new InvalidArgumentException("If specifying full gateway export (all=true) do not give any other entity id's");
         }
 
         final Bundle bundle = createBundle(true, Mapping.Action.valueOf(defaultAction), "id",
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase,
-                entityHeaders.toArray(new EntityHeader[entityHeaders.size()]));
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, entityHeadersToIgnoreDependencies,
+                entityHeadersToExport.toArray(new EntityHeader[entityHeadersToExport.size()]));
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
 
-    private void buildEntityHeaders(@NotNull final List<String> ids, @NotNull final List<EntityHeader> entityHeaders, @NotNull final EntityType entityType) {
+    private static void buildEntityHeaders(@NotNull final List<String> ids, @NotNull final List<EntityHeader> entityHeaders, @NotNull final EntityType entityType) {
         for (final String id : ids) {
             entityHeaders.add(new EntityHeader(id, entityType, null, null));
         }
@@ -322,7 +486,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, header);
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), header);
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
@@ -392,6 +556,7 @@ public class BundleResource {
                                 boolean includeDependencies,
                                 boolean encryptSecrets,
                                 @Nullable final String encodedKeyPassphrase,
+                                @NotNull final List<EntityHeader> ignoreEntityDependencies,
                                 @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
@@ -407,6 +572,8 @@ public class BundleResource {
         if (containerRequest.getProperty("ServiceId") != null) {
             bundleOptionsBuilder.setProperty(BundleExporter.ServiceUsed, containerRequest.getProperty("ServiceId").toString());
         }
+        //TODO: This is ugly! change the properties to a map
+        bundleOptionsBuilder.put(BundleExporter.IgnoreDependenciesOption, ignoreEntityDependencies);
         //create the bundle export
         return bundleExporter.exportBundle(bundleOptionsBuilder, includeDependencies, encryptSecrets, encryptSecrets ? encodedKeyPassphrase : null, headers);
     }

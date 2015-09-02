@@ -132,17 +132,29 @@ public class DependencyFinder {
             return null;
         }
 
+        final List ignoreDependenciesHeaders = getOption(DependencyAnalyzer.IgnoreDependenciesSearchOptionKey, List.class, (List) Collections.<EntityHeader>emptyList());
         // Adds the dependency to the dependencies found set. This needs to be done before calling the
         // getDependencies() method in order to handle the cyclical case
         dependenciesFound.add(dependency);
         //check to make sure the max search depth has not been reached.
-        if (searchDepth != 0) {
+        if (searchDepth != 0 && !ignoreDependenciesHeaders.contains(getHeader(dependent))) {
             //decrement the search depth.
             searchDepth--;
             //If the depth is non 0 then find the dependencies for the given entity.
             dependency.setDependencies(getDependencies(dependent.getEntity()));
         }
         return dependency;
+    }
+
+    /**
+     * Returns the header of a dependent
+     *
+     * @param dependent The dependent to get the header for
+     * @return The headed of the dependent if or null if a header cannot be retrieved
+     */
+    @Nullable
+    private EntityHeader getHeader(@NotNull final FindResults dependent) {
+        return dependent.hasEntityHeader() ? dependent.getEntityHeader() : (dependent.getEntity() instanceof Entity ? EntityHeaderUtils.fromEntity((Entity) dependent.getEntity()) : null);
     }
 
     /**

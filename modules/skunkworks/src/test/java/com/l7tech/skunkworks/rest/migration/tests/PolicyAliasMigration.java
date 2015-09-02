@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -126,6 +127,19 @@ public class PolicyAliasMigration extends MigrationTestBase {
 
         assertEquals("The bundle should have 2 items.", 2, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 items.", 4, bundleItem.getContent().getMappings().size());
+    }
+
+    @Test
+    public void testIgnorePolicyAliasDependencies() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle?policyAlias=" + policyAliasItem.getId() + "&requirePolicyAlias=" + policyAliasItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertEquals("The bundle should have 1 items. A policyAlias", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 1 mapping. A policyAlias", 1, bundleItem.getContent().getMappings().size());
+        assertTrue((Boolean) bundleItem.getContent().getMappings().get(0).getProperties().get("FailOnNew"));
     }
 
     @Test
