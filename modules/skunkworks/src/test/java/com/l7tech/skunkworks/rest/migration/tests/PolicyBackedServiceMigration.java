@@ -22,6 +22,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,7 +80,13 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
         PolicyBackedServiceMO policyBackedServiceMO = ManagedObjectFactory.createPolicyBackedServiceMO();
         policyBackedServiceMO.setName("Test PBS created");
         policyBackedServiceMO.setInterfaceName("test.interface");
-        policyBackedServiceMO.setPolicyBackedServiceOperationPolicyIds(Arrays.asList(policyItem.getId()));
+        PolicyBackedServiceMO.PolicyBackedServiceOperation operation = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+        operation.setPolicyId(policyItem.getId());
+        operation.setOperationName("myMethod");
+        PolicyBackedServiceMO.PolicyBackedServiceOperation operation2 = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+        operation2.setPolicyId(policyItem.getId());
+        operation2.setOperationName("myMethod2");
+        policyBackedServiceMO.setPolicyBackedServiceOperations(Arrays.asList(operation, operation2));
         response = getSourceEnvironment().processRequest("policyBackedServices", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(policyBackedServiceMO)));
 
@@ -188,6 +195,7 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
 
         assertOkCreatedResponse(response);
         Item<PolicyMO> policyItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItemTarget.setContent(policyMO);
 
         try {
 
@@ -256,8 +264,15 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
             Item<PolicyBackedServiceMO> ServiceDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             PolicyBackedServiceMO policyBackedServiceTarget = ServiceDependencies.getContent();
             Assert.assertNotNull(policyBackedServiceTarget);
-            Assert.assertEquals(1, policyBackedServiceTarget.getPolicyBackedServiceOperationPolicyIds().size());
-            Assert.assertNotNull(policyItemTarget.getId(), policyBackedServiceTarget.getPolicyBackedServiceOperationPolicyIds().get(0));
+            Assert.assertEquals(2, policyBackedServiceTarget.getPolicyBackedServiceOperations().size());
+            PolicyBackedServiceMO.PolicyBackedServiceOperation operation = getOperation("myMethod", policyBackedServiceTarget.getPolicyBackedServiceOperations());
+            Assert.assertNotNull(operation);
+            Assert.assertNotNull(policyItemTarget.getId(), operation.getPolicyId());
+            Assert.assertNotNull((String)policyItemTarget.getContent().getPolicyDetail().getProperties().get("subtag"), operation.getOperationName());
+            operation = getOperation("myMethod2", policyBackedServiceTarget.getPolicyBackedServiceOperations());
+            Assert.assertNotNull(operation);
+            Assert.assertNotNull(policyItemTarget.getId(), operation.getPolicyId());
+            Assert.assertNotNull("myMethod2", operation.getOperationName());
 
             mappingsToClean = mappings;
 
@@ -299,12 +314,19 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
 
         assertOkCreatedResponse(response);
         Item<PolicyMO> policyItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItemTarget.setContent(policyMO);
 
         //create PBS;
         PolicyBackedServiceMO policyBackedServiceMO = ManagedObjectFactory.createPolicyBackedServiceMO();
         policyBackedServiceMO.setName("Test PBS created");
         policyBackedServiceMO.setInterfaceName("test.interface");
-        policyBackedServiceMO.setPolicyBackedServiceOperationPolicyIds(Arrays.asList(policyItemTarget.getId()));
+        PolicyBackedServiceMO.PolicyBackedServiceOperation operation = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+        operation.setPolicyId(policyItemTarget.getId());
+        operation.setOperationName("myMethod");
+        PolicyBackedServiceMO.PolicyBackedServiceOperation operation2 = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+        operation2.setPolicyId(policyItemTarget.getId());
+        operation2.setOperationName("myMethodExisting2");
+        policyBackedServiceMO.setPolicyBackedServiceOperations(Arrays.asList(operation, operation2));
         response = getTargetEnvironment().processRequest("policyBackedServices", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(policyBackedServiceMO)));
 
@@ -373,9 +395,15 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
             Item<PolicyBackedServiceMO> serviceDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             PolicyBackedServiceMO policyBackedServiceTarget = serviceDependencies.getContent();
             Assert.assertNotNull(policyBackedServiceTarget);
-            Assert.assertEquals(1, policyBackedServiceTarget.getPolicyBackedServiceOperationPolicyIds().size());
-            Assert.assertNotNull(policyItem.getId(), policyBackedServiceTarget.getPolicyBackedServiceOperationPolicyIds().get(0));
-
+            Assert.assertEquals(2, policyBackedServiceTarget.getPolicyBackedServiceOperations().size());
+            operation = getOperation("myMethod", policyBackedServiceTarget.getPolicyBackedServiceOperations());
+            Assert.assertNotNull(operation);
+            Assert.assertNotNull(policyItemTarget.getId(), operation.getPolicyId());
+            Assert.assertNotNull((String)policyItemTarget.getContent().getPolicyDetail().getProperties().get("subtag"), operation.getOperationName());
+            operation = getOperation("myMethod2", policyBackedServiceTarget.getPolicyBackedServiceOperations());
+            Assert.assertNotNull(operation);
+            Assert.assertNotNull(policyItemTarget.getId(), operation.getPolicyId());
+            Assert.assertNotNull("myMethod2", operation.getOperationName());
             mappingsToClean = mappings;
 
             validate(mappings);
@@ -386,6 +414,15 @@ public class PolicyBackedServiceMigration extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/" + policyItemTarget.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
         }
+    }
+
+    private PolicyBackedServiceMO.PolicyBackedServiceOperation getOperation(final String myMethod, List<PolicyBackedServiceMO.PolicyBackedServiceOperation> policyBackedServiceOperations) {
+        return Functions.grepFirst(policyBackedServiceOperations, new Functions.Unary<Boolean, PolicyBackedServiceMO.PolicyBackedServiceOperation>() {
+            @Override
+            public Boolean call(PolicyBackedServiceMO.PolicyBackedServiceOperation policyBackedServiceOperation) {
+                return myMethod.equals(policyBackedServiceOperation.getOperationName());
+            }
+        });
     }
 
     protected Goid getGoid() {

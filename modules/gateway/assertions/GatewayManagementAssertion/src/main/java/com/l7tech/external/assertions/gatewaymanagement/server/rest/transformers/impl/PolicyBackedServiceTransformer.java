@@ -38,10 +38,13 @@ public class PolicyBackedServiceTransformer extends EntityManagerAPITransformer<
         policyBackedServiceMO.setVersion(policyBackedService.getVersion());
         policyBackedServiceMO.setName(policyBackedService.getName());
         policyBackedServiceMO.setInterfaceName(policyBackedService.getServiceInterfaceName());
-        policyBackedServiceMO.setPolicyBackedServiceOperationPolicyIds(Functions.map(policyBackedService.getOperations(), new Functions.Unary<String, PolicyBackedServiceOperation>() {
+        policyBackedServiceMO.setPolicyBackedServiceOperations(Functions.map(policyBackedService.getOperations(), new Functions.Unary<PolicyBackedServiceMO.PolicyBackedServiceOperation, PolicyBackedServiceOperation>() {
             @Override
-            public String call(PolicyBackedServiceOperation policyBackedServiceOperation) {
-                return policyBackedServiceOperation.getPolicyGoid().toString();
+            public PolicyBackedServiceMO.PolicyBackedServiceOperation call(PolicyBackedServiceOperation policyBackedServiceOperation) {
+                PolicyBackedServiceMO.PolicyBackedServiceOperation operation = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+                operation.setOperationName(policyBackedServiceOperation.getName());
+                operation.setPolicyId(policyBackedServiceOperation.getPolicyGoid().toString());
+                return operation;
             }
         }));
         doSecurityZoneToMO(policyBackedServiceMO, policyBackedService);
@@ -77,12 +80,13 @@ public class PolicyBackedServiceTransformer extends EntityManagerAPITransformer<
         }
         policyBackedService.setName(policyBackedServiceMO.getName());
         policyBackedService.setServiceInterfaceName(policyBackedServiceMO.getInterfaceName());
-        policyBackedService.setOperations(new HashSet<>(Functions.map(policyBackedServiceMO.getPolicyBackedServiceOperationPolicyIds(), new Functions.Unary<PolicyBackedServiceOperation, String>() {
+        policyBackedService.setOperations(new HashSet<>(Functions.map(policyBackedServiceMO.getPolicyBackedServiceOperations(), new Functions.Unary<PolicyBackedServiceOperation, PolicyBackedServiceMO.PolicyBackedServiceOperation>() {
             @Override
-            public PolicyBackedServiceOperation call(String policyId) {
+            public PolicyBackedServiceOperation call(PolicyBackedServiceMO.PolicyBackedServiceOperation operation) {
                 PolicyBackedServiceOperation policyBackedServiceOperation = new PolicyBackedServiceOperation();
                 policyBackedServiceOperation.setPolicyBackedService(policyBackedService);
-                policyBackedServiceOperation.setPolicyGoid(Goid.parseGoid(policyId));
+                policyBackedServiceOperation.setPolicyGoid(Goid.parseGoid(operation.getPolicyId()));
+                policyBackedServiceOperation.setName(operation.getOperationName());
                 return policyBackedServiceOperation;
             }
         })));

@@ -50,8 +50,8 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     }
 
     @Override
-    protected void beforeUpdateEntity(final SsgFirewallRule entity) throws ObjectModelException {
-        super.beforeUpdateEntity(entity);
+    protected void beforeUpdateEntity(@NotNull final SsgFirewallRule entity, @NotNull SsgFirewallRule oldEntity) throws ObjectModelException {
+        super.beforeUpdateEntity(entity, oldEntity);
 
         // make sure ordinals starts at 1
         if(entity.getOrdinal() < 1){

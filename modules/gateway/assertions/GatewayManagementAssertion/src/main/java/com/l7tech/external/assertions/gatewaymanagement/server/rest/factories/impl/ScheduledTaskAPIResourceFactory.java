@@ -45,7 +45,7 @@ public class ScheduledTaskAPIResourceFactory extends
     }
 
     @Override
-    protected void beforeUpdateEntity(ScheduledTask entity) throws ObjectModelException {
+    protected void beforeUpdateEntity(@NotNull ScheduledTask entity, @NotNull ScheduledTask oldEntity) throws ObjectModelException {
         // only users that have role management access can set a user for a scheduled task
         if (entity.getIdProviderGoid() != null || entity.getUserId() != null) {
             rbacAccessService.validatePermitted(EntityType.USER, OperationType.UPDATE);

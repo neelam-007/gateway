@@ -62,10 +62,11 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
      * <p/>
      * <p>This implementation does nothing.</p>
      *
-     * @param entity The entity to update
+     * @param newEntity The entity to update to
+     * @param oldEntity The existing entity
      * @throws com.l7tech.objectmodel.ObjectModelException If an error occurs
      */
-    protected void beforeUpdateEntity(E entity) throws ObjectModelException {
+    protected void beforeUpdateEntity(@NotNull E newEntity, @NotNull E oldEntity) throws ObjectModelException {
     }
 
     /**
@@ -223,7 +224,7 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
                     rbacAccessService.validatePermitted(updateEntity, OperationType.UPDATE);
                     RestResourceFactoryUtils.validate(updateEntity, Collections.<String, String>emptyMap());
 
-                    beforeUpdateEntity(updateEntity);
+                    beforeUpdateEntity(updateEntity, oldEntity);
                     getEntityManager().update(updateEntity);
                     afterUpdateEntity(updateEntity);
 

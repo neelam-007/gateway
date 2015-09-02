@@ -147,7 +147,10 @@ public class PolicyBackedServiceResource extends RestEntityResource<PolicyBacked
         PolicyBackedServiceMO policyBackedServiceMO = ManagedObjectFactory.createPolicyBackedServiceMO();
         policyBackedServiceMO.setName("TemplatePolicyBackedService");
         policyBackedServiceMO.setInterfaceName("my.interface.name");
-        policyBackedServiceMO.setPolicyBackedServiceOperationPolicyIds(Arrays.asList("bf5bbf25b64acf3cc74b5a2bf7bc1cde"));
+        PolicyBackedServiceMO.PolicyBackedServiceOperation operation = new PolicyBackedServiceMO.PolicyBackedServiceOperation();
+        operation.setPolicyId("bf5bbf25b64acf3cc74b5a2bf7bc1cde");
+        operation.setOperationName("myOperation");
+        policyBackedServiceMO.setPolicyBackedServiceOperations(Arrays.asList(operation));
         return super.createTemplateItem(policyBackedServiceMO);
     }
 }

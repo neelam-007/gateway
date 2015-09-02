@@ -25,6 +25,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.polback.PolicyBackedService;
+import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -1163,6 +1165,47 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             }
             ssgKeyEntry.setAlias(keyParts[1]);
             ssgKeyEntry.setKeystoreId(Goid.parseGoid(keyParts[0]));
+        } else if (entityContainer.getEntity() instanceof PolicyBackedService && existingEntity != null) {
+            //TODO: This logic is duplicated in com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyBackedServiceAPIResourceFactory.beforeUpdateEntity()
+            final PolicyBackedService newPolicyBackedService = (PolicyBackedService) entityContainer.getEntity();
+            final PolicyBackedService oldPolicyBackedService = (PolicyBackedService) existingEntity;
+            //This is needed in order to avoid hibernate issues related to updating operations to a PolicyBackedService
+            //update to existing operations to match the updated ones.
+            final Set<PolicyBackedServiceOperation> operations = oldPolicyBackedService.getOperations();
+            final Iterator<PolicyBackedServiceOperation> operationsIterator = operations.iterator();
+            while(operationsIterator.hasNext()){
+                //This will update the existing operations to match the updated ones. And remove existing operations that are no longer in the updated PBS
+                final PolicyBackedServiceOperation operation = operationsIterator.next();
+                //Find the new operation with the same operation name a this existing operation
+                final PolicyBackedServiceOperation newOperation = Functions.grepFirst(newPolicyBackedService.getOperations(), new Functions.Unary<Boolean, PolicyBackedServiceOperation>() {
+                    @Override
+                    public Boolean call(PolicyBackedServiceOperation policyBackedServiceOperation) {
+                        return StringUtils.equals(policyBackedServiceOperation.getName(), operation.getName());
+                    }
+                });
+                if(newOperation != null) {
+                    //updated the existing operation policy id to match the new one
+                    operation.setPolicyGoid(newOperation.getPolicyGoid());
+                } else {
+                    //remove the existing operation since it is not available in the new PBS.
+                    operationsIterator.remove();
+                }
+            }
+            //This will add any new operations to the list of existing operations.
+            for(final PolicyBackedServiceOperation operation : newPolicyBackedService.getOperations()){
+                //Find the existing operation with the same operation name a this new operation
+                final PolicyBackedServiceOperation oldOperation = Functions.grepFirst(oldPolicyBackedService.getOperations(), new Functions.Unary<Boolean, PolicyBackedServiceOperation>() {
+                    @Override
+                    public Boolean call(PolicyBackedServiceOperation policyBackedServiceOperation) {
+                        return StringUtils.equals(policyBackedServiceOperation.getName(), operation.getName());
+                    }
+                });
+                //If there is no existing operation with the same name then add a new one.
+                if(oldOperation == null){
+                    operations.add(operation);
+                }
+            }
+            newPolicyBackedService.setOperations(operations);
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
         if(entityContainer.getEntity() instanceof HasFolder && existingEntity != null) {
