@@ -2409,7 +2409,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             // Set the mnemonic and accelerator key
             hideShowCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
-            hideShowCommentsAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
         }
 
         return hideShowCommentsAction;

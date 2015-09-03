@@ -680,7 +680,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             showAstnCommentsMenuItem.setText("Show Comments");
             showAstnCommentsMenuItem.setMnemonic(KeyEvent.VK_C);
             showAstnCommentsMenuItem.setDisplayedMnemonicIndex(5);
-            showAstnCommentsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
         }
         return showAstnCommentsMenuItem;
     }
