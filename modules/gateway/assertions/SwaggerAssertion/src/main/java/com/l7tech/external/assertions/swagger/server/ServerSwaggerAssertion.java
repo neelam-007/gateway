@@ -26,16 +26,18 @@ import io.swagger.models.Path;
 import io.swagger.models.Scheme;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.AuthorizationValue;
+import io.swagger.models.auth.SecuritySchemeDefinition;
 import io.swagger.parser.SwaggerParser;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.UriTemplate;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the SwaggerAssertion.
@@ -49,9 +51,20 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
 
+    private static enum SwaggerSecurityType  { BASIC, APIKEY, OAUTH2, INVALID };
+    private Map<String,ValidateSecurity> securityTypeMap;
+
+    private static final Pattern basicAuth = Pattern.compile("^Basic");
+    private static final Pattern apiKey = Pattern.compile("apiKey");
+    private static final Pattern oauth2inHeader = Pattern.compile("Bearer");
+
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
+        securityTypeMap = new HashMap<String,ValidateSecurity>();
+        securityTypeMap.put("basic", new ValidateBasicSecurity());
+        securityTypeMap.put("apiKey", new ValidateApiKeySecurity());
+        securityTypeMap.put("oauth2", new ValidateOauth2Security());
     }
 
     @Override
@@ -178,10 +191,108 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                         // TODO jwilliams: check specification and decide on behaviour for default scheme validation
                     }
                 }
+
+          checkSecurity:
+                if (assertion.isRequireSecurityCredentials()) {
+                    Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
+                    List<Map<String, List<String>>> security = operation.getSecurity();
+
+                    if ( security != null ) {
+
+                        if ( securityDefinitions == null ) {
+                            //TODO: Error security clause references securityDefinitions must exist?
+                            return false;
+                        }
+                        for (Map<String, List<String>> sec : security) {
+                            Set<String> keys = sec.keySet();
+                            if (keys.size() != 1) {
+                                //TODO: Error should only have one key }
+                            }
+                            SecuritySchemeDefinition definition = securityDefinitions.get(keys.iterator().next());
+                            ValidateSecurity type = securityTypeMap.get(definition.getType());
+                            if ( type == null ) {
+                                //TODO Error: unknown type
+                            }
+                            if ( type.checkSecurity(httpRequestKnob) ) {
+                                //TODO: return ok!
+                                break checkSecurity;
+                            }
+                        }
+                        return false;
+                    }
+                }
             }
         }
 
         return true;
+    }
+
+    private static interface ValidateSecurity {
+        public boolean checkSecurity(HttpRequestKnob httpRequestKnob);
+    }
+
+    private class ValidateBasicSecurity implements ValidateSecurity {
+        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
+            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
+            for ( String header : authHeaders ) {
+                Matcher m = basicAuth.matcher(header);
+                if (m.matches()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private class ValidateApiKeySecurity implements ValidateSecurity {
+        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
+            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
+            for ( String header : authHeaders ) {
+                Matcher m = apiKey.matcher(header);
+                if (m.matches()) {
+                    return true;
+                }
+            }
+            try {
+                if (httpRequestKnob.getParameter("apiKey") != null) {
+                    return true;
+                }
+                if (httpRequestKnob.getParameter("api_key") != null) {
+                    return true;
+                }
+            } catch ( IOException e ) {
+                //TODO: decide appropriate response
+                //  IOException here means api_key was multi-valued parameter!!
+                //  if legit return true;
+                //  if not fall through and return false below
+            }
+
+            //TODO: figure out alternative locations.
+            return false;
+        }
+    }
+
+    private class ValidateOauth2Security implements ValidateSecurity {
+        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
+            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
+            for ( String header : authHeaders ) {
+                Matcher m = oauth2inHeader.matcher(header);
+                if (m.matches()) {
+                    return true;
+                }
+            }
+            try {
+                if (httpRequestKnob.getParameter("access_token") != null) {
+                    return true;
+                }
+            } catch (IOException e) {
+                //TODO: decide appropriate response
+                //  IOException here means api_key was multi-valued parameter!!
+                //  if legit return true;
+                //  if not fall through and return false below
+            }
+            return false;
+        }
     }
 
     protected Swagger parseSwaggerJson(String doc) {

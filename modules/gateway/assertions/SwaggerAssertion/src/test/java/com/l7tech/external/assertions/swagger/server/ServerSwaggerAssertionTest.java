@@ -81,6 +81,7 @@ public class ServerSwaggerAssertionTest {
     @Before
     public void setUp() {
         assertion = new SwaggerAssertion();
+        assertion.setRequireSecurityCredentials(false);
 
         testAudit = new TestAudit();
         stashManager = stashManagerFactory.createStashManager();
