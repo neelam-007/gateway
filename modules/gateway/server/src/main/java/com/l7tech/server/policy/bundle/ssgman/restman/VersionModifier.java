@@ -83,6 +83,14 @@ public class VersionModifier {
                                     - serviceManager.findByRoutingUri(url).isEmpty()
                                     - use dryRunEvent.addServiceConflict(<service name and conflict URL pattern>) */
                             break;
+                        case SCHEDULED_TASK:
+                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String name) {
+                                    return getPrefixedScheduledTaskName(version, name);
+                                }
+                            });
+                            break;
                         default:
                             break;
                     }
@@ -114,6 +122,10 @@ public class VersionModifier {
 
     public static String getPrefixedEncapsulatedAssertionName(@Nullable String versionModifier, @NotNull String encapsulatedAssertionName) {
         return isValidVersionModifier(versionModifier) ? versionModifier + " " + encapsulatedAssertionName : encapsulatedAssertionName;
+    }
+
+    public static String getPrefixedScheduledTaskName(@Nullable String versionModifier, @NotNull String scheduledTaskName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + scheduledTaskName : scheduledTaskName;
     }
 
     public static boolean isValidVersionModifier(@Nullable String versionModifier) {
