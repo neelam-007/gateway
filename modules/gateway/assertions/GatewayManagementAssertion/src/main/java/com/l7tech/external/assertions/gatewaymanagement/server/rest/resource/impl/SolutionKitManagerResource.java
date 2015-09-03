@@ -155,16 +155,22 @@ public class SolutionKitManagerResource {
 
             // handle upgrade
             final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
-            // todo: to ghuang; it seems this logic always selects the first child to upgrade, which differs than the UI.
+            // todo: to ghuang; it seems this logic always selects the first entity returned by findBySolutionKitGuid(), assuming the parent, which differs than the UI.
             // todo: in the UI the solution kit to upgrade is selected by Goid, it doesn't seem to always match solutionKitsExistingOnGateway.get(0)
-            // todo: Please remove this if this is by-design
+            // todo: Please remove this todo if this is by-design
             if (StringUtils.isNotBlank(upgradeGuid)) {
+                // todo: in addition we need to fail if upgradeGuid doesn't exists, as the for one do an early fail, and second the code below (i.e. solutionKitsConfig.getSolutionKitsToUpgrade().get(0)) will always throw exception
+                // todo: ghuang; in case I'm mistaken i.e. there is a legit reason why upgradeGuid doesn't exists, then please remove this logic and fix solutionKitsConfig.getSolutionKitsToUpgrade().get(0) not to throw exception
                 final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
-                if (solutionKitsExistingOnGateway.size() > 0) {
-                    solutionKitsConfig.setSolutionKitsToUpgrade(
-                            solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitsExistingOnGateway.get(0))
-                    );
+                if (solutionKitsExistingOnGateway.isEmpty()) {
+                    final String warningMsg = "The query parameter 'id' (" + upgradeGuid + "), representing the solution kit to upgrade, does not exist in the Database.";
+                    logger.warning(warningMsg);
+                    return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                 }
+
+                solutionKitsConfig.setSolutionKitsToUpgrade(
+                        solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitsExistingOnGateway.get(0))
+                );
 
                 // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
                 solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
@@ -189,7 +195,7 @@ public class SolutionKitManagerResource {
             // Check instance modifier uniqueness for installing child solution kits.  If any child solution kits violate
             // the uniqueness rule, stop install any solution kits and do not allow any partial installation.
             // Note: This checking is only for install (not for upgrade).
-            if (upgradeGuid == null) {
+            if (StringUtils.isBlank(upgradeGuid)) {
                 final Map<String, List<String>> usedInstanceModifiersMap = SolutionKitUtils.getInstanceModifiers(solutionKitAdminHelper.findSolutionKits());
                 for (SolutionKit solutionKit : selectedSolutionKits) {
                     if (!SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, usedInstanceModifiersMap)) {
@@ -206,7 +212,8 @@ public class SolutionKitManagerResource {
             // Process parent solution kit first, if a parent solution kit is loaded.
             if (parentSKFromLoad != null) {
                 // Case 1: Parent for upgrade
-                if (upgradeGuid != null) {
+                if (StringUtils.isNotBlank(upgradeGuid)) {
+                    assert solutionKitsConfig.getSolutionKitsToUpgrade().size() > 0; // should always be grater then 0 as check is done above (early fail)
                     final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitsToUpgrade().get(0); // The first element is a real parent solution kit.
 
                     if (!upgradeGuid.equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
