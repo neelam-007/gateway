@@ -215,7 +215,13 @@ elif [ "$1" = "run" ] ; then
             echo $$ > "${GATEWAY_PID}"
         fi
 
-        exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
+        if [ -z "${IS_APPLIANCE}" ]; then
+            # Software only version requires emptying stdout/stderr or it may block.
+            # "/dev/null" can be replaced with a filename in the following to capture messages if required
+            exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &> /dev/null
+        else
+            exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
+        fi
     fi
 
 elif [ "$1" = "stop" ] ; then
