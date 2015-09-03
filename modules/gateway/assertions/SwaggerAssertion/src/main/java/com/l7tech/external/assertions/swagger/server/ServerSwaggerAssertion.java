@@ -49,7 +49,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
 
-    public ServerSwaggerAssertion( final SwaggerAssertion assertion ) throws PolicyAssertionException {
+    public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
     }

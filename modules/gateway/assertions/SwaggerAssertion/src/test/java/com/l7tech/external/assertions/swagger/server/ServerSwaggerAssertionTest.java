@@ -1,54 +1,68 @@
 package com.l7tech.external.assertions.swagger.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
-import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpResponseKnob;
+import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
-import io.swagger.models.Path;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.AuthorizationValue;
 import io.swagger.parser.SwaggerParser;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
 
 import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathDefinition;
 import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathResolver;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
  * Test the SwaggerAssertion.
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerSwaggerAssertionTest {
 
     public static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
 
-    @Mock
-    PolicyEnforcementContext mockContext;
-    @Mock
-    HttpRequestKnob mockRequestKnob;
-    Message requestMsg;
-    Message responseMsg;
-
     SwaggerAssertion assertion;
     ServerSwaggerAssertion fixture;
 
+    @Inject
+    private StashManagerFactory stashManagerFactory;
+
+    private StashManager stashManager;
+    private TestAudit testAudit;
+    private SecurityManager originalSecurityManager;
+
+    private static String testDocument;
     private static Swagger testModel;
     private static PathResolver testModelPathResolver;
 
@@ -58,75 +72,99 @@ public class ServerSwaggerAssertionTest {
         List<AuthorizationValue> authorizationValues = new ArrayList<>();
         authorizationValues.add(new AuthorizationValue());
 
-        String swaggerDoc = new String(IOUtils.slurpStream(ServerSwaggerAssertionTest.class
+        testDocument = new String(IOUtils.slurpStream(ServerSwaggerAssertionTest.class
                 .getResourceAsStream("petstore_swagger.json")), Charsets.UTF8);
-        testModel = parser.parse(swaggerDoc, authorizationValues);
+        testModel = parser.parse(testDocument, authorizationValues);
         testModelPathResolver = new PathResolver(testModel);
     }
 
     @Before
-    public void setUp() throws Exception {
-        //Setup Context
-        requestMsg = new Message();
-        requestMsg.attachHttpRequestKnob(mockRequestKnob);
-        responseMsg = new Message();
-        responseMsg.attachHttpResponseKnob(new HttpResponseKnob() {
-            @Override
-            public void addChallenge(String value) {
-
-            }
-
-            @Override
-            public void setStatus(int code) {
-
-            }
-
-            @Override
-            public int getStatus() {
-                return 0;
-            }
-        });
-
-
-        PublishedService service = new PublishedService();
-        service.setRoutingUri("/svr/*");
-        service.setSoap(false);
-        when(mockContext.getService()).thenReturn(service);
-
+    public void setUp() {
         assertion = new SwaggerAssertion();
+
+        testAudit = new TestAudit();
+        stashManager = stashManagerFactory.createStashManager();
+
+        originalSecurityManager = System.getSecurityManager();
+        System.setSecurityManager(new GatewayPermissiveLoggingSecurityManager());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        System.setSecurityManager(originalSecurityManager);
     }
 
     @Test
     public void testInvalidSwagger() throws Exception {
         assertion.setSwaggerDoc("swaggerDoc");
-        Map<String,Object> varMap = new HashMap<>();
-        varMap.put("swaggerdoc", INVALID_SWAGGER_JSON);
-        when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
-        when(mockContext.getVariable("swaggerDoc")).thenReturn(INVALID_SWAGGER_JSON);
-        fixture = new ServerSwaggerAssertion(assertion);
-        assertEquals(AssertionStatus.FAILED, fixture.checkRequest(mockContext));
+        fixture = createServer(assertion);
 
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", INVALID_SWAGGER_JSON);
+
+        assertEquals(AssertionStatus.FAILED, fixture.checkRequest(pec));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_DOCUMENT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_DOCUMENT));
     }
 
     @Test
-    public void testSwaggerValidRequest_checkBaseUriAndHostContextVariables() throws  Exception {
-        String swaggerDoc = new String(IOUtils.slurpStream(ServerSwaggerAssertionTest.class
-                .getResourceAsStream("petstore_swagger.json")), Charsets.UTF8);
-
+    public void testSwaggerValidRequest_checkBaseUriAndHostContextVariables() throws Exception {
         assertion.setSwaggerDoc("swaggerDoc");
-        Map<String,Object> varMap = new HashMap<>();
-        varMap.put("swaggerdoc", swaggerDoc);
-        when(mockRequestKnob.getRequestUri()).thenReturn("/svr/pet/findByStatus");
-        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
-        when(mockContext.getVariableMap(eq(assertion.getVariablesUsed()), any(Audit.class))).thenReturn(varMap);
-        when(mockContext.getVariable("swaggerDoc")).thenReturn(swaggerDoc);
-        when(mockContext.getRequest()).thenReturn(requestMsg);
-        fixture = new ServerSwaggerAssertion(assertion);
-        assertEquals(AssertionStatus.NONE, fixture.checkRequest(mockContext));
-        verify(mockContext, times(1)).setVariable("sw.apiUri", "/pet/findByStatus");
-        verify(mockContext, times(1)).setVariable("sw.host","petstore.swagger.io");
-        verify(mockContext, times(1)).setVariable("sw.baseUri", "/v2");
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        assertEquals("petstore.swagger.io", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_HOST));
+        assertEquals("/v2", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_BASE_URI));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
     }
+
+    @Test
+    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_SucceedsNoAudits() throws  Exception {
+        String requestUri = "/store/order";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_Falsified11402Audited() throws  Exception {
+        String requestUri = "/store/order";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);   // get not defined
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_METHOD.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_METHOD));
+    }
+
+    // PATH DEFINITION RESOLUTION HELPER CLASS TESTS
 
     @Test
     public void testPathDefinitionResolver_ValidRequestUriForPathWithNoVariables_PathFound() {
@@ -144,6 +182,7 @@ public class ServerSwaggerAssertionTest {
 
         assertNotNull(path);
         assertEquals("/pet/{petId}/uploadImage", path.path);
+        assertEquals(0, testAudit.getAuditCount());
     }
 
     @Test
@@ -167,30 +206,48 @@ public class ServerSwaggerAssertionTest {
         assertNull(path);
     }
 
-    @Test
-    public void test() {
-        String requestUri = "/store/order";
+    // HELPER METHODS
 
-        Path path = testModel.getPath(requestUri);
+    private ServerSwaggerAssertion createServer(SwaggerAssertion assertion) {
+        ServerSwaggerAssertion serverAssertion = new ServerSwaggerAssertion(assertion);
 
-        assertNull(path.getGet());
-        assertNotNull(path.getPost());
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                        .put("auditFactory", testAudit.factory())
+                        .unmodifiableMap()
+        );
+
+        return serverAssertion;
     }
 
-    @Test
-    public void testValidateWithPathAndMethodEnabled_validPathAndMethod_() throws  Exception {
-        String requestUri = "/store/order";
+    private PolicyEnforcementContext createPolicyEnforcementContext(Message request) {
+        return createPolicyEnforcementContext(request, new Message());
+    }
 
-        assertion.setValidatePath(true);
-        assertion.setValidateMethod(true);
+    private PolicyEnforcementContext createPolicyEnforcementContext(Message request, Message response) {
+        PublishedService service = new PublishedService();
+        service.setRoutingUri("/svr/*");
+        service.setSoap(false);
 
-        fixture = new ServerSwaggerAssertion(assertion);
+        PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
+        context.setService(service);
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        return context;
+    }
 
+    private Message createHttpRequestMessage(String requestUri, String method) throws IOException {
+        MockHttpServletRequest hRequest = new MockHttpServletRequest();
 
+        hRequest.setMethod(method);
+        hRequest.setRequestURI(requestUri);
 
+        Message request = new Message(stashManager,
+                ContentTypeHeader.APPLICATION_JSON,
+                new ByteArrayInputStream(new byte[0]));
+
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
+
+        return request;
     }
 }
