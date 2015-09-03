@@ -205,6 +205,16 @@ public class SolutionKitManagerResource {
                 }
             }
 
+            // remap any entity id(s)
+            remapEntityIds(solutionKitsConfig, entityIdReplaces);
+
+            // pass in form fields as input parameters to customizations
+            setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
+
+            // Test all selected (child) solution kit(s) before actual installation.
+            // This step is to prevent partial installation/upgrade
+            testBundleImports(solutionKitsConfig);
+
             // Check if the loaded skar is a collection of skars
             final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
             Goid parentGoid = null;
@@ -246,16 +256,6 @@ public class SolutionKitManagerResource {
                     }
                 }
             }
-
-            // remap any entity id(s)
-            remapEntityIds(solutionKitsConfig, entityIdReplaces);
-
-            // pass in form fields as input parameters to customizations
-            setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
-
-            // Test all selected (child) solution kit(s) before actual installation.
-            // This step is to prevent partial installation/upgrade
-            testBundleImports(solutionKitsConfig, selectedSolutionKits);
 
             // install or upgrade skars
             // After processing the parent, process selected solution kits if applicable.
@@ -302,13 +302,10 @@ public class SolutionKitManagerResource {
      * Method simply calls {@link SolutionKitManager#importBundle(String, String, boolean)} and handles potential conflicts.
      *
      * @param solutionKitsConfig      the SolutionKit config object.  Required and cannot be {@code null}.
-     * @param selectedSolutionKits    collection of the SolutionKit config object.  Required and cannot be {@code null}.
      * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
      */
-    private void testBundleImports(
-            @NotNull final SolutionKitsConfig solutionKitsConfig,
-            @NotNull final Collection<SolutionKit> selectedSolutionKits
-    ) throws SolutionKitManagerResourceException {
+    private void testBundleImports(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
+        final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
         for (final SolutionKit solutionKit: selectedSolutionKits) {
             // Update resolved mapping target IDs.
             try {
