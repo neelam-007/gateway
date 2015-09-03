@@ -137,7 +137,6 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Update a solution kit
      * @param solutionKit: a solution kit to be updated.
-     * @return a Goid of the updated solution kit
      * @throws UpdateException
      */
     @Secured(stereotype = MethodStereotype.UPDATE)
@@ -176,7 +175,8 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      * @param solutionKit: the selected solution kit, which user selects to upgrade.
      * @return a list of solution kits for upgrade
      */
+    @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_ENTITIES)
-    List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit);
+    List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) throws FindException;
 }

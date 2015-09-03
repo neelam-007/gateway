@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -44,13 +45,27 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
     void updateProtectedEntityTracking() throws FindException;
 
 
-    /**
-     * Find all child solution kits of a parent solution kit given by a parent Goid.
+    // TODO: ghuang; consider to deprecate this method and use {@link #findAllChildrenByParentGoid(com.l7tech.objectmodel.Goid)}
+    // TODO: as in most of the cases the caller will get the {@link com.l7tech.gateway.common.solutionkit.SolutionKit} object anyways
+    // TODO: which eventually will produce way more DB traffic and transactions
+
+     /**
+     * Find all child solution kit headers of a parent solution kit given by a parent Goid.
+     *
      * @param parentGoid: the Goid of a parent solution kit
      * @return a list of child solution kits
      * @throws FindException
      */
-    List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException;
+    List<SolutionKitHeader> findAllChildrenHeadersByParentGoid(@NotNull final Goid parentGoid) throws FindException;
+
+    /**
+     * Find all child solution kit headers of a parent solution kit given by a parent Goid.
+     * @param parentGoid: the Goid of a parent solution kit
+     * @return a list of child solution kits
+     * @throws FindException
+     */
+    @NotNull
+    Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException;
 
     /**
      * Find all solution kits but not including any child solution kits.

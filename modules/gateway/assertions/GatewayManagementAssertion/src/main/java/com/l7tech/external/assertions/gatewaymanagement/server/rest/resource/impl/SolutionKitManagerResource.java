@@ -5,7 +5,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
@@ -17,10 +16,12 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
+import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import org.apache.commons.lang.CharEncoding;
@@ -31,6 +32,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.xml.sax.SAXException;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -41,6 +43,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.SignatureException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -152,19 +155,32 @@ public class SolutionKitManagerResource {
 
             // handle upgrade
             final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
-            if (upgradeGuid != null) {
+            // todo: to ghuang; it seems this logic always selects the first child to upgrade, which differs than the UI.
+            // todo: in the UI the solution kit to upgrade is selected by Goid, it doesn't seem to always match solutionKitsExistingOnGateway.get(0)
+            // todo: Please remove this if this is by-design
+            if (StringUtils.isNotBlank(upgradeGuid)) {
                 final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
                 if (solutionKitsExistingOnGateway.size() > 0) {
                     solutionKitsConfig.setSolutionKitsToUpgrade(
                             solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitsExistingOnGateway.get(0))
                     );
                 }
+
+                // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
+                solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
             }
 
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-            final Pair<byte[], String> digestAndSignature = skarProcessor.load(fileInputStream);
-            solutionKitAdminHelper.verifySkarSignature(digestAndSignature.left, digestAndSignature.right);
+            skarProcessor.load(
+                    fileInputStream,
+                    new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
+                        @Override
+                        public void call(final byte[] digest, final String signature) throws SignatureException {
+                            solutionKitAdminHelper.verifySkarSignature(digest, signature);
+                        }
+                    }
+            );
 
             // handle any user selection(s) - child solution kits
             setUserSelections(solutionKitsConfig, solutionKitSelects);
@@ -182,33 +198,6 @@ public class SolutionKitManagerResource {
                     }
                 }
             }
-
-// TODO tveninov has a proper fix.  Will probably cleanup by moving to a private method (e.g. testBundleImports(..))
-            // Test all selected (child) solution kit(s) before actual installation.  This step is to prevent partial installation/upgrade
-//            for (SolutionKit solutionKit: selectedSolutionKits) {
-//                try {
-//                    String mappingsStr = solutionKitManager.importBundle(solutionKitsConfig.getBundleAsString(solutionKit), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
-//                    Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(mappingsStr)));
-//                    Mappings mappings = (Mappings) item.getContent();
-//                    if (mappings == null || mappings.getMappings() == null) continue;
-//
-//                    StringBuilder errorSB = new StringBuilder();
-//                    for (Mapping mapping: mappings.getMappings()) {
-//                        Mapping.ErrorType errorType = mapping.getErrorType();
-//                        if (errorType != null) {
-//                            errorSB.append(errorType.toString()).append(": ").append(mapping.getProperties().get("ErrorMessage")).append(lineSeparator());
-//                        }
-//                    }
-//                    if (errorSB.length() > 0) {
-//                        String errorMessage = errorSB.toString();
-//                        logger.warning(errorMessage);
-//                        return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator() + errorMessage + lineSeparator()).build();
-//                    }
-//                } catch (Exception e) {
-//                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-//                    return status(BAD_REQUEST).entity("Cannot install the solution kit '" + solutionKit.getName() + "': " + lineSeparator()  + e.getMessage() + lineSeparator()).build();
-//                }
-//            }
 
             // Check if the loaded skar is a collection of skars
             final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
@@ -257,6 +246,10 @@ public class SolutionKitManagerResource {
             // pass in form fields as input parameters to customizations
             setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
+            // Test all selected (child) solution kit(s) before actual installation.
+            // This step is to prevent partial installation/upgrade
+            testBundleImports(solutionKitsConfig, selectedSolutionKits);
+
             // install or upgrade skars
             // After processing the parent, process selected solution kits if applicable.
             for (SolutionKit solutionKit : selectedSolutionKits) {
@@ -290,6 +283,110 @@ public class SolutionKitManagerResource {
         }
 
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
+    }
+
+    /**
+     * Error Message Format during testBundleImports.
+     */
+    private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE = "Test install/upgrade failed for solution kit: {0} ({1}). {2}";
+
+    /**
+     * Will attempt a dry-run (i.e. test bundle import) of the selected solution kits.<br/>
+     * Method simply calls {@link SolutionKitManager#importBundle(String, String, boolean)} and handles potential conflicts.
+     *
+     * @param solutionKitsConfig      the SolutionKit config object.  Required and cannot be {@code null}.
+     * @param selectedSolutionKits    collection of the SolutionKit config object.  Required and cannot be {@code null}.
+     * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
+     */
+    private void testBundleImports(
+            @NotNull final SolutionKitsConfig solutionKitsConfig,
+            @NotNull final Collection<SolutionKit> selectedSolutionKits
+    ) throws SolutionKitManagerResourceException {
+        for (final SolutionKit solutionKit: selectedSolutionKits) {
+            // Update resolved mapping target IDs.
+            try {
+                solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+            } catch (final ForbiddenException e) {
+                throw new SolutionKitManagerResourceException(
+                        status(FORBIDDEN).entity(
+                                MessageFormat.format(
+                                        TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                        solutionKit.getName(),
+                                        solutionKit.getSolutionKitGuid(),
+                                        lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                )
+                        ).build(),
+                        e
+                );
+            }
+
+            final String bundle = solutionKitsConfig.getBundleAsString(solutionKit);
+            // make sense to process only if the solution kit has bundle
+            if (StringUtils.isNotBlank(bundle)) {
+                assert bundle != null; // intellij intellisense doesn't know how isNotBlank works
+                final String mappingsStr;
+                try {
+                    mappingsStr = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
+                } catch (final BadRequestException e) {
+                    throw new SolutionKitManagerResourceException(
+                            status(BAD_REQUEST).entity(
+                                    MessageFormat.format(
+                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                            solutionKit.getName(),
+                                            solutionKit.getSolutionKitGuid(),
+                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                    )
+                            ).build(),
+                            e
+                    );
+                } catch (final Exception e) {
+                    throw new SolutionKitManagerResourceException(
+                            status(INTERNAL_SERVER_ERROR).entity(
+                                    MessageFormat.format(
+                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                            solutionKit.getName(),
+                                            solutionKit.getSolutionKitGuid(),
+                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                    )
+                            ).build(),
+                            e
+                    );
+                }
+
+                // no mappings; looks like there are no errors
+                if (StringUtils.isNotBlank(mappingsStr)) {
+                    // create a RestmanMessage in order to parse error mappings
+                    final RestmanMessage message;
+                    try {
+                        message = new RestmanMessage(mappingsStr);
+                    } catch (final SAXException e) {
+                        throw new SolutionKitManagerResourceException(
+                                status(INTERNAL_SERVER_ERROR).entity(
+                                        MessageFormat.format(
+                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                solutionKit.getName(),
+                                                solutionKit.getSolutionKitGuid(),
+                                                lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                        )
+                                ).build(),
+                                e
+                        );
+                    }
+                    if (message.hasMappingError()) {
+                        throw new SolutionKitManagerResourceException(
+                                status(CONFLICT).entity(
+                                        MessageFormat.format(
+                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                solutionKit.getName(),
+                                                solutionKit.getSolutionKitGuid(),
+                                                lineSeparator() + mappingsStr + lineSeparator()
+                                        )
+                                ).build()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -328,14 +425,13 @@ public class SolutionKitManagerResource {
             // Find the first solution kit matching the given guid, deleteGuid.
             // todo: if there are multiple solution kits with the same guid, in future probably need to introduce a new query parameter, instance modifier to unify a solution kit.
             final SolutionKit solutionKitToUninstall = solutionKitsExistingOnGateway.get(0);
-            final Collection<SolutionKitHeader> childrenHeaders = solutionKitManager.findAllChildrenByParentGoid(solutionKitToUninstall.getGoid());
+            final Collection<SolutionKitHeader> childrenHeaders = solutionKitManager.findAllChildrenHeadersByParentGoid(solutionKitToUninstall.getGoid());
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
             int numOfUninstalled = 0;
             if (! childrenHeaders.isEmpty()) {
                 // There are no child guids specified in the query param, which means uninstall all child solution kits.
                 if (childGuidsInQueryParam.isEmpty()) {
-                    AsyncAdminMethods.JobId<String> jobId;
                     for (SolutionKitHeader childHeader: childrenHeaders) {
                         solutionKitAdminHelper.uninstall(childHeader.getGoid());
                     }
@@ -359,7 +455,6 @@ public class SolutionKitManagerResource {
 
                     // Uninstall each child solution kit
                     SolutionKitHeader childHeader;
-                    AsyncAdminMethods.JobId<String> jobId;
                     for (String childGuidInParam: childGuidsInQueryParam) {
                         childHeader = childSKMap.get(childGuidInParam);
                         solutionKitAdminHelper.uninstall(childHeader.getGoid());
@@ -489,13 +584,20 @@ public class SolutionKitManagerResource {
     }
 
     private class SolutionKitManagerResourceException extends Exception {
+        @NotNull
         private Response response;
 
-        public SolutionKitManagerResourceException(Response response) {
+        public SolutionKitManagerResourceException(@NotNull final Response response) {
             super();
             this.response = response;
         }
 
+        public SolutionKitManagerResourceException(@NotNull final Response response, final Throwable cause) {
+            super(cause);
+            this.response = response;
+        }
+
+        @NotNull
         public Response getResponse() {
             return response;
         }

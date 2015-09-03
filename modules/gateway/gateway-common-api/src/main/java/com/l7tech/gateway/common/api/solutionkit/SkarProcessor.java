@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -46,8 +47,6 @@ public class SkarProcessor {
     private static final String SK_CUSTOMIZATION_JAR_FILENAME = "Customization.jar";
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
-
-    public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
 
     @NotNull
     private final SolutionKitsConfig solutionKitsConfig;
@@ -109,24 +108,7 @@ public class SkarProcessor {
      */
     public Triple<SolutionKit, String, Boolean> installOrUpgrade(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
         // Update resolved mapping target IDs.
-        Pair<SolutionKit, Map<String, String>> resolvedEntityIds = solutionKitsConfig.getResolvedEntityIds(solutionKit.getSolutionKitGuid());
-        Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
-        if (bundle != null) {
-            String resolvedId;
-            Boolean allowOverride;
-            for (Mapping mapping : bundle.getMappings()) {
-                resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
-                if (resolvedId != null) {
-                    allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
-                    if (allowOverride != null && allowOverride) {
-                        mapping.setTargetId(resolvedId);
-                    } else {
-                        throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
-                                ".  Replacement id=" + resolvedId + " requires the .skar author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
-                    }
-                }
-            }
-        }
+        solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
 
         boolean isUpgrade =! solutionKitsConfig.getSolutionKitsToUpgrade().isEmpty();
         String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
@@ -141,25 +123,27 @@ public class SkarProcessor {
      * Load and process the files inside the SKAR.<br/>
      * Note that the SKAR file must be signed with trusted signer.
      *
-     * @param skarStream          An {@code InputStream} of signed SKAR file.  Required and cannot be {@code null}.
-     * @param solutionKitAdmin    Solution kit admin interface used to verify SKAR signature.  Required and cannot be {@code null}.
+     * @param skarStream                An {@code InputStream} of signed SKAR file.  Required and cannot be {@code null}.
+     * @param signatureVerifierCallback A callback performing the signature verification.  Required and cannot be {@code null}.
      * @throws SolutionKitException if an error happens while processing the specified SKAR file
      * @throws UntrustedSolutionKitException if the specified SKAR is not signed
      * with trusted signer or SKAR file signature is not verified.
      */
-    public Pair<byte[], String> load(@NotNull final InputStream skarStream) throws SolutionKitException {
+    public void load(
+            @NotNull final InputStream skarStream,
+            @NotNull final Functions.BinaryVoidThrows<byte[], String, SignatureException> signatureVerifierCallback
+    ) throws SolutionKitException {
         // todo: for now load in-memory, must revisit this logic later
         // skarStream is not markable, therefore the stream cannot be read multiple times (once for verifying the signature, the other to load the content)
         // perhaps use a temporary file to stash the raw bytes of the SKAR file (need to check if tmp file works from the applet)
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-        Pair<byte[], String> digestAndSignature;
         try {
             // get SHA-256 the message digest
             final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
             // process signed zip file to calculate digest
-            digestAndSignature = SignerUtils.walkSignedZip(
+            final Pair<byte[], String> digestAndSignature = SignerUtils.walkSignedZip(
                     skarStream,
                     new SignedZipVisitor<byte[], String>() {
                         @Override
@@ -184,14 +168,16 @@ public class SkarProcessor {
                     },
                     true
             );
-        } catch (final IOException | NoSuchAlgorithmException e) {
+
+            // verify SKAR signature
+            signatureVerifierCallback.call(digestAndSignature.left, digestAndSignature.right);
+
+        } catch (final IOException | NoSuchAlgorithmException | SignatureException e) {
             throw new UntrustedSolutionKitException("Error loading signed skar file :" + e.getMessage(), e);
         }
 
         // finally load the SKAR file without the signature
         loadWithoutSignatureCheck(new ByteArrayInputStream(bos.toByteArray()));
-
-        return digestAndSignature;
     }
 
     /**

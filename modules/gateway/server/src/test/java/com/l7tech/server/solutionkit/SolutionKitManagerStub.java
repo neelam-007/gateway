@@ -10,6 +10,7 @@ import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,7 +39,13 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     public void updateProtectedEntityTracking() throws FindException {}
 
     @Override
-    public List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
+    public List<SolutionKitHeader> findAllChildrenHeadersByParentGoid(@NotNull Goid parentGoid) throws FindException {
+        return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
         return Collections.emptyList();
     }
 

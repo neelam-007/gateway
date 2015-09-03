@@ -60,7 +60,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @NotNull
     @Override
     public Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
-        return getSolutionKitAdminHelper().findAllChildrenByParentGoid(parentGoid);
+        return getSolutionKitAdminHelper().findAllChildrenHeadersByParentGoid(parentGoid);
     }
 
     @NotNull
@@ -164,8 +164,9 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         getSolutionKitAdminHelper().verifySkarSignature(digest, signatureProperties);
     }
 
+    @NotNull
     @Override
-    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) {
+    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) throws FindException {
         return getSolutionKitAdminHelper().getSolutionKitsToUpgrade(solutionKit);
     }
     /**

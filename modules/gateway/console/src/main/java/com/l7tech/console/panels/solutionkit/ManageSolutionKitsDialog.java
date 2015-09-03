@@ -143,15 +143,21 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onInstall() {
-        final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this);
-        wizard.pack();
-        Utilities.centerOnParentWindow(wizard);
-        DialogDisplayer.display(wizard, new Runnable() {
-            @Override
-            public void run() {
-                refreshSolutionKitsTable();
-            }
-        });
+        try {
+            final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this);
+            wizard.pack();
+            Utilities.centerOnParentWindow(wizard);
+            DialogDisplayer.display(wizard, new Runnable() {
+                @Override
+                public void run() {
+                    refreshSolutionKitsTable();
+                }
+            });
+        } catch (FindException e) {
+            final String msg = "Unable to install solution kit: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+        }
     }
 
     private void onUninstall() {

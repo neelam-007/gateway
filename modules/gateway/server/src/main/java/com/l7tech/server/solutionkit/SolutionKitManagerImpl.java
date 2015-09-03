@@ -40,6 +40,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -200,12 +202,20 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     private SolutionKitException getRestmanErrorDetail(@NotNull GatewayManagementDocumentUtilities.UnexpectedManagementResponse ex) throws Exception {
         try {
             final Document doc = XmlUtil.parse(ExceptionUtils.getMessage(ex));
+            // get error type
+            final Element msgTypeNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Type");
+            final String errorType = XmlUtil.getTextValue(msgTypeNode, true);
+            // get error message
             final Element msgDetailsNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Detail");
             final String detailMsg = XmlUtil.getTextValue(msgDetailsNode, true);
-            if (detailMsg.contains("Exception")) {
-                throw new Exception(detailMsg);
-            } else if (detailMsg.contains("Module must be signed")) {
+            // BundleResource.importBundle fails with either CONFLICT or BAD_REQUEST (in case one of the entities in the bundle are invalid i.e. throws ResourceFactory.InvalidResourceException)
+            // CONFLICT should be handled by test so it is of no interest here
+            // BAD_REQUEST i.e. when ResourceFactory.InvalidResourceException is throw the error type is "InvalidResource", as per ExceptionMapper.handleOperationException()
+            // TODO: if one of the above methods are changed this logic must be changed as well
+            if ("InvalidResource".equalsIgnoreCase(errorType)) {
                 return new BadRequestException(detailMsg);
+            } else if (detailMsg.contains("Exception")) {
+                throw new Exception(detailMsg);
             } else {
                 return new SolutionKitException(detailMsg);
             }
@@ -233,7 +243,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     }
 
     @Override
-    public List<SolutionKitHeader> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException {
+    public List<SolutionKitHeader> findAllChildrenHeadersByParentGoid(@NotNull final Goid parentGoid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
                 @Override
@@ -241,6 +251,24 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                     final Query q = session.createQuery(HQL_FIND_BY_PARENT_GOID);
                     q.setParameter(0, parentGoid);
                     return convertToHTList(q.list());
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
+    }
+
+    @NotNull
+    @Override
+    public Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Collection<SolutionKit>>() {
+                @Override
+                protected Collection<SolutionKit> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    final Query q = session.createQuery(HQL_FIND_BY_PARENT_GOID);
+                    q.setParameter(0, parentGoid);
+                    final Collection<SolutionKit> kits = q.list();
+                    return kits == null ? Collections.<SolutionKit>emptyList() : kits;
                 }
             });
         } catch (Exception e) {

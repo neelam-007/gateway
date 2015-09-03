@@ -2,8 +2,11 @@ package com.l7tech.gateway.common.api.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -14,7 +17,9 @@ import org.w3c.dom.Document;
 
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,6 +44,8 @@ public class SolutionKitsConfig {
 
     private Map<String, List<String>> instanceModifiers = new HashMap<>();
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
+
+    public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
 
     @Nullable
     private SolutionKit parentSolutionKit;
@@ -140,7 +147,7 @@ public class SolutionKitsConfig {
         return solutionKitsToUpgrade;
     }
 
-    public void setSolutionKitsToUpgrade(@Nullable List<SolutionKit> solutionKitsToUpgrade) {
+    public void setSolutionKitsToUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade) {
         this.solutionKitsToUpgrade = solutionKitsToUpgrade;
     }
 
@@ -196,5 +203,68 @@ public class SolutionKitsConfig {
             }
         }
         customizations.clear();
+    }
+
+    /**
+     * Utility method, to be used only during upgrade, to set previously resolved user mapping.
+     * Find and set previously installed mappings where srcId differs from targetId (e.g. user resolved).
+     */
+    public void onUpgradeResetPreviouslyInstalledMappings() {
+        // get all kits to upgrade
+        final List<SolutionKit> solutionKitsToUpgrade = getSolutionKitsToUpgrade();
+
+        // Note that if it is a collection of solution kits for upgrade, then the first element in solutionKitsToUpgrade is a parent solution kit, which should not be upgraded.
+        final int startIdx = solutionKitsToUpgrade.size() > 1 ? 1 : 0;
+
+        for (int i = startIdx; i < solutionKitsToUpgrade.size(); i++) {
+            final SolutionKit solutionKitToUpgrade = solutionKitsToUpgrade.get(i);
+            if (!SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUpgrade.getMappings())) {
+                try {
+                    final Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
+                    // TODO: ghuang; can this happen and if so throw appropriate error
+                    assert item.getContent() != null && item.getContent() instanceof Mappings;
+                    final Mappings mappings = (Mappings) item.getContent();
+                    Map<String, String> previouslyResolvedIds = new HashMap<>();
+                    for (Mapping mapping : mappings.getMappings()) {
+                        if (!mapping.getSrcId().equals(mapping.getTargetId()) ) {
+                            previouslyResolvedIds.put(mapping.getSrcId(), mapping.getTargetId());
+                        }
+                    }
+                    if (!previouslyResolvedIds.isEmpty()) {
+                        getResolvedEntityIds().put(solutionKitToUpgrade.getSolutionKitGuid(), new Pair<>(solutionKitToUpgrade, previouslyResolvedIds));
+                    }
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+    }
+
+    /**
+     * Utility method for updating resolved mapping target IDs into the bundle itself, before executing dry-run or install.
+     *
+     * @param solutionKit    the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
+     * @throws ForbiddenException if {@link #MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE} is not set by the SKAR author.
+     */
+    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit) throws ForbiddenException {
+        // TODO: this todo is valid only during headless install
+        // TODO: the logic looks safe enough to be executed twice i.e. once per dry-run and afterwards (assuming no conflicts) on install (SkarProcessor.installOrUpgrade)
+        // TODO: ghuang; would you double-check if this logic can be called twice in a row?
+        final Pair<SolutionKit, Map<String, String>> resolvedEntityIds = getResolvedEntityIds(solutionKit.getSolutionKitGuid());
+        final Bundle bundle = getBundle(solutionKit);
+        if (bundle != null) {
+            for (final Mapping mapping : bundle.getMappings()) {
+                final String resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
+                if (resolvedId != null) {
+                    final Boolean allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+                    if (allowOverride != null && allowOverride) {
+                        mapping.setTargetId(resolvedId);
+                    } else {
+                        throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
+                                ".  Replacement id=" + resolvedId + " requires the .skar author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
+                    }
+                }
+            }
+        }
     }
 }

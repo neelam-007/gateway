@@ -52,13 +52,24 @@ public class SolutionKitAdminHelper {
     }
 
     /**
+     * Retrieve all child solution kit headers, whose parent's GOID is the same as a given parentGoid.
+     *
+     * @return a collection of child solution kits associated with parentGoid.
+     * @throws FindException
+     */
+    @NotNull
+    public Collection<SolutionKitHeader> findAllChildrenHeadersByParentGoid(Goid parentGoid) throws FindException {
+        return solutionKitManager.findAllChildrenHeadersByParentGoid(parentGoid);
+    }
+
+    /**
      * Retrieve all child solution kits, whose parent's GOID is the same as a given parentGoid.
      *
      * @return a collection of child solution kits associated with parentGoid.
      * @throws FindException
      */
     @NotNull
-    public Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
+    public Collection<SolutionKit> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
         return solutionKitManager.findAllChildrenByParentGoid(parentGoid);
     }
 
@@ -191,23 +202,19 @@ public class SolutionKitAdminHelper {
      * @param solutionKit: the selected solution kit, which user selects to upgrade.
      * @return a list of solution kits for upgrade
      */
-    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) {
-
-        // TODO ghuang please refactor exception handling
-
+    @NotNull
+    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) throws FindException {
         final List<SolutionKit> skList = new ArrayList<>();
         if (solutionKit == null) return skList;
 
         // Case 1:
         final Goid parentGoid = solutionKit.getParentGoid();
         if (parentGoid != null) {
-            try {
-                final SolutionKit parent = get(parentGoid);
+            final SolutionKit parent = get(parentGoid);
+            if (parent != null) {
+                // someone could potentially delete the solution kit in the meanwhile so I guess skip this one
+                // todo: ghuang; perhaps if it makes more sense you could throw an error or return empty list
                 skList.add(parent);
-            } catch (FindException e) {
-                String errMsg = "Cannot retrieve the solution kit (GOID = '" + parentGoid + "')";
-//                logger.warning(errMsg);
-                throw new RuntimeException(errMsg);
             }
         }
 
@@ -215,22 +222,9 @@ public class SolutionKitAdminHelper {
         skList.add(solutionKit);
 
         // Case 3:
-        final Collection<SolutionKitHeader> children;
-        try {
-            children = findAllChildrenByParentGoid(solutionKit.getGoid());
-        } catch (FindException e) {
-            String errMsg = "Cannot find child solution kits for '" + solutionKit.getName() + "'";
-//            logger.warning(errMsg);
-            throw new RuntimeException(errMsg);
-        }
-        for (SolutionKitHeader child: children) {
-            try {
-                skList.add(get(child.getGoid()));
-            } catch (FindException e) {
-                String errMsg = "Cannot find the solution kit, '" + child.getName() + "'";
-//                logger.warning(errMsg);
-                throw new RuntimeException(errMsg);
-            }
+        final Collection<SolutionKit> children = findAllChildrenByParentGoid(solutionKit.getGoid());
+        for (final SolutionKit child: children) {
+            skList.add(child);
         }
 
         return skList;
