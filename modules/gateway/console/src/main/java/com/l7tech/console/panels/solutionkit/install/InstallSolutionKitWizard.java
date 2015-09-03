@@ -158,13 +158,15 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 errorKitList.add(new Pair<>(msg, solutionKit));
             }
         }
-        // Finish installation successfully if no errors exist.  Otherwise, display errors if applicable
-        if (errorKitList.isEmpty()) {
-            super.finish(evt);
-            wizardInput.clear();
-        } else {
+
+        // Display errors if applicable
+        if (! errorKitList.isEmpty()) {
             displayErrorDialog(errorKitList);
         }
+
+        // Finish installation no matter if successful or not
+        super.finish(evt);
+        wizardInput.clear();
     }
 
     @SuppressWarnings("unused")
