@@ -392,7 +392,6 @@ public class SolutionKitManagerResourceTest {
     }
 
     @Test
-    @Ignore   // TODO tveninov please help
     public void untrustedSkar() throws Exception {
         // create untrusted signer with same DNs plus a new one
         final String[] untrustedDNs = ArrayUtils.concat(
@@ -508,7 +507,6 @@ public class SolutionKitManagerResourceTest {
     }
 
     @Test
-    @Ignore // TODO tveninov please help
     public void tamperWithSignedSkar() throws Exception {
         // create untrusted signer with same DNs plus a new one
         final String[] untrustedDNs = ArrayUtils.concat(
