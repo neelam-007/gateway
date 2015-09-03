@@ -91,6 +91,14 @@ public class VersionModifier {
                                 }
                             });
                             break;
+                        case POLICY_BACKED_SERVICE:
+                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String name) {
+                                    return getPrefixedPolicyBackedServiceName(version, name);
+                                }
+                            });
+                            break;
                         default:
                             break;
                     }
@@ -126,6 +134,10 @@ public class VersionModifier {
 
     public static String getPrefixedScheduledTaskName(@Nullable String versionModifier, @NotNull String scheduledTaskName) {
         return isValidVersionModifier(versionModifier) ? versionModifier + " " + scheduledTaskName : scheduledTaskName;
+    }
+
+    public static String getPrefixedPolicyBackedServiceName(@Nullable String versionModifier, @NotNull String policyBackedServiceName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyBackedServiceName : policyBackedServiceName;
     }
 
     public static boolean isValidVersionModifier(@Nullable String versionModifier) {
