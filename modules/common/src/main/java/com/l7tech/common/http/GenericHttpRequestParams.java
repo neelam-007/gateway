@@ -57,6 +57,7 @@ public class GenericHttpRequestParams {
     private boolean forceIncludeRequestBody;
     private SSLContext sslContext;
     private String methodAsString;
+    private boolean enableAutoChallenge = false;
 
     // NOTE: Add any new fields to the copy constructor
 
@@ -617,4 +618,21 @@ public class GenericHttpRequestParams {
     public void setMethodAsString(String methodAsString) {
         this.methodAsString = methodAsString;
     }
+
+    /**
+     * check if the auto challenge is enabled. This will force the client to try to authenticate preemptively.
+     * @return true if the autoChallenge is enabled
+     */
+    public boolean isEnableAutoChallenge() {
+        return enableAutoChallenge;
+    }
+
+    /**
+     * sets the auto challenge
+     * @param enableAutoChallenge
+     */
+    public void setEnableAutoChallenge(boolean enableAutoChallenge) {
+        this.enableAutoChallenge = enableAutoChallenge;
+    }
+
 }

@@ -702,7 +702,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
             if (params.isPreemptiveAuthentication()) {
                 //set preemptive authentication
-                if(!proxyConfigured) {
+                if(!proxyConfigured && !params.isEnableAutoChallenge()) {
                     //disable preemptive authentication only when proxy is not used
                     clientParams.setParameter(ClientPNames.HANDLE_AUTHENTICATION, false);
                 }

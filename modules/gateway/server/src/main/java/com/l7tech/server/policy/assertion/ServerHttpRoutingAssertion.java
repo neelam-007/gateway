@@ -404,6 +404,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 } else {
                     routedRequestParams.setPreemptiveAuthentication(true);
                     routedRequestParams.setPasswordAuthentication(new PasswordAuthentication(login, password.toCharArray()));
+                    routedRequestParams.setEnableAutoChallenge(config.getBooleanProperty("ioEnableAutoChallenge", false));
                 }
             }
 
