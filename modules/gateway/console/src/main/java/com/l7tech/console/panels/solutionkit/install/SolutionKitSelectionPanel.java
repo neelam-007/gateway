@@ -446,7 +446,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 instanceModifierAmountMap = new HashMap<>();
                 instanceModifierAmountMap.put(instanceModifier, 1);
             } else {
-                int newAmount = instanceModifierAmountMap.get(instanceModifier) + 1;
+                Integer oldValue = instanceModifierAmountMap.get(instanceModifier);
+                if (oldValue == null) oldValue = 0;
+
+                int newAmount = oldValue + 1;
                 instanceModifierAmountMap.put(instanceModifier, newAmount);
             }
 
