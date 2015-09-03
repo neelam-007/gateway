@@ -5,6 +5,7 @@
                       username="deployment" passwd="7layer"/>
   <publications>
      <artifact name="api-portal-assertion9.0" type="aar"/>
+     <artifact name="api-portal-assertion9.0" type="saar"/>
   </publications>
   <property name="nexus-public"
                    value="http://blackforest.l7tech.com:8080/nexus/content/groups/public"/>
