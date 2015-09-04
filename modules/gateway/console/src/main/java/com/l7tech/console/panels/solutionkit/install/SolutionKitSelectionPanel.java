@@ -119,7 +119,16 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     public boolean onNextButton() {
         // Check whether any two selected solution kits have same GUID and instance modifier. If so, display warning
         // and stop installation.  This checking is applied to install and upgrade.
-        if (haveDuplicateSelectedSolutionKits()) {
+        final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(solutionKitsModel.getSelected());
+        if (StringUtils.isNotBlank(errorReport)) {
+            DialogDisplayer.showMessageDialog(
+                this,
+                "There are more than two selected solution kits having same GUID and Instance Modifier.\n" + errorReport,
+                "Solution Kit Installation Warning",
+                JOptionPane.WARNING_MESSAGE,
+                null
+            );
+
             return false;
         }
 
@@ -427,58 +436,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 }
             }
         }
-    }
-
-    /**
-     * Check whether any two selected solution kits have same GUID and instance modifier
-     * @return true if any two solution kits have same GUID and instance modifier
-     */
-    private boolean haveDuplicateSelectedSolutionKits() {
-        final Map<String, Map<String, Integer>> duplicateSKs = new HashMap<>();
-
-        for (SolutionKit solutionKit: solutionKitsModel.getSelected()) {
-            String guid = solutionKit.getSolutionKitGuid();
-            String instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-            if (StringUtils.isEmpty(instanceModifier)) instanceModifier = "";
-
-            Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
-            if (instanceModifierAmountMap == null) {
-                instanceModifierAmountMap = new HashMap<>();
-                instanceModifierAmountMap.put(instanceModifier, 1);
-            } else {
-                Integer oldValue = instanceModifierAmountMap.get(instanceModifier);
-                if (oldValue == null) oldValue = 0;
-
-                int newAmount = oldValue + 1;
-                instanceModifierAmountMap.put(instanceModifier, newAmount);
-            }
-
-            duplicateSKs.put(guid, instanceModifierAmountMap);
-        }
-
-        final StringBuilder report = new StringBuilder();
-        for (String guid: duplicateSKs.keySet()) {
-            Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
-            for (String instanceModifier: instanceModifierAmountMap.keySet()) {
-                if (instanceModifierAmountMap.get(instanceModifier) > 1) {
-                    report.append("GUID = ").append(guid).append("    Instance Modifier = ").append("".equals(instanceModifier)? "N/A" : instanceModifier).append("\n");
-                }
-            }
-        }
-
-        if (report.length() > 0) {
-            DialogDisplayer.showMessageDialog(
-                this,
-                "There are more than two selected solution kits having same GUID and Instance Modifier.\n" + report.toString(),
-                "Solution Kit Installation Warning",
-                JOptionPane.WARNING_MESSAGE,
-                null
-            );
-
-            return true;
-        }
-
-        return false;
     }
 
     /**

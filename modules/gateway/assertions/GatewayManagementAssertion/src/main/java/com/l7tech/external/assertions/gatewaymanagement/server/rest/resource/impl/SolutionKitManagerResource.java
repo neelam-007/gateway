@@ -192,6 +192,15 @@ public class SolutionKitManagerResource {
             setUserSelections(solutionKitsConfig, solutionKitSelects);
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
+            // Check whether any two selected solution kits have same GUID and instance modifier. If so, return a conflict
+            // error response and stop installation.  This checking is applied to install and upgrade.
+            final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(selectedSolutionKits);
+            if (StringUtils.isNotBlank(errorReport)) {
+                return status(CONFLICT).entity(
+                    "There are more than two selected solution kits having same GUID and Instance Modifier." + lineSeparator() + errorReport + lineSeparator()
+                ).build();
+            }
+
             // Check instance modifier uniqueness for installing child solution kits.  If any child solution kits violate
             // the uniqueness rule, stop install any solution kits and do not allow any partial installation.
             // Note: This checking is only for install (not for upgrade).

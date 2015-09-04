@@ -13,12 +13,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
@@ -29,8 +30,6 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  * This class contains utility methods for the solution kit manager.
  */
 public final class SolutionKitUtils {
-    private static final Logger logger = Logger.getLogger(SolutionKitUtils.class.getName());
-
     public static final String SK_NS = "http://ns.l7tech.com/2010/04/gateway-management";
     public static final String SK_NS_PREFIX = "l7";
     public static final String SK_ELE_ROOT = "SolutionKit";
@@ -293,6 +292,51 @@ public final class SolutionKitUtils {
         }
 
         return instanceModifiers;
+    }
+
+    /**
+     * Check whether any two selected solution kits have same GUID and same instance modifier
+     * @return a string containing error report if any two solution kits have same GUID and instance modifier; Otherwise null if no any errors exist.
+     */
+    @Nullable
+    public static String haveDuplicateSelectedSolutionKits(@NotNull final Collection<SolutionKit> selectedSolutionKits) {
+        final Map<String, Map<String, Integer>> duplicateSKs = new HashMap<>();
+
+        for (SolutionKit solutionKit: selectedSolutionKits) {
+            String guid = solutionKit.getSolutionKitGuid();
+            String instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            if (StringUtils.isEmpty(instanceModifier)) instanceModifier = "";
+
+            Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
+            if (instanceModifierAmountMap == null) {
+                instanceModifierAmountMap = new HashMap<>();
+                instanceModifierAmountMap.put(instanceModifier, 1);
+            } else {
+                Integer oldValue = instanceModifierAmountMap.get(instanceModifier);
+                if (oldValue == null) oldValue = 0;
+
+                int newAmount = oldValue + 1;
+                instanceModifierAmountMap.put(instanceModifier, newAmount);
+            }
+
+            duplicateSKs.put(guid, instanceModifierAmountMap);
+        }
+
+        final StringBuilder report = new StringBuilder();
+        for (String guid: duplicateSKs.keySet()) {
+            Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
+            for (String instanceModifier: instanceModifierAmountMap.keySet()) {
+                if (instanceModifierAmountMap.get(instanceModifier) > 1) {
+                    report.append("GUID = ").append(guid).append("    Instance Modifier = ").append("".equals(instanceModifier)? "N/A" : instanceModifier).append("\n");
+                }
+            }
+        }
+
+        if (report.length() > 0) {
+            return report.toString();
+        }
+
+        return null;
     }
 
     private SolutionKitUtils() {}
