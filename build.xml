@@ -3765,19 +3765,35 @@
     </target>
 
     <!--
+        Target to build the skar signer and sign .aar file.
+    -->
+    <target name="sign-aar-full" depends="package.skarsigner,sign-aar" description="Sign an AAR file" />
+
+    <!--
         Target to sign .aar file.
     -->
-    <target name="sign-aar" depends="package.skarsigner" description="Sign an AAR file">
+    <target name="sign-aar" description="Sign an AAR file">
         <fail unless="assertion" message="assertion is a required property (assertion name)"/>
         <fail unless="keystore" message="keystore is a required property (keystore file name)"/>
         <fail unless="access.password" message="access.password is a required property (encoded keystore access password)"/>
         <fail unless="load.password" message="load.password is a required property (encoded keystore load password)"/>
 
+        <property name="skarSigner" value="${src.root}/modules/internal/build/SkarSigner.jar"/>
+        <fail message="Skar signer ${skarSigner} is not available. Try sign-aar-full.">
+            <condition>
+                <not>
+                    <available file="${skarSigner}" />
+                </not>
+            </condition>
+        </fail>
+
         <!-- Defaults that could be overridden -->
         <property name="input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.aar"/>
         <property name="output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar"/>
 
-        <java jar="${src.root}/modules/internal/build/SkarSigner.jar" fork="true" failonerror="true">
+        <echo level="info">Signing ${input} as ${output} using key ${keystore}</echo>
+
+        <java jar="${skarSigner}" fork="true" failonerror="true">
             <arg line="sign"/>
             <arg line="-f &quot;${src.root}/etc/signer/${keystore}&quot;"/>
             <arg line="-p &quot;${access.password}&quot;"/>
