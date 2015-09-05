@@ -59,11 +59,6 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         final SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdmin.getSolutionKitsToUpgrade(solutionKitToUpgrade));
-        try {
-            solutionKitsConfig.setInstanceModifiers(SolutionKitUtils.getInstanceModifiers(solutionKitAdmin.findSolutionKits()));
-        } catch (FindException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        }
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }

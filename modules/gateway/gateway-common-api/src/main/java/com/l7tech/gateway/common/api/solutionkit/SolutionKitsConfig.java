@@ -151,6 +151,10 @@ public class SolutionKitsConfig {
         this.solutionKitsToUpgrade = solutionKitsToUpgrade;
     }
 
+    public boolean isUpgrade() {
+        return solutionKitsToUpgrade.size() > 0;
+    }
+
     @NotNull
     public Map<String, Pair<SolutionKit, SolutionKitCustomization>> getCustomizations() {
         return customizations;

@@ -110,13 +110,12 @@ public class SkarProcessor {
         // Update resolved mapping target IDs.
         solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
 
-        boolean isUpgrade =! solutionKitsConfig.getSolutionKitsToUpgrade().isEmpty();
         String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
         if (bundleXml == null) {
             throw new BadRequestException("Unexpected error: unable to get Solution Kit bundle.");
         }
 
-        return new Triple<>(solutionKit, bundleXml, isUpgrade);
+        return new Triple<>(solutionKit, bundleXml, solutionKitsConfig.isUpgrade());
     }
 
     /**

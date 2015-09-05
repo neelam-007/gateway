@@ -133,42 +133,31 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         // Test on each individual solution kit
+        final boolean isUpgrade = settings.isUpgrade();
         for (SolutionKit solutionKit: solutionKitsModel.getSelected()) {
-            boolean success = testInstall(solutionKit);
+            boolean success = testInstall(solutionKit, isUpgrade);
             if (! success) return false;
         }
 
         return true;
     }
 
-    private boolean testInstall(final SolutionKit solutionKit) {
+    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade) {
         boolean success = false;
-        String errorMessage = "";
+        String errorMessage;
 
         // For installation, check if instance modifier is unique for a selected solution kit.
         // However, this checking will be ignored for any solution kit upgrade bundle.
         final String bundle = settings.getBundleAsString(solutionKit);
 
-        //final List<SolutionKit> solutionKitsToUpgrade = settings.getSolutionKitsToUpgrade();
-        final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsToUpgrade, solutionKit.getSolutionKitGuid());
+        // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
+        // contain UpgradeBundle.xml, then display warning
+        if (isUpgrade && !settings.isUpgradeInfoProvided(solutionKit)) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "The solution kit '" + solutionKit.getName() + " is not upgradable due that its SKAR file does not include UpgradeBundle.xml.",
+                "Solution Kit Upgrade Warning", JOptionPane.WARNING_MESSAGE, null);
 
-        if (// Case 1: User runs Install
-            solutionKitToUpgrade == null ||
-            // Case 2: User runs Upgrade but the skar file does not contain UpgradeBundle.xml.  We treat this case same as Install.
-            !settings.isUpgradeInfoProvided(solutionKit)) {
-
-            final boolean duplicateInstanceModifierFound = ! SolutionKitUtils.checkInstanceModifierUniqueness(solutionKit, settings.getInstanceModifiers());
-            if (duplicateInstanceModifierFound) {
-                final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "The solution kit '" + solutionKit.getName() + "' has already used " +
-                        (newInstanceModifier == null? "an empty instance modifier" : "the instance modifier, '" + newInstanceModifier + "'") +
-                        ".\nPlease specify a different instance modifier to continue installation.",
-                    "Duplicate Instance Modifier Warning", JOptionPane.WARNING_MESSAGE, null);
-
-                return false;
-            }
+            return false;
         }
 
         // invoke custom callback
@@ -189,7 +178,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     this.getOwner(),
                     "Testing Solution Kit",
                     "The gateway is testing selected solution kit(s)",
-                    solutionKitAdmin.testInstall(solutionKit, bundle),
+                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
                     false
             );
 

@@ -10,6 +10,7 @@ import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,17 +39,6 @@ public class SolutionKitAdminHelper {
         this.solutionKitManager = solutionKitManager;
         this.licenseManager = licenseManager;
         this.signatureVerifier = signatureVerifier;
-    }
-
-    /**
-     * Retrieve all solution kit entity headers.
-     *
-     * @return a collection of solution kit entity headers
-     * @throws FindException
-     */
-    @NotNull
-    public Collection<SolutionKitHeader> findSolutionKits() throws FindException {
-        return solutionKitManager.findAllHeaders();
     }
 
     /**
@@ -89,13 +79,15 @@ public class SolutionKitAdminHelper {
      *
      * @param solutionKit the solution kit to test
      * @param bundle the bundle XML to test
+     * @param isUpgrade indicate if the soluton kit is to be upgraded or installed.
      * @return the resulting mapping XML
      */
     @NotNull
-    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) throws Exception {
+    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
-        final boolean isTest = true;
-        return solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
+
+        return solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
     }
 
     /**
@@ -111,8 +103,7 @@ public class SolutionKitAdminHelper {
         checkFeatureEnabled(solutionKit);
 
         // Install bundle.
-        final boolean isTest = false;
-        String mappings = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+        String mappings = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), false);
 
         // Save solution kit entity.
         solutionKit.setMappings(mappings);
@@ -228,6 +219,51 @@ public class SolutionKitAdminHelper {
         }
 
         return skList;
+    }
+
+    /**
+     * Validate if a target solution kit is good for install or upgrade.
+     * This is the requirement from the note in the story SSG-10996, Upgrade Solution Kit.
+     * - disable install if SK is already installed (upgrade only)
+     * - dis-allow upgrade if you don't have SK already installed (install only)
+     *
+     * @param targetSK: the solution kit to be validated
+     * @param isUpgrade: indicate if the solution kit is to upgraded or install.  True for upgrade and false for install.
+     * @return true if validation is passed; Otherwise false returns.
+     * @throws BadRequestException: any errors or rule violation will throw BadRequestException
+     */
+    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit targetSK, final boolean isUpgrade) throws BadRequestException {
+        final String targetGuid = targetSK.getSolutionKitGuid();
+        final List<SolutionKit> solutionKitsOnDB;
+        try {
+            solutionKitsOnDB = solutionKitManager.findBySolutionKitGuid(targetGuid);
+        } catch (FindException e) {
+            throw new BadRequestException(ExceptionUtils.getMessage(e));
+        }
+
+        String targetInstanceModifier = targetSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        if (StringUtils.isBlank(targetInstanceModifier)) targetInstanceModifier = "";  // This reassignment is to easier compare with other instance modifier.
+        final String targetInstanceModifierDisplayName = StringUtils.isBlank(targetInstanceModifier)? "N/A" : targetInstanceModifier;
+
+        String instanceModifier;
+        for (SolutionKit solutionKit: solutionKitsOnDB) {
+            instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
+
+            if (targetInstanceModifier.equals(instanceModifier)) {
+                if (isUpgrade) {
+                    return true;
+                } else {
+                    throw new BadRequestException("Installation Failed: found one other existing solution kit matching '" + targetSK.getName() + "' (GUID = " + targetGuid + ", Instance Modifier = " + targetInstanceModifierDisplayName + ")");
+                }
+            }
+        }
+
+        if (isUpgrade) {
+            throw new BadRequestException("Upgrade Failed: cannot find any solution kit matching '" + targetSK.getName() + "' (GUID = " + targetGuid + ", Instance Modifier = " + targetInstanceModifierDisplayName + ") to upgrade");
+        } else {
+            return true;
+        }
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
