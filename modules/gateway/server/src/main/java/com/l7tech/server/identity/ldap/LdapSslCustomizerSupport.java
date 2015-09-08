@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
@@ -237,6 +238,7 @@ public class LdapSslCustomizerSupport {
                 }
 
                 final SSLContext context = SSLContext.getInstance("TLS");
+                JceProvider.getInstance().prepareSslContext( context );
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);

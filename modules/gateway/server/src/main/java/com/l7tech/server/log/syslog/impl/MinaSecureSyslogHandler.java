@@ -4,6 +4,7 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.mina.core.service.IoConnector;
@@ -107,6 +108,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
 
             // Create the SSLContext
             SSLContext ctx = SSLContext.getInstance("TLS");
+            JceProvider.getInstance().prepareSslContext( ctx );
             ctx.init(km, new TrustManager[] { tm }, null);
             return ctx;
 

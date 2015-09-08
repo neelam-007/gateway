@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.SSLSocketWrapper;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
@@ -126,6 +127,7 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
         final SSLContext context;
         try {
             context = SSLContext.getInstance("TLS");
+            JceProvider.getInstance().prepareSslContext( context );
             context.init( keyManagers, new TrustManager[]{ trustManager }, null );
             context.getClientSessionContext().setSessionTimeout(timeout);
         } catch (GeneralSecurityException e) {

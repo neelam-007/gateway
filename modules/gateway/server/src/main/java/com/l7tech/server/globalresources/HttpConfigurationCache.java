@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
@@ -298,6 +299,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                         sslSocketFactory = sslSocketFactoryMap.get( keyNoVersion );
                         if ( sslSocketFactory == null ) {
                             SSLContext sslContext = SSLContext.getInstance( "TLS" );
+                            JceProvider.getInstance().prepareSslContext( sslContext );
                             final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
                             sslContext.getClientSessionContext().setSessionTimeout( timeout );
                             final SsgKeyEntry keyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( keyAlias, keystoreId );
@@ -349,6 +351,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
 
     private SSLSocketFactory buildDefaultSSLSocketFactory( final boolean useSslKeyForDefault ) throws NoSuchAlgorithmException, KeyManagementException {
         final SSLContext sslContext = SSLContext.getInstance("TLS");
+        JceProvider.getInstance().prepareSslContext( sslContext );
         final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
         sslContext.getClientSessionContext().setSessionTimeout(timeout);
         sslContext.init( useSslKeyForDefault ? defaultKey.getSslKeyManagers() : null, new TrustManager[]{trustManager}, null );

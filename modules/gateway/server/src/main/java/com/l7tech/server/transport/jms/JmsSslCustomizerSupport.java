@@ -3,6 +3,7 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.util.ConfigFactory;
@@ -121,6 +122,7 @@ public class JmsSslCustomizerSupport {
                 }
 
                 final SSLContext context = SSLContext.getInstance("TLS");
+                JceProvider.getInstance().prepareSslContext( context );
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);

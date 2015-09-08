@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;
 import org.apache.http.client.params.ClientPNames;
@@ -91,6 +92,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
     private SSLSocketFactory getSSLSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
+            JceProvider.getInstance().prepareSslContext( sslContext );
             KeyManager[] keyManagers = getKeyManagers();
             TrustManager[] trustManagers = getTrustManagers();
             sslContext.init(keyManagers, trustManagers, null);

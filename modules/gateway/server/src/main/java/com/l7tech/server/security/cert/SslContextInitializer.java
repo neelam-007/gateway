@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -95,6 +96,7 @@ public class SslContextInitializer {
         logger.info( "(Re)Initializing default SSL context." );
         try {
             final SSLContext context = SSLContext.getInstance( DEFAULT_SSL_PROTOCOL );
+            JceProvider.getInstance().prepareSslContext( context );
             context.init(
                     new KeyManager[]{ new SsgKeyStoreKeyManager(ssgKeyStoreManager) },
                     new TrustManager[]{ trustManager },
