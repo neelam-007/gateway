@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -258,11 +259,20 @@ public class ScheduledTaskWindow extends JDialog {
     }
 
     private void doEdit(final ScheduledTask scheduledTask) {
-
-        final AttemptedOperation operation = new AttemptedUpdate(EntityType.SCHEDULED_TASK, scheduledTask);
+        ScheduledTask toEdit = scheduledTask;
+        try {
+            // get latest task as the state may have changed by background process
+            final ScheduledTask latest = scheduledTaskAdmin.getScheduledTask(scheduledTask.getGoid());
+            if (latest != null) {
+                toEdit = latest;
+            }
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve latest scheduled task for edit: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+        final AttemptedOperation operation = new AttemptedUpdate(EntityType.SCHEDULED_TASK, toEdit);
         boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
 
-        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, scheduledTask, readOnly));
+        displayPropertiesDialog(new ScheduledTaskPropertiesDialog(this, toEdit, readOnly));
     }
 
     private void doClone(final ScheduledTask scheduledTask) {
