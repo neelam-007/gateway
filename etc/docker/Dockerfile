@@ -13,7 +13,7 @@ USER root
 
 # inject the ssg and ssg-appliance RPMs into the filesystem of the container
 # the RPM is expected to be in the same directory as this Dockerfile
-RUN yum install -y sudo perl
+RUN yum install -y sudo perl passwd
 ADD ssg-*.noarch.rpm /root/
 ADD ssg-appliance*.x86_64.rpm /root/
 RUN rpm -ivh /root/ssg-*.noarch.rpm /root/ssg-appliance-*.x86_64.rpm
