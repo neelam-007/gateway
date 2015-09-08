@@ -1,5 +1,6 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -38,6 +39,8 @@ public class SolutionKitManagerImplTest {
     private Callable<Pair<AssertionStatus, RestmanMessage>> callable;
     @Mock
     private PolicyEnforcementContext pec;
+    @Mock
+    private SolutionKit metadata;
 
     @Before
     public void setupSolutionKitManager() {
@@ -68,7 +71,7 @@ public class SolutionKitManagerImplTest {
         when(callable.call()).thenReturn(restmanResponse);
         when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenReturn(restmanResponse);
 
-        Assert.assertEquals(response, solutionKitManager.importBundle(REQUEST, "", false));
+        Assert.assertEquals(response, solutionKitManager.importBundle(REQUEST, metadata, false));
     }
 
     @Test
@@ -80,7 +83,7 @@ public class SolutionKitManagerImplTest {
         when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenReturn(restmanResponse);
 
         try {
-            solutionKitManager.importBundle(REQUEST, "", true);
+            solutionKitManager.importBundle(REQUEST, metadata, true);
             fail("Expected: server error response.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString(restmanResponse.left.getMessage()));
@@ -127,7 +130,7 @@ public class SolutionKitManagerImplTest {
         when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenReturn(restmanResponse);
 
         try {
-            solutionKitManager.importBundle(REQUEST, "", false);
+            solutionKitManager.importBundle(REQUEST, metadata, false);
             fail("Expected: server error response.");
         } catch (SolutionKitException e) {
             assertEquals(response, e.getMessage());

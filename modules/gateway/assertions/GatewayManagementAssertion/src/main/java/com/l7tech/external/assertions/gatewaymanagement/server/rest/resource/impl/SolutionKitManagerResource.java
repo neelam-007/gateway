@@ -344,7 +344,7 @@ public class SolutionKitManagerResource {
                 assert bundle != null; // intellij intellisense doesn't know how isNotBlank works
                 final String mappingsStr;
                 try {
-                    mappingsStr = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
+                    mappingsStr = solutionKitManager.importBundle(bundle, solutionKit, true);
                 } catch (final BadRequestException e) {
                     throw new SolutionKitManagerResourceException(
                         status(BAD_REQUEST).entity(

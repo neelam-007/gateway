@@ -3,9 +3,11 @@ package com.l7tech.server.solutionkit;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,14 +22,14 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * persist solution kit entity to the database.
      *
      * @param bundle the bundle XML to install
-     * @param instanceModifier the prefix used to distinguish solution kit instances.
+     * @param metadata solution kit metadata, including the instance modifier (prefix used to distinguish solution kit instances).
      * @param isTest true if this is a test installation, no changes will be persisted; false otherwise
      * @return the resulting mappings XML
      * @throws SaveException
      * @throws SolutionKitException
      */
     @NotNull
-    String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, final boolean isTest) throws Exception;
+    String importBundle(@NotNull final String bundle, @NotNull final SolutionKit metadata, final boolean isTest) throws Exception;
 
     /**
      * Find a list of Solution Kits by a given GUID.

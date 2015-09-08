@@ -87,7 +87,7 @@ public class SolutionKitAdminHelper {
         checkFeatureEnabled(solutionKit);
         validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
 
-        return solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), true);
+        return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
 
     /**
@@ -103,7 +103,7 @@ public class SolutionKitAdminHelper {
         checkFeatureEnabled(solutionKit);
 
         // Install bundle.
-        String mappings = solutionKitManager.importBundle(bundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), false);
+        String mappings = solutionKitManager.importBundle(bundle, solutionKit, false);
 
         // Save solution kit entity.
         solutionKit.setMappings(mappings);
@@ -164,7 +164,7 @@ public class SolutionKitAdminHelper {
             }
 
             // Import the deletion bundle
-            resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), isTest);
+            resultMappings = solutionKitManager.importBundle(uninstallBundle, solutionKit, isTest);
         }
         solutionKitManager.delete(solutionKit);
         return resultMappings;

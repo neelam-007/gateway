@@ -28,7 +28,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +37,10 @@ import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +48,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker.*;
 
 public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, SolutionKitHeader> implements SolutionKitManager, PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerImpl.class.getName());
@@ -133,11 +137,12 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String importBundle(@NotNull final String bundle, @Nullable final String instanceModifier, boolean isTest) throws Exception {
+    public String importBundle(@NotNull final String bundle, @NotNull final SolutionKit metadata, boolean isTest) throws Exception {
         final RestmanInvoker restmanInvoker = getRestmanInvoker();
 
         final String requestXml;
         try {
+            final String instanceModifier = metadata.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
             if (VersionModifier.isValidVersionModifier(instanceModifier)) {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
                 new VersionModifier(requestMessage.getBundleReferenceItems(), instanceModifier).apply();
@@ -148,9 +153,8 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
 
             final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
 
-            if (isTest) {
-                pec.setVariable("RestGatewayMan.uri", "1.0/bundle?test=true");
-            }
+            // set restman query parameters including test and versionComment
+            pec.setVariable(VAR_RESTMAN_URI, getRestmanQueryParameters(metadata, isTest));
 
             // Allow solution kit installation/upgrade to "punch through" read-only entities
             Pair<AssertionStatus, RestmanMessage> result;
@@ -422,5 +426,23 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             htList.add(new SolutionKitHeader(solutionKit));
         }
         return htList;
+    }
+
+    // get restman query parameters (e.g. 1.0/bundle?versionComment=Simple+Service+and+Other+Dependencies+%28v1.1%29&test=true )
+    private String getRestmanQueryParameters(final SolutionKit metadata, final boolean isTest) throws UnsupportedEncodingException {
+        final String policyRevisionComment = MessageFormat.format("{0} (v{1})", metadata.getName(), metadata.getSolutionKitVersion());
+
+        StringBuilder restmanQueryParams = new StringBuilder().append("?");
+        try {
+            restmanQueryParams.append("versionComment=").append(URLEncoder.encode(policyRevisionComment, UTF_8));
+        } catch (UnsupportedEncodingException e) {
+            logger.warning("Unexpected exception encoding policy revision comment '" + policyRevisionComment + "' using " + UTF_8);
+            throw e;
+        }
+        if (isTest) {
+            restmanQueryParams.append("&test=true");
+        }
+
+        return URL_1_0_BUNDLE + restmanQueryParams;
     }
 }

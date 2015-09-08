@@ -26,7 +26,7 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @NotNull
     @Override
-    public String importBundle(@NotNull String migrationBundle, @Nullable String instanceModifier, boolean isTest) throws SaveException, SolutionKitException {
+    public String importBundle(@NotNull String bundle, @NotNull SolutionKit metadata, boolean isTest) throws Exception {
         return "";
     }
 

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.security.signer.SignatureTestUtils;
@@ -194,7 +195,7 @@ public class SolutionKitManagerResourceTest {
                         "    </l7:Resource>\n" +
                         "</l7:Item>";
             }
-        }).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        }).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
 
         // create our SolutionKitManagerResource
         solutionKitResource = new SolutionKitManagerResource();
