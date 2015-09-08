@@ -17,6 +17,9 @@ import java.util.Collections;
 
 import static org.junit.Assert.*;
 
+/**
+ * Server side test for ServerApiPortalIntegrationAssertion.
+ */
 public class ServerApiPortalIntegrationAssertionTest {
     private ServerApiPortalIntegrationAssertion serverAssertion;
     private ApiPortalIntegrationAssertion assertion;
