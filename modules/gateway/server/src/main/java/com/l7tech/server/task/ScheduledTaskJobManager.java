@@ -174,7 +174,7 @@ public class ScheduledTaskJobManager implements PostStartupApplicationListener {
                     public void triggerComplete(Trigger trigger, JobExecutionContext context, Trigger.CompletedExecutionInstruction triggerInstructionCode) {
                         // update one time jobs as completed
                         String nodeId = trigger.getJobDataMap().getString(JOB_DETAIL_NODE);
-                        if (ScheduledTaskJobManager.JOB_DETAIL_NODE_ALL.equals(nodeId) || clusterMaster.isMaster()) {
+                        if (clusterMaster.isMaster()) {
                             String jobType = trigger.getJobDataMap().getString(JOB_DETAIL_JOBTYPE);
                             String entityGoid = trigger.getJobDataMap().getString(JOB_DETAIL_ENITTY_GOID);
                             try {
