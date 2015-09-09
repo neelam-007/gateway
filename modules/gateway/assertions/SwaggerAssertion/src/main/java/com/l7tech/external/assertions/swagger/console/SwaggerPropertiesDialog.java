@@ -28,7 +28,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
 
     public SwaggerPropertiesDialog(final Window parent, final SwaggerAssertion assertion) {
         super(SwaggerAssertion.class, parent, assertion, true);
-        initComponents(assertion);
+        initComponents();
     }
 
     @Override
@@ -44,6 +44,9 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validateSchemeCheckBox.setSelected(assertion.isValidateScheme());
         requireSecurityCredentialsToCheckBox.setSelected(assertion.isRequireSecurityCredentials());
         swaggerPrefix.setVariable(assertion.getPrefix());
+
+        swaggerPrefix.setAssertion(assertion, getPreviousAssertion());
+        swaggerDocumentVariable.setAssertion(assertion, getPreviousAssertion());
     }
 
     @Override
@@ -58,13 +61,11 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         return assertion;
     }
 
-    protected void initComponents(final SwaggerAssertion assertion) {
+    @Override
+    protected void initComponents() {
         super.initComponents();
         swaggerDocumentVariable.setAcceptEmpty(false);
         swaggerPrefix.setAcceptEmpty(false);
-
-        swaggerPrefix.setAssertion(assertion, getPreviousAssertion());
-        swaggerDocumentVariable.setAssertion(assertion, getPreviousAssertion());
 
         validateMethodCheckBox.setSelected(true);
         validatePathCheckBox.setSelected(true);
