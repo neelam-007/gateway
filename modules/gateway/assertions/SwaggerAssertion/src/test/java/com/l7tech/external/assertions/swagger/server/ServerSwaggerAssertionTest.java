@@ -285,6 +285,31 @@ public class ServerSwaggerAssertionTest {
         assertNull(path);
     }
 
+    @Test
+    public void testHttpBasicCredPresent() {
+
+    }
+
+    @Test
+    public void testApiKeyInParamPresent() {
+
+    }
+
+    @Test
+    public void testApiKeyInAuthHeaderPresent() {
+
+    }
+
+    @Test
+    public void testOAuthTokenInParamPresent() {
+
+    }
+
+    @Test
+    public void testOAuthTokenInAuthHeaderPresent() {
+
+    }
+
     // HELPER METHODS
 
     private ServerSwaggerAssertion createServer(SwaggerAssertion assertion) {

@@ -56,7 +56,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
     private static final Pattern basicAuth = Pattern.compile("^Basic");
     private static final Pattern apiKey = Pattern.compile("apiKey");
-    private static final Pattern oauth2inHeader = Pattern.compile("Bearer");
+    private static final Pattern oauth2inHeader = Pattern.compile("^Bearer");
 
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
@@ -192,37 +192,38 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     }
                 }
 
-          checkSecurity:
                 if (assertion.isRequireSecurityCredentials()) {
-                    Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
                     List<Map<String, List<String>>> security = operation.getSecurity();
-
-                    if ( security != null ) {
-
-                        if ( securityDefinitions == null ) {
-                            //TODO: Error security clause references securityDefinitions must exist?
-                            return false;
-                        }
-                        for (Map<String, List<String>> sec : security) {
-                            Set<String> keys = sec.keySet();
-                            if (keys.size() != 1) {
-                                //TODO: Error should only have one key }
-                            }
-                            SecuritySchemeDefinition definition = securityDefinitions.get(keys.iterator().next());
-                            ValidateSecurity type = securityTypeMap.get(definition.getType());
-                            if ( type == null ) {
-                                //TODO Error: unknown type
-                            }
-                            if ( type.checkSecurity(httpRequestKnob) ) {
-                                //TODO: return ok!
-                                break checkSecurity;
-                            }
-                        }
+                    if ( security == null ) {
+                        return true;
+                    }
+                    Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
+                    if (securityDefinitions == null) {
+                        logAndAudit(AssertionMessages.SWAGGER_NO_SECURITY_DEFN);
                         return false;
                     }
+
+                    for (Map<String, List<String>> sec : security) {
+                        Set<String> keys = sec.keySet();
+                        if (keys.size() != 1) {
+                            //TODO: Error should only have one key }
+                            return false;
+                        }
+                        SecuritySchemeDefinition definition = securityDefinitions.get(keys.iterator().next());
+                        ValidateSecurity type = securityTypeMap.get(definition.getType());
+                        if (type == null) {
+                            logAndAudit(AssertionMessages.SWAGGER_UNKNOWN_SECURITY_TYPE,definition.getType(),operation.toString());
+                            return false;
+                        }
+                        if (type.checkSecurity(httpRequestKnob)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
             }
         }
+
 
         return true;
     }
