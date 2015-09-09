@@ -9,7 +9,9 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.UntrustedSolutionKitException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -24,8 +26,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.InputStream;
 import java.security.SignatureException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static org.junit.Assert.*;
@@ -40,6 +44,25 @@ public class SkarProcessorTest {
     private static final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
     private static final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
 
+    private static final String SAMPLE_INSTALL_BUNDLE_XML =
+            "    <l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                    "        <l7:Mappings />\n" +
+                    "    </l7:Bundle>";
+
+    private static final String SAMPLE_UPGRADE_BUNDLE_XML  =
+            "    <l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                    "        <l7:Mappings>\n" +
+                    "            <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71a6d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d\" type=\"SECURE_PASSWORD\">\n" +
+                    "            <l7:Properties>\n" +
+                    "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                    "                <l7:Property key=\"SK_AllowMappingOverride\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                    "            </l7:Properties>\n" +
+                    "        </l7:Mapping>\n" +
+                    "        </l7:Mappings>\n" +
+                    "    </l7:Bundle>";
+
+    protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
+
     // do nothing to verify signature (simulate skar is trusted)
     private static final Functions.BinaryVoidThrows<byte[], String, SignatureException> DUMMY_SIGNATURE_VERIFIER_CALLBACK =
             new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
@@ -47,8 +70,7 @@ public class SkarProcessorTest {
                 public void call(byte[] digest, String signature) throws SignatureException {
                     // do nothing to verify signature (simulate skar is trusted)
                 }
-    };
-
+            };
 
     @BeforeClass
     public static void load() throws Exception {
@@ -73,10 +95,62 @@ public class SkarProcessorTest {
         final Bundle bundle = solutionKitsConfig.getLoadedSolutionKits().get(solutionKit);
         assertEquals(12, bundle.getMappings().size());
         assertEquals(10, bundle.getReferences().size());
+    }
 
-        // TODO test skarProcessor.mergeBundle()
+    @Test
+    public void setCustomizationInstances()  throws Exception {
 
-        // TODO test skarProcessor.setCustomizationInstances()
+        // get the input stream of the Customization jar
+        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.Customization.jar");
+        Assert.assertNotNull(inputStream);
+        try {
+            //create a class loader with the jar
+            SolutionKitCustomizationClassLoader classLoader = skarProcessor.getCustomizationClassLoader(inputStream);
+            Assert.assertNotNull(classLoader);
+
+            //Create a solution kit to test with
+            final SolutionKit solutionKit = new SolutionKit();
+            solutionKit.setGoid(new Goid(GOID_HI_START, 2));
+            solutionKit.setSolutionKitVersion("1.1");
+            final UUID firstChildGUID = UUID.randomUUID();
+            solutionKit.setName("Customization Instance SK");
+            solutionKit.setSolutionKitGuid(firstChildGUID.toString());
+            solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, "Customization Instance SK");
+            solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, String.valueOf(new Date().getTime()));
+            solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, String.valueOf(false));
+            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback");
+            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi");
+
+            //call the method we're testing to set the customization classes
+            skarProcessor.setCustomizationInstances(solutionKit, classLoader);
+
+            //check to see whether the SolutionKitManagerCallback and SolutionKitManagerUi were set
+            Pair<SolutionKit, SolutionKitCustomization> customization;
+            SolutionKitManagerCallback customCallback;
+            SolutionKitManagerUi customUi;
+            SolutionKitCustomizationClassLoader returnedClassLoader;
+
+            customization = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid());
+            Assert.assertNotNull(customization);
+
+            //check the classloader is the correct one
+            returnedClassLoader = customization.right.getClassLoader();
+            Assert.assertNotNull(returnedClassLoader);
+            Assert.assertTrue(returnedClassLoader instanceof SolutionKitCustomizationClassLoader);
+
+            //check that the customCallBack class that was loaded is the right one
+            customCallback = customization.right.getCustomCallback();
+            Assert.assertNotNull(customCallback);
+            Assert.assertEquals(customCallback.getClass().getName(), "com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback");
+
+            //check that the customUI class that was loaded is the right one
+            customUi = customization.right.getCustomUi();
+            Assert.assertNotNull(customUi);
+            Assert.assertEquals(customUi.getClass().getName(), "com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi");
+
+        } catch (SolutionKitException e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test

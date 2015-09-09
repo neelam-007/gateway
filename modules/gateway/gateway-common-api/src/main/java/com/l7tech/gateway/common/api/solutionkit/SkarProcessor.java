@@ -332,7 +332,7 @@ public class SkarProcessor {
     }
 
     // merge bundles (if upgrade mappings exists, replace existing install mappings)
-    private Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
+    Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
         final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), solutionKit.getSolutionKitGuid());
         if (solutionKitToUpgrade != null && upgradeBundle.getMappings() != null) {
 
@@ -359,7 +359,7 @@ public class SkarProcessor {
     }
 
     @Nullable
-    private SolutionKitCustomizationClassLoader getCustomizationClassLoader(final ZipInputStream zis) throws SolutionKitException {
+    SolutionKitCustomizationClassLoader getCustomizationClassLoader(final InputStream zis) throws SolutionKitException {
         SolutionKitCustomizationClassLoader classLoader = null;
 
         // temporarily write customization jar to a temp directory
@@ -388,7 +388,7 @@ public class SkarProcessor {
     }
 
     // may need to move class loading logic to the server (i.e. admin) for headless to work
-    private void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
+    void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
         if (classLoader != null) {
             try {
                 SolutionKitManagerUi customUi = null;
