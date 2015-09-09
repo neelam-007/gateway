@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,6 +39,8 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * @throws FindException
      */
     List<SolutionKit> findBySolutionKitGuid(@NotNull final String solutionKitGuid) throws FindException;
+
+    SolutionKit findBySolutionKitGuidAndIM(@NotNull final String solutionKitGuid, @Nullable String instanceModifier) throws FindException;
 
     /**
      * Reads and enables entity protection for all Solution Kit-owned entities. This method should be invoked

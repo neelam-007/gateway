@@ -23,11 +23,13 @@ import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +43,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -247,6 +246,23 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     }
 
     @Override
+    public SolutionKit findBySolutionKitGuidAndIM(@NotNull String solutionKitGuid, @Nullable String instanceModifier) throws FindException {
+        List<SolutionKit> solutionKits = findBySolutionKitGuid(solutionKitGuid);
+
+        String tempIM;
+        for (SolutionKit solutionKit: solutionKits) {
+            tempIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+            if ((StringUtils.isBlank(instanceModifier) && StringUtils.isBlank(tempIM)) ||
+                (instanceModifier != null && instanceModifier.equals(tempIM))) {
+                return solutionKit;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public List<SolutionKitHeader> findAllChildrenHeadersByParentGoid(@NotNull final Goid parentGoid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
@@ -299,16 +315,13 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @Override
     public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
         List<SolutionKitHeader> children = findChildSolutionKits();
-        List<String> parentGoidStrList = new ArrayList<>(children.size());
+        Set<String> parentGoidStrSet = new HashSet<>(children.size());
         for (SolutionKitHeader child: children) {
-            String parentGoidStr = child.getParentGoid().toString();
-            if (!parentGoidStrList.contains(parentGoidStr)) {
-                parentGoidStrList.add(parentGoidStr);
-            }
+            parentGoidStrSet.add(child.getParentGoid().toString());
         }
 
         List<SolutionKitHeader> parentList = new ArrayList<>();
-        for (String goidStr: parentGoidStrList) {
+        for (String goidStr: parentGoidStrSet) {
             parentList.add(new SolutionKitHeader(findByPrimaryKey(Goid.parseGoid(goidStr))));
         }
 

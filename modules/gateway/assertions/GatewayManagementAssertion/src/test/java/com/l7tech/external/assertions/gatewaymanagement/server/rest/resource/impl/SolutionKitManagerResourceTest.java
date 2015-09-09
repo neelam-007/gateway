@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.ID_DELIMINATOR;
+import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.PARAMETER_DELIMINATOR;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -220,12 +220,12 @@ public class SolutionKitManagerResourceTest {
 
         String entityIdOld = "f1649a0664f1ebb6235ac238a6f71a6d";
         String entityIdNew = "66461b24787941053fc65a626546e4bd";
-        SolutionKitManagerResource.decodeSplitPut(entityIdOld + ID_DELIMINATOR + entityIdNew, entityIdReplaceMap);
+        SolutionKitManagerResource.decodeSplitPut(entityIdOld + PARAMETER_DELIMINATOR + entityIdNew, entityIdReplaceMap);
         assertEquals(entityIdNew, entityIdReplaceMap.get(entityIdOld));
 
         entityIdOld = "0567c6a8f0c4cc2c9fb331cb03b4de6f";
         entityIdNew = "1e3299eab93e2935adafbf35860fc8d9";
-        SolutionKitManagerResource.decodeSplitPut(entityIdOld + URLEncoder.encode(ID_DELIMINATOR, CharEncoding.UTF_8) + entityIdNew, entityIdReplaceMap);
+        SolutionKitManagerResource.decodeSplitPut(entityIdOld + URLEncoder.encode(PARAMETER_DELIMINATOR, CharEncoding.UTF_8) + entityIdNew, entityIdReplaceMap);
         assertEquals(entityIdNew, entityIdReplaceMap.get(entityIdOld));
     }
 
@@ -238,7 +238,8 @@ public class SolutionKitManagerResourceTest {
         // try to install unsigned skar
         Response response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(sampleSkar),
-                null, // don't care about solutionKitSelects
+                null, // don't care about instanceModifier
+                null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
                 null // don't care about other form data
@@ -272,7 +273,8 @@ public class SolutionKitManagerResourceTest {
         // install the skar of skars
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(sampleSkar),
-                null, // don't care about solutionKitSelects
+                null, // don't care about instanceModifier
+                null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
                 null // don't care about other form data
@@ -299,7 +301,8 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             Response response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
-                    null, // don't care about solutionKitSelects
+                    null, // don't care about instanceModifier
+                    null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
                     new FormDataMultiPart()
@@ -338,6 +341,7 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
+                    null, // don't care about instanceModifier
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -377,6 +381,7 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
+                    null, // don't care about instanceModifier
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -414,6 +419,7 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             Response response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
+                    null, // don't care about instanceModifier
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -453,6 +459,7 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
+                    null, // don't care about instanceModifier
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -492,6 +499,7 @@ public class SolutionKitManagerResourceTest {
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
+                    null, // don't care about instanceModifier
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -554,6 +562,7 @@ public class SolutionKitManagerResourceTest {
         // test
         Response response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -599,6 +608,7 @@ public class SolutionKitManagerResourceTest {
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -643,6 +653,7 @@ public class SolutionKitManagerResourceTest {
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -685,6 +696,7 @@ public class SolutionKitManagerResourceTest {
         // make sure this is trusted
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(signedTrustedAnotherSampleSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -747,6 +759,7 @@ public class SolutionKitManagerResourceTest {
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -817,6 +830,7 @@ public class SolutionKitManagerResourceTest {
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
+                null, // don't care about instanceModifier
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid

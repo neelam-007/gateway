@@ -203,9 +203,9 @@ public class SolutionKitAdminHelper {
         if (parentGoid != null) {
             final SolutionKit parent = get(parentGoid);
             if (parent != null) {
-                // someone could potentially delete the solution kit in the meanwhile so I guess skip this one
-                // todo: ghuang; perhaps if it makes more sense you could throw an error or return empty list
                 skList.add(parent);
+            } else {
+                throw new FindException("The parent of a child solution kit '" + solutionKit.getName() + "' does not exist.");
             }
         }
 

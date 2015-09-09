@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
@@ -64,7 +65,7 @@ import static org.apache.commons.lang.StringUtils.*;
 public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
-    protected static final String ID_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
+    protected static final String PARAMETER_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
 
     private SolutionKitManager solutionKitManager;
     @SpringBean
@@ -126,7 +127,8 @@ public class SolutionKitManagerResource {
      * </code>
      *
      * @param fileInputStream Input stream of the upload SKAR file.
-     * @param solutionKitSelects Which Solution Kit ID(s) in the uploaded SKAR to install. If not provided, all Solution Kit(s) in the upload SKAR will be installed.
+     * @param instanceModifier For upgrade, the instance modifier of the to-be-upgraded solution kit.  For install, the instance modifier of the to-be-installed solution kit.
+     * @param solutionKitSelects Which Solution Kit ID(s) in the uploaded SKAR to install/upgrade. If not provided, all Solution Kit(s) in the upload SKAR will be installed/upgraded.
      * @param entityIdReplaces Optional. To map one entity ID to another. Format <find_id>::<replace_with_id>.
      * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
      * @param formDataMultiPart See above.
@@ -135,6 +137,7 @@ public class SolutionKitManagerResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response installOrUpgrade(final @FormDataParam("file") InputStream fileInputStream,
+                                     final @FormDataParam("instanceModifier") String instanceModifier,
                                      final @FormDataParam("solutionKitSelect") List<FormDataBodyPart> solutionKitSelects,
                                      final @FormDataParam("entityIdReplace") List<FormDataBodyPart> entityIdReplaces,
                                      final @QueryParam("id") String upgradeGuid,
@@ -150,26 +153,35 @@ public class SolutionKitManagerResource {
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+
         try {
             validateParams(fileInputStream);
 
             // handle upgrade
-            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
-            // todo: to ghuang; it seems this logic always selects the first entity returned by findBySolutionKitGuid(), assuming the parent, which differs than the UI.
-            // todo: in the UI the solution kit to upgrade is selected by Goid, it doesn't seem to always match solutionKitsExistingOnGateway.get(0)
-            // todo: Please remove this todo if this is by-design
-            if (StringUtils.isNotBlank(upgradeGuid)) {
-                // todo: in addition we need to fail if upgradeGuid doesn't exists, as the for one do an early fail, and second the code below (i.e. solutionKitsConfig.getSolutionKitsToUpgrade().get(0)) will always throw exception
-                // todo: ghuang; in case I'm mistaken i.e. there is a legit reason why upgradeGuid doesn't exists, then please remove this logic and fix solutionKitsConfig.getSolutionKitsToUpgrade().get(0) not to throw exception
-                final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(upgradeGuid);
-                if (solutionKitsExistingOnGateway.isEmpty()) {
-                    final String warningMsg = "The query parameter 'id' (" + upgradeGuid + "), representing the solution kit to upgrade, does not exist in the Database.";
-                    logger.warning(warningMsg);
-                    return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
-                }
+            final boolean isUpgrade = StringUtils.isNotBlank(upgradeGuid);
+            if (isUpgrade) {
+                // Check if the query parameter 'id' (i.e. GUID) is for a parent, child, or other (i.e., neither parent nor child).
+                // Continue to validate two parameters 'id' and 'instanceModifier", which are combined to find a matched solution kit.
+                final Pair<Boolean, SolutionKit> resultOfCheckingParent = isParentSolutionKit(upgradeGuid);
+                final boolean isParent = resultOfCheckingParent.left;
+                final SolutionKit solutionKitForUpgrade;
 
+                if (isParent) {
+                    solutionKitForUpgrade = resultOfCheckingParent.right;
+                } else {
+                    SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(upgradeGuid, instanceModifier);
+                    if (tempSK == null) {
+                        final String instanceModifierDisplayName = StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
+                        final String warningMsg = "Upgrade failed: cannot find any existing solution kit (GUID = '" + upgradeGuid + "',  Instance Modifier = '" + instanceModifierDisplayName + "') for upgrade.";
+                        logger.warning(warningMsg);
+                        return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
+                    } else {
+                        solutionKitForUpgrade = tempSK;
+                    }
+                }
                 solutionKitsConfig.setSolutionKitsToUpgrade(
-                        solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitsExistingOnGateway.get(0))
+                    solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitForUpgrade)
                 );
 
                 // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
@@ -179,21 +191,27 @@ public class SolutionKitManagerResource {
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
             skarProcessor.load(
-                    fileInputStream,
-                    new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
-                        @Override
-                        public void call(final byte[] digest, final String signature) throws SignatureException {
-                            solutionKitAdminHelper.verifySkarSignature(digest, signature);
-                        }
+                fileInputStream,
+                new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
+                    @Override
+                    public void call(final byte[] digest, final String signature) throws SignatureException {
+                        solutionKitAdminHelper.verifySkarSignature(digest, signature);
                     }
+                }
             );
 
             // handle any user selection(s) - child solution kits
-            setUserSelections(solutionKitsConfig, solutionKitSelects);
+            setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifier);
+
+            // Note that these selected solution kits have been assigned with instance modifiers (default: empty/null)
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
-            // Check whether any two selected solution kits have same GUID and instance modifier. If so, return a conflict
-            // error response and stop installation.  This checking is applied to install and upgrade.
+            // (SSG-11727) Check if any two selected solution kits have same GUID and instance modifier. If so, return
+            // a conflict error response and stop installation.  This checking is applied to install and upgrade.
+            // This checking will detect a following error case:
+            // - "id" (a parent guid) is specified and there are no "solutionKitSelects" specified.
+            // - The skar file contains some solution kits with same guid.
+            // - In this case, the above child solution kits have same guid and same instance modifier (default value).
             final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(selectedSolutionKits);
             if (StringUtils.isNotBlank(errorReport)) {
                 return status(CONFLICT).entity(
@@ -218,11 +236,11 @@ public class SolutionKitManagerResource {
             // Process parent solution kit first, if a parent solution kit is loaded.
             if (parentSKFromLoad != null) {
                 // Case 1: Parent for upgrade
-                if (StringUtils.isNotBlank(upgradeGuid)) {
+                if (isUpgrade) {
                     assert solutionKitsConfig.getSolutionKitsToUpgrade().size() > 0; // should always be grater then 0 as check is done above (early fail)
                     final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitsToUpgrade().get(0); // The first element is a real parent solution kit.
 
-                    if (!upgradeGuid.equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
+                    if (!parentSKFromLoad.getSolutionKitGuid().equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
                         String warningMsg = "The query parameter 'id' (" + upgradeGuid + ") does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
                         logger.warning(warningMsg);
 
@@ -288,6 +306,26 @@ public class SolutionKitManagerResource {
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
 
+    private Pair<Boolean, SolutionKit> isParentSolutionKit(String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
+        final List<SolutionKit> solutionKits = solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
+        final int size = solutionKits.size();
+
+        if (size == 0) {
+            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" + lineSeparator()).build());
+        } else if (size > 0) {
+            // Every parent is unique.  If found more than one, guarantee it is not a parent.
+            return new Pair<>(false, null);
+        }
+
+        final SolutionKit parentCandidate = solutionKits.get(0);
+
+        if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(parentCandidate.getMappings())) {
+            return new Pair<>(true, parentCandidate);
+        }
+
+        return new Pair<>(false, null);
+    }
+
     /**
      * Error Message Format during testBundleImports.
      */
@@ -313,12 +351,15 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The solution kit '" + solutionKit.getName() + " is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
             }
 
-            // Check if a target solution kit is good for install or upgrade.
-            try {
-                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
-            } catch (BadRequestException e) {
-                // This exception already has a well-info message containing name, GUID, and instance modifier.
-                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
+            // Check if a target solution kit is good for install.
+            // Note that this checking is not applied on target solution kits for upgrade process.
+            if (!isUpgrade) {
+                try {
+                    solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
+                } catch (BadRequestException e) {
+                    // This exception already has a well-info message containing name, GUID, and instance modifier.
+                    throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
+                }
             }
 
             // Update resolved mapping target IDs.
@@ -513,10 +554,34 @@ public class SolutionKitManagerResource {
         }
     }
 
-    // set user selection(s)
-    private void setUserSelections(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> solutionKitIdInstalls) throws SolutionKitManagerResourceException {
+    // Each item of solutionKitSelects could specify instance modifier split by "::".
+
+    /**
+     * Set user selection(s) based on form data parameters "solutionKitSelect" specifying a list of solution kits with
+     * GUID and instance modifier, which is delimited by "::".
+     *
+     * This method is shared by install and upgrade.  If the parameter "isInstall" is true, then this method should be
+     * used in the install context and the parameter globalInstanceModifier will be used to set those selected solution
+     * kits which do not specify own instance modifier in the parameter "solutionKitSelects".  If this method is used in
+     * upgrade context, then isInstall should be set to false and globalInstanceModifier should be ignored, since selected
+     * solution kits must set own changeable instance modifier.
+     *
+     * @param solutionKitsConfig: used to get loaded solution kits and set selected solution kits.
+     * @param solutionKitSelects: the form data parameter to specify a list of solution kits
+     * @param isInstall: true if install is executed; false means upgrade.
+     * @param globalInstanceModifier: in stall, the instance modifier is shared by all selected solution kits, but individual solution kit's instance modifier can override it.
+     *
+     * @throws SolutionKitManagerResourceException
+     * @throws UnsupportedEncodingException
+     */
+    private void setUserSelections(
+        @NotNull final SolutionKitsConfig solutionKitsConfig,
+        @Nullable final List<FormDataBodyPart> solutionKitSelects,
+        final boolean isInstall,
+        @Nullable final String globalInstanceModifier) throws SolutionKitManagerResourceException, UnsupportedEncodingException {
+
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
-        if (solutionKitIdInstalls == null || solutionKitIdInstalls.isEmpty()) {
+        if (solutionKitSelects == null || solutionKitSelects.isEmpty()) {
             // default install all
             solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
         } else {
@@ -528,14 +593,31 @@ public class SolutionKitManagerResource {
 
             // verify the user selected id(s) and build selection set
             final Set<SolutionKit> selectedSolutionKitIdSet = new TreeSet<>();
-            String selectedId;
-            for (FormDataBodyPart solutionKitIdInstall : solutionKitIdInstalls) {
-                selectedId = solutionKitIdInstall.getValue();
-                if (!loadedSolutionKitMap.containsKey(selectedId)) {
+            String decodedStr, guid, individualInstanceModifier;
+            SolutionKit selectedSolutionKit;
+
+            for (FormDataBodyPart solutionKitSelect : solutionKitSelects) {
+                decodedStr = URLDecoder.decode(solutionKitSelect.getValue(), CharEncoding.UTF_8);
+                guid = substringBefore(decodedStr, PARAMETER_DELIMINATOR).trim();
+                individualInstanceModifier = substringAfter(decodedStr, PARAMETER_DELIMINATOR).trim();
+
+                if (!loadedSolutionKitMap.containsKey(guid)) {
                     throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                            "Solution Kit ID to install: " + selectedId + " not found in the skar." + lineSeparator()).build());
+                            "Solution Kit ID to install/upgrade: " + guid + " not found in the skar." + lineSeparator()).build());
                 }
-                selectedSolutionKitIdSet.add(loadedSolutionKitMap.get(selectedId));
+
+                selectedSolutionKit = loadedSolutionKitMap.get(guid);
+
+                // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
+                if (StringUtils.isNotBlank(individualInstanceModifier)) {
+                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
+                }
+                // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
+                else if (isInstall && StringUtils.isNotBlank(globalInstanceModifier)) {
+                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                }
+
+                selectedSolutionKitIdSet.add(selectedSolutionKit);
             }
 
             // set selection set for install
@@ -565,7 +647,7 @@ public class SolutionKitManagerResource {
 
     protected static void decodeSplitPut(@NotNull final String entityIdReplaceStr, @NotNull final Map<String, String> entityIdReplaceMap) throws UnsupportedEncodingException {
         final String entityIdReplaceDecoded = URLDecoder.decode(entityIdReplaceStr, CharEncoding.UTF_8);
-        entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, ID_DELIMINATOR).trim(), substringAfter(entityIdReplaceDecoded, ID_DELIMINATOR).trim());
+        entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, PARAMETER_DELIMINATOR).trim(), substringAfter(entityIdReplaceDecoded, PARAMETER_DELIMINATOR).trim());
     }
 
     private void setCustomizationKeyValues(@NotNull final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations, @NotNull FormDataMultiPart formDataMultiPart) throws SolutionKitException, UnsupportedEncodingException {
