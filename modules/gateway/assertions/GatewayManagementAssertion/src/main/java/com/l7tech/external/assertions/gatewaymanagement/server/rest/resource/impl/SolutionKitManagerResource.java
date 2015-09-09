@@ -348,7 +348,7 @@ public class SolutionKitManagerResource {
             // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
             // contain UpgradeBundle.xml, then throw exception with warning
             if (isUpgrade && !solutionKitsConfig.isUpgradeInfoProvided(solutionKit)) {
-                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The solution kit '" + solutionKit.getName() + " is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The solution kit '" + solutionKit.getName() + "' is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
             }
 
             // Check if a target solution kit is good for install.
