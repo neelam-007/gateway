@@ -130,7 +130,7 @@ public class ServerSwaggerAssertionTest {
     }
 
     @Test
-    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_SucceedsNoAudits() throws  Exception {
+    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_SucceedsNoAudits() throws Exception {
         String requestUri = "/store/order";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
@@ -147,7 +147,7 @@ public class ServerSwaggerAssertionTest {
     }
 
     @Test
-    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_Falsified11402Audited() throws  Exception {
+    public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_Falsified11402Audited() throws Exception {
         String requestUri = "/store/order";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
@@ -163,6 +163,84 @@ public class ServerSwaggerAssertionTest {
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(AssertionMessages.SWAGGER_INVALID_METHOD.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_METHOD));
+    }
+
+    @Test
+    public void testValidateWithPathAndMethod_GetSwaggerDoc_Falsified11401Audited() throws Exception {
+        String requestUri = "/swagger.json";    // swagger doc is not defined as a path item
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_PATH.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_PATH));
+    }
+
+    @Test
+    public void testValidateWithPathMethodScheme_ValidRequest_SucceedsNoAudits() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodScheme_InvalidRequestScheme_Falsified11403Audited() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_SCHEME.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_SCHEME));
+    }
+
+    @Test
+    public void testValidateWithPathMethodEnabledSchemeDisabled_InvalidRequestScheme_SucceedsNoAudits() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(false); // scheme validation disabled
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
     }
 
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS

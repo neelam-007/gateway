@@ -5,6 +5,7 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -17,7 +18,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle(SwaggerPropertiesDialog.class.getName());
        
     private JPanel mainPanel;
-    private JPanel prefixPanel;
     private TargetVariablePanel swaggerPrefix;
     private TargetVariablePanel swaggerDocumentVariable;
     private JCheckBox validateMethodCheckBox;
@@ -25,9 +25,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private JCheckBox validateSchemeCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
     private JTextField serviceBaseTextField;
-    private JLabel swaggerDocumentLabel;
-    private JLabel prefixLabel;
-    private InputValidator validator;
 
     public SwaggerPropertiesDialog(final Window parent, final SwaggerAssertion assertion) {
         super(SwaggerAssertion.class, parent, assertion, true);
@@ -61,22 +58,24 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         return assertion;
     }
 
-
     protected void initComponents(final SwaggerAssertion assertion) {
         super.initComponents();
         swaggerDocumentVariable.setAcceptEmpty(false);
         swaggerPrefix.setAcceptEmpty(false);
+
+        swaggerPrefix.setAssertion(assertion, getPreviousAssertion());
+        swaggerDocumentVariable.setAssertion(assertion, getPreviousAssertion());
 
         validateMethodCheckBox.setSelected(true);
         validatePathCheckBox.setSelected(true);
         validateSchemeCheckBox.setSelected(true);
         requireSecurityCredentialsToCheckBox.setSelected(true);
 
-        validator = new InputValidator(this, getTitle());
+        InputValidator validator = new InputValidator(this, getTitle());
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(!swaggerDocumentVariable.isEntryValid()) {
+                if (!swaggerDocumentVariable.isEntryValid()) {
                     return resourceBundle.getString("swaggerDocumentInvalidEntryErrMsg");
                 }
                 return null;
@@ -86,7 +85,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(!swaggerPrefix.isEntryValid()) {
+                if (!swaggerPrefix.isEntryValid()) {
                     return resourceBundle.getString("variablePrefixInvalidErrMsg");
                 }
                 return null;
@@ -108,12 +107,14 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
 
     private void enableDisableComponents() {
         validateMethodCheckBox.setEnabled(validatePathCheckBox.isSelected());
+        validateSchemeCheckBox.setEnabled(validateMethodCheckBox.isSelected());
         requireSecurityCredentialsToCheckBox.setEnabled(validateMethodCheckBox.isSelected());
 
         if(!validatePathCheckBox.isSelected()) {
             validateMethodCheckBox.setSelected(false);
         }
         if(!validateMethodCheckBox.isSelected()){
+            validateSchemeCheckBox.setSelected(false);
             requireSecurityCredentialsToCheckBox.setSelected(false);
         }
     }
@@ -121,11 +122,6 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     @Override
     protected JPanel createPropertyPanel() {
         return mainPanel;
-    }
-
-    private void createUIComponents() {
-        prefixPanel = new TargetVariablePanel();
-        swaggerDocumentVariable = new TargetVariablePanel();
     }
 
     @Override

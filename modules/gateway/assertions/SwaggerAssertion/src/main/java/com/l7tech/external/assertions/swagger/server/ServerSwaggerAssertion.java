@@ -61,7 +61,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
-        securityTypeMap = new HashMap<String,ValidateSecurity>();
+        securityTypeMap = new HashMap<>();
         securityTypeMap.put("basic", new ValidateBasicSecurity());
         securityTypeMap.put("apiKey", new ValidateApiKeySecurity());
         securityTypeMap.put("oauth2", new ValidateOauth2Security());
@@ -179,16 +179,16 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     List<Scheme> schemes = operation.getSchemes();
 
                     if (null == schemes) {
-                        schemes = model.getSchemes();
-                        // TODO jwilliams: this uses top level scheme definition - must take into account overriding at operation level
+                        schemes = model.getSchemes(); // use top-level schemes if the operation doesn't define its own
                     }
 
-                    Scheme requestScheme = httpRequestKnob.isSecure() ? Scheme.HTTPS : Scheme.HTTP; // TODO jwilliams: what about WS & WSS? they are possible schemes
+                    // N.B. We do not currently support WS/WSS request validation
+                    Scheme requestScheme = httpRequestKnob.isSecure() ? Scheme.HTTPS : Scheme.HTTP;
 
                     if (null != schemes && !schemes.contains(requestScheme)) { // request scheme is not defined for operation
-                        // TODO jwilliams: audit
+                        logAndAudit(AssertionMessages.SWAGGER_INVALID_SCHEME,
+                                method.getProtocolName(), requestPathDefinition.path, requestScheme.toValue());
                         return false;
-                        // TODO jwilliams: check specification and decide on behaviour for default scheme validation
                     }
                 }
 
