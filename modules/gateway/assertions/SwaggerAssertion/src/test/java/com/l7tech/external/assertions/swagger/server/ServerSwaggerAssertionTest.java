@@ -51,6 +51,9 @@ import static org.mockito.Mockito.*;
 public class ServerSwaggerAssertionTest {
 
     public static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
+    public static final String OAUTH2_TOKEN = "bearer J1qK1c18UUGJFAzz9xnH56584l4";
+    public static final String APIKEY_TOKEN = "apikey Jlkhbejhven789hhetbJMHeur";
+    public static final String BASIC_TOKEN = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
 
     SwaggerAssertion assertion;
     ServerSwaggerAssertion fixture;
@@ -241,6 +244,173 @@ public class ServerSwaggerAssertionTest {
 
         assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
         assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_BasicAuthentication() throws Exception {
+        String requestUri = "/user/test123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+
+        fixture = createServer(assertion);
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_MissingBasicAuthentication() throws Exception {
+        String requestUri = "/user/test123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{APIKEY_TOKEN});
+
+        fixture = createServer(assertion);
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue("Missing audit: " + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
+
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_ApiKeyPresent() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{APIKEY_TOKEN});
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_ApiKeyParamPresent() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_NoTokenRequired() throws Exception {
+        String requestUri = "/store/order/111111";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_OauthTokenPresent() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_TOKEN});
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_MissingRequestToken() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
+    }
+
+    @Test
+    public void testValidateWithPathMethod_WrongAccessToken() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_TOKEN});
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue("Missing audit: " + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS

@@ -45,18 +45,19 @@ import java.util.regex.Pattern;
  * @see com.l7tech.external.assertions.swagger.SwaggerAssertion
  */
 public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAssertion> {
+    public static final String AUTHORIZATION_HEADER = "authorization";
     private final String[] variablesUsed;
     private AtomicReference<Swagger> swaggerModel = new AtomicReference<>(null);
     private AtomicReference<PathResolver> pathResolver = new AtomicReference<>(null);
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
 
-    private static enum SwaggerSecurityType  { BASIC, APIKEY, OAUTH2, INVALID };
+    private static enum SwaggerSecurityType  { BASIC, APIKEY, OAUTH2, INVALID }
     private Map<String,ValidateSecurity> securityTypeMap;
 
-    private static final Pattern basicAuth = Pattern.compile("^Basic");
-    private static final Pattern apiKey = Pattern.compile("apiKey");
-    private static final Pattern oauth2inHeader = Pattern.compile("^Bearer");
+    private static final Pattern basicAuth = Pattern.compile("^Basic", Pattern.CASE_INSENSITIVE);
+    private static final Pattern apiKey = Pattern.compile("apikey", Pattern.CASE_INSENSITIVE);
+    private static final Pattern oauth2inHeader = Pattern.compile("^Bearer", Pattern.CASE_INSENSITIVE);
 
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
@@ -124,9 +125,8 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_BASE_URI, model.getBasePath());
 
         // perform the validation
-        boolean valid = validate(model, resolver, httpRequestKnob, apiUri);
 
-        return valid ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        return validate(model, resolver, httpRequestKnob, apiUri) ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
     }
 
     protected boolean validate(Swagger model, PathResolver resolver, HttpRequestKnob httpRequestKnob, String apiUri) {
@@ -193,39 +193,45 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                 }
 
                 if (assertion.isRequireSecurityCredentials()) {
-                    List<Map<String, List<String>>> security = operation.getSecurity();
-                    if ( security == null ) {
-                        return true;
-                    }
                     Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
-                    if (securityDefinitions == null) {
-                        logAndAudit(AssertionMessages.SWAGGER_NO_SECURITY_DEFN);
-                        return false;
-                    }
-
-                    for (Map<String, List<String>> sec : security) {
-                        Set<String> keys = sec.keySet();
-                        if (keys.size() != 1) {
-                            //TODO: Error should only have one key }
-                            return false;
-                        }
-                        SecuritySchemeDefinition definition = securityDefinitions.get(keys.iterator().next());
-                        ValidateSecurity type = securityTypeMap.get(definition.getType());
-                        if (type == null) {
-                            logAndAudit(AssertionMessages.SWAGGER_UNKNOWN_SECURITY_TYPE,definition.getType(),operation.toString());
-                            return false;
-                        }
-                        if (type.checkSecurity(httpRequestKnob)) {
-                            return true;
-                        }
-                    }
-                    return false;
+                    return validateRequestSecurity(httpRequestKnob, operation, securityDefinitions, requestPathDefinition.path);
                 }
             }
         }
 
-
         return true;
+    }
+
+    private boolean validateRequestSecurity(HttpRequestKnob httpRequestKnob, Operation operation, Map<String, SecuritySchemeDefinition> securityDefinitions, String path) {
+        if(securityDefinitions != null){
+            List<Map<String, List<String>>> security = operation.getSecurity();
+            boolean validSecurity = true;
+            if ( security != null && !security.isEmpty()) {
+                for (Map<String, List<String>> sec : security) {
+                    Set<String> keys = sec.keySet();
+                    for(String key : keys) {
+                        SecuritySchemeDefinition definition = securityDefinitions.get(key);
+                        ValidateSecurity type = securityTypeMap.get(definition.getType());
+                        if (type == null) {
+                            logAndAudit(AssertionMessages.SWAGGER_INVALID_SECURITY_DEFINITION, definition.getType(), operation.getOperationId(), path);
+                            return false;
+                        }
+                        validSecurity &= type.checkSecurity(httpRequestKnob);
+                    }
+                    if(validSecurity) break;// no need to validate other security requirements when we found valid one
+                }
+            }
+
+            if(!validSecurity) {
+                logAndAudit(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED, operation.getOperationId(), path);
+            }
+
+            return validSecurity;
+        }
+        else {
+            //security is not required
+            return true;
+        }
     }
 
     private static interface ValidateSecurity {
@@ -234,11 +240,10 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
     private class ValidateBasicSecurity implements ValidateSecurity {
         public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
-            for ( String header : authHeaders ) {
-                Matcher m = basicAuth.matcher(header);
-                if (m.matches()) {
-                    return true;
+            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
+            if (authHeaders != null) {
+                for (String header : authHeaders) {
+                    return basicAuth.matcher(header).find();
                 }
             }
             return false;
@@ -247,52 +252,48 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
     private class ValidateApiKeySecurity implements ValidateSecurity {
         public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
-            for ( String header : authHeaders ) {
-                Matcher m = apiKey.matcher(header);
-                if (m.matches()) {
-                    return true;
+            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
+            if(authHeaders != null) {
+                for (String header : authHeaders) {
+                    Matcher m = apiKey.matcher(header);
+                    if (m.find()) {
+                        return true;
+                    }
                 }
             }
             try {
-                if (httpRequestKnob.getParameter("apiKey") != null) {
-                    return true;
-                }
-                if (httpRequestKnob.getParameter("api_key") != null) {
-                    return true;
-                }
-            } catch ( IOException e ) {
-                //TODO: decide appropriate response
-                //  IOException here means api_key was multi-valued parameter!!
-                //  if legit return true;
-                //  if not fall through and return false below
-            }
-
-            //TODO: figure out alternative locations.
-            return false;
-        }
-    }
-
-    private class ValidateOauth2Security implements ValidateSecurity {
-        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues("authorization");
-            for ( String header : authHeaders ) {
-                Matcher m = oauth2inHeader.matcher(header);
-                if (m.matches()) {
-                    return true;
-                }
-            }
-            try {
-                if (httpRequestKnob.getParameter("access_token") != null) {
-                    return true;
-                }
+                 return (httpRequestKnob.getParameter("apiKey") != null || httpRequestKnob.getParameter("api_key") != null);
             } catch (IOException e) {
                 //TODO: decide appropriate response
                 //  IOException here means api_key was multi-valued parameter!!
                 //  if legit return true;
                 //  if not fall through and return false below
+                return false;
             }
-            return false;
+        }
+    }
+
+    private class ValidateOauth2Security implements ValidateSecurity {
+        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
+            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
+            if(authHeaders != null) {
+                for (String header : authHeaders) {
+                    Matcher m = oauth2inHeader.matcher(header);
+                    if (m.find()) {
+                        return true;
+                    }
+                }
+            }
+            //alternative way of finding the access token
+            try {
+                return (httpRequestKnob.getParameter("access_token") != null);
+            } catch (IOException e) {
+                //TODO: decide appropriate response
+                //  IOException here means api_key was multi-valued parameter!!
+                //  if legit return true;
+                //  if not fall through and return false below
+                return false;
+            }
         }
     }
 
