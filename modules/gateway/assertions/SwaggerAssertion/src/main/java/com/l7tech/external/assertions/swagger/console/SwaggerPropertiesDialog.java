@@ -76,6 +76,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                swaggerDocumentVariable.updateStatus();
                 if (!swaggerDocumentVariable.isEntryValid()) {
                     return resourceBundle.getString("swaggerDocumentInvalidEntryErrMsg");
                 }
@@ -86,6 +87,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                swaggerPrefix.updateStatus();
                 if (!swaggerPrefix.isEntryValid()) {
                     return resourceBundle.getString("variablePrefixInvalidErrMsg");
                 }
