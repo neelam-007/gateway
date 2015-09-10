@@ -57,7 +57,7 @@
         </constraints>
         <properties>
           <toolTipText resource-bundle="com/l7tech/external/assertions/swagger/console/SwaggerPropertiesDialog" key="swaggerDocumentTooltip"/>
-          <valueWillBeRead value="true"/>
+          <valueWillBeRead value="false"/>
           <valueWillBeWritten value="false"/>
         </properties>
       </component>
