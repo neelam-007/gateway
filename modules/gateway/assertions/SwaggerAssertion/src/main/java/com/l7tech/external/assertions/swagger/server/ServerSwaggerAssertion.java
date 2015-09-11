@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the SwaggerAssertion.
@@ -51,13 +49,8 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
     private AtomicReference<PathResolver> pathResolver = new AtomicReference<>(null);
     private AtomicInteger swaggerDocumentHash = new AtomicInteger();
     private Lock lock = new ReentrantLock();
-
-    private static enum SwaggerSecurityType  { BASIC, APIKEY, OAUTH2, INVALID }
     private Map<String,ValidateSecurity> securityTypeMap;
 
-    private static final Pattern basicAuth = Pattern.compile("^Basic", Pattern.CASE_INSENSITIVE);
-    private static final Pattern apiKey = Pattern.compile("apikey", Pattern.CASE_INSENSITIVE);
-    private static final Pattern oauth2inHeader = Pattern.compile("^Bearer", Pattern.CASE_INSENSITIVE);
 
     public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
         super(assertion);
@@ -238,72 +231,6 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         else {
             //security is not required
             return true;
-        }
-    }
-
-    private static interface ValidateSecurity {
-        public boolean checkSecurity(HttpRequestKnob httpRequestKnob);
-    }
-
-    private class ValidateBasicSecurity implements ValidateSecurity {
-        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
-            if (authHeaders != null) {
-                for (String header : authHeaders) {
-                    Matcher m = basicAuth.matcher(header);
-                    if(m.find()) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    private class ValidateApiKeySecurity implements ValidateSecurity {
-        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
-            if(authHeaders != null) {
-                for (String header : authHeaders) {
-                    Matcher m = apiKey.matcher(header);
-                    if (m.find()) {
-                        return true;
-                    }
-                }
-            }
-            try {
-                 return (httpRequestKnob.getParameter("apiKey") != null || httpRequestKnob.getParameter("api_key") != null);
-            } catch (IOException e) {
-                //TODO: decide appropriate response
-                //  IOException here means api_key was multi-valued parameter!!
-                //  if legit return true;
-                //  if not fall through and return false below
-                return false;
-            }
-        }
-    }
-
-    private class ValidateOauth2Security implements ValidateSecurity {
-        public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
-            String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
-            if(authHeaders != null) {
-                for (String header : authHeaders) {
-                    Matcher m = oauth2inHeader.matcher(header);
-                    if (m.find()) {
-                        return true;
-                    }
-                }
-            }
-            //alternative way of finding the access token
-            try {
-                return (httpRequestKnob.getParameter("access_token") != null);
-            } catch (IOException e) {
-                //TODO: decide appropriate response
-                //  IOException here means api_key was multi-valued parameter!!
-                //  if legit return true;
-                //  if not fall through and return false below
-                return false;
-            }
         }
     }
 
