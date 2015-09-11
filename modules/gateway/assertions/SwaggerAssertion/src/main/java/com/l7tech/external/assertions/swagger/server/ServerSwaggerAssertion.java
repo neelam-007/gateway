@@ -115,8 +115,15 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         }
 
         HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+        //determine the service base
+        String serviceBase;
+        if(StringUtils.isNotBlank(assertion.getServiceBase())){
+            serviceBase = ExpandVariables.process(assertion.getServiceBase(), variableMap, getAudit());
+        }
+        else {
+            serviceBase = getServiceRoutingUri(context.getService());
+        }
 
-        String serviceBase = StringUtils.isNotBlank(assertion.getServiceBase()) ? assertion.getServiceBase() : getServiceRoutingUri(context.getService());
         String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, ""); // remove service from the request uri
 
         // set context variables regardless of the validation results
@@ -243,7 +250,10 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             String authHeaders[] = httpRequestKnob.getHeaderValues(AUTHORIZATION_HEADER);
             if (authHeaders != null) {
                 for (String header : authHeaders) {
-                    return basicAuth.matcher(header).find();
+                    Matcher m = basicAuth.matcher(header);
+                    if(m.find()) {
+                        return true;
+                    }
                 }
             }
             return false;

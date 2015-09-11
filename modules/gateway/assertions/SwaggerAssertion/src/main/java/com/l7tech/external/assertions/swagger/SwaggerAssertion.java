@@ -5,12 +5,10 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -104,6 +102,8 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     public String[] getVariablesUsed() {
         List<String> varsUsed = new ArrayList<>();
         varsUsed.add(getSwaggerDoc());
+        String[] refNames = Syntax.getReferencedNames(serviceBase);
+        varsUsed.addAll(Arrays.asList(refNames));
         return varsUsed.toArray(new String[varsUsed.size()]);
     }
 

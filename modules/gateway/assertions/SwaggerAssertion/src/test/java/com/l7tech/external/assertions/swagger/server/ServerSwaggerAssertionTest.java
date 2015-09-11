@@ -133,6 +133,57 @@ public class ServerSwaggerAssertionTest {
     }
 
     @Test
+     public void testSwaggerValidRequest_checkServiceBaseContextVariables() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        assertion.setServiceBase("${abc}");
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+        pec.setVariable("abc", "/svr");
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+    }
+
+    @Test
+    public void testSwaggerValidRequest_checkServiceBase() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        assertion.setServiceBase("/svr");
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+    }
+
+
+    @Test
+    public void testSwaggerValidRequest_checkEmptyServiceBaseContextVariable() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        assertion.setServiceBase("${empty}");
+        assertion.setValidatePath(false);
+
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+        pec.setVariable("empty","");
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        assertEquals("/svr/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+    }
+
+    @Test
     public void testValidateWithPathAndMethodEnabled_ValidPathAndMethod_SucceedsNoAudits() throws Exception {
         String requestUri = "/store/order";
 
@@ -259,7 +310,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(false);
-        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_TOKEN, BASIC_TOKEN});
 
         fixture = createServer(assertion);
 
