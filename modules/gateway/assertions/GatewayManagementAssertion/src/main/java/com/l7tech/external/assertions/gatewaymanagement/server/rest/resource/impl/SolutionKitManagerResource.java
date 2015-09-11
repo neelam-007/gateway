@@ -582,7 +582,12 @@ public class SolutionKitManagerResource {
 
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
         if (solutionKitSelects == null || solutionKitSelects.isEmpty()) {
-            // default install all
+            if (isInstall && StringUtils.isNotBlank(globalInstanceModifier)) {
+                for (SolutionKit solutionKit: loadedSolutionKits) {
+                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                }
+            }
+
             solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
         } else {
             // build id -> loaded solution kit map
@@ -619,6 +624,9 @@ public class SolutionKitManagerResource {
 
                 selectedSolutionKitIdSet.add(selectedSolutionKit);
             }
+
+            // todo:ms For upgrade, filter those non-upgraded solution kits out.
+            // This is, not always select all loaded solution kits, since users may not select all solution kits to upgrade.
 
             // set selection set for install
             solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKitIdSet);
