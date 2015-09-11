@@ -41,7 +41,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String STEP_DESC = "Specify the location of solution kit file (skar) to install.";
 
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
-    private static final FileFilter SIGNED_SK_FILE_FILTER = FileChooserUtil.buildFilter(".signed", "Signed Skar (*.signed)");
+    private static final FileFilter SIGNED_SK_FILE_FILTER = FileChooserUtil.buildFilter(".sskar", "Signed Skar (*.sskar)");
 
     private JPanel mainPanel;
     private JTextField fileTextField;

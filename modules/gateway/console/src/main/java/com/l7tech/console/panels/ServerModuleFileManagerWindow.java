@@ -751,7 +751,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
      */
     private void showError(@NotNull String message, @Nullable final Throwable e, boolean logError) {
         if (e != null) {
-            message = message + ": " + ExceptionUtils.getMessage(e);
+            message = message + ":\n" + ExceptionUtils.getMessage(e);
         }
 
         if (logError) {

@@ -5,6 +5,7 @@ import com.l7tech.internal.signer.LazyFileOutputStream;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +22,8 @@ public class SignCommand extends Command {
     static final String PLAINTEXT_PASSWORD_WARNING = "NOTE: Use of plaintext passwords is not recommended. Use encoded form for maximum security.";
 
     private static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
-    private static final String DEFAULT_SIGNED_EXT = ".signed";
+    protected static final String DEFAULT_SIGNED_EXT = ".signed";
+    protected static final String DEFAULT_SIGNED_PREFIX = ".s";
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // don't forget to update getOptions() and getOptionOrdinal() when adding new options
@@ -129,7 +131,7 @@ public class SignCommand extends Command {
         try {
             outFile = (hasOption(outFileOpt) && StringUtils.isNotBlank(getOptionValue(outFileOpt)))
                     ? new File(getOptionValue(outFileOpt))
-                    : new File(fileToSign.getCanonicalPath() + DEFAULT_SIGNED_EXT);
+                    : generateOutFileName(fileToSign);
             if (outFile.isDirectory()) {
                 throw new IllegalArgumentException("Specified output file cannot be a directory");
             }
@@ -146,6 +148,37 @@ public class SignCommand extends Command {
         }
 
         return SUCCESS;
+    }
+
+    /**
+     * Utility method for generating an output file given input file.<br/>
+     * Convention:<br/>
+     * <ul>
+     *     <li>input unsigned SKAR, with extension {@code .skar}:</li>
+     *     <ul><li>foo.skar -> signer -> foo.sskar</li></ul>
+     *     <li>input Modular Assertion, with extension {@code .aar}:</li>
+     *     <ul><li>foo.aar -> signer -> foo.saar</li></ul>
+     *     <li>input Custom Assertion, with extension {@code .jar}:</li>
+     *     <ul><li>foo.jar -> signer -> foo.sjar</li></ul>
+     *     <li>for anything else, simply appends {@code .signed} at the end of the file.</li>
+     * </ul>
+     *
+     * @param inFileName    input file.
+     * @return a {@code File} object.
+     * @throws IOException if an IO error happens.
+     */
+    @NotNull
+    protected File generateOutFileName(@NotNull final File inFileName) throws IOException {
+        // get the canonical path
+        final String inFilePath = inFileName.getCanonicalPath();
+        // extract extension
+        final String inFileExt = FilenameUtils.getExtension(inFilePath);
+        // if the file has extension
+        if (StringUtils.isNotBlank(inFileExt)) {
+            return new File(FilenameUtils.removeExtension(inFilePath) + DEFAULT_SIGNED_PREFIX + inFileExt);
+        }
+        // otherwise simply append DEFAULT_SIGNED_EXT
+        return new File(FilenameUtils.removeExtension(inFilePath) + DEFAULT_SIGNED_EXT);
     }
 
     @Override
@@ -169,7 +202,7 @@ public class SignCommand extends Command {
             System.out.println("File successfully signed.");
             System.out.println("Signed File: " + outFile.getCanonicalPath());
         } catch (final IOException e) {
-            throw new CommandException(IO_ERROR_WHILE_SIGNING, e);
+            throw new CommandException(IO_ERROR_WHILE_RUNNING, e);
         } catch (final Exception e) {
             throw new CommandException(ERROR_SIGNING, e);
         }

@@ -11,6 +11,7 @@ import java.util.TreeMap;
  * The command registry contains the different commands available for the Skar Signer.<br/>
  * For now this tool can only sign files i.e. only {@link SignCommand} is registered.
  */
+@SuppressWarnings("UnusedDeclaration")
 public final class CommandRegistry {
     private static final TreeMap<String, Command> registeredCommands = new TreeMap<>();
 
@@ -20,6 +21,9 @@ public final class CommandRegistry {
         registeredCommands.put(command.getName(), command);
 
         command = new EncodePasswordCommand();
+        registeredCommands.put(command.getName(), command);
+
+        command = new GenerateServerModuleFileCommand();
         registeredCommands.put(command.getName(), command);
     }
 
