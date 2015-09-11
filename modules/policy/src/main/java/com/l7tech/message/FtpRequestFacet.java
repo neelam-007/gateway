@@ -22,7 +22,7 @@ public class FtpRequestFacet extends MessageFacet {
      *
      */
     public MessageKnob getKnob(Class c) {
-        if (c == FtpRequestKnob.class || c == TcpKnob.class || c == UriKnob.class) {
+        if (c == FtpRequestKnob.class || c == TcpKnob.class || c == TlsKnob.class || c == UriKnob.class) {
             return ftpRequestKnob;
         }
         return super.getKnob(c);
