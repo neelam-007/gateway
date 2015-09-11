@@ -1,0 +1,249 @@
+LAYER7-MIB DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+        OBJECT-TYPE, MODULE-IDENTITY, NOTIFICATION-TYPE, Counter32, Integer32, enterprises FROM SNMPv2-SMI
+        DisplayString FROM SNMPv2-TC;
+
+l7 MODULE-IDENTITY
+      LAST-UPDATED "201504291600Z"
+      ORGANIZATION "CA Technologies"
+      CONTACT-INFO
+            "Rob Ballantyne
+             Suite 500
+	     HSBC Building
+	     885 West Georgia Street
+             Vancouver, BC
+             Canada V6C 3G1
+             Email:       Rob.Ballantyne@ca.com"
+      DESCRIPTION
+            "Tactical implementation of MIB module for SecureSpan Networking Gateway - 2014-02-19 V.03"
+      REVISION "201504291600Z"
+      DESCRIPTION
+            "updates to module identity"
+      ::= { enterprises 17304 }
+
+
+serviceTable OBJECT-TYPE
+      SYNTAX       SEQUENCE OF ServiceEntry
+      MAX-ACCESS   not-accessible
+      STATUS       current
+      DESCRIPTION 
+            "A list of service entries"
+      ::= { l7 7 }
+
+l7NotificationGroup NOTIFICATION-GROUP
+      NOTIFICATIONS { layer7Generic1, layer7Generic2, layer7Generic3, layer7Generic4 }
+      STATUS current
+      DESCRIPTION 
+        "Layer 7 Notifications"
+      ::= { l7 8 }
+
+     
+serviceEntry OBJECT-TYPE
+      SYNTAX        ServiceEntry
+      MAX-ACCESS    not-accessible
+      STATUS        current
+      DESCRIPTION
+            "A list of service entries."
+      INDEX { serviceOid }
+      ::= { serviceTable 1 }
+	  
+ServiceEntry ::= SEQUENCE {
+            serviceOid             			DisplayString,
+            serviceName            			DisplayString,
+            requests               			Counter32,
+            authRequests           			Counter32,
+            completedRequests      			Counter32,
+	    failedRoutesLast24Hrs  			Integer32,
+	    failedRoutesLastHour   			Integer32,
+	    failedRoutesFineBin    			Integer32,
+	    averageBackEndResponseTime24hours		Integer32,
+	    averageBackEndResponseTimeLastHour		Integer32,
+   	    averageBackEndResponseTimeFine		Integer32,
+	    averageFrontEndResponseTimeLast24hours	Integer32,
+	    averageFrontEndResponseTimeLastHour		Integer32,
+	    averageFrontEndResponseTimeFine		Integer32,
+	    policyViolationsLast24Hours			Integer32,
+	    policyViolationsLastHour			Integer32,
+ 	    policyViolationsFine			Integer32
+      }
+
+serviceOid OBJECT-TYPE
+      SYNTAX         DisplayString
+      MAX-ACCESS     read-only
+      STATUS         current
+      DESCRIPTION
+            "Unique service identifier"
+      ::= { serviceEntry 1 }
+      
+serviceName OBJECT-TYPE
+      SYNTAX          DisplayString
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Service Name"
+      ::= { serviceEntry 2 }
+      
+requests OBJECT-TYPE
+      SYNTAX          Counter32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of requests received by the SecureSpan Gateway"
+      ::= { serviceEntry 3 }
+      
+authRequests OBJECT-TYPE
+      SYNTAX          Counter32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of requests received by the SecureSpan Gateway that
+             are authorized to be processed."
+      ::= { serviceEntry 4 }
+      
+completedRequests OBJECT-TYPE
+      SYNTAX          Counter32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of requests received by the SecureSpan Gateway that
+             are authorized and have been processed."
+      ::= { serviceEntry 5 }
+
+failedRoutesLast24Hrs OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of failed routes for a policy in the last 24 hours."
+      ::= { serviceEntry 6 }
+
+failedRoutesLastHour OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of failed routes for a policy in the last hour."
+      ::= { serviceEntry 7 }
+
+failedRoutesFineBin OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of failed routes for a policy in the last fine time bin period."
+      ::= { serviceEntry 8 }
+
+averageBackEndResponseTime24hours OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average back end response time in milliseconds for a policy in the last 24 hour time period."
+      ::= { serviceEntry 9 }
+
+averageBackEndResponseTimeLastHour OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average back end response time in milliseconds for this policy in the last hour."
+      ::= { serviceEntry 10 }
+
+averageBackEndResponseTimeFine OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average back end response time in milliseconds for this policy for the last fine time interval."
+      ::= { serviceEntry 11 }
+
+averageFrontEndResponseTimeLast24hours OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average front end response time in milliseconds for this policy in the last 24 hours."
+      ::= { serviceEntry 12 }
+
+averageFrontEndResponseTimeLastHour OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average front end response time in milliseconds for this policy in the last hour."
+      ::= { serviceEntry 13 }
+
+averageFrontEndResponseTimeFine OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Average front end response time for this policy in the last fine bin time period."
+      ::= { serviceEntry 14 }
+
+policyViolationsLast24Hours OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of policy violations that have occurred in the last 24 hour 
+	     time interval for this policy."
+      ::= { serviceEntry 15 }
+
+policyViolationsLastHour OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of policy violations that have occurred in the last hourly 
+	     time bin interval for this policy."
+      ::= { serviceEntry 16 }
+
+policyViolationsFine OBJECT-TYPE
+      SYNTAX          Integer32
+      MAX-ACCESS      read-only
+      STATUS          current
+      DESCRIPTION
+            "Number of policy violations that have occurred in the fine 
+	     time bin interval for this policy."
+      ::= { serviceEntry 17 }
+
+genericStringNotification OBJECT-TYPE
+	SYNTAX OCTET STRING (SIZE (0..64))
+	MAX-ACCESS accessible-for-notify
+	STATUS current
+	DESCRIPTION
+		"A string object to represent a short notification"
+::= { l7 22 }
+
+layer7Generic1 NOTIFICATION-TYPE
+	OBJECTS { genericStringNotification }
+        STATUS      current
+		DESCRIPTION
+                "CA/Layer7 Error Type 1"
+		::= { l7NotificationGroup 1 }
+		
+layer7Generic2 NOTIFICATION-TYPE
+	OBJECTS { genericStringNotification }
+        STATUS      current
+ 		DESCRIPTION
+                "CA/Layer7 Error Type 2"
+		::= { l7NotificationGroup 2 }
+		
+layer7Generic3 NOTIFICATION-TYPE
+	OBJECTS { genericStringNotification }
+        STATUS      current
+ 		DESCRIPTION
+                "CA/Layer7 Error Type 3"
+		::= { l7NotificationGroup 3 }
+		
+layer7Generic4 NOTIFICATION-TYPE
+	OBJECTS { genericStringNotification }
+        STATUS      current
+ 		DESCRIPTION
+                "CA/Layer7 Error Type 4"
+		::= { l7NotificationGroup 4 }
+
+END      

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <bean id="sessionFactory" class="com.l7tech.external.assertions.snmpagent.server.MockSessionFactory" />
+
+    <bean id="serviceMetricsManager" class="com.l7tech.server.service.MockServiceMetricsManager" />
+    <bean id="serviceMetricsServices" class="com.l7tech.external.assertions.snmpagent.server.MockServiceMetricsServices" />
+
+    <bean id="serviceManager" class="com.l7tech.external.assertions.snmpagent.server.MockServiceManager" />
+    <bean id="serviceUsageManager" class="com.l7tech.external.assertions.snmpagent.server.MockServiceUsageManager" />
+    <bean id="clusterInfoManager" class="com.l7tech.server.ClusterInfoManagerStub" />
+</beans>
