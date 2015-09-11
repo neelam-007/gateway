@@ -1,0 +1,3 @@
+<project name="SymmetricKeyEncryptionDecryptionAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>
