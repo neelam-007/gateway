@@ -36,12 +36,14 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_ID = "Id";
     public static final String SK_ELE_VERSION = "Version";
     public static final String SK_ELE_NAME = "Name";
-    public static final String SK_ELE_DESC = "Description";
-    public static final String SK_ELE_TIMESTAMP = "TimeStamp";
-    public static final String SK_ELE_IS_COLLECTION = "IsCollection";
-    public static final String SK_ELE_FEATURE_SET = "FeatureSet";
-    public static final String SK_ELE_CUSTOM_UI = "CustomUI";
-    public static final String SK_ELE_CUSTOM_CALLBACK = "CustomCallback";
+    public static final String SK_ELE_DESC = SolutionKit.SK_PROP_DESC_KEY;
+    public static final String SK_ELE_TIMESTAMP = SolutionKit.SK_PROP_TIMESTAMP_KEY;
+    public static final String SK_ELE_IS_COLLECTION = SolutionKit.SK_PROP_IS_COLLECTION_KEY;
+    public static final String SK_ELE_FEATURE_SET = SolutionKit.SK_PROP_FEATURE_SET_KEY;
+    public static final String SK_ELE_CUSTOM_UI = "CustomUI";   // note the uppercase "I"
+    public static final String SK_ELE_CUSTOM_CALLBACK = SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY;
+    public static final String SK_ELE_ALLOW_ADDENDUM = SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
+
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
 
@@ -196,6 +198,11 @@ public final class SolutionKitUtils {
             solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
         }
 
+        final Element allowAddendumEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_ALLOW_ADDENDUM);
+        if (allowAddendumEle != null) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, DomUtils.getTextValue(allowAddendumEle));
+        }
+
         //TODO - Copying over of Dependencies element and its child elements
     }
 
@@ -228,6 +235,10 @@ public final class SolutionKitUtils {
         final String customUi = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
         if (customUi != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_CUSTOM_UI).setTextContent(customUi);
+        }
+        final String allowAddendum = solutionKit.getProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY);
+        if (allowAddendum != null) {
+            DomUtils.createAndAppendElement(docEle, SK_ELE_ALLOW_ADDENDUM).setTextContent(allowAddendum);
         }
 
         return doc;

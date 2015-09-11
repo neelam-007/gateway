@@ -265,7 +265,7 @@ public class SolutionKitsConfig {
                         mapping.setTargetId(resolvedId);
                     } else {
                         throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
-                                ".  Replacement id=" + resolvedId + " requires the .skar author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
+                                ".  Replacement id=" + resolvedId + " requires the .skar file author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true.");
                     }
                 }
             }

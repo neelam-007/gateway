@@ -10,6 +10,9 @@ import org.w3c.dom.Document;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.either;
+import static org.hamcrest.Matchers.startsWith;
+
 /**
  * Test utility methods
  */
@@ -28,6 +31,7 @@ public class SolutionKitUtilsTest {
                 "    <l7:FeatureSet>feature:FooBar</l7:FeatureSet>\n" +
                 "    <l7:CustomCallback>com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback</l7:CustomCallback>\n" +
                 "    <l7:CustomUI>com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi</l7:CustomUI>\n" +
+                "    <l7:AllowAddendum>false</l7:AllowAddendum>\n" +
                 "</l7:SolutionKit>\n";
 
         SolutionKit original = new SolutionKit();
@@ -40,6 +44,7 @@ public class SolutionKitUtilsTest {
         original.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "feature:FooBar");
         original.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback");
         original.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi");
+        original.setProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false");
 
         // make sure document created from solution kit is the same
         Document doc = SolutionKitUtils.createDocument(original);
@@ -57,13 +62,15 @@ public class SolutionKitUtilsTest {
         try {
             SolutionKitUtils.searchSolutionKitByGuidToUpgrade(null, "");
         } catch (Exception e) {
-            Assert.assertTrue("Check first argument not null:", e.getMessage().startsWith("Argument 0 for @NotNull parameter"));
+            // appears exception message can be variable: "Argument 0 for @NotNull parameter" or "Argument for @NotNull parameter 'solutionKitsToUpgrade'
+            Assert.assertThat(e.getMessage(), either(startsWith("Argument 0 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'solutionKitsToUpgrade")));
         }
 
         try {
             SolutionKitUtils.searchSolutionKitByGuidToUpgrade(new ArrayList<SolutionKit>(), null);
         } catch (Exception e) {
-            Assert.assertTrue("Check second argument not null:", e.getMessage().startsWith("Argument 1 for @NotNull parameter"));
+            // appears exception message can be variable: "Argument 1 for @NotNull parameter" or "Argument for @NotNull parameter 'guid'"
+            Assert.assertThat(e.getMessage(), either(startsWith("Argument 1 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'guid'")));
         }
 
         final List<SolutionKit> solutionKits = new ArrayList<>(2);

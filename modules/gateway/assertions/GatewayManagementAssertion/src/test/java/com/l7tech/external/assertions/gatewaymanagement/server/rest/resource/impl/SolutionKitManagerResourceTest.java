@@ -1,6 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
@@ -10,6 +14,7 @@ import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.util.*;
 import org.apache.commons.lang.CharEncoding;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.Nullable;
@@ -21,12 +26,16 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.ws.rs.core.Response;
+import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -34,8 +43,14 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.FORM_FIELD_NAME_BUNDLE;
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.PARAMETER_DELIMINATOR;
-import static org.junit.Assert.assertEquals;
+import static com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Solution Kit Manager Resource tests
@@ -158,6 +173,11 @@ public class SolutionKitManagerResourceTest {
 
     @Mock
     private LicenseManager licenseManager;
+    @Mock
+    private FormDataMultiPart formDataMultiPart;
+    @Mock
+    private SolutionKitsConfig solutionKitsConfig;
+
     @Spy
     private SolutionKitManager solutionKitManager = new SolutionKitManagerStub();
 
@@ -248,9 +268,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
 
         // test unsigned skar of skars
 
@@ -283,9 +303,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Invalid signed Zip"));
     }
 
     @Test
@@ -311,9 +331,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children unsigned)
@@ -351,9 +371,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children signed)
@@ -391,9 +411,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Missing required file SolutionKit.xml"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Missing required file SolutionKit.xml"));
         }
     }
 
@@ -429,9 +449,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children unsigned)
@@ -469,9 +489,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children signed)
@@ -509,9 +529,9 @@ public class SolutionKitManagerResourceTest {
             Assert.assertNotNull(response);
             Assert.assertNotNull(response.getStatusInfo());
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-            Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-            Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            Assert.assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
         }
     }
 
@@ -553,7 +573,7 @@ public class SolutionKitManagerResourceTest {
                     @Override
                     public Pair<byte[], Properties> call(final byte[] dataBytes, final Properties sigProps) throws Exception {
                         Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        assertThat(dataBytes.length, Matchers.greaterThan(0));
                         Assert.assertNotNull(sigProps);
                         return Pair.pair(SignatureTestUtils.flipRandomByte(dataBytes), sigProps);
                     }
@@ -572,9 +592,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,7 +608,7 @@ public class SolutionKitManagerResourceTest {
                     @Override
                     public Pair<byte[], Properties> call(final byte[] dataBytes, final Properties sigProps) throws Exception {
                         Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        assertThat(dataBytes.length, Matchers.greaterThan(0));
                         Assert.assertNotNull(sigProps);
 
                         // read the signature property
@@ -598,7 +618,7 @@ public class SolutionKitManagerResourceTest {
                         final byte[] modSignBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signatureB64));
                         // store modified signature
                         sigProps.setProperty("signature", HexUtils.encodeBase64(modSignBytes));
-                        Assert.assertThat(signatureB64, Matchers.not(Matchers.equalTo((String) sigProps.get("signature"))));
+                        assertThat(signatureB64, Matchers.not(Matchers.equalTo((String) sigProps.get("signature"))));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);
@@ -618,9 +638,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.either(Matchers.containsString("Signature not verified")).or(Matchers.containsString("Could not verify signature")));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.either(Matchers.containsString("Signature not verified")).or(Matchers.containsString("Could not verify signature")));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -633,7 +653,7 @@ public class SolutionKitManagerResourceTest {
                     @Override
                     public Pair<byte[], Properties> call(final byte[] dataBytes, final Properties sigProps) throws Exception {
                         Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        assertThat(dataBytes.length, Matchers.greaterThan(0));
                         Assert.assertNotNull(sigProps);
 
                         // read the signer cert property
@@ -643,7 +663,7 @@ public class SolutionKitManagerResourceTest {
                         final byte[] modSignerCertBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signerCertB64));
                         // store modified signature
                         sigProps.setProperty("cert", HexUtils.encodeBase64(modSignerCertBytes));
-                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
+                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);
@@ -663,9 +683,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat(
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat(
                 (String) response.getEntity(),
                 Matchers.anyOf(
                         Matchers.containsString("Failed to verify signer certificate"),
@@ -706,15 +726,15 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.OK.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Request completed successfully"));
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // sign our first sample using untrusted signer and swap the signature from signedTrustedAnotherSampleSkarBytes
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Assert.assertThat(untrustedDNs[0], Matchers.equalTo(TRUSTED_SIGNER_CERT_DNS[0])); // make sure same DN is used (simply to look more legit)
+        assertThat(untrustedDNs[0], Matchers.equalTo(TRUSTED_SIGNER_CERT_DNS[0])); // make sure same DN is used (simply to look more legit)
         tamperedSignedSkarBytes = SignatureTestUtils.signAndTamperWithContent(
                 new ByteArrayInputStream(sampleSkarBytes),
                 untrustedSigner,
@@ -723,7 +743,7 @@ public class SolutionKitManagerResourceTest {
                     @Override
                     public Pair<byte[], Properties> call(final byte[] dataBytes, final Properties sigProps) throws Exception {
                         Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        assertThat(dataBytes.length, Matchers.greaterThan(0));
                         Assert.assertNotNull(sigProps);
 
                         // read the signature and signer cert property
@@ -755,7 +775,7 @@ public class SolutionKitManagerResourceTest {
                 }
         );
         // verify the tamperedSignedSkarBytes have the same signature properties raw-bytes as signedTrustedAnotherSampleSkarBytes
-        Assert.assertThat(SignatureTestUtils.getSignatureProperties(tamperedSignedSkarBytes), Matchers.equalTo(SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes)));
+        assertThat(SignatureTestUtils.getSignatureProperties(tamperedSignedSkarBytes), Matchers.equalTo(SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes)));
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
@@ -769,16 +789,16 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // same as above but instead of swapping the entire signature properties bytes, swap only the signer cert and leave signature unchanged
         // sign our first sample using untrusted signer and swap the signing cert from signedTrustedAnotherSampleSkarBytes
-        Assert.assertThat(untrustedDNs[0], Matchers.equalTo(TRUSTED_SIGNER_CERT_DNS[0])); // make sure same DN is used (simply to look more legit)
+        assertThat(untrustedDNs[0], Matchers.equalTo(TRUSTED_SIGNER_CERT_DNS[0])); // make sure same DN is used (simply to look more legit)
         tamperedSignedSkarBytes = SignatureTestUtils.signAndTamperWithContent(
                 new ByteArrayInputStream(sampleSkarBytes),
                 untrustedSigner,
@@ -787,7 +807,7 @@ public class SolutionKitManagerResourceTest {
                     @Override
                     public Pair<byte[], Properties> call(final byte[] dataBytes, final Properties sigProps) throws Exception {
                         Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
+                        assertThat(dataBytes.length, Matchers.greaterThan(0));
                         Assert.assertNotNull(sigProps);
 
                         // read the signature and signer cert property
@@ -816,9 +836,9 @@ public class SolutionKitManagerResourceTest {
                         // swap signing cert property
                         sigProps.setProperty("cert", HexUtils.encodeBase64(trustedSignerCertBytes));
                         // make sure after the swap the signer cert is different
-                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
+                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
                         // make sure after the swap the signature is unchanged
-                        Assert.assertThat(signatureB64, Matchers.equalTo((String) sigProps.get("signature")));
+                        assertThat(signatureB64, Matchers.equalTo((String) sigProps.get("signature")));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);
@@ -826,7 +846,7 @@ public class SolutionKitManagerResourceTest {
                 }
         );
         // verify that the tamperedSignedSkarBytes signature properties raw-bytes differ than signedTrustedAnotherSampleSkarBytes
-        Assert.assertThat(SignatureTestUtils.getSignatureProperties(tamperedSignedSkarBytes), Matchers.not(Matchers.equalTo(SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes))));
+        assertThat(SignatureTestUtils.getSignatureProperties(tamperedSignedSkarBytes), Matchers.not(Matchers.equalTo(SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes))));
         // test
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
@@ -840,9 +860,9 @@ public class SolutionKitManagerResourceTest {
         Assert.assertNotNull(response);
         Assert.assertNotNull(response.getStatusInfo());
         logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
-        Assert.assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
-        Assert.assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-        Assert.assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
+        assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(response.getEntity(), Matchers.instanceOf(String.class));
+        assertThat((String) response.getEntity(), Matchers.containsString("Signature not verified"));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
@@ -869,7 +889,7 @@ public class SolutionKitManagerResourceTest {
             @Nullable final SignatureVerifier signer,
             @Nullable final String signerDn
     ) throws Exception {
-        Assert.assertThat(numChildren, Matchers.greaterThanOrEqualTo(1));
+        assertThat(numChildren, Matchers.greaterThanOrEqualTo(1));
         if (sign) {
             // these are mandatory to sign the SK
             Assert.assertNotNull(signer);
@@ -907,11 +927,11 @@ public class SolutionKitManagerResourceTest {
             final String installBundleXml,
             final InputStream[] childSkars
     ) throws Exception {
-        Assert.assertThat(metaXml, Matchers.not(Matchers.isEmptyOrNullString()));
+        assertThat(metaXml, Matchers.not(Matchers.isEmptyOrNullString()));
         final boolean isSkarOfSkars = childSkars != null && childSkars.length > 0;
         if (!isSkarOfSkars) {
             // if not skar-of-skars then install bundle is mandatory
-            Assert.assertThat(installBundleXml, Matchers.not(Matchers.isEmptyOrNullString()));
+            assertThat(installBundleXml, Matchers.not(Matchers.isEmptyOrNullString()));
         }
         metaXml = MessageFormat.format(metaXml, String.valueOf(isSkarOfSkars));
         
@@ -937,6 +957,305 @@ public class SolutionKitManagerResourceTest {
 
         // finally return the bytes
         return outputZip.toByteArray();
+    }
+
+    @Test
+    public void applyAddendumBundlesErrors() throws Exception {
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(2);
+        SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, "true");
+        selectedSolutionKits.add(solutionKit);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        {
+            // setup addendum bundle
+            final FormDataBodyPart addendumPart = mock(FormDataBodyPart.class);
+            when(formDataMultiPart.getField(FORM_FIELD_NAME_BUNDLE)).thenReturn(addendumPart);
+            String emptyAddendumBundleStr = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                    "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                    "</l7:Bundle>";
+            when(addendumPart.getValueAs(InputStream.class)).thenReturn(new ByteArrayInputStream(emptyAddendumBundleStr.getBytes(StandardCharsets.UTF_8)));
+
+            // test # selected solution kits > 1
+            SolutionKit solutionKit2 = new SolutionKit();
+            solutionKit.setName("SK2 name");
+            selectedSolutionKits.add(solutionKit2);
+            try {
+                solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+                fail("Expected: error. Can't have more than one Solution Kit in scope when using addendum bundle.");
+            } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+                assertThat((String) e.getResponse().getEntity(), startsWith("Can't have more than one Solution Kit in scope when using form field named '"));
+            }
+            selectedSolutionKits.remove(solutionKit2);
+
+            // test not allow addendum
+            solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, "false");
+            try {
+                solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+                fail("Expected: error.  The selected .skar file does not allow addendum bundle.");
+            } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+                assertThat((String) e.getResponse().getEntity(), startsWith("The selected .skar file does not allow addendum bundle.  Form field named '"));
+            }
+            solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, "true");
+
+            // test addendum bundle has no mapping
+            try {
+                solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+                fail("Expected: error. The addendum bundle can't have null mappings.");
+            } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+                assertThat((String) e.getResponse().getEntity(), startsWith("The addendum bundle specified using form field named '"));
+            }
+        }
+
+        {
+            // setup addendum bundle
+            final FormDataBodyPart addendumPart = mock(FormDataBodyPart.class);
+            when(formDataMultiPart.getField(FORM_FIELD_NAME_BUNDLE)).thenReturn(addendumPart);
+            final String bundleStr = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                    "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                    "    <l7:References>\n" +
+                    "        <l7:Item>\n" +
+                    "            <l7:Name>SSG</l7:Name>\n" +
+                    "            <l7:Id>0567c6a8f0c4cc2c9fb331cb03b4de6f</l7:Id>\n" +
+                    "            <l7:Type>JDBC_CONNECTION</l7:Type>\n" +
+                    "            <l7:TimeStamp>2015-03-13T11:44:51.513-07:00</l7:TimeStamp>\n" +
+                    "            <l7:Resource>\n" +
+                    "                <l7:JDBCConnection id=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" version=\"0\">\n" +
+                    "                    <l7:Name>SSG</l7:Name>\n" +
+                    "                    <l7:Enabled>true</l7:Enabled>\n" +
+                    "                    <l7:Properties>\n" +
+                    "                        <l7:Property key=\"maximumPoolSize\">\n" +
+                    "                            <l7:IntegerValue>15</l7:IntegerValue>\n" +
+                    "                        </l7:Property>\n" +
+                    "                        <l7:Property key=\"minimumPoolSize\">\n" +
+                    "                            <l7:IntegerValue>3</l7:IntegerValue>\n" +
+                    "                        </l7:Property>\n" +
+                    "                    </l7:Properties>\n" +
+                    "                    <l7:Extension>\n" +
+                    "                        <l7:DriverClass>com.l7tech.jdbc.mysql.MySQLDriver</l7:DriverClass>\n" +
+                    "                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg</l7:JdbcUrl>\n" +
+                    "                        <l7:ConnectionProperties>\n" +
+                    "                            <l7:Property key=\"EnableCancelTimeout\">\n" +
+                    "                                <l7:StringValue>true</l7:StringValue>\n" +
+                    "                            </l7:Property>\n" +
+                    "                            <l7:Property key=\"password\">\n" +
+                    "                                <l7:StringValue>${secpass.mysql_root.plaintext}</l7:StringValue>\n" +
+                    "                            </l7:Property>\n" +
+                    "                            <l7:Property key=\"user\">\n" +
+                    "                                <l7:StringValue>root</l7:StringValue>\n" +
+                    "                            </l7:Property>\n" +
+                    "                        </l7:ConnectionProperties>\n" +
+                    "                    </l7:Extension>\n" +
+                    "                </l7:JDBCConnection>\n" +
+                    "            </l7:Resource>\n" +
+                    "        </l7:Item>\n" +
+                    "    </l7:References>\n" +
+                    "    <l7:Mappings>\n" +
+                    "        <l7:Mapping action=\"NewOrExisting\" srcId=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f\" type=\"JDBC_CONNECTION\">\n" +
+                    "            <l7:Properties>\n" +
+                    "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                    "            </l7:Properties>\n" +
+                    "        </l7:Mapping>\n" +
+                    "    </l7:Mappings>\n" +
+                    "</l7:Bundle>";
+            InputStream inputStream = new ByteArrayInputStream(bundleStr.getBytes(StandardCharsets.UTF_8));
+            when(addendumPart.getValueAs(InputStream.class)).thenReturn(inputStream);
+
+            // test skar bundle can't be null
+            try {
+                solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+                fail("Expected: error. The .skar file bundle can't be null when addendum bundle has been specified.");
+            } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+                assertThat((String) e.getResponse().getEntity(), startsWith("The .skar file bundle can't be null (nor have null references, nor null mappings) "));
+            }
+
+            // test skar bundle mapping no override flag
+            inputStream.reset();
+            final DOMSource bundleSource = new DOMSource();
+            final Document bundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
+            final Element addendumBundleEle = bundleDoc.getDocumentElement();
+            bundleSource.setNode(addendumBundleEle);
+            final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, bundleSource, true);   // Bundle, Item and Mapping constructors are private; use marshalling instead
+            inputStream.reset();
+            when(solutionKitsConfig.getBundle(solutionKit)).thenReturn(bundle);
+            try {
+                solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+                fail("Expected: error. The .skar file bundle mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' is missing.");
+            } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+                assertThat((String) e.getResponse().getEntity(), startsWith("Unable to process addendum bundle for mapping with scrId="));
+            }
+        }
+    }
+
+    @Test
+    public void applyAddendumBundles() throws Exception {
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(1);
+        SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, "true");
+        selectedSolutionKits.add(solutionKit);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        // setup addendum bundle
+        final FormDataBodyPart addendumPart = mock(FormDataBodyPart.class);
+        when(formDataMultiPart.getField(FORM_FIELD_NAME_BUNDLE)).thenReturn(addendumPart);
+        final String addendumBundleStr = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References>\n" +
+                "        <l7:Item>\n" +
+                "            <l7:Name>CHANGED! SSG</l7:Name>\n" +
+                "            <l7:Id>0567c6a8f0c4cc2c9fb331cb03b4de6f</l7:Id>\n" +
+                "            <l7:Type>JDBC_CONNECTION</l7:Type>\n" +
+                "            <l7:TimeStamp>2015-03-13T11:44:51.513-07:00</l7:TimeStamp>\n" +
+                "            <l7:Resource>\n" +
+                "                <l7:JDBCConnection id=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" version=\"0\">\n" +
+                "                    <l7:Name>SSG</l7:Name>\n" +
+                "                    <l7:Enabled>true</l7:Enabled>\n" +
+                "                    <l7:Properties>\n" +
+                "                        <l7:Property key=\"maximumPoolSize\">\n" +
+                "                            <l7:IntegerValue>15</l7:IntegerValue>\n" +
+                "                        </l7:Property>\n" +
+                "                        <l7:Property key=\"minimumPoolSize\">\n" +
+                "                            <l7:IntegerValue>3</l7:IntegerValue>\n" +
+                "                        </l7:Property>\n" +
+                "                    </l7:Properties>\n" +
+                "                    <l7:Extension>\n" +
+                "                        <l7:DriverClass>com.l7tech.jdbc.mysql.MySQLDriver</l7:DriverClass>\n" +
+                "                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg</l7:JdbcUrl>\n" +
+                "                        <l7:ConnectionProperties>\n" +
+                "                            <l7:Property key=\"EnableCancelTimeout\">\n" +
+                "                                <l7:StringValue>true</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                            <l7:Property key=\"password\">\n" +
+                "                                <l7:StringValue>${secpass.mysql_root.plaintext}</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                            <l7:Property key=\"user\">\n" +
+                "                                <l7:StringValue>root</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                        </l7:ConnectionProperties>\n" +
+                "                    </l7:Extension>\n" +
+                "                </l7:JDBCConnection>\n" +
+                "            </l7:Resource>\n" +
+                "        </l7:Item>\n" +
+                "    </l7:References>\n" +
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" srcUri=\"https://CHANGED:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f\" type=\"JDBC_CONNECTION\">\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "                <l7:Property key=\"SK_AllowMappingOverride\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "        </l7:Mapping>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>";
+        final InputStream addendumInputStream = new ByteArrayInputStream(addendumBundleStr.getBytes(StandardCharsets.UTF_8));
+        when(addendumPart.getValueAs(InputStream.class)).thenReturn(addendumInputStream);
+
+        // setup skar bundle (REPLACE reference item)
+        String bundleStr = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References>\n" +
+                "        <l7:Item>\n" +
+                "            <l7:Name>SSG</l7:Name>\n" +
+                "            <l7:Id>0567c6a8f0c4cc2c9fb331cb03b4de6f</l7:Id>\n" +
+                "            <l7:Type>JDBC_CONNECTION</l7:Type>\n" +
+                "            <l7:TimeStamp>2015-03-13T11:44:51.513-07:00</l7:TimeStamp>\n" +
+                "            <l7:Resource>\n" +
+                "                <l7:JDBCConnection id=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" version=\"0\">\n" +
+                "                    <l7:Name>SSG</l7:Name>\n" +
+                "                    <l7:Enabled>true</l7:Enabled>\n" +
+                "                    <l7:Properties>\n" +
+                "                        <l7:Property key=\"maximumPoolSize\">\n" +
+                "                            <l7:IntegerValue>15</l7:IntegerValue>\n" +
+                "                        </l7:Property>\n" +
+                "                        <l7:Property key=\"minimumPoolSize\">\n" +
+                "                            <l7:IntegerValue>3</l7:IntegerValue>\n" +
+                "                        </l7:Property>\n" +
+                "                    </l7:Properties>\n" +
+                "                    <l7:Extension>\n" +
+                "                        <l7:DriverClass>com.l7tech.jdbc.mysql.MySQLDriver</l7:DriverClass>\n" +
+                "                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg</l7:JdbcUrl>\n" +
+                "                        <l7:ConnectionProperties>\n" +
+                "                            <l7:Property key=\"EnableCancelTimeout\">\n" +
+                "                                <l7:StringValue>true</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                            <l7:Property key=\"password\">\n" +
+                "                                <l7:StringValue>${secpass.mysql_root.plaintext}</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                            <l7:Property key=\"user\">\n" +
+                "                                <l7:StringValue>root</l7:StringValue>\n" +
+                "                            </l7:Property>\n" +
+                "                        </l7:ConnectionProperties>\n" +
+                "                    </l7:Extension>\n" +
+                "                </l7:JDBCConnection>\n" +
+                "            </l7:Resource>\n" +
+                "        </l7:Item>\n" +
+                "    </l7:References>\n" +
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f\" type=\"JDBC_CONNECTION\">\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "                <l7:Property key=\"SK_AllowMappingOverride\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "        </l7:Mapping>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>";
+        InputStream inputStream = new ByteArrayInputStream(bundleStr.getBytes(StandardCharsets.UTF_8));
+        DOMSource bundleSource = new DOMSource();
+        Document bundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
+        Element addendumBundleEle = bundleDoc.getDocumentElement();
+        bundleSource.setNode(addendumBundleEle);
+        Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, bundleSource, true);   // Bundle, Item and Mapping constructors are private; use marshalling instead
+        when(solutionKitsConfig.getBundle(solutionKit)).thenReturn(bundle);
+
+        // make sure we have 1 of each before we start
+        assertEquals(1, bundle.getReferences().size());
+        assertEquals(1, bundle.getMappings().size());
+
+        // apply addendum bundle
+        solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+
+        // make sure we still have 1 of each after
+        assertEquals(1, bundle.getMappings().size());
+        assertEquals(1, bundle.getReferences().size());
+
+        // test bundle mapping replaced with addendum bundle mapping
+        assertThat(bundle.getMappings().get(0).getSrcUri(), startsWith("https://CHANGED"));
+
+        // test skar bundle reference item replaced with addendum bundle reference item
+        assertThat(bundle.getReferences().get(0).getName(), startsWith("CHANGED! "));
+
+        // setup skar bundle (ADD reference item)
+        addendumInputStream.reset();
+        bundleStr = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References>\n" +
+                "    </l7:References>\n" +
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"0567c6a8f0c4cc2c9fb331cb03b4de6f\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f\" type=\"JDBC_CONNECTION\">\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "                <l7:Property key=\"SK_AllowMappingOverride\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "        </l7:Mapping>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>";
+        inputStream = new ByteArrayInputStream(bundleStr.getBytes(StandardCharsets.UTF_8));
+        bundleSource = new DOMSource();
+        bundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
+        addendumBundleEle = bundleDoc.getDocumentElement();
+        bundleSource.setNode(addendumBundleEle);
+        bundle = MarshallingUtils.unmarshal(Bundle.class, bundleSource, true);   // Bundle, Item and Mapping constructors are private; use marshalling instead
+        when(solutionKitsConfig.getBundle(solutionKit)).thenReturn(bundle);
+
+        // make sure we have 0 references items and 1 mapping before we start
+        assertEquals(0, bundle.getReferences().size());
+        assertEquals(1, bundle.getMappings().size());
+
+        // apply addendum bundle
+        solutionKitResource.applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+
+        // test that addendum bundle reference item was added to skar bundle
+        assertEquals(1, bundle.getReferences().size());
+        assertEquals(1, bundle.getMappings().size());
     }
 
     // TODO more tests

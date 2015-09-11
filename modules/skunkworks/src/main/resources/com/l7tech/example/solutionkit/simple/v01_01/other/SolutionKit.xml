@@ -8,4 +8,5 @@
     <l7:FeatureSet>feature:FooBar</l7:FeatureSet>
     <l7:CustomUI>com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi</l7:CustomUI>
     <l7:CustomCallback>com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback</l7:CustomCallback>
+    <l7:AllowAddendum>true</l7:AllowAddendum>
 </l7:SolutionKit>

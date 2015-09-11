@@ -41,8 +41,9 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     public static final String SK_PROP_IS_COLLECTION_KEY = "IsCollection";
     public static final String SK_PROP_FEATURE_SET_KEY = "FeatureSet";
     public static final String SK_PROP_CUSTOM_CALLBACK_KEY = "CustomCallback";
-    public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";
+    public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";   // note the lowercase "i"
     public static final String SK_PROP_INSTANCE_MODIFIER_KEY = "InstanceModifier";
+    public static final String SK_PROP_ALLOW_ADDENDUM_KEY = "AllowAddendum";
 
     public static final String PARENT_SOLUTION_KIT_DUMMY_MAPPINGS = "<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT";
 

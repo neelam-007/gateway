@@ -2,9 +2,15 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 /* NOTE: The java docs in this class get converted to API documentation seen by customers! */
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitCustomization;
@@ -21,10 +27,7 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
+import com.l7tech.util.*;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -33,6 +36,8 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.inject.Singleton;
@@ -40,6 +45,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import javax.xml.XMLConstants;
+import javax.xml.transform.dom.DOMSource;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -49,6 +58,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
 import static java.lang.System.lineSeparator;
 import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.status;
@@ -65,6 +76,7 @@ import static org.apache.commons.lang.StringUtils.*;
 public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
+    protected static final String FORM_FIELD_NAME_BUNDLE = "bundle";
     protected static final String PARAMETER_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
 
     private SolutionKitManager solutionKitManager;
@@ -206,6 +218,9 @@ public class SolutionKitManagerResource {
             // Note that these selected solution kits have been assigned with instance modifiers (default: empty/null)
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
+            // optionally apply addendum bundle(s)
+            applyAddendumBundles(formDataMultiPart, solutionKitsConfig);
+
             // (SSG-11727) Check if any two selected solution kits have same GUID and instance modifier. If so, return
             // a conflict error response and stop installation.  This checking is applied to install and upgrade.
             // This checking will detect a following error case:
@@ -333,7 +348,7 @@ public class SolutionKitManagerResource {
 
     /**
      * Will attempt a dry-run (i.e. test bundle import) of the selected solution kits.<br/>
-     * Method simply calls {@link SolutionKitManager#importBundle(String, String, boolean)} and handles potential conflicts.
+     * Method simply calls {@link SolutionKitManager#importBundle(String, SolutionKit, boolean)} and handles potential conflicts.
      *
      * @param solutionKitAdminHelper the helper class used to call validating solution kit for install or upgrade
      * @param solutionKitsConfig the SolutionKit config object.  Required and cannot be {@code null}.
@@ -348,7 +363,8 @@ public class SolutionKitManagerResource {
             // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
             // contain UpgradeBundle.xml, then throw exception with warning
             if (isUpgrade && !solutionKitsConfig.isUpgradeInfoProvided(solutionKit)) {
-                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The solution kit '" + solutionKit.getName() + "' is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The solution kit '" + solutionKit.getName() +
+                        "' is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
             }
 
             // Check if a target solution kit is good for install.
@@ -658,7 +674,8 @@ public class SolutionKitManagerResource {
         entityIdReplaceMap.put(substringBefore(entityIdReplaceDecoded, PARAMETER_DELIMINATOR).trim(), substringAfter(entityIdReplaceDecoded, PARAMETER_DELIMINATOR).trim());
     }
 
-    private void setCustomizationKeyValues(@NotNull final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations, @NotNull FormDataMultiPart formDataMultiPart) throws SolutionKitException, UnsupportedEncodingException {
+    private void setCustomizationKeyValues(@NotNull final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations,
+                                           @NotNull FormDataMultiPart formDataMultiPart) throws SolutionKitException, SolutionKitManagerResourceException, UnsupportedEncodingException {
         // pass on all unknown form fields as customization key-value input
         final List<BodyPart> bodyParts = formDataMultiPart.getBodyParts();
         final List<FormDataBodyPart> keyValues = new ArrayList<>(bodyParts.size());
@@ -667,7 +684,7 @@ public class SolutionKitManagerResource {
             final String name = parameters.get("name");
 
             // NOTE: skip known form fields from method declaration above (strings not final static constants because Jersey annotations complains with error)
-            if (!"file".equals(name) && !"solutionKitSelect".equals(name) && !"entityIdReplace".equals(name)) {
+            if (name != null && !name.startsWith(FORM_FIELD_NAME_BUNDLE) && !"file".equals(name) && !"solutionKitSelect".equals(name) && !"entityIdReplace".equals(name)) {
                 keyValues.add(formDataMultiPart.getField(name));
             }
         }
@@ -681,7 +698,13 @@ public class SolutionKitManagerResource {
                     String customizationKey, customizationValue;
                     for (FormDataBodyPart customizationKeyValue : keyValues) {
                         customizationKey = URLDecoder.decode(customizationKeyValue.getName(), CharEncoding.UTF_8);
-                        customizationValue = URLDecoder.decode(customizationKeyValue.getValue(), CharEncoding.UTF_8);
+                        try {
+                            customizationValue = URLDecoder.decode(customizationKeyValue.getValue(), CharEncoding.UTF_8);
+                        } catch (IllegalStateException e) {
+                            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(
+                                    "Unable to pass form-field value for '" + customizationKey + "' to the Custom Callback. " + e.getMessage() + lineSeparator()).build());
+                        }
                         if (isNotEmpty(customizationKey) && isNotEmpty(customizationValue)) {
                             customUi.getContext().getKeyValues().put(customizationKey, customizationValue);
                         }
@@ -691,7 +714,124 @@ public class SolutionKitManagerResource {
         }
     }
 
-    private class SolutionKitManagerResourceException extends Exception {
+    /*
+        Addendum Bundle: this is an undocumented “dark feature” that’s not QA’d.
+
+        Prerequisites:
+            - Requires that only one Solution Kit is in scope.  If using a collection of Solution Kits, select only one child Solution Kit for the request (e.g. specify a GUID in form-field name solutionKitSelect).
+            - If Solution Kit supports upgrade, a separate upgrade addendum bundle is required (e.g. mapping action=“NewOrUpdate"instead of "AlwaysCreateNew")
+            - The .skar file's bundle requires the <l7:Mappings> element (note the ending “s”).
+            - <l7:AllowAddendum> must be true in .skar file metadata (i.e. SolutionKit.xml)
+            - The .skar file mapping(s) to change must set "SK_AllowMappingOverride" property to true
+
+        Algorithm:
+            Loop through addendum bundle mappings
+                if skar bundle has mapping AND has override flag true
+                    replace bundle mapping with addendum bundle mapping
+                else
+                    throw error (400 Bad Request or 403 Forbidden)
+
+                if addendum bundle has reference item matching it's mapping srdId
+                    if skar bundle has reference item with same id
+                        replace skar bundle's reference item with addendum bundle reference item
+                    else
+                        add addendum bundle reference item
+
+         TODO move code below to a class for better separation (possibly SolutionKitUtils or SolutionKitConfig)
+     */
+    void applyAddendumBundles(@NotNull final FormDataMultiPart formDataMultiPart,
+                              @NotNull final SolutionKitsConfig solutionKitsConfig) throws IOException, SAXException, SolutionKitManagerResourceException {
+
+        final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
+        final FormDataBodyPart addendumPart = formDataMultiPart.getField(FORM_FIELD_NAME_BUNDLE);
+        if (addendumPart != null) {
+            if (selectedSolutionKits.size() > 1) {
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("Can't have more than one Solution Kit in scope when using form field named '" +
+                        FORM_FIELD_NAME_BUNDLE + "'. If using a collection of Solution Kits, select only one child Solution Kit for the request." + lineSeparator()).build());
+            }
+
+            // future: handle collection of skars using field name "bundle" + <solution_kit_guid>
+            SolutionKit solutionKit = selectedSolutionKits.iterator().next();
+
+            // check if metadata allows Add flag to solution kit meta to allow author to control support for this dynamic bundle (e.g. allow or not allow dynamic bundle)
+            final Boolean allowAddendum = Boolean.valueOf(solutionKit.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY));
+            if (!allowAddendum) {
+                throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity("The selected .skar file does not allow addendum bundle.  Form field named '" + FORM_FIELD_NAME_BUNDLE +
+                        "' not allow unless the .skar file author has metadata element '" + SK_PROP_ALLOW_ADDENDUM_KEY + "' to true." + lineSeparator()).build());
+            }
+
+            final InputStream addendumInputStream = addendumPart.getValueAs(InputStream.class);
+            final DOMSource addendumBundleSource = new DOMSource();
+            final Document addendumBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(addendumInputStream)));
+            final Element addendumBundleEle = addendumBundleDoc.getDocumentElement();
+            addendumBundleSource.setNode(addendumBundleEle);
+            final Bundle addendumBundle = MarshallingUtils.unmarshal(Bundle.class, addendumBundleSource, true);
+
+            if (addendumBundle == null || addendumBundle.getMappings() == null) {
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(
+                        "The addendum bundle specified using form field named '" + FORM_FIELD_NAME_BUNDLE + "' can't be null (nor have null mappings)." + lineSeparator()).build());
+            }
+
+            // get the skar bundle
+            final Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
+            if (bundle == null || bundle.getReferences() == null || bundle.getMappings() == null) {
+                // skar bundle null shouldn't happen; just in case
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("The .skar file bundle can't be null (nor have null references, nor null mappings) " +
+                        "when addendum bundle has been specified (i.e. form field named '" + FORM_FIELD_NAME_BUNDLE + "' was provided)." + lineSeparator()).build());
+            }
+
+            // use skar bundle to build a map of srcId->mapping and map of id->reference
+            final List<Item> referenceItems = bundle.getReferences();
+            final Map<String, Item> idReferenceItemMap = new HashMap<>(referenceItems.size());
+            for (Item referenceItem : referenceItems) {
+                idReferenceItemMap.put(referenceItem.getId(), referenceItem);
+            }
+            final List<Mapping> mappings = bundle.getMappings();
+            final Map<String, Mapping> srcIdMappingMap = new HashMap<>(mappings.size());
+            for (Mapping mapping : mappings) {
+                srcIdMappingMap.put(mapping.getSrcId(), mapping);
+            }
+
+            // use addendum bundle to build a map of id->reference
+            final Map<String, Item> addendumIdReferenceMap = new HashMap<>(addendumBundle.getReferences().size());
+            for (Item referenceItem : addendumBundle.getReferences()) {
+                addendumIdReferenceMap.put(referenceItem.getId(), referenceItem);
+            }
+
+            // make decisions on addendum bundle mappings
+            for (Mapping addendumMapping : addendumBundle.getMappings()) {
+
+                // check if skar bundle has mapping AND has override flag true
+                Mapping mapping = srcIdMappingMap.get(addendumMapping.getSrcId());
+                if (mapping != null) {
+                    final Boolean allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+                    if (allowOverride == null || !allowOverride) {
+                        throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity("Unable to process addendum bundle for mapping with scrId=" + addendumMapping.getSrcId() +
+                                ".  This requires the .skar file author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true." + lineSeparator()).build());
+                    }
+
+                    // replace skar bundle mapping with addendum bundle mapping
+                    mappings.set(mappings.indexOf(mapping), addendumMapping);
+
+                    // check if addendum bundle has reference item with srdId
+                    Item addendumReferenceItem = addendumIdReferenceMap.get(addendumMapping.getSrcId());
+                    if (addendumReferenceItem != null) {
+                        // check if skar bundle has reference item with same id
+                        Item referenceItem = idReferenceItemMap.get(addendumReferenceItem.getId());
+                        if (referenceItem != null) {
+                            // replace skar bundle's reference item with addendum bundle reference item
+                            referenceItems.set(referenceItems.indexOf(referenceItem), addendumReferenceItem);
+                        } else {
+                            // add addendum bundle reference item
+                            referenceItems.add(addendumReferenceItem);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    class SolutionKitManagerResourceException extends Exception {
         @NotNull
         private Response response;
 
