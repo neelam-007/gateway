@@ -164,6 +164,19 @@ public class ServerSwaggerAssertionTest {
         assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
     }
 
+    @Test
+    public void testSwaggerValidRequest_invalidServiceBasePattern() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        assertion.setServiceBase("/svr/pet/");
+        fixture = createServer(assertion);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+    }
 
     @Test
     public void testSwaggerValidRequest_checkEmptyServiceBaseContextVariable() throws Exception {

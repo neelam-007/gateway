@@ -108,16 +108,8 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         }
 
         HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-        //determine the service base
-        String serviceBase;
-        if(StringUtils.isNotBlank(assertion.getServiceBase())){
-            serviceBase = ExpandVariables.process(assertion.getServiceBase(), variableMap, getAudit());
-        }
-        else {
-            serviceBase = getServiceRoutingUri(context.getService());
-        }
-
-        String apiUri = httpRequestKnob.getRequestUri().replaceFirst(serviceBase, ""); // remove service from the request uri
+        // calculate the apiUri
+        String apiUri = getApiUri(context, variableMap, httpRequestKnob);
 
         // set context variables regardless of the validation results
         context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_API_URI, apiUri);
@@ -127,6 +119,28 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         // perform the validation
 
         return validate(model, resolver, httpRequestKnob, apiUri) ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+    }
+
+    private String getApiUri(PolicyEnforcementContext context, Map<String, Object> variableMap, HttpRequestKnob httpRequestKnob) {
+        String serviceBase;
+        if(StringUtils.isNotBlank(assertion.getServiceBase())){
+            serviceBase = ExpandVariables.process(assertion.getServiceBase(), variableMap, getAudit());
+        }
+        else {
+            serviceBase = getServiceRoutingUri(context.getService());
+        }
+
+        String apiUri;
+
+        String requestUri = httpRequestKnob.getRequestUri().trim();
+        int serviceBaseIndex = requestUri.indexOf(serviceBase); // remove service from the request uri
+        if(serviceBaseIndex == 0) {
+            apiUri = requestUri.substring(serviceBase.length());
+        }
+        else {
+            apiUri = requestUri;
+        }
+        return apiUri;
     }
 
     protected boolean validate(Swagger model, PathResolver resolver, HttpRequestKnob httpRequestKnob, String apiUri) {
