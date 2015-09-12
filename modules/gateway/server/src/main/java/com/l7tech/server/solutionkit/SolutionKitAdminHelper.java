@@ -83,9 +83,9 @@ public class SolutionKitAdminHelper {
      * @return the resulting mapping XML
      */
     @NotNull
-    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
+    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade, final String targetInstanceModifier) throws Exception {
         checkFeatureEnabled(solutionKit);
-        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
+        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade, targetInstanceModifier);
 
         return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
@@ -223,47 +223,63 @@ public class SolutionKitAdminHelper {
 
     /**
      * Validate if a target solution kit is good for install or upgrade.
+     *
+     * Install: if an existing solution kit is found as same as the target solution kit, fail install.
      * This is the requirement from the note in the story SSG-10996, Upgrade Solution Kit.
      * - disable install if SK is already installed (upgrade only)
-     * - dis-allow upgrade if you don't have SK already installed (install only)
      *
-     * @param targetSK: the solution kit to be validated
+     * Upgrade: if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
+     *
+     * @param sourceSK: the solution kit to be validated
      * @param isUpgrade: indicate if the solution kit is to upgraded or install.  True for upgrade and false for install.
      * @return true if validation is passed; Otherwise false returns.
      * @throws BadRequestException: any errors or rule violation will throw BadRequestException
      */
-    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit targetSK, final boolean isUpgrade) throws BadRequestException {
-        final String targetGuid = targetSK.getSolutionKitGuid();
+    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade, @Nullable String targetIM) throws BadRequestException, SolutionKitConflictException {
+        final String sourceGuid = sourceSK.getSolutionKitGuid();
+        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+        if (StringUtils.isBlank(sourceIM)) sourceIM = "";  // This reassignment is to easier compare with other instance modifier.
+        final String sourceIMDisplayName = StringUtils.isBlank(sourceIM)? "N/A" : sourceIM;
+
+        // Check upgrade
+        if (isUpgrade) {
+            if (StringUtils.isBlank(targetIM)) targetIM = "";  // This reassignment is to easier compare with other instance modifier.
+
+            if (! sourceIM.equals(targetIM)) {
+                try {
+                    SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
+                    if (found != null) {
+                        //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
+                        throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' uses the instance modifier '" + sourceIMDisplayName + "', which other existing solution kit has used");
+                    }
+                } catch (FindException e) {
+                    throw new BadRequestException(ExceptionUtils.getMessage(e));
+                }
+            }
+
+            return true;
+        }
+
+        // Check install
         final List<SolutionKit> solutionKitsOnDB;
         try {
-            solutionKitsOnDB = solutionKitManager.findBySolutionKitGuid(targetGuid);
+            solutionKitsOnDB = solutionKitManager.findBySolutionKitGuid(sourceGuid);
         } catch (FindException e) {
             throw new BadRequestException(ExceptionUtils.getMessage(e));
         }
-
-        String targetInstanceModifier = targetSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        if (StringUtils.isBlank(targetInstanceModifier)) targetInstanceModifier = "";  // This reassignment is to easier compare with other instance modifier.
-        final String targetInstanceModifierDisplayName = StringUtils.isBlank(targetInstanceModifier)? "N/A" : targetInstanceModifier;
 
         String instanceModifier;
         for (SolutionKit solutionKit: solutionKitsOnDB) {
             instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
             if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
 
-            if (targetInstanceModifier.equals(instanceModifier)) {
-                if (isUpgrade) {
-                    return true;
-                } else {
-                    throw new BadRequestException("Installation Failed: found one other existing solution kit matching '" + targetSK.getName() + "' (GUID = " + targetGuid + ", Instance Modifier = " + targetInstanceModifierDisplayName + ")");
-                }
+            if ((!isUpgrade) && sourceIM.equals(instanceModifier)) {
+                throw new SolutionKitConflictException("Installation Failed: found one other existing solution kit matching '" + sourceSK.getName() + "' (GUID = " + sourceGuid + ", Instance Modifier = " + sourceIMDisplayName + ")");
             }
         }
 
-        if (isUpgrade) {
-            throw new BadRequestException("Upgrade Failed: cannot find any solution kit matching '" + targetSK.getName() + "' (GUID = " + targetGuid + ", Instance Modifier = " + targetInstanceModifierDisplayName + ") to upgrade");
-        } else {
-            return true;
-        }
+        return true;
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {

@@ -245,7 +245,7 @@ public class SkarProcessor {
                 // Save the parent solution kit into solutionKitsConfig. Just in case, we need to use the parent solution kit object.
                 // However, be aware that the parent solution kit has not been saved yet, so its GOID is a default dummy GOID.
                 solutionKit.setMappings(SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS); // Set a dummy mapping for a parent solution kit
-                solutionKitsConfig.setParentSolutionKit(solutionKit);
+                solutionKitsConfig.setParentSolutionKitLoaded(solutionKit);
                 return;
             }
 

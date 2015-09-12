@@ -95,13 +95,14 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      *
      * @param solutionKit the solution kit to test
      * @param bundle the bundle XML to test
-     * @param isUpgrade indicate if the soluton kit is to be upgraded or installed.
+     * @param isUpgrade indicate if the solution kit is to be upgraded or installed.
+     * @param targetInstanceModifier the instance modifier of a target solution kit for upgrade.  For install, this parameter can be set as null.
      * @return the resulting mapping XML
      */
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
-    JobId<String> testInstall(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
+    JobId<String> testInstall(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade, String targetInstanceModifier);
 
     /**
      * Install the given solution kit.

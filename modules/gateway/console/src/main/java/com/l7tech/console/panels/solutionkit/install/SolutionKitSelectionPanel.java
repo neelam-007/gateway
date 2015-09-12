@@ -3,7 +3,6 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
-import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Item;
@@ -17,9 +16,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gui.ErrorMessageDialog;
-import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
@@ -32,6 +29,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -44,8 +42,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.gui.util.TableUtil.column;
-
 /**
  * Wizard panel which allows the user to select component(s) within a solution kit to install.
  */
@@ -53,6 +49,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());
     private static final String STEP_LABEL = "Select Solution Kit";
     private static final String STEP_DESC = "Select solution kit(s) to install.";
+    private final String[] tableColumnNames = {"", "Name", "Version", "Instance Modifier", "Description"};
 
     private JPanel mainPanel;
     private JButton selectAllButton;
@@ -62,12 +59,14 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JPanel customizableButtonPanel;
     private JButton instanceModifierButton;
 
-    private SelectableTableModel<SolutionKit> solutionKitsModel;
+    private DefaultTableModel solutionKitsModel;
 
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
-    private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
+    private Set<SolutionKit> solutionKitsLoaded = new TreeSet<>();
+    private Set<SolutionKit> solutionKitsSelected = new TreeSet<>();
+    private Map<String, Set<String>> guidAndInstanceModifierMapFromUpgrade = new HashMap<>();
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -87,7 +86,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     @Override
     public boolean canAdvance() {
-        return !solutionKitsModel.getSelected().isEmpty();
+        return !solutionKitsSelected.isEmpty();
     }
 
     @Override
@@ -98,12 +97,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         testMappings.clear();
+        this.settings = settings;
 
         if  (settings.getSelectedSolutionKits().isEmpty()) {
-            solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits().keySet()));
+            initializeSolutionKitsLoaded();
+            initializeSolutionKitsTable();
         }
-        solutionKitsToUpgrade = settings.getSolutionKitsToUpgrade();
-        this.settings = settings;
 
         initializeInstanceModifierButton();
         addCustomUis(customizableButtonPanel, settings, null);
@@ -111,7 +110,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        settings.setSelectedSolutionKits(new TreeSet<>(solutionKitsModel.getSelected()));
+        settings.setSelectedSolutionKits(solutionKitsSelected);
         settings.setTestMappings(testMappings);
     }
 
@@ -119,7 +118,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     public boolean onNextButton() {
         // Check whether any two selected solution kits have same GUID and instance modifier. If so, display warning
         // and stop installation.  This checking is applied to install and upgrade.
-        final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(solutionKitsModel.getSelected());
+        final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(solutionKitsSelected);
         if (StringUtils.isNotBlank(errorReport)) {
             DialogDisplayer.showMessageDialog(
                 this,
@@ -134,15 +133,19 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // Test on each individual solution kit
         final boolean isUpgrade = settings.isUpgrade();
-        for (SolutionKit solutionKit: solutionKitsModel.getSelected()) {
-            boolean success = testInstall(solutionKit, isUpgrade);
+        for (SolutionKit solutionKitSelected: solutionKitsSelected) {
+            boolean success = testInstall(
+                solutionKitSelected,
+                isUpgrade,
+                (isUpgrade? SolutionKitUtils.findTargetInstanceModifier(solutionKitSelected, settings.getSolutionKitsToUpgrade()) : null)
+            );
             if (! success) return false;
         }
 
         return true;
     }
 
-    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade) {
+    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade, final String targetInstanceModifier) {
         boolean success = false;
         String errorMessage;
 
@@ -178,7 +181,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     this.getOwner(),
                     "Testing Solution Kit",
                     "The gateway is testing selected solution kit(s)",
-                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
+                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade, targetInstanceModifier),
                     false
             );
 
@@ -210,7 +213,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     public void notifyActive() {
         // auto next step the wizard for solution kit with single item
         if (solutionKitsModel.getRowCount() == 1) {
-            solutionKitsModel.select(0);
+            solutionKitsSelected.add(getSolutionKitAt(0));
 // todo auto next step bug: left step menu shows incorrect last step; comment out for now
 //            if (!disableAutoNext && owner instanceof InstallSolutionKitWizard) {
 //                ((InstallSolutionKitWizard) owner).clickButtonNext();
@@ -224,8 +227,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         selectAllButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                solutionKitsModel.selectAll();
+                addAllExceptUnavailable();
+                initializeSolutionKitsTable();
                 enableDisableInstanceModifierButton();
+                notifyListeners();
             }
         });
 
@@ -233,8 +238,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         clearAllButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                solutionKitsModel.deselectAll();
+                solutionKitsSelected.clear();
+                initializeSolutionKitsTable();
                 enableDisableInstanceModifierButton();
+                notifyListeners();
             }
         });
 
@@ -245,84 +252,116 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         });
 
-        //noinspection unchecked
-        solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
-            column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
-                @Override
-                public Boolean call(SolutionKit solutionKit) {
-                    return solutionKitsModel.isSelected(solutionKit);
-                }
-            }),
-            column("Name", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
-                @Override
-                public String call(SolutionKit solutionKit) {
-                    final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
-                    if (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet)) {
-                        return solutionKit.getName();
-                    } else {
-                        return "(Unlicensed) " + solutionKit.getName();
-                    }
-                }
-            }),
-            column("Version", 50, 60, 500, new Functions.Unary<String, SolutionKit>() {
-                @Override
-                public String call(SolutionKit solutionKit) {
-                    return solutionKit.getSolutionKitVersion();
-                }
-            }),
-            column("Instance Modifier", 50, 240, 5000, new Functions.Unary<String, SolutionKit>() {
-                @Override
-                public String call(SolutionKit solutionKit) {
-                    return solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-                }
-            }),
-            column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKit>() {
-                @Override
-                public String call(SolutionKit solutionKit) {
-                    return solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY);
-                }
-            })
-        );
+        setLayout(new BorderLayout());
+        add(mainPanel);
+    }
 
-        solutionKitsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    private void addAllExceptUnavailable() {
+        solutionKitsSelected.clear();
+
+        int index = 0;
+        for (SolutionKit solutionKit: solutionKitsLoaded) {
+            if (isEditableOrEnabledAt(index++)) {
+                solutionKitsSelected.add(solutionKit);
+            }
+        }
+    }
+
+    private void initializeSolutionKitsLoaded() {
+        solutionKitsLoaded = new TreeSet<>(settings.getLoadedSolutionKits().keySet());
+
+        // The next update is only applied to Upgrade, not for Install
+        if (! settings.isUpgrade()) return;
+
+        guidAndInstanceModifierMapFromUpgrade = SolutionKitUtils.getGuidAndInstanceModifierMapFromUpgrade(settings.getSolutionKitsToUpgrade());
+
+        final Set<String> guids = guidAndInstanceModifierMapFromUpgrade.keySet();
+        final StringBuilder errorSB = new StringBuilder();
+        String guid;
+        Set<String> instanceModifierSet;
+
+        for (SolutionKit loadedSK: solutionKitsLoaded) {
+            guid = loadedSK.getSolutionKitGuid();
+            if (guids.contains(guid)) {
+                instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(guid);
+                if (instanceModifierSet.size() > 1) {
+                    errorSB.append("Selecting '").append(loadedSK.getName()).append("'").append(" for upgrade will be disabled, since there are two or more solution kit instances using it to upgrade.\n");
+                } else if (instanceModifierSet.size() == 1) {
+                    loadedSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifierSet.toArray(new String[]{})[0]);
+                }
+            }
+        }
+
+        if (errorSB.length() > 0) {
+            DialogDisplayer.showMessageDialog(this,errorSB.toString(), "Solution Kit Upgrade Warning", JOptionPane.WARNING_MESSAGE, null);
+        }
+    }
+
+    private void initializeSolutionKitsTable() {
+        solutionKitsModel = new DefaultTableModel(populateData(), tableColumnNames) {
+            @Override
+            public Class getColumnClass(int column) {
+                return column == 0? Boolean.class : String.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return (column == 0)? isEditableOrEnabledAt(row) : false;
+            }
+        };
+        solutionKitsTable.setModel(solutionKitsModel);
+
+        // Set the column widths
+        solutionKitsTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // Selected or not
+        solutionKitsTable.getColumnModel().getColumn(1).setPreferredWidth(400); // Name
+        solutionKitsTable.getColumnModel().getColumn(2).setPreferredWidth(130); // Version
+        solutionKitsTable.getColumnModel().getColumn(3).setPreferredWidth(280); // Instance Modifier
+        solutionKitsTable.getColumnModel().getColumn(4).setPreferredWidth(500); // Description
+
+        solutionKitsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         solutionKitsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                addCustomUis(customizableButtonPanel, settings, getSelectedSolutionKit());
+                enableDisableInstanceModifierButton();
+
+                // If multiple row selected, then do not add custom ui
+                if (solutionKitsTable.getSelectedRows().length == 1) {
+                    addCustomUis(customizableButtonPanel, settings, getSolutionKitAt(solutionKitsTable.getSelectedRow()));
+                } else {
+                    addCustomUis(customizableButtonPanel, settings, null);
+                }
+                notifyListeners();
             }
         });
         solutionKitsModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
-                enableDisableInstanceModifierButton();
+                final int row = solutionKitsTable.getSelectedRow();
+                final int col = solutionKitsTable.getSelectedColumn();
+                if (col == 0) {
+                    boolean selected = (Boolean) solutionKitsTable.getValueAt(row, col);
+                    SolutionKit solutionKit = getSolutionKitAt(row);
+
+                    if (selected) {
+                        solutionKitsSelected.add(solutionKit);
+                    } else {
+                        solutionKitsSelected.remove(solutionKit);
+                    }
+                }
+
                 notifyListeners();
             }
         });
-        Utilities.setRowSorter(solutionKitsTable, solutionKitsModel,
-            new int[]{0, 1, 2, 3, 4}, new boolean[]{true, true, true, true, true},
-            new Comparator[]{new Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    return Boolean.compare(Boolean.parseBoolean(o1.toString()), Boolean.parseBoolean(o2.toString()));
-                }},
-                String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER, String.CASE_INSENSITIVE_ORDER}
-        );
 
         //Set up tool tips for the table cells.
         final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, final int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                // If user chooses to upgrade, make sure that all rows not for upgrade should be disabled.
-                final SolutionKit solutionKit = getSolutionKitAtRow(row);
-                final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsToUpgrade, solutionKit.getSolutionKitGuid());
-                final boolean isEnabled = solutionKitsToUpgrade.isEmpty() || solutionKitToUpgrade != null;
-                comp.setEnabled(isEnabled);
-
                 if (column != 0 && comp instanceof JComponent) {
                     ((JComponent)comp).setToolTipText(value == null? "N/A": String.valueOf(value));
-                }
 
+                    comp.setEnabled(isEditableOrEnabledAt(row));
+                }
                 return comp;
             }
         };
@@ -330,48 +369,73 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         solutionKitsTable.getColumnModel().getColumn(2).setCellRenderer(renderer);
         solutionKitsTable.getColumnModel().getColumn(3).setCellRenderer(renderer);
         solutionKitsTable.getColumnModel().getColumn(4).setCellRenderer(renderer);
-
-        setLayout(new BorderLayout());
-        add(mainPanel);
     }
 
-    private SolutionKit getSelectedSolutionKit() {
-        final int selectedIdx = solutionKitsTable.getSelectedRow();
-        return selectedIdx == -1?
-            null :
-            solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(selectedIdx));
+    private Object[][] populateData() {
+        final int row = solutionKitsLoaded.size();
+        final int col = tableColumnNames.length;
+        final Object[][] data = new Object[row][col];
+        int rowIdx = 0;
+
+        for (SolutionKit solutionKit: solutionKitsLoaded) {
+            data[rowIdx++] = new Object[] {
+                solutionKitsSelected.contains(solutionKit)? Boolean.TRUE : Boolean.FALSE,
+                solutionKit.getName(),
+                solutionKit.getSolutionKitVersion(),
+                solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY),
+                solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY)
+            };
+        }
+
+        return data;
     }
 
-    private SolutionKit getSolutionKitAtRow(final int row) {
-        return row == -1?
-            null :
-            solutionKitsModel.getRowObject(solutionKitsTable.convertRowIndexToModel(row));
+    private boolean isEditableOrEnabledAt(final int index) {
+        final SolutionKit loadedSolutionKit = getSolutionKitAt(index);
+        final Set<String> instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(loadedSolutionKit.getSolutionKitGuid());
+        final boolean isEditableOrEnabled =
+            // Case 1: Install
+            (!settings.isUpgrade()) ||
+                // Case 2: Upgrade
+                (instanceModifierSet != null && instanceModifierSet.size() == 1);
+
+        return isEditableOrEnabled;
+    }
+
+    private SolutionKit getSolutionKitAt(final int index) {
+        return index == -1? null : solutionKitsLoaded.toArray(new SolutionKit[]{})[index];
     }
 
     private void enableDisableInstanceModifierButton() {
-        final boolean enabled = solutionKitsModel.getSelected().size() > 0;
-        instanceModifierButton.setEnabled(enabled);
+        instanceModifierButton.setEnabled(solutionKitsTable.getSelectedRows().length > 0);
     }
 
     private void initializeInstanceModifierButton() {
         ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
         for (ActionListener actionListener: actionListeners) instanceModifierButton.removeActionListener(actionListener);
 
+        // Instance modifier button only modifies the solution kits in highlighted rows
         instanceModifierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final List<SolutionKit> solutionKitsSelected = solutionKitsModel.getSelected();
-                if (solutionKitsSelected.isEmpty()) return;
+                final int[] selectedRows = solutionKitsTable.getSelectedRows();
+                if (selectedRows.length == 0) return;
+
+                final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
+                final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[]{});
+                for (int row : selectedRows) {
+                    toBeModified.add(solutionKitsLoadedArray[row]);
+                }
 
                 final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
-                    TopComponents.getInstance().getTopParent(), solutionKitsSelected, settings
+                    TopComponents.getInstance().getTopParent(), toBeModified, settings
                 );
                 instanceModifierDialog.pack();
                 Utilities.centerOnParentWindow(instanceModifierDialog);
                 DialogDisplayer.display(instanceModifierDialog, new Runnable() {
                     @Override
                     public void run() {
-                        solutionKitsModel.fireTableDataChanged();
+                        initializeSolutionKitsTable();
                     }
                 });
             }

@@ -166,6 +166,7 @@ public class SolutionKitManagerResource {
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+        String warningMessage = null;
 
         try {
             validateParams(fileInputStream);
@@ -182,8 +183,10 @@ public class SolutionKitManagerResource {
                 if (isParent) {
                     solutionKitForUpgrade = resultOfCheckingParent.right;
                 } else {
-                    SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(upgradeGuid, instanceModifier);
+                    final SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(upgradeGuid, instanceModifier);
                     if (tempSK == null) {
+                        //There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
+                        // - dis-allow upgrade if you don't have SK already installed (install only)
                         final String instanceModifierDisplayName = StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
                         final String warningMsg = "Upgrade failed: cannot find any existing solution kit (GUID = '" + upgradeGuid + "',  Instance Modifier = '" + instanceModifierDisplayName + "') for upgrade.";
                         logger.warning(warningMsg);
@@ -213,7 +216,7 @@ public class SolutionKitManagerResource {
             );
 
             // handle any user selection(s) - child solution kits
-            setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifier);
+            warningMessage = setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifier);
 
             // Note that these selected solution kits have been assigned with instance modifiers (default: empty/null)
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
@@ -245,7 +248,7 @@ public class SolutionKitManagerResource {
             testBundleImports(solutionKitAdminHelper, solutionKitsConfig);
 
             // Check if the loaded skar is a collection of skars
-            final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKit();
+            final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded();
             Goid parentGoid = null;
 
             // Process parent solution kit first, if a parent solution kit is loaded.
@@ -318,7 +321,7 @@ public class SolutionKitManagerResource {
             solutionKitsConfig.clear();
         }
 
-        return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
+        return Response.ok().entity("Request completed successfully." + lineSeparator() + (StringUtils.isBlank(warningMessage) ? "" : warningMessage + lineSeparator())).build();
     }
 
     private Pair<Boolean, SolutionKit> isParentSolutionKit(String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
@@ -327,7 +330,7 @@ public class SolutionKitManagerResource {
 
         if (size == 0) {
             throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" + lineSeparator()).build());
-        } else if (size > 0) {
+        } else if (size > 1) {
             // Every parent is unique.  If found more than one, guarantee it is not a parent.
             return new Pair<>(false, null);
         }
@@ -367,15 +370,21 @@ public class SolutionKitManagerResource {
                         "' is not upgradable due that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
             }
 
-            // Check if a target solution kit is good for install.
-            // Note that this checking is not applied on target solution kits for upgrade process.
-            if (!isUpgrade) {
-                try {
-                    solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
-                } catch (BadRequestException e) {
-                    // This exception already has a well-info message containing name, GUID, and instance modifier.
-                    throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
-                }
+            // Check if a target solution kit is good for install or upgrade.
+            // Install: if an existing solution kit is found as same as the target, fail install.
+            // Upgrade: if the selected solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
+            try {
+                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(
+                    solutionKit,
+                    isUpgrade,
+                    (isUpgrade? SolutionKitUtils.findTargetInstanceModifier(solutionKit, solutionKitsConfig.getSolutionKitsToUpgrade()) : null)
+                );
+            }
+            // This exception already has a well-info message containing name, GUID, and instance modifier.
+            catch (BadRequestException e) {
+                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
+            } catch (SolutionKitConflictException e) {
+                throw new SolutionKitManagerResourceException(status(CONFLICT).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
             }
 
             // Update resolved mapping target IDs.
@@ -587,33 +596,62 @@ public class SolutionKitManagerResource {
      * @param isInstall: true if install is executed; false means upgrade.
      * @param globalInstanceModifier: in stall, the instance modifier is shared by all selected solution kits, but individual solution kit's instance modifier can override it.
      *
+     * @return a message if there is any warning.
      * @throws SolutionKitManagerResourceException
      * @throws UnsupportedEncodingException
      */
-    private void setUserSelections(
+    private String setUserSelections(
         @NotNull final SolutionKitsConfig solutionKitsConfig,
         @Nullable final List<FormDataBodyPart> solutionKitSelects,
         final boolean isInstall,
         @Nullable final String globalInstanceModifier) throws SolutionKitManagerResourceException, UnsupportedEncodingException {
 
+        String warningMessage = null;
+
+        // Collect information about loaded solution kits
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
+        final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(loadedSolutionKits.size());
+        for (SolutionKit loadedSolutionKit : loadedSolutionKits) {
+            loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
+        }
+
+        // Collect information about solution kits for upgrade
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+        final Map<String, Set<String>> guidAndInstanceModifierMapFromUpgrade = SolutionKitUtils.getGuidAndInstanceModifierMapFromUpgrade(solutionKitsToUpgrade);
+
+        // Check the list of form data parameter "solutionKitSelect"
         if (solutionKitSelects == null || solutionKitSelects.isEmpty()) {
-            if (isInstall && StringUtils.isNotBlank(globalInstanceModifier)) {
-                for (SolutionKit solutionKit: loadedSolutionKits) {
-                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+            if (isInstall) {
+                if (StringUtils.isNotBlank(globalInstanceModifier)) {
+                    for (SolutionKit solutionKit: loadedSolutionKits) {
+                        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                    }
                 }
-            }
+                solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
+            } else { // For upgrade
+                final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
 
-            solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
+                // For upgrade, like UI (the method isEditableOrEnabledAt), filter out those selected solution kits not suitable for upgrade.
+                // Case 1: If the selected solution kit is not in the upgrade list, then ignore the selected solution kit.
+                // Case 2: If there are more than two solution kits from the upgrade list matching the selected solution kit, ignore the selected solution kit.
+                SolutionKit loadedSK;
+                Set<String> instanceModifierSet;
+                for (String guidOfLoadedSK: loadedSolutionKitMap.keySet()) {
+                    loadedSK = loadedSolutionKitMap.get(guidOfLoadedSK);
+                    instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(guidOfLoadedSK);
+                    if (instanceModifierSet == null) {
+                        continue;
+                    } else if (instanceModifierSet.size() > 1) {
+                        warningMessage = "Upgrade Warning: '" + loadedSK.getName() + "' cannot be used for upgrade, since there are two or more solution kit instances using it to upgrade" + lineSeparator();
+                        continue;
+                    }
+                    selectedSolutionKits.add(loadedSK);
+                }
+                solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
+            }
         } else {
-            // build id -> loaded solution kit map
-            final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(loadedSolutionKits.size());
-            for (SolutionKit loadedSolutionKit : loadedSolutionKits) {
-                loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
-            }
-
-            // verify the user selected id(s) and build selection set
-            final Set<SolutionKit> selectedSolutionKitIdSet = new TreeSet<>();
+            final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
+            final boolean isUpgrade = !isInstall;
             String decodedStr, guid, individualInstanceModifier;
             SolutionKit selectedSolutionKit;
 
@@ -629,6 +667,19 @@ public class SolutionKitManagerResource {
 
                 selectedSolutionKit = loadedSolutionKitMap.get(guid);
 
+                // For upgrade, like UI (the method isEditableOrEnabledAt), filter out those selected solution kits not suitable for upgrade.
+                // Case 1: If the selected solution kit is not in the upgrade list, then ignore the selected solution kit.
+                // Case 2: If there are more than two solution kits from the upgrade list matching the selected solution kit, ignore the selected solution kit.
+                if (isUpgrade) {
+                    final Set<String> instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(selectedSolutionKit.getSolutionKitGuid());
+                    if (instanceModifierSet == null) {
+                        continue;
+                    } else if (instanceModifierSet.size() > 1) {
+                        warningMessage = "Upgrade Warning: '" + selectedSolutionKit.getName() + "' cannot be used for upgrade, since there are two or more solution kit instances using it to upgrade" + lineSeparator();
+                        continue;
+                    }
+                }
+
                 // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
                 if (StringUtils.isNotBlank(individualInstanceModifier)) {
                     selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
@@ -638,15 +689,19 @@ public class SolutionKitManagerResource {
                     selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
                 }
 
-                selectedSolutionKitIdSet.add(selectedSolutionKit);
+                selectedSolutionKits.add(selectedSolutionKit);
             }
 
-            // todo:ms For upgrade, filter those non-upgraded solution kits out.
-            // This is, not always select all loaded solution kits, since users may not select all solution kits to upgrade.
+            if (solutionKitSelects.isEmpty()) {
+                throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
+                    "There are no any solution kits being selectable for install/upgrade." + lineSeparator()).build());
+            }
 
             // set selection set for install
-            solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKitIdSet);
+            solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
         }
+
+        return warningMessage;
     }
 
     // remap any entity id(s)
@@ -715,12 +770,12 @@ public class SolutionKitManagerResource {
     }
 
     /*
-        Addendum Bundle: this is an undocumented “dark feature” that’s not QA’d.
+        Addendum Bundle: this is an undocumented "dark feature" that’s not QA’d.
 
         Prerequisites:
             - Requires that only one Solution Kit is in scope.  If using a collection of Solution Kits, select only one child Solution Kit for the request (e.g. specify a GUID in form-field name solutionKitSelect).
             - If Solution Kit supports upgrade, a separate upgrade addendum bundle is required (e.g. mapping action=“NewOrUpdate"instead of "AlwaysCreateNew")
-            - The .skar file's bundle requires the <l7:Mappings> element (note the ending “s”).
+            - The .skar file's bundle requires the <l7:Mappings> element (note the ending "s").
             - <l7:AllowAddendum> must be true in .skar file metadata (i.e. SolutionKit.xml)
             - The .skar file mapping(s) to change must set "SK_AllowMappingOverride" property to true
 

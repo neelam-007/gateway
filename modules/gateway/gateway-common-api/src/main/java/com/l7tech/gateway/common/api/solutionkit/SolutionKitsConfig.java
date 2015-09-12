@@ -48,7 +48,7 @@ public class SolutionKitsConfig {
     public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
 
     @Nullable
-    private SolutionKit parentSolutionKit;
+    private SolutionKit parentSolutionKitLoaded;
 
     public SolutionKitsConfig() {
     }
@@ -177,12 +177,12 @@ public class SolutionKitsConfig {
     }
 
     @Nullable
-    public SolutionKit getParentSolutionKit() {
-        return parentSolutionKit;
+    public SolutionKit getParentSolutionKitLoaded() {
+        return parentSolutionKitLoaded;
     }
 
-    public void setParentSolutionKit(@Nullable SolutionKit parentSolutionKit) {
-        this.parentSolutionKit = parentSolutionKit;
+    public void setParentSolutionKitLoaded(@Nullable SolutionKit parentSolutionKitLoaded) {
+        this.parentSolutionKitLoaded = parentSolutionKitLoaded;
     }
 
     public void clear(boolean nullSolutionKitToUpgrade) {

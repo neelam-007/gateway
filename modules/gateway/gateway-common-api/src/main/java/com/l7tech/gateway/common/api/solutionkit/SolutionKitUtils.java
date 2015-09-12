@@ -350,5 +350,34 @@ public final class SolutionKitUtils {
         return null;
     }
 
+    public static String findTargetInstanceModifier(@NotNull final SolutionKit selectedSolutionKit, @NotNull final List<SolutionKit> solutionKitsToUpgrade) {
+        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
+            if (selectedSolutionKit.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
+                return solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            }
+        }
+        throw new IllegalArgumentException("Invalid parameter of a solution kit, '" + selectedSolutionKit.getName() + "'");
+    }
+
+    public static Map<String, Set<String>> getGuidAndInstanceModifierMapFromUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade) {
+        final Map<String, Set<String>> guidInstanceModifierMapFromUpgrade = new HashMap<>();
+        String guid;
+        Set<String> instanceModifierSet;
+
+        for (SolutionKit solutionKitToUpgrade: solutionKitsToUpgrade) {
+            guid = solutionKitToUpgrade.getSolutionKitGuid();
+
+            instanceModifierSet = guidInstanceModifierMapFromUpgrade.get(guid);
+            if (instanceModifierSet == null) {
+                instanceModifierSet = new HashSet<>();
+            }
+            instanceModifierSet.add(solutionKitToUpgrade.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+
+            guidInstanceModifierMapFromUpgrade.put(guid, instanceModifierSet);
+        }
+
+        return guidInstanceModifierMapFromUpgrade;
+    }
+
     private SolutionKitUtils() {}
 }

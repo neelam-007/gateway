@@ -82,12 +82,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public JobId<String> testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) {
+    public JobId<String> testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade, final String targetInstanceModifier) {
         final FutureTask<String> task =
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    return getSolutionKitAdminHelper().testInstall(solutionKit, bundle, isUpgrade);
+                    return getSolutionKitAdminHelper().testInstall(solutionKit, bundle, isUpgrade, targetInstanceModifier);
                 }
             }));
 

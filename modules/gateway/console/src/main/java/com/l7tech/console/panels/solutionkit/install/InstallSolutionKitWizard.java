@@ -13,7 +13,6 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.api.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -85,7 +84,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
-        final SolutionKit parentSKFromLoad = wizardInput.getParentSolutionKit(); // Note: The parent solution kit has a dummy default GOID.
+        final SolutionKit parentSKFromLoad = wizardInput.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
         Goid parentGoid = null;
 
         if (parentSKFromLoad != null) {

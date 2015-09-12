@@ -118,7 +118,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         }
 
         // Check the license of the parent SKAR, before the next wizard step SolutionKitSelectionPanel proceeds.
-        final SolutionKit parentSK = solutionKitsConfig.getParentSolutionKit();
+        final SolutionKit parentSK = solutionKitsConfig.getParentSolutionKitLoaded();
         if (parentSK != null) {
             final String featureSet = parentSK.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
             if (! (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet))) {
