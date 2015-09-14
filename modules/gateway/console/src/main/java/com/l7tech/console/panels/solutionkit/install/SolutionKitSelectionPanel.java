@@ -324,8 +324,9 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             public void valueChanged(ListSelectionEvent e) {
                 enableDisableInstanceModifierButton();
 
-                // If multiple row selected, then do not add custom ui
-                if (solutionKitsTable.getSelectedRows().length == 1) {
+                // If multiple row selected or the selected solution kit is not available for upgrade, then do not add custom ui
+                int[] selectedRows = solutionKitsTable.getSelectedRows();
+                if (selectedRows.length == 1 && isEditableOrEnabledAt(selectedRows[0])) {
                     addCustomUis(customizableButtonPanel, settings, getSolutionKitAt(solutionKitsTable.getSelectedRow()));
                 } else {
                     addCustomUis(customizableButtonPanel, settings, null);
@@ -393,13 +394,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private boolean isEditableOrEnabledAt(final int index) {
         final SolutionKit loadedSolutionKit = getSolutionKitAt(index);
         final Set<String> instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(loadedSolutionKit.getSolutionKitGuid());
-        final boolean isEditableOrEnabled =
-            // Case 1: Install
-            (!settings.isUpgrade()) ||
-                // Case 2: Upgrade
-                (instanceModifierSet != null && instanceModifierSet.size() == 1);
 
-        return isEditableOrEnabled;
+        return
+            // Case 1: Always true for Install
+            (!settings.isUpgrade()) ||
+            // Case 2: Upgrade
+            (instanceModifierSet != null && instanceModifierSet.size() == 1);
     }
 
     private SolutionKit getSolutionKitAt(final int index) {
@@ -407,7 +407,22 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void enableDisableInstanceModifierButton() {
-        instanceModifierButton.setEnabled(solutionKitsTable.getSelectedRows().length > 0);
+        boolean enabled = false;
+        final int selectedRows[] = solutionKitsTable.getSelectedRows();
+        int row;
+
+        for (int i = 0; i < selectedRows.length; i++) {
+            row = selectedRows[i];
+            if (isEditableOrEnabledAt(row)) {
+                enabled = true;
+            } else {
+                enabled = false;
+                break;
+            }
+        }
+
+        // The button is enabled if at least one solution kit is selected and it must be available for install or upgrade.
+        instanceModifierButton.setEnabled(enabled);
     }
 
     private void initializeInstanceModifierButton() {
