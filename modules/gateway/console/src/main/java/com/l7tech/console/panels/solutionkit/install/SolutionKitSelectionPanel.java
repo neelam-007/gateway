@@ -212,8 +212,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     @Override
     public void notifyActive() {
         // auto next step the wizard for solution kit with single item
-        if (solutionKitsModel.getRowCount() == 1) {
-            solutionKitsSelected.add(getSolutionKitAt(0));
+        if (solutionKitsLoaded.size() == 1) {
+            addAllExceptUnavailable();
+            initializeSolutionKitsTable();
+            enableDisableInstanceModifierButton();
+            notifyListeners();
 // todo auto next step bug: left step menu shows incorrect last step; comment out for now
 //            if (!disableAutoNext && owner instanceof InstallSolutionKitWizard) {
 //                ((InstallSolutionKitWizard) owner).clickButtonNext();
