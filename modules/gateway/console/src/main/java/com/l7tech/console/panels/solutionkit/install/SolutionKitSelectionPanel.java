@@ -157,7 +157,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // contain UpgradeBundle.xml, then display warning
         if (isUpgrade && !settings.isUpgradeInfoProvided(solutionKit)) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "The solution kit '" + solutionKit.getName() + "' is not upgradable due that its SKAR file does not include UpgradeBundle.xml.",
+                "Solution kit '" + solutionKit.getName() + "' cannot be used for upgrade due to that its SKAR file does not include UpgradeBundle.xml.",
                 "Solution Kit Upgrade Warning", JOptionPane.WARNING_MESSAGE, null);
 
             return false;
