@@ -321,8 +321,12 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
 
         List<SolutionKitHeader> parentList = new ArrayList<>();
+        SolutionKit parent;
         for (String goidStr: parentGoidStrSet) {
-            parentList.add(new SolutionKitHeader(findByPrimaryKey(Goid.parseGoid(goidStr))));
+            parent = findByPrimaryKey(Goid.parseGoid(goidStr));
+            if (parent == null) continue;
+
+            parentList.add(new SolutionKitHeader(parent));
         }
 
         return parentList;

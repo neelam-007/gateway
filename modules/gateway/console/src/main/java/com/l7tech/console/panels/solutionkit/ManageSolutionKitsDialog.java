@@ -179,7 +179,7 @@ public class ManageSolutionKitsDialog extends JDialog {
                     }
 
                     boolean cancelled = false;
-                    Pair<Boolean, String> result = new Pair<>(false, "");
+                    Pair<Boolean, String> result = new Pair<>(true, "");
                     try {
                         Collection<SolutionKitHeader> children = solutionKitAdmin.findAllChildrenByParentGoid(header.getGoid());
                         if (! children.isEmpty()) {
@@ -190,11 +190,13 @@ public class ManageSolutionKitsDialog extends JDialog {
                         }
 
                         final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
-                        if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
-                            solutionKitAdmin.deleteSolutionKit(header.getGoid());
-                            result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
-                        } else {
-                            result = uninstallSolutionKit(header.getName(), header.getGoid());
+                        if (result.left) {
+                            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
+                                solutionKitAdmin.deleteSolutionKit(header.getGoid());
+                                result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
+                            } else {
+                                result = uninstallSolutionKit(header.getName(), header.getGoid());
+                            }
                         }
                     } catch (InterruptedException e) {
                         // do nothing.
