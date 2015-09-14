@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final String STEP_LABEL = "Resolve entity conflicts";
-    private static final String STEP_DESC = "Resolve entity conflicts.";
+    private static final String STEP_DESC = "Resolve entity conflicts (or click Finish if none exist).";
 
     private JPanel mainPanel;
     private JTabbedPane solutionKitMappingsTabbedPane;
