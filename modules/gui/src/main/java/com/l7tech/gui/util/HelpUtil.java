@@ -30,6 +30,7 @@ public class HelpUtil {
      */
     private static final String PROP_DEFAULT_HELP_URL = "com.l7tech.gui.util.HelpUtil.defaultHelpUrl";
     private static final String DEFAULT_DEFAULT_HELP_URL = "http://wiki.ca.com/display/gateway" + BuildInfo.getProductVersionMajor() + BuildInfo.getProductVersionMinor();
+    private static final String XVC_HELP_URI = "https://wiki.ca.com/xvc";
     public static final String DEFAULT_HELP_URL = SyspropUtil.getString( PROP_DEFAULT_HELP_URL, DEFAULT_DEFAULT_HELP_URL );
     private static BrowserLauncher browserLauncher;
     private static String helpUrl = null;
@@ -73,12 +74,13 @@ public class HelpUtil {
      * @param parentComponent  parent component if an error dialog must be displayed, or null to use the default
      *                         frame (same as JOptionPane)
      */
-    public static void showHelpTopicsRoot( Frame parentComponent ) {
+    public static void showHelpTopicsRoot( Frame parentComponent, boolean isXVChelp ) {
         Exception problem = null;
 
         try {
             if ( helpUrl == null )
-                helpUrl = DEFAULT_HELP_URL;
+                helpUrl = isXVChelp ? XVC_HELP_URI : DEFAULT_HELP_URL;
+
             logger.info("Launching web help URL: " + helpUrl);
             BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
             Thread launcherThread = new Thread(runner);

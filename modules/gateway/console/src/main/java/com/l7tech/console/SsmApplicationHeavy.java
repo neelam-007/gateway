@@ -118,7 +118,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
      * This procedure displays the help contents in the preferred browser for the system on which the SSM is running.
      */
     public void showHelpTopicsRoot() {
-        HelpUtil.showHelpTopicsRoot( TopComponents.getInstance().getTopParent() );
+        HelpUtil.showHelpTopicsRoot( TopComponents.getInstance().getTopParent(), false );
     }
 
     private void installAdditionalSecurityProviders() {
