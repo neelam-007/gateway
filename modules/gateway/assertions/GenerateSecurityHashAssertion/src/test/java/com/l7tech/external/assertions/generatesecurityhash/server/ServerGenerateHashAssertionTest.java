@@ -299,4 +299,27 @@ public class ServerGenerateHashAssertionTest {
         AssertionStatus result = new ServerGenerateSecurityHashAssertion( ass ).checkRequest( pec );
         assertEquals( AssertionStatus.FAILED, result );
     }
+
+    @Test
+    @BugId( "SSG-11984" )
+    public void testHashOfDataToSign_Long() throws Exception {
+        pec.setVariable( TEST_DATA_CONTEXT_VARIABLE, 1234L );
+        setTestData( "MD5", TEST_KEY, "${input.data}", OUTPUT_VARIABLE );
+        AssertionStatus result = serverAssertion.checkRequest( pec );
+        assertEquals( AssertionStatus.NONE, result );
+        String output = pec.getVariable( OUTPUT_VARIABLE ).toString();
+        assertEquals( "gdyb21LQTcIANtvYMT7QVQ==", output );
+    }
+
+    @Test
+    @BugId( "SSG-11984" )
+    public void testHmacOfKey_Long() throws Exception {
+        pec.setVariable( TEST_DATA_CONTEXT_VARIABLE, 1234L );
+        setTestData( "HMAC-SHA1", "${input.data}", "asdfasdf", OUTPUT_VARIABLE );
+        AssertionStatus result = serverAssertion.checkRequest( pec );
+        assertEquals( AssertionStatus.NONE, result );
+        String output = pec.getVariable( OUTPUT_VARIABLE ).toString();
+        assertEquals( "7XGb9IbJvdh1eYov+3DxZENefP0=", output );
+    }
+
 }

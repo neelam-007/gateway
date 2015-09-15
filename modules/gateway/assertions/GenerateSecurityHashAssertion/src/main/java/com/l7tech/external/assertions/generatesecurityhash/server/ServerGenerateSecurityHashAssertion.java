@@ -66,7 +66,14 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
             dataToSignObj = ExpandVariables.process( expr, vars, getAudit(), true );
         }
 
-        final byte[] dataToSign = toByteArray( dataToSignObj, "<Source Object>" );
+        byte[] dataToSign;
+        try {
+            dataToSign = toByteArray( dataToSignObj, "<Source Object>" );
+        } catch ( ContextVariableUtils.NoBinaryRepresentationException e ) {
+            // SSG-11984: Fall back to legacy behavior and treat the input as a string expression then encode in UTF-8
+            dataToSign = ExpandVariables.process( expr, vars, getAudit(), true ).getBytes( Charsets.UTF8 );
+        }
+
         final String algorithm = GenerateSecurityHashAssertion.getSupportedAlgorithm().get(assertion.getAlgorithm());
         final String variableName = assertion.getTargetOutputVariable();
 
@@ -85,7 +92,7 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
         return signData( context, algorithm, dataToSign, variableName, vars );
     }
 
-    private byte[] toByteArray( Object obj, String what ) {
+    private byte[] toByteArray( Object obj, String what ) throws ContextVariableUtils.NoBinaryRepresentationException {
         try {
             // Preserve old behavior of using UTF-8 for string values
             return ContextVariableUtils.convertContextVariableValueToByteArray( obj, -1, Charsets.UTF8 );
@@ -94,7 +101,7 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
             getAudit().logAndAudit( AssertionMessages.NO_SUCH_PART, new String[] { what, e.getWhatWasMissing() },
                     ExceptionUtils.getDebugException( e ) );
             throw new AssertionStatusException( AssertionStatus.SERVER_ERROR, "Unable to read " + what + ":" + ExceptionUtils.getMessage( e ), e );
-        } catch ( IOException | ContextVariableUtils.NoBinaryRepresentationException e ) {
+        } catch ( IOException e ) {
             getAudit().logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[] { "Unable to read source object: " + ExceptionUtils.getMessage( e ) },
                     ExceptionUtils.getDebugException( e ) );
@@ -151,7 +158,12 @@ public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion
             keyObj = ExpandVariables.process( keyExpr, vars, getAudit(), true );
         }
 
-        return toByteArray( keyObj, "<Key>" );
+        try {
+            return toByteArray( keyObj, "<Key>" );
+        } catch ( ContextVariableUtils.NoBinaryRepresentationException e ) {
+            // SSG-11984: Fall back to legacy behavior and treat input as string expression then encode in UTF-8
+            return ExpandVariables.process( keyExpr, vars, getAudit(), true ).getBytes( Charsets.UTF8 );
+        }
     }
 
     /**
