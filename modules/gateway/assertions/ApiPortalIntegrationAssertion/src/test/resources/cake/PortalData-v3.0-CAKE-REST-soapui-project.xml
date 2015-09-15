@@ -834,9 +834,9 @@ declare namespace d="http://schemas.microsoft.com/ado/2007/08/dataservices"
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
@@ -918,9 +918,9 @@ declare namespace d="http://schemas.microsoft.com/ado/2007/08/dataservices"
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
@@ -971,9 +971,9 @@ declare namespace d="http://schemas.microsoft.com/ado/2007/08/dataservices"
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
@@ -1023,9 +1023,9 @@ declare namespace d="http://schemas.microsoft.com/ado/2007/08/dataservices"
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
@@ -1544,9 +1544,9 @@ log.info apiUuid</script></con:config></con:testStep><con:properties><con:proper
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
@@ -1781,9 +1781,9 @@ boolean(//l7:OAuth/l7:CallbackUrl[text()='oauthCallbackUrl']/../l7:Scope[text()=
          <d:SsgUrl>/${#TestCase#urlPattern}*</d:SsgUrl>
          <d:StatusAlert m:type="Edm.Boolean">false</d:StatusAlert>
          <d:PolicyTemplateUuid m:null="true"/>
-         <d:WadlFilename m:null="true"/>
-         <d:WadlFilesize m:null="true"/>
-         <d:WadlContent m:null="true"/>
+         <d:SpecFilename m:null="true"/>
+         <d:SpecFilesize m:null="true"/>
+         <d:SpecContent m:null="true"/>
          <d:TransactionPhase m:null="true"/>
          <d:CreateTs m:type="Edm.Int64">1403642437761</d:CreateTs>
          <d:ModifyTs m:type="Edm.Int64">1403643198177</d:ModifyTs>
