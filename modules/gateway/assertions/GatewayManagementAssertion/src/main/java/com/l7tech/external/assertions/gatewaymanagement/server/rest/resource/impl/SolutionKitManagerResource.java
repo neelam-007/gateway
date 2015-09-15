@@ -9,7 +9,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Sin
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.api.solutionkit.SkarProcessor;
@@ -45,7 +44,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
-import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -480,84 +478,117 @@ public class SolutionKitManagerResource {
      *     <li>Specify the Solution Kit ID as a query parameter in the URL.</li>
      * </ul>
      *
-     * @param deleteGuid Solution Kit GUID to delete.
-     * @param childGuidsInQueryParam GUIDs of child solution kits to delete
+     * @param deleteGuidIM Solution Kit GUID and Instance Modifier to delete.
+     * @param childGuidIMList GUID and Instance Modifier of child solution kits to delete
      * @return Output from the Solution Kit Manager.
      */
     @DELETE
     public Response uninstall(
-        final @QueryParam("id") String deleteGuid,
-        final @QueryParam("childId") List<String> childGuidsInQueryParam) {
+        final @QueryParam("id") String deleteGuidIM,
+        final @QueryParam("childId") List<String> childGuidIMList) {
 
         // Couldn't use Solution Kit ID in the URL to upgrade (i.e. @Path("{id}") and @PathParam("id")).
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
         try {
-            if (StringUtils.isEmpty(deleteGuid)) {
+            if (StringUtils.isEmpty(deleteGuidIM)) {
                 // HTTP DELETE, using 404 not found to be consistent with other restman resources
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Solution Kit ID to uninstall is empty." + lineSeparator()).build());
             }
 
-            final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(deleteGuid);
-            if (solutionKitsExistingOnGateway.isEmpty()) {
-                throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("No Solution Kit ID " + deleteGuid + " found for uninstall." + lineSeparator()).build());
+            final String deleteGuid = substringBefore(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
+            final String instanceModifier = substringAfter(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
+
+            final Pair<Boolean, SolutionKit> resultOfCheckingParent = isParentSolutionKit(deleteGuid);
+            final boolean isParent = resultOfCheckingParent.left;
+            final SolutionKit solutionKitToUninstall;
+
+            if (isParent) {
+                solutionKitToUninstall = resultOfCheckingParent.right;
+            } else {
+                final SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(deleteGuid, instanceModifier);
+                if (tempSK == null) {
+                    // There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
+                    // - dis-allow upgrade if you don't have SK already installed (install only)
+                    final String instanceModifierDisplayName = StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
+                    final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + deleteGuid + "',  Instance Modifier = '" + instanceModifierDisplayName + "') for uninstall.";
+                    logger.warning(warningMsg);
+                    return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
+                } else {
+                    solutionKitToUninstall = tempSK;
+                }
             }
 
             final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
-
-            // Find the first solution kit matching the given guid, deleteGuid.
-            // todo: if there are multiple solution kits with the same guid, in future probably need to introduce a new query parameter, instance modifier to unify a solution kit.
-            final SolutionKit solutionKitToUninstall = solutionKitsExistingOnGateway.get(0);
-            final Collection<SolutionKitHeader> childrenHeaders = solutionKitManager.findAllChildrenHeadersByParentGoid(solutionKitToUninstall.getGoid());
+            final Collection<SolutionKit> childrenList = solutionKitAdminHelper.findAllChildrenByParentGoid(solutionKitToUninstall.getGoid());
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
-            int numOfUninstalled = 0;
-            if (! childrenHeaders.isEmpty()) {
-                // There are no child guids specified in the query param, which means uninstall all child solution kits.
-                if (childGuidsInQueryParam.isEmpty()) {
-                    for (SolutionKitHeader childHeader: childrenHeaders) {
-                        solutionKitAdminHelper.uninstall(childHeader.getGoid());
+            if (isParent) {
+                int numOfUninstalled = 0;
+
+                // No child list specified means uninstall all child solution kits.
+                if (childGuidIMList == null || childGuidIMList.isEmpty()) {
+                    for (SolutionKit child: childrenList) {
+                        solutionKitAdminHelper.uninstall(child.getGoid());
+                        numOfUninstalled++;
                     }
                 }
                 // Otherwise, uninstall specified child solution kits.
                 else {
-                    Map<String, SolutionKitHeader> childSKMap = new HashMap<>(childrenHeaders.size());
-                    for (SolutionKitHeader childHeader: childrenHeaders) {
-                        childSKMap.put(childHeader.getSolutionKitGuid(), childHeader);
+                    final Set<String> childGuids = new HashSet<>(childrenList.size());
+                    for (SolutionKit child: childrenList) {
+                        childGuids.add(child.getSolutionKitGuid());
                     }
 
-                    // Check if given child guild is valid or not.  If found any, stop uninstall. We do not allow partial uninstall until fix the wrong guid.
-                    // The reason of not allowing partial uninstall is if we silently swallow invalid/misused guid, the user would think uninstall
-                    // was successful, but actually some expected solution kits are still existing.
-                    Set<String> allChildGuids = childSKMap.keySet();
-                    for (String givenChildGuid: childGuidsInQueryParam) {
-                        if (! allChildGuids.contains(givenChildGuid)) {
-                            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Child Solution Kit GUID " + givenChildGuid + " is not valid." + lineSeparator()).build());
+                    String guid, individualInstanceModifier;
+                    SolutionKit selectedSolutionKit;
+
+                    for (String guidIM: childGuidIMList) {
+                        guid = substringBefore(guidIM, PARAMETER_DELIMINATOR).trim();
+                        individualInstanceModifier = substringAfter(guidIM, PARAMETER_DELIMINATOR).trim();
+
+                        // If the solutionKitSelect specifies an invalid guid, then report this error
+                        if (! childGuids.contains(guid)) {
+                            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Uninstall failed: Cannot any child solution kit matching the GUID '" + guid + "' specified in the parameter 'solutionKitSelect'" + lineSeparator()).build());
                         }
-                    }
 
-                    // Uninstall each child solution kit
-                    SolutionKitHeader childHeader;
-                    for (String childGuidInParam: childGuidsInQueryParam) {
-                        childHeader = childSKMap.get(childGuidInParam);
-                        solutionKitAdminHelper.uninstall(childHeader.getGoid());
+                        // Firstly check if individual instance modifier is specified.
+                        // The individual instance modifier will override the global instance modifier.
+                        String finalIM;
+                        if (StringUtils.isNotBlank(individualInstanceModifier)) {
+                            finalIM = individualInstanceModifier;
+                        }
+                        // Secondly check if global instance modifier is specified.
+                        else if (StringUtils.isNotBlank(instanceModifier)) {
+                            finalIM = instanceModifier;
+                        }
+                        // By default
+                        else {
+                            finalIM = null;
+                        }
+                        selectedSolutionKit = solutionKitManager.findBySolutionKitGuidAndIM(guid, finalIM);
+
+                        if (selectedSolutionKit == null) {
+                            final String instanceModifierDisplayName = StringUtils.isBlank(finalIM)? "N/A" : finalIM;
+                            final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + guid + "',  Instance Modifier = '" + instanceModifierDisplayName + "') for uninstall.";
+                            logger.warning(warningMsg);
+                            return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
+                        }
+
+
+                        solutionKitAdminHelper.uninstall(selectedSolutionKit.getGoid());
                         numOfUninstalled++;
                     }
                 }
-            } else if (! childGuidsInQueryParam.isEmpty()) {
-                // Just give an info and do not throw any error
-                // Ignore redundant given child guids.
-                logger.info("Redundant child solution kit guid(s) given, since there are not child solution kits associated with '" + solutionKitToUninstall.getName() + "'");
-            }
 
-            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUninstall.getMappings())) {
-                if (childGuidsInQueryParam.isEmpty() || numOfUninstalled == childrenHeaders.size()) {
-                    // Delete the parent solution kit, after all children are deleted at the above step.
+                // Delete the parent solution kit, after all children are deleted at the above step.
+                if (numOfUninstalled == childrenList.size()) {
                     solutionKitManager.delete(solutionKitToUninstall.getGoid());
                 }
-            } else {
-                // Uninstall a non-parent solution kit
+            }
+            // Uninstall a non-parent solution kit
+            else {
                 solutionKitAdminHelper.uninstall(solutionKitToUninstall.getGoid());
             }
         } catch (SolutionKitManagerResourceException e) {
