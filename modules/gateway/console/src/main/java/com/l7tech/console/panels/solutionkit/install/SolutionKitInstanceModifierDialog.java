@@ -73,9 +73,17 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
         instanceModifierTextField.getDocument().addDocumentListener(new RunOnChangeListener(){
             @Override
             protected void run() {
-                final String validationWarning = validatePrefixedURI(instanceModifierTextField.getText());
-                // If the validation warning is null, then set the OK button enabled.  Otherwise, set to be disabled.
-                okCancelPanel.getOkButton().setEnabled(validationWarning == null);
+                final String instanceModifier = instanceModifierTextField.getText();
+                boolean enabled;
+
+                if (StringUtils.isBlank(instanceModifier)) {
+                    enabled = true;
+                } else {
+                    final String validationWarning = validatePrefixedURI(instanceModifierTextField.getText());
+                    enabled = validationWarning == null;
+                }
+
+                okCancelPanel.getOkButton().setEnabled(enabled);
             }
         });
 
@@ -98,10 +106,9 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
 
     private void onOK() {
         final String newInstanceModifier = instanceModifierTextField.getText();
-        if (StringUtils.isEmpty(newInstanceModifier)) return;
 
         for (SolutionKit solutionKit: solutionKits) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
+            solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, StringUtils.isBlank(newInstanceModifier)? null : newInstanceModifier);
         }
 
         dispose();
