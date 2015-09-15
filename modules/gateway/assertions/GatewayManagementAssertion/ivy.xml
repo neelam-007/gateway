@@ -13,10 +13,8 @@
 	</publications>
 	<dependencies>
 
-        <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>
         <dependency name="layer7-policy-exporter" rev="latest.integration" force="true" conf="core->master"/>
         <dependency name="layer7-gateway-rest-toolkit" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-gateway-common-api" rev="latest.integration" force="true" conf="core->master"/>
 
         <dependency name="javax.ws.rs-api" org="jax-rs" rev="2.0" force="true" conf="core"/>
 

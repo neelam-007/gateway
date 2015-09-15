@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Wiseman resource handler configuration  
+-->
+<resource-handlers xmlns="http://wiseman.dev.java.net/server/handler/config/1/resource-handler-config.xsd">
+    <resource-handler>
+        <resource-pattern>.*</resource-pattern>
+        <resource-handler-class>com.l7tech.external.assertions.gatewaymanagement.server.ResourceHandler</resource-handler-class>
+    </resource-handler>
+</resource-handlers>

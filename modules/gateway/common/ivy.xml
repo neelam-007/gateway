@@ -15,6 +15,7 @@
     <dependencies>
         <dependency name="layer7-common" rev="latest.integration" conf="core; test"/>
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gateway-api" rev="latest.integration" conf="core->master"/>
         <dependency name="layer7-identity" rev="latest.integration" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" conf="core"/>
         <dependency name="layer7-uddi" rev="latest.integration" conf="core"/>
