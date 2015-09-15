@@ -4,7 +4,7 @@ import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.RunOnChangeListener;

@@ -4,7 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
@@ -45,7 +45,7 @@ import java.util.zip.ZipOutputStream;
 
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.FORM_FIELD_NAME_BUNDLE;
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.PARAMETER_DELIMINATOR;
-import static com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
+import static com.l7tech.gateway.common.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
@@ -71,11 +71,11 @@ public class SolutionKitManagerResourceTest {
     };
 
     /**
-     * IMPORTANT: Keep the values as per {@link com.l7tech.gateway.common.api.solutionkit.SkarProcessor#SK_FILENAME}
+     * IMPORTANT: Keep the values as per {@link com.l7tech.gateway.common.solutionkit.SkarProcessor#SK_FILENAME}
      */
     private static final String SK_FILENAME = "SolutionKit.xml";
     /**
-     * IMPORTANT: Keep the values as per {@link com.l7tech.gateway.common.api.solutionkit.SkarProcessor#SK_INSTALL_BUNDLE_FILENAME}
+     * IMPORTANT: Keep the values as per {@link com.l7tech.gateway.common.solutionkit.SkarProcessor#SK_INSTALL_BUNDLE_FILENAME}
      */
     private static final String SK_INSTALL_BUNDLE_FILENAME = "InstallBundle.xml";
 

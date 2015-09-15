@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.api.solutionkit;
+package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
@@ -6,8 +6,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.solutionkit.ForbiddenException;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;

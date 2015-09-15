@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.api.solutionkit;
+package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.XmlUtil;
@@ -7,7 +7,6 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
-import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;

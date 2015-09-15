@@ -5,7 +5,7 @@ import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
-import com.l7tech.gateway.common.api.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;

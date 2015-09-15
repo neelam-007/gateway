@@ -1,14 +1,10 @@
-package com.l7tech.gateway.common.api.solutionkit;
+package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.solutionkit.BadRequestException;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;

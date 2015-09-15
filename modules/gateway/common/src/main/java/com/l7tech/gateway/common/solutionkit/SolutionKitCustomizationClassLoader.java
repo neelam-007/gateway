@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.api.solutionkit;
+package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.util.FileUtils;
 
