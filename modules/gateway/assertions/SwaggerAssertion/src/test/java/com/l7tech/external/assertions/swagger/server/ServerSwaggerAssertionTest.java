@@ -52,7 +52,7 @@ public class ServerSwaggerAssertionTest {
 
     public static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
     public static final String OAUTH2_TOKEN = "bearer J1qK1c18UUGJFAzz9xnH56584l4";
-    public static final String APIKEY_TOKEN = "apikey Jlkhbejhven789hhetbJMHeur";
+    public static final String APIKEY_TOKEN = "api_key Jlkhbejhven789hhetbJMHeur";
     public static final String BASIC_TOKEN = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
 
     SwaggerAssertion assertion;
@@ -376,7 +376,7 @@ public class ServerSwaggerAssertionTest {
 
     @Test
     public void testValidateWithPathMethodSchemeSecurity_ApiKeyParamPresent() throws Exception {
-        String requestUri = "/pet/123";
+        String requestUri = "/petParams/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
 
@@ -477,6 +477,49 @@ public class ServerSwaggerAssertionTest {
         assertTrue("Missing audit: " + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
+    @Test
+    public void testValidateSecurityWithMultipleRequirementsOR () throws Exception {
+        String requestUri = "/store/inventoryOR";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        // when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{APIKEY_TOKEN});
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateSecurityWithMultipleRequirementsAND () throws Exception {
+        String requestUri = "/store/inventoryAND";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS
 
     @Test

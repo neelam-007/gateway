@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.swagger.server;
 
 import com.l7tech.message.HttpRequestKnob;
+import io.swagger.models.auth.SecuritySchemeDefinition;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +16,7 @@ public class ValidateBasicSecurity implements ValidateSecurity {
 
     private static final Pattern basicAuth = Pattern.compile("^Basic", Pattern.CASE_INSENSITIVE);
 
-    public boolean checkSecurity(HttpRequestKnob httpRequestKnob) {
+    public boolean checkSecurity(HttpRequestKnob httpRequestKnob, SecuritySchemeDefinition securityDefinition) {
         String authHeaders[] = httpRequestKnob.getHeaderValues(ServerSwaggerAssertion.AUTHORIZATION_HEADER);
         if (authHeaders != null) {
             for (String header : authHeaders) {
