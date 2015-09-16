@@ -205,6 +205,9 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
             PartInfo partInfo = (PartInfo) value;
             message.initialize( stashManagerFactory.createStashManager(), contentType, partInfo.getInputStream( false ) );
             initialized = true;
+        } else {
+            // TODO try using com.l7tech.server.util.ContextVariableUtils.convertContextVariableValueToByteArray()
+            // (but not for Message and PartInfo which could be huge streams and are better handled as they already are, above)
         }
 
         if ( initialized ) {

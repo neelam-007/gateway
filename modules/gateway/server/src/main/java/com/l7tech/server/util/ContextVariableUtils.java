@@ -141,6 +141,9 @@ public class ContextVariableUtils {
      *     <li>Arbitrary objects that implement Serializable: this is very Java-specific and not the kind of meaningful binary representation
      *     we want to expose to users.
      *     Also, there are objects like X509Certificate that are Serializable but whose meaningful binary representation differs.</li>
+     *     <li>Primitive types like Number and Boolean.  This is because there is no single unambiguous meaningful binary
+     *     representation: numbers can be encoded as binary in a variety of ways
+     *     in addition to things like eg .toString().getBytes( charset )</li>
      *     <li>Automatic decoding of encodings such as Base-64 or URL encoding.  Such encodings must be explicitly decoded
      *     earlier in a policy, if this is desired.</li>
      * </ul>
