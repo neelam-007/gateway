@@ -49,7 +49,6 @@ public class VersionModifier {
 
     public void apply() {
         String entityTypeStr, actionStr;
-        EntityType entityType;
         Node node;
 
         for (Element item : bundleMappings) {
@@ -57,12 +56,7 @@ public class VersionModifier {
             actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
             if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
                 if (MappingAction.valueOf(actionStr) == AlwaysCreateNew) {
-                    entityType = EntityType.valueOf(entityTypeStr);
-
-                    // these entity types must include ALL cases in the switch statement below
-                    if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
-                            entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
-
+                    if (isModifiableType(entityTypeStr)) {
                         // deterministically set targetId for the version modified entity
                         item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getVersionModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
                     }
@@ -80,6 +74,9 @@ public class VersionModifier {
 
                 // apply version modifier to these entities
                 if (!StringUtils.isEmpty(entityTypeStr)) {
+
+                    // IMPORTANT cases in switch statement must match ALL the entity types in isModifiableType() below
+
                     switch (valueOf(entityTypeStr)) {
                         case FOLDER:
                             applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
@@ -158,7 +155,10 @@ public class VersionModifier {
             return false;
         } else {
             final EntityType entityType = valueOf(entityTypeStr);
-            return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType ;
+
+            // IMPORTANT these types must match ALL cases in the switch statement in apply() above
+
+            return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE;
         }
     }
 
