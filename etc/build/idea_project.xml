@@ -23,6 +23,7 @@
         <wildcardResourcePatterns>
             <entry name="?*.properties"/>
             <entry name="?*.xml"/>
+            <entry name="?*.json"/>
             <entry name="?*.gif"/>
             <entry name="?*.png"/>
             <entry name="?*.jpeg"/>

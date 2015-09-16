@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="com.bazaarvoice.jolt"
+		module="jolt-core"
+		revision="0.0.16"
+		status="release"
+		publication="20150427114807"
+	>
+		<description homepage="" />
+		<m:properties__commons-lang3.version>3.3.2</m:properties__commons-lang3.version>
+		<m:properties__project.reporting.outputEncoding>UTF-8</m:properties__project.reporting.outputEncoding>
+		<m:dependency.management__com.google.guava__guava__scope>test</m:dependency.management__com.google.guava__guava__scope>
+		<m:properties__argparse4j.version>0.4.4</m:properties__argparse4j.version>
+		<m:dependency.management__com.fasterxml.jackson.core__jackson-databind__version>2.5.0</m:dependency.management__com.fasterxml.jackson.core__jackson-databind__version>
+		<m:dependency.management__com.google.guava__guava__version>18.0</m:dependency.management__com.google.guava__guava__version>
+		<m:properties__project.build.sourceEncoding>UTF-8</m:properties__project.build.sourceEncoding>
+		<m:properties__testng.version>6.8.21</m:properties__testng.version>
+		<m:dependency.management__org.testng__testng__version>6.8.21</m:dependency.management__org.testng__testng__version>
+		<m:properties__javax-inject.version>1</m:properties__javax-inject.version>
+		<m:dependency.management__javax.inject__javax.inject__version>1</m:dependency.management__javax.inject__javax.inject__version>
+		<m:properties__jackson.version>2.5.0</m:properties__jackson.version>
+		<m:dependency.management__net.sourceforge.argparse4j__argparse4j__version>0.4.4</m:dependency.management__net.sourceforge.argparse4j__argparse4j__version>
+		<m:dependency.management__org.testng__testng__scope>test</m:dependency.management__org.testng__testng__scope>
+		<m:dependency.management__com.google.inject__guice__version>3.0</m:dependency.management__com.google.inject__guice__version>
+		<m:dependency.management__com.fasterxml.jackson.core__jackson-core__version>2.5.0</m:dependency.management__com.fasterxml.jackson.core__jackson-core__version>
+		<m:properties__guava.version>18.0</m:properties__guava.version>
+		<m:properties__java.minimum.version>1.7</m:properties__java.minimum.version>
+		<m:properties__sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</m:properties__sonatypeOssDistMgmtSnapshotsUrl>
+		<m:maven.plugins>org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.apache.rat__apache-rat-plugin__0.9|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__1.0|org.apache.maven.plugins__maven-enforcer-plugin__null|org.apache.maven.plugins__maven-compiler-plugin__null|org.apache.maven.plugins__maven-source-plugin__null|org.apache.rat__apache-rat-plugin__0.9|org.codehaus.mojo__cobertura-maven-plugin__2.5.2</m:maven.plugins>
+		<m:properties__guice.version>3.0</m:properties__guice.version>
+		<m:dependency.management__org.apache.commons__commons-lang3__version>3.3.2</m:dependency.management__org.apache.commons__commons-lang3__version>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="sources" visibility="public" description="this configuration contains the source artifact of this module, if any."/>
+		<conf name="javadoc" visibility="public" description="this configuration contains the javadoc artifact of this module, if any."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="jolt-core" type="jar" ext="jar" conf="master"/>
+		<artifact name="jolt-core" type="source" ext="jar" conf="sources" m:classifier="sources"/>
+		<artifact name="jolt-core" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
+	</publications>
+	<dependencies>
+		<dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.commons" name="commons-lang3" rev="3.3.2" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="com.bazaarvoice.jolt" name="json-utils" rev="0.0.16" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="com.google.guava" name="guava" rev="18.0" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.testng" name="testng" rev="6.8.21" force="true" conf="test->runtime(*),master(*)"/>
+		<override org="com.google.guava" module="guava" matcher="exact" rev="18.0"/>
+		<override org="com.fasterxml.jackson.core" module="jackson-databind" matcher="exact" rev="2.5.0"/>
+		<override org="com.google.guava" module="guava" matcher="exact" rev="18.0"/>
+		<override org="org.testng" module="testng" matcher="exact" rev="6.8.21"/>
+		<override org="javax.inject" module="javax.inject" matcher="exact" rev="1"/>
+		<override org="net.sourceforge.argparse4j" module="argparse4j" matcher="exact" rev="0.4.4"/>
+		<override org="org.testng" module="testng" matcher="exact" rev="6.8.21"/>
+		<override org="com.google.inject" module="guice" matcher="exact" rev="3.0"/>
+		<override org="com.fasterxml.jackson.core" module="jackson-core" matcher="exact" rev="2.5.0"/>
+		<override org="org.apache.commons" module="commons-lang3" matcher="exact" rev="3.3.2"/>
+	</dependencies>
+</ivy-module>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="JsonJoltAssertion"
+        status="integration"
+	>
+	</info>
+	<configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+	</configurations>
+	<publications>
+		<artifact name="JsonJoltAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="com.bazaarvoice.jolt" name="jolt-core" rev="0.0.16" force="true" conf="core"/>
+	</dependencies>
+</ivy-module>
