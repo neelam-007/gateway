@@ -601,7 +601,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             String scheme = value.substring(0, spos);
             byte[] token = HexUtils.decodeBase64(value.substring( spos + 1 ), true);
             //check if the client using NTLM as a part of negotiation
-            if ( scheme.equalsIgnoreCase(NTLM_SCHEME) || (ArrayUtils.matchSubarrayOrPrefix(token, 0, 1, NTLM_MESSAGE_PREFIX, 0) > -1)) {
+            if ( scheme.equalsIgnoreCase(NTLM_SCHEME) || (token.length > 0 && ArrayUtils.matchSubarrayOrPrefix(token, 0, 1, NTLM_MESSAGE_PREFIX, 0) > -1)) {
                 return true;
             }
         }

@@ -1,6 +1,7 @@
 package com.l7tech.common.http.prov.apache.components;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
 import com.sun.net.httpserver.HttpExchange;
@@ -15,6 +16,7 @@ import java.net.URL;
 import java.util.zip.GZIPInputStream;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -39,13 +41,56 @@ public class HttpComponentsClientTest {
     @Test
     public void testCreateRequest() throws Exception {
         GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
-        requestParams.setTargetUrl(new URL("http://l7tech.com"));
+        requestParams.setTargetUrl(new URL("http://www.ca.com"));
         GenericHttpRequest request = null;
         try {
             request = fixture.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();
             assertEquals(200, response.getStatus());
             IOUtils.copyStream(response.getInputStream(), System.out);
+        } finally {
+            if (request != null) {
+                request.close();
+            }
+        }
+    }
+
+    @Test
+    public void testCreateRequestWithInvalidAuthorizationHeader() throws Exception {
+        final String[] sawRequestMethod = new String[1];
+
+        MockHttpServer httpServer = new MockHttpServer(17802);
+        httpServer.setHttpHandler(new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                sawRequestMethod[0] = exchange.getRequestHeaders().getFirst("Authorization");
+                exchange.sendResponseHeaders(200, 0);
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+        requestParams.setExtraHeaders(new HttpHeader[]{new HttpHeader() {
+            @Override
+            public String getName() {
+                return "Authorization";
+            }
+
+            @Override
+            public String getFullValue() {
+                return "bearer 1";
+            }
+        }});
+        requestParams.setTargetUrl(new URL("http://localhost:" + httpServer.getPort()));
+        GenericHttpRequest request = null;
+        try {
+            fixture = new HttpComponentsClient(new IdentityBindingHttpConnectionManager(), -1, -1);
+            request = fixture.createRequest(HttpMethod.GET, requestParams);
+            assertTrue(request != null);
+            GenericHttpResponse response = request.getResponse();
+            assertEquals(200, response.getStatus());
+            assertEquals("bearer 1", sawRequestMethod[0]);
         } finally {
             if (request != null) {
                 request.close();
