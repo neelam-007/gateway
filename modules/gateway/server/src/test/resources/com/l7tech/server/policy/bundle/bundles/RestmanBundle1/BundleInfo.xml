@@ -3,7 +3,7 @@
     <l7:Version>1.0</l7:Version>
     <!--
      version history:
-        1.1: trivial modifications to verify update
+        1.1: change some actions to AlwaysCreateNew
         1.0: initial version to verify create
      -->
     <l7:Name>REST Gateway Management Bundle</l7:Name>

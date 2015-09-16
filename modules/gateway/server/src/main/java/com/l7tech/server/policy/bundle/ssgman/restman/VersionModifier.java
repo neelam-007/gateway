@@ -1,7 +1,10 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,9 +12,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.l7tech.objectmodel.EntityType.*;
+import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction;
+import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.AlwaysCreateNew;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Apply version modifier to entities of a restman migration bundle.
@@ -20,22 +28,48 @@ public class VersionModifier {
     public static final String TAG_NAME_L7_NAME = "l7:Name";
     public static final String TAG_NAME_L7_TYPE = "l7:Type";
     public static final String TAG_NAME_L7_URL_PATTERN = "l7:UrlPattern";
+    public static final String ATTRIBUTE_NAME_SRC_ID = "srcId";
+    public static final String ATTRIBUTE_NAME_TARGET_ID = "targetId";
+    public static final String ATTRIBUTE_NAME_TYPE = "type";
+    public static final String ATTRIBUTE_NAME_ACTION = "action";
 
     private final List<Element> bundleReferenceItems;
+    private List<Element> bundleMappings;
     private final String versionModifier;
 
-    public VersionModifier(@NotNull final List<Element> bundleReferenceItems, @Nullable final String versionModifier) {
+    public VersionModifier(@NotNull final List<Element> bundleReferenceItems, @NotNull final List<Element> bundleMappings, @Nullable final String versionModifier) {
         this.bundleReferenceItems = bundleReferenceItems;
+        this.bundleMappings = bundleMappings;
         this.versionModifier = versionModifier;
     }
 
     public VersionModifier(@NotNull final RestmanMessage restmanMessage, @Nullable final String versionModifier) {
-        this(restmanMessage.getBundleReferenceItems(), versionModifier);
+        this(restmanMessage.getBundleReferenceItems(), restmanMessage.getMappings(), versionModifier);
     }
 
     public void apply() {
-        String entityTypeStr;
+        String entityTypeStr, actionStr;
+        EntityType entityType;
         Node node;
+
+        for (Element item : bundleMappings) {
+            entityTypeStr = item.getAttribute(ATTRIBUTE_NAME_TYPE);
+            actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
+            if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
+                if (MappingAction.valueOf(actionStr) == AlwaysCreateNew) {
+                    entityType = EntityType.valueOf(entityTypeStr);
+
+                    // these entity types must include ALL cases in the switch statement below
+                    if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
+                            entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
+
+                        // deterministically set targetId for the version modified entity
+                        item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getVersionModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
+                    }
+                }
+            }
+        }
+
         for (Element item : bundleReferenceItems) {
             final NodeList nodeList = item.getElementsByTagName(TAG_NAME_L7_TYPE);
 
@@ -107,8 +141,20 @@ public class VersionModifier {
         }
     }
 
+    /**
+     * Deterministically version modify the GOID by getting the first 128 bits (16 bytes) of SHA-256( version_modifier + ":" + original_goid ).
+     */
+    public static String getVersionModifiedGoid(@Nullable String versionModifier, @NotNull final String goid) {
+        if (isEmpty(versionModifier)) {
+            return goid;
+        } else {
+            byte[] hash = HexUtils.getSha256Digest((versionModifier + ":" + goid).getBytes(Charsets.UTF8));
+            return new Goid(Arrays.copyOf(hash, 16)).toString();
+        }
+    }
+
     public static boolean isModifiableType(@Nullable final String entityTypeStr) {
-        if (StringUtils.isEmpty(entityTypeStr)) {
+        if (isEmpty(entityTypeStr)) {
             return false;
         } else {
             final EntityType entityType = valueOf(entityTypeStr);

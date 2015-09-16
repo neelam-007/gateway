@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,9 +9,10 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 
+import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier.*;
-import static com.l7tech.objectmodel.EntityType.valueOf;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -20,7 +22,7 @@ public class VersionModifierTest {
     private final String validRequestXml;
 
     public VersionModifierTest() throws IOException {
-        byte[] bytes = IOUtils.slurpUrl(getClass().getResource("/com/l7tech/server/policy/bundle/bundles/RestmanBundle1/MigrationBundle1.0.xml"));
+        byte[] bytes = IOUtils.slurpUrl(getClass().getResource("/com/l7tech/server/policy/bundle/bundles/RestmanBundle1/MigrationBundle1.1.xml"));
         validRequestXml = new String(bytes, RestmanInvoker.UTF_8);
     }
 
@@ -54,6 +56,17 @@ public class VersionModifierTest {
 
         // apply version modifier to message
         new VersionModifier(requestMessage, versionModifier).apply();
+
+        // check version modified entity has generated goid set for targetId
+        for (Element item : requestMessage.getMappings()) {
+            EntityType entityType = EntityType.valueOf(item.getAttribute(ATTRIBUTE_NAME_TYPE));
+            if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
+            entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
+                assertEquals(item.getAttribute(ATTRIBUTE_NAME_TARGET_ID), getVersionModifiedGoid(versionModifier,item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
+            } else {
+                assertEquals("", item.getAttribute(ATTRIBUTE_NAME_TARGET_ID));
+            }
+        }
 
         // check all bundle reference items
         String entityType, entityName, urlPattern;

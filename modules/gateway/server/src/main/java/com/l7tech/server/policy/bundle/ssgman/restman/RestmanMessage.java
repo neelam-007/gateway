@@ -181,7 +181,7 @@ public class RestmanMessage {
     /**
      * Get Restman mapping(s) as list of Elements.
      */
-    public List<Element> getMappings() throws IOException {
+    public List<Element> getMappings() {
         if (mappings == null || mappings.isEmpty()) {
             loadMappings();
         }
