@@ -1419,6 +1419,7 @@ public class AssertionMessages extends Messages {
     public static final M SWAGGER_NO_SECURITY_DEFN = m(11404, Level.WARNING, "Invalid Swagger Document - operation security requirements with securityDefinition section");
     public static final M SWAGGER_INVALID_SECURITY_DEFINITION = m(11405, Level.WARNING, "Invalid security definition {0} for method {1} on {2}");
     public static final M SWAGGER_CREDENTIALS_CHECK_FAILED = m(11406, Level.WARNING, "Required security credentials are missing or invalid for method {0} on {1}");
+    public static final M SWAGGER_MISSING_SECURITY_DEFINITION = m(11407, Level.WARNING, "Swagger security definition missing for requirement {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

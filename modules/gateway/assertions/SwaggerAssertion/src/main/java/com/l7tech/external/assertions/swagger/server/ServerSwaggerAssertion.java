@@ -229,6 +229,10 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     Set<String> securitySchemeObjects = securityRequirementObject.keySet();
                     for(String securitySchemeObject : securitySchemeObjects) {
                         SecuritySchemeDefinition definition = securityDefinitions.get(securitySchemeObject);
+                        if ( definition == null ) {
+                            logAndAudit(AssertionMessages.SWAGGER_MISSING_SECURITY_DEFINITION,securitySchemeObject);
+                            return false;
+                        }
                         ValidateSecurity type = securityTypeMap.get(definition.getType());
                         if (type == null) {
                             logAndAudit(AssertionMessages.SWAGGER_INVALID_SECURITY_DEFINITION, definition.getType(), operation.getOperationId(), path);

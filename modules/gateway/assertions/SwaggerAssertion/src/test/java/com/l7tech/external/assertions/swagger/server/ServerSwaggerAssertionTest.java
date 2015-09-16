@@ -520,6 +520,28 @@ public class ServerSwaggerAssertionTest {
         assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
         assertEquals(0, testAudit.getAuditCount());
     }
+
+    @Test
+    public void testValidateSecurityWithMissingSecurityDefinition () throws Exception {
+        String requestUri = "/store/inventoryMissingSecurityDefinition";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+    }
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS
 
     @Test
