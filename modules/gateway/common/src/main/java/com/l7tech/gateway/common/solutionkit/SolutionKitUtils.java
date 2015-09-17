@@ -255,6 +255,20 @@ public final class SolutionKitUtils {
         return null;
     }
 
+    public static SolutionKit searchSolutionKitFromUpgradeListByGuidAndIM(@NotNull final List<SolutionKit> solutionKitsToUpgrade, @NotNull final String guid, @Nullable final String instanceModifier) {
+        String tempIM;
+        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
+            tempIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+            if (guid.equals(solutionKit.getSolutionKitGuid()) &&
+               ((StringUtils.isBlank(tempIM) && StringUtils.isBlank(instanceModifier)) || (tempIM != null && tempIM.equals(instanceModifier)))) {
+                return solutionKit;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Check if the instance modifier of a selected solution kit is unique or not.
      *
@@ -373,6 +387,12 @@ public final class SolutionKitUtils {
         }
 
         return guidInstanceModifierMapFromUpgrade;
+    }
+
+    public static boolean isSameInstanceModifier(final String im1, final String im2) {
+        return
+            (StringUtils.isBlank(im1) && StringUtils.isBlank(im2)) ||
+            (im1 != null && im1.equals(im2));
     }
 
     private SolutionKitUtils() {}

@@ -251,7 +251,7 @@ public class SolutionKitAdminHelper {
                     SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
                     if (found != null) {
                         //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-                        throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' uses the instance modifier '" + sourceIMDisplayName + "', which other existing solution kit has used");
+                        throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' wants to upgrade an existing solution kit, which uses the same instance modifier, '" + sourceIMDisplayName + "'");
                     }
                 } catch (FindException e) {
                     throw new BadRequestException(ExceptionUtils.getMessage(e));

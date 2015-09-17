@@ -60,14 +60,14 @@ public class SolutionKitUtilsTest {
     @Test
     public void testSearchSolutionKitByGuidToUpgrade() {
         try {
-            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(null, "");
+            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(null, "", null);
         } catch (Exception e) {
             // appears exception message can be variable: "Argument 0 for @NotNull parameter" or "Argument for @NotNull parameter 'solutionKitsToUpgrade'
             Assert.assertThat(e.getMessage(), either(startsWith("Argument 0 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'solutionKitsToUpgrade")));
         }
 
         try {
-            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(new ArrayList<SolutionKit>(), null);
+            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(new ArrayList<SolutionKit>(), null, null);
         } catch (Exception e) {
             // appears exception message can be variable: "Argument 1 for @NotNull parameter" or "Argument for @NotNull parameter 'guid'"
             Assert.assertThat(e.getMessage(), either(startsWith("Argument 1 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'guid'")));
@@ -86,7 +86,7 @@ public class SolutionKitUtilsTest {
         Assert.assertEquals(
             "Find matched solution kit:",
             "79b16742-d62d-4095-8f8d-4db707e0ad22",
-            SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKits, "79b16742-d62d-4095-8f8d-4db707e0ad22").getSolutionKitGuid()
+            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(solutionKits, "79b16742-d62d-4095-8f8d-4db707e0ad22", null).getSolutionKitGuid()
         );
     }
 }

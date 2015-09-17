@@ -42,6 +42,7 @@ public class SolutionKitsConfig {
 
     private Map<String, List<String>> instanceModifiers = new HashMap<>();
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
+    private Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = new HashMap<>(); // The map of guid and instance modifier of selected solution kits for headless upgrade.
 
     public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
 
@@ -183,6 +184,10 @@ public class SolutionKitsConfig {
         this.parentSolutionKitLoaded = parentSolutionKitLoaded;
     }
 
+    public Map<String, Pair<String, String>> getSelectedGuidAndImForHeadlessUpgrade() {
+        return selectedGuidAndImForHeadlessUpgrade;
+    }
+
     public void clear(boolean nullSolutionKitToUpgrade) {
         loaded.clear();
         selected.clear();
@@ -259,7 +264,9 @@ public class SolutionKitsConfig {
                 final String resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
                 if (resolvedId != null) {
                     final Boolean allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
-                    if (allowOverride != null && allowOverride) {
+                    if (allowOverride == null) continue;
+
+                    if (allowOverride) {
                         mapping.setTargetId(resolvedId);
                     } else {
                         throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +

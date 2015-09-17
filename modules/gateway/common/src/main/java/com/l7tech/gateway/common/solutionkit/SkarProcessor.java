@@ -261,7 +261,7 @@ public class SkarProcessor {
             }
 
             // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
-            SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), solutionKit.getSolutionKitGuid());
+            final SolutionKit solutionKitToUpgrade = findSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
 
             if (solutionKitToUpgrade != null) {
                 solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
@@ -332,9 +332,9 @@ public class SkarProcessor {
 
     // merge bundles (if upgrade mappings exists, replace existing install mappings)
     Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
-        final SolutionKit solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), solutionKit.getSolutionKitGuid());
-        if (solutionKitToUpgrade != null && upgradeBundle.getMappings() != null) {
+        final SolutionKit solutionKitToUpgrade = findSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
 
+        if (solutionKitToUpgrade != null && upgradeBundle.getMappings() != null) {
             // set goid and version for upgrade
             solutionKit.setGoid(solutionKitToUpgrade.getGoid());
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
@@ -355,6 +355,35 @@ public class SkarProcessor {
         }
 
         return installBundle;
+    }
+
+    private SolutionKit findSolutionKitToUpgrade(@NotNull final String guid) {
+        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        final SolutionKit solutionKitToUpgrade;
+
+        // If this map is empty, it means it is a UI upgrade, since this map is filled by headless upgrade.
+        if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
+            solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitByGuidToUpgrade(solutionKitsConfig.getSolutionKitsToUpgrade(), guid);
+        } else {
+            final String instanceModifierSelected = findInstanceModifierFromSelectedGuidAndImForHeadlessUpgrade(guid);
+            solutionKitToUpgrade = SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(solutionKitsConfig.getSolutionKitsToUpgrade(), guid, instanceModifierSelected);
+        }
+
+        return solutionKitToUpgrade;
+    }
+
+    @Nullable
+    private String findInstanceModifierFromSelectedGuidAndImForHeadlessUpgrade(@NotNull final String guid) {
+        String instanceModifier = null;
+
+        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        if (! selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
+            if (selectedGuidAndImForHeadlessUpgrade.keySet().contains(guid)) {
+                instanceModifier = selectedGuidAndImForHeadlessUpgrade.get(guid).left;
+            }
+        }
+
+        return instanceModifier;
     }
 
     @Nullable
