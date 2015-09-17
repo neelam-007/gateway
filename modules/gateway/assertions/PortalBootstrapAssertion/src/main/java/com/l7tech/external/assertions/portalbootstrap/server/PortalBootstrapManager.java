@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -47,10 +48,9 @@ import com.l7tech.util.*;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
@@ -98,7 +98,8 @@ public class PortalBootstrapManager {
     static final String OAUTH = "OAuth";
 
     private static PortalBootstrapManager instance = null;
-    private static int ENROLL_PORT = 9446;
+    private static final int ENROLL_PORT = 9446;
+    private static final String SKAR_ID_HEADER_FIELD = "L7-skar-id";
 
     private final ApplicationContext applicationContext;
     private boolean initialized;
@@ -126,6 +127,9 @@ public class PortalBootstrapManager {
 
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
+
+    @Inject
+    private StashManagerFactory stashManagerFactory;
 
     private Config config = ConfigFactory.getCachedConfig();
 
@@ -194,7 +198,6 @@ public class PortalBootstrapManager {
             throw new IOException( e );
         }
 
-        Document bundleDoc = null;
         InputStream input = null;
         OutputStream output = null;
         HttpsURLConnection connection;
@@ -207,14 +210,15 @@ public class PortalBootstrapManager {
             output = connection.getOutputStream();
             output.write(postBody);
 
-            boolean isBinary = ContentTypeHeader.parseValue(connection.getContentType()).matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
+            ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
+            boolean isBinary = contentTypeHeader.matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
             if (isBinary) {
                 input = new GZIPInputStream(connection.getInputStream());
             } else {
                 input = connection.getInputStream();
             }
 
-            bundleDoc = toDocument(input);
+            installBundle(input, connection.getHeaderField(SKAR_ID_HEADER_FIELD), contentTypeHeader, user);
         } finally {
             if (input != null) {
                 input.close();
@@ -223,8 +227,6 @@ public class PortalBootstrapManager {
                 output.close();
             }
         }
-
-        installBundle(bundleDoc, user);
 
         // Bundle installed, post back status
         try {
@@ -293,8 +295,7 @@ public class PortalBootstrapManager {
 
     private Document toDocument(final InputStream inputStream) throws IOException {
         try {
-            Document bundle = XmlUtil.parse(inputStream);
-            return bundle;
+            return XmlUtil.parse(inputStream);
         } catch (SAXException e) {
             throw new IOException(e);
         }
@@ -409,7 +410,10 @@ public class PortalBootstrapManager {
         throw new RuntimeException( "portalman private key does not already exist, and no mutable keystore exists in which to create a new one." );
     }
 
-    private void installBundle( @NotNull Document bundleDoc, @NotNull User adminUser ) throws IOException {
+    private void installBundle( @NotNull InputStream responseInputStream,
+                                @Nullable final String skarId,
+                                @NotNull ContentTypeHeader responseContentType,
+                                @NotNull User adminUser ) throws IOException {
         String policyXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -426,15 +430,34 @@ public class PortalBootstrapManager {
         PolicyEnforcementContext context = null;
         try {
             sph = serverPolicyFactory.compilePolicy( assertion, false );
-
             Message mess = new Message();
-            mess.initialize( bundleDoc, ContentTypeHeader.XML_DEFAULT );
 
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+            if (responseContentType.isMultipart()) {
+                // SKAR bundle
+                logger.log( Level.INFO, "SKAR bundle detected");
+
+                String queryParam = "";
+                if (skarId != null) {
+                    // perform a SKAR upgrade
+                    queryParam = "?id=" + skarId;
+                }
+
+                mess.initialize( stashManagerFactory.createStashManager(), responseContentType, responseInputStream );
+                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+                context.setVariable( "restGatewayMan.action", "POST" );
+                context.setVariable( "restGatewayMan.uri", "1.0/solutionKitManagers" + queryParam );
+            } else {
+                // restman bundle
+                Document bundleDoc;
+                bundleDoc = toDocument(responseInputStream);
+                mess.initialize(bundleDoc, ContentTypeHeader.XML_DEFAULT);
+                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+                context.setVariable("restGatewayMan.action", "PUT");
+                context.setVariable( "restGatewayMan.uri", "1.0/bundle" );
+            }
+
             context.getResponse().attachHttpResponseKnob( new AbstractHttpResponseKnob() {} );
             context.setVariable( "mess", mess );
-            context.setVariable( "restGatewayMan.action", "PUT" );
-            context.setVariable( "restGatewayMan.uri", "1.0/bundle" );
             context.getDefaultAuthenticationContext().addAuthenticationResult( new AuthenticationResult( adminUser, new OpaqueSecurityToken() ) );
 
             AssertionStatus result = sph.checkRequest( context );
