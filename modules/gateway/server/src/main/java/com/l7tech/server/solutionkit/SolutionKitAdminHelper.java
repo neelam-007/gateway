@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -153,7 +152,7 @@ public class SolutionKitAdminHelper {
                 final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
                 for (Element element: uninstallMappingsMsg.getMappings()) {
                     entityTypeStr = element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
-                    if (! VersionModifier.isModifiableType(entityTypeStr)) {
+                    if (!InstanceModifier.isModifiableType(entityTypeStr)) {
                         toBeIgnoredEntityTypes.add(entityTypeStr);
                     }
                 }

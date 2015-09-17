@@ -3,17 +3,15 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.common.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
-import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,9 +20,9 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.URLDecoder;
-import java.util.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A dialog gets an input as an instance modifier.
@@ -64,7 +62,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
                     @Override
                     public String call(String s) {
                         // Return a validation warning by calling a validation method, validatePrefixedURI.
-                        return validatePrefixedURI(s);
+                        return InstanceModifier.validatePrefixedURI(s);
                     }
                 });
             }
@@ -79,7 +77,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
                 if (StringUtils.isBlank(instanceModifier)) {
                     enabled = true;
                 } else {
-                    final String validationWarning = validatePrefixedURI(instanceModifierTextField.getText());
+                    final String validationWarning = InstanceModifier.validatePrefixedURI(instanceModifierTextField.getText());
                     enabled = validationWarning == null;
                 }
 
@@ -118,7 +116,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
      * Calculate what the max length of instance modifier could be for all selected solution kit.
      * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
      *
-     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
+     * @return the max allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
      */
     private int getMaxLengthForInstanceModifier() {
         int maxAllowedLengthAllow = Integer.MAX_VALUE;
@@ -138,7 +136,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
      * Calculate what the max length of instance modifier could be for a particular solution kit.
      * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
      *
-     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
+     * @return the max allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
      */
     private int getMaxLengthForInstanceModifier(@NotNull final SolutionKit solutionKit) {
         Integer maxLength = instanceModifierMaxLengthMap.get(solutionKit);
@@ -148,93 +146,12 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
             Bundle bundle = kitBundleMap.get(solutionKit);
 
             // Compute a new max length
-            maxLength = getMaxLengthForInstanceModifier(bundle.getReferences());
+            maxLength = InstanceModifier.getMaxAllowedLength(bundle.getReferences());
 
             // Save the max value for this solution kit in the map
             instanceModifierMaxLengthMap.put(solutionKit, maxLength);
         }
 
         return maxLength;
-    }
-
-    /**
-     * Calculate what the max length of instance modifier could be.
-     * The value dynamically depends on given names of folder, service, policy, and encapsulated assertion.
-     *
-     * TODO make this validation available to headless interface (i.e. SolutionKitManagerResource)
-     *
-     * @return the minimum allowed length among folder name, service name, policy name, encapsulated assertion name combining with instance modifier.
-     */
-    private int getMaxLengthForInstanceModifier(@NotNull final List<Item> bundleReferenceItems) {
-        int maxAllowedLengthAllow = Integer.MAX_VALUE;
-        int allowedLength;
-        String entityName;
-        EntityType entityType;
-
-        for (Item item: bundleReferenceItems) {
-            entityName = item.getName();
-            entityType = EntityType.valueOf(item.getType());
-
-            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
-                // The format of a folder name is "<folder_name> <instance_modifier>".
-                // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
-                // The max length of a folder name or an encapsulated assertion name is 128.
-                allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.POLICY) {
-                // The format of a policy name is "<instance_modifier> <policy_name>".
-                // The max length of a policy name is 255.
-                allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.SERVICE) {
-                // The max length of a service routing uri is 128
-                // The format of a service routing uri is "/<instance_modifier>/<service_name>".
-                allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
-            }  else {
-                continue;
-            }
-
-            if (maxAllowedLengthAllow > allowedLength) {
-                maxAllowedLengthAllow = allowedLength;
-            }
-        }
-
-        if (maxAllowedLengthAllow < 0) maxAllowedLengthAllow = 0;
-
-        return maxAllowedLengthAllow;
-    }
-
-    /**
-     * Validate if an instance modifier is a valid part of a URI.
-     *
-     * TODO make this validation available to headless interface (i.e. SolutionKitManagerResource)
-     *
-     * @return null if the instance modifier is valid.  Otherwise, a string explaining invalid reason.
-     */
-    private String validatePrefixedURI(@NotNull String instanceModifier) {
-        // Service Routing URI must not start with '/ssg'
-        if (instanceModifier.startsWith("ssg")) {
-            return "Instance modifier must not start with 'ssg', since Service Routing URI must not start with '/ssg'";
-        }
-
-        // validate for XML chars and new line char
-        String [] invalidChars = new String[]{"\"", "&", "'", "<", ">", "\n"};
-        for (String invalidChar : invalidChars) {
-            if (instanceModifier.contains(invalidChar)) {
-                if (invalidChar.equals("\n")) invalidChar = "\\n";
-                return "Invalid character '" + invalidChar + "' is not allowed in the installation prefix.";
-            }
-        }
-
-        String testUri = "http://ssg.com:8080/" + instanceModifier + "/query";
-        if (!ValidationUtils.isValidUrl(testUri)) {
-            return "Invalid prefix '" + instanceModifier + "'. It must be possible to construct a valid routing URI using the prefix.";
-        }
-
-        try {
-            URLDecoder.decode(instanceModifier, "UTF-8");
-        } catch (Exception e) {
-            return "Invalid prefix '" + instanceModifier + "'. It must be possible to construct a valid routing URL using the prefix.";
-        }
-
-        return null;
     }
 }

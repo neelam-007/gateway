@@ -142,9 +142,9 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         final String requestXml;
         try {
             final String instanceModifier = metadata.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-            if (VersionModifier.isValidVersionModifier(instanceModifier)) {
+            if (InstanceModifier.isValidVersionModifier(instanceModifier)) {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
-                new VersionModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), instanceModifier).apply();
+                new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), instanceModifier).apply();
                 requestXml = requestMessage.getAsString();
             } else {
                 requestXml = bundle;
