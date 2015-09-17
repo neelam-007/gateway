@@ -25,7 +25,7 @@ function logError() {
 	log user.error "ERROR: $1"
 }
 
-function logInfo() {
+function logWarning() {
 	log user.warning "WARNING: $1"
 }
 
@@ -158,14 +158,34 @@ ENDOFFILE
 )
 echo "SSG_HEADLESS_AUTOCONFIG=$SSG_HEADLESS_AUTOCONFIG"
 
+# preserve the Admin DB creds in case we need them
+echo "[client]" > /root/.my.cnf
+echo "user=$SSG_DATABASE_ADMIN_USER" >> /root/.my.cnf
+echo "password=$SSG_DATABASE_ADMIN_PASS" >> /root/.my.cnf
+chmod 600 /root/.my.cnf
+
 #echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" headless appliance-full
 (echo "create-db"; echo "$SSG_HEADLESS_AUTOCONFIG") | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
 if [ $? -ne 0 ]; then
-	logInfo "gateway headless autoconfig failed. Perhaps the database already exists. Retrying without the database creation."
-	echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
+	logInfo "gateway headless autoconfig failed. Perhaps the database already exists. Checking to see if it does."
+	mysql --batch --disable-column-names --host="$SSG_DATABASE_HOST" -e "show databases" | grep "^$SSG_DATABASE_NAME\$" &> /dev/null
 	if [ $? -ne 0 ]; then
-		logErrorAndExit "gateway headless autoconfig failed. Exiting."
+		logErrorAndExit "gateway headless autoconfig failed. Database doesn't already exist."
 	fi
+	logInfo "gateway database already exists. Generating node.properties and joining node to existing database."
+	echo "" > /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	/bin/chown layer7:gateway "/opt/SecureSpan/Gateway/node/default/etc/conf/node.properties"
+	/bin/chmod 664 "/opt/SecureSpan/Gateway/node/default/etc/conf/node.properties"
+	NODE_ID="$(/bin/dd if=/dev/urandom bs=1 count=16 2>/dev/null | hexdump -v -e '16/1 "%02X"')"
+	echo "node.id = $NODE_ID" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.enabled = true" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.cluster.pass = $SSG_CLUSTER_PASSWORD" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.db.config.main.host = $SSG_DATABASE_HOST" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.db.config.main.port = $SSG_DATABASE_PORT" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.db.config.main.name = $SSG_DATABASE_NAME" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.db.config.main.user = $SSG_DATABASE_USER" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties
+	echo "node.db.config.main.pass = $SSG_DATABASE_PASSWORD" >> /opt/SecureSpan/Gateway/node/default/etc/conf/node.properties 
+	/etc/init.d/ssg restart
 fi
 
 logInfo "gateway is now starting up"
