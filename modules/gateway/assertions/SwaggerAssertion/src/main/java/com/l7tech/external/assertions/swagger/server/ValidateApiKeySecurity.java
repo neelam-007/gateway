@@ -1,14 +1,10 @@
 package com.l7tech.external.assertions.swagger.server;
 
-import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.message.HttpRequestKnob;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
-import io.swagger.models.auth.In;
 import io.swagger.models.auth.SecuritySchemeDefinition;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,19 +27,8 @@ public class ValidateApiKeySecurity implements ValidateSecurity {
 
         switch ( apiKeyAuthDefinition.getIn() ) {
             case HEADER:
-                Pattern apiKey = Pattern.compile(apiKeyAuthDefinition.getName(), Pattern.CASE_INSENSITIVE);
-
-                String authHeaders[] = httpRequestKnob.getHeaderValues(ServerSwaggerAssertion.AUTHORIZATION_HEADER);
-                if (authHeaders != null) {
-                    for (String header : authHeaders) {
-                        Matcher m = apiKey.matcher(header);
-                        if (m.find()) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-
+                String authHeaders[] = httpRequestKnob.getHeaderValues(apiKeyAuthDefinition.getName());
+                return (authHeaders != null && authHeaders.length > 0);
             case QUERY:
                 try {
                     return (httpRequestKnob.getParameter(apiKeyAuthDefinition.getName()) != null);

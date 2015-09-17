@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class ValidateOauth2Security implements ValidateSecurity {
 
-    private static final Pattern oauth2inHeader = Pattern.compile("^Bearer", Pattern.CASE_INSENSITIVE);
+    private static final Pattern oauth2inHeader = Pattern.compile("^\\s*Bearer\\s+", Pattern.CASE_INSENSITIVE);
 
     public boolean checkSecurity(HttpRequestKnob httpRequestKnob, SecuritySchemeDefinition securityDefinition) {
         String authHeaders[] = httpRequestKnob.getHeaderValues(ServerSwaggerAssertion.AUTHORIZATION_HEADER);
