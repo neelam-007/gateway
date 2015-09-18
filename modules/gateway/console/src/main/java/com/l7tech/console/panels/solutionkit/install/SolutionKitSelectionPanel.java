@@ -3,6 +3,7 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Item;
@@ -58,8 +59,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private JButton manageLicensesButton;
     private JPanel customizableButtonPanel;
     private JButton instanceModifierButton;
-
-    private DefaultTableModel solutionKitsModel;
 
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
@@ -297,15 +296,15 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void initializeSolutionKitsTable() {
-        solutionKitsModel = new DefaultTableModel(populateData(), tableColumnNames) {
+        DefaultTableModel solutionKitsModel = new DefaultTableModel(populateData(), tableColumnNames) {
             @Override
             public Class getColumnClass(int column) {
-                return column == 0? Boolean.class : String.class;
+                return column == 0 ? Boolean.class : String.class;
             }
 
             @Override
             public boolean isCellEditable(int row, int column) {
-                return (column == 0)? isEditableOrEnabledAt(row) : false;
+                return (column == 0) ? isEditableOrEnabledAt(row) : false;
             }
         };
         solutionKitsTable.setModel(solutionKitsModel);
@@ -380,7 +379,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         for (SolutionKit solutionKit: solutionKitsLoaded) {
             data[rowIdx++] = new Object[] {
                 solutionKitsSelected.contains(solutionKit)? Boolean.TRUE : Boolean.FALSE,
-                solutionKit.getName(),
+                getSolutionKitDisplayName(solutionKit),
                 solutionKit.getSolutionKitVersion(),
                 solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY),
                 solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY)
@@ -388,6 +387,15 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         return data;
+    }
+
+    private String getSolutionKitDisplayName(final SolutionKit solutionKit) {
+        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        if (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet)) {
+            return solutionKit.getName();
+        } else {
+            return "(Unlicensed) " + solutionKit.getName();
+        }
     }
 
     private boolean isEditableOrEnabledAt(final int index) {
@@ -467,7 +475,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
-                solutionKitsModel.fireTableDataChanged();
+                initializeSolutionKitsTable();
             }
         });
     }
