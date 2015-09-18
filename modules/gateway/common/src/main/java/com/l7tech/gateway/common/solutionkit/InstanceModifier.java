@@ -238,24 +238,22 @@ public class InstanceModifier {
             entityName = item.getName();
             entityType = EntityType.valueOf(item.getType());
 
-            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION) {
+            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION || entityType == EntityType.SCHEDULED_TASK) {
                 // The format of a folder name is "<folder_name> <instance_modifier>".
                 // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
-                // The max length of a folder name or an encapsulated assertion name is 128.
+                // The format of a scheduled task name is "<instance_modifier> <scheduled_task_name>".
+                // The max length of a folder name, an encapsulated assertion name, or a scheduled task name is 128.
                 allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
-            } else if (entityType == EntityType.POLICY) {
+            } else if (entityType == EntityType.POLICY || entityType == EntityType.POLICY_BACKED_SERVICE) {
                 // The format of a policy name is "<instance_modifier> <policy_name>".
-                // The max length of a policy name is 255.
+                // The format of a policy backed service name is "<instance_modifier> <policy_backed_service_name>".
+                // The max length of a policy name or a policy backed service name is 255.
                 allowedLength = 255 - entityName.length() - 1; // 1 represents one char of white space.
             } else if (entityType == EntityType.SERVICE) {
-                // The max length of a service routing uri is 128
                 // The format of a service routing uri is "/<instance_modifier>/<service_name>".
+                // The max length of a service routing uri is 128
                 allowedLength = 128 - entityName.length() - 2; // 2 represents two chars of '/' in the routing uri.
-            }
-
-            // TODO for ghuang SCHEDULED_TASK & POLICY_BACKED_SERVICE
-
-            else {
+            } else {
                 continue;
             }
 
