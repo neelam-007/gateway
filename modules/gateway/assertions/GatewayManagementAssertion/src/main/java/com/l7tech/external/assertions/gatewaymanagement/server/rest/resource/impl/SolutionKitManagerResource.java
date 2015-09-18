@@ -113,29 +113,88 @@ public class SolutionKitManagerResource {
      * 	                <li><b>Mapping must be overridable</b> from the solution kit author (e.g. mapping with srcId=<find_id> has <code>SK_AllowMappingOverride = true</code>). An error occurs when attempting to replace an non-overridable mapping.</li>
      * 	            </ul>
      * 	        </li>
-     * 	        <li><code>solutionKitSelect</code>. Optional. To select which Solution Kit in the uploaded SKAR to install. A Solution Kit ID. If not provided, all Solution Kit(s) in the upload SKAR will be installed. Multiple values accepted (values from multiple fields with the same form-field name are treated as a list of values).</li>
-     * 	        <li>Passing values to the Custom Callback. Optional. All form-fields not listed above will be passed to the Custom Callback.
+     * 	        <li>
+     * 	            <code>solutionKitSelect</code>: Optional. To select which solution kit in the uploaded SKAR will be installed and what instance modifier will be applied to the installed instance.
+     *              <ul>
+     *                  <li>The value format of <code>solutionKitSelect</code> is '''<ID>::<IM>''', where '''::''' is a deliminator, <ID> is the GUID of the installed solution kit, and <IM> is the instance modifier applied to the installed instance. If <IM> is not specified, or the value of <IM> is empty, then the default instance modifier (empty value) is used.</li>
+     * 	                <li>If no <code>solutionKitSelect</code> provided, all solution kit(s) in the upload SKAR will be installed.</li>
+     * 	                <li>Multiple <code>solutionKitSelect</code> allowed: to specify multiple solution kits to install.</li>
+     * 	            </ul>
+     * 	         </li>
+     * 	         <li>
+     * 	             <code>instanceModifier</code>. Optional. To specify an instance modifier applied to all installed solution kits. By default, if this form field is not specified or its value is empty, then this instance modifier uses a default value (empty value).
+     * 	             <ul>
+     * 	                 <li>Applying <code>instanceModifier</code> is a quick way to apply a same instance modifier to a list of solution kits that have a same instance modifier. However, this instance modifier is only applied in the following two scenarios:</li>
+     * 	                 <li>(1) No any <code>solutionKitSelect</code> specified (i.e., all solution kit(s) in the SKAR will be installed.)</li>
+     * 	                 <li>(2) Some <code>solutionKitSelect</code> specified, but without <IM> specifed.</li>
+     * 	             </ul>
+     * 	         </li>
+     * 	        <li>Passing values to the Custom Callback. Optional. All form-fields not listed above will be passed to the Custom Callback.</li>
      * 	    </ul>
      * 	</li>
      * </ul>
      *
      * <p>Here's a cURL example (note the use of the --insecure option for development only):</p>
      * <code>
-     *     curl --user admin_user:the_password --insecure --form entityIdReplace=f1649a0664f1ebb6235ac238a6f71a6d::66461b24787941053fc65a626546e4bd --form entityIdReplace=0567c6a8f0c4cc2c9fb331cb03b4de6f::1e3299eab93e2935adafbf35860fc8d9 --form "file=@/<your_path>/SimpleSolutionKit-1.1-20150823.skar.signed" --form MyInputTextKey=Hello https://127.0.0.1:8443/restman/1.0/solutionKitManagers
+     *      curl --user admin:password --insecure
+     *      --form entityIdReplace=f1649a0664f1ebb6235ac238a6f71a6d::66461b24787941053fc65a626546e4bd
+     *      --form entityIdReplace=0567c6a8f0c4cc2c9fb331cb03b4de6f::1e3299eab93e2935adafbf35860fc8d9
+     *      --form instanceModifier=AAA
+     *      --form solutionKitSelect=33b16742-d62d-4095-8f8d-4db707e9ad52
+     *      --form solutionKitSelect=33b16742-d62d-4095-8f8d-4db707e9ad53::BBB
+     *      --form "file=@/<your_path>/SimpleSolutionKit-1.1-20150823.skar.signed" --form MyInputTextKey=Hello
+     *      https://127.0.0.1:8443/restman/1.0/solutionKitManagers
      * </code>
      *
      * <h5>To Upgrade</h5>
-     * Same as install above, and the following.
-     * <ul>
-     *     <li>Specify the previously installed Solution Kit ID to upgrade as a query parameter in the URL. For example:</li>
-     * </ul>
+     * Same as install above except the formats of <code>solutionKitSelect</code> and <code>instanceModifier</code> * Specify the previously installed Solution Kit ID to upgrade as a query parameter in the URL. The ID can be either a parent solution kit's GUID or a non-parent solution kit's GUID.
+     * For example:
      * <code>
      *     https://127.0.0.1:8443/restman/1.0/solutionKitManagers?id=33b16742-d62d-4095-8f8d-4db707e9ad52
      * </code>
+     * Note: we're using HTML POST to upgrade since HTML PUT does not support forms and therefore does not support multipart file upload.
+     * <ul>
+     *     <li><code>solutionKitSelect</code>: to select an individual child solution kit for upgrade and/or update the current instance modifier using a new instance modifier
+     *          <ul>
+     *              The value format is <ID>::<Current_IM>::<New_IM>
+     *              <li><ID> is the GUID of a selected solution kit (e.g, a non-parent solution kit)</li>
+     *              <li><Current_IM> is the current instance modifier used by a selected solution kit</li>
+     *              <li><New_IM> is a new instance modifier, which the selected solution kit use to upgrade the current instance modifier.</li>
+     *          </ul>
+     *     </li>
+     *     <li>
+     *         <code>instanceModifier</code>: to set a global current and new instance modifiers for upgrading all selected solution kits (non-parent solution kits)
+     *         <ul>
+     *              The value format is <Global_Current_IM>::<Global_New_IM>
+     *              <li><Global_Current_IM> is the current instance modifier used by all selected solution kits</li>
+     *              <li><Global_New_IM> is a new instance modifier, which all selected solution kits use to upgrade the current instance modifier.</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         Usage of Solution Kit ID, <code>instanceModifier</code>, and <code>solutionKitSelect</code><br>
+     *         - If ID is a parent solution kit GUID, then <code>instanceModifier</code> and <code>solutionKitSelect</code> accepted.<br>
+     *         - If ID is a non-parent solution kit GUID, <code>instanceModifier</code> accepted and <code>solutionKitSelect</code> not accepted.
+     *     </li>
+     *     <li>
+     *         <code>instanceModifier</code> combines with <code>solutionKitSelect</code>: The global instance modifiers will be applied on the selected solution kits specified by a list of <code>solutionKitSelect</code>
+     *         <ul>
+     *              <li>Individual <Current_IM> will overwrite <Global_Current_IM> for a particular selected solution kit.</li>
+     *              <li>Individual <New_IM> will overwrite <Global_New_IM> for a particular selected solution kit.</li>
+     *              <li>If individual solution kits do not specify <Current_IM> and <New_IM>, then <Global_Current_IM> and <Global_New_IM> will be used.</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         Use <code>instanceModifier</code> only without <code>solutionKitSelect</code>
+     *         <ul>
+     *              <li><Global_Current_IM> will be used to find all child solution kits, whose current instance modifier is <Global_Current_IM>.</li>
+     *              <li><Global_New_IM> will be applied to change the current instance modifier during upgrading the above found solution kits.</li>
+     *          </ul>
+     *     </li>
+     * </ul>
      *
      * @param fileInputStream Input stream of the upload SKAR file.
-     * @param instanceModifierParameter For upgrade, the instance modifier of the to-be-upgraded solution kit.  For install, the instance modifier of the to-be-installed solution kit.
-     * @param solutionKitSelects Which Solution Kit ID(s) in the uploaded SKAR to install/upgrade. If not provided, all Solution Kit(s) in the upload SKAR will be installed/upgraded.
+     * @param instanceModifierParameter Global instance modifiers of to-be-upgraded/installed solution kit(s).
+     * @param solutionKitSelects Which Solution Kit(s) (found by ID and Instance Modifier) in the uploaded SKAR to install/upgrade. If not provided, all Solution Kit(s) in the upload SKAR will be installed/upgraded.
      * @param entityIdReplaces Optional. To map one entity ID to another. Format <find_id>::<replace_with_id>.
      * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
      * @param formDataMultiPart See above.
@@ -512,11 +571,24 @@ public class SolutionKitManagerResource {
      * Uninstall the Solution Kit record and the entities installed from the original SKAR (if delete mappings were provided by the SKAR author).
      * <ul>
      *     <li>Use a <code>DELETE</code> request.</li>
-     *     <li>Specify the Solution Kit ID as a query parameter in the URL.</li>
+     *     <li>Specify the Solution Kit ID as a query parameter in the URL. The ID consists of two parts, solution kit GUID and instance modifier used. The two parts are separated by "::".</li>
+     *     <li>Three types of ID URL format:
+     *          <ul>
+     *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=<non-parent_guid>::<IM></li>
+     *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=<parent_guid></li>
+     *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=<parent_guid>::<IM>&childId=<child_1_guid>::<IM1>...&childId=<child_n_guid>::<IMn></li>
+     *          </ul>
+     *     </li>
+     * </ul>
+     * In the URL, <IM> is an instance modifier, which combines with a GUID to find a unique solution kit. If <IM> is missed, then a default instance modifier (empty value) will be used.
+     * <ul>
+     *     <li>Use the type (1), if deleting a single non-parent solution kit.</li>
+     *     <li>Use the type (2), if deleting all child solution kits.</li>
+     *     <li>Use the type (3), if deleting some of child solution kits. Each individual instance modifier <IMx> will overwrite the global instance modifier <IM>. If individual solution kits don't specify <IMx>, then the global instance modifier will be used.</li>
      * </ul>
      *
-     * @param deleteGuidIM Solution Kit GUID and Instance Modifier to delete.
-     * @param childGuidIMList GUID and Instance Modifier of child solution kits to delete
+     * @param deleteGuidIM Solution kit GUID and instance modifier of a single solution kit or a collection of solution kits to delete.
+     * @param childGuidIMList GUID and instance modifier of child solution kits to delete
      * @return Output from the Solution Kit Manager.
      */
     @DELETE
