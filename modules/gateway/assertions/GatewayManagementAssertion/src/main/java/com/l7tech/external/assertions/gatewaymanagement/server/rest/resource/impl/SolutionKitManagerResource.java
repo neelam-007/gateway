@@ -193,14 +193,17 @@ public class SolutionKitManagerResource {
                         solutionKitForUpgrade = tempSK;
                     }
                 }
-                // Get the upgrade list
+                // Get the upgrade list.  However, this list has not applied user selection on solution kits based on parameters such id and solutionKitSelect.
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitForUpgrade));
-
-                // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
-                solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
 
                 // This help info must be done before skarProcessor runs.
                 setSelectedGuidAndImForHeadlessUpgrade(isParent, upgradeGuid, solutionKitsConfig, instanceModifierParameter, solutionKitSelects);
+
+                // Update the upgrade list again after the above setSelectedGuidAndImForHeadlessUpgrade is done.
+                updateSolutionKitsToUpgradeBasedOnGivenParameters(solutionKitsConfig);
+
+                // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
+                solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
             }
 
             // load skar
@@ -322,6 +325,42 @@ public class SolutionKitManagerResource {
         }
 
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
+    }
+
+    private void updateSolutionKitsToUpgradeBasedOnGivenParameters(@NotNull final SolutionKitsConfig solutionKitsConfig) throws FindException {
+        // Check precondition: the map must be filled already based on parameters given by user
+        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
+            throw new IllegalArgumentException("A map of guid and instance modifier for selected to-be-upgraded solution kits has not been initialized.");
+        }
+
+        final List<SolutionKit> finalUpgradeList = new ArrayList<>();
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+
+        // Add the parent first if the first element is a parent.
+        if (solutionKitsToUpgrade.size() > 0) {
+            final SolutionKit parentCandidate = solutionKitsToUpgrade.get(0);
+            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(parentCandidate.getMappings())) {
+                finalUpgradeList.add(parentCandidate);
+            }
+        }
+
+        // Get the final upgrade list
+        String currentIM, tempIM, tempGuid;
+        for (String guid: selectedGuidAndImForHeadlessUpgrade.keySet()) {
+            currentIM = selectedGuidAndImForHeadlessUpgrade.get(guid).left;
+
+            for (SolutionKit solutionKit: solutionKitsToUpgrade) {
+                tempGuid = solutionKit.getSolutionKitGuid();
+                tempIM = solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
+
+                if (guid.equals(tempGuid) && SolutionKitUtils.isSameInstanceModifier(currentIM, tempIM)) {
+                    finalUpgradeList.add(solutionKit);
+                }
+            }
+        }
+
+        solutionKitsConfig.setSolutionKitsToUpgrade(finalUpgradeList);
     }
 
     private Pair<Boolean, SolutionKit> isParentSolutionKit(String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
@@ -957,7 +996,7 @@ public class SolutionKitManagerResource {
                                                         @NotNull final SolutionKitsConfig solutionKitsConfig,
                                                         @Nullable final String instanceModifierParameter,
                                                         @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException, FindException {
-
+        // Don't create a new return map.  Just use a map from SolutionKitConfig, so the result of this map can be shared thru accessing SolutionKitConfig.
         final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();  // it should be emtpy at beginning.
         final Pair<String, String> globalIMPair = processGlobalInstanceModifiers(instanceModifierParameter);
         final String currentGlobalIM = globalIMPair.left;
@@ -976,7 +1015,7 @@ public class SolutionKitManagerResource {
                 final SolutionKit parent = kitList.get(0); // parent is always unique.
 
                 for (SolutionKit child: solutionKitManager.findAllChildrenByParentGoid(parent.getGoid())) {
-                    if (SolutionKitUtils.isSameInstanceModifier(currentGlobalIM, child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY))) {
+                    if (instanceModifierParameter == null || SolutionKitUtils.isSameInstanceModifier(currentGlobalIM, child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY))) {
                         selectedGuidAndImForHeadlessUpgrade.put(child.getSolutionKitGuid(), new Pair<>(currentGlobalIM, newGlobalIM));
                     }
                 }
