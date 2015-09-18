@@ -82,9 +82,9 @@ public class SolutionKitAdminHelper {
      * @return the resulting mapping XML
      */
     @NotNull
-    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade, final String targetInstanceModifier) throws Exception {
+    public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
-        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade, targetInstanceModifier);
+        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
 
         return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
@@ -234,27 +234,22 @@ public class SolutionKitAdminHelper {
      * @return true if validation is passed; Otherwise false returns.
      * @throws BadRequestException: any errors or rule violation will throw BadRequestException
      */
-    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade, @Nullable String targetIM) throws BadRequestException, SolutionKitConflictException {
+    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {
+        final Goid sourceGoid = sourceSK.getGoid();
         final String sourceGuid = sourceSK.getSolutionKitGuid();
-        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-        if (StringUtils.isBlank(sourceIM)) sourceIM = "";  // This reassignment is to easier compare with other instance modifier.
-        final String sourceIMDisplayName = StringUtils.isBlank(sourceIM)? "N/A" : sourceIM;
+        final String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        final String sourceIMDisplayName = SolutionKitUtils.getInstanceModifierDisplayingName(sourceIM);
 
         // Check upgrade
         if (isUpgrade) {
-            if (StringUtils.isBlank(targetIM)) targetIM = "";  // This reassignment is to easier compare with other instance modifier.
-
-            if (! sourceIM.equals(targetIM)) {
-                try {
-                    SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
-                    if (found != null) {
-                        //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-                        throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' wants to upgrade an existing solution kit, which uses the same instance modifier, '" + sourceIMDisplayName + "'");
-                    }
-                } catch (FindException e) {
-                    throw new BadRequestException(ExceptionUtils.getMessage(e));
+            try {
+                SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
+                if (found != null && sourceGoid != null && !sourceGoid.equals(found.getGoid())) {
+                    //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
+                    throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' tired to use a same instance modifier '" + sourceIMDisplayName + "', which other existing solution kit already uses");
                 }
+            } catch (FindException e) {
+                throw new BadRequestException(ExceptionUtils.getMessage(e));
             }
 
             return true;

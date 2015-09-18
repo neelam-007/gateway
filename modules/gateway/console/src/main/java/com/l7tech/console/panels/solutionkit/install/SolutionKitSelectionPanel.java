@@ -134,18 +134,14 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         // Test on each individual solution kit
         final boolean isUpgrade = settings.isUpgrade();
         for (SolutionKit solutionKitSelected: solutionKitsSelected) {
-            boolean success = testInstall(
-                solutionKitSelected,
-                isUpgrade,
-                (isUpgrade? SolutionKitUtils.findTargetInstanceModifier(solutionKitSelected, settings.getSolutionKitsToUpgrade()) : null)
-            );
+            boolean success = testInstall(solutionKitSelected, isUpgrade);
             if (! success) return false;
         }
 
         return true;
     }
 
-    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade, final String targetInstanceModifier) {
+    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade) {
         boolean success = false;
         String errorMessage;
 
@@ -181,7 +177,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     this.getOwner(),
                     "Testing Solution Kit",
                     "The gateway is testing selected solution kit(s)",
-                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade, targetInstanceModifier),
+                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
                     false
             );
 

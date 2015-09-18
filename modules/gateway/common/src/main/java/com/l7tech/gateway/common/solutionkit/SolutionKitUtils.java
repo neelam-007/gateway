@@ -360,13 +360,8 @@ public final class SolutionKitUtils {
         return null;
     }
 
-    public static String findTargetInstanceModifier(@NotNull final SolutionKit selectedSolutionKit, @NotNull final List<SolutionKit> solutionKitsToUpgrade) {
-        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
-            if (selectedSolutionKit.getSolutionKitGuid().equals(solutionKit.getSolutionKitGuid())) {
-                return solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-            }
-        }
-        throw new IllegalArgumentException("Invalid parameter of a solution kit, '" + selectedSolutionKit.getName() + "'");
+    public static String getInstanceModifierDisplayingName(@Nullable final String instanceModifier) {
+        return StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
     }
 
     public static Map<String, Set<String>> getGuidAndInstanceModifierMapFromUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade) {

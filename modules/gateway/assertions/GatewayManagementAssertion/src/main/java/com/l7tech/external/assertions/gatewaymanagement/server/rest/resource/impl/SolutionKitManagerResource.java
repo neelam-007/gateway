@@ -189,7 +189,8 @@ public class SolutionKitManagerResource {
                     if (tempSK == null) {
                         //There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
                         // - dis-allow upgrade if you don't have SK already installed (install only)
-                        final String warningMsg = "Upgrade failed: cannot find any existing solution kit (GUID = '" + upgradeGuid + "',  Instance Modifier = '" + getInstanceModifierDisplayingName(currentIM) + "') for upgrade.";
+                        final String warningMsg = "Upgrade failed: cannot find any existing solution kit (GUID = '" + upgradeGuid +
+                            "',  Instance Modifier = '" + SolutionKitUtils.getInstanceModifierDisplayingName(currentIM) + "') for upgrade.";
                         logger.warning(warningMsg);
                         return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                     } else {
@@ -327,10 +328,6 @@ public class SolutionKitManagerResource {
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
 
-    private String getInstanceModifierDisplayingName(@Nullable final String instanceModifier) {
-        return StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
-    }
-
     private Pair<Boolean, SolutionKit> isParentSolutionKit(String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
         final List<SolutionKit> solutionKits = solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
         final int size = solutionKits.size();
@@ -381,11 +378,7 @@ public class SolutionKitManagerResource {
             // Install: if an existing solution kit is found as same as the target, fail install.
             // Upgrade: if the selected solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
             try {
-                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(
-                    solutionKit,
-                    isUpgrade,
-                    (isUpgrade? SolutionKitUtils.findTargetInstanceModifier(solutionKit, solutionKitsConfig.getSolutionKitsToUpgrade()) : null)
-                );
+                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
             }
             // This exception already has a well-info message containing name, GUID, and instance modifier.
             catch (BadRequestException e) {
@@ -520,7 +513,8 @@ public class SolutionKitManagerResource {
                 if (tempSK == null) {
                     // There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
                     // - dis-allow upgrade if you don't have SK already installed (install only)
-                    final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + deleteGuid + "',  Instance Modifier = '" + getInstanceModifierDisplayingName(instanceModifier) + "') for uninstall.";
+                    final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + deleteGuid +
+                        "',  Instance Modifier = '" + SolutionKitUtils.getInstanceModifierDisplayingName(instanceModifier) + "') for uninstall.";
                     logger.warning(warningMsg);
                     return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                 } else {
@@ -578,7 +572,8 @@ public class SolutionKitManagerResource {
                         selectedSolutionKit = solutionKitManager.findBySolutionKitGuidAndIM(guid, finalIM);
 
                         if (selectedSolutionKit == null) {
-                            final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + guid + "',  Instance Modifier = '" + getInstanceModifierDisplayingName(finalIM) + "') for uninstall.";
+                            final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + guid +
+                                "',  Instance Modifier = '" + SolutionKitUtils.getInstanceModifierDisplayingName(finalIM) + "') for uninstall.";
                             logger.warning(warningMsg);
                             return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                         }
@@ -1065,8 +1060,8 @@ public class SolutionKitManagerResource {
                     }
                     if (! matched) {
                         throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                            "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" +
-                                givenGuidFromPara + ") and the given Instance Modifier (" + getInstanceModifierDisplayingName(currentIM) + ")" + lineSeparator()).build());
+                            "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" + givenGuidFromPara +
+                                ") and the given Instance Modifier (" + SolutionKitUtils.getInstanceModifierDisplayingName(currentIM) + ")" + lineSeparator()).build());
                     }
                 }
             }
