@@ -697,9 +697,6 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             @NotNull final String moduleDigest,
             @NotNull final String updatedEntityName
     ) {
-        // TODO: No need to check if the scanner is enabled or not, for now the entity name change is of interest not the module content i.e. the module is not reloaded if the content has changed.
-        // TODO: Once module content can be updated, consider checking whether the scanner is enabled or not.
-
         // get the module filename
         final String fileName = stagedFile.getName();
 

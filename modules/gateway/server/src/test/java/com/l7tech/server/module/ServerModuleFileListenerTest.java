@@ -22,8 +22,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.*;
-import com.l7tech.util.ArrayUtils;
-import org.apache.commons.lang.*;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -41,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -92,8 +92,6 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     private ServerModuleFileListener modulesListener;
     private CustomAssertionsScanner customAssertionsScanner;
     private ModularAssertionsScanner modularAssertionsScanner;
-    private ServerAssertionRegistry modularAssertionRegistrar;
-    private CustomAssertionsRegistrar customAssertionRegistrar;
 
     // server module files initial repository
     private Map<Goid, ServerModuleFile> moduleFiles;
@@ -127,7 +125,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Assert.assertFalse("MODULES_COPY_ROOT_EMPTY_DIR exists", StringUtils.isBlank(modulesCopyRootEmptyDir = extractFolder(MODULES_COPY_ROOT_EMPTY_DIR)));
 
         // combination of already trusted and untrusted DN's
-        // everything signed with this signer will not be trusted 
+        // everything signed with this signer will not be trusted
         untrustedModuleSigner = SignatureTestUtils.createSignatureVerifier(
                 ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns)
         );
@@ -174,7 +172,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Mockito.doReturn(true).when(customModulesConfig).isHotSwapEnabled();
         Mockito.doReturn(DISABLED_MODULES_SUFFIX).when(customModulesConfig).getDisabledSuffix();
         Mockito.doReturn("custom_assertions.properties").when(customModulesConfig).getCustomAssertionPropertyFileName();
-        customAssertionRegistrar = Mockito.mock(CustomAssertionsRegistrar.class);
+        final CustomAssertionsRegistrar customAssertionRegistrar = Mockito.mock(CustomAssertionsRegistrar.class);
         customAssertionsScanner = Mockito.spy(new CustomAssertionsScanner(customModulesConfig, customAssertionCallbacks));
         mockServerModuleFileLoader(customAssertionRegistrar, customAssertionsScanner);
 
@@ -189,7 +187,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(DISABLED_MODULES_SUFFIX);
         Mockito.when(modulesConfig.getManifestHdrAssertionList()).thenReturn("ModularAssertion-List");
         Mockito.when(modulesConfig.getManifestHdrPrivateLibraries()).thenReturn("ModularAssertion-Private-Libraries");
-        modularAssertionRegistrar = Mockito.mock(ServerAssertionRegistry.class);
+        final ServerAssertionRegistry modularAssertionRegistrar = Mockito.mock(ServerAssertionRegistry.class);
         modularAssertionsScanner = Mockito.spy(new ModularAssertionsScanner(modulesConfig, modularAssertionCallbacks));
         mockServerModuleFileLoader(modularAssertionRegistrar, modularAssertionsScanner);
 
@@ -1214,7 +1212,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
      * @param future    the {@link Future} to wait for completion.  Optional and can be {@code null} in case when no task was executed.
      */
     private static Future waitForFuture(final Future future) throws ExecutionException, InterruptedException, TimeoutException {
-        return waitForFuture(future, -1/*5000*/); // todo revert me back
+        return waitForFuture(future, 5000);
     }
 
     /**
@@ -2132,7 +2130,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         Assert.assertNotNull(moduleType);
         final ModuleState moduleState = modulesListener.getModuleState(moduleFile);
         Assert.assertNotNull(moduleState);
-        
+
         // get initial counts
         File[] files = stagingFolder.listFiles();
         Assert.assertNotNull(files);
@@ -4126,7 +4124,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     }
 
     @Test
-    public void test_process_module_events() throws Exception {
+    public void test_process_entity_invalidation_events() throws Exception {
         Assert.assertNotNull(modulesListener);
         createUnsignedSampleModules();
         mockServerModuleFileManager(true);
@@ -4147,16 +4145,19 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         // module_8  => ACCEPTED => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)
         // module_9  => REJECTED => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)
         // module_10 => LOADED   => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar
-        do_test_started_event(Collections.<Goid>emptyList(), Collections.<Goid>emptyList());
+        do_test_started_event(
+                Arrays.asList(new Goid(GOID_HI_START, 4)), // module_4 REJECTED
+                Arrays.asList(new Goid(GOID_HI_START, 0))  // module_0 ERROR
+        );
 
         // expected states after the started event is processed:
         verifyModulesState(
                 new ModuleState[]{
-                        ModuleState.LOADED,   // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => LOADED
+                        ModuleState.ERROR,    // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => ERROR
                         ModuleState.LOADED,   // module_1  => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar       => LOADED
                         ModuleState.LOADED,   // module_2  => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                       => LOADED
                         ModuleState.LOADED,   // module_3  => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                => LOADED
-                        ModuleState.LOADED,   // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => LOADED
+                        ModuleState.REJECTED, // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => REJECTED
                         ModuleState.LOADED,   // module_5  => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                       => LOADED
                         ModuleState.LOADED,   // module_6  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar     => LOADED
                         ModuleState.ERROR,    // module_7  => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)       => ERROR
@@ -4165,58 +4166,562 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         ModuleState.LOADED    // module_10 => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                       => LOADED
                 }
         );
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
 
-        // new module with goid 100
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test EntityInvalidationEvent
+        // send UPDATE for all LOADED modules (1, 2, 3, 5, 6, 10)
+        // since no changes were actually done, i.e. moduleFiles (mimicking our DB) is unchanged, callbacks shouldn't be called
+        final AtomicInteger countLoad = new AtomicInteger(0), countUnload = new AtomicInteger(0), countUpdate = new AtomicInteger(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.fail("there shouldn't be any load");
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.fail("there shouldn't be any unload");
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.fail("there shouldn't be any update");
+                    }
+                },
+                new Goid[]{new Goid(GOID_HI_START, 1), new Goid(GOID_HI_START, 2), new Goid(GOID_HI_START, 3), new Goid(GOID_HI_START, 5), new Goid(GOID_HI_START, 6), new Goid(GOID_HI_START, 10)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.CREATE, EntityInvalidationEvent.CREATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // test EntityInvalidationEvent
+        // send UPDATE for all not loaded (REJECTED, ERROR etc) modules (0, 4, 7, 8, 9)
+        // since these modules failed to load and UPDATE is send for those modules they'll be reloaded
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // make sure these are our deleted modules (100, 3 and 8)
+                        Assert.assertThat(
+                                module.getGoid(),
+                                Matchers.anyOf(
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 0)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 4)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 7)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 8)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 9))
+                                )
+                        );
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.fail("there shouldn't be any unload");
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.fail("there shouldn't be any update");
+                    }
+                },
+                new Goid[]{new Goid(GOID_HI_START, 0), new Goid(GOID_HI_START, 4), new Goid(GOID_HI_START, 7), new Goid(GOID_HI_START, 8), new Goid(GOID_HI_START, 9)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.CREATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.CREATE, EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(5));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure nothing changed
+        verifyModulesState(
+                new ModuleState[]{
+                        ModuleState.ERROR,    // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => ERROR
+                        ModuleState.LOADED,   // module_1  => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar       => LOADED
+                        ModuleState.LOADED,   // module_2  => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                       => LOADED
+                        ModuleState.LOADED,   // module_3  => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                => LOADED
+                        ModuleState.REJECTED, // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => REJECTED
+                        ModuleState.LOADED,   // module_5  => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                       => LOADED
+                        ModuleState.LOADED,   // module_6  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar     => LOADED
+                        ModuleState.ERROR,    // module_7  => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)       => ERROR
+                        ModuleState.ERROR,    // module_8  => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)  => ERROR
+                        ModuleState.ERROR,    // module_9  => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)           => ERROR
+                        ModuleState.LOADED    // module_10 => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                       => LOADED
+                }
+        );
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // add new module with goid 100
+        Assert.assertNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
         moduleFiles.put(
                 new Goid(GOID_HI_START, 100),
                 new ServerModuleFileBuilder(create_unsigned_test_module_without_states(100, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar")))
                         .addState(currentNodeId, ModuleState.UPLOADED)
                         .build()
         );
-
+        // test EntityInvalidationEvent
+        // send three sample UPDATE's (modules 1, 2, 3 are already LOADED so they'll be ignored)
+        // since only one module (module_100) is created, then only the load callback for module_100 should be called
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
         do_test_process_module_events(
-                new Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException>() {
+                new Functions.UnaryVoid<ServerModuleFile>() {
                     @Override
-                    public void call(final File stagedFile, final ServerModuleFile module) throws ModuleLoadingException {
-                        Assert.assertNotNull(stagedFile);
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
                         Assert.assertNotNull(module);
                         Assert.assertNotNull(module.getGoid());
+                        // make sure this is our newly added module_100
                         Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 100)));
                     }
                 },
-                new Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException>() {
+                new Functions.UnaryVoid<ServerModuleFile>() {
                     @Override
-                    public void call(final File stagedFile, final ServerModuleFile module) throws ModuleLoadingException {
-                        Assert.assertNotNull(stagedFile);
-                        Assert.assertNotNull(module);
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
                         Assert.fail("there shouldn't be any unload");
                     }
                 },
-                new Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException>() {
+                new Functions.UnaryVoid<ServerModuleFile>() {
                     @Override
-                    public void call(final File stagedFile, final ServerModuleFile module) throws ModuleLoadingException {
-                        Assert.assertNotNull(stagedFile);
-                        Assert.assertNotNull(module);
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
                         Assert.fail("there shouldn't be any update");
                     }
                 },
-                new Goid[]{new Goid(GOID_HI_START, 0), new Goid(GOID_HI_START, 2), new Goid(GOID_HI_START, 100), new Goid(GOID_HI_START, 1)},
-                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.CREATE, EntityInvalidationEvent.DELETE}
+                // for new modules, the logic acts on a EntityInvalidationEvent as a trigger, so it doesn't matter that CREATE is not sending
+                new Goid[]{new Goid(GOID_HI_START, 1), new Goid(GOID_HI_START, 2), new Goid(GOID_HI_START, 3)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE}
         );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // remove modules with goids 100, 3 and 8
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 100)));
+        moduleFiles.remove(new Goid(GOID_HI_START, 100));
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 3)));
+        moduleFiles.remove(new Goid(GOID_HI_START, 3));
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 8)));
+        moduleFiles.remove(new Goid(GOID_HI_START, 8));
+
+        // test EntityInvalidationEvent
+        // send three sample UPDATE's (modules 1, 2, 3 are already LOADED so they'll be ignored)
+        // we have 3 deletes so make sure only unload callback is called with exact goids (100, 3 and 8)
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.fail("there shouldn't be any load");
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // make sure these are our deleted modules (100, 3 and 8)
+                        Assert.assertThat(
+                                module.getGoid(),
+                                Matchers.anyOf(
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 100)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 3)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 8))
+                                )
+                        );
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.fail("there shouldn't be any update");
+                    }
+                },
+                // for deleted modules, the logic acts on a EntityInvalidationEvent as a trigger, so it doesn't matter that CREATE is not sending
+                new Goid[]{new Goid(GOID_HI_START, 1), new Goid(GOID_HI_START, 2), new Goid(GOID_HI_START, 3)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(3));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // this is the current modules states:
+        // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => ERROR
+        // module_1  => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar       => LOADED
+        // module_2  => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                       => LOADED
+        // module_3  => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                => LOADED  (deleted)
+        // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => REJECTED
+        // module_5  => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                       => LOADED
+        // module_6  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar     => LOADED
+        // module_7  => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)       => ERROR
+        // module_8  => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)  => ERROR   (deleted)
+        // module_9  => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)           => ERROR
+        // module_10 => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                       => LOADED
+        // 1). make sure module_0 has an error so that we can test reload
+        Goid goid = new Goid(GOID_HI_START, 0);
+        ServerModuleFile module = moduleFiles.get(goid);
+        Assert.assertNotNull(module);
+        Assert.assertThat(modulesListener.getModuleState(module), Matchers.equalTo(ModuleState.ERROR));
+        Assert.assertThat(module.getName(), Matchers.not(Matchers.equalTo("new module_0")));
+        module.setName("new module_0");
+        Assert.assertThat(module.getName(), Matchers.equalTo("new module_0"));
+        // 2). make sure module_1 is loaded so that we can test just name update
+        goid = new Goid(GOID_HI_START, 1);
+        module = moduleFiles.get(goid);
+        Assert.assertNotNull(module);
+        Assert.assertThat(modulesListener.getModuleState(module), Matchers.equalTo(ModuleState.LOADED));
+        Assert.assertThat(module.getName(), Matchers.not(Matchers.equalTo("new module_1")));
+        module.setName("new module_1");
+        Assert.assertThat(module.getName(), Matchers.equalTo("new module_1"));
+        // 3). make sure module_2 is loaded so that we can test reload (due to content change)
+        goid = new Goid(GOID_HI_START, 2);
+        module = moduleFiles.get(goid);
+        Assert.assertNotNull(module);
+        Assert.assertThat(modulesListener.getModuleState(module), Matchers.equalTo(ModuleState.LOADED));
+        Assert.assertThat(module.getName(), Matchers.not(Matchers.equalTo("new module_2")));
+        module.setName("new module_2");
+        Assert.assertThat(module.getName(), Matchers.equalTo("new module_2"));
+        Pair<InputStream, String> bytesAndSig = serverModuleFileManager.getModuleBytesAsStreamWithSignature(goid);
+        Assert.assertNotNull(bytesAndSig);
+        Assert.assertNotNull(bytesAndSig.left); // only bytes are of interest
+        byte[] moduleBytes = IOUtils.slurpStream(bytesAndSig.left);
+        Assert.assertTrue(moduleBytes != null && moduleBytes.length > 0);
+        String moduleDigest = module.getModuleSha256();
+        ServerModuleFile newModule = new ServerModuleFileBuilder(create_unsigned_test_module_without_states(2, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.WorkingTest5.aar"))).build();
+        newModule.copyFrom(module, false, false, true);
+        Assert.assertThat(newModule.getGoid(), Matchers.equalTo(goid));
+        ServerModuleFile removed = moduleFiles.put(newModule.getGoid(), newModule);
+        Assert.assertThat(removed, Matchers.sameInstance(module));
+        module = moduleFiles.get(goid);
+        Assert.assertThat(module, Matchers.sameInstance(newModule));
+        Assert.assertThat(moduleDigest, Matchers.not(Matchers.equalTo(module.getModuleSha256())));
+        Pair<InputStream, String> newBytesAndSig = serverModuleFileManager.getModuleBytesAsStreamWithSignature(goid);
+        Assert.assertNotNull(newBytesAndSig);
+        Assert.assertNotNull(newBytesAndSig.left);
+        byte[] newModuleBytes = IOUtils.slurpStream(newBytesAndSig.left);
+        Assert.assertFalse(Arrays.equals(moduleBytes, newModuleBytes));
+
+        // test EntityInvalidationEvent
+        // for UPDATE send either UPDATE or CREATE with the specified goid's
+        // this time we are not going to send the correct goids, therefore 1). will not be executed, however 2). and 3). will be executed
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // then module_2 will be loaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 2)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // module_2 will first be unloaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 2)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // all modules (i.e. module_0, module_1, module_2) names are changed
+                        Assert.assertThat(
+                                module.getGoid(),
+                                Matchers.anyOf(
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 0)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 1)),
+                                        Matchers.equalTo(new Goid(GOID_HI_START, 2))
+                                )
+                        );
+                    }
+                },
+                // for deleted modules, the logic acts on a EntityInvalidationEvent as a trigger, so it doesn't matter that CREATE is not sending
+                new Goid[]{new Goid(GOID_HI_START, 101), new Goid(GOID_HI_START, 102)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(3));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 2)));
+        Assert.assertThat(modulesListener.getModuleState(moduleFiles.get(new Goid(GOID_HI_START, 2))), Matchers.equalTo(ModuleState.LOADED));
+
+        // test EntityInvalidationEvent
+        // for UPDATE send either UPDATE or CREATE with the specified goid's
+        // finally send update for 1).
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // then module_0 will be loaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 0)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // module_0 will first be unloaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 0)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.fail("there shouldn't be any update");
+                    }
+                },
+                // for deleted modules, the logic acts on a EntityInvalidationEvent as a trigger, so it doesn't matter that CREATE is not sending
+                new Goid[]{new Goid(GOID_HI_START, 0)},
+                new char[]{EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(0));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 0)));
+        Assert.assertThat(modulesListener.getModuleState(moduleFiles.get(new Goid(GOID_HI_START, 0))), Matchers.equalTo(ModuleState.ERROR));
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // this is the current modules states:
+        // module_0  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest1.jar     => ERROR
+        // module_1  => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest1.jar       => LOADED
+        // module_2  => MODULAR_ASSERTION   com.l7tech.WorkingTest1.aar                       => LOADED
+        // module_3  => CUSTOM_ASSERTION    com.l7tech.DualAssertionsTest1.jar                => LOADED  (deleted)
+        // module_4  => MODULAR_ASSERTION   com.l7tech.WorkingTest2.aar                       => REJECTED
+        // module_5  => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                       => LOADED
+        // module_6  => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar     => LOADED
+        // module_7  => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)       => ERROR
+        // module_8  => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)  => ERROR   (deleted)
+        // module_9  => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)           => ERROR
+        // module_10 => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                       => LOADED
+        goid = new Goid(GOID_HI_START, 2);
+        module = moduleFiles.get(goid);
+        Assert.assertNotNull(module);
+        Assert.assertThat(modulesListener.getModuleState(module), Matchers.equalTo(ModuleState.LOADED));
+        Assert.assertThat(module.getName(), Matchers.equalTo("new module_2"));
+        bytesAndSig = serverModuleFileManager.getModuleBytesAsStreamWithSignature(goid);
+        Assert.assertNotNull(bytesAndSig);
+        Assert.assertNotNull(bytesAndSig.left); // only bytes are of interest
+        moduleBytes = IOUtils.slurpStream(bytesAndSig.left);
+        Assert.assertTrue(moduleBytes != null && moduleBytes.length > 0);
+        moduleDigest = module.getModuleSha256();
+        newModule = new ServerModuleFileBuilder(create_unsigned_test_module_without_states(2, ModuleType.MODULAR_ASSERTION, new File(modulesRootEmptyDir, "com.l7tech.MissingAssertionClassTest1.aar"))).build();
+        newModule.copyFrom(module, false, false, true);
+        Assert.assertThat(newModule.getGoid(), Matchers.equalTo(goid));
+        removed = moduleFiles.put(newModule.getGoid(), newModule);
+        Assert.assertThat(removed, Matchers.sameInstance(module));
+        module = moduleFiles.get(goid);
+        Assert.assertThat(module, Matchers.sameInstance(newModule));
+        Assert.assertThat(moduleDigest, Matchers.not(Matchers.equalTo(module.getModuleSha256())));
+        newBytesAndSig = serverModuleFileManager.getModuleBytesAsStreamWithSignature(goid);
+        Assert.assertNotNull(newBytesAndSig);
+        Assert.assertNotNull(newBytesAndSig.left);
+        newModuleBytes = IOUtils.slurpStream(newBytesAndSig.left);
+        Assert.assertFalse(Arrays.equals(moduleBytes, newModuleBytes));
+
+        // test EntityInvalidationEvent
+        // for UPDATE send either UPDATE or CREATE with the specified goid's
+        // this time we are not going to send the correct goids, therefore 1). will not be executed, however 2). and 3). will be executed
+        countLoad.set(0); countUnload.set(0); countUpdate.set(0);
+        do_test_process_module_events(
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countLoad.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // then module_2 will be loaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 2)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUnload.getAndIncrement();
+                        Assert.assertNotNull(module);
+                        Assert.assertNotNull(module.getGoid());
+                        // module_2 will first be unloaded
+                        Assert.assertThat(module.getGoid(), Matchers.equalTo(new Goid(GOID_HI_START, 2)));
+                    }
+                },
+                new Functions.UnaryVoid<ServerModuleFile>() {
+                    @Override
+                    public void call(final ServerModuleFile module) {
+                        countUpdate.getAndIncrement();
+                        Assert.fail("there shouldn't be any update");
+                    }
+                },
+                // for deleted modules, the logic acts on a EntityInvalidationEvent as a trigger, so it doesn't matter that CREATE is not sending
+                new Goid[]{new Goid(GOID_HI_START, 101), new Goid(GOID_HI_START, 102)},
+                new char[]{EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.UPDATE}
+        );
+        Assert.assertThat(countLoad.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUnload.get(), Matchers.equalTo(1));
+        Assert.assertThat(countUpdate.get(), Matchers.equalTo(0));
+        // make sure all modules are populate into knownModuleFiles
+        assertThat(modulesListener.knownModuleFiles.values(), not(empty()));
+        assertThat(modulesListener.knownModuleFiles.size(), equalTo(moduleFiles.size()));
+        for (final ServerModuleFile moduleFile : moduleFiles.values()) {
+            Assert.assertNotNull(modulesListener.knownModuleFiles.get(moduleFile.getGoid()));
+        }
+        Assert.assertNotNull(moduleFiles.get(new Goid(GOID_HI_START, 2)));
+        Assert.assertThat(modulesListener.getModuleState(moduleFiles.get(new Goid(GOID_HI_START, 2))), Matchers.equalTo(ModuleState.ERROR));
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
     private void do_test_process_module_events(
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> loadCallback,
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> unloadCallback,
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> updateCallback,
+            final Functions.UnaryVoid<ServerModuleFile> loadCallback,
+            final Functions.UnaryVoid<ServerModuleFile> unloadCallback,
+            final Functions.UnaryVoid<ServerModuleFile> updateCallback,
             final Goid[] goids,
             final char[] ops
     ) throws Exception {
-
         // mock load/unload/update module methods
-        mockLoadModule(loadCallback);
-        mockUnloadModule(unloadCallback);
-        mockUpdateModule(updateCallback);
+        Assert.assertNotNull(loadCallback);
+        Assert.assertNotNull(unloadCallback);
+        Assert.assertNotNull(updateCallback);
+        Assert.assertNotNull(goids);
+        Assert.assertNotNull(ops);
+        Assert.assertThat(goids.length, Matchers.equalTo(ops.length));
+        // mock loadModule
+        Mockito.doAnswer(
+                new Answer<Void>() {
+                    @Override
+                    public Void answer(final InvocationOnMock invocation) throws Throwable {
+                        Assert.assertNotNull(invocation);
+                        Assert.assertEquals("there is one parameter for updateModule", 1, invocation.getArguments().length);
+                        final Object param1 = invocation.getArguments()[0];
+                        Assert.assertTrue("Param1 is ServerModuleFile", param1 instanceof ServerModuleFile);
+                        final ServerModuleFile moduleEntity = (ServerModuleFile) param1;
+                        Assert.assertNotNull(moduleEntity);
+                        // execute callback
+                        loadCallback.call(moduleEntity);
+                        invocation.callRealMethod();
+                        return null;
+                    }
+                }
+        ).when(modulesListener).loadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        // mock unloadModule
+        Mockito.doAnswer(
+                new Answer<Void>() {
+                    @Override
+                    public Void answer(final InvocationOnMock invocation) throws Throwable {
+                        Assert.assertNotNull(invocation);
+                        Assert.assertEquals("there is one parameter for updateModule", 1, invocation.getArguments().length);
+                        final Object param1 = invocation.getArguments()[0];
+                        Assert.assertTrue("Param1 is ServerModuleFile", param1 instanceof ServerModuleFile);
+                        final ServerModuleFile moduleEntity = (ServerModuleFile) param1;
+                        Assert.assertNotNull(moduleEntity);
+                        // execute callback
+                        unloadCallback.call(moduleEntity);
+                        invocation.callRealMethod();
+                        return null;
+                    }
+                }
+        ).when(modulesListener).unloadModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
+        // mock updateModule
+        Mockito.doAnswer(
+                new Answer<Void>() {
+                    @Override
+                    public Void answer(final InvocationOnMock invocation) throws Throwable {
+                        Assert.assertNotNull(invocation);
+                        Assert.assertEquals("there is one parameter for updateModule", 1, invocation.getArguments().length);
+                        final Object param1 = invocation.getArguments()[0];
+                        Assert.assertTrue("Param1 is ServerModuleFile", param1 instanceof ServerModuleFile);
+                        final ServerModuleFile moduleEntity = (ServerModuleFile) param1;
+                        Assert.assertNotNull(moduleEntity);
+                        // execute callback
+                        updateCallback.call(moduleEntity);
+                        invocation.callRealMethod();
+                        return null;
+                    }
+                }
+        ).when(modulesListener).updateModule(Mockito.<ServerModuleFileListener.StagedServerModuleFile>any());
 
         // send EntityInvalidationEvent, containing two events
         Assert.assertNotNull(
@@ -4231,155 +4736,5 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         )
                 )
         );
-    }
-
-    private void mockLoadModule(
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> loadCallback
-    ) throws Exception {
-        Assert.assertNotNull(loadCallback);
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        loadCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(modularAssertionRegistrar).loadModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        loadCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(customAssertionRegistrar).loadModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-    }
-
-    private void mockUnloadModule(
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> unloadCallback
-    ) throws Exception {
-        Assert.assertNotNull(unloadCallback);
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        unloadCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(modularAssertionRegistrar).unloadModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        unloadCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(customAssertionRegistrar).unloadModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-    }
-
-    private void mockUpdateModule(
-            final Functions.BinaryVoidThrows<File, ServerModuleFile, ModuleLoadingException> updateCallback
-    ) throws Exception {
-        Assert.assertNotNull(updateCallback);
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        updateCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(modularAssertionRegistrar).updateModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
-
-        Mockito.doAnswer(
-                new Answer<Void>() {
-                    @Override
-                    public Void answer(final InvocationOnMock invocation) throws Throwable {
-                        Assert.assertNotNull(invocation);
-                        Assert.assertEquals("there are two parameter for updateModule", 2, invocation.getArguments().length);
-                        final Object param1 = invocation.getArguments()[0];
-                        Assert.assertTrue("Param1 is File", param1 instanceof File);
-                        final File stagedFile = (File) param1;
-                        Assert.assertNotNull(stagedFile);
-                        //Assert.assertTrue(stagedFile.exists());
-                        final Object param2 = invocation.getArguments()[1];
-                        Assert.assertTrue("Param2 is ServerModuleFile", param2 instanceof ServerModuleFile);
-                        final ServerModuleFile moduleEntity = (ServerModuleFile) param2;
-                        Assert.assertNotNull(moduleEntity);
-
-                        updateCallback.call(stagedFile, moduleEntity);
-                        return null;
-                    }
-                }
-        ).when(customAssertionRegistrar).updateModule(Mockito.<File>any(), Mockito.<ServerModuleFile>any());
     }
 }

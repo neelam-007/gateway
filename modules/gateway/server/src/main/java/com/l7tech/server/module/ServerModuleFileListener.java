@@ -517,6 +517,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
+     * Detect and unload any modules being removed since last scan.
      *
      * @param dbModuleFileGoids    A Read-Only set of current {@code ServerModuleFile}'s {@code Goid}'s from the DB.
      */
@@ -554,6 +555,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
+     * Detect and process (update, load or reload) any modules being added or updated since last scan.
      *
      * @param dbModuleFiles    A Read-Only collection of current {@code ServerModuleFile}'s from the DB.
      * @param potentialUpdates A read-only set of {@code ServerModuleFile} {@code Goid}'s that might have been updated. Required and cannot be {@code null}.
@@ -804,7 +806,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Module Data and Signature Downloaded Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name is \"");
+                logger.log(Level.FINE, "Module Data and Signature Downloaded Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\"");
             }
             // finally return the module data and signature
             return streamAndSignature;
