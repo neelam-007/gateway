@@ -11,10 +11,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.solutionkit.SolutionKitCustomization;
-import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
@@ -56,9 +52,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
 import static com.l7tech.gateway.common.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
 import static java.lang.System.lineSeparator;
 import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.status;
@@ -629,7 +625,6 @@ public class SolutionKitManagerResource {
      * @param isInstall: true if install is executed; false means upgrade.
      * @param instanceModifierParameter: the instance modifier is shared by all selected solution kits, but individual solution kit's instance modifier can override it.
      *
-     * @return a message if there is any warning.
      * @throws SolutionKitManagerResourceException
      * @throws UnsupportedEncodingException
      */
@@ -651,12 +646,6 @@ public class SolutionKitManagerResource {
 
     /**
      * Set a list of solution kits for upgrade
-     *
-     * @param solutionKitsConfig
-     * @param instanceModifierParameter
-     * @param solutionKitSelects
-     * @throws UnsupportedEncodingException
-     * @throws SolutionKitManagerResourceException
      */
     private void selectSolutionKitsForInstall(@NotNull final SolutionKitsConfig solutionKitsConfig,
                                               @Nullable final String instanceModifierParameter,
@@ -934,8 +923,7 @@ public class SolutionKitManagerResource {
                 // check if skar bundle has mapping AND has override flag true
                 Mapping mapping = srcIdMappingMap.get(addendumMapping.getSrcId());
                 if (mapping != null) {
-                    final Boolean allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
-                    if (allowOverride == null || !allowOverride) {
+                    if (!SolutionKitsConfig.allowOverride(mapping)) {
                         throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity("Unable to process addendum bundle for mapping with scrId=" + addendumMapping.getSrcId() +
                                 ".  This requires the .skar file author to set mapping property '" + MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' to true." + lineSeparator()).build());
                     }
@@ -963,15 +951,6 @@ public class SolutionKitManagerResource {
 
     /**
      * In headless upgrade, find all mappings for guid and instance modifier for selected solution kits, based on two parameters, "instanceModifier" and "solutionKitSelect".
-     *
-     * @param isParent
-     * @param upgradeGuid
-     * @param solutionKitsConfig
-     * @param instanceModifierParameter
-     * @param solutionKitSelects
-     * @throws UnsupportedEncodingException
-     * @throws SolutionKitManagerResourceException
-     * @throws FindException
      */
     private void setSelectedGuidAndImForHeadlessUpgrade(final boolean isParent,
                                                         @NotNull final String upgradeGuid,
@@ -1008,7 +987,7 @@ public class SolutionKitManagerResource {
                 final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
                 final Map<String, Set<String>> guidAndInstanceModifierMapFromUpgrade = SolutionKitUtils.getGuidAndInstanceModifierMapFromUpgrade(solutionKitsToUpgrade);
 
-                Set<String> instanceModifierSetFromUpgrade, guidSet, duplicateGuids = new HashSet<>();
+                Set<String> instanceModifierSetFromUpgrade, guidSet;
                 String decodedStr, givenGuidFromPara, individualInstanceModifiers, currentIM, newIM;
                 int numOfDeliminator;
 

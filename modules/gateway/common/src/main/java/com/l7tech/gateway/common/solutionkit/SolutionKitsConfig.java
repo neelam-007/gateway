@@ -263,10 +263,7 @@ public class SolutionKitsConfig {
             for (final Mapping mapping : bundle.getMappings()) {
                 final String resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
                 if (resolvedId != null) {
-                    final Boolean allowOverride = mapping.getProperty(MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
-                    if (allowOverride == null) continue;
-
-                    if (allowOverride) {
+                    if (allowOverride(mapping)) {
                         mapping.setTargetId(resolvedId);
                     } else {
                         throw new ForbiddenException("Unable to process entity ID replace for mapping with scrId=" + mapping.getSrcId() +
@@ -275,5 +272,10 @@ public class SolutionKitsConfig {
                 }
             }
         }
+    }
+
+    public static boolean allowOverride(@NotNull final Mapping mapping) {
+        final Boolean allowOverride = mapping.getProperty(SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE);
+        return allowOverride != null && allowOverride;
     }
 }
