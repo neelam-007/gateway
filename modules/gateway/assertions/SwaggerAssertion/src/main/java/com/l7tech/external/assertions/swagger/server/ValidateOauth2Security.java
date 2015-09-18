@@ -15,21 +15,25 @@ import java.util.regex.Pattern;
  */
 public class ValidateOauth2Security implements ValidateSecurity {
 
-    private static final Pattern oauth2inHeader = Pattern.compile("^\\s*Bearer\\s+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern oauth2inHeader = Pattern.compile("^\\s*bearer\\s+", Pattern.CASE_INSENSITIVE);
 
     public boolean checkSecurity(HttpRequestKnob httpRequestKnob, SecuritySchemeDefinition securityDefinition) {
+
+        boolean inAuthHeader = false;
+        boolean inParameters = false;
+
         String authHeaders[] = httpRequestKnob.getHeaderValues(ServerSwaggerAssertion.AUTHORIZATION_HEADER);
         if(authHeaders != null) {
             for (String header : authHeaders) {
                 Matcher m = oauth2inHeader.matcher(header);
                 if (m.find()) {
-                    return true;
+                    inAuthHeader = true;
                 }
             }
         }
         //alternative way of finding the access token
         try {
-            return (httpRequestKnob.getParameter("access_token") != null);
+            inParameters = httpRequestKnob.getParameter("access_token") != null;
         } catch (IOException e) {
             //TODO: decide appropriate response
             //  IOException here means api_key was multi-valued parameter!!
@@ -37,5 +41,7 @@ public class ValidateOauth2Security implements ValidateSecurity {
             //  if not fall through and return false below
             return false;
         }
+
+        return ( (inAuthHeader || inParameters) &&  !( inAuthHeader && inParameters) );
     }
 }
