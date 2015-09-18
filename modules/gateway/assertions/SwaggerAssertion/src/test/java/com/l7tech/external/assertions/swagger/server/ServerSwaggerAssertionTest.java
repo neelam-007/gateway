@@ -133,6 +133,26 @@ public class ServerSwaggerAssertionTest {
     }
 
     @Test
+    public void testSwaggerValidRequest_noSecurityDefinitionsRequired() throws Exception {
+        String requestUri = "/pet/findByTags";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(false); // scheme validation disabled
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
      public void testSwaggerValidRequest_checkServiceBaseContextVariables() throws Exception {
         assertion.setSwaggerDoc("swaggerDoc");
         assertion.setServiceBase("${abc}");

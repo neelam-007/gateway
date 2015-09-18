@@ -220,30 +220,29 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         if (securityDefinitions != null) {
             List<Map<String, List<String>>> securityRequirementObjects = operation.getSecurity();
 
-            if ( securityRequirementObjects == null ) return true;  /* No Security Requirements Object = no security required */
+            if ( securityRequirementObjects == null || securityRequirementObjects.isEmpty() ) return true;  /* No Security Requirements Object = no security required */
 
             boolean disjunctValid = false;
-            if ( !securityRequirementObjects.isEmpty() ) {
-                for (Map<String, List<String>> securityRequirementObject : securityRequirementObjects) {
-                    boolean conjunctValid = true;
-                    Set<String> securitySchemeObjects = securityRequirementObject.keySet();
-                    for(String securitySchemeObject : securitySchemeObjects) {
-                        SecuritySchemeDefinition definition = securityDefinitions.get(securitySchemeObject);
-                        if ( definition == null ) {
-                            logAndAudit(AssertionMessages.SWAGGER_MISSING_SECURITY_DEFINITION,securitySchemeObject);
-                            return false;
-                        }
-                        ValidateSecurity type = securityTypeMap.get(definition.getType());
-                        if (type == null) {
-                            logAndAudit(AssertionMessages.SWAGGER_INVALID_SECURITY_DEFINITION, definition.getType(), operation.getOperationId(), path);
-                            return false;
-                        }
-                        conjunctValid &= type.checkSecurity(httpRequestKnob,definition);
-                    }
 
-                    disjunctValid |= conjunctValid;
-                    if(disjunctValid) break;// no need to validate other security requirements when we found valid one
+            for (Map<String, List<String>> securityRequirementObject : securityRequirementObjects) {
+                boolean conjunctValid = true;
+                Set<String> securitySchemeObjects = securityRequirementObject.keySet();
+                for(String securitySchemeObject : securitySchemeObjects) {
+                    SecuritySchemeDefinition definition = securityDefinitions.get(securitySchemeObject);
+                    if ( definition == null ) {
+                        logAndAudit(AssertionMessages.SWAGGER_MISSING_SECURITY_DEFINITION,securitySchemeObject);
+                        return false;
+                    }
+                    ValidateSecurity type = securityTypeMap.get(definition.getType());
+                    if (type == null) {
+                        logAndAudit(AssertionMessages.SWAGGER_INVALID_SECURITY_DEFINITION, definition.getType(), operation.getOperationId(), path);
+                        return false;
+                    }
+                    conjunctValid &= type.checkSecurity(httpRequestKnob,definition);
                 }
+
+                disjunctValid |= conjunctValid;
+                if(disjunctValid) break;// no need to validate other security requirements when we found valid one
             }
 
             if (!disjunctValid) {
