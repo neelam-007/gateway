@@ -809,8 +809,9 @@ public class SolutionKitManagerResource {
 
     // remap any entity id(s)
     private void remapEntityIds(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> entityIdReplaces) throws UnsupportedEncodingException {
+        final Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces == null? 0 : entityIdReplaces.size());
+
         if (entityIdReplaces != null) {
-            Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces.size());
             String entityIdReplaceStr;
             for (FormDataBodyPart entityIdReplace : entityIdReplaces) {
                 entityIdReplaceStr = entityIdReplace.getValue();
@@ -818,13 +819,14 @@ public class SolutionKitManagerResource {
                     decodeSplitPut(entityIdReplaceStr, entityIdReplaceMap);
                 }
             }
-
-            Map<String, Pair<SolutionKit, Map<String, String>>> idRemapBySolutionKit = new HashMap<>();
-            for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
-                idRemapBySolutionKit.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
-            }
-            solutionKitsConfig.setResolvedEntityIds(idRemapBySolutionKit);
         }
+
+        Map<String, Pair<SolutionKit, Map<String, String>>> idRemapBySolutionKit = new HashMap<>();
+        for (SolutionKit solutionKit: solutionKitsConfig.getSelectedSolutionKits()) {
+            idRemapBySolutionKit.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
+        }
+
+        solutionKitsConfig.setResolvedEntityIds(idRemapBySolutionKit);
     }
 
     protected static void decodeSplitPut(@NotNull final String entityIdReplaceStr, @NotNull final Map<String, String> entityIdReplaceMap) throws UnsupportedEncodingException {
