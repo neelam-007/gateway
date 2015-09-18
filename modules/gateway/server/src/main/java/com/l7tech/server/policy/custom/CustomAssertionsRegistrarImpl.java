@@ -680,6 +680,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         assertionsScanner.unloadServerModuleFile(stagedFile, moduleEntity.getModuleSha256(), moduleEntity.getName());
     }
 
+    @Override
+    public boolean isModuleLoaded(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) {
+        return assertionsScanner.isServerModuleFileLoaded(stagedFile, moduleEntity.getModuleSha256(), moduleEntity.getName());
+    }
+
     /**
      * {@inheritDoc}
      */

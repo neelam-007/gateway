@@ -617,6 +617,28 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
     }
 
     /**
+     * Determine if a {@code ServerModuleFile} specified with its {@code stagedFile} and {@code moduleDigest} is currently loaded or not.
+     *
+     * @param stagedFile      the module staging file.  Required and cannot be {@code null}.
+     * @param moduleDigest    the module digest, currently SHA-256.  Required and cannot be {@code null}.
+     * @param entityName      the module entity name.  Required and cannot be {@code null}.
+     * @return {@code true} if the {@code ServerModuleFile}, specified with its {@code stagedFile} and {@code moduleDigest} is currently loaded,
+     * or {@code false} otherwise.
+     */
+    public boolean isServerModuleFileLoaded(
+            @NotNull final File stagedFile,
+            @NotNull final String moduleDigest,
+            @NotNull final String entityName
+    ) {
+        // get the module filename
+        final String fileName = stagedFile.getName();
+
+        // find loaded module with the same name and digest
+        final T loadedModule = scannedModules.get(fileName);
+        return (loadedModule != null && moduleDigest.equals(loadedModule.getDigest()));
+    }
+
+    /**
      * Scan for any changes in the modules folder, which includes new modules, modules being changed, deleted or disabled.
      *
      * @param config    The modules configuration, providing path to the modules folder etc.

@@ -210,4 +210,9 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     public void unloadModule(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) throws ModuleLoadingException {
         // nothing to do
     }
+
+    @Override
+    public boolean isModuleLoaded(@NotNull final File stagedFile, @NotNull final ServerModuleFile moduleEntity) {
+        return false;
+    }
 }

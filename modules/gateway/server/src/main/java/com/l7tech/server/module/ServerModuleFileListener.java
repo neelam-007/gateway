@@ -7,12 +7,14 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,10 +31,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.io.*;
 import java.security.SignatureException;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -85,6 +84,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         /**
          * The Module File inside the staging folder.  Optional and can be {@code null}
          */
+        @Nullable
         private File stagingFile;
 
         /**
@@ -109,6 +109,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         /**
          * Getter for {@link #stagingFile staging file}.
          */
+        @Nullable
         File getStagingFile() {
             return stagingFile;
         }
@@ -116,16 +117,8 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
         /**
          * Setter for {@link #stagingFile staging file}.
          */
-        void setStagingFile(final File stagingFile) {
+        void setStagingFile(@Nullable final File stagingFile) {
             this.stagingFile = stagingFile;
-        }
-
-        /**
-         * @return {@code true} if the module is associated with a {@link #stagingFile staging file},
-         * which happens after successful download of the module contents.
-         */
-        boolean hasStagingFile() {
-            return stagingFile != null;
         }
 
         /**
@@ -214,9 +207,11 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                             processGatewayStartedEvent();
                         } catch (final RuntimeException e) {
                             logger.log(Level.SEVERE, "Unhandled exception while Processing Gateway Startup event: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
-                            // TODO (tveninov): Make sure setting the thread termination due to uncaught exception is acceptable here
                             final Thread t = Thread.currentThread();
-                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                            final Thread.UncaughtExceptionHandler exceptionHandler = t.getUncaughtExceptionHandler();
+                            if (exceptionHandler != null) {
+                                exceptionHandler.uncaughtException(t, e);
+                            }
                         }
                     }
                 });
@@ -236,6 +231,25 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                 return null;
             }
 
+            // check for license change
+            if (event instanceof LicenseChangeEvent) {
+                return eventHandlerExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            processLicenseChangeEvent();
+                        } catch (final RuntimeException e) {
+                            logger.log(Level.SEVERE, "Unhandled exception while Processing Gateway Startup event: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+                            final Thread t = Thread.currentThread();
+                            final Thread.UncaughtExceptionHandler exceptionHandler = t.getUncaughtExceptionHandler();
+                            if (exceptionHandler != null) {
+                                exceptionHandler.uncaughtException(t, e);
+                            }
+                        }
+                    }
+                });
+            }
+
             if (event instanceof EntityInvalidationEvent) {
                 // we are only interested in ServerModuleFile entity changes
                 final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
@@ -249,9 +263,11 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
                             processServerModuleFileInvalidationEvent(entityInvalidationEvent);
                         } catch (final RuntimeException e) {
                             logger.log(Level.SEVERE, "Unhandled exception while Processing Entity Invalidation event: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
-                            // TODO (tveninov): Make sure setting the thread termination due to uncaught exception is acceptable here
                             final Thread t = Thread.currentThread();
-                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                            final Thread.UncaughtExceptionHandler exceptionHandler = t.getUncaughtExceptionHandler();
+                            if (exceptionHandler != null) {
+                                exceptionHandler.uncaughtException(t, e);
+                            }
                         }
                     }
                 });
@@ -313,6 +329,346 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     }
 
     /**
+     * Handles {@link LicenseChangeEvent} event.<br/>
+     * Loops through all server module file entities in the DB, adds each module into the {@link #knownModuleFiles known module cache}
+     * and finally, if modules upload is enabled, tries to load each module.
+     */
+    void processLicenseChangeEvent() {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "processLicenseChangeEvent...");
+        }
+
+        // log that ServerModuleFiles are about to be reloaded
+        logger.info("Gateway license changed. Reloading Server Module Files from Database.");
+
+        // scan all modules from DB
+        // since this is a license change event all modules from DB are assumed to have been updated.
+        scanModules(null);
+    }
+
+    /**
+     * Handles {@link ServerModuleFile} invalidation events (i.e. {@link EntityInvalidationEvent} event).<br/>
+     *
+     * @param entityInvalidationEvent    {@code ServerModuleFile} entity invalidation event.
+     */
+    void processServerModuleFileInvalidationEvent(@NotNull final EntityInvalidationEvent entityInvalidationEvent) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "processServerModuleFileInvalidationEvent...");
+        }
+
+        // get ops and goids
+        final Goid[] goids = entityInvalidationEvent.getEntityIds();
+        final char[] ops = entityInvalidationEvent.getEntityOperations();
+
+        assert goids != null && ops != null;
+        assert goids.length == ops.length;
+
+        // get updated Goids
+        // these are the ones we are going to reload if not loaded yet
+        final Set<Goid> potentialUpdates = new HashSet<>();
+        for (int ix = 0; ix < goids.length; ++ix) {
+            final char op = ops[ix];
+            final Goid goid = goids[ix];
+            assert goid != null;
+            // skip deleted goids
+            if (op == EntityInvalidationEvent.CREATE || op == EntityInvalidationEvent.UPDATE) {
+                potentialUpdates.add(goid);
+            }
+        }
+
+        // scan all modules from DB
+        scanModules(Collections.unmodifiableSet(potentialUpdates));
+    }
+
+    /**
+     * Handles {@link ServerModuleFile} invalidation events.<br/>
+     * This handler will install or uninstall the {@code ServerModuleFile} entity associated with the {@link EntityInvalidationEvent}
+     *
+     * @param entityInvalidationEvent    {@code ServerModuleFile} entity invalidation event.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    @Deprecated
+    void legacyProcessServerModuleFileInvalidationEvent(@NotNull final EntityInvalidationEvent entityInvalidationEvent) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "doProcessServerModuleFileInvalidationEvent...");
+        }
+
+        // get ops and goids
+        final Goid[] goids = entityInvalidationEvent.getEntityIds();
+        final char[] ops = entityInvalidationEvent.getEntityOperations();
+
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "EntityInvalidationEvent ops \"" + Arrays.toString(ops) + "\", goids \"" + Arrays.toString(goids) + "\"");
+        }
+
+        // flag indicating whether module upload is enabled
+        final boolean isModuleUploadEnabled = serverModuleFileManager.isModuleUploadEnabled();
+
+        for (int ix = 0; ix < goids.length; ++ix) {
+            final char op = ops[ix];
+            @NotNull final Goid goid = goids[ix];
+
+            // for debug purposes
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Processing operation \"" + operationToString(op) + "\", for goid \"" + goid + "\"");
+            }
+
+            // on error continue with the next operation and log the failure
+            if (op == EntityInvalidationEvent.CREATE || op == EntityInvalidationEvent.UPDATE) {
+                // extract server module file
+                final ServerModuleFile moduleFile;
+                try {
+                    moduleFile = Eithers.extract(
+                            readOnlyTransaction(new Functions.Nullary<Either<FindException, Option<ServerModuleFile>>>() {
+                                @Override
+                                public Either<FindException, Option<ServerModuleFile>> call() {
+                                    try {
+                                        return Either.rightOption(serverModuleFileManager.findByPrimaryKey(goid));
+                                    } catch (final FindException e) {
+                                        return Either.left(e);
+                                    }
+                                }
+                            })
+                    ).toNull();
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Failed to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+                    continue;
+                }
+
+                if (moduleFile != null) {
+                    // add it to the known modules cache
+                    final StagedServerModuleFile moduleInfo = addToKnownModules(moduleFile);
+                    // threat create or updated events as create (see SSG-10351 for reference)
+                    // todo: correct logic once EntityVersionChecker (see SSG-10351) is properly fixed
+                    if (isModuleUploadEnabled && !ModuleState.LOADED.equals(getModuleState(moduleFile))) {
+                        loadModule(moduleInfo);
+                    } else if (isModuleUploadEnabled) {
+                        updateModule(moduleInfo);
+                    }
+                } else {
+                    // non-existent module goid, remove it from known cache
+                    knownModuleFiles.remove(goid);
+                }
+            } else if (op == EntityInvalidationEvent.DELETE) {
+                // extract server module file
+                final StagedServerModuleFile moduleFile;
+                try {
+                    moduleFile = removeFromKnownModules(goid);
+                } catch (FindException e) {
+                    // for debug purposes should be ignored otherwise
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE, "Unable to find Server Module File with \"" + goid + "\", from known modules cache. Ignoring Module Delete Event.", e);
+                    }
+                    return;
+                }
+
+                // process removed module only if upload is enabled
+                if (isModuleUploadEnabled) {
+                    unloadModule(moduleFile);
+                }
+            } else {
+                logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\". Ignoring...");
+            }
+        }
+    }
+
+    /**
+     * Called during license change and {@code ServerModuleFile} entity invalidation event.
+     * <p/>
+     * Get current {@code ServerModuleFile}'s list from DB (i.e. {@link ServerModuleFileManager#findAll()})
+     * and compare against known modules cache (i.e. {@link #knownModuleFiles}).<br/>
+     * First unload all deleted modules and afterwards load or update any new or updated modules, respectively.
+     *
+     * @param potentialUpdates    A read-only set of {@code ServerModuleFile} {@code Goid}'s that might have been updated.
+     *                            Optional and can be {@code null}, in which case it's assumed that all {@code ServerModuleFile}'s
+     *                            from DB have been updated (e.g. during {@link LicenseChangeEvent} event).
+     */
+    private void scanModules(@Nullable final Set<Goid> potentialUpdates) {
+        // first gather all SMFs from DB
+        try {
+            final Collection<ServerModuleFile> modules = Collections.unmodifiableCollection(Eithers.extract(
+                    readOnlyTransaction(new Functions.Nullary<Either<FindException, Collection<ServerModuleFile>>>() {
+                        @Override
+                        public Either<FindException, Collection<ServerModuleFile>> call() {
+                            try {
+                                return Either.right(serverModuleFileManager.findAll());
+                            } catch (final FindException e) {
+                                return Either.left(e);
+                            }
+                        }
+                    })
+            ));
+
+            // get the goids from DB modules
+            final Set<Goid> allModules = getGoids(modules);
+
+            // first process removed modules
+            processRemovedModules(allModules);
+
+            // finally process created or updated modules
+            processNewOrUpdatedModules(modules, potentialUpdates != null ? potentialUpdates : allModules);
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Failed to find all Server Module Files: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+        }
+    }
+
+    /**
+     *
+     * @param dbModuleFileGoids    A Read-Only set of current {@code ServerModuleFile}'s {@code Goid}'s from the DB.
+     */
+    private void processRemovedModules(@NotNull final Set<Goid> dbModuleFileGoids) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "processRemovedModules...");
+        }
+
+        // flag indicating whether module upload is enabled
+        final boolean isModuleUploadEnabled = serverModuleFileManager.isModuleUploadEnabled();
+
+        // first loop through known modules from cache i.e. knownModuleFiles
+        for (final StagedServerModuleFile module : knownModuleFiles.values()) {
+            assert module != null;
+            final Goid goid = module.getGoid();
+            assert goid != null;
+
+            // if this module is not in the DB, then it has been deleted
+            if (!dbModuleFileGoids.contains(goid)) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Processing module that has been removed; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
+                }
+
+                // extract server module file to remove
+                final ServerModuleFile moduleToRemove = knownModuleFiles.remove(goid);
+                assert moduleToRemove != null;
+
+                // process removed module only if upload is enabled
+                if (isModuleUploadEnabled) {
+                    unloadModule(module);
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @param dbModuleFiles    A Read-Only collection of current {@code ServerModuleFile}'s from the DB.
+     * @param potentialUpdates A read-only set of {@code ServerModuleFile} {@code Goid}'s that might have been updated. Required and cannot be {@code null}.
+     */
+    private void processNewOrUpdatedModules(
+            @NotNull final Collection<ServerModuleFile> dbModuleFiles,
+            @NotNull final Set<Goid> potentialUpdates
+    ) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "processNewOrUpdatedModules...");
+        }
+
+        // flag indicating whether module upload is enabled
+        final boolean isModuleUploadEnabled = serverModuleFileManager.isModuleUploadEnabled();
+
+        // first loop through modules from DB
+        for (final ServerModuleFile module : dbModuleFiles) {
+            // extract the module goid first
+            final Goid goid = module.getGoid();
+            assert goid != null;
+
+            // get the previous module (if any) from known modules cache
+            final StagedServerModuleFile prevModule = knownModuleFiles.get(goid);
+
+            // add the module into known modules cache if missing, or update if present
+            final StagedServerModuleFile updatedModule = addToKnownModules(module);
+            assert goid.equals(updatedModule.getGoid());
+
+            // continue if modules upload is disabled
+            if (!isModuleUploadEnabled) {
+                continue;
+            }
+
+            // modules upload is enabled so process the module
+
+            // test for create or update
+            if (prevModule == null) { // this is a create
+                // for debug purposes
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Processing module that has been created; goid \"" + updatedModule.getGoid() + "\", type \"" + updatedModule.getModuleType() + "\", name \"" + updatedModule.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(updatedModule.getStagingFile(), "(null)") + "\"");
+                }
+
+                // module state should be uploaded, as the module if not known to this listener i.e. not found inside knownModuleFiles
+                assert ModuleState.UPLOADED.equals(getModuleState(module));
+
+                // load the module only if module upload is enabled
+                loadModule(updatedModule);
+
+                // job done move to the next one
+                continue;
+            }
+
+            // this is a potential update
+
+            // first check if the module name has changed
+            // get both module names (from DB and staged)
+            final String moduleName = module.getName();
+            assert StringUtils.isNotBlank(moduleName);
+            final String prevModuleName = prevModule.getName();
+            assert StringUtils.isNotBlank(prevModuleName);
+            // if they are different
+            if (!moduleName.equals(prevModuleName)) {
+                updateModule(updatedModule);
+            }
+
+            // next check if the module content have changed
+            // so get both modules (from DB and staged) digest (sha256)
+            final String moduleDigest = module.getModuleSha256();
+            assert StringUtils.isNotBlank(moduleDigest);
+            final String prevModuleDigest = prevModule.getModuleSha256();
+            assert StringUtils.isNotBlank(prevModuleDigest);
+            // to make sure content have been updated, check if both digests are different
+            if (!moduleDigest.equals(prevModuleDigest)) {
+                // for debug purposes
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Processing module which content has been updated...");
+                    logger.log(Level.FINE, "Updated module; goid \"" + updatedModule.getGoid() + "\", type \"" + updatedModule.getModuleType() + "\", name \"" + updatedModule.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(updatedModule.getStagingFile(), "(null)") + "\"");
+                    logger.log(Level.FINE, "Previous module; goid \"" + prevModule.getGoid() + "\", type \"" + prevModule.getModuleType() + "\", name \"" + prevModule.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(prevModule.getStagingFile(), "(null)") + "\"");
+                }
+
+                // first unload the module
+                unloadModule(prevModule);
+
+                // finally load the module with new content
+                loadModule(updatedModule);
+
+                // job done move to the next one
+                continue;
+            }
+
+            // finally we need to check if the module failed to load last time
+            // get module state
+            final ModuleState moduleState = getModuleState(module);
+            // check if this module didn't load last time and load it only if assumed updated.
+            if (!ModuleState.LOADED.equals(moduleState) && potentialUpdates.contains(goid)) {
+                // for debug purposes
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Processing module that is known but not yet loaded...");
+                    logger.log(Level.FINE, "Updated module; goid \"" + updatedModule.getGoid() + "\", type \"" + updatedModule.getModuleType() + "\", name \"" + updatedModule.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(updatedModule.getStagingFile(), "(null)") + "\"");
+                    logger.log(Level.FINE, "Previous module; goid \"" + prevModule.getGoid() + "\", type \"" + prevModule.getModuleType() + "\", name \"" + prevModule.getName() + "\", stage-file \"" + ObjectUtils.defaultIfNull(prevModule.getStagingFile(), "(null)") + "\"");
+                }
+
+                // if the module have just been uploaded then unload previous module first
+                if (isModuleLoaded(prevModule)) {
+                    unloadModule(prevModule);
+                }
+
+                // if module is known but not loaded, then load the module
+                loadModule(updatedModule);
+            }
+        }
+    }
+
+    /**
      * Tries to load the specified entity.<br/>
      * First the module content is downloaded into the configured staging folder.<br/>
      * Next the module signature is checked against the downloaded file.<br/>
@@ -339,6 +695,9 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             try {
                 // stage module data
                 module.setStagingFile(stageModule(module, moduleDataAndSignature.left, getStagingDir()));
+
+                // staging file shouldn't be null after staging
+                assert module.getStagingFile() != null;
 
                 // verify module signature
                 verifySignature(module, moduleDataAndSignature.right);
@@ -369,7 +728,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Module loaded successfully; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+                logger.log(Level.FINE, "Module loaded successfully; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
             }
         } catch (final ModuleLoadingException e) {
             // set the module state accordingly
@@ -523,13 +882,13 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             @NotNull final StagedServerModuleFile module,
             @Nullable final String signatureProperties
     ) throws ModuleSignatureException {
-        if (!module.hasStagingFile()) {
+        if (module.getStagingFile() == null) {
             throw new ModuleSignatureException(resources.getString("error.signature.file.missing"));
         }
 
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Verifying module signature; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+            logger.log(Level.FINE, "Verifying module signature; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", staging file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
         }
 
         InputStream is = null;
@@ -541,7 +900,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Module Verified Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", stagingDir \"" + module.getStagingFile() + "\"");
+                logger.log(Level.FINE, "Module Verified Successfully; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", stagingDir \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
             }
         } catch (final FileNotFoundException e) {
             // shouldn't happen though
@@ -550,93 +909,6 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             throw new ModuleRejectedException(e);
         } finally {
             ResourceUtils.closeQuietly(is);
-        }
-    }
-
-    /**
-     * Handles {@link ServerModuleFile} invalidation events.<br/>
-     * This handler will install or uninstall the {@code ServerModuleFile} entity associated with the {@link EntityInvalidationEvent}
-     *
-     * @param entityInvalidationEvent    {@code ServerModuleFile} entity invalidation event.
-     */
-    void processServerModuleFileInvalidationEvent(@NotNull final EntityInvalidationEvent entityInvalidationEvent) {
-        // get ops and goids
-        final Goid[] goids = entityInvalidationEvent.getEntityIds();
-        final char[] ops = entityInvalidationEvent.getEntityOperations();
-
-        // for debug purposes
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "EntityInvalidationEvent ops \"" + Arrays.toString(ops) + "\", goids \"" + Arrays.toString(goids) + "\"");
-        }
-
-        // flag indicating whether module upload is enabled
-        final boolean isModuleUploadEnabled = serverModuleFileManager.isModuleUploadEnabled();
-
-        for (int ix = 0; ix < goids.length; ++ix) {
-            final char op = ops[ix];
-            @NotNull final Goid goid = goids[ix];
-
-            // for debug purposes
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Processing operation \"" + operationToString(op) + "\", for goid \"" + goid + "\"");
-            }
-
-            // on error continue with the next operation and log the failure
-            if (op == EntityInvalidationEvent.CREATE || op == EntityInvalidationEvent.UPDATE) {
-                // extract server module file
-                final ServerModuleFile moduleFile;
-                try {
-                    moduleFile = Eithers.extract(
-                            readOnlyTransaction(new Functions.Nullary<Either<FindException, Option<ServerModuleFile>>>() {
-                                @Override
-                                public Either<FindException, Option<ServerModuleFile>> call() {
-                                    try {
-                                        return Either.rightOption(serverModuleFileManager.findByPrimaryKey(goid));
-                                    } catch (final FindException e) {
-                                        return Either.left(e);
-                                    }
-                                }
-                            })
-                    ).toNull();
-                } catch (final FindException e) {
-                    logger.log(Level.WARNING, "Failed to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
-                    continue;
-                }
-
-                if (moduleFile != null) {
-                    // add it to the known modules cache
-                    final StagedServerModuleFile moduleInfo = addToKnownModules(moduleFile);
-                    // threat create or updated events as create (see SSG-10351 for reference)
-                    // todo: correct logic once EntityVersionChecker (see SSG-10351) is properly fixed
-                    if (isModuleUploadEnabled && !ModuleState.LOADED.equals(getModuleState(moduleFile))) {
-                        loadModule(moduleInfo);
-                    } else if (isModuleUploadEnabled) {
-                        updateModule(moduleInfo);
-                    }
-                } else {
-                    // non-existent module goid, remove it from known cache
-                    knownModuleFiles.remove(goid);
-                }
-            } else if (op == EntityInvalidationEvent.DELETE) {
-                // extract server module file
-                final StagedServerModuleFile moduleFile;
-                try {
-                    moduleFile = removeFromKnownModules(goid);
-                } catch (FindException e) {
-                    // for debug purposes should be ignored otherwise
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.log(Level.FINE, "Unable to find Server Module File with \"" + goid + "\", from known modules cache. Ignoring Module Delete Event.", e);
-                    }
-                    return;
-                }
-
-                // process removed module only if upload is enabled
-                if (isModuleUploadEnabled) {
-                    unloadModule(moduleFile);
-                }
-            } else {
-                logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\". Ignoring...");
-            }
         }
     }
 
@@ -650,17 +922,20 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     void updateModule(@NotNull final StagedServerModuleFile module) {
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Updating module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staged file-name \"" + module.getStagingFile() + "\"");
+            logger.log(Level.FINE, "Updating module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staged file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
         }
 
         try {
-            final ModuleType moduleType = module.getModuleType();
-            if (ModuleType.MODULAR_ASSERTION == moduleType) {
-                modularAssertionRegistrar.updateModule(module.getStagingFile(), module);
-            } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
-                customAssertionRegistrar.updateModule(module.getStagingFile(), module);
-            } else {
-                throw new UnsupportedModuleTypeException(moduleType);
+            // unload only if module has a staging file
+            if (module.getStagingFile() != null) {
+                final ModuleType moduleType = module.getModuleType();
+                if (ModuleType.MODULAR_ASSERTION == moduleType) {
+                    modularAssertionRegistrar.updateModule(module.getStagingFile(), module);
+                } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
+                    customAssertionRegistrar.updateModule(module.getStagingFile(), module);
+                } else {
+                    throw new UnsupportedModuleTypeException(moduleType);
+                }
             }
 
             logger.log(Level.INFO, "Successfully updated module; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\", type \"" + module.getModuleType() + "\"");
@@ -678,7 +953,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     void unloadModule(@NotNull final StagedServerModuleFile module) {
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Unloading module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+            logger.log(Level.FINE, "Unloading module; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
         }
 
         // audit un-installation start
@@ -705,13 +980,44 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Module unloaded successfully; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + module.getStagingFile() + "\"");
+                logger.log(Level.FINE, "Module unloaded successfully; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
             }
         } catch (ModuleLoadingException e) {
             // audit un-installation failure
             logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, module);
             logger.log(Level.WARNING, "Error while Unloading Module \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         }
+    }
+
+    /**
+     * Determine whether the specified {@code ServerModuleFile} is currently loaded or not.
+     *
+     * @param module    the module entity to check.  Required and cannot be {@code null}.
+     * @return {@code true} is loaded, {@code false} otherwise.
+     */
+    private boolean isModuleLoaded(@NotNull final StagedServerModuleFile module) {
+        // for debug purposes
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Checking if module is loaded; goid \"" + module.getGoid() + "\", type \"" + module.getModuleType() + "\", name \"" + module.getName() + "\", staging file-name \"" + ObjectUtils.defaultIfNull(module.getStagingFile(), "(null)") + "\"");
+        }
+
+        // unload only if module has a staging file
+        try {
+            if (module.getStagingFile() != null) {
+                final ModuleType moduleType = module.getModuleType();
+                if (ModuleType.MODULAR_ASSERTION == moduleType) {
+                    return modularAssertionRegistrar.isModuleLoaded(module.getStagingFile(), module);
+                } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
+                    return customAssertionRegistrar.isModuleLoaded(module.getStagingFile(), module);
+                } else {
+                    throw new UnsupportedModuleTypeException(moduleType);
+                }
+            }
+        } catch (final ModuleLoadingException e) {
+            logger.log(Level.WARNING, "Cannot determine if module is loaded; goid \"" + module.getGoid() + "\", name \"" + module.getName() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+        }
+
+        return false;
     }
 
     /**
@@ -754,7 +1060,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
 
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Removed from known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\", staged file-name \"" + moduleFile.getStagingFile() + "\"");
+            logger.log(Level.FINE, "Removed from known cache, goid \"" + moduleFile.getGoid() + "\", type \"" + moduleFile.getModuleType() + "\", name \"" + moduleFile.getName() + "\", staged file-name \"" + ObjectUtils.defaultIfNull(moduleFile.getStagingFile(), "(null)") + "\"");
         }
 
         return moduleFile;
@@ -819,6 +1125,8 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      * Utility function for getting module state for the current cluster node.<br/>
      * Never returns {@code null}, if the current cluster node doesn't contain any state record,
      * then {@link ModuleState#UPLOADED} is returned.
+     * <p/>
+     * Note that this method doesn't require DB transaction i.e. there aren't going to be made any DB calls.
      *
      * @param moduleFile    the {@link ServerModuleFile} which state to extract
      * @return Specified {@code module} current cluster node {@link ModuleState state}, if any, or {@link ModuleState#UPLOADED} otherwise.
@@ -978,6 +1286,22 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             return EVENT_OPERATION_DELETE_UFN;
         }
         return String.valueOf(op);
+    }
+
+    /**
+     * Utility method for converting the specified {@code ServerModuleFile} collection into a set of {@code Goid}'s.
+     *
+     * @param modules    A read-only collection of {@code ServerModuleFile}'s.  Required and cannot be {@code null}.
+     * @return A Read-ony set of all {@code Goid}'s from the specified {@code modules} collections.  Never {@code null}.
+     */
+    @NotNull
+    private static Set<Goid> getGoids(@NotNull final Collection<ServerModuleFile> modules) {
+        final Set<Goid> goids = new HashSet<>();
+        for (final ServerModuleFile module : modules) {
+            assert module.getGoid() != null;
+            goids.add(module.getGoid());
+        }
+        return Collections.unmodifiableSet(goids);
     }
 
     @Override

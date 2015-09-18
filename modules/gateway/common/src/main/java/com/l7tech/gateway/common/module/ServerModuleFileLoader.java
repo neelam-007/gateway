@@ -26,4 +26,9 @@ public interface ServerModuleFileLoader {
      * @throws ModuleLoadingException if an error happens while unloading the module.
      */
     void unloadModule(@NotNull File stagedFile, @NotNull ServerModuleFile moduleEntity) throws ModuleLoadingException;
+
+    /**
+     * Check whether the specified {@link ServerModuleFile} is currently loaded or not.
+     */
+    boolean isModuleLoaded(@NotNull File stagedFile, @NotNull ServerModuleFile moduleEntity);
 }
