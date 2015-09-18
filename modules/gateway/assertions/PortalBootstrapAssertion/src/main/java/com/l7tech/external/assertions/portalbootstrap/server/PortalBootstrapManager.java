@@ -200,6 +200,7 @@ public class PortalBootstrapManager {
 
         InputStream input = null;
         OutputStream output = null;
+        PolicyEnforcementContext context = null;
         HttpsURLConnection connection;
         try {
             connection = (HttpsURLConnection) url.openConnection();
@@ -218,7 +219,9 @@ public class PortalBootstrapManager {
                 input = connection.getInputStream();
             }
 
-            installBundle(input, connection.getHeaderField(SKAR_ID_HEADER_FIELD), contentTypeHeader, user);
+            // context is created here and passed into installBundle Mockito doesn't support mocking static method.
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            installBundle(input, connection.getHeaderField(SKAR_ID_HEADER_FIELD), contentTypeHeader, user, context);
         } finally {
             if (input != null) {
                 input.close();
@@ -226,6 +229,8 @@ public class PortalBootstrapManager {
             if (output != null) {
                 output.close();
             }
+
+            ResourceUtils.closeQuietly( context );
         }
 
         // Bundle installed, post back status
@@ -410,10 +415,11 @@ public class PortalBootstrapManager {
         throw new RuntimeException( "portalman private key does not already exist, and no mutable keystore exists in which to create a new one." );
     }
 
-    private void installBundle( @NotNull InputStream responseInputStream,
-                                @Nullable final String skarId,
-                                @NotNull ContentTypeHeader responseContentType,
-                                @NotNull User adminUser ) throws IOException {
+    void installBundle(@NotNull InputStream responseInputStream,
+                       @Nullable final String skarId,
+                       @NotNull ContentTypeHeader responseContentType,
+                       @NotNull User adminUser,
+                       @NotNull PolicyEnforcementContext context) throws IOException {
         String policyXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -427,7 +433,6 @@ public class PortalBootstrapManager {
         Assertion assertion = wspReader.parseStrictly( policyXml, WspReader.Visibility.omitDisabled );
 
         ServerAssertion sph = null;
-        PolicyEnforcementContext context = null;
         try {
             sph = serverPolicyFactory.compilePolicy( assertion, false );
             Message mess = new Message();
@@ -443,7 +448,6 @@ public class PortalBootstrapManager {
                 }
 
                 mess.initialize( stashManagerFactory.createStashManager(), responseContentType, responseInputStream );
-                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
                 context.setVariable( "restGatewayMan.action", "POST" );
                 context.setVariable( "restGatewayMan.uri", "1.0/solutionKitManagers" + queryParam );
             } else {
@@ -451,7 +455,6 @@ public class PortalBootstrapManager {
                 Document bundleDoc;
                 bundleDoc = toDocument(responseInputStream);
                 mess.initialize(bundleDoc, ContentTypeHeader.XML_DEFAULT);
-                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
                 context.setVariable("restGatewayMan.action", "PUT");
                 context.setVariable( "restGatewayMan.uri", "1.0/bundle" );
             }
@@ -476,7 +479,6 @@ public class PortalBootstrapManager {
         } catch ( PolicyAssertionException|NoSuchPartException e ) {
             throw new IOException( "Unable to invoke RESTMAN policy: " + ExceptionUtils.getMessage( e ), e );
         } finally {
-            ResourceUtils.closeQuietly( context );
             ResourceUtils.closeQuietly( sph );
         }
     }

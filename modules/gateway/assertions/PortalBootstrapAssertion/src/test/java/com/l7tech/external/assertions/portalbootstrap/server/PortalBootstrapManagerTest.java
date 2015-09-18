@@ -1,20 +1,25 @@
 package com.l7tech.external.assertions.portalbootstrap.server;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.identity.UserBean;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.*;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
@@ -29,10 +34,14 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapManager.*;
 
@@ -72,10 +81,9 @@ public class PortalBootstrapManagerTest {
     @Mock
     private JdbcConnectionManager jdbcConnectionManager;
     @Mock
-    private StashManagerFactory stashManagerFactory;
-    @Mock
     private Config config;
     private PortalBootstrapManager manager;
+    private StashManagerFactory stashManagerFactory;
 
     @Before
     public void setup() {
@@ -93,6 +101,8 @@ public class PortalBootstrapManagerTest {
         user = new UserBean(ID_PROV_GOID, USER_LOGIN);
         user.setUniqueIdentifier(USER_ID);
         manager.setConfig(config);
+        stashManagerFactory = TestStashManagerFactory.getInstance();
+
         ApplicationContexts.inject(manager, CollectionUtils.<String, Object>mapBuilder()
                         .put("serverPolicyFactory", serverPolicyFactory)
                         .put("wspReader", wspReader)
@@ -135,5 +145,66 @@ public class PortalBootstrapManagerTest {
         assertEquals(OTK_JDBC_GOID.toString(), jsonNode.get(OTK_JDBC_CONN).getTextValue());
         assertEquals("1", jsonNode.get("node_count").getTextValue());
         assertNotNull(jsonNode.get("nodeInfo"));
+    }
+
+    @Test
+    public void testInstallBundleMultipartMessage() throws Exception {
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        ContentTypeHeader responseContentType = ContentTypeHeader.parseValue("multipart/form-data; charset=ISO-8859-1; boundary=enrollment-bundle-boundary");
+
+        InputStream responseInputStream = mock(InputStream.class);
+        ServerAssertion serverAssertion = mock(ServerAssertion.class);
+        when(serverPolicyFactory.compilePolicy(null, false)).thenReturn(serverAssertion);
+        when(serverAssertion.checkRequest(context)).thenReturn(AssertionStatus.NONE);
+
+        try {
+            manager.installBundle(responseInputStream, null, responseContentType, user, context);
+        }
+        catch (IOException ioe) {
+            // expected to fail with restman error message, httpStatus = 200
+        }
+        assertEquals(context.getVariable("restGatewayMan.action"), "POST");
+        assertEquals(context.getVariable("restGatewayMan.uri"), "1.0/solutionKitManagers");
+    }
+
+    @Test
+    public void testInstallBundleXMLMessage() throws Exception {
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        ContentTypeHeader responseContentType = ContentTypeHeader.parseValue("plain/xml; charset=UTF-8");
+        InputStream responseInputStream = new ByteArrayInputStream("<test></test>".getBytes());
+
+        ServerAssertion serverAssertion = mock(ServerAssertion.class);
+        when(serverPolicyFactory.compilePolicy(null, false)).thenReturn(serverAssertion);
+        when(serverAssertion.checkRequest(context)).thenReturn(AssertionStatus.NONE);
+
+        try {
+            manager.installBundle(responseInputStream, null, responseContentType, user, context);
+        }
+        catch (IOException ioe) {
+            // expected to fail with restman error message, httpStatus = 200
+        }
+        assertEquals(context.getVariable("restGatewayMan.action"), "PUT");
+        assertEquals(context.getVariable("restGatewayMan.uri"), "1.0/bundle");
+    }
+
+    @Test
+    public void testInstallBundleWithSkarId() throws Exception {
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        ContentTypeHeader responseContentType = ContentTypeHeader.parseValue("multipart/form-data; charset=ISO-8859-1; boundary=enrollment-bundle-boundary");
+        final String skarId = "33b16742-d62d-4095-8f8d-4db707e9ad52";
+
+        InputStream responseInputStream = mock(InputStream.class);
+        ServerAssertion serverAssertion = mock(ServerAssertion.class);
+        when(serverPolicyFactory.compilePolicy(null, false)).thenReturn(serverAssertion);
+        when(serverAssertion.checkRequest(context)).thenReturn(AssertionStatus.NONE);
+
+        try {
+            manager.installBundle(responseInputStream, skarId, responseContentType, user, context);
+        }
+        catch (IOException ioe) {
+            // expected to fail with restman error message, httpStatus = 200
+        }
+        assertEquals(context.getVariable("restGatewayMan.action"), "POST");
+        assertEquals(context.getVariable("restGatewayMan.uri"), "1.0/solutionKitManagers?id=33b16742-d62d-4095-8f8d-4db707e9ad52");
     }
 }
