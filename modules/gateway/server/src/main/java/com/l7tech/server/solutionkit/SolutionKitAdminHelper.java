@@ -237,7 +237,10 @@ public class SolutionKitAdminHelper {
     public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {
         final Goid sourceGoid = sourceSK.getGoid();
         final String sourceGuid = sourceSK.getSolutionKitGuid();
-        final String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        if (StringUtils.isBlank(sourceIM)) sourceIM = "";
+
         final String sourceIMDisplayName = SolutionKitUtils.getInstanceModifierDisplayingName(sourceIM);
 
         // Check upgrade
@@ -268,7 +271,7 @@ public class SolutionKitAdminHelper {
             instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
             if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
 
-            if ((!isUpgrade) && sourceIM.equals(instanceModifier)) {
+            if (sourceIM.equals(instanceModifier)) {
                 throw new SolutionKitConflictException("Installation Failed: found one other existing solution kit matching '" + sourceSK.getName() + "' (GUID = " + sourceGuid + ", Instance Modifier = " + sourceIMDisplayName + ")");
             }
         }

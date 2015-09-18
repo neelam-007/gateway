@@ -1014,8 +1014,15 @@ public class SolutionKitManagerResource {
                 }
                 final SolutionKit parent = kitList.get(0); // parent is always unique.
 
+                String childGuid;
                 for (SolutionKit child: solutionKitManager.findAllChildrenByParentGoid(parent.getGoid())) {
                     if (instanceModifierParameter == null || SolutionKitUtils.isSameInstanceModifier(currentGlobalIM, child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY))) {
+                        childGuid = child.getSolutionKitGuid();
+                        if (selectedGuidAndImForHeadlessUpgrade.keySet().contains(childGuid)) {
+                            throw new SolutionKitManagerResourceException(status(CONFLICT).entity(
+                                "Upgrade failed: at least two child solution kits with a same GUID (" + childGuid + ") are selected for upgrade at same time."  + lineSeparator()).build());
+                        }
+
                         selectedGuidAndImForHeadlessUpgrade.put(child.getSolutionKitGuid(), new Pair<>(currentGlobalIM, newGlobalIM));
                     }
                 }
