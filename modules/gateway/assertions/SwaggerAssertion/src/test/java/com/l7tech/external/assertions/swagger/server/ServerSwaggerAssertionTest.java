@@ -473,9 +473,34 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
+        when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{});
+
 
         assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
         assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
+    public void testValidateWithPathMethodSchemeSecurity_MultipleOauthTokenPresent() throws Exception {
+        String requestUri = "/pet/123";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
+        when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{OAUTH2_PARAM_TOKEN});
+
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
     }
 
     @Test
@@ -493,7 +518,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
         when(mockRequestKnob.isSecure()).thenReturn(false);
-        when(mockRequestKnob.getParameter("access_token")).thenReturn(OAUTH2_PARAM_TOKEN);
+        when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{OAUTH2_PARAM_TOKEN});
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
 
         assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
@@ -515,6 +540,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
         when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{});
 
         assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));

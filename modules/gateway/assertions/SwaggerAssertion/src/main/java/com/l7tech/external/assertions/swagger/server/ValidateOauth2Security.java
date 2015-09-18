@@ -33,7 +33,7 @@ public class ValidateOauth2Security implements ValidateSecurity {
         }
         //alternative way of finding the access token
         try {
-            inParameters = httpRequestKnob.getParameter("access_token") != null;
+            inParameters = (httpRequestKnob.getParameterValues("access_token").length == 1);
         } catch (IOException e) {
             //TODO: decide appropriate response
             //  IOException here means api_key was multi-valued parameter!!
