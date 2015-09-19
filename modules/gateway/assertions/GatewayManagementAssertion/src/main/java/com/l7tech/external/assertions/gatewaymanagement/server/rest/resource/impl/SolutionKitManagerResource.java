@@ -119,6 +119,7 @@ public class SolutionKitManagerResource {
      *                  <li>The value format of <code>solutionKitSelect</code> is [ID]::[IM], where <i>"::"</i> is a deliminator, [ID] is the GUID of the installed solution kit, and [IM] is the instance modifier applied to the installed instance. If [IM] is not specified, or the value of [IM] is empty, then the default instance modifier (empty value) is used.</li>
      * 	                <li>If no <code>solutionKitSelect</code> provided, all solution kit(s) in the upload SKAR will be installed.</li>
      * 	                <li>Multiple <code>solutionKitSelect</code> allowed: to specify multiple solution kits to install.</li>
+     * 	                <li>Note: the value of each instance modifier should not include "::", since "::" is a reserved delimiter.</li>
      * 	            </ul>
      * 	         </li>
      * 	         <li>
@@ -127,6 +128,7 @@ public class SolutionKitManagerResource {
      * 	                 <li>Applying <code>instanceModifier</code> is a quick way to apply a same instance modifier to a list of solution kits that have a same instance modifier. However, this instance modifier is only applied in the following two scenarios:</li>
      * 	                 <li>(1) No any <code>solutionKitSelect</code> specified (i.e., all solution kit(s) in the SKAR will be installed.)</li>
      * 	                 <li>(2) Some <code>solutionKitSelect</code> specified, but without [IM] specified.</li>
+     * 	                 <li>Note: the value of each instance modifier should not include "::", since "::" is a reserved delimiter.</li>
      * 	             </ul>
      * 	         </li>
      * 	        <li>Passing values to the Custom Callback. Optional. All form-fields not listed above will be passed to the Custom Callback.</li>
@@ -161,6 +163,7 @@ public class SolutionKitManagerResource {
      *              <li>[ID] is the GUID of a selected solution kit (e.g, a non-parent solution kit)</li>
      *              <li>[Current_IM] is the current instance modifier used by a selected solution kit</li>
      *              <li>[New_IM] is a new instance modifier, which the selected solution kit use to upgrade the current instance modifier.</li>
+     *              <li>Note: the value of each instance modifier should not include "::", since "::" is a reserved delimiter.</li>
      *          </ul>
      *     </li>
      *     <li>
@@ -169,6 +172,7 @@ public class SolutionKitManagerResource {
      *              The value format is [Global_Current_IM]::[Global_New_IM]
      *              <li>[Global_Current_IM] is the current instance modifier used by all selected solution kits</li>
      *              <li>[Global_New_IM] is a new instance modifier, which all selected solution kits use to upgrade the current instance modifier.</li>
+     *              <li>Note: the value of each instance modifier should not include "::", since "::" is a reserved delimiter.</li>
      *         </ul>
      *     </li>
      *     <li>
