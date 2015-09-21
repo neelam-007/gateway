@@ -14,10 +14,6 @@ import java.io.IOException;
  */
 public class ValidateApiKeySecurity implements ValidateSecurity {
 
-    private static final String HEADER = "header";
-    private static final String QUERY = "query";
-
-
     public boolean checkSecurity(HttpRequestKnob httpRequestKnob, SecuritySchemeDefinition securityDefinition) {
 
         if (! (securityDefinition instanceof ApiKeyAuthDefinition)) {

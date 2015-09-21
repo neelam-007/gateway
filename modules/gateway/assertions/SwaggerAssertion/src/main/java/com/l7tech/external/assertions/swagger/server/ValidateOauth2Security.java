@@ -15,33 +15,34 @@ import java.util.regex.Pattern;
  */
 public class ValidateOauth2Security implements ValidateSecurity {
 
-    private static final Pattern oauth2inHeader = Pattern.compile("^\\s*bearer\\s+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern oauth2inHeader = Pattern.compile("^\\s*Bearer\\s+", Pattern.CASE_INSENSITIVE);
+    private static final String ACCESS_TOKEN_PARAM = "access_token";
 
     public boolean checkSecurity(HttpRequestKnob httpRequestKnob, SecuritySchemeDefinition securityDefinition) {
-
-        boolean inAuthHeader = false;
-        boolean inParameters = false;
-
+        boolean found = false;
         String authHeaders[] = httpRequestKnob.getHeaderValues(ServerSwaggerAssertion.AUTHORIZATION_HEADER);
         if(authHeaders != null) {
             for (String header : authHeaders) {
                 Matcher m = oauth2inHeader.matcher(header);
                 if (m.find()) {
-                    inAuthHeader = true;
+                    found = true;
+                    break;
                 }
             }
         }
         //alternative way of finding the access token
         try {
-            inParameters = (httpRequestKnob.getParameterValues("access_token").length == 1);
+            String[] values = httpRequestKnob.getParameterValues(ACCESS_TOKEN_PARAM);
+            if(values != null && values.length > 0) {
+                if(values.length > 1){
+                    return false;
+                }
+
+                found ^= true;
+            }
         } catch (IOException e) {
-            //TODO: decide appropriate response
-            //  IOException here means api_key was multi-valued parameter!!
-            //  if legit return true;
-            //  if not fall through and return false below
             return false;
         }
-
-        return ( (inAuthHeader || inParameters) &&  !( inAuthHeader && inParameters) );
+        return found;
     }
 }
