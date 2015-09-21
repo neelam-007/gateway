@@ -101,7 +101,7 @@ public class SolutionKitManagerResource {
      * <ul>
      * 	<li>Upload a SKAR file using a <code>POST</code> request.</li>
      * 	<li>Set the encoding to <code>multipart/form-data</code>.</li>
-     * 	<li>Set the file upload form-field name as <code>file</code>.</li>
+     * 	<li>Set the file upload form-field name as <code>file</code>.  The uploaded file has to be signed (*.sskar format).</li>
      * 	<li>
      * 	    Add other form-field name and value as needed.
      * 	    <ul>
