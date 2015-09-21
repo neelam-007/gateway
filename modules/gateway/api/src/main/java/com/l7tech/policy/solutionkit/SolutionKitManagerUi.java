@@ -8,7 +8,7 @@ import javax.swing.*;
  *
  * Provides an opportunity for the caller to hook into the Solution Kit Manager UI and provide customized UIs.
  * Methods to implement:
- *      initialize() - provide an opportunity to do initialization work (e.g. set your custom data object).
+ *      initialize() - provide an opportunity to do initialization work.
  *      createButton(...) - implement the button to launch your main screen.
  */
 public abstract class SolutionKitManagerUi {

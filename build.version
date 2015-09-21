@@ -21,7 +21,7 @@ build.em.version.revision=1
 #   - Major: major changes to the published API (significant features added).
 #   - Minor: minor changes to the published API from added feature(s).
 #   - Subminor: minor changes to the published API from bug fix(es).
-build.api.version.major=9
-build.api.version.minor=0
+build.api.version.major=8
+build.api.version.minor=10
 build.api.version.subminor=00
 build.api.version.revision=1
