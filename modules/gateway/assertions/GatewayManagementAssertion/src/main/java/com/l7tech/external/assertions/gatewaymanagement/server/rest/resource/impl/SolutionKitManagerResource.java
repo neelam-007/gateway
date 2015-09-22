@@ -1094,7 +1094,10 @@ public class SolutionKitManagerResource {
                 final SolutionKit parent = kitList.get(0); // parent is always unique.
 
                 String childGuid;
-                for (SolutionKit child: solutionKitManager.findAllChildrenByParentGoid(parent.getGoid())) {
+                final Collection<SolutionKit> children = solutionKitManager.findAllChildrenByParentGoid(parent.getGoid());
+                for (SolutionKit child: children) {
+                    // Case 1: If there is no "instanceModifier" specified, then every child will be added.
+                    // Case 2: If "instanceModifier" exists, then the children matching global instance modifier will be added.
                     if (instanceModifierParameter == null || SolutionKitUtils.isSameInstanceModifier(currentGlobalIM, child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY))) {
                         childGuid = child.getSolutionKitGuid();
                         if (selectedGuidAndImForHeadlessUpgrade.keySet().contains(childGuid)) {
@@ -1104,6 +1107,13 @@ public class SolutionKitManagerResource {
 
                         selectedGuidAndImForHeadlessUpgrade.put(child.getSolutionKitGuid(), new Pair<>(currentGlobalIM, newGlobalIM));
                     }
+                }
+
+                // If the parent has children, but no any children were found by global instance modifier, then report error.
+                if (children.size() > 0 && selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
+                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
+                        "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (" +
+                            SolutionKitUtils.getInstanceModifierDisplayingName(currentGlobalIM) + ") specified by the parameter 'instanceModifier'" + lineSeparator()).build());
                 }
             }
             // Case 1.2: There are some im2 "solutionKitSelect" parameters specified
