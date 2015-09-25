@@ -269,7 +269,7 @@ public class ServerModuleFileResource extends RestEntityResource<ServerModuleFil
                             "rI0PoEjvI3O+mHCSxAPzqVMKNACQ+AYAx4NbIg=="
             );
         }
-        serverModuleFileMO.setProperties(Collections.unmodifiableMap(builder.map()));
+        serverModuleFileMO.setSignatureProperties(Collections.unmodifiableMap(builder.map()));
         serverModuleFileMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
                 .put(ServerModuleFile.PROP_SIZE, "4194378") // ~ 4 MB
                 .put(ServerModuleFile.PROP_ASSERTIONS, "TestAssertion1,TestAssertion2")

@@ -246,7 +246,7 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     }
 
     /**
-     * Utility method for converting {@link com.l7tech.gateway.common.module.ServerModuleFile#getXmlProperties()} entity properties}
+     * Utility method for converting {@link com.l7tech.gateway.common.module.ServerModuleFile#getXmlProperties()} entity properties
      * into {@link ServerModuleFileMO#properties MO properties}.
      *
      * @param moduleFile    the {@code ServerModuleFile} entity to gather properties from.  Required and cannot be {@code null}.
