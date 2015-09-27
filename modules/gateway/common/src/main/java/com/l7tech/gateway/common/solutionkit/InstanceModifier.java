@@ -4,10 +4,8 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +16,7 @@ import org.w3c.dom.NodeList;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.l7tech.objectmodel.EntityType.*;
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -34,6 +33,14 @@ public class InstanceModifier {
     public static final String ATTRIBUTE_NAME_TYPE = "type";
     public static final String ATTRIBUTE_NAME_ACTION = "action";
 
+    private static final Map<String, String> nsMap = CollectionUtils.MapBuilder.<String, String>builder()
+            .put("l7", "http://ns.l7tech.com/2010/04/gateway-management")
+            .unmodifiableMap();
+
+    private static Map<String, String> getNamespaceMap() {
+        return nsMap;
+    }
+
     private final List<Element> bundleReferenceItems;
     private List<Element> bundleMappings;
     private final String versionModifier;
@@ -47,12 +54,14 @@ public class InstanceModifier {
     public void apply() {
         String entityTypeStr, actionStr;
         Node node;
+        Mapping.Action action;
 
         for (Element item : bundleMappings) {
             entityTypeStr = item.getAttribute(ATTRIBUTE_NAME_TYPE);
             actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
             if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
-                if (Mapping.Action.valueOf(actionStr) == Mapping.Action.AlwaysCreateNew) {
+                action = Mapping.Action.valueOf(actionStr);
+                if (action == Mapping.Action.AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))) {
                     if (isModifiableType(entityTypeStr)) {
                         // deterministically set targetId for the version modified entity
                         item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getVersionModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
@@ -157,6 +166,18 @@ public class InstanceModifier {
 
             return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE;
         }
+    }
+
+    // format: <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+    public static boolean isFailOnNewMapping(@NotNull final Element item) {
+        final List<Element> failOnNewBooleanValues = XpathUtil.findElements(item, ".//l7:Properties/l7:Property[@key=\"FailOnNew\"]/l7:BooleanValue", getNamespaceMap());
+
+        if (failOnNewBooleanValues.size() < 1) {
+            return false;
+        }
+
+        final Element failOnNewBooleanValue = failOnNewBooleanValues.get(0);
+        return failOnNewBooleanValue != null && Boolean.valueOf(failOnNewBooleanValue.getTextContent());
     }
 
     public static String getSuffixedFolderName(@Nullable String versionModifier, @NotNull String folderName) {

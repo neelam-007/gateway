@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.IOUtils;
 import org.junit.Assert;
@@ -9,6 +10,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 
+import static com.l7tech.gateway.api.Mapping.Action.AlwaysCreateNew;
 import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier.*;
 import static org.hamcrest.Matchers.*;
@@ -60,9 +62,16 @@ public class VersionModifierTest {
         // check version modified entity has generated goid set for targetId
         for (Element item : requestMessage.getMappings()) {
             EntityType entityType = EntityType.valueOf(item.getAttribute(ATTRIBUTE_NAME_TYPE));
-            if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
-            entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
-                assertEquals(item.getAttribute(ATTRIBUTE_NAME_TARGET_ID), getVersionModifiedGoid(versionModifier,item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
+            Mapping.Action action = Mapping.Action.valueOf(item.getAttribute(ATTRIBUTE_NAME_ACTION));
+
+            if (action == AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !VersionModifier.isFailOnNewMapping(item))) {
+                // list each type as sanity check for VersionModifier.isModifiableType()
+                if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
+                        entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
+                    assertEquals(item.getAttribute(ATTRIBUTE_NAME_TARGET_ID), getVersionModifiedGoid(versionModifier,item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
+                } else {
+                    assertEquals("", item.getAttribute(ATTRIBUTE_NAME_TARGET_ID));
+                }
             } else {
                 assertEquals("", item.getAttribute(ATTRIBUTE_NAME_TARGET_ID));
             }
