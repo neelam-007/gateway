@@ -4,6 +4,8 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
@@ -286,6 +288,24 @@ public class InstanceModifier {
         if (maxAllowedLength < 0) maxAllowedLength = 0;
 
         return maxAllowedLength;
+    }
+
+    /**
+     * Add instance modifier to the customizations (custom context).
+     */
+    public static void setCustomContext(@NotNull final SolutionKitsConfig settings, @NotNull final SolutionKit selectedSolutionKit) {
+        final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = settings.getCustomizations();
+        final Pair<SolutionKit, SolutionKitCustomization> customization = customizations.get(selectedSolutionKit.getSolutionKitGuid());
+        if (customization != null && customization.right != null) {
+            final SolutionKitManagerUi customUi = customization.right.getCustomUi();
+            if (customUi != null) {
+                // test for null b/c implementer can optionally null the context
+                SolutionKitManagerContext skContext = customUi.getContext();
+                if (skContext != null) {
+                    skContext.setInstanceModifier(selectedSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+                }
+            }
+        }
     }
 
     private void applyVersionToDescendantsByTagName(Element item, String tagName, Functions.Binary<String, String, String> callback) {

@@ -780,6 +780,7 @@ public class SolutionKitManagerResource {
             if (StringUtils.isNotBlank(globalInstanceModifier)) {
                 for (SolutionKit solutionKit: loadedSolutionKits) {
                     solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, solutionKit);
                 }
             }
             solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
@@ -811,10 +812,12 @@ public class SolutionKitManagerResource {
                 // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
                 if (StringUtils.isNotBlank(individualInstanceModifier)) {
                     selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
                 }
                 // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
                 else if (StringUtils.isNotBlank(globalInstanceModifier)) {
                     selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
                 }
 
                 selectedSolutionKits.add(selectedSolutionKit);
@@ -872,6 +875,7 @@ public class SolutionKitManagerResource {
 
             loadedSK = loadedSolutionKitMap.get(guidOfLoadedSK);
             loadedSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
+            InstanceModifier.setCustomContext(solutionKitsConfig, loadedSK);
 
             selectedSolutionKits.add(loadedSK);
         }

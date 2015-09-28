@@ -107,6 +107,7 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
 
         for (SolutionKit solutionKit: solutionKits) {
             solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, StringUtils.isBlank(newInstanceModifier)? null : newInstanceModifier);
+            InstanceModifier.setCustomContext(settings, solutionKit);
         }
 
         dispose();

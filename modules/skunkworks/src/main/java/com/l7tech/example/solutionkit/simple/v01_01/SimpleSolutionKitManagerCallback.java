@@ -46,7 +46,7 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
         // get user input text
         final String input = context.getKeyValues().get(MY_INPUT_TEXT_KEY);
 
-        final String message = "*** CUSTOM CODE CALLED FOR " + solutionKitName + " ***  # item(s) in bundle: " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".  " + input;
+        final String message = "*** CUSTOM CODE CALLED FOR " + solutionKitName + " ***  # item(s) in bundle: " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ", instance modifier: " + context.getInstanceModifier() + ". " + input;
         logger.info(message);
         System.out.println(message);
 
