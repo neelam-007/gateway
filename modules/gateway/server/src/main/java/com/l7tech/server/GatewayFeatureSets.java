@@ -119,6 +119,8 @@ public class GatewayFeatureSets {
 
     public static final String PROFILE_GATEWAY = "set:Profile:Gateway";
 
+    public static final String PROFILE_GATEWAY_ENTERPRISE = "set:Profile:EnterpriseGateway";
+
     public static final String PROFILE_CLOUD_CONTROL = "set:Profile:CloudControl";
 
     public static final String PROFILE_POLICY_INTEGRATION_POINT = "set:Profile:PolicyIntegrationPoint";
@@ -1132,6 +1134,13 @@ public class GatewayFeatureSets {
             fs(profileGateway),
             fs(saml2AttributeQueryAssertions),
             fs(usAssertions));
+
+        GatewayFeatureSet profileGatewayEnterprise =
+        fsp(PROFILE_GATEWAY_ENTERPRISE, "Enterprise API Gateway",
+                "Gateway feature set including non mobile specific MAG assertions.",
+                fs(profileGateway),
+                xmppAssertions,
+                webSocketAssertions);
 
         GatewayFeatureSet profileFederal =
         fsp(PROFILE_FEDERAL, "SecureSpan Federal",
