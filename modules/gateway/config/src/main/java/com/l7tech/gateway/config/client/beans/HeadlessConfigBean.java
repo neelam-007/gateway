@@ -474,7 +474,7 @@ public class HeadlessConfigBean {
     private static OptionSet getOptionSet() throws ConfigurationException {
         final OptionSet optionSet;
         optionSet = ConfigurationFactory.newConfiguration(HeadlessConfig.class, "configTemplates/GatewayApplianceConfiguration.xml");
-        //optionSet.getOptions().add(dbOption);
+        optionSet.getOptions().add(dbOption);
         optionSet.getOptions().add(nodeOption);
         optionSet.getOptions().add(dbTypeOption);
         return optionSet;

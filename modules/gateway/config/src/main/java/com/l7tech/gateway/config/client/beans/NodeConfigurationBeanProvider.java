@@ -73,12 +73,19 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                         adminPassphrase != null &&
                         adminPassphrase.trim().length() > 0;
 
+                boolean makedb = true;
+                if ((Boolean)getOption("configure.db", configuration) != null) {
+                    makedb = (Boolean)getOption("configure.db", configuration);
+                }
+
                 if ( createdb ) {
                     Collection<String> hosts = new ArrayList<String>();
                     for ( DatabaseConfig dbConfig : config.getDatabases() ) {
                         hosts.add( dbConfig.getHost() );
                     }
-                    managementService.createDatabase( config.getName(), databaseConfig.toNull(), hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
+                    if ( makedb ) {
+                        managementService.createDatabase(config.getName(), databaseConfig.toNull(), hosts, adminLogin, adminPassphrase, config.getClusterHostname());
+                    }
                 }
 
                 Boolean configureNode = getOption("configure.node", configuration);
