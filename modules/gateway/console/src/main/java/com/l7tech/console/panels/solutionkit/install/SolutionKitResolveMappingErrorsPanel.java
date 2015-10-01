@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.sun.istack.NotNull;
 
@@ -80,6 +81,18 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             });
 
             solutionKitMappingsTabbedPane.add(solutionKit.getName(), solutionKitMappingsPanel);
+
+            // Look through mappings for error type
+            boolean hasError = Functions.exists(mappings.getMappings(), new Functions.Unary<Boolean, Mapping>() {
+                @Override
+                public Boolean call(Mapping mapping) {
+                    return mapping.getErrorType() != null;
+                }
+            });
+            //Set the tab containing errors to red
+            if (hasError) {
+                solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.indexOfTab(solutionKit.getName()), Color.red);
+            }
         }
 
         refreshMappingsTableButtons();
@@ -180,6 +193,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         if (dlg.isConfirmed()) {
             solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
             solutionKitMappingsPanel.reload();
+            solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.white);
         }
     }
 }
