@@ -6,10 +6,7 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.common.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -99,7 +96,9 @@ public class SolutionKitInstanceModifierDialog extends JDialog {
             }
         });
 
-        pack();
+        DialogDisplayer.pack(this);
+
+        instanceModifierTextField.requestFocusInWindow();
     }
 
     private void onOK() {

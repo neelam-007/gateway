@@ -59,6 +59,7 @@
             </constraints>
             <properties>
               <text value="Create"/>
+              <visible value="false"/>
             </properties>
           </component>
           <component id="dc3f6" class="javax.swing.JButton" binding="uninstallButton" default-binding="true">
@@ -74,7 +75,7 @@
       <nested-form id="ab116" form-file="com/l7tech/console/panels/solutionkit/SolutionKitTablePanel.form" binding="solutionKitTablePanel">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <preferred-size width="700" height="-1"/>
+            <preferred-size width="840" height="-1"/>
           </grid>
         </constraints>
       </nested-form>

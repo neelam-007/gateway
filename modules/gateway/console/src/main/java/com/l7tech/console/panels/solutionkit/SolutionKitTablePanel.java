@@ -8,6 +8,7 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.DateUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
@@ -131,7 +132,7 @@ public class SolutionKitTablePanel extends JPanel {
                     }
                 }
             }),
-            column("Name", 50, 400, 5000, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Name", 50, 270, 5000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     String displayName = solutionKitHeader.getName();
@@ -144,28 +145,28 @@ public class SolutionKitTablePanel extends JPanel {
                     return displayName;
                 }
             }),
-            column("Version", 50, 60, 500, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Version", 50, 30, 500, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getSolutionKitVersion();
                 }
             }),
-            column("Instance Modifier", 50, 240, 5000, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Instance Modifier", 50, 100, 5000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getInstanceModifier();
                 }
             }),
-            column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Description", 50, 300, 5000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getDescription();
                 }
             }),
-            column("Last Updated", 50, 400, 1000, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Last Updated", 50, 100, 1000, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
-                    return new Date(solutionKitHeader.getLastUpdateTime()).toString();
+                    return DateUtils.getZuluFormattedString(new Date(solutionKitHeader.getLastUpdateTime()));
                 }
             })
         );

@@ -230,6 +230,8 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     private void initialize() {
         setTitle(WIZARD_TITLE);
+        this.setPreferredSize(new Dimension(1157, 538));
+
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

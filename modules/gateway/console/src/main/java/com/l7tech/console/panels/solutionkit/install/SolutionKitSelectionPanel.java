@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig>  {
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());
     private static final String STEP_LABEL = "Select Solution Kit";
-    private static final String STEP_DESC = "Select solution kit(s) to install.";
+    private static final String STEP_DESC = "Use the checkbox to select the solution kit(s) to install.  Optionally highlight the solution kit row(s) to perform a button action.  For example to enable the Set Instance Modifier button.";
     private final String[] tableColumnNames = {"", "Name", "Version", "Instance Modifier", "Description"};
 
     private JPanel mainPanel;
@@ -311,10 +311,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // Set the column widths
         solutionKitsTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // Selected or not
-        solutionKitsTable.getColumnModel().getColumn(1).setPreferredWidth(400); // Name
-        solutionKitsTable.getColumnModel().getColumn(2).setPreferredWidth(130); // Version
-        solutionKitsTable.getColumnModel().getColumn(3).setPreferredWidth(280); // Instance Modifier
-        solutionKitsTable.getColumnModel().getColumn(4).setPreferredWidth(500); // Description
+        solutionKitsTable.getColumnModel().getColumn(1).setPreferredWidth(410); // Name
+        solutionKitsTable.getColumnModel().getColumn(2).setPreferredWidth(80); // Version
+        solutionKitsTable.getColumnModel().getColumn(3).setPreferredWidth(160); // Instance Modifier
+        solutionKitsTable.getColumnModel().getColumn(4).setPreferredWidth(410); // Description
 
         solutionKitsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         solutionKitsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
