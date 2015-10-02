@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
@@ -14,7 +15,9 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
@@ -27,19 +30,24 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  * Apply instance modifier to entities of a restman migration bundle.
  */
 public class InstanceModifier {
+    public static final String ATTRIBUTE_NAME_ACTION = "action";
+    public static final String ATTRIBUTE_NAME_GUID = "guid";
+    public static final String ATTRIBUTE_NAME_SRC_ID = "srcId";
+    public static final String ATTRIBUTE_NAME_STRING_VALUE = "stringValue";
+    public static final String ATTRIBUTE_NAME_TARGET_ID = "targetId";
+    public static final String ATTRIBUTE_NAME_TYPE = "type";
+    public static final String TAG_NAME_L7_GUID = "l7:Guid";
     public static final String TAG_NAME_L7_NAME = "l7:Name";
     public static final String TAG_NAME_L7_TYPE = "l7:Type";
     public static final String TAG_NAME_L7_URL_PATTERN = "l7:UrlPattern";
-    public static final String ATTRIBUTE_NAME_SRC_ID = "srcId";
-    public static final String ATTRIBUTE_NAME_TARGET_ID = "targetId";
-    public static final String ATTRIBUTE_NAME_TYPE = "type";
-    public static final String ATTRIBUTE_NAME_ACTION = "action";
+    public static final String TAG_NAME_L7P_ENCASS_CONFIG_GUID = "L7p:EncapsulatedAssertionConfigGuid";
+    public static final String TAG_NAME_L7P_POLICY_GUID = "L7p:PolicyGuid";
 
     private static final Map<String, String> nsMap = CollectionUtils.MapBuilder.<String, String>builder()
             .put("l7", "http://ns.l7tech.com/2010/04/gateway-management")
             .unmodifiableMap();
 
-    private static Map<String, String> getNamespaceMap() {
+    public static Map<String, String> getNamespaceMap() {
         return nsMap;
     }
 
@@ -54,24 +62,10 @@ public class InstanceModifier {
     }
 
     public void apply() {
+
+        // modify items
         String entityTypeStr, actionStr;
         Node node;
-        Mapping.Action action;
-
-        for (Element item : bundleMappings) {
-            entityTypeStr = item.getAttribute(ATTRIBUTE_NAME_TYPE);
-            actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
-            if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
-                action = Mapping.Action.valueOf(actionStr);
-                if (action == Mapping.Action.AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))) {
-                    if (isModifiableType(entityTypeStr)) {
-                        // deterministically set targetId for the version modified entity
-                        item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getVersionModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
-                    }
-                }
-            }
-        }
-
         for (Element item : bundleReferenceItems) {
             final NodeList nodeList = item.getElementsByTagName(TAG_NAME_L7_TYPE);
 
@@ -87,7 +81,7 @@ public class InstanceModifier {
 
                     switch (valueOf(entityTypeStr)) {
                         case FOLDER:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getSuffixedFolderName(version, name);
@@ -95,35 +89,59 @@ public class InstanceModifier {
                             });
                             break;
                         case POLICY:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getPrefixedPolicyName(version, name);
                                 }
                             });
+                            applyModifierToDescendants(item, ".//l7:Resource/l7:Policy", ATTRIBUTE_NAME_GUID, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String guid) {
+                                    return getModifiedGuid(version, guid);
+                                }
+                            });
+                            applyModifierToDescendants(item, ".//l7:Resource/l7:Policy/l7:PolicyDetail", ATTRIBUTE_NAME_GUID, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String guid) {
+                                    return getModifiedGuid(version, guid);
+                                }
+                            });
+
+                            modifyResourceGuidReferences(item, ".//l7:Resource/l7:Policy/l7:Resources/l7:ResourceSet/l7:Resource[@type=\"policy\"]");
+
                             break;
                         case ENCAPSULATED_ASSERTION:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getPrefixedEncapsulatedAssertionName(version, name);
                                 }
                             });
+                            applyModifierToDescendants(item, TAG_NAME_L7_GUID, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String guid) {
+                                    return getModifiedGuid(version, guid);
+                                }
+                            });
                             break;
                         case SERVICE:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_URL_PATTERN, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_URL_PATTERN, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getPrefixedUrl(version, name);
                                 }
                             });
+
+                            modifyResourceGuidReferences(item, ".//l7:Resource/l7:Service/l7:Resources/l7:ResourceSet/l7:Resource[@type=\"policy\"]");
+
                             /* TODO need restman to detect service url conflict checking; see SSG-9579
                                 otherwise we'll need to manually look up each url here e.g.
                                     - serviceManager.findByRoutingUri(url).isEmpty()
                                     - use dryRunEvent.addServiceConflict(<service name and conflict URL pattern>) */
                             break;
                         case SCHEDULED_TASK:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getPrefixedScheduledTaskName(version, name);
@@ -131,7 +149,7 @@ public class InstanceModifier {
                             });
                             break;
                         case POLICY_BACKED_SERVICE:
-                            applyVersionToDescendantsByTagName(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
                                     return getPrefixedPolicyBackedServiceName(version, name);
@@ -144,18 +162,41 @@ public class InstanceModifier {
                 }
             }
         }
+
+        // modify mappings
+        Mapping.Action action;
+        for (Element item : bundleMappings) {
+            entityTypeStr = item.getAttribute(ATTRIBUTE_NAME_TYPE);
+            actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
+            if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
+                action = Mapping.Action.valueOf(actionStr);
+                if (action == Mapping.Action.AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))) {
+                    if (isModifiableType(entityTypeStr)) {
+                        // deterministically set targetId for the version modified entity
+                        item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
+                    }
+                }
+            }
+        }
     }
 
     /**
      * Deterministically version modify the GOID by getting the first 128 bits (16 bytes) of SHA-256( version_modifier + ":" + original_goid ).
      */
-    public static String getVersionModifiedGoid(@Nullable String versionModifier, @NotNull final String goid) {
+    public static String getModifiedGoid(@Nullable String versionModifier, @NotNull final String goid) {
         if (isEmpty(versionModifier)) {
             return goid;
         } else {
             byte[] hash = HexUtils.getSha256Digest((versionModifier + ":" + goid).getBytes(Charsets.UTF8));
             return new Goid(Arrays.copyOf(hash, 16)).toString();
         }
+    }
+
+    public static String getModifiedGuid(@Nullable String versionModifier, @NotNull final String guid) {
+        // save the dashes (-) in the right place e.g. 506589b0-eba5-4b3f-81b5-be7809817623
+        // policy guid requires 36 characters, otherwise an error like this "Invalid Value: guid size must be between 36 and 36"
+        String modifiedGoid = getModifiedGoid(versionModifier, guid);
+        return modifiedGoid.substring(0, 8) + "-" + modifiedGoid.substring(8, 12) + "-" + modifiedGoid.substring(12, 16) + "-" + modifiedGoid.substring(16, 20) + "-" + modifiedGoid.substring(20, 32);
     }
 
     public static boolean isModifiableType(@Nullable final String entityTypeStr) {
@@ -308,12 +349,51 @@ public class InstanceModifier {
         }
     }
 
-    private void applyVersionToDescendantsByTagName(Element item, String tagName, Functions.Binary<String, String, String> callback) {
+    // apply modifier to the text content of descendants matching a tag name
+    private void applyModifierToDescendants(Element item, String tagName, Functions.Binary<String, String, String> callback) {
         NodeList nodeList = item.getElementsByTagName(tagName);
         Node node;
         for (int i = 0; i < nodeList.getLength(); i++) {
             node = nodeList.item(i);
             node.setTextContent(callback.call(versionModifier, node.getTextContent()));
+        }
+    }
+
+    // apply modifier to the attribute value of descendants matching the xpath and attribute name
+    private void applyModifierToDescendants(Element item, String xpath, String attributeName, Functions.Binary<String, String, String> callback) {
+        final List<Element> elements = XpathUtil.findElements(item, xpath, getNamespaceMap());
+        for (Element element : elements) {
+            element.setAttribute(attributeName, callback.call(versionModifier, element.getAttribute(attributeName)));
+        }
+    }
+
+    // instance modify guid references in the resource
+    private void modifyResourceGuidReferences(Element item, String xpath) {
+        final List<Element> textContentResources = XpathUtil.findElements(item, xpath, getNamespaceMap());
+        for (Element textContentResource : textContentResources) {
+            try {
+                // convert text content into DOM element for traversal
+                Element resource = XmlUtil.stringToDocument(textContentResource.getTextContent()).getDocumentElement();
+
+                // modify encass guid references (e.g. <L7p:EncapsulatedAssertionConfigGuid stringValue="506589b0-eba5-4b3f-81b5-be7809817623"/>)
+                NodeList nodeList = resource.getElementsByTagName(TAG_NAME_L7P_ENCASS_CONFIG_GUID);
+                for (int i = 0; i < nodeList.getLength(); i++) {
+                    Element element = (Element) nodeList.item(i);
+                    element.setAttribute(ATTRIBUTE_NAME_STRING_VALUE, getModifiedGuid(versionModifier, element.getAttribute(ATTRIBUTE_NAME_STRING_VALUE)));
+                }
+
+                // modify policy guid references (e.g. <L7p:PolicyGuid stringValue="cfa49381-54aa-4231-b72e-6d483a032bf7"/>)
+                nodeList = resource.getElementsByTagName(TAG_NAME_L7P_POLICY_GUID);
+                for (int i = 0; i < nodeList.getLength(); i++) {
+                    Element element = (Element) nodeList.item(i);
+                    element.setAttribute(ATTRIBUTE_NAME_STRING_VALUE, getModifiedGuid(versionModifier, element.getAttribute(ATTRIBUTE_NAME_STRING_VALUE)));
+                }
+
+                // write back changes to the resource
+                DomUtils.setTextContent(textContentResource, XmlUtil.nodeToString(resource));
+            } catch (SAXException | IOException e) {
+                throw new RuntimeException("Unexpected error processing instance modifier; error serializing or de-serializing XML: " + e.getMessage(), e);
+            }
         }
     }
 }
