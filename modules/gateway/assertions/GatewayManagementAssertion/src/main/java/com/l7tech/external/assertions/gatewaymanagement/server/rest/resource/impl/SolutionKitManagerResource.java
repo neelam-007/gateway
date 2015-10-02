@@ -956,11 +956,11 @@ public class SolutionKitManagerResource {
     }
 
     /*
-        Addendum Bundle: this is an undocumented "dark feature" that’s not QA’d.
+        Addendum Bundle: this is an undocumented "dark feature" that's not QA'd.
 
         Prerequisites:
             - Requires that only one Solution Kit is in scope.  If using a collection of Solution Kits, select only one child Solution Kit for the request (e.g. specify a GUID in form-field name solutionKitSelect).
-            - If Solution Kit supports upgrade, a separate upgrade addendum bundle is required (e.g. mapping action=“NewOrUpdate"instead of "AlwaysCreateNew")
+            - If Solution Kit supports upgrade, a separate upgrade addendum bundle is required (e.g. mapping action="NewOrUpdate"instead of "AlwaysCreateNew")
             - The .skar file's bundle requires the <l7:Mappings> element (note the ending "s").
             - <l7:AllowAddendum> must be true in .skar file metadata (i.e. SolutionKit.xml)
             - The .skar file mapping(s) to change must set "SK_AllowMappingOverride" property to true
