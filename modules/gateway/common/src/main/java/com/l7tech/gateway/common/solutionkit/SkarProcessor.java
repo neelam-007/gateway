@@ -350,6 +350,12 @@ public class SkarProcessor {
                 }
             }
 
+            //create a map of srcId -> mapping from the original install mappings; save a copy before merge/upgrade for use elsewhere
+            final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings();
+            for (Mapping installMapping : installBundle.getMappings()) {
+                    installMappings.put(installMapping.getSrcId(), installMapping);
+            }
+
             // replace with upgrade mappings
             installBundle.setMappings(upgradeBundle.getMappings());
         }

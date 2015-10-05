@@ -7,21 +7,19 @@ import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.solutionkit.SolutionKitCustomization;
-import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.MissingRequiredElementException;
+import com.l7tech.util.Pair;
+import com.l7tech.util.TooManyChildElementsException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -40,8 +38,11 @@ import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.api.Mapping.ErrorType.TargetNotFound;
 
 /**
  * Wizard panel which allows the user to select component(s) within a solution kit to install.
@@ -171,17 +172,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             return false;
         }
         try {
-            final String result = AdminGuiUtils.doAsyncAdminWithException(
-                    solutionKitAdmin,
-                    this.getOwner(),
-                    "Testing Solution Kit",
-                    "The gateway is testing selected solution kit(s)",
-                    solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
-                    false
-            );
+            //run the test for the first time
+            Mappings mappings = testInstall(solutionKit, bundle, isUpgrade);
+            if (null == mappings || null == mappings.getMappings()) {
+                DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
 
-            Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
-            Mappings mappings = (Mappings) item.getContent();
+            //while performing upgrade, check to see whether any entities from the original install are missing
+            if (isUpgrade) {
+                mappings = optionallyRecreateDeletedEntities(mappings, solutionKit);
+            }
+
             testMappings.put(solutionKit, mappings);
             success = true;
         } catch (InvocationTargetException | IOException e) {
@@ -202,6 +204,75 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
 
         return success;
+    }
+
+    private Mappings testInstall (final SolutionKit solutionKit, final String bundle, final boolean isUpgrade)
+            throws Throwable {
+
+        final String result = AdminGuiUtils.doAsyncAdminWithException(
+                solutionKitAdmin,
+                this.getOwner(),
+                "Testing Solution Kit",
+                "The gateway is testing selected solution kit(s)",
+                solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
+                false);
+
+        Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
+        return (Mappings) item.getContent();
+    }
+
+    private Mappings optionallyRecreateDeletedEntities(Mappings responseMappings, SolutionKit solutionKit) throws Throwable {
+        final List<String> missingEntitiesList = new ArrayList<>();
+
+        // get original install mappings
+        final Map<String, Mapping> installMappings = settings.getInstallMappings();
+
+        //check for any TargetNotFound ErrorTypes where the entity from the original install is missing
+        for (Mapping responseMapping : responseMappings.getMappings()) {
+            if (responseMapping.getErrorType() == TargetNotFound) {
+                Mapping installMapping = installMappings.get(responseMapping.getSrcId());
+                if (installMapping != null) {
+                    Boolean isFailOnNew = installMapping.getProperty("FailOnNew");
+                    if (isFailOnNew == null || !isFailOnNew) {
+                        missingEntitiesList.add(installMapping.getSrcId());
+                    }
+                }
+            }
+        }
+
+        //if we found any errors, prompt the user and ask if they would like to recreate the entities from the original install
+        if (missingEntitiesList.size() > 0 && promptUserForMissingEntitiesAction() == JOptionPane.YES_OPTION) {
+
+            //iterate through the currently loaded solution kit and if we find a matching srcId, then swap in the original mapping for that srcId
+            final List<Mapping> currentMappings = settings.getLoadedSolutionKits().get(solutionKit).getMappings();
+            for (int i=0; i < currentMappings.size(); i++){
+                Mapping currentMapping = currentMappings.get(i);
+                if (missingEntitiesList.contains(currentMapping.getSrcId())) {
+                    currentMappings.set(i, installMappings.get(currentMapping.getSrcId()));
+                }
+            }
+
+            //since errors have been found and the user has asked to recreate missing entities, we run the test of install again
+            return testInstall(solutionKit, settings.getBundleAsString(solutionKit), true);
+        }
+        return responseMappings;  //we have no errors, or user selected NO, return responseMappings as is
+    }
+
+    private int promptUserForMissingEntitiesAction() {
+        final AtomicInteger result = new AtomicInteger();
+        DialogDisplayer.showConfirmDialog(
+                this.getOwner(),
+                "One or more entities from the initial install is missing while trying to perform an upgrade.  Would you like to re-create?",
+                "Solution Kit Upgrade Error",
+                JOptionPane.YES_NO_OPTION,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        result.set(option);
+                    }
+                }
+        );
+        return result.get();
     }
 
     @Override

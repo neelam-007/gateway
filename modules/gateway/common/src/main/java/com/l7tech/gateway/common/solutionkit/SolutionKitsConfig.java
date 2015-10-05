@@ -31,6 +31,7 @@ public class SolutionKitsConfig {
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
     private Set<SolutionKit> selected = new TreeSet<>();
     private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
+    private Map<String, Mapping> installMappings = new HashMap<>();
 
     // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
     private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
@@ -175,6 +176,11 @@ public class SolutionKitsConfig {
         this.instanceModifiers = instanceModifiers;
     }
 
+    @NotNull
+    public Map<String, Mapping> getInstallMappings() {
+        return installMappings;
+    }
+
     @Nullable
     public SolutionKit getParentSolutionKitLoaded() {
         return parentSolutionKitLoaded;
@@ -192,6 +198,7 @@ public class SolutionKitsConfig {
         loaded.clear();
         selected.clear();
         testMappings.clear();
+        installMappings.clear();
         resolvedEntityIds.clear();
         if (nullSolutionKitToUpgrade) {
             solutionKitsToUpgrade.clear();
