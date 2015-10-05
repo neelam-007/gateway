@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.GLOBAL_ACTION_CLASSNAMES;
 
 /**
  * 
@@ -141,9 +142,8 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/swagger/console/resources/swagger-16x16.png");
 
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:Swagger" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(GLOBAL_ACTION_CLASSNAMES,
+                new String[] {"com.l7tech.external.assertions.swagger.console.PublishSwaggerServiceAction"});
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
