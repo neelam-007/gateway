@@ -19,10 +19,9 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.Ignore;
-import static com.l7tech.server.bundling.EntityMappingResult.MappingAction.CreatedNew;
-import static com.l7tech.server.bundling.EntityMappingResult.MappingAction.Deleted;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_ATTRIBUTE;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_TAKEN_ATTRIBUTE;
 
@@ -30,6 +29,8 @@ import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPP
  * This helper holds common logic used in more than one place (i.e. SolutionKitAdminImpl, SolutionKitManagerResource).
  */
 public class SolutionKitAdminHelper {
+    private static final Logger logger = Logger.getLogger(SolutionKitAdminHelper.class.getName());
+
     private final SolutionKitManager solutionKitManager;
     private final LicenseManager licenseManager;
     private final SignatureVerifier signatureVerifier;
@@ -289,60 +290,78 @@ public class SolutionKitAdminHelper {
     /**
      * Create EntityOwnershipDescriptors for each newly created entity.
      */
-    private void updateEntityOwnershipDescriptors(@NotNull final String resultMappings,
-                                                  @NotNull final SolutionKit solutionKit) throws SAXException, IOException {
-        final HashMap<String, EntityType> deletedEntities = new HashMap<>();
+    private void updateEntityOwnershipDescriptors(
+            @NotNull final String resultMappings,
+            @NotNull final SolutionKit solutionKit
+    ) throws SAXException, IOException {
+        // get solutionKit's current entity ownership descriptors (read-only)
+        // todo: consider locking the EntityOwnershipDescriptors set (or even this entire method) IF another thread is upgrading or updating the solution kit content
+        // todo: shouldn't really happen though (we'd probably have bigger issues if same solution kit is installed from multiple threads)
+        final Set<EntityOwnershipDescriptor> entityOwnershipDescriptors = solutionKit.getEntityOwnershipDescriptors();
+        // a bit of optimization, convert the ownership descriptors set into a map by entity-id
+        final Map<String, EntityOwnershipDescriptor> ownershipDescriptorMap = new HashMap<>(entityOwnershipDescriptors != null ? entityOwnershipDescriptors.size() : 0);
+        if (entityOwnershipDescriptors != null) {
+            for (final EntityOwnershipDescriptor descriptor : entityOwnershipDescriptors) {
+                final EntityOwnershipDescriptor oldDescriptor = ownershipDescriptorMap.put(descriptor.getEntityId(), descriptor);
+                if (oldDescriptor != null) {
+                    // this shouldn't happen so log for now
+                    logger.log(Level.WARNING, "EntityOwnershipDescriptor: Duplicate entity id: " + descriptor.getEntityId());
+                }
+            }
+        }
 
         final Set<EntityOwnershipDescriptor> newOwnershipDescriptors = new HashSet<>();
-        final Set<EntityOwnershipDescriptor> obsoleteOwnershipDescriptors = new HashSet<>();
-
-        String entityId, entityType;
+        final Set<EntityOwnershipDescriptor> deletedOwnershipDescriptors = new HashSet<>();
 
         // Find all matches of srdId and targetId in result mappings and save them in a map.
         final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
 
-        for (Element mapping : mappingsMsg.getMappings()) {
-            if (Ignore == EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE)))
+        // loop through the result mappings from RESTMAN
+        final Collection<Element> mappings = mappingsMsg.getMappings();
+        for (final Element mapping : mappings) {
+            // get the initial author mapping action
+            final EntityMappingInstructions.MappingAction authorMappingAction = EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE));
+            // get the resulting restman mapping action
+            final EntityMappingResult.MappingAction restmanResultMappingAction = EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
+            // skip the entity if its ignored by either the author or restman i.e.
+            // if author action is Ignore or result action is Ignored then continue with the next one
+            // RESTMAN result action is Ignored if either the author action was Ignore or the author action was Delete but the target entity could not be found to be deleted.
+            if (EntityMappingInstructions.MappingAction.Ignore == authorMappingAction || EntityMappingResult.MappingAction.Ignored == restmanResultMappingAction) {
                 continue;
+            }
 
-            entityId = mapping.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
-            entityType = mapping.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
-
-            if (!StringUtils.isEmpty(entityId) && !StringUtils.isEmpty(entityType)) {
-                EntityMappingResult.MappingAction mappingResultAction =
-                        EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
-
-                if (Deleted == mappingResultAction) {
-                    deletedEntities.put(entityId, EntityType.valueOf(entityType));
-                } else if (CreatedNew == mappingResultAction) {
-                    EntityOwnershipDescriptor d = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), true);
-                    newOwnershipDescriptors.add(d);
+            // get entity target-id and entity type
+            final String entityId = mapping.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
+            final String entityType = mapping.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
+            if (StringUtils.isNotBlank(entityId) && StringUtils.isNotBlank(entityType)) {
+                if (EntityMappingResult.MappingAction.Deleted == restmanResultMappingAction) {
+                    // get the entity ownership descriptor for entityId
+                    final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
+                    if (existing != null) {
+                        // the solutionKit own this entityId so add it to the deletedOwnershipDescriptors
+                        deletedOwnershipDescriptors.add(existing);
+                    }
+                } else if (EntityMappingResult.MappingAction.CreatedNew == restmanResultMappingAction) {
+                    final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
+                    final EntityOwnershipDescriptor descriptor = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), isReadOnly);
+                    newOwnershipDescriptors.add(descriptor);
+                } else if (EntityMappingResult.MappingAction.UpdatedExisting == restmanResultMappingAction || EntityMappingResult.MappingAction.UsedExisting == restmanResultMappingAction) {
+                    // this is an update
+                    // check if the author is modifying entity read-only status
+                    // this can only be done if the solution kit owns this entity
+                    final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
+                    if (existing != null) {
+                        final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
+                        existing.setReadable(!isReadOnly);
+                    }
+                } else {
+                    logger.log(Level.WARNING, "Unrecognized RESTMAN result action '" + restmanResultMappingAction + "'. Entity (" + entityId + "," + entityType + ") ownership information cannot be processed.");
                 }
             }
         }
 
-        /**
-         * Look at each existing EntityOwnershipDescriptor to see if it is obsolete - check for the owned entity in
-         * the map of deleted ones. We'll remove each deleted entity from the deletedEntities map, and when it is
-         * empty we can stop iterating over the EntityOwnershipDescriptors; the Solution Kit is likely to have more
-         * entities than would be deleted in a upgrade scenario.
-         */
-        if (null != solutionKit.getEntityOwnershipDescriptors() && !deletedEntities.isEmpty()) {
-            for (EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
-                if (0 == deletedEntities.size())
-                    break;
-
-                EntityType deletedEntityType = deletedEntities.get(descriptor.getEntityId());
-
-                if (null != deletedEntityType) {
-                    obsoleteOwnershipDescriptors.add(descriptor);
-                    deletedEntities.remove(descriptor.getEntityId());
-                }
-            }
-
-            solutionKit.removeEntityOwnershipDescriptors(obsoleteOwnershipDescriptors);
-        }
-
+        // update solutionKit EntityOwnershipDescriptors
+        solutionKit.removeEntityOwnershipDescriptors(deletedOwnershipDescriptors);
         solutionKit.addEntityOwnershipDescriptors(newOwnershipDescriptors);
     }
 

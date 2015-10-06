@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +24,8 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     private SolutionKit solutionKit;
     private String entityId;
     private EntityType entityType;
-
-    private boolean readOnly = true;
+    private boolean readable = true;
+    // When adding fields, update copyFrom() method
 
     @Deprecated
     @SuppressWarnings("unused")
@@ -35,7 +36,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         this.solutionKit = solutionKit;
         this.entityId = entityId;
         this.entityType = entityType;
-        this.readOnly = readOnly;
+        this.readable = !readOnly;
     }
 
     @ManyToOne(optional=false)
@@ -43,8 +44,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     public SolutionKit getSolutionKit() {
         return solutionKit;
     }
-
-    public void setSolutionKit(@NotNull SolutionKit solutionKit) {
+    public void setSolutionKit(@NotNull final SolutionKit solutionKit) {
         this.solutionKit = solutionKit;
     }
 
@@ -52,43 +52,62 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     public String getEntityId() {
         return entityId;
     }
-
-    public void setEntityId(@NotNull String entityId) {
+    public void setEntityId(@NotNull final String entityId) {
         this.entityId = entityId;
     }
 
-    @Transient
+    @Enumerated(EnumType.STRING)
+    @Column(name="entity_type", length=255, nullable=false)
     public EntityType getEntityType() {
         return entityType;
     }
-
-    public void setEntityType(@NotNull EntityType entityType) {
+    public void setEntityType(@NotNull final EntityType entityType) {
         this.entityType = entityType;
     }
 
-    /** @deprecated only here to hide enums from Hibernate */
-    @Deprecated
-    @SuppressWarnings("unused")
-    @Column(name="entity_type", nullable=false, length=255)
-    protected String getEntityTypeName() {
-        if (entityType == null) return null;
-        return entityType.name();
+    @Column(name="readable")
+    public boolean isReadable() {
+        return readable;
+    }
+    public void setReadable(boolean readable) {
+        this.readable = readable;
     }
 
-    /** @deprecated only here to hide enums from Hibernate */
-    @Deprecated
-    @SuppressWarnings("unused")
-    protected void setEntityTypeName(@NotNull String typeName) {
-        entityType = EntityType.valueOf(typeName);
+    /**
+     * Copy data from the specified {@code otherDescriptor} and set the owner to the specified {@code ownerSolutionKit}.
+     *
+     * @param otherDescriptor    the {@code EntityOwnershipDescriptor} from which to copy properties.  Required and cannot be {@code null}.
+     * @param ownerSolutionKit   the owner {@code SolutionKit}.  Required and cannot be {@code null}.
+     */
+    public void copyFrom(
+        @NotNull final EntityOwnershipDescriptor otherDescriptor,
+        @NotNull final SolutionKit ownerSolutionKit
+    ) {
+        if (!PersistentEntity.DEFAULT_GOID.equals(otherDescriptor.getGoid())) {
+            setGoid(otherDescriptor.getGoid());
+        }
+        setSolutionKit(ownerSolutionKit);
+        setEntityId(otherDescriptor.getEntityId());
+        setEntityType(otherDescriptor.getEntityType());
+        setReadable(otherDescriptor.isReadable());
     }
 
-    @Column(name="read_only")
-    public boolean isReadOnly() {
-        return readOnly;
-    }
-
-    public void setReadOnly(boolean readOnly) {
-        this.readOnly = readOnly;
+    /**
+     * Create a new {@code EntityOwnershipDescriptor} instance by coping data from the specified {@code otherDescriptor},
+     * and set the owner to the specified {@code ownerSolutionKit}.
+     *
+     * @param otherDescriptor     the {@code EntityOwnershipDescriptor} from which to copy properties.  Required and cannot be {@code null}.
+     * @param ownerSolutionKit    the owner {@code SolutionKit}.  Required and cannot be {@code null}.
+     * @return a copy of the specified {@code otherDescriptor} with the specified {@code ownerSolutionKit}.
+     */
+    public static EntityOwnershipDescriptor createFrom(
+            @NotNull final EntityOwnershipDescriptor otherDescriptor,
+            @NotNull final SolutionKit ownerSolutionKit
+    ) {
+        //noinspection deprecation
+        final EntityOwnershipDescriptor descriptor = new EntityOwnershipDescriptor();
+        descriptor.copyFrom(otherDescriptor, ownerSolutionKit);
+        return descriptor;
     }
 
     @Override
@@ -97,21 +116,21 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         if (!(o instanceof EntityOwnershipDescriptor)) return false;
         if (!super.equals(o)) return false;
 
-        EntityOwnershipDescriptor that = (EntityOwnershipDescriptor) o;
+        final EntityOwnershipDescriptor that = (EntityOwnershipDescriptor) o;
 
-        return !(solutionKit != null ? !solutionKit.getGoid().equals(that.solutionKit.getGoid()) : that.solutionKit.getGoid() != null)
-                && !(entityId != null ? !entityId.equals(that.entityId) : that.entityId != null)
+        // there is no need to check for owner solutionKit equality (pattern from other entities see Role->Permissions)
+        return !(entityId != null ? !entityId.equals(that.entityId) : that.entityId != null)
                 && entityType == that.entityType
-                && readOnly == that.readOnly;
+                && readable == that.readable;
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 197 * result + (solutionKit.getGoid() != null ? solutionKit.getGoid().hashCode() : 0);
-        result = 197 * result + (entityId != null ? entityId.hashCode() : 0);
-        result = 197 * result + (entityType != null ? entityType.name().hashCode() : 0);
-        result = 197 * result + (readOnly ? 1 : 0);
+        // same as equals, there is no need to calc hash for owner solutionKit (pattern from other entities see Role->Permissions)
+        result = 31 * result + (entityId != null ? entityId.hashCode() : 0);
+        result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
+        result = 31 * result + Boolean.hashCode(readable);
         return result;
     }
 }

@@ -177,4 +177,10 @@
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
+
+    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" >
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 </beans>

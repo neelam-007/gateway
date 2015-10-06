@@ -51,6 +51,8 @@ public class RestmanMessage {
         "     <l7:Properties><l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>\n" +
         "</l7:Mapping>\n";
 
+    private static final String MAPPING_PROPERTY_NAME_SK_READ_ONLY_ENTITY = "SK_ReadOnlyEntity";
+
     private List<Element> mappingErrors;
     private List<Element> bundles;
     private List<Element> resourceSetPolicies;
@@ -181,6 +183,7 @@ public class RestmanMessage {
     /**
      * Get Restman mapping(s) as list of Elements.
      */
+    @NotNull
     public List<Element> getMappings() {
         if (mappings == null || mappings.isEmpty()) {
             loadMappings();
@@ -484,6 +487,25 @@ public class RestmanMessage {
         for (Element tobeRemoved: toBeRemovedMappings) {
             mappingsElement.removeChild(tobeRemoved);
         }
+    }
+
+    /**
+     * Checks if the specified entity mapping is marked as a read-only entity.<br/>
+     * Checks whether {@link #MAPPING_PROPERTY_NAME_SK_READ_ONLY_ENTITY} property is present and has {@code BooleanValue} of {@code true}.
+     */
+    public static boolean isMarkedAsReadOnly(@NotNull final Element mapping) {
+        final List<Element> readOnlyEntityBooleanValues = XpathUtil.findElements(
+                mapping,
+                ".//l7:Properties/l7:Property[@key='" + MAPPING_PROPERTY_NAME_SK_READ_ONLY_ENTITY + "']/l7:BooleanValue",
+                getNamespaceMap()
+        );
+
+        if (readOnlyEntityBooleanValues.size() < 1) {
+            return false;
+        }
+
+        final Element readOnlyEntityBooleanValue = readOnlyEntityBooleanValues.get(0);
+        return readOnlyEntityBooleanValue != null && Boolean.valueOf(readOnlyEntityBooleanValue.getTextContent());
     }
 
     // START load methods, can be private access, but made protected for unit testing

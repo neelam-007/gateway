@@ -44,6 +44,18 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     public static final String SK_PROP_CUSTOM_UI_KEY = "CustomUi";   // note the lowercase "i"
     public static final String SK_PROP_INSTANCE_MODIFIER_KEY = "InstanceModifier";
     public static final String SK_PROP_ALLOW_ADDENDUM_KEY = "AllowAddendum";
+    // When adding new properties, update ALL_PROPERTY_KEYS
+
+    private static final String[] ALL_PROPERTY_KEYS = {
+            SK_PROP_DESC_KEY,
+            SK_PROP_TIMESTAMP_KEY,
+            SK_PROP_IS_COLLECTION_KEY,
+            SK_PROP_FEATURE_SET_KEY,
+            SK_PROP_CUSTOM_CALLBACK_KEY,
+            SK_PROP_CUSTOM_UI_KEY,
+            SK_PROP_INSTANCE_MODIFIER_KEY,
+            SK_PROP_ALLOW_ADDENDUM_KEY
+    };
 
     public static final String PARENT_SOLUTION_KIT_DUMMY_MAPPINGS = "<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT";
 
@@ -316,5 +328,16 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
                 }
             }
         }
+    }
+
+    /**
+     * Utility function for gathering all known property keys used by the {@code SolutionKit}.
+     *
+     * @return a {@code String} array containing all known property keys used by the {@code SolutionKit}, never {@code null}.
+     * @see #ALL_PROPERTY_KEYS
+     */
+    @NotNull
+    public static String[] getPropertyKeys() {
+        return ALL_PROPERTY_KEYS;
     }
 }

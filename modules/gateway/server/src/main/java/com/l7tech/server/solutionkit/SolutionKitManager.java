@@ -42,13 +42,6 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
 
     SolutionKit findBySolutionKitGuidAndIM(@NotNull final String solutionKitGuid, @Nullable String instanceModifier) throws FindException;
 
-    /**
-     * Reads and enables entity protection for all Solution Kit-owned entities. This method should be invoked
-     * after any EntityOwnershipDescriptors have been added e.g. in the process of Solution Kit installation/upgrade/removal.
-     * @throws FindException
-     */
-    void updateProtectedEntityTracking() throws FindException;
-
 
     // TODO: ghuang; consider to deprecate this method and use {@link #findAllChildrenByParentGoid(com.l7tech.objectmodel.Goid)}
     // TODO: as in most of the cases the caller will get the {@link com.l7tech.gateway.common.solutionkit.SolutionKit} object anyways

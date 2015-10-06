@@ -12,4 +12,24 @@
             </update>
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="solution_kit_meta_rename_read_only_to_readable_and_set_default_value">
+        <renameColumn tableName="solution_kit_meta" oldColumnName="read_only" newColumnName="readable" columnDataType="${tinyint.type}" />
+        <dropDefaultValue tableName="solution_kit_meta" columnName="readable" />
+        <!--
+         cannot use addNotNullConstraint with defaultNullValue as in derby defaultNullValue is always interpreted as string (see ticket https://liquibase.jira.com/browse/CORE-1064).
+         Works on mysql though as columnDataType is supported.
+         <addNotNullConstraint tableName="solution_kit_meta" columnName="readable" defaultNullValue="1" columnDataType="${tinyint.type}"/>
+        -->
+        <update tableName="solution_kit_meta">
+            <column name="readable" valueBoolean="true" />
+            <where>readable IS NULL</where>
+        </update>
+        <addNotNullConstraint tableName="solution_kit_meta" columnName="readable" columnDataType="${tinyint.type}" />
+        <addDefaultValue tableName="solution_kit_meta" columnName="readable" defaultValueBoolean="true" />
+        <rollback>
+            <dropDefaultValue tableName="solution_kit_meta" columnName="readable" />
+            <dropNotNullConstraint tableName="solution_kit_meta" columnName="readable" columnDataType="${tinyint.type}" />
+            <renameColumn tableName="solution_kit_meta" oldColumnName="readable" newColumnName="read_only" columnDataType="${tinyint.type}" />
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

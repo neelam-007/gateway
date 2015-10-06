@@ -18,7 +18,6 @@ import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.policy.bundle.ssgman.restman.VersionModifier;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -116,13 +115,20 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             logger.log(Level.INFO, "Solution Kit (" + entity.getName() + ") has been deleted on Instance Modifier : " + entity.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
     }
 
-    @Override
-    public void updateProtectedEntityTracking() throws FindException {
-        List< Pair< EntityType, String> > solutionKitOwnedEntities = new ArrayList<>();
+    /**
+     * Reads and enables entity protection for all Solution Kit-owned entities.
+     * This method should be invoked after any EntityOwnershipDescriptors have been added e.g. in the process of Solution Kit installation/upgrade/removal.
+     *
+     * @throws FindException in case there is an error getting solution kits from the database.
+     */
+    private void updateProtectedEntityTracking() throws FindException {
+        final List< Pair< EntityType, String> > solutionKitOwnedEntities = new ArrayList<>();
 
-        for (SolutionKit solutionKit : findAll()) {
-            for (EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
-                solutionKitOwnedEntities.add( Pair.pair( descriptor.getEntityType(), descriptor.getEntityId() ) );
+        for (final SolutionKit solutionKit : findAll()) {
+            for (final EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
+                if (!descriptor.isReadable()) {
+                    solutionKitOwnedEntities.add(Pair.pair(descriptor.getEntityType(), descriptor.getEntityId()));
+                }
             }
         }
 

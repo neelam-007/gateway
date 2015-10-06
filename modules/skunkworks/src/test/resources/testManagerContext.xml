@@ -1752,7 +1752,9 @@
 
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 
-    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" />
+    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
 
     <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerImpl" parent="hibernateBean">
     </bean>

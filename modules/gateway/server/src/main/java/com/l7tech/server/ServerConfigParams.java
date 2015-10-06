@@ -228,4 +228,7 @@ public interface ServerConfigParams {
     String PARAM_SERVER_MODULE_FILE_STAGING_FOLDER = "serverModuleFile.staging.folder";
     String PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
     String PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = "serverModuleFile.upload.maxSize";
+
+    // ProtectedEntityTracker
+    String PARAM_PROTECTED_ENTITY_TRACKER_ENABLE = "protectedEntityTracker.enable";
 }

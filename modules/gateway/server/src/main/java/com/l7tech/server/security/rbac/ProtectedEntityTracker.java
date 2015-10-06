@@ -2,8 +2,9 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,9 +17,10 @@ import java.util.concurrent.Callable;
  * A bean that keeps an in-memory list of entities which are protected from modification.
  */
 public class ProtectedEntityTracker {
-
-    private static final String PROP_ENFORCEMENT_ENABLED = "com.l7tech.server.security.rbac.ProtectedEntityTracker.enabled";
-    private static final boolean ENFORCEMENT_ENABLED = SyspropUtil.getBoolean( PROP_ENFORCEMENT_ENABLED, false );
+    /**
+     * Gateway Configuration bean
+     */
+    @NotNull protected final Config config;
 
     public static class EntityProtection {
         private final EntityType entityType;
@@ -46,6 +48,14 @@ public class ProtectedEntityTracker {
             return true;
         }
     };
+
+    public ProtectedEntityTracker(@NotNull final Config config) {
+        this.config = config;
+    }
+
+    public boolean isEnabled() {
+        return config.getBooleanProperty(ServerConfigParams.PARAM_PROTECTED_ENTITY_TRACKER_ENABLE, true);
+    }
 
     public void bulkUpdateReadOnlyEntitiesList( Collection< Pair< EntityType, String> > readOnlyEntities ) {
         synchronized ( protectedEntityMap ) {
@@ -81,7 +91,7 @@ public class ProtectedEntityTracker {
     }
 
     public boolean isEntityProtectionEnabled() {
-        return ENFORCEMENT_ENABLED && entityProtectionEnabled.get();
+        return isEnabled() && entityProtectionEnabled.get();
     }
 
     public <T> T doWithEntityProtectionDisabled( Callable<T> stuff ) throws Exception {

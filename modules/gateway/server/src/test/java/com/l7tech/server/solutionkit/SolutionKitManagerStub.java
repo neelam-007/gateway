@@ -41,9 +41,6 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     }
 
     @Override
-    public void updateProtectedEntityTracking() throws FindException {}
-
-    @Override
     public List<SolutionKitHeader> findAllChildrenHeadersByParentGoid(@NotNull Goid parentGoid) throws FindException {
         return Collections.emptyList();
     }

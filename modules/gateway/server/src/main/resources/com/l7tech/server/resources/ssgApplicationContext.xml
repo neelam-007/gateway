@@ -2743,7 +2743,9 @@
 
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 
-    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" />
+    <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" >
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
 
     <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierImpl" depends-on="systemProperties">
         <constructor-arg index="0" type="java.io.File" value="file:${com.l7tech.server.configDirectory}${file.separator}trusted_signers"/>
