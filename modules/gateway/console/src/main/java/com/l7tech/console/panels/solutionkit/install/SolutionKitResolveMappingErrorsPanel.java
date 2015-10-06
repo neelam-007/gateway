@@ -85,6 +85,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             solutionKitMappingsTabbedPane.add(solutionKitName, solutionKitMappingsPanel);
 
             String solutionKitGuid = solutionKit.getSolutionKitGuid();
+
+            Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
             // Look through mappings for error type
             for (Mapping mapping : mappings.getMappings()) {
                 if (mapping.getErrorType() != null) {
@@ -93,7 +95,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
                     } else {
                         guidToActiveErrorMap.put(solutionKitGuid, 1);
                         //Set the tab containing errors to red
-                        final int tabIndex = solutionKitMappingsTabbedPane.indexOfTab(solutionKitName);
+                        final int tabIndex = Arrays.asList(solutionKitGuidArray).indexOf(solutionKitGuid);
                         solutionKitMappingsTabbedPane.setBackgroundAt(tabIndex, Color.red);
                         solutionKitMappingsTabbedPane.setForegroundAt(tabIndex, Color.red);
                     }
