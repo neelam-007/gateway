@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.sun.istack.NotNull;
 
@@ -19,8 +18,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
@@ -33,7 +31,9 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     private JTabbedPane solutionKitMappingsTabbedPane;
     private JButton resolveButton;
 
-    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIdsMap = new HashMap<>();    // the map of a value: key = from id. value  = to id.
+    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIdsMap = new LinkedHashMap<>();    // the map of a value: key = from id. value  = to id.
+
+    private Map<String, Integer> guidToActiveErrorMap = new HashMap<>(); //key = solution kit guid, value = number of active errors
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
@@ -58,6 +58,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         resolvedEntityIdsMap.clear();
+        guidToActiveErrorMap.clear();
         solutionKitMappingsTabbedPane.removeAll();
 
         for (final SolutionKit solutionKit: settings.getSelectedSolutionKits()) {
@@ -80,21 +81,26 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
                 }
             });
 
-            solutionKitMappingsTabbedPane.add(solutionKit.getName(), solutionKitMappingsPanel);
+            String solutionKitName = solutionKit.getName();
+            solutionKitMappingsTabbedPane.add(solutionKitName, solutionKitMappingsPanel);
 
+            String solutionKitGuid = solutionKit.getSolutionKitGuid();
             // Look through mappings for error type
-            boolean hasError = Functions.exists(mappings.getMappings(), new Functions.Unary<Boolean, Mapping>() {
-                @Override
-                public Boolean call(Mapping mapping) {
-                    return mapping.getErrorType() != null;
+            for (Mapping mapping : mappings.getMappings()) {
+                if (mapping.getErrorType() != null) {
+                    if (guidToActiveErrorMap.containsKey(solutionKitGuid)) {
+                        guidToActiveErrorMap.put(solutionKitGuid, guidToActiveErrorMap.get(solutionKitGuid) + 1);
+                    } else {
+                        guidToActiveErrorMap.put(solutionKitGuid, 1);
+                        //Set the tab containing errors to red
+                        final int tabIndex = solutionKitMappingsTabbedPane.indexOfTab(solutionKitName);
+                        solutionKitMappingsTabbedPane.setBackgroundAt(tabIndex, Color.red);
+                        solutionKitMappingsTabbedPane.setForegroundAt(tabIndex, Color.red);
+                    }
                 }
-            });
-            //Set the tab containing errors to red
-            if (hasError) {
-                solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.indexOfTab(solutionKit.getName()), Color.red);
+
             }
         }
-
         refreshMappingsTableButtons();
     }
 
@@ -142,27 +148,15 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     }
 
     private boolean areAllConflictsResolved() {
-        int numOfErrors = 0;
-        for (Component component: solutionKitMappingsTabbedPane.getComponents()) {
-            if (component instanceof SolutionKitMappingsPanel) {
-                SolutionKitMappingsPanel solutionKitMappingsPanel = (SolutionKitMappingsPanel) component;
-                for (Mapping mapping: solutionKitMappingsPanel.getAllMappings()) {
-                    if (mapping != null) {
-                        Mapping.ErrorType errorType = mapping.getErrorType();
-                        if (errorType != null) {
-                            numOfErrors++;
-                        }
-                    }
-                }
+        Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
+
+        for (int i = 0; i < solutionKitMappingsTabbedPane.getTabCount(); i++) {
+            if (guidToActiveErrorMap.containsKey(solutionKitGuidArray[i]) && guidToActiveErrorMap.get(solutionKitGuidArray[i]) > 0) {
+                return false;
             }
         }
 
-        int numOfResolved = 0;
-        for (Pair<SolutionKit, Map<String, String>> idsMap: resolvedEntityIdsMap.values()) {
-            numOfResolved += idsMap.right.size();
-        }
-
-        return numOfErrors == numOfResolved;
+        return true;
     }
 
     private void onResolve(@NotNull final SolutionKitMappingsPanel solutionKitMappingsPanel) {
@@ -193,7 +187,21 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         if (dlg.isConfirmed()) {
             solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
             solutionKitMappingsPanel.reload();
-            solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.white);
+
+            Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
+
+            //The guid according to the current TabbedPane index (the tabbed index corresponds to index in solutionKitGuidArray because of linkedHashMap)
+            String solutionKitGuid = (String) solutionKitGuidArray[solutionKitMappingsTabbedPane.getSelectedIndex()];
+
+            int count = guidToActiveErrorMap.get(solutionKitGuid) -1;
+            guidToActiveErrorMap.put(solutionKitGuid, count);
+
+            //set the tab back to white if conditions are good
+            if (count < 1) {
+                guidToActiveErrorMap.remove(solutionKitGuid);
+                solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.WHITE);
+                solutionKitMappingsTabbedPane.setForegroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(), Color.BLACK);
+            }
         }
     }
 }

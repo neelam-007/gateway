@@ -13,8 +13,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.awt.Component;
 import java.util.*;
 
 /**
@@ -207,6 +209,27 @@ public class SolutionKitMappingsPanel extends JPanel {
                 @Override
                 public String call(Mapping mapping) {
                     Mapping.ErrorType errorType = mapping.getErrorType();
+
+                    class CustomRenderer extends DefaultTableCellRenderer {
+                        Mapping mapping;
+
+                        CustomRenderer(Mapping m) {
+                            super();
+                            mapping = m;
+                        }
+
+                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                            Component cellComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                            if ((mapping.getErrorType() != null) && (resolvedEntityIds.get(mapping.getSrcId()) == null)){
+                                cellComponent.setBackground(Color.PINK);
+                                cellComponent.setForeground(Color.RED);
+                            }
+                            return cellComponent;
+                        }
+                    }
+
+                    resolvedColumn.setCellRenderer(new CustomRenderer(mapping));
+
                     if (errorType != null) {
                         return errorType.toString();
                     }
@@ -247,8 +270,8 @@ public class SolutionKitMappingsPanel extends JPanel {
 
         mappingsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setRowSorter(mappingsTable, mappingsModel,
-            new int[]{0},
-            new boolean[]{true},
+            new int[]{5},
+            new boolean[]{false},
             new Comparator[]{null});
 
         hideTargetIdColumn();
