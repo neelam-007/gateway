@@ -27,7 +27,7 @@ cp -a build/installer/SkarSigner-HEAD-9.0.00.zip modules/skunkworks/src/main/res
 cd $BUILD_DIR
 
 # build child skar with only Server Module File
-zip -X SimpleServerModuleFile-1.1.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/DeleteBundle.xml
+zip -X SimpleServerModuleFile-1.1.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/smf_only/DeleteBundle.xml
 
 # build child skar for all other entities
 zip -X SimpleServiceAndOthers-1.1.skar Customization.jar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/other/DeleteBundle.xml

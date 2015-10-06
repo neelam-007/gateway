@@ -38,7 +38,7 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String inputText = JOptionPane.showInputDialog(parentPanel,
-                        "<html>About this bundle: # item(s): " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".<br>Instance modifier: " + getContext().getInstanceModifier() + "<br><br>Prefix with customization text below.<html>", "CUSTOMIZED!");
+                        "<html>About this bundle: # item(s): " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ".<br>Instance modifier: " + getContext().getInstanceModifier() + "<br><br>Prefix with customization text below.<html>", "Hello!");
 
                 // pass user input text to the callback e.g. to SimpleSolutionKitManagerCallback.preMigrationBundleImport()
                 if (inputText != null) {
