@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
@@ -19,10 +20,12 @@ import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
@@ -31,10 +34,9 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.security.SignatureException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.ResourceBundle;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -214,6 +216,8 @@ public class ServerModuleFileManagerWindow extends JDialog {
         //
         moduleTable.getColumnModel().getColumn(SIZE_COLUMN_INDEX).setCellRenderer(new SizeCellRenderer());
 
+        moduleTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
         // create entity crud
         //
         final EntityCrudController<ServerModuleFile> crud = new EntityCrudController<>();
@@ -228,12 +232,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
                     showError(resources.getString("error.open.module"), e, true);
                 }
                 return null;
-            }
-        });
-        crud.setEntityDeleter(new EntityDeleter<ServerModuleFile>() {
-            @Override
-            public void deleteEntity(@NotNull final ServerModuleFile entity) throws DeleteException {
-                asyncDeleteModuleFile(entity);
             }
         });
         crud.setEntityDeleteConfirmer(createDialogBasedEntityDeleteConfirmer());
@@ -284,7 +282,30 @@ public class ServerModuleFileManagerWindow extends JDialog {
         uploadButton.addActionListener(crud.createCreateAction());
         propertiesButton.addActionListener(crud.createEditAction());
         Utilities.setDoubleClickAction(moduleTable, propertiesButton);
-        deleteButton.addActionListener(crud.createDeleteAction());
+        deleteButton.addActionListener(
+                new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        final Collection<ServerModuleFile> selectedModules = getSelectedServerModuleFiles();
+                        if (selectedModules.isEmpty())
+                            return;
+
+                        DialogDisplayer.showSafeConfirmDialog(
+                                ServerModuleFileManagerWindow.this,
+                                WordUtils.wrap(createDeleteConfirmationMsg(selectedModules), DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
+                                ServerModuleFileManagerWindow.resources.getString("delete.confirmer.title"),
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.WARNING_MESSAGE,
+                                new DialogDisplayer.OptionListener() {
+                                    @Override
+                                    public void reportResult(final int option) {
+                                        if (option == JOptionPane.YES_OPTION)
+                                            asyncDeleteServerModuleFiles(selectedModules);
+                                    }
+                                });
+                    }
+                }
+        );
 
         if (canUpload) {
             startRefreshTimer();
@@ -292,6 +313,12 @@ public class ServerModuleFileManagerWindow extends JDialog {
 
         // initial update of server module file table based of the select cluster node
         resetData();
+    }
+
+    private String createDeleteConfirmationMsg(final Collection<ServerModuleFile> selected) {
+        if (selected.size() > 1) 
+            return resources.getString("delete.confirmer.message.multiple");
+        return MessageFormat.format(resources.getString("delete.confirmer.message.single"), selected.iterator().next().getName());
     }
 
     /**
@@ -325,31 +352,43 @@ public class ServerModuleFileManagerWindow extends JDialog {
         return null;
     }
 
-    /**
-     * Asynchronously delete the specified {@code moduleFile}.
-     *
-     * @param moduleFile    {@link ServerModuleFile} entity to delete.
-     * @throws DeleteException if module can't be deleted, or DB error updating.
-     */
-    private void asyncDeleteModuleFile(@NotNull final ServerModuleFile moduleFile) throws DeleteException {
+    private void asyncDeleteServerModuleFiles(final Collection<ServerModuleFile> modules) {
         try {
-            doAsyncTask(
+            final List<Exception> errors = doAsyncTask(
                     resources.getString("delete.async.dialog.message"),
-                    new Callable<Void>() {
+                    new Callable<List<Exception>>() {
                         @Override
-                        public Void call() throws Exception {
-                            getClusterStatusAdmin().deleteServerModuleFile(moduleFile.getGoid());
-                            return null;
+                        public List<Exception> call() throws Exception {
+                            final List<Exception> errors = new ArrayList<>();
+                            for (final ServerModuleFile module : modules) {
+                                try {
+                                    getClusterStatusAdmin().deleteServerModuleFile(module.getGoid());
+                                    serverModuleFilesTableModel.removeRow(module);
+                                } catch (final Exception e) {
+                                    logger.log(Level.WARNING, "Error deleting Server Module File \"" + module.getName() + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    errors.add(e);
+                                }
+                            }
+                            return Collections.unmodifiableList(errors);
                         }
                     }
             );
+
+            if (errors.size() == 1) {
+                final Exception error = errors.get(0);
+                if (error instanceof PermissionDeniedException) {
+                    // delegate to PermissionDeniedErrorHandler
+                    throw (PermissionDeniedException) error;
+                } else {
+                    showError(resources.getString("error.async.delete.single"), error);
+                }
+            } else if (errors.size() > 1) {
+                showError(resources.getString("error.async.delete.multiple"), null);
+            }
         } catch (final InvocationTargetException e) {
             // rethrow if target was DeleteException
             final Throwable cause = e.getTargetException();
-            if (cause instanceof DeleteException) {
-                throw (DeleteException)cause;
-            }
-            showError(resources.getString("unhandled.error.async.delete"), e, true);
+            showError(resources.getString("unhandled.error.async.delete"), cause != null ? cause : e, true);
         }
     }
 
@@ -488,7 +527,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
         // In this case, removed collection will contain the old entity(s), where as the added collection will contain
         // the same entity(s) (same id's) but with new values.
         // In this case we need to preserve selection.
-        final ServerModuleFile selectedModuleFile = getSelectedServerModuleFile();
+        final ServerModuleFile selectedModuleFile = getFirstSelectedServerModuleFile();
         ServerModuleFile newlySelectedModuleFile = null;
 
         // Removes removed items from model.
@@ -567,20 +606,50 @@ public class ServerModuleFileManagerWindow extends JDialog {
     }
 
     /**
+     * Get all selected {@link ServerModuleFile Server Module Files}, from the Modules Table.
+     *
+     * @return a read-only list of {@code ServerModuleFile}'s of all selected rows, or an empty {@code collection} if no row is selected.
+     */
+    @NotNull
+    private Collection<ServerModuleFile> getSelectedServerModuleFiles() {
+        final int[] selectedRows = moduleTable.getSelectedRows();
+        final Collection<ServerModuleFile> selectedModules = new ArrayList<>(selectedRows.length);
+        // loop through selected row
+        for (final int rowIndex : selectedRows) {
+            final ServerModuleFile selectedModule = moduleFromRowIndex(rowIndex);
+            if (selectedModule != null) {
+                selectedModules.add(selectedModule);
+            }
+        }
+        // finally return read-only collection
+        return Collections.unmodifiableCollection(selectedModules);
+    }
+
+    /**
      * Get currently selected {@link ServerModuleFile Server Module File}, from the Modules Table,
      * or {@code null} if no module is selected.
      */
     @Nullable
-    private ServerModuleFile getSelectedServerModuleFile() {
-        ServerModuleFile selected = null;
-        final int rowIndex = moduleTable.getSelectedRow();
+    private ServerModuleFile getFirstSelectedServerModuleFile() {
+        return moduleFromRowIndex(moduleTable.getSelectedRow());
+    }
+
+    /**
+     * Utility method for getting the associated {@code ServerModuleFile} of the specified row index.
+     *
+     * @param rowIndex    the row index.
+     * @return The {@code ServerModuleFile} associated for the specified {@code rowIndex}
+     * or {@code null} if {@code rowIndex} is an invalid row (i.e. -1).
+     */
+    @Nullable
+    private ServerModuleFile moduleFromRowIndex(final int rowIndex) {
         if (rowIndex >= 0) {
             final int modelIndex = moduleTable.convertRowIndexToModel(rowIndex);
             if (modelIndex >= 0) {
-                selected = serverModuleFilesTableModel.getRowObject(modelIndex);
+                return serverModuleFilesTableModel.getRowObject(modelIndex);
             }
         }
-        return selected;
+        return null;
     }
 
     /**
@@ -817,7 +886,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
      * @see #enableOrDisable(com.l7tech.gateway.common.module.ServerModuleFile)
      */
     private void enableOrDisable() {
-        enableOrDisable(getSelectedServerModuleFile());
+        enableOrDisable(getFirstSelectedServerModuleFile());
     }
 
     /**
