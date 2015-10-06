@@ -66,6 +66,26 @@ function doWaitForProcessControllerStartUp() {
         doWaitForServiceStartUp "process controller" "8765"
 }
 
+# collect config from Consul if it's available
+if [ "$SKIP_CONSUL_CHECK" == "true" ]; then
+	logInfo "skipping check for Consul server"
+else
+	logInfo "checking for a Consul server"
+	CONSUL_IP=`dig consul.service.consul +short | head -n 1`
+	if [ "$CONSUL_IP" == "" ]; then
+		logInfo "no Consul server found"
+	else
+		logInfo "found Consul server at \"$CONSUL_IP\". Running envconsul"
+		# we do a recursive call of this script using the exported environment from Consul
+		# to prevent infinite recursion, we test if we've checked for Consul before
+		export SKIP_CONSUL_CHECK="true"
+		# note that we assume that the Consul API is available on the standard port (8500)
+		envconsul -consul "$CONSUL_IP:8500" -prefix com/ca/apim -sanitize -upcase -log-level info -once "$0"
+		if [ $? -ne 0 ]; then
+			logErrorAndExit "failed to retrieve config from Consul"
+		fi
+	fi
+fi
 
 # create a bootstap directory if we need to
 if [ -d "$GATEWAY_BOOTSTRAP_DIR" ]; then
@@ -77,15 +97,18 @@ else
 fi
 
 # copy in the license file from the environment
-if [ "$SSG_LICENSE" == "" ]; then
-	logErrorAndExit "no license set via SSG_LICENSE in the environment. Exiting."
-else
-	logInfo "license found. Writing to disk."
-	mkdir "$GATEWAY_LICENSE_DIR" || logErrorAndExit "could not create directory \"$GATEWAY_LICENSE_DIR\""
-	chmod 755 "$GATEWAY_LICENSE_DIR" || logErrorAndExit "could not chmod directory \"$GATEWAY_LICENSE_DIR\""
+mkdir "$GATEWAY_LICENSE_DIR" || logErrorAndExit "could not create directory \"$GATEWAY_LICENSE_DIR\""
+chmod 755 "$GATEWAY_LICENSE_DIR" || logErrorAndExit "could not chmod directory \"$GATEWAY_LICENSE_DIR\""
+if [ "$SSG_LICENSE" != "" ]; then
+	logInfo "license found in SSG_LICENSE environment variable. Writing to disk."
 	echo "$SSG_LICENSE" | base64 -d -i | gunzip - > "$GATEWAY_LICENSE_FILE" || logErrorAndExit "could not decode license to disk. Make sure SSG_LICENSE is exported and the content is gzipped, then base64 encoded."
-	chmod 644 "$GATEWAY_LICENSE_FILE" || logErrorAndExit "could not chmod file \"$GATEWAY_LICENSE_FILE\""
+elif [ -r "/mnt/ssgconfig/license.xml" ]; then
+	logInfo "license found in /mnt/ssgconfig/license.xml. Copying."
+	cp /mnt/ssgconfig/license.xml "$GATEWAY_LICENSE_FILE" || logErrorAndExit "could not copy license file from /mnt/ssgconfig/license.xml to \"$GATEWAY_LICENSE_FILE\""
+else
+	logErrorAndExit "no license found. Exiting."
 fi
+chmod 644 "$GATEWAY_LICENSE_FILE" || logErrorAndExit "could not chmod file \"$GATEWAY_LICENSE_FILE\""
 
 # create the services files
 if [ -d "$GATEWAY_SERVICES_DIR" ]; then

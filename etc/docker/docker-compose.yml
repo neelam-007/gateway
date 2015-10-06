@@ -1,19 +1,21 @@
 ssg:
-  image: heinrichbutowatca/ssg:9.0-test2
+  image: heinrichbutowatca/ssg:9.0.00-1.svn20150922
+#  image: teamcity/ssg:9.0.00-1.svn20150828
+#  image: hbutow/ssg:9.0.00-1.svn20150917
 #  mem_limit: 2147483648
 #  mem_limit: 1073741824
 #  mem_limit: 1024m
 #  memswap_limit: 0m
-  expose:
-    - "2124"
-    - "8080"
-    - "8443"
-    - "9443"
-# if you want to map the ports from the container onto the host, use this form instead.
-#  ports:
+#  expose:
+#    - "2124"
 #    - "8080"
 #    - "8443"
 #    - "9443"
+# if you want to map the ports from the container onto the host, use this form instead.
+  ports:
+    - "8080"
+    - "8443"
+    - "9443"
 # for the environment, we use a YAML dictionary instead of an array as this lets us use a quoted string with a space in it for SSG_INTERNAL_SERVICES
   environment:
     SSG_CLUSTER_HOST: localhost
@@ -35,7 +37,7 @@ ssg:
 # the internal services to create. A space separated list of files to create as described at https://wiki.l7tech.com/mediawiki/index.php/Auto_Provision_Internal_Gateway_Service_Func_Spec
     SSG_INTERNAL_SERVICES: "restman wsman"
 # this should ensure that the ssg containers are scheduled by Docker Swarm on different Docker hosts 
-#    affinity: 'container!=~*ssg*'
+    affinity: "container!=~*ssg*"
   links:
     - mysql
 mysql:
