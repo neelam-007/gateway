@@ -26,6 +26,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
@@ -98,8 +99,15 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                 PartInfo partInfo = mimeKnob.getFirstPart();
                 if(partInfo != null) {
                     //streaming support
-                    GZIPInputStream gzipStream = new GZIPInputStream(partInfo.getInputStream(false));
-                    try (final Reader reader = new InputStreamReader(new BOMInputStream(gzipStream), StandardCharsets.UTF_8)) {
+                    InputStream inputStream;
+                    if(assertion.getCompression() == BulkJdbcInsertAssertion.Compression.GZIP) {
+                        inputStream = new GZIPInputStream(partInfo.getInputStream(false));
+                    }
+                    else {
+                        inputStream = partInfo.getInputStream(false);
+                    }
+
+                    try (final Reader reader = new InputStreamReader(new BOMInputStream(inputStream), StandardCharsets.UTF_8)) {
                         try (final CSVParser parser = new CSVParser(reader, getCVSFormat(assertion))) {
                             List<CSVRecord> recordList = parser.getRecords();
                             if(recordList.size() > 0) {
@@ -157,6 +165,9 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
             return AssertionStatus.FAILED;
         } catch (SQLException sqle) {
             logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"SQLException occurred: " + sqle.getMessage()}, ExceptionUtils.getDebugException(sqle));
+            return AssertionStatus.FAILED;
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"Exception: " + e.getClass().getName() + " " + e.getMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 

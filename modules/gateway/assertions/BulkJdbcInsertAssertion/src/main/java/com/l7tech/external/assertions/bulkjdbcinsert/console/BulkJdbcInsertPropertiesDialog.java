@@ -71,7 +71,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        decompressionComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.Compression.valuesToString()));
+        decompressionComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.Compression.values()));
         inputValidator.ensureComboBoxSelection(decompressionLabel.getText(), decompressionComboBox);
 
         final RunOnChangeListener connectionListener = new RunOnChangeListener(new Runnable() {
@@ -196,6 +196,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         if(assertion.getColumnMapperList() != null) {
             mapperList.addAll(assertion.getColumnMapperList());
         }
+        decompressionComboBox.setSelectedItem(assertion.getCompression());
         batchSizeSpinner.setValue(assertion.getBatchSize());
     }
 
@@ -208,6 +209,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         assertion.setFieldDelimiter(fieldDelimiterTextField.getText());
         assertion.setEscapeQuote(escapeQuoteTextField.getText());
         assertion.setColumnMapperList(mapperList);
+        assertion.setCompression((BulkJdbcInsertAssertion.Compression)decompressionComboBox.getSelectedItem());
         assertion.setBatchSize((Integer)batchSizeSpinner.getValue());
         return assertion;
     }

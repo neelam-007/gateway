@@ -1,7 +1,11 @@
 package com.l7tech.external.assertions.bulkjdbcinsert;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.*;
+import com.l7tech.search.Dependency;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -11,7 +15,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 /**
  * 
  */
-public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implements UsesVariables {
+public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implements JdbcConnectionable,UsesVariables {
     protected static final Logger logger = Logger.getLogger(BulkJdbcInsertAssertion.class.getName());
     public enum Compression {
         NONE, GZIP, DEFLATE;
@@ -35,6 +39,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
     private boolean quoted = false;
     private String escapeQuote = "";
     private String quoteChar = "";
+    private Compression compression = Compression.GZIP;
     private int batchSize = 100;
     private List<ColumnMapper> columnMapperList;
 
@@ -53,6 +58,9 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         this.schema = schema;
     }
 
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.JDBC_CONNECTION)
+    @Dependency(type = Dependency.DependencyType.JDBC_CONNECTION, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getConnectionName() {
         return connectionName;
     }
@@ -113,6 +121,14 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         return batchSize;
     }
 
+    public Compression getCompression() {
+        return compression;
+    }
+
+    public void setCompression(Compression compression) {
+        this.compression = compression;
+    }
+
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
@@ -171,7 +187,8 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new BeanTypeMapping(ColumnMapper.class, "columnMapper"),
-                new CollectionTypeMapping(List.class, ColumnMapper.class , ArrayList.class , "columnMapperList")
+                new CollectionTypeMapping(List.class, ColumnMapper.class , ArrayList.class , "columnMapperList"),
+                new Java5EnumTypeMapping(Compression.class, "compression")
         )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
