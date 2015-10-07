@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.List;
 
 /**
  * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
@@ -31,9 +32,10 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     private JTabbedPane solutionKitMappingsTabbedPane;
     private JButton resolveButton;
 
-    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIdsMap = new LinkedHashMap<>();    // the map of a value: key = from id. value  = to id.
+    private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIdsMap = new HashMap<>();    // the map of a value: key = from id. value  = to id.
 
-    private Map<String, Integer> guidToActiveErrorMap = new HashMap<>(); //key = solution kit guid, value = number of active errors
+    private Map<String, Integer> guidAndInstanceToActiveErrorMap = new HashMap<>(); //key = solution kit guid, value = number of active errors
+    private List<String> guidAndInstanceArray = new ArrayList<>(); //list of all the guidAndInstanceArray
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
@@ -58,7 +60,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         resolvedEntityIdsMap.clear();
-        guidToActiveErrorMap.clear();
+        guidAndInstanceToActiveErrorMap.clear();
+        guidAndInstanceArray.clear();
         solutionKitMappingsTabbedPane.removeAll();
 
         for (final SolutionKit solutionKit: settings.getSelectedSolutionKits()) {
@@ -84,18 +87,18 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             String solutionKitName = solutionKit.getName();
             solutionKitMappingsTabbedPane.add(solutionKitName, solutionKitMappingsPanel);
 
-            String solutionKitGuid = solutionKit.getSolutionKitGuid();
+            String guidAndInstance = solutionKit.getSolutionKitGuid()+((solutionKit.getProperty("InstanceModifier")==null)? "" : solutionKit.getProperty("InstanceModifier"));
+            guidAndInstanceArray.add(guidAndInstance);
 
-            Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
             // Look through mappings for error type
             for (Mapping mapping : mappings.getMappings()) {
                 if (mapping.getErrorType() != null) {
-                    if (guidToActiveErrorMap.containsKey(solutionKitGuid)) {
-                        guidToActiveErrorMap.put(solutionKitGuid, guidToActiveErrorMap.get(solutionKitGuid) + 1);
+                    if (guidAndInstanceToActiveErrorMap.containsKey(guidAndInstance)) {
+                        guidAndInstanceToActiveErrorMap.put(guidAndInstance, guidAndInstanceToActiveErrorMap.get(guidAndInstance) + 1);
                     } else {
-                        guidToActiveErrorMap.put(solutionKitGuid, 1);
+                        guidAndInstanceToActiveErrorMap.put(guidAndInstance, 1);
                         //Set the tab containing errors to red
-                        final int tabIndex = Arrays.asList(solutionKitGuidArray).indexOf(solutionKitGuid);
+                        final int tabIndex = guidAndInstanceArray.indexOf(guidAndInstance);
                         solutionKitMappingsTabbedPane.setBackgroundAt(tabIndex, Color.red);
                         solutionKitMappingsTabbedPane.setForegroundAt(tabIndex, Color.red);
                     }
@@ -150,10 +153,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     }
 
     private boolean areAllConflictsResolved() {
-        Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
-
         for (int i = 0; i < solutionKitMappingsTabbedPane.getTabCount(); i++) {
-            if (guidToActiveErrorMap.containsKey(solutionKitGuidArray[i]) && guidToActiveErrorMap.get(solutionKitGuidArray[i]) > 0) {
+            if (guidAndInstanceToActiveErrorMap.containsKey(guidAndInstanceArray.get(i)) && guidAndInstanceToActiveErrorMap.get(guidAndInstanceArray.get(i)) > 0) {
                 return false;
             }
         }
@@ -190,17 +191,14 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
             solutionKitMappingsPanel.reload();
 
-            Object[] solutionKitGuidArray = resolvedEntityIdsMap.keySet().toArray();
+            String guidAndInstance = guidAndInstanceArray.get(solutionKitMappingsTabbedPane.getSelectedIndex());
 
-            //The guid according to the current TabbedPane index (the tabbed index corresponds to index in solutionKitGuidArray because of linkedHashMap)
-            String solutionKitGuid = (String) solutionKitGuidArray[solutionKitMappingsTabbedPane.getSelectedIndex()];
-
-            int count = guidToActiveErrorMap.get(solutionKitGuid) -1;
-            guidToActiveErrorMap.put(solutionKitGuid, count);
+            int count = guidAndInstanceToActiveErrorMap.get(guidAndInstance) -1;
+            guidAndInstanceToActiveErrorMap.put(guidAndInstance, count);
 
             //set the tab back to white if conditions are good
             if (count < 1) {
-                guidToActiveErrorMap.remove(solutionKitGuid);
+                guidAndInstanceToActiveErrorMap.remove(guidAndInstance);
                 solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.WHITE);
                 solutionKitMappingsTabbedPane.setForegroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(), Color.BLACK);
             }
