@@ -99,7 +99,11 @@
     </l7:Item>
 </l7:References>
 <l7:Mappings>
-    <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71b0c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER"/>
+    <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71b0c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER">
+        <l7:Properties>
+            <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+        </l7:Properties>
+    </l7:Mapping>
     <l7:Mapping action="AlwaysCreateNew" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE"/>
 </l7:Mappings>
 </l7:Bundle>

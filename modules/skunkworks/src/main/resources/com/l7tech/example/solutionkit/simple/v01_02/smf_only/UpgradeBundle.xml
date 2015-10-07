@@ -8,6 +8,7 @@
                 <l7:Property key="MapBy">
                     <l7:StringValue>moduleSha256</l7:StringValue>
                 </l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
             </l7:Properties>
         </l7:Mapping>
     </l7:Mappings>
