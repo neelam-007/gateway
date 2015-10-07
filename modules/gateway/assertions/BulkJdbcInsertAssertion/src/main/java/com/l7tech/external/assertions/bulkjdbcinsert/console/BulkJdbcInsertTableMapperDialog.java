@@ -65,7 +65,7 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
         transformationComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.TRANSFORMATIONS));
 
         final InputValidator inputValidator = new InputValidator(this, title);
-        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("mapper.columnName.label"), columnNameTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("column.label.name"), columnNameTextField, null);
         inputValidator.constrainTextField(orderTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {

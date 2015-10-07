@@ -13,7 +13,7 @@
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Column Name:"/>
+          <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.name.label"/>
         </properties>
       </component>
       <component id="40726" class="javax.swing.JLabel" binding="orderLabel">
@@ -21,7 +21,7 @@
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="CSV Order:"/>
+          <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.order.label"/>
         </properties>
       </component>
       <component id="b28d6" class="javax.swing.JLabel" binding="transformationLabel">
@@ -29,7 +29,7 @@
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Transformation:"/>
+          <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.transformation.label"/>
         </properties>
       </component>
       <component id="6e8af" class="javax.swing.JTextField" binding="orderTextField">
@@ -53,7 +53,7 @@
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Transform Parameter:"/>
+          <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.transformParam.label"/>
         </properties>
       </component>
       <component id="abb52" class="javax.swing.JTextField" binding="paramTextField">
@@ -77,7 +77,7 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="OK"/>
+              <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="button.ok"/>
             </properties>
           </component>
           <hspacer id="35cde">
@@ -90,7 +90,7 @@
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Cancel"/>
+              <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="button.cancel"/>
             </properties>
           </component>
         </children>

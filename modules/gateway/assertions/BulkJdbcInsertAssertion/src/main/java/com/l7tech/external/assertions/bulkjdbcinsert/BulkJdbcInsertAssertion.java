@@ -17,6 +17,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
  */
 public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implements JdbcConnectionable,UsesVariables {
     protected static final Logger logger = Logger.getLogger(BulkJdbcInsertAssertion.class.getName());
+    public static final String CRLF = "CRLF";
+
     public enum Compression {
         NONE, GZIP, DEFLATE;
 
@@ -34,7 +36,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
     private String connectionName;
     private String schema;
     private String tableName;
-    private String recordDelimiter = "<CR><LF>";
+    private String recordDelimiter = CRLF;
     private String fieldDelimiter = ",";
     private boolean quoted = false;
     private String escapeQuote = "";
@@ -164,8 +166,8 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Bulk JDBC Insert");
-        meta.put(AssertionMetadata.DESCRIPTION, "Insert bulk data in csv format to the specified database table");
+        meta.put(AssertionMetadata.SHORT_NAME, "Insert JDBC Data in Bulk");
+        meta.put(AssertionMetadata.DESCRIPTION, "Parses data from a compressed comma-separated file and then inserts then in bulk into a specified database table using a JDBC connection.");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

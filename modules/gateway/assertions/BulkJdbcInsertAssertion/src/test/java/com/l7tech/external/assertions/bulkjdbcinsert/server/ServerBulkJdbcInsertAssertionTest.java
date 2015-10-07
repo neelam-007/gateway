@@ -12,9 +12,6 @@ import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.BOMInputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +26,6 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPInputStream;
 
 import static junit.framework.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
@@ -120,26 +115,6 @@ public class ServerBulkJdbcInsertAssertionTest {
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(1), anyString());
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(2), anyString());
-    }
-
-    @Ignore
-    @Test
-    public void testCsv() throws Exception {
-        InputStream inputStream = ServerBulkJdbcInsertAssertionTest.class.getResourceAsStream("0700_20150625-072200.v2.csv.gz");
-        GZIPInputStream gzipStream = new GZIPInputStream(inputStream);
-
-        try(final Reader reader = newReader(gzipStream)) {
-            try(final CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT)) {
-                for (final CSVRecord record : parser) {
-                    for(int i=0; i < record.size(); i++) {
-                        System.out.print(record.get(i) + " ");
-                    }
-                    System.out.println();
-                }
-            }
-        }
-
-
     }
 
     @Test

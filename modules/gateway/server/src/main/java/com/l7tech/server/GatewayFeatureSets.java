@@ -694,6 +694,10 @@ public class GatewayFeatureSets {
             mass("assertion:JdbcQuery"),
             mass("assertion:composite.Transaction"));
 
+        GatewayFeatureSet bulkJdbcInsertAssertions =
+        fsr("set:BulkJdbcInsert:Assertions", "The necessary assertions to enable Bulk JDBC insert functionality",
+             mass("assertion:BulkJdbcInsert"));
+
         GatewayFeatureSet icapAntivirusScannerAssertions =
         fsr("set:IcapAntivirusScanner:Assertions", "The necessary assertions to enable ICAP Antivirus scanning functionality",
             mass("assertion:IcapAntivirusScanner"));
@@ -1080,6 +1084,7 @@ public class GatewayFeatureSets {
             fs(samlpInboundAssertions),
             fs(xacmlAssertions),
             fs(jdbcQueryAssertions),
+            fs(bulkJdbcInsertAssertions),
             fs(uddiNotificationAssertions),
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
@@ -1166,6 +1171,7 @@ public class GatewayFeatureSets {
             fs(samlpAssertions),
             fs(wssp),
             fs(jdbcQueryAssertions),
+            fs(bulkJdbcInsertAssertions),
             fs(uddiNotificationAssertions),
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
@@ -1209,6 +1215,7 @@ public class GatewayFeatureSets {
                 fs(mtomEncodeAssertions),
                 fs(mtomValidateAssertions),
                 fs(jdbcQueryAssertions),
+                fs(bulkJdbcInsertAssertions),
                 fs(xmlsecAccel),
                 ass(RequireWssTimestamp.class),
                 ass(SslAssertion.class),

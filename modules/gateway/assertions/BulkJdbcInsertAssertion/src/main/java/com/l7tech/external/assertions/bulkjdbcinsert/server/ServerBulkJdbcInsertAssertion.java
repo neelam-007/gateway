@@ -221,7 +221,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         //TODO: configure format
         CSVFormat format = CSVFormat.DEFAULT;//start from the default format
         if(assertion.getRecordDelimiter() != null) {
-            format = format.withRecordSeparator(assertion.getRecordDelimiter().equals("<CR><LF>")? "\r\n":assertion.getRecordDelimiter());
+            format = format.withRecordSeparator(assertion.getRecordDelimiter().equals(BulkJdbcInsertAssertion.CRLF)? "\r\n":assertion.getRecordDelimiter());
         }
         if(assertion.getFieldDelimiter() != null && assertion.getFieldDelimiter().trim().length() == 1) {
             format = format.withDelimiter(assertion.getFieldDelimiter().trim().charAt(0));

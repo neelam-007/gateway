@@ -144,7 +144,6 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        //TODO: initialize other components
         inputValidator.constrainTextFieldToMaxChars(quoteLabel.getText(),quoteTextField, 1, null);
         inputValidator.constrainTextFieldToMaxChars(escapeQuoteLabel.getText(), escapeQuoteTextField, 1, null);
 
@@ -258,17 +257,12 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent()) {
             //logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");
-
             return null;
         }
         return reg.getJdbcConnectionAdmin();
     }
 
     private class ColumnMappingTableModel extends AbstractTableModel {
-
-
-
-
         @Override
         public int getColumnCount() {
             return MAX_TABLE_COLUMN_NUM;
