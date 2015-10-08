@@ -8,6 +8,12 @@
 #         and <l7_workspace>/modules/policy/build/layer7-policy.jar (e.g. ./build.sh moduled -Dmodule=layer7-policy)
 #         and <l7_workspace>/modules/utility/build/layer7-utility.jar (e.g. ./build.sh moduled -Dmodule=layer7-utility)
 
+# javac defaults to unix
+JAVAC_CLASSPATH_SEPARATOR=":"
+case "$(uname)" in
+  CYGWIN*) JAVAC_CLASSPATH_SEPARATOR=";" ;;
+esac
+
 # cd <l7_workspace>
 cd ../../../../../../../../../../..
 
@@ -16,14 +22,14 @@ BUILD_DIR="modules/skunkworks/build/example/solutionkit/simple/v01_01"
 mkdir -p $BUILD_DIR
 
 cd modules/skunkworks
-javac -sourcepath src/main/java/ -classpath ../gateway/api/build/layer7-api.jar:../policy/build/layer7-policy.jar:../utility/build/layer7-utility.jar:../../lib/repository/commons-lang/commons-lang-2.5.jar src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
+javac -sourcepath src/main/java/ -classpath "../gateway/api/build/layer7-api.jar${JAVAC_CLASSPATH_SEPARATOR}../policy/build/layer7-policy.jar${JAVAC_CLASSPATH_SEPARATOR}../utility/build/layer7-utility.jar${JAVAC_CLASSPATH_SEPARATOR}../../lib/repository/commons-lang/commons-lang-2.5.jar" src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
 cd build/example/solutionkit/simple/v01_01
 jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi\$1.class
 
 # cd <l7_workspace>
 cd ../../../../../../..
 
-cp -a build/installer/SkarSigner-HEAD-9.1.00.zip modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/. modules/skunkworks/build/example/solutionkit/simple/v01_01/
+cp -f build/installer/SkarSigner-HEAD-9.1.00.zip modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/*.* ${BUILD_DIR}
 cd $BUILD_DIR
 
 # build child skar with only Server Module File

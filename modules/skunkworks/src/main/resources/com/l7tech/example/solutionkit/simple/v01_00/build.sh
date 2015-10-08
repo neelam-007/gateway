@@ -10,7 +10,7 @@ cd ../../../../../../../../../../..
 BUILD_DIR="modules/skunkworks/build/example/solutionkit/simple/v01_00"
 mkdir -p $BUILD_DIR
 
-cp -a build/installer/SkarSigner-HEAD-9.1.00.zip modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_00/. modules/skunkworks/build/example/solutionkit/simple/v01_00/
+cp -f build/installer/SkarSigner-HEAD-9.1.00.zip modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_00/*.* ${BUILD_DIR}
 cd $BUILD_DIR
 zip -X SimpleSolutionKit-1.0.skar -j ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_00/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_00/InstallBundle.xml
 
