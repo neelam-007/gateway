@@ -479,17 +479,6 @@ public class ArrayUtils {
         }
     }
 
-    /**
-     * Merge two arrays.
-     *
-     * @param a  an int array.  May be empty but not null.
-     * @param b  an int array.  May be empty but not null.
-     * @return a new array that contains all the elements of a followed by all the elements of b.  Never null.
-     */
-    public static int[] concat(@NotNull int[] a, @NotNull int[] b) {
-        return (int[])copyInternal( a, b );
-    }
-
     /** Same as {@link Arrays#fill} except it returns the array (e.g. so you can use it in a super constructor call) */
     public static char[] fill(char[] chars, char c) {
         Arrays.fill(chars, c);

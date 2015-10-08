@@ -40,6 +40,9 @@ import java.util.zip.GZIPInputStream;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import static java.lang.reflect.Array.getLength;
+import static java.lang.reflect.Array.newInstance;
+
 /**
  * Server side implementation of the BulkJdbcInsertAssertion.
  *
@@ -139,7 +142,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                     currentBatchSize++;
                                     if(currentBatchSize == assertion.getBatchSize()) {
                                         int[] count = saveBatch(jdbcConnection, stmt);
-                                        commitRespose = ArrayUtils.concat(commitRespose, count);
+                                        commitRespose = concatArrays(commitRespose, count);
                                         currentBatchSize = 0;
                                     }
                                 }
@@ -316,6 +319,15 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         }
     }
 
+
+     static int[] concatArrays( final int[] data1, final int[] data2 ) {
+        final int data1Length = getLength( data1 );
+        final int data2Length = getLength( data2 );
+        final Object copy = newInstance( int.class, data1Length + data2Length );
+        System.arraycopy(data1, 0, copy, 0, data1Length);
+        System.arraycopy(data2, 0, copy, data1Length, data2Length);
+        return (int[])copy;
+    }
     /*
      * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
      * that would otherwise keep our instances from getting collected.

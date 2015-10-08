@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -139,6 +140,15 @@ public class ServerBulkJdbcInsertAssertionTest {
         assertion.setColumnMapperList(mapperList);
         fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
         assertEquals("INSERT INTO tableOne(ColumnOne,ColumnTwo) VALUES (?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
+    }
+
+    @Test
+    public void testConcatArrays() {
+        int[] arrayOne = {1,2,3,4};
+        int[] arrayTwo = {5,6,7,8,9,10,0};
+        int[] expectedArray = {1,2,3,4,5,6,7,8,9,10,0};
+
+        assertArrayEquals(expectedArray, ServerBulkJdbcInsertAssertion.concatArrays(arrayOne, arrayTwo));
     }
 
 
