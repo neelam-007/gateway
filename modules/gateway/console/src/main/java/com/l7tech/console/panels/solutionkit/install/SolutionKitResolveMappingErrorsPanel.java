@@ -101,6 +101,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
                         final int tabIndex = guidAndInstanceArray.indexOf(guidAndInstance);
                         solutionKitMappingsTabbedPane.setBackgroundAt(tabIndex, Color.red);
                         solutionKitMappingsTabbedPane.setForegroundAt(tabIndex, Color.red);
+                        solutionKitMappingsTabbedPane.setSelectedIndex(tabIndex);
                     }
                 }
 
