@@ -115,6 +115,7 @@ public class ServerBulkJdbcInsertAssertionTest {
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(1), anyString());
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(2), anyString());
+        verify(mockPreparedStatement, times(3)).executeBatch();
     }
 
     @Test

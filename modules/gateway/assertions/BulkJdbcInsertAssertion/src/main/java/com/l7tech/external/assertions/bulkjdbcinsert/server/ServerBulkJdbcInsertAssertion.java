@@ -15,10 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -120,6 +117,8 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                 }
                                 BulkJdbcInsertAssertion.ColumnMapper[] columnMappers = columnMapperSet.toArray(new BulkJdbcInsertAssertion.ColumnMapper[0]);
                                 PreparedStatement stmt = jdbcConnection.prepareStatement(sqlCommand);
+                                int currentBatchSize = 0;
+                                int[] commitRespose = new int[0];
                                 for (final CSVRecord record : recordList) {
                                     for(int i=0; i < columnMapperSet.size(); i++) {
                                         BulkJdbcInsertAssertion.ColumnMapper param = columnMappers[i];
@@ -137,16 +136,16 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                         }
                                     }
                                     stmt.addBatch();//add prepared statement to the batch
+                                    currentBatchSize++;
+                                    if(currentBatchSize == assertion.getBatchSize()) {
+                                        int[] count = saveBatch(jdbcConnection, stmt);
+                                        commitRespose = ArrayUtils.concat(commitRespose, count);
+                                        currentBatchSize = 0;
+                                    }
                                 }
 
-                                int[] count = stmt.executeBatch();
-
-                                if(!jdbcConnection.getAutoCommit()) {
-                                    jdbcConnection.commit();
-                                    logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, "Committed inserted records to the database");
-                                }
                                 long processTime = System.currentTimeMillis() - startTime;
-                                logAndAudit(AssertionMessages.BULKJDBCINSERT_SUCCESS, "Inserted " + count.length + " records into the table " +  tableName + " in " + processTime + " ms");
+                                logAndAudit(AssertionMessages.BULKJDBCINSERT_SUCCESS, "Inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
                             }
                         }
                     }
@@ -174,6 +173,15 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         return AssertionStatus.NONE;
     }
 
+    private int[] saveBatch(Connection jdbcConnection, PreparedStatement stmt) throws SQLException {
+        int[] count = stmt.executeBatch();
+
+        if(!jdbcConnection.getAutoCommit()) {
+            jdbcConnection.commit();
+            logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, count.length + " records were committed to the database");
+        }
+        return count;
+    }
 
 
     protected Set<BulkJdbcInsertAssertion.ColumnMapper> getColumnMapperSet() {
