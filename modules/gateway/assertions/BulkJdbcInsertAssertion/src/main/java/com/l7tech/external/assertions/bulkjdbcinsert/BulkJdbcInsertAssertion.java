@@ -40,7 +40,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
     private String fieldDelimiter = ",";
     private boolean quoted = false;
     private String escapeQuote = "";
-    private String quoteChar = "";
+    private String quoteChar = "\"";
     private Compression compression = Compression.GZIP;
     private int batchSize = 100;
     private List<ColumnMapper> columnMapperList;

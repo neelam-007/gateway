@@ -141,12 +141,16 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                     stmt.addBatch();//add prepared statement to the batch
                                     currentBatchSize++;
                                     if(currentBatchSize == assertion.getBatchSize()) {
-                                        int[] count = saveBatch(jdbcConnection, stmt);
+                                        int[] count = stmt.executeBatch();
                                         commitRespose = concatArrays(commitRespose, count);
                                         currentBatchSize = 0;
                                     }
                                 }
 
+                                if(!jdbcConnection.getAutoCommit()) {
+                                    jdbcConnection.commit();
+                                    logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, commitRespose.length + " records were committed to the database");
+                                }
                                 long processTime = System.currentTimeMillis() - startTime;
                                 logAndAudit(AssertionMessages.BULKJDBCINSERT_SUCCESS, "Inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
                             }
@@ -162,10 +166,16 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException nspe) {
-            //logAndAudit
             logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"The message contains no parts: " + nspe.getMessage()}, ExceptionUtils.getDebugException(nspe));
             return AssertionStatus.FAILED;
         } catch (SQLException sqle) {
+            try {
+                if(!jdbcConnection.getAutoCommit()) {
+                    jdbcConnection.rollback();
+                }
+            } catch (SQLException e) {
+                logger.log(Level.FINE, "Unable to rollback transaction for connection " + connName);
+            }
             logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"SQLException occurred: " + sqle.getMessage()}, ExceptionUtils.getDebugException(sqle));
             return AssertionStatus.FAILED;
         } catch (Exception e) {
@@ -174,16 +184,6 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         }
 
         return AssertionStatus.NONE;
-    }
-
-    private int[] saveBatch(Connection jdbcConnection, PreparedStatement stmt) throws SQLException {
-        int[] count = stmt.executeBatch();
-
-        if(!jdbcConnection.getAutoCommit()) {
-            jdbcConnection.commit();
-            logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, count.length + " records were committed to the database");
-        }
-        return count;
     }
 
 
@@ -230,7 +230,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
 
     private CSVFormat getCVSFormat(final BulkJdbcInsertAssertion assertion) {
         //TODO: configure format
-        CSVFormat format = CSVFormat.DEFAULT;//start from the default format
+        CSVFormat format = CSVFormat.newFormat(',').withQuote('"').withRecordSeparator("\r\n").withIgnoreEmptyLines(true);//CSVFormat.DEFAULT;//start from the default format
         if(assertion.getRecordDelimiter() != null) {
             format = format.withRecordSeparator(assertion.getRecordDelimiter().equals(BulkJdbcInsertAssertion.CRLF)? "\r\n":assertion.getRecordDelimiter());
         }

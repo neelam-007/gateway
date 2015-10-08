@@ -48,6 +48,8 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     private JLabel quoteLabel;
     private JTextField quoteTextField;
     private JLabel escapeQuoteLabel;
+    private JLabel tableNameLabel;
+    private JLabel fieldDelimiterLabel;
     private final Map<String,String> connToDriverMap = new HashMap<String, String>();
     private List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
     private ColumnMappingTableModel mappingTableModel;
@@ -79,6 +81,9 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
                 enableOrDisableComponents();
             }
         });
+
+        inputValidator.constrainTextFieldToBeNonEmpty(tableNameLabel.getText(),tableNameTextField, null);
+        inputValidator.constrainTextFieldToMaxChars(fieldDelimiterLabel.getText(),fieldDelimiterTextField,1,null);
 
         quotedCheckBox.addActionListener(connectionListener);
 
@@ -157,7 +162,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
 
         batchSizeSpinner.setModel(new SpinnerNumberModel(1, 1, JdbcAdmin.UPPER_BOUND_MAX_RECORDS, 1));
 
-        enableOrDisableTableButtons();
+        enableOrDisableComponents();
 
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
     }
@@ -168,6 +173,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         quoteTextField.setEnabled(quoted);
         escapeQuoteTextField.setEnabled(quoted);
         escapeQuoteLabel.setEnabled(quoted);
+        enableOrDisableTableButtons();
     }
 
     private void enableOrDisableTableButtons() {
@@ -197,6 +203,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         }
         decompressionComboBox.setSelectedItem(assertion.getCompression());
         batchSizeSpinner.setValue(assertion.getBatchSize());
+        enableOrDisableComponents();
     }
 
     @Override
@@ -207,6 +214,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         assertion.setRecordDelimiter(recordDelimiterTextField.getText());
         assertion.setFieldDelimiter(fieldDelimiterTextField.getText());
         assertion.setEscapeQuote(escapeQuoteTextField.getText());
+        assertion.setQuoteChar(quoteTextField.getText());
         assertion.setColumnMapperList(mapperList);
         assertion.setCompression((BulkJdbcInsertAssertion.Compression)decompressionComboBox.getSelectedItem());
         assertion.setBatchSize((Integer)batchSizeSpinner.getValue());

@@ -151,8 +151,6 @@ public class ServerBulkJdbcInsertAssertionTest {
         assertArrayEquals(expectedArray, ServerBulkJdbcInsertAssertion.concatArrays(arrayOne, arrayTwo));
     }
 
-
-
     public InputStreamReader newReader(final InputStream inputStream) {
         return new InputStreamReader(new BOMInputStream(inputStream), StandardCharsets.UTF_8);
     }
