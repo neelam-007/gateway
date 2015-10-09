@@ -83,12 +83,34 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
 
         inputValidator.ensureComboBoxSelection(transformationLabel.getText(),transformationComboBox);
 
+        inputValidator.constrainTextField(paramTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if("Subtract".equals(transformationComboBox.getSelectedItem())) {
+                    if(StringUtils.isBlank(paramTextField.getText())) {
+                        return resources.getString("mapper.param.error.empty");
+                    }
+                    else {
+                        try {
+                            Integer.parseInt(paramTextField.getText());
+                        } catch(NumberFormatException e) {
+                            return resources.getString("mapper.param.error.invalid");
+                        }
+                    }
+                }
+
+                return null;
+            }
+        });
+
         inputValidator.attachToButton(OKButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doOk();
             }
         });
+
+        transformationComboBox.addActionListener(changeListener);
 
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -129,7 +151,8 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
     }
 
     private void enableOrDisableOkButton() {
-
+        boolean selected = transformationComboBox.getSelectedIndex() != -1;
+        paramTextField.setEnabled(selected && !transformationComboBox.getSelectedItem().equals("String"));
     }
 
 
