@@ -69,7 +69,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                return (StringUtils.isBlank((String)connectionComboBox.getSelectedItem()) || connectionComboBox.getSelectedIndex() == -1)? resources.getString("connection.name.error"):null;
+                return StringUtils.isBlank(((JTextField)connectionComboBox.getEditor().getEditorComponent()).getText())? resources.getString("connection.name.error"):null;
             }
         });
 
