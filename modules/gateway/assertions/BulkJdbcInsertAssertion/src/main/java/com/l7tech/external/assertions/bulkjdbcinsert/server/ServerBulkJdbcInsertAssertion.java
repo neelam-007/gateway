@@ -142,15 +142,22 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                     currentBatchSize++;
                                     if(currentBatchSize == assertion.getBatchSize()) {
                                         int[] count = stmt.executeBatch();
+                                        logger.log(Level.FINE, "Executed the batch of " + count.length +" records");
                                         commitRespose = concatArrays(commitRespose, count);
                                         currentBatchSize = 0;
                                     }
                                 }
-
+                                //make sure we executed the batch
+                                if(currentBatchSize > 0) {
+                                    int[] count = stmt.executeBatch();
+                                    logger.log(Level.FINE, "Executed the batch of " + count.length +" records");
+                                    commitRespose = concatArrays(commitRespose, count);
+                                }
                                 if(!jdbcConnection.getAutoCommit()) {
                                     jdbcConnection.commit();
                                     logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, commitRespose.length + " records were committed to the database");
                                 }
+                                logger.log(Level.FINE, "Total amount of records processed: " + recordList.size());
                                 long processTime = System.currentTimeMillis() - startTime;
                                 logAndAudit(AssertionMessages.BULKJDBCINSERT_SUCCESS, "Inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
                             }
