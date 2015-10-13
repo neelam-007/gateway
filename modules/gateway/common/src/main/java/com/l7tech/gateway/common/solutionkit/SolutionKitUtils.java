@@ -5,7 +5,6 @@ import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
@@ -270,52 +269,6 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Check if the instance modifier of a selected solution kit is unique or not.
-     *
-     * @param solutionKit: a solution kit whose instance modifier will be checked.
-     * @param usedInstanceModifiersMap: a map of solution kit guid and a list of instance modifiers used by all solution kits with such guid.
-     * @return true if the instance modifier is unique.  That is, the instance modifier is not used by other solution kit instances.
-     */
-    public static boolean checkInstanceModifierUniqueness(@NotNull final SolutionKit solutionKit, @NotNull final Map<String, List<String>> usedInstanceModifiersMap) {
-        final String solutionKitGuid = solutionKit.getSolutionKitGuid();
-        if (usedInstanceModifiersMap.keySet().contains(solutionKitGuid)) {
-            final List<String> usedInstanceModifiers = usedInstanceModifiersMap.get(solutionKitGuid);
-            final String newInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-            if (usedInstanceModifiers != null && usedInstanceModifiers.contains(newInstanceModifier)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Find all instance modifiers used by all solution kit instances.
-     *
-     * @param solutionKitHeaders: solution kit headers
-     * @return a map of solution kit guid and a list of instance modifiers used by all solution kits with such guid.
-     */
-    public static Map<String, List<String>> getInstanceModifiers(@NotNull final Collection<SolutionKitHeader> solutionKitHeaders) {
-        final Map<String, List<String>> instanceModifiers = new HashMap<>();
-
-        for (EntityHeader header: solutionKitHeaders) {
-            if (! (header instanceof SolutionKitHeader)) continue;  // This line is to avoid to break the test, signedSkar() in SolutionKitManagerResourceTest.
-
-            SolutionKitHeader solutionKitHeader = (SolutionKitHeader) header;
-            String solutionKitGuid = solutionKitHeader.getSolutionKitGuid();
-            java.util.List<String> usedInstanceModifiers = instanceModifiers.get(solutionKitGuid);
-            if (usedInstanceModifiers == null) {
-                usedInstanceModifiers = new ArrayList<>();
-            }
-            usedInstanceModifiers.add(solutionKitHeader.getInstanceModifier());
-            instanceModifiers.put(solutionKitGuid, usedInstanceModifiers);
-        }
-
-        return instanceModifiers;
-    }
-
-    /**
      * Check whether any two selected solution kits have same GUID and same instance modifier
      * @return a string containing error report if any two solution kits have same GUID and instance modifier; Otherwise null if no any errors exist.
      */
@@ -360,10 +313,6 @@ public final class SolutionKitUtils {
         return null;
     }
 
-    public static String getInstanceModifierDisplayingName(@Nullable final String instanceModifier) {
-        return StringUtils.isBlank(instanceModifier)? "N/A" : instanceModifier;
-    }
-
     public static Map<String, Set<String>> getGuidAndInstanceModifierMapFromUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade) {
         final Map<String, Set<String>> guidInstanceModifierMapFromUpgrade = new HashMap<>();
         String guid;
@@ -382,12 +331,6 @@ public final class SolutionKitUtils {
         }
 
         return guidInstanceModifierMapFromUpgrade;
-    }
-
-    public static boolean isSameInstanceModifier(final String im1, final String im2) {
-        return
-            (StringUtils.isBlank(im1) && StringUtils.isBlank(im2)) ||
-            (im1 != null && im1.equals(im2));
     }
 
     private SolutionKitUtils() {}

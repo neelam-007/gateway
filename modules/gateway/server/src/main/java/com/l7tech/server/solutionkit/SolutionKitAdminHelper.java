@@ -242,7 +242,7 @@ public class SolutionKitAdminHelper {
         String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
         if (StringUtils.isBlank(sourceIM)) sourceIM = "";
 
-        final String sourceIMDisplayName = SolutionKitUtils.getInstanceModifierDisplayingName(sourceIM);
+        final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
 
         // Check upgrade
         if (isUpgrade) {
