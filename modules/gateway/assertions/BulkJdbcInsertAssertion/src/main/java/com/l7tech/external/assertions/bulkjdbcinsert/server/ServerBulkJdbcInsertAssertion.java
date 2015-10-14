@@ -189,6 +189,15 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         } catch (Exception e) {
             logAndAudit(Messages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Bulk JDBC Insert Assertion failed due to: Exception: " + e.getClass().getName() + " " + e.getMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
+        } finally {
+            if(jdbcConnection != null) {
+                try {
+                    jdbcConnection.close();
+                } catch (SQLException e) {
+                    logAndAudit(AssertionMessages.JDBC_CONNECTION_ERROR, "SQLException occurred for " + connName + ". " + e.getMessage());
+                    logger.log(Level.SEVERE, e.getMessage(), ExceptionUtils.getDebugException(e));
+                }
+            }
         }
 
         return AssertionStatus.NONE;
@@ -226,7 +235,6 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
             DataSource ds = jdbcConnectionPoolManager.getDataSource(connName);
             connection = ds.getConnection();
         } catch (NamingException ne) {
-
             logAndAudit(AssertionMessages.JDBC_CONNECTION_ERROR, "Failed to find JDBC connection " + connName + ". " + ne.getMessage());
             logger.log(Level.SEVERE, "Failed to find JDBC connection " + connName + ". " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
         } catch(SQLException sqle) {
