@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.cors.console.CORSPropertiesDialog">
+  <grid id="4bd77" binding="propertyPanel" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
+    <constraints>
+      <xy x="48" y="102" width="445" height="567"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="65b43" class="javax.swing.JTextField" binding="responseCacheAgeTextField">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="6b631" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="varible.prefix"/>
+        </properties>
+      </component>
+      <grid id="b1513" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="origins.title"/>
+        <children>
+          <component id="b483c" class="javax.swing.JRadioButton" binding="originsAllRadioButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="all"/>
+            </properties>
+          </component>
+          <component id="4b900" class="javax.swing.JRadioButton" binding="originsListRadioButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="origins"/>
+            </properties>
+          </component>
+          <grid id="b7ede" binding="originsListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="74c1" class="javax.swing.JButton" binding="originsListAdd">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.add"/>
+                </properties>
+              </component>
+              <component id="6e7bc" class="javax.swing.JButton" binding="originsListRemove">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.remove"/>
+                </properties>
+              </component>
+              <scrollpane id="2b694">
+                <constraints>
+                  <grid row="0" column="0" row-span="3" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="6b114" class="javax.swing.JTable" binding="originsTable">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
+              <vspacer id="736a4">
+                <constraints>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <component id="270d4" class="javax.swing.JCheckBox" binding="responeCacheAgeCheckBox">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="response.cache.age"/>
+        </properties>
+      </component>
+      <component id="f2a72" class="javax.swing.JLabel" binding="responseCacheAgeUnit">
+        <constraints>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="seconds"/>
+        </properties>
+      </component>
+      <grid id="c0a6f" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="headers.title"/>
+        <children>
+          <component id="a396e" class="javax.swing.JRadioButton" binding="headersAllRadioButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="all"/>
+            </properties>
+          </component>
+          <component id="e40bd" class="javax.swing.JRadioButton" binding="headersListRadioButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="headers"/>
+            </properties>
+          </component>
+          <grid id="9cb14" binding="headersListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="35f3c" class="javax.swing.JButton" binding="headersListAdd">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.add"/>
+                </properties>
+              </component>
+              <component id="dc6a6" class="javax.swing.JButton" binding="headersListRemove">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.remove"/>
+                </properties>
+              </component>
+              <scrollpane id="2917">
+                <constraints>
+                  <grid row="0" column="0" row-span="3" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="9b2e" class="javax.swing.JTable" binding="headersTable">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
+              <vspacer id="a17e3">
+                <constraints>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="c9cf6" binding="variablePrefixPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children/>
+      </grid>
+      <grid id="8c823" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="exposed.headers"/>
+        <children>
+          <component id="fa84" class="javax.swing.JRadioButton" binding="exposedHeadersAllRadioButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="all"/>
+            </properties>
+          </component>
+          <component id="9712" class="javax.swing.JRadioButton" binding="exposedHeadersListRadioButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="headers"/>
+            </properties>
+          </component>
+          <grid id="8621d" binding="exposedHeadersListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="89758" class="javax.swing.JButton" binding="exposedHeadersListAdd">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.add"/>
+                </properties>
+              </component>
+              <component id="c40e0" class="javax.swing.JButton" binding="exposedHeadersListRemove">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="list.remove"/>
+                </properties>
+              </component>
+              <scrollpane id="486a7">
+                <constraints>
+                  <grid row="0" column="0" row-span="3" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="28233" class="javax.swing.JTable" binding="exposedHeadersTable">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
+              <vspacer id="4e43">
+                <constraints>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>
