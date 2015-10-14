@@ -43,6 +43,8 @@ public class RbacAdminImplTest {
     private AssertionRegistry assertionRegistry;
     @Mock
     private IdentityProviderFactory identityProviderFactory;
+    @Mock
+    private ProtectedEntityTracker protectedEntityTracker;
     private List<SecurityZone> zones;
     private SecurityZone zone;
 
@@ -58,6 +60,7 @@ public class RbacAdminImplTest {
                 .put("assertionAccessManager", assertionAccessManager)
                 .put("entityCrud", entityCrud)
                 .put("identityProviderFactory", identityProviderFactory)
+                .put("protectedEntityTracker", protectedEntityTracker)
                 .unmodifiableMap());
     }
 

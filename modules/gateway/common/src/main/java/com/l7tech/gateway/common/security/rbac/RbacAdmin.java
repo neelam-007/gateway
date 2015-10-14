@@ -8,6 +8,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,13 +56,40 @@ public interface RbacAdmin {
     Role findRoleByPrimaryKey(Goid oid) throws FindException;
 
     /**
-     * Gets the permissions of the current admin user.  This is unsecured, so that anyone running
-     * the SSM can find out what functionality they can access. 
+     * Gets the permissions of the current admin user.<br/>
+     * This is unsecured, so that anyone running the SSM can find out what functionality they can access.
+     *
+     * @return A collection of permissions of the current admin user, never {@code null}.
      */
+    @NotNull
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Collection<Permission> findCurrentUserPermissions() throws FindException;
+
+    /**
+     * Gets Gateway protected entities.<br/>
+     * This is unsecured, so that anyone running the SSM can find out what functionality they can access.
+     *
+     * @return A copy of Gateway protected entities map, never {@code null}.
+     */
+    @NotNull
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly=true)
+    @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    Map<String, EntityProtectionInfo> findProtectedEntities() throws FindException;
+
+    /**
+     * Gets the permissions of the current admin user and Gateway protected entities.<br/>
+     * This is unsecured, so that anyone running the SSM can find out what functionality they can access.
+     *
+     * @return A pair of current user permissions (never {@code null}) and a copy of Gateway protected entities map (never {@code null}).
+     */
+    @NotNull
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    Pair<Collection<Permission>, Map<String, EntityProtectionInfo>> findCurrentUserPermissionsAndProtectedEntities() throws FindException;
 
     /**
      * Gets the roles assigned to the given user.  This is unsecured, so that anyone running

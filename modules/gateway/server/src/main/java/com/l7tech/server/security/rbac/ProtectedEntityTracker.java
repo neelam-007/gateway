@@ -1,5 +1,6 @@
 package com.l7tech.server.security.rbac;
 
+import com.l7tech.gateway.common.security.rbac.EntityProtectionInfo;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ServerConfigParams;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -22,25 +24,7 @@ public class ProtectedEntityTracker {
      */
     @NotNull protected final Config config;
 
-    public static class EntityProtection {
-        private final EntityType entityType;
-        private final boolean readOnly;
-
-        private EntityProtection( @NotNull EntityType entityType, boolean readOnly ) {
-            this.entityType = entityType;
-            this.readOnly = readOnly;
-        }
-
-        public boolean isReadOnly() {
-            return readOnly;
-        }
-
-        public boolean matchesTypeOf( Entity e ) {
-            return e != null && entityType.getEntityClass().isAssignableFrom( e.getClass() );
-        }
-    }
-
-    private static final Map<String, EntityProtection> protectedEntityMap = new HashMap<>();
+    private static final Map<String, EntityProtectionInfo> protectedEntityMap = new HashMap<>();
 
     private static final ThreadLocal<Boolean> entityProtectionEnabled = new ThreadLocal<Boolean>() {
         @Override
@@ -62,31 +46,21 @@ public class ProtectedEntityTracker {
             protectedEntityMap.clear();
 
             for ( Pair<EntityType, String> pair : readOnlyEntities ) {
-                protectedEntityMap.put( pair.right, new EntityProtection( pair.left, true ) );
-            }
-        }
-    }
-
-    public void setEntityProtection( @NotNull EntityType entityType, @NotNull String entityId, boolean readOnly ) {
-        synchronized ( protectedEntityMap ) {
-            if ( readOnly ) {
-                protectedEntityMap.put( entityId, new EntityProtection( entityType, true ) );
-            } else {
-                protectedEntityMap.remove( entityId );
+                protectedEntityMap.put( pair.right, new EntityProtectionInfo( pair.left, true ) );
             }
         }
     }
 
     @Nullable
-    public EntityProtection getEntityProtection( @NotNull String entityId ) {
+    public EntityProtectionInfo getEntityProtection( @NotNull String entityId ) {
         synchronized ( protectedEntityMap ) {
             return protectedEntityMap.get( entityId );
         }
     }
 
     public boolean isReadOnlyEntity( @NotNull Entity e ) {
-        String id = e.getId();
-        EntityProtection perm = id == null ? null : getEntityProtection( id );
+        final String id = e.getId();
+        final EntityProtectionInfo perm = id == null ? null : getEntityProtection( id );
         return perm != null && perm.matchesTypeOf( e ) && perm.isReadOnly();
     }
 
@@ -102,5 +76,19 @@ public class ProtectedEntityTracker {
         } finally {
             entityProtectionEnabled.set( oldState );
         }
+    }
+
+    /**
+     * Returns a copy of {@link #protectedEntityMap}.
+     */
+    @NotNull
+    public Map<String, EntityProtectionInfo> getProtectedEntities() {
+        if (isEnabled()) {
+            synchronized (protectedEntityMap) {
+                // todo: for now its ok not to copy the EntityProtectionInfo's as there is no way to set individual EntityProtectionInfo (bulkUpdateReadOnlyEntitiesList will clear the map first).
+                return new HashMap<>(protectedEntityMap);
+            }
+        }
+        return Collections.emptyMap();
     }
 }

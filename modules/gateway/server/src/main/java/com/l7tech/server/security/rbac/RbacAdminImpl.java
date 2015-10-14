@@ -15,6 +15,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -43,6 +44,9 @@ public class RbacAdminImpl implements RbacAdmin {
     @Inject
     private IdentityProviderFactory identityProviderFactory;
 
+    @Inject
+    private ProtectedEntityTracker protectedEntityTracker;
+
     public RbacAdminImpl(RoleManager roleManager) {
         this.roleManager = roleManager;
     }
@@ -65,6 +69,8 @@ public class RbacAdminImpl implements RbacAdmin {
         return allHeaders;
     }
 
+    @NotNull
+    @Override
     public Collection<Permission> findCurrentUserPermissions() throws FindException {
         User u = JaasUtils.getCurrentUser();
         if (u == null) throw new FindException("Couldn't get current user");
@@ -89,6 +95,23 @@ public class RbacAdminImpl implements RbacAdmin {
         }
 
         return perms;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, EntityProtectionInfo> findProtectedEntities() throws FindException {
+        if (protectedEntityTracker == null) {
+            throw new FindException("ProtectedEntityTracker is not available");
+        }
+        return protectedEntityTracker.getProtectedEntities();
+    }
+
+    @NotNull
+    @Override
+    public Pair<Collection<Permission>, Map<String, EntityProtectionInfo>> findCurrentUserPermissionsAndProtectedEntities() throws FindException {
+        final Collection<Permission> permissions = findCurrentUserPermissions();
+        final Map<String, EntityProtectionInfo> protectedEntityMap = findProtectedEntities();
+        return Pair.pair(permissions, protectedEntityMap);
     }
 
     private Role findDefaultRole(Goid providerId) throws FindException {

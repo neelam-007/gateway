@@ -6,9 +6,11 @@
 package com.l7tech.gateway.common;
 
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * The <code>Authorizer</code> abstract class provide authorization methods for
@@ -53,12 +55,38 @@ public abstract class Authorizer {
     }
 
     public boolean hasPermission(AttemptedOperation attempted) {
-        Collection<Permission> perms = getUserPermissions();
+        final Collection<Permission> perms = getUserPermissions();
         if (attempted == null || perms == null || perms.isEmpty()) return false;
+
+        // get protected entities map
+        //
+        // its desired for getProtectedEntities() to be called after getUserPermissions()
+        // as getUserPermissions() initially calls refreshPermissionCache() which also refreshes protected entity cache
+        // where as getProtectedEntities() initially calls refreshProtectedEntitiesCache() which only refreshes protected entity cache
+        final Map<String, EntityProtectionInfo> protectedEntityMap = getProtectedEntities();
+
+        // first check against read only entities
+        // but only if operation is other than READ and operation is on specific entity
+        final OperationType operationType = attempted.getOperation();
+        if (operationType != null && !OperationType.READ.equals(operationType) && attempted instanceof AttemptedEntityOperation) {
+            // get the entity
+            final Entity entity = ((AttemptedEntityOperation) attempted).getEntity();
+            // todo: what is the proper way of handling AttemptedEntityOperation with no entity, disallow ????
+            if (entity != null) {
+                final String id = entity.getId();
+                final EntityProtectionInfo perm = id == null ? null : protectedEntityMap.get(id);
+                // check if entity is read-only
+                if (perm != null && perm.matchesTypeOf(entity) && perm.isReadOnly()) {
+                    return false;
+                }
+            }
+        }
+
+        // do the usual RBAC check
 
         for ( com.l7tech.gateway.common.security.rbac.Permission perm : perms) {
             if (perm.getEntityType() != EntityType.ANY && perm.getEntityType() != attempted.getType()) continue;
-            if (perm.getOperation() != attempted.getOperation()) {
+            if (perm.getOperation() != operationType) {
                 if (attempted instanceof AttemptedAnyOperation) {
                     return true;
                 } else {
@@ -116,6 +144,7 @@ public abstract class Authorizer {
     }
 
     public abstract Collection<Permission> getUserPermissions() throws RuntimeException;
+    public abstract Map<String, EntityProtectionInfo> getProtectedEntities() throws RuntimeException;
 
     //- PRIVATE
 

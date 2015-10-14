@@ -1,6 +1,7 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
@@ -20,10 +21,6 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -45,6 +42,7 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Option;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -57,6 +55,7 @@ import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.l7tech.util.Option.none;
@@ -220,6 +219,7 @@ public class RegistryStub extends Registry {
                 return null;
             }
 
+            @NotNull
             @Override
             public Collection<Permission> findCurrentUserPermissions() throws FindException {
                 return Arrays.asList(
@@ -229,6 +229,20 @@ public class RegistryStub extends Registry {
                         new Permission(role, OperationType.DELETE, EntityType.ANY),
                         new Permission(role, OperationType.OTHER, EntityType.ANY)
                 );
+            }
+
+            @NotNull
+            @Override
+            public Map<String, EntityProtectionInfo> findProtectedEntities() throws FindException {
+                return Collections.emptyMap();
+            }
+
+            @NotNull
+            @Override
+            public Pair<Collection<Permission>, Map<String, EntityProtectionInfo>> findCurrentUserPermissionsAndProtectedEntities() throws FindException {
+                final Collection<Permission> permissions = findCurrentUserPermissions();
+                final Map<String, EntityProtectionInfo> protectedEntityMap = findProtectedEntities();
+                return Pair.pair(permissions, protectedEntityMap);
             }
 
             @Override

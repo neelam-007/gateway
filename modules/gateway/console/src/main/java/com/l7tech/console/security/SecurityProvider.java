@@ -1,18 +1,19 @@
 package com.l7tech.console.security;
 
 import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.security.rbac.EntityProtectionInfo;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,8 @@ import java.util.logging.Logger;
  */
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     protected User user = null;
-    private final Set<Permission> subjectPermissions = new HashSet<Permission>();
+    private final Set<Permission> subjectPermissions = new HashSet<>();
+    private final AtomicReference<Map<String, EntityProtectionInfo>> protectedEntityMap = new AtomicReference<>();
     private static final Logger logger = Logger.getLogger( SecurityProvider.class.getName() );
     private boolean hasNoRoles = false;  // Keep track if a NoRoleException has been thrown or not.
 
@@ -50,6 +52,10 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
         synchronized (SecurityProvider.class) {
             user = null;
             subjectPermissions.clear();
+            final Map<String, EntityProtectionInfo> protectionInfoMap = protectedEntityMap.getAndSet(null);
+            if (protectionInfoMap != null) {
+                protectionInfoMap.clear();
+            }
         }
     }
 
@@ -62,24 +68,72 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
     public Collection<Permission> getUserPermissions() throws RuntimeException {
         Set<Permission> result;
         synchronized (this) {
-            result = Collections.unmodifiableSet(subjectPermissions);
+            // return a copy as read-only, as HashSet Iterator can still throw ConcurrentModificationException if the set is modified afterwards
+            // todo: rollback if returning a copy has significant performance issue (with user having many permissions)
+            result = Collections.unmodifiableSet(new HashSet<>(subjectPermissions));
         }
         if (!result.isEmpty()) return result;
-        return refreshPermissionCache();
+        refreshPermissionCache();
+        synchronized (this) {
+            // return a copy as read-only, as HashSet Iterator can still throw ConcurrentModificationException if the set is modified afterwards
+            // todo: rollback if returning a copy has significant performance issue (with user having many permissions)
+            result = Collections.unmodifiableSet(new HashSet<>(subjectPermissions));
+        }
+        return result;
     }
 
-    public Collection<Permission> refreshPermissionCache() {
-        RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+    @Override
+    public Map<String, EntityProtectionInfo> getProtectedEntities() throws RuntimeException {
+        final Map<String, EntityProtectionInfo> result = protectedEntityMap.get();
+        if (result == null) {
+            refreshProtectedEntitiesCache();
+        }
+        return Collections.unmodifiableMap(protectedEntityMap.get());
+    }
+
+    /**
+     * Refreshes only protected entities cache.
+     */
+    public void refreshProtectedEntitiesCache() {
+        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+        if (rbacAdmin == null) {
+            throw new IllegalStateException("Unable to obtain admin service");
+        }
+        try {
+            final Map<String, EntityProtectionInfo> entitiesProtectionInfo = rbacAdmin.findProtectedEntities();
+            final Map<String, EntityProtectionInfo> protectionInfoMap = protectedEntityMap.getAndSet(new ConcurrentHashMap<>(entitiesProtectionInfo));
+            if (protectionInfoMap != null) {
+                protectionInfoMap.clear();
+            }
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Refreshes user permissions and protected entities cache.
+     */
+    public void refreshPermissionCache() {
+        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         if (rbacAdmin == null) {
             throw new IllegalStateException("Unable to obtain admin service");
         }
 
         try {
-            final Collection<Permission> perms = rbacAdmin.findCurrentUserPermissions();
+            final Pair<Collection<Permission>, Map<String, EntityProtectionInfo>> permissionsAndEntitiesProtectionInfo = rbacAdmin.findCurrentUserPermissionsAndProtectedEntities();
+            final Collection<Permission> perms = permissionsAndEntitiesProtectionInfo.left;
+            assert perms != null;
+            final Map<String, EntityProtectionInfo> entitiesProtectionInfo = permissionsAndEntitiesProtectionInfo.right;
+            assert entitiesProtectionInfo != null;
             synchronized (this) {
                 logger.log( Level.INFO, "Loaded {0} permissions.", perms.size() );
-                subjectPermissions.clear();
-                subjectPermissions.addAll(perms);
+                logger.log( Level.INFO, "Loaded {0} EntitiesProtectionInfo.", entitiesProtectionInfo.size() );
+                this.subjectPermissions.clear();
+                this.subjectPermissions.addAll(perms);
+                final Map<String, EntityProtectionInfo> protectionInfoMap = protectedEntityMap.getAndSet(new ConcurrentHashMap<>(entitiesProtectionInfo));
+                if (protectionInfoMap != null) {
+                    protectionInfoMap.clear();
+                }
             }
             // The below condition checking prevents SSM from hanging after services/policy fragments deleted.
             if (! perms.isEmpty()) {
@@ -93,7 +147,6 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
                 hasNoRoles = true;  // Set it true to avoid many NoRoleExceptions thrown.
                 throw new NoRoleException();
             }
-            return perms;
         } catch (FindException e) {
             throw new RuntimeException(e);
         }

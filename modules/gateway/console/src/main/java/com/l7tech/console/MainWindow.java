@@ -1600,6 +1600,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     @Override
                     public void actionPerformed(ActionEvent event) {
+                        refreshEntitiesProtectionCache();
+
                         Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
                         // no matter what, if id provider tree exists, always refresh it
                         if (identityProvidersTree != null) {
@@ -1647,6 +1649,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         refreshAction.setEnabled(false);
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
+    }
+
+    public void refreshEntitiesProtectionCache() {
+        // refresh protected entities cache only
+        try {
+            final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+            if (securityProvider != null) {
+                securityProvider.refreshProtectedEntitiesCache();
+            }
+        } catch (final Exception e) {
+            // refreshProtectedEntitiesCache failed log the error
+            log.log(Level.WARNING, "Failed to refresh ProtectedEntities Cache: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     public void refreshPoliciesFolderNode() {

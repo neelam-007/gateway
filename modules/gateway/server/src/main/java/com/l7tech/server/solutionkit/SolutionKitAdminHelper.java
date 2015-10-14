@@ -294,7 +294,7 @@ public class SolutionKitAdminHelper {
             @NotNull final String resultMappings,
             @NotNull final SolutionKit solutionKit
     ) throws SAXException, IOException {
-        // get solutionKit's current entity ownership descriptors (read-only)
+        // get solutionKit's current entity ownership descriptors
         // todo: consider locking the EntityOwnershipDescriptors set (or even this entire method) IF another thread is upgrading or updating the solution kit content
         // todo: shouldn't really happen though (we'd probably have bigger issues if same solution kit is installed from multiple threads)
         final Set<EntityOwnershipDescriptor> entityOwnershipDescriptors = solutionKit.getEntityOwnershipDescriptors();
