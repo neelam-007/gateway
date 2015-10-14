@@ -1,7 +1,9 @@
 package com.l7tech.common.http;
 
+import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugId;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.Cookie;
@@ -353,5 +355,92 @@ public class CookieUtilsTest {
     @Test
     public void trimLastSubPathNull() {
         assertNull(CookieUtils.trimLastSubPath(null));
+    }
+
+    @Test
+    @Ignore( "Performance benchmark" )
+    public void benchmarkSplitCookieHeader() throws Exception {
+        final String testValue = "foo=\"abclsakdjhfalshdflaksdhsfpaiughaeprwiuhapifuhailsdjfhalsidfhapoiwrufhgairughalksfdjghalsijfghairughpa" +
+                "eirughpaeourhgpaeriuhgpaieurhgpaeirughpaieurhgakljsdfghlaskjfghaklfdjghlsdfkjhgpsduighpaetuiohg[aoeutgh[aeotughpaeoutghoauethgaoeut" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "hgpauethgpaieuthgpiauethgpiauethgiuethgpiauhgkajdfhglafjdhglksdfjhglskjdfghsjdhgpaouehgaouetnhaoeiuthgaouetghaoetughaeotughaeotugh" +
+                "aeoughpaetughpaetuighapetiughpaetiughagija;dfjkghdfkjlghsaahsdfasidfoadsfoadsfhoaiusdhfaouisdfhaodsiufhaosdidflkjghsfdlkjsdhgflkjsdh" +
+                "domain=.something;  \" ;Domain=\"blah....\"   ;Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT; bar=cdfe; Path=/;Max-Age=something;httpOnly;secure ;mycookie = \"value " +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "ajksdflajdhflkadhlkjhflakfhlkjhldskjalhgwrouigaowiruygfhaoiwrfhaoirwuf92hg97h92hg97ahgao793hg79a3hg5o7a35hg7a53ghoa735ghao75ghao357gh" +
+                "  \"";
+        System.out.println( "length=" + testValue.length() );
+
+        // Make sure test data is sane before we run benchmark using it
+        List<String> actual = CookieUtils.splitCookieHeader(testValue);
+        assertEquals( 3, actual.size() );
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                for ( int i = 0; i < 10; ++i ) {
+                    CookieUtils.splitCookieHeader( testValue );
+                }
+            }
+        };
+        new BenchmarkRunner( runnable, 300, 2, "(BURN IN) CookieUtils.splitCookieHeader() * 10" ).run();
+        new BenchmarkRunner( runnable, 10000, 10, "CookieUtils.splitCookieHeader() * 10" ).run();
     }
 }
