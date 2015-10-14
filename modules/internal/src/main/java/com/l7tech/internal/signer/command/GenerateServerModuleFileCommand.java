@@ -42,8 +42,8 @@ public class GenerateServerModuleFileCommand extends Command {
     private static final Option smfFileOpt = new OptionBuilder()
             .opt("f")
             .longOpt("smfFile")
-            .argName("input Server Module .aar or .jar file")
-            .desc("Name of input Server Module .aar or .jar file")
+            .argName("input Server Module File")
+            .desc("Name of signed input Server Module File")
             .required(true)
             .build();
     private static final Option outFileOpt = new OptionBuilder()
