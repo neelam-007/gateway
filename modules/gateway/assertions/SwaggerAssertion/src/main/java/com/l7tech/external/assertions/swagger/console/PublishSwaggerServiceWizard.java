@@ -53,7 +53,10 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
     }
 
     public static PublishSwaggerServiceWizard getInstance(@NotNull final Frame parent) {
-        return new PublishSwaggerServiceWizard(parent, new SwaggerServiceConfigurationPanel(null));
+        SwaggerServiceConfigurationPanel configurationPanel = new SwaggerServiceConfigurationPanel(null);
+        SwaggerDocumentPanel documentPanel = new SwaggerDocumentPanel(configurationPanel);
+
+        return new PublishSwaggerServiceWizard(parent, documentPanel);
     }
 
     private void initWizard() {
@@ -108,7 +111,7 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
 
         service.setFolder(getTargetFolder());
         service.setName(wizardInput.getServiceName());
-        service.setRoutingUri(wizardInput.getRoutingUri());
+        service.setRoutingUri("/" + wizardInput.getRoutingUri());
         service.setSoap(false);
         service.setHttpMethods(EnumSet.of(HttpMethod.GET));
 
@@ -156,8 +159,16 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
 
     public static class SwaggerServiceConfig {
         private String serviceName;
-        private String routingUri = "/";
+        private String routingUri;
         private SecurityZone securityZone = null;
+        private String documentUrl;
+        private String apiHost;
+        private String apiBasePath;
+        private String apiTitle;
+        private boolean validatePath;
+        private boolean validateMethod;
+        private boolean validateScheme;
+        private boolean requireSecurityCredentials;
 
         public String getServiceName() {
             return serviceName;
@@ -181,6 +192,70 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
 
         public void setSecurityZone(SecurityZone securityZone) {
             this.securityZone = securityZone;
+        }
+
+        public String getDocumentUrl() {
+            return documentUrl;
+        }
+
+        public void setDocumentUrl(String documentUrl) {
+            this.documentUrl = documentUrl;
+        }
+
+        public String getApiHost() {
+            return apiHost;
+        }
+
+        public void setApiHost(String apiHost) {
+            this.apiHost = apiHost;
+        }
+
+        public String getApiBasePath() {
+            return apiBasePath;
+        }
+
+        public void setApiBasePath(String apiBasePath) {
+            this.apiBasePath = apiBasePath;
+        }
+
+        public String getApiTitle() {
+            return apiTitle;
+        }
+
+        public void setApiTitle(String apiTitle) {
+            this.apiTitle = apiTitle;
+        }
+
+        public boolean isValidatePath() {
+            return validatePath;
+        }
+
+        public void setValidatePath(boolean validatePath) {
+            this.validatePath = validatePath;
+        }
+
+        public boolean isValidateMethod() {
+            return validateMethod;
+        }
+
+        public void setValidateMethod(boolean validateMethod) {
+            this.validateMethod = validateMethod;
+        }
+
+        public boolean isValidateScheme() {
+            return validateScheme;
+        }
+
+        public void setValidateScheme(boolean validateScheme) {
+            this.validateScheme = validateScheme;
+        }
+
+        public boolean isRequireSecurityCredentials() {
+            return requireSecurityCredentials;
+        }
+
+        public void setRequireSecurityCredentials(boolean requireSecurityCredentials) {
+            this.requireSecurityCredentials = requireSecurityCredentials;
         }
     }
 }

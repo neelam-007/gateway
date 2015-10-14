@@ -23,6 +23,8 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     public static final String SWAGGER_HOST = ".host";
     public static final String SWAGGER_API_URI = ".apiUri";
 
+    public static final String CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE = "swagger.specification.maxDownloadSize";
+
     private String prefix = DEFAULT_PREFIX;
     private String swaggerDoc;
     private String serviceBase = "";

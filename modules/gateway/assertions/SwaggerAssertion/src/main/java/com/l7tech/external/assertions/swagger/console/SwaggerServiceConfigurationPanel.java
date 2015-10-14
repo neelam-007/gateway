@@ -1,47 +1,46 @@
 package com.l7tech.external.assertions.swagger.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.Policy;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
 import java.awt.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.swagger.console.PublishSwaggerServiceWizard.SwaggerServiceConfig;
 
 public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerServiceConfig> {
-    private static final Logger logger = Logger.getLogger(SwaggerServiceConfigurationPanel.class.getName());
     private static final ResourceBundle resources =
             ResourceBundle.getBundle(SwaggerServiceConfigurationPanel.class.getName());
 
     private static final int SERVICE_NAME_MAX_LENGTH = 235;
-    private static final int ROUTING_URI_MAX_LENGTH = 127;
 
     private JPanel contentPanel;
     private JTextField serviceNameTextField;
+    private JTextField apiHostTextField;
+    private JTextField apiBasePathTextField;
     private JTextField routingUriTextField;
-    private JTextField urlPreviewTextField;
+    private JLabel gatewayUrlPrefixLabel;
     private SecurityZoneWidget securityZoneWidget;
-
-    private String urlPrefix;
+    private JCheckBox validatePathCheckBox;
+    private JCheckBox validateMethodCheckBox;
+    private JCheckBox validateSchemeCheckBox;
+    private JCheckBox requireSecurityCredentialsToCheckBox;
 
     public SwaggerServiceConfigurationPanel(WizardStepPanel<SwaggerServiceConfig> next) {
         super(next);
@@ -57,7 +56,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
 
         add(contentPanel);
 
-        urlPrefix = "http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]";
+        gatewayUrlPrefixLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/");
 
         // listener updates service URL preview label as routing URI is updated
         routingUriTextField.getDocument().addDocumentListener(new DocumentListener() {
@@ -77,7 +76,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
             }
         });
 
-        // service must have a name and be unique
+        // service must have a name
         validationRules.add(new InputValidator.ComponentValidationRule(serviceNameTextField) {
             @Override
             public String getValidationError() {
@@ -89,16 +88,71 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
                     return MessageFormat.format(resources.getString("serviceNameTooLongError"), SERVICE_NAME_MAX_LENGTH);
                 }
 
-                try {
-                    if (!isPolicyNameUnique(serviceName)) {
-                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), serviceName);
+                return null;
+            }
+        });
+
+        // must have an API Host including host and (optionally) port
+        validationRules.add(new InputValidator.ComponentValidationRule(apiHostTextField) {
+            @Override
+            public String getValidationError() {
+                String apiHost = apiHostTextField.getText().trim();
+
+                if (StringUtils.isBlank(apiHost)) {
+                    return resources.getString("apiHostNotSpecifiedError");
+                }
+
+                // parse from "host[:port]" using placeholder for default port
+                Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(apiHost, "X");
+
+                if (!InetAddressUtil.isValidHostName(hostAndPort.left) &&
+                        !InetAddressUtil.isValidIpv4Address(hostAndPort.left) &&
+                        !InetAddressUtil.isValidIpv6Address(hostAndPort.left)) {
+                    return resources.getString("invalidApiHostError");
+                }
+
+                // if the parsed port is not the placeholder default, validate it
+                if (!"X".equals(hostAndPort.right)) {
+                    try {
+                        final Integer port = Integer.valueOf(hostAndPort.right);
+
+                        if (port < 1 || port > 65535) {
+                            return resources.getString("invalidApiHostError");
+                        }
+                    } catch (NumberFormatException e) {
+                        return resources.getString("invalidApiHostError");
                     }
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
-                    return "Failed to validate service name " + serviceNameTextField.getText().trim();
                 }
 
                 return null;
+            }
+        });
+
+        // must have a valid API Base Path with a leading slash
+        validationRules.add(new InputValidator.ComponentValidationRule(apiBasePathTextField) {
+            @Override
+            public String getValidationError() {
+                String apiBasePath = apiBasePathTextField.getText().trim();
+
+                String errorMessage = null;
+
+                if (StringUtils.isBlank(apiBasePath)) {
+                    errorMessage = resources.getString("apiBasePathNotSpecifiedError");
+                } else if (!apiBasePath.startsWith("/")) {
+                    errorMessage = resources.getString("invalidApiBasePathError");
+                } else {
+                    try {
+                        URL url = new URL(apiBasePath);
+
+                        if (!url.getPath().equals(apiBasePath)) {   // should be the path only - no file or parameters
+                            errorMessage = resources.getString("invalidApiBasePathError");
+                        }
+                    } catch (MalformedURLException e) {
+                        errorMessage = resources.getString("invalidApiBasePathError");
+                    }
+                }
+
+                return errorMessage;
             }
         });
 
@@ -106,44 +160,58 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
         validationRules.add(new InputValidator.ComponentValidationRule(routingUriTextField) {
             @Override
             public String getValidationError() {
-                String errorMsg;
-
                 String routingUri = routingUriTextField.getText().trim();
 
                 if (StringUtils.isBlank(routingUri)) {
                     return resources.getString("routingUriNotSpecifiedError");
-                } else if (!StringUtils.startsWith(routingUri, "/")) {
-                    return resources.getString("routingUriMissingLeadingSlashError");
-                } else if (routingUri.length() > ROUTING_URI_MAX_LENGTH) {
-                    return MessageFormat.format(resources.getString("routingUriTooLongError"), ROUTING_URI_MAX_LENGTH);
                 }
 
-                errorMsg = ValidationUtils.isValidUriString(routingUri);
+                String errorMsg = ValidationUtils.isValidUriString("/" + routingUri);
 
-                return null == errorMsg
-                        ? ValidatorUtils.validateResolutionPath(routingUri, true, true)
-                        : errorMsg;
+                if (null == errorMsg) {
+                    errorMsg = ValidatorUtils.validateResolutionPath("/" + routingUri, false, false);
+                }
+
+                return errorMsg;
             }
         });
-    }
-
-    private boolean isPolicyNameUnique(String policyName) throws FindException {
-        final Policy found = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(policyName);
-
-        return null == found;
     }
 
     @Override
     public void storeSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
         settings.setServiceName(serviceNameTextField.getText().trim());
+        settings.setApiHost(apiHostTextField.getText().trim());
+        settings.setApiBasePath(apiBasePathTextField.getText().trim());
         settings.setRoutingUri(routingUriTextField.getText().trim());
+        settings.setValidatePath(validatePathCheckBox.isSelected());
+        settings.setValidateMethod(validateMethodCheckBox.isSelected());
+        settings.setValidateScheme(validateSchemeCheckBox.isSelected());
+        settings.setRequireSecurityCredentials(requireSecurityCredentialsToCheckBox.isSelected());
         settings.setSecurityZone(securityZoneWidget.getSelectedZone());
     }
 
     @Override
     public void readSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
-        serviceNameTextField.setText(settings.getServiceName());
-        routingUriTextField.setText(settings.getRoutingUri());
+        if (null == settings.getServiceName() || settings.getServiceName().isEmpty()) {
+            serviceNameTextField.setText(settings.getApiTitle());
+        } else {
+            serviceNameTextField.setText(settings.getServiceName());
+        }
+
+        apiHostTextField.setText(settings.getApiHost());
+        apiBasePathTextField.setText(settings.getApiBasePath());
+
+        if (null == settings.getRoutingUri() || settings.getRoutingUri().isEmpty()) {
+            routingUriTextField.setText(settings.getApiBasePath().substring(1) + "*"); // strip the leading slash
+        } else {
+            routingUriTextField.setText(settings.getRoutingUri());
+        }
+
+        validatePathCheckBox.setSelected(settings.isValidatePath());
+        validateMethodCheckBox.setSelected(settings.isValidateMethod());
+        validateSchemeCheckBox.setSelected(settings.isValidateScheme());
+        requireSecurityCredentialsToCheckBox.setSelected(settings.isRequireSecurityCredentials());
+
         securityZoneWidget.setSelectedZone(settings.getSecurityZone());
 
         updateUrlPreview();
@@ -152,12 +220,12 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
     private void updateUrlPreview() {
         String routingUri = routingUriTextField.getText().trim();
 
-        urlPreviewTextField.setText(urlPrefix + routingUri);
-
-        if (!routingUri.isEmpty() && ValidationUtils.isValidUri(routingUri) && routingUri.startsWith("/")) {
-            urlPreviewTextField.setForeground(Color.BLACK);
+        if (routingUri.isEmpty() || (!routingUri.startsWith("/") && ValidationUtils.isValidUri(routingUri))) {
+            gatewayUrlPrefixLabel.setForeground(Color.BLACK);
+            routingUriTextField.setForeground(Color.BLACK);
         } else {
-            urlPreviewTextField.setForeground(Color.RED);
+            gatewayUrlPrefixLabel.setForeground(Color.RED);
+            routingUriTextField.setForeground(Color.RED);
         }
     }
 
