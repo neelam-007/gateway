@@ -5,6 +5,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.external.assertions.bulkjdbcinsert.BulkJdbcInsertAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -132,7 +133,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                                     transformer.transform(stmt, i + 1, mapper, record);
                                                 }
                                                 else {
-                                                    logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, "Unknown transformation " + mapper.getTransformation() + " found. Unable to process CSV");
+                                                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Bulk JDBC Insert Assertion failed due to: Unknown transformation " + mapper.getTransformation() + " found. Unable to process CSV");
                                                     return AssertionStatus.FAILED;
                                                 }
                                             }
@@ -155,25 +156,25 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                 }
                                 if(!jdbcConnection.getAutoCommit()) {
                                     jdbcConnection.commit();
-                                    logAndAudit(AssertionMessages.BULKJDBCINSERT_FINE, commitRespose.length + " records were committed to the database");
+                                    logAndAudit(AssertionMessages.USERDETAIL_FINE, "Bulk JDBC Insert Assertion - " + commitRespose.length + " records were committed to the database");
                                 }
                                 logger.log(Level.FINE, "Total amount of records processed: " + recordList.size());
                                 long processTime = System.currentTimeMillis() - startTime;
-                                logAndAudit(AssertionMessages.BULKJDBCINSERT_SUCCESS, "Inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
+                                logAndAudit(AssertionMessages.USERDETAIL_INFO, "Bulk JDBC Insert Assertion successfully processed data: inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
                             }
                         }
                     }
                 }
                 else {
-                    logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, "First part of the message is null");
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Bulk JDBC Insert Assertion failed due to: First part of the message is null");
                     return AssertionStatus.FALSIFIED;
                 }
             } else {
-                logAndAudit( AssertionMessages.BULKJDBCINSERT_WARNING, "Message not initialized" );
+                logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Bulk JDBC Insert Assertion failed due to: Message not initialized" );
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException nspe) {
-            logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"The message contains no parts: " + nspe.getMessage()}, ExceptionUtils.getDebugException(nspe));
+            logAndAudit(Messages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"The message contains no parts: " + nspe.getMessage()}, ExceptionUtils.getDebugException(nspe));
             return AssertionStatus.FAILED;
         } catch (SQLException sqle) {
             try {
@@ -183,10 +184,10 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
             } catch (SQLException e) {
                 logger.log(Level.FINE, "Unable to rollback transaction for connection " + connName);
             }
-            logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"SQLException occurred: " + sqle.getMessage()}, ExceptionUtils.getDebugException(sqle));
+            logAndAudit(Messages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Bulk JDBC Insert Assertion failed due to: SQLException occurred: " + sqle.getMessage()}, ExceptionUtils.getDebugException(sqle));
             return AssertionStatus.FAILED;
         } catch (Exception e) {
-            logAndAudit(AssertionMessages.BULKJDBCINSERT_WARNING, new String[]{"Exception: " + e.getClass().getName() + " " + e.getMessage()}, ExceptionUtils.getDebugException(e));
+            logAndAudit(Messages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Bulk JDBC Insert Assertion failed due to: Exception: " + e.getClass().getName() + " " + e.getMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
