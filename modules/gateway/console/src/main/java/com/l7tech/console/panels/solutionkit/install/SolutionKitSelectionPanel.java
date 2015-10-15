@@ -147,7 +147,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         // For installation, check if instance modifier is unique for a selected solution kit.
         // However, this checking will be ignored for any solution kit upgrade bundle.
-        final String bundle = settings.getBundleAsString(solutionKit);
 
         // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
         // contain UpgradeBundle.xml, then display warning
@@ -167,6 +166,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         }
 
+        final String bundle = settings.getBundleAsString(solutionKit);
         if (bundle == null) {
             DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit bundle.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
             return false;
