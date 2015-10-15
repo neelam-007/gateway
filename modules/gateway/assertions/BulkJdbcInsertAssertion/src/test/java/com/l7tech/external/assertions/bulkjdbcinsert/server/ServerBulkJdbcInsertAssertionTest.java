@@ -123,14 +123,14 @@ public class ServerBulkJdbcInsertAssertionTest {
     public void testBuildSqlInsertStatement() throws Exception {
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
-        m1.setName("ColumnOne");
+        m1.setName("Column1");
         m1.setOrder(1);
         BulkJdbcInsertAssertion.ColumnMapper m2 = new BulkJdbcInsertAssertion.ColumnMapper();
-        m2.setName("ColumnTwo");
+        m2.setName("Column2");
         m2.setOrder(2);
         m2.setTransformation("String");
         BulkJdbcInsertAssertion.ColumnMapper m3 = new BulkJdbcInsertAssertion.ColumnMapper();
-        m3.setName("ColumnTwo");
+        m3.setName("Column2");
         m3.setOrder(2);
         m3.setTransformation("Subtract");
         m3.setTransformParam("6");
@@ -139,7 +139,29 @@ public class ServerBulkJdbcInsertAssertionTest {
         mapperList.add(m1);
         assertion.setColumnMapperList(mapperList);
         fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
-        assertEquals("INSERT INTO tableOne(ColumnOne,ColumnTwo) VALUES (?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
+        assertEquals("INSERT INTO tableOne(Column1,Column2) VALUES (?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
+    }
+
+    @Test
+    public void testBuildSqlInsertStatement_mapSameCSVColumn() throws Exception {
+        List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
+        BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m1.setName("Column1");
+        m1.setOrder(1);
+        BulkJdbcInsertAssertion.ColumnMapper m2 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m2.setName("Column2");
+        m2.setOrder(2);
+        m2.setTransformation("String");
+        BulkJdbcInsertAssertion.ColumnMapper m3 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m3.setName("Column3");
+        m3.setOrder(2);
+        m3.setTransformation("String");
+        mapperList.add(m3);
+        mapperList.add(m2);
+        mapperList.add(m1);
+        assertion.setColumnMapperList(mapperList);
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
+        assertEquals("INSERT INTO tableOne(Column1,Column2,Column3) VALUES (?,?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
     }
 
     @Test

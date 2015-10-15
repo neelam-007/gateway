@@ -208,7 +208,11 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         Set<BulkJdbcInsertAssertion.ColumnMapper> mapperSet = new TreeSet<>(new Comparator<BulkJdbcInsertAssertion.ColumnMapper>() {
             @Override
             public int compare(BulkJdbcInsertAssertion.ColumnMapper o1, BulkJdbcInsertAssertion.ColumnMapper o2) {
-                return o1.getOrder() - o2.getOrder();
+                int result = o1.getName().hashCode() - o2.getName().hashCode();
+                if(result == 0) {
+                    result = o1.getOrder() - o2.getOrder();
+                }
+                return result;
             }
         });
         mapperSet.addAll(assertion.getColumnMapperList());
