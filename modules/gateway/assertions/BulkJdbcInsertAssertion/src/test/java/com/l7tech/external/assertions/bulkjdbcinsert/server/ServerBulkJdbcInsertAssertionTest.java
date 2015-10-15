@@ -165,6 +165,32 @@ public class ServerBulkJdbcInsertAssertionTest {
     }
 
     @Test
+    public void testSubtractTransformerTest() throws Exception {
+        InputStream inputStream = ServerBulkJdbcInsertAssertionTest.class.getResourceAsStream("0700_20150625-072200.v2.csv.gz");
+        Message request = new Message(new ByteArrayStashManager(),
+                ContentTypeHeader.parseValue(MESSAGE_CONTENT_TYPE),
+                inputStream);
+        Message response = new Message();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        assertion.setConnectionName("Connection");
+        assertion.setTableName("TableOne");
+        List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
+        BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m1.setName("ColumnOne");
+        m1.setOrder(0);
+        m1.setTransformation("Subtract");
+        m1.setTransformParam("0");
+        mapperList.add(m1);
+        assertion.setColumnMapperList(mapperList);
+        doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
+        when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{1});
+        doNothing().when(mockConnection).commit();
+        assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
+        verify(mockPreparedStatement, atLeastOnce()).setLong(eq(1), anyLong());
+        verify(mockPreparedStatement, times(3)).executeBatch();
+    }
+
+    @Test
     public void testConcatArrays() {
         int[] arrayOne = {1,2,3,4};
         int[] arrayTwo = {5,6,7,8,9,10,0};

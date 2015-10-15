@@ -331,7 +331,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
             try {
                 long val1 = Long.parseLong(record.get(mapper.getOrder()));
-                long val2 = Long.parseLong(record.get(mapper.getTransformParam()));
+                long val2 = Long.parseLong(record.get(Integer.parseInt(mapper.getTransformParam())));
                 stmt.setLong(index, val1 - val2);
             } catch(NumberFormatException nfe) {
                 throw new SQLException("Invalid number format", nfe);
