@@ -31,7 +31,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         }
     }
 
-    public static String[] TRANSFORMATIONS = new String[]{"String","Regex2Bool","Regex2Int","Subtract"};
+    public static String[] TRANSFORMATIONS = new String[]{"String","Regex2Bool","Regex2Int","Subtract", "Add"};
 
     private String connectionName;
     private String schema;

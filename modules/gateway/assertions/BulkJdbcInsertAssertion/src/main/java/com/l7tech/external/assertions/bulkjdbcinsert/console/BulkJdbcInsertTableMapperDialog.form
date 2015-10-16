@@ -8,7 +8,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="16225" class="javax.swing.JLabel" binding="columnNameLabel">
+      <component id="16225" class="javax.swing.JLabel">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -16,7 +16,7 @@
           <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.name.label"/>
         </properties>
       </component>
-      <component id="40726" class="javax.swing.JLabel" binding="orderLabel">
+      <component id="40726" class="javax.swing.JLabel">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -24,7 +24,7 @@
           <text resource-bundle="com/l7tech/external/assertions/bulkjdbcinsert/console/resources/BulkJdbcInsertPropertiesDialog" key="mapper.order.label"/>
         </properties>
       </component>
-      <component id="b28d6" class="javax.swing.JLabel" binding="transformationLabel">
+      <component id="b28d6" class="javax.swing.JLabel">
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -48,7 +48,7 @@
         </constraints>
         <properties/>
       </component>
-      <component id="49988" class="javax.swing.JLabel" binding="paramLabel">
+      <component id="49988" class="javax.swing.JLabel">
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>

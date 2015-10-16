@@ -62,6 +62,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         transformerMap.put("Regex2Bool", new Regex2BoolTransformer());
         transformerMap.put("Regex2Int", new Regex2IntTransformer());
         transformerMap.put("Subtract", new SubtractTransformer());
+        transformerMap.put("Add", new AddTransformer());
     }
 
     public ServerBulkJdbcInsertAssertion( final BulkJdbcInsertAssertion assertion, final ApplicationContext context ) throws PolicyAssertionException {
@@ -333,6 +334,19 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                 long val1 = Long.parseLong(record.get(mapper.getOrder()));
                 long val2 = Long.parseLong(record.get(Integer.parseInt(mapper.getTransformParam())));
                 stmt.setLong(index, val1 - val2);
+            } catch(NumberFormatException nfe) {
+                throw new SQLException("Invalid number format", nfe);
+            }
+        }
+    }
+
+    public static final class AddTransformer implements Transformer {
+        @Override
+        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
+            try {
+                long val1 = Long.parseLong(record.get(mapper.getOrder()));
+                long val2 = Long.parseLong(record.get(Integer.parseInt(mapper.getTransformParam())));
+                stmt.setLong(index, val1 + val2);
             } catch(NumberFormatException nfe) {
                 throw new SQLException("Invalid number format", nfe);
             }

@@ -21,14 +21,10 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
     private JTextField columnNameTextField;
     private JPanel mainPanel;
     private JTextField orderTextField;
-    private JLabel transformationLabel;
-    private JLabel orderLabel;
-    private JLabel columnNameLabel;
     private JTextField paramTextField;
-    private JLabel paramLabel;
     private JButton OKButton;
     private JButton cancelButton;
-    private JComboBox transformationComboBox;
+    private JComboBox<String> transformationComboBox;
     private BulkJdbcInsertAssertion.ColumnMapper mapper;
     private boolean confirmed;
 
@@ -62,7 +58,7 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
         // todo: test field length verification
         columnNameTextField.getDocument().addDocumentListener(changeListener);
         orderTextField.getDocument().addDocumentListener(changeListener);
-        transformationComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.TRANSFORMATIONS));
+        transformationComboBox.setModel(new DefaultComboBoxModel<>(BulkJdbcInsertAssertion.TRANSFORMATIONS));
 
         final InputValidator inputValidator = new InputValidator(this, title);
         inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("column.label.name"), columnNameTextField, null);
@@ -73,7 +69,7 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
 
                 try{
                     Integer val = new Integer(orderTextField.getText());
-                    if(val == null || val < 0 ) return resources.getString("mapper.order.error.invalid");
+                    if(val < 0) return resources.getString("mapper.order.error.invalid");
                 } catch(NumberFormatException e) {
                     return resources.getString("mapper.order.error.invalid");
                 }
@@ -81,17 +77,19 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
             }
         });
 
-        inputValidator.ensureComboBoxSelection(transformationLabel.getText(),transformationComboBox);
+        inputValidator.ensureComboBoxSelection(resources.getString("column.label.transformation"), transformationComboBox);
 
         inputValidator.constrainTextField(paramTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if("Subtract".equals(transformationComboBox.getSelectedItem())) {
+                if("Subtract".equals(transformationComboBox.getSelectedItem())
+                        || "Add".equals(transformationComboBox.getSelectedItem())) {
                     if(StringUtils.isBlank(paramTextField.getText())) {
                         return resources.getString("mapper.param.error.empty");
                     }
                     else {
                         try {
+                            //noinspection ResultOfMethodCallIgnored
                             Integer.parseInt(paramTextField.getText());
                         } catch(NumberFormatException e) {
                             return resources.getString("mapper.param.error.invalid");
