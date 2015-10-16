@@ -54,7 +54,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     private static final int supervisorQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.supervisorQueueSize", 4096);
     private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 4096);
 
-    private static final int flushTime = SyspropUtil.getInteger("com.l7tech.hacounter.flushTimeWriteDatabase", 1);
+    private static final int flushTime = SyspropUtil.getInteger("com.l7tech.hacounter.flushTimeWriteDatabase", 500);
     private static final int readPeriod = SyspropUtil.getInteger("com.l7tech.hacounter.timeClearReadCache", 60000);
 
     private static final ExecutorService updateThreads = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveSec, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(supervisorQueueSize), new ThreadPoolExecutor.CallerRunsPolicy());
