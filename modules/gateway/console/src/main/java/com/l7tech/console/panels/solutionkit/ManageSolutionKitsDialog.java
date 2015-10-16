@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.solutionkit;
 
+import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.panels.solutionkit.install.InstallSolutionKitWizard;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
@@ -15,6 +16,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -69,7 +71,7 @@ public class ManageSolutionKitsDialog extends JDialog {
         solutionKitTablePanel.addEnterKeyBinding(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final SolutionKitHeader solutionKitHT = solutionKitTablePanel.getSelectedSolutionKit();
+                final SolutionKitHeader solutionKitHT = solutionKitTablePanel.getFirstSelectedSolutionKit();
                 try {
                     // The solution kit is a parent solution kit
                     if (solutionKitAdmin.findAllChildrenByParentGoid(solutionKitHT.getGoid()).size() > 0) {
@@ -161,68 +163,62 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUninstall() {
-        final SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
-        if (header == null) {
+        final Collection<SolutionKitHeader> headers = solutionKitTablePanel.getSelectedSolutionKits();
+        if (headers == null || headers.isEmpty()) {
             return;
         }
 
-        DialogDisplayer.showConfirmDialog(
-            this.getOwner(),
-            "Are you sure you want to uninstall the selected solution kit?",
-            "Uninstall Solution Kit",
-            JOptionPane.YES_NO_OPTION,
-            new DialogDisplayer.OptionListener() {
-                @Override
-                public void reportResult(int option) {
-                    if (option == JOptionPane.NO_OPTION || option == JOptionPane.CLOSED_OPTION) {
-                        return;
-                    }
+        DialogDisplayer.showSafeConfirmDialog(
+                ManageSolutionKitsDialog.this,
+                WordUtils.wrap("Are you sure you want to uninstall the selected solution kit(s)?", DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
+                "Confirm Solution Kit Uninstall",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option != JOptionPane.YES_OPTION) {
+                            return;
+                        }
 
-                    boolean cancelled = false;
-                    Pair<Boolean, String> result = new Pair<>(true, "");
-                    try {
-                        Collection<SolutionKitHeader> children = solutionKitAdmin.findAllChildrenByParentGoid(header.getGoid());
-                        if (! children.isEmpty()) {
-                            for (SolutionKitHeader child: children) {
-                                result = uninstallSolutionKit(child.getName(), child.getGoid());
-                                if (! result.left) break;
+                        for (SolutionKitHeader header : headers) {
+                            Pair<Boolean, String> result = new Pair<>(true, "");
+                            try {
+                                Collection<SolutionKitHeader> children = solutionKitAdmin.findAllChildrenByParentGoid(header.getGoid());
+                                if (!children.isEmpty()) {
+                                    for (SolutionKitHeader child : children) {
+                                        result = uninstallSolutionKit(child.getName(), child.getGoid());
+                                        if (!result.left) break;
+                                    }
+                                }
+
+                                final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
+                                if (result.left && selectedSK != null) {
+                                    if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
+                                        solutionKitAdmin.deleteSolutionKit(header.getGoid());
+                                        result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
+                                    } else {
+                                        result = uninstallSolutionKit(header.getName(), header.getGoid());
+                                    }
+                                }
+                            } catch (Exception e) {
+                                String msg = ExceptionUtils.getMessage(e);
+                                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                                result = new Pair<>(false, msg);
+                            }
+
+                            if (!result.left) {
+                                Throwable throwable = new Throwable(result.right);
+                                ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, "Solution Kit Manager has encountered an unexpected error", throwable);
+                                Utilities.centerOnParentWindow(errorMessageDialog);
+                                DialogDisplayer.pack(errorMessageDialog);
+                                DialogDisplayer.display(errorMessageDialog);
                             }
                         }
 
-                        final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
-                        if (result.left) {
-                            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
-                                solutionKitAdmin.deleteSolutionKit(header.getGoid());
-                                result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
-                            } else {
-                                result = uninstallSolutionKit(header.getName(), header.getGoid());
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        // do nothing.
-                        cancelled = true;
-                    } catch (Exception e) {
-                        String msg = ExceptionUtils.getMessage(e);
-                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                        result = new Pair<>(false, msg);
+                        refreshSolutionKitsTable();
                     }
-
-                    if (!cancelled) {
-                        if (result.left) {
-                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, result.right, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
-                        } else {
-                            Throwable throwable = new Throwable(result.right);
-                            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, "Solution Kit Manager has encountered an unexpected error", throwable);
-                            Utilities.centerOnParentWindow(errorMessageDialog);
-                            DialogDisplayer.pack(errorMessageDialog);
-                            DialogDisplayer.display(errorMessageDialog);
-                        }
-                    }
-
-                    refreshSolutionKitsTable();
-                }
-            }
-        );
+                });
     }
 
     private Pair<Boolean, String> uninstallSolutionKit(@NotNull final String skName, @NotNull final Goid skGoid) throws InvocationTargetException, InterruptedException {
@@ -253,7 +249,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUpgrade() {
-        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        SolutionKitHeader header = solutionKitTablePanel.getFirstSelectedSolutionKit();
         if (header != null) {
             try {
                 SolutionKit solutionKitToUpgrade = solutionKitAdmin.get(header.getGoid());
@@ -275,7 +271,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onProperties() {
-        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        SolutionKitHeader header = solutionKitTablePanel.getFirstSelectedSolutionKit();
         if (header != null) {
             try {
                 SolutionKit solutionKit = solutionKitAdmin.get(header.getGoid());
@@ -310,8 +306,8 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void refreshSolutionKitsTableButtons() {
-        boolean selected = solutionKitTablePanel.isSolutionKitSelected();
-        uninstallButton.setEnabled(selected);
+        int selectedRowCount = solutionKitTablePanel.getSelectedRowCount();
+        uninstallButton.setEnabled(selectedRowCount > 0);
 
         // disable features causing permission exceptions in the applet security manager
         if (TopComponents.getInstance().isApplet()) {
@@ -319,8 +315,8 @@ public class ManageSolutionKitsDialog extends JDialog {
             upgradeButton.setEnabled(false);
             propertiesButton.setEnabled(false);
         } else {
-            upgradeButton.setEnabled(selected);
-            propertiesButton.setEnabled(selected);
+            upgradeButton.setEnabled(selectedRowCount == 1);
+            propertiesButton.setEnabled(selectedRowCount == 1);
         }
     }
 }

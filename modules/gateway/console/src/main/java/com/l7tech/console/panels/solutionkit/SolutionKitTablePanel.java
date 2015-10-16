@@ -18,8 +18,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Collections;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -66,13 +65,12 @@ public class SolutionKitTablePanel extends JPanel {
     }
 
     /**
-     * Check if a solution kit in the table is selected.
+     * Returns the number of selected rows.
      *
-     * @return true if a solution kit selected. false otherwise.
+     * @return the number of selected rows, 0 if no rows are selected
      */
-    public boolean isSolutionKitSelected() {
-        int rowIndex = solutionKitsTable.getSelectedRow();
-        return (rowIndex != -1);
+    public int getSelectedRowCount() {
+        return solutionKitsTable.getSelectedRowCount();
     }
 
     /**
@@ -80,13 +78,26 @@ public class SolutionKitTablePanel extends JPanel {
      *
      * @return the selected solution kit header. Null if none is selected.
      */
-    public SolutionKitHeader getSelectedSolutionKit() {
+    public SolutionKitHeader getFirstSelectedSolutionKit() {
         int rowIndex = solutionKitsTable.getSelectedRow();
         if (rowIndex == -1 || rowIndex >= solutionKitsTable.getRowCount()) {
             return null;
         }
 
         return solutionKitsModel.getRowObject(rowIndex);
+    }
+
+    public Collection<SolutionKitHeader> getSelectedSolutionKits() {
+        final List<SolutionKitHeader> selected = new ArrayList<>();
+        final int[] rows = solutionKitsTable.getSelectedRows();
+        for (final int row : rows) {
+            final int modelRow = solutionKitsTable.convertRowIndexToModel(row);
+            final SolutionKitHeader rowObject = solutionKitsModel.getRowObject(modelRow);
+            if (rowObject != null) {
+                selected.add(rowObject);
+            }
+        }
+        return selected;
     }
 
     /**
@@ -171,13 +182,13 @@ public class SolutionKitTablePanel extends JPanel {
             })
         );
 
-        solutionKitsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        solutionKitsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         solutionKitsTable.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (solutionKitsTable.getSelectedColumn() == 0) {
-                    final SolutionKitHeader solutionKitHeader = getSelectedSolutionKit();
+                    final SolutionKitHeader solutionKitHeader = getFirstSelectedSolutionKit();
                     if (solutionKitHeader == null) return;
 
                     final SolutionKitDisplayingType displayingType = findDisplayingType(solutionKitHeader);
