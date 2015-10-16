@@ -2323,6 +2323,7 @@
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="solutionKitManager"/>
             </list>
         </constructor-arg>
     </bean>

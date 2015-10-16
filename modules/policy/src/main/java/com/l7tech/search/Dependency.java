@@ -76,7 +76,8 @@ public @interface Dependency {
         INTERFACE_TAG(EntityType.INTERFACE_TAG),
         WORK_QUEUE(EntityType.WORK_QUEUE),
         SERVER_MODULE_FILE(EntityType.SERVER_MODULE_FILE),
-        POLICY_BACKED_SERVICE(EntityType.POLICY_BACKED_SERVICE);
+        POLICY_BACKED_SERVICE(EntityType.POLICY_BACKED_SERVICE),
+        SOLUTION_KIT(EntityType.SOLUTION_KIT);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

@@ -624,6 +624,24 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new SolutionKitMO instance.
+     *
+     * @return The new instance.
+     */
+    public static SolutionKitMO createSolutionKitMO() {
+        return new SolutionKitMO();
+    }
+
+    /**
+     * Create a new EntityOwnershipDescriptorMO instance.
+     *
+     * @return The new instance.
+     */
+    public static EntityOwnershipDescriptorMO createEntityOwnershipDescriptorMO() {
+        return new EntityOwnershipDescriptorMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

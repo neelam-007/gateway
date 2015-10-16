@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -109,7 +110,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             ResourceEntry.class,
             ScheduledTask.class,
             WorkQueue.class,
-            ServerModuleFile.class
+            ServerModuleFile.class,
+            SolutionKit.class
     );
     @Inject
     private EntityCrud entityCrud;

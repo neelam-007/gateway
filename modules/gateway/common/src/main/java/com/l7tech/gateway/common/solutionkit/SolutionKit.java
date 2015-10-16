@@ -57,6 +57,9 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
             SK_PROP_ALLOW_ADDENDUM_KEY
     };
 
+    // TODO: I couldn't find any install properties, so remove this if proven there are none
+    private static final String[] ALL_INSTALL_PROPERTY_KEYS = {};
+
     public static final String PARENT_SOLUTION_KIT_DUMMY_MAPPINGS = "<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT";
 
     private Goid parentGoid;
@@ -339,5 +342,16 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     @NotNull
     public static String[] getPropertyKeys() {
         return ALL_PROPERTY_KEYS;
+    }
+
+    /**
+     * Utility function for gathering all known install property keys used by the {@code SolutionKit}.
+     *
+     * @return a {@code String} array containing all known install property keys used by the {@code SolutionKit}, never {@code null}.
+     * @see #ALL_PROPERTY_KEYS
+     */
+    @NotNull
+    public static String[] getInstallPropertyKeys() {
+        return ALL_INSTALL_PROPERTY_KEYS;
     }
 }

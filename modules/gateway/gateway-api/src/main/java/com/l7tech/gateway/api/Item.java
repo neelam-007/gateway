@@ -64,7 +64,8 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = WorkQueueMO.class),
             @XmlElementRef(type = ScheduledTaskMO.class),
             @XmlElementRef(type = ServerModuleFileMO.class),
-            @XmlElementRef(type = PolicyBackedServiceMO.class)
+            @XmlElementRef(type = PolicyBackedServiceMO.class),
+            @XmlElementRef(type = SolutionKitMO.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "Resource", required = false)
