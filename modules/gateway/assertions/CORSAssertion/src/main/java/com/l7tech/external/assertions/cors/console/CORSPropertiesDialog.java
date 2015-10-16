@@ -10,8 +10,7 @@ import com.l7tech.gui.util.Utilities;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -58,8 +57,6 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         initComponents();
     }
 
-
-
     @Override
     protected JPanel createPropertyPanel() {
 
@@ -80,6 +77,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         originsTable.setShowGrid(false);
         originsTable.setTableHeader(null);
         originsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        originsTable.setCellSelectionEnabled(true);
         originsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         originsTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         originsListAdd.addActionListener(new ActionListener() {
@@ -105,6 +103,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         headersTable.setShowGrid(false);
         headersTable.setTableHeader(null);
         headersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        headersTable.setCellSelectionEnabled(true);
         headersTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         headersTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         headersListAdd.addActionListener(new ActionListener() {
@@ -130,6 +129,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         exposedHeadersTable.setShowGrid(false);
         exposedHeadersTable.setTableHeader(null);
         exposedHeadersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        exposedHeadersTable.setCellSelectionEnabled(true);
         exposedHeadersTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         exposedHeadersTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         exposedHeadersListAdd.addActionListener(new ActionListener() {
@@ -171,9 +171,11 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     }
 
     private void onAdd(DefaultTableModel tableModel, JTable table) {
-        tableModel.insertRow(0, new Object[]{""});
-        table.changeSelection(0,0,false,false);
-        table.editCellAt(0, 0);
+        int index = tableModel.getRowCount();
+        tableModel.insertRow(index, new Object[]{""});
+        table.changeSelection(index,0,false,false);
+        table.editCellAt(index, 0);
+        table.requestFocus();
     }
 
     private void enableDisableComponents() {
