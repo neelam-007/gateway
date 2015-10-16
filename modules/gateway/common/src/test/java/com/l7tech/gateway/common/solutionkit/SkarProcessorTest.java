@@ -22,10 +22,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.InputStream;
 import java.security.SignatureException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static org.junit.Assert.*;
@@ -296,5 +293,61 @@ public class SkarProcessorTest {
         Mockito.verify(skarProcessor, Mockito.times(1)).load(signedSkarOfSkarStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
         // 3 times; once for the parent and twice for two children
         Mockito.verify(skarProcessor, Mockito.times(3)).loadWithoutSignatureCheck(Mockito.<InputStream>any());
+    }
+
+    @Test
+    public void mergedBundle() throws Exception{
+        //Reloaded because Don't want to affect final variables used in other test cases
+        SolutionKitsConfig skConfig = new SolutionKitsConfig();
+        SkarProcessor mergeSkarProcessor = new SkarProcessor(skConfig);
+        InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
+        Assert.assertNotNull(inputStream);
+        // load the skar file
+        mergeSkarProcessor.load(inputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+        SolutionKit solutionKit = skConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        //installBundle and it's mapping
+        Bundle installBundle = skConfig.getLoadedSolutionKits().get(solutionKit);
+
+        //reload solution kit to make mappings for a mock upgradeBundle
+        skConfig = new SolutionKitsConfig();
+        mergeSkarProcessor = new SkarProcessor(skConfig);
+        inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
+        Assert.assertNotNull(inputStream);
+        // load the skar file
+        mergeSkarProcessor.load(inputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+        solutionKit = skConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        //mock upgradeBundle and its mapping
+        Bundle upgradeBundle = skConfig.getLoadedSolutionKits().get(solutionKit);
+        List<Mapping> upgradeMappings = skConfig.getBundle(solutionKit).getMappings();
+        //Delete this mapping again
+        upgradeMappings.remove(9);
+        //Change the 4th mapping from AlwaysCreateNew to NewOrExisting
+        upgradeMappings.get(4).setAction(Mapping.Action.valueOf("NewOrExisting"));
+
+        // make an solutionKitUpgradeList needed in mergeBundle
+        List<SolutionKit> solutionKitList = new ArrayList<>();
+        solutionKitList.add(solutionKit);
+        skConfig.setSolutionKitsToUpgrade(solutionKitList);
+
+        Bundle returnBundle = mergeSkarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+
+        List<Mapping> returnBundleMappings = returnBundle.getMappings();
+        //Check that the return bundle decreases from 12 to 11 mappings
+        assertEquals(returnBundleMappings.size(), 11);
+
+        //Check that the returnBundleMappings is the same as install Mappings
+        boolean returnBundleIsMappedCorrectly = true;
+        for (int i=0; i<upgradeMappings.size();i++){
+            if (returnBundleMappings.get(i) != upgradeMappings.get(i)) {
+                returnBundleIsMappedCorrectly = false;
+                break;
+            }
+        }
+        assertTrue(returnBundleIsMappedCorrectly);
+
+        //Check that the returnBundle updated with upgradeBundle
+        assertThat(returnBundleMappings.get(4).getAction().name(), Matchers.containsString("NewOrExisting"));
     }
 }
