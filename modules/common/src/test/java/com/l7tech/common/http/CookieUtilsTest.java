@@ -291,11 +291,14 @@ public class CookieUtilsTest {
 
     @Test
     public void testCookieParser() throws Exception {
-        String testValue = "foo=\"abc;domain=.something;  \" ;Domain=\"blah....\"   ;Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT; bar=cdfe; Path=/;Max-Age=something;httpOnly;secure ;mycookie = \"value  \"";
+        String testValue = "foo=\"abc;domain=.something;  \" ;Domain=\"blah....\"   ;Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT;"
+                + "bar=cdfe; Path=/;Max-Age=something;httpOnly;secure ;"
+                + "mycookie = \"value  \";"
+                + "thecookie=";
         List<String> actual = CookieUtils.splitCookieHeader(testValue);
         assertEquals("Compare first cookie", "foo=\"abc;domain=.something;  \"; Domain=\"blah....\"; Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT", actual.get(0));
         assertEquals("Compare second cookie", "bar=cdfe; Path=/; Max-Age=something; httpOnly; secure", actual.get(1));
-        assertEquals("Compare thirds cookie", "mycookie = \"value  \"", actual.get(2));
+        assertEquals("Compare thirds cookie", "mycookie=\"value  \"", actual.get(2));
     }
 
     @Test
@@ -443,4 +446,69 @@ public class CookieUtilsTest {
         new BenchmarkRunner( runnable, 300, 2, "(BURN IN) CookieUtils.splitCookieHeader() * 10" ).run();
         new BenchmarkRunner( runnable, 10000, 10, "CookieUtils.splitCookieHeader() * 10" ).run();
     }
+
+    @Test
+    public void testCookieParsingUnquotedString() {
+
+        CookieUtils.CookieTokenizer ct0 = new CookieUtils.CookieTokenizer("a");
+        CookieUtils.CookieTokenizer ct1 = new CookieUtils.CookieTokenizer("asdflkjsd sfdlkjsdflj dfsdfs");
+        CookieUtils.CookieTokenizer ct2 = new CookieUtils.CookieTokenizer("asdflkjsd sfdlkjsdflj;  dfsdfs");
+        CookieUtils.CookieTokenizer ct3 = new CookieUtils.CookieTokenizer("asdflkjsd=sfdlkjsdflj;  dfsdfs");
+        CookieUtils.CookieTokenizer ct4 = new CookieUtils.CookieTokenizer("\"blusdfsdfk\"");
+
+        assertTrue(ct0.matchUnquotedString());
+        assertEquals(ct0.getCurMatch(),"a");
+
+        assertTrue(ct1.matchUnquotedString());
+        assertEquals(ct1.getCurMatch(),"asdflkjsd sfdlkjsdflj dfsdfs");
+
+        assertTrue(ct2.matchUnquotedString());
+        assertEquals(ct2.getCurMatch(),"asdflkjsd sfdlkjsdflj");
+
+        assertTrue(ct3.matchUnquotedString());
+        assertEquals(ct3.getCurMatch(),"asdflkjsd");
+
+        assertFalse(ct4.matchUnquotedString());
+    }
+
+    @Test
+    public void testCookieTokenizerQuotedString() {
+
+        CookieUtils.CookieTokenizer ct1 = new CookieUtils.CookieTokenizer("\"bladfss dslfkjsldfj;dsflkjdsfl\"; alpaldsfkjs");
+        CookieUtils.CookieTokenizer ct2 = new CookieUtils.CookieTokenizer("megasd ; one=two");
+
+        assertTrue(ct1.matchQuotedString());
+        assertEquals(ct1.getCurMatch(),"\"bladfss dslfkjsldfj;dsflkjdsfl\"");
+
+        assertFalse(ct2.matchQuotedString());
+    }
+
+    @Test
+    public void testCookieTokenizerErrorConditions() {
+        CookieUtils.CookieTokenizer ct1 = new CookieUtils.CookieTokenizer("\"asdlfkjslfkjslkjfsdldjf");
+
+        assertFalse(ct1.matchUnquotedString());
+    }
+
+    @Test
+    public void testCompatibilityBetweenCookieParser() {
+
+        // Pre-existing regex parser handled non-terminating quoted strings as running to the end of the line
+        String testValue = "alpha=\"beta";
+        List<String> actual = CookieUtils.splitCookieHeader(testValue);
+        assertEquals(actual.get(0),"alpha=\"beta");
+
+
+        // Pre-existing regex parser handled empty final attribute-value pair on cookie line by returning the
+        // zero length string for the empty component.
+        testValue = "alpha=beta;";
+        actual = CookieUtils.splitCookieHeader(testValue);
+        assertEquals(actual.size(),2);
+
+        // Pre-existed regex parser handled illegally quoted 'name' portions of the N-V pairs by passing them
+        // through.
+        testValue = "\"alpha\"=\"beta\"";
+        actual = CookieUtils.splitCookieHeader(testValue);
+    }
+
 }

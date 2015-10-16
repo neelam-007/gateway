@@ -1,11 +1,13 @@
 package com.l7tech.common.http;
 
+import com.l7tech.util.ConfigFactory;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import sun.text.resources.ko.CollationData_ko;
 
 import java.io.IOException;
 import java.util.*;
@@ -67,6 +69,8 @@ public class CookieUtils {
     private static final String NON_TOKEN_CHARS = ",; ";
 
     private static Calendar calendar = Calendar.getInstance();
+
+    private static final boolean fastCookieParser = ConfigFactory.getProperty("com.l7tech.http.cookieParser","fast").equals("fast");
 
     static {
         //Order is based on most likely to least likely
@@ -516,6 +520,49 @@ public class CookieUtils {
         return sb.toString();
     }
 
+    private static String[] fastSplitAttributes(@NotNull String cookieHeader) {
+
+        List<String> cookieItems = new ArrayList<>();
+
+        CookieTokenizer ct = new CookieTokenizer(cookieHeader);
+
+        CookieToken tok = ct.nextToken();
+
+        if ( tok.getType() != CookieTokenType.UNQUOTED_STRING ) {
+            // error -- non valid format, cookie must start with <CookieName> =
+            // pre-existed parser returned value regardless, we'll do the same.
+        }
+        String current = tok.getValue().trim();
+        tok = ct.nextToken();
+        boolean done = false;
+        while ( ! done ) {
+            switch (tok.getType()) {
+
+                case UNQUOTED_STRING:
+                case QUOTED_STRING:
+                    current = current + tok.getValue().trim();
+                    break;
+
+                case EQUALS:
+                    current = current + "=";
+                    break;
+
+                case SEMICOLON:
+                    cookieItems.add(current);
+                    current = "";
+                    break;
+
+                case EOL:
+                    cookieItems.add(current);
+                    current = "";
+                    done = true;
+                    break;
+            }
+            tok = ct.nextToken();
+        }
+        return cookieItems.toArray(new String[0]);
+    }
+
     private static String[] splitAttributes(@NotNull String value) {
         List<String> attributes = new ArrayList<>();
         Matcher m = attributePattern.matcher(value);
@@ -554,7 +601,7 @@ public class CookieUtils {
     public static List<String> splitCookieHeader(final String cookieValue) {
         final List<String> singleCookieValues = new ArrayList<>();
         if (cookieValue != null) {
-            final String[] tokens = splitAttributes(cookieValue);
+            final String[] tokens = fastCookieParser ? fastSplitAttributes(cookieValue) : splitAttributes(cookieValue);
             if (tokens.length > 0) {
                 final List<String> group = new ArrayList<>();
                 final String firstToken = tokens[0].trim();
@@ -717,6 +764,124 @@ public class CookieUtils {
         @Override
         public int compare(final String token1, final String token2) {
             return ComparatorUtils.booleanComparator(true).compare(!isCookieAttribute(token1), !isCookieAttribute(token2));
+        }
+    }
+
+    static enum CookieTokenType { UNQUOTED_STRING, QUOTED_STRING, EQUALS, SEMICOLON, EOL };
+
+    static class CookieToken {
+        CookieTokenType type;
+        String value;
+
+        public CookieToken(CookieTokenType t, String v) {
+            type = t;
+            value = v;
+        }
+
+        public CookieTokenType getType() { return type; }
+
+        public String getValue() { return value;}
+
+        public String toString() {
+            return "(" + type + "," + value + ")";
+        }
+    }
+
+    public static class CookieTokenizer {
+
+        String cookieString;
+        int cookieStringLen;
+        int curPosition;
+        String curMatch;
+
+        public CookieTokenizer(String s) {
+            cookieString = s;
+            cookieStringLen = s.length();
+            curPosition = 0;
+        }
+
+        public String getCurMatch() {
+            return curMatch;
+        }
+        public CookieToken nextToken() {
+
+            if ( curPosition == -1 ) {
+                return new CookieToken(CookieTokenType.EOL,"");
+            }
+
+            consumeWhiteSpace();
+
+            if ( curPosition >= cookieStringLen ) {
+                curPosition = -1;
+                return new CookieToken(CookieTokenType.EOL,null);
+
+            } else if ( isChar('=') ) {
+                curPosition++;
+                return  new CookieToken(CookieTokenType.EQUALS,"=");
+
+            } else if ( isChar(';') ) {
+                curPosition++;
+                return new CookieToken(CookieTokenType.SEMICOLON,";");
+
+            } else if ( matchUnquotedString() ) {
+                // curPosition updated in  matchUnquotedString()
+                return new CookieToken(CookieTokenType.UNQUOTED_STRING,getCurMatch());
+
+            } else if (matchQuotedString() ) {
+               // curPosition updated in matchQuotedString()
+                return new CookieToken(CookieTokenType.QUOTED_STRING,getCurMatch());
+
+            } else   {
+                return null;
+            }
+
+        }
+
+        public void consumeWhiteSpace() {
+            while ( curPosition < cookieStringLen && Character.isWhitespace(cookieString.charAt(curPosition)) ) {
+                curPosition++;
+            }
+        }
+
+        public boolean isChar(char c) {
+            return ( cookieString.charAt(curPosition) == c );
+        }
+
+        public boolean matchUnquotedString() {
+            int end = curPosition;
+            if ( cookieString.charAt(curPosition) == '=' ||
+                    cookieString.charAt(curPosition) == ';' ||
+                    cookieString.charAt(curPosition) == '"' ) {
+                return false;
+            }
+            while ( end < cookieStringLen &&
+                      cookieString.charAt(end) != '=' &&
+                      cookieString.charAt(end) != ';' ) {
+                end++;
+            }
+
+            curMatch = cookieString.substring(curPosition,end);
+            curPosition = end;
+            return true;
+        }
+
+        public boolean matchQuotedString() {
+            int end = curPosition;
+            if ( cookieString.charAt(end) != '"' ) {
+                return false;
+            }
+            end++;
+            while ( end < cookieStringLen && cookieString.charAt(end) != '"' ) {
+                end++;
+            }
+            // If end == cookieStringLen we've run into the end
+            // of the cookie without finding the closing quote(").
+            // Otherwise we've found the quote and include it in
+            // the string
+            if ( end != cookieStringLen ) end++;
+            curMatch = cookieString.substring(curPosition,end);
+            curPosition = end;
+            return true;
         }
     }
 }
