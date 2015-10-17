@@ -7,35 +7,29 @@ import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.Functions;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.List;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+
 public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> {
 
-    public static String preflightOriginHeader = "origin";
-    public static String preflightMethodHeader = "Access-Control-Request-Method";
-    public static String preflightAccessControlHeadersHeader = "Access-Control-Request-Headers";
+    public static final String PREFLIGHT_ORIGIN_HEADER = "Origin";
+    public static final String PREFLIGHT_REQUEST_METHOD_HEADER = "Access-Control-Request-Method";
+    public static final String PREFLIGHT_REQUEST_HEADERS_HEADER = "Access-Control-Request-Headers";
 
-    public static String preflightResponseAllowOrigin = "Access-Control-Allow-Origin";
-    public static String preflightResponseAllowCredientials = "Access-Control-Allow-Credentials";
-    public static String preflightResponseExposeHeaders = "Access-Control-Expose-Headers";
-    public static String preflightResponseCacheTime = "access-control-max-age";
-    public static String preflightResponseAllowMethods = "access-control-allow-methods";
-    public static String preflightResponseAllowAccessHeaders = "access-control-allow-headers";
+    public static final String PREFLIGHT_RESPONSE_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    public static final String PREFLIGHT_RESPONSE_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String PREFLIGHT_RESPONSE_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+    public static final String PREFLIGHT_RESPONSE_CACHE_TIME = "access-control-max-age";
+    public static final String PREFLIGHT_RESPONSE_ALLOW_METHODS = "access-control-allow-methods";
+    public static final String PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS = "access-control-allow-headers";
 
-    public ServerCORSAssertion(CORSAssertion assertion,
-                               final ApplicationContext springContext) throws PolicyAssertionException {
-        super(assertion);
-    }
-
-    protected ServerCORSAssertion(final CORSAssertion assertion,
-                                  final StashManagerFactory stashManagerFactory) {
+    public ServerCORSAssertion(final CORSAssertion assertion) {
         super(assertion);
     }
 
@@ -44,84 +38,84 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         final Message request = context.getRequest();
         final HeadersKnob requestHeadersKnob = request.getHeadersKnob();
 
-        // is a CORS request if "Origin" header is present
+        // set default variable values
         context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, false);
         context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, false);
 
-        if (requestHeadersKnob.containsHeader(preflightOriginHeader, HeadersKnob.HEADER_TYPE_HTTP)) {
-
+        // is a CORS request if "Origin" header is present
+        if (requestHeadersKnob.containsHeader(PREFLIGHT_ORIGIN_HEADER, HEADER_TYPE_HTTP)) {
             // check origin
-            final String origin = requestHeadersKnob.getHeaderValues(preflightOriginHeader, HeadersKnob.HEADER_TYPE_HTTP)[0];
-            if (assertion.getAcceptedOrigins() != null) {
-                    if(!Functions.exists(assertion.getAcceptedOrigins(), new Functions.Unary<Boolean, String>() {
-                        @Override
-                        public Boolean call(String s) {
-                            return s.equals(origin);
-                        }
-                    })){
+            final String origin = requestHeadersKnob.getHeaderValues(PREFLIGHT_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
 
-                        return AssertionStatus.NONE;
+            if (assertion.getAcceptedOrigins() != null) {
+                if(!Functions.exists(assertion.getAcceptedOrigins(), new Functions.Unary<Boolean, String>() {
+                    @Override
+                    public Boolean call(String s) {
+                        return s.equals(origin);
+                    }
+                })) {
+                    return AssertionStatus.NONE;
                 }
             }
 
             context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, true);
 
             final boolean isPreflight = request.getHttpRequestKnob().getMethod().equals(HttpMethod.OPTIONS) &&
-                    requestHeadersKnob.containsHeader(preflightMethodHeader, HeadersKnob.HEADER_TYPE_HTTP);
+                    requestHeadersKnob.containsHeader(PREFLIGHT_REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
 
-            final Message response = context.getResponse();
+            final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
+
             if (isPreflight) {
-
                 context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, true);
 
-                // check preflightMethodHeader
-                String[] methods = requestHeadersKnob.getHeaderValues(preflightMethodHeader, HeadersKnob.HEADER_TYPE_HTTP);
-                // check preflightAccessControlHeadersHeader if exist
-                String[] accessHeaders = requestHeadersKnob.getHeaderValues(preflightAccessControlHeadersHeader, HeadersKnob.HEADER_TYPE_HTTP);
+                // check PREFLIGHT_REQUEST_METHOD_HEADER
+                String[] methods = requestHeadersKnob.getHeaderValues(PREFLIGHT_REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
+                // check PREFLIGHT_ACCESS_CONTROL_HEADERS_HEADER if exist
+                String[] accessHeaders = requestHeadersKnob.getHeaderValues(PREFLIGHT_REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
 
                 // set response Access-Control-Allow-Methods
                 // echo back the method, actual request will not be resolved by the gateway if method is not allowed
-                addHeaders(response.getHeadersKnob(), preflightResponseAllowMethods, methods);
+                addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_METHODS, methods);
 
                 // set response Access-Control-Allow-Headers
                 if (assertion.getAcceptedHeaders() == null) {
                     // echo back if all headers are accepted
-                    addHeaders(response.getHeadersKnob(), preflightResponseAllowAccessHeaders, accessHeaders);
+                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS, accessHeaders);
                 } else {
-                    addHeaders(response.getHeadersKnob(), preflightResponseAllowAccessHeaders, assertion.getAcceptedHeaders());
+                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS, assertion.getAcceptedHeaders());
                 }
 
+                if (assertion.getExposedHeaders() != null) {
+                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_EXPOSE_HEADERS, assertion.getExposedHeaders());
+                }
 
                 if (assertion.getResponseCacheTime() != null) {
-                    response.getHeadersKnob().setHeader(preflightResponseCacheTime, assertion.getResponseCacheTime().toString(), HeadersKnob.HEADER_TYPE_HTTP);
-                }
-
-                if(assertion.getExposedHeaders()!=null){
-                    addHeaders(response.getHeadersKnob(), preflightResponseExposeHeaders, assertion.getExposedHeaders());
+                    setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_CACHE_TIME, assertion.getResponseCacheTime().toString());
                 }
             }
 
-            response.getHeadersKnob().setHeader( preflightResponseAllowOrigin, origin, HeadersKnob.HEADER_TYPE_HTTP);
+            setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ORIGIN, origin);
 
-            // always allow user credentials  in the request
-            response.getHeadersKnob().setHeader(preflightResponseAllowCredientials, "true", HeadersKnob.HEADER_TYPE_HTTP);
-
+            // always allow user credentials in the request
+            setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_CREDENTIALS, "true");
         }
 
         return AssertionStatus.NONE;
     }
 
+    private void setHeader(HeadersKnob headersKnob, String headerName, String headerValue) {
+        headersKnob.setHeader(headerName, headerValue, HEADER_TYPE_HTTP);
+    }
+
     private void addHeaders(HeadersKnob headersKnob, String header, List<String> values) {
         for (String val : values) {
-            headersKnob.addHeader(header, val, HeadersKnob.HEADER_TYPE_HTTP);
+            headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
     }
 
     private void addHeaders(HeadersKnob headersKnob, String header, String[] values) {
         for (String val : values) {
-            headersKnob.addHeader(header, val, HeadersKnob.HEADER_TYPE_HTTP);
+            headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
     }
-
-
 }
