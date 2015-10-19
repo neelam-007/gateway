@@ -50,20 +50,21 @@ import static java.lang.reflect.Array.newInstance;
  * @see com.l7tech.external.assertions.bulkjdbcinsert.BulkJdbcInsertAssertion
  */
 public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServerAssertion<BulkJdbcInsertAssertion> {
-    private static Map<String,Transformer> transformerMap = new HashMap<>();//might be moved to the core so the transformers can be loaded
+    //private static Map<String,Transformer> transformerMap = new HashMap<>();//might be moved to the core so the transformers can be loaded
 
     private final String[] variablesUsed;
     private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
     private final Config config;
 
-    static{
+/*    static{
         //initialize transformers. Custom transformers can be added later via separate assertion module
         transformerMap.put("String", new StringTransformer());
         transformerMap.put("Regex2Bool", new Regex2BoolTransformer());
         transformerMap.put("Regex2Int", new Regex2IntTransformer());
         transformerMap.put("Subtract", new SubtractTransformer());
         transformerMap.put("Add", new AddTransformer());
-    }
+        transformerMap.put("UUID", new GenerateUuidTransformer());
+    }*/
 
     public ServerBulkJdbcInsertAssertion( final BulkJdbcInsertAssertion assertion, final ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
@@ -129,8 +130,8 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                         BulkJdbcInsertAssertion.ColumnMapper param = columnMappers[i];
                                         for (BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
                                             if(mapper.equals(param)) {
-                                                if(transformerMap.keySet().contains(mapper.getTransformation())) {
-                                                    Transformer transformer = transformerMap.get(mapper.getTransformation());
+                                                if(BulkJdbcInsertAssertion.transformerMap.keySet().contains(mapper.getTransformation())) {
+                                                    Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(mapper.getTransformation());
                                                     transformer.transform(stmt, i + 1, mapper, record);
                                                 }
                                                 else {
@@ -284,75 +285,6 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         }
         return content;
     }
-
-    public static interface Transformer {
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException;
-    }
-
-    public static final class StringTransformer implements Transformer {
-        @Override
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException{
-            String val = record.get(mapper.getOrder());
-            stmt.setString(index, val);
-        }
-    }
-
-    public static final class Regex2BoolTransformer implements Transformer {
-        @Override
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
-            String val = record.get(mapper.getOrder());
-            String transformParam = mapper.getTransformParam();
-            stmt.setBoolean(index, convertRegex2Boolean(val, transformParam));
-        }
-
-        private boolean convertRegex2Boolean(String val, String transformParam) {
-            Pattern regex = Pattern.compile(transformParam, Pattern.CASE_INSENSITIVE);
-            Matcher m = regex.matcher(val);
-            return m.find();
-        }
-    }
-
-    public static final class Regex2IntTransformer implements Transformer {
-        @Override
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
-            String val = record.get(mapper.getOrder());
-            String transformParam = mapper.getTransformParam();
-            stmt.setInt(index, convertRegex2Int(val, transformParam));
-        }
-
-        private int convertRegex2Int(String val, String transformParam) {
-            Pattern regex = Pattern.compile(transformParam, Pattern.CASE_INSENSITIVE);
-            Matcher m = regex.matcher(val);
-            return m.find()?1:0;
-        }
-    }
-
-    public static final class SubtractTransformer implements Transformer {
-        @Override
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
-            try {
-                long val1 = Long.parseLong(record.get(mapper.getOrder()));
-                long val2 = Long.parseLong(record.get(Integer.parseInt(mapper.getTransformParam())));
-                stmt.setLong(index, val1 - val2);
-            } catch(NumberFormatException nfe) {
-                throw new SQLException("Invalid number format", nfe);
-            }
-        }
-    }
-
-    public static final class AddTransformer implements Transformer {
-        @Override
-        public void transform(PreparedStatement stmt, int index, BulkJdbcInsertAssertion.ColumnMapper mapper, CSVRecord record) throws SQLException {
-            try {
-                long val1 = Long.parseLong(record.get(mapper.getOrder()));
-                long val2 = Long.parseLong(record.get(Integer.parseInt(mapper.getTransformParam())));
-                stmt.setLong(index, val1 + val2);
-            } catch(NumberFormatException nfe) {
-                throw new SQLException("Invalid number format", nfe);
-            }
-        }
-    }
-
 
      static int[] concatArrays( final int[] data1, final int[] data2 ) {
         final int data1Length = getLength( data1 );

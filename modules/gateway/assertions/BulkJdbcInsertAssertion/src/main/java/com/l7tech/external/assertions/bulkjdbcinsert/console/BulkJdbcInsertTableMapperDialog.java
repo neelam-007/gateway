@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.bulkjdbcinsert.console;
 
 import com.l7tech.external.assertions.bulkjdbcinsert.BulkJdbcInsertAssertion;
+import com.l7tech.external.assertions.bulkjdbcinsert.server.Transformer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -65,13 +66,16 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
         inputValidator.constrainTextField(orderTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(StringUtils.isBlank(orderTextField.getText())) return resources.getString("mapper.order.error.empty");
-
-                try{
-                    Integer val = new Integer(orderTextField.getText());
-                    if(val < 0) return resources.getString("mapper.order.error.invalid");
-                } catch(NumberFormatException e) {
-                    return resources.getString("mapper.order.error.invalid");
+                Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(transformationComboBox.getSelectedItem());
+                if(transformer != null && transformer.requiresCsvField()) {
+                    if (StringUtils.isBlank(orderTextField.getText()))
+                        return resources.getString("mapper.order.error.empty");
+                    try {
+                        Integer val = new Integer(orderTextField.getText());
+                        if (val < 0) return resources.getString("mapper.order.error.invalid");
+                    } catch (NumberFormatException e) {
+                        return resources.getString("mapper.order.error.invalid");
+                    }
                 }
                 return null;
             }
@@ -82,20 +86,17 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
         inputValidator.constrainTextField(paramTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if("Subtract".equals(transformationComboBox.getSelectedItem())
-                        || "Add".equals(transformationComboBox.getSelectedItem())) {
-                    if(StringUtils.isBlank(paramTextField.getText())) {
-                        return resources.getString("mapper.param.error.empty");
-                    }
-                    else {
-                        try {
-                            //noinspection ResultOfMethodCallIgnored
-                            Integer.parseInt(paramTextField.getText());
-                        } catch(NumberFormatException e) {
-                            return resources.getString("mapper.param.error.invalid");
+                    Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(transformationComboBox.getSelectedItem());
+                    if(transformer != null && transformer.requiresParameter()) {
+                        if (StringUtils.isBlank(paramTextField.getText()) && !transformer.isParameterValid(paramTextField.getText())) {
+                            return resources.getString("mapper.param.error.empty");
+                        } else {
+                            if(!transformer.isParameterValid(paramTextField.getText()))
+                            {
+                                return resources.getString("mapper.param.error.invalid");
+                            }
                         }
                     }
-                }
 
                 return null;
             }
@@ -134,9 +135,17 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
 
     private void viewToModel() {
         mapper.setName(columnNameTextField.getText());
-        mapper.setOrder(Integer.parseInt(orderTextField.getText()));
+        mapper.setOrder(getOrderField());
         mapper.setTransformation((String)transformationComboBox.getSelectedItem());
         mapper.setTransformParam(paramTextField.getText());
+    }
+
+    private int getOrderField() {
+        try {
+            return Integer.parseInt(orderTextField.getText());
+        } catch (NumberFormatException ex) {
+            return 0;//set default column as 0
+        }
     }
 
     private void modelToView() {
@@ -150,7 +159,9 @@ public class BulkJdbcInsertTableMapperDialog extends JDialog{
 
     private void enableOrDisableOkButton() {
         boolean selected = transformationComboBox.getSelectedIndex() != -1;
-        paramTextField.setEnabled(selected && !transformationComboBox.getSelectedItem().equals("String"));
+        Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(transformationComboBox.getSelectedItem());
+        orderTextField.setEnabled(selected && transformer != null && transformer.requiresCsvField());
+        paramTextField.setEnabled(selected && transformer != null && transformer.requiresParameter());
     }
 
 

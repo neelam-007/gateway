@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.bulkjdbcinsert;
 
+import com.l7tech.external.assertions.bulkjdbcinsert.server.Transformer;
+import com.l7tech.external.assertions.bulkjdbcinsert.server.transformers.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -31,7 +33,22 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         }
     }
 
-    public static String[] TRANSFORMATIONS = new String[]{"String","Regex2Bool","Regex2Int","Subtract", "Add"};
+    public static Map<String,Transformer> transformerMap = new HashMap<>();//might be moved to the core so the transformers can be loaded
+
+    public static String[] TRANSFORMATIONS;
+
+    static{
+        //initialize transformers. Custom transformers can be added later via separate assertion module
+        transformerMap.put("String", new StringTransformer());
+        transformerMap.put("Regex2Bool", new Regex2BoolTransformer());
+        transformerMap.put("Regex2Int", new Regex2IntTransformer());
+        transformerMap.put("Subtract", new SubtractTransformer());
+        transformerMap.put("Add", new AddTransformer());
+        transformerMap.put("UUID", new GenerateUuidTransformer());
+        transformerMap.put("SetInt", new SetIntValueTransformer());
+        transformerMap.put("SetString", new SetStringTransformer());
+        TRANSFORMATIONS = transformerMap.keySet().toArray(new String[0]);
+    }
 
     private String connectionName;
     private String schema;
