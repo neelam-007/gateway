@@ -48,9 +48,6 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private DefaultTableModel originsTableModel;
     private DefaultTableModel headersTableModel;
     private DefaultTableModel exposedHeadersTableModel;
-    private ButtonGroup originsButtonGroup;
-    private ButtonGroup headersButtonGroup;
-    private ButtonGroup exposedHeadersButtonGroup;
 
     public CORSPropertiesDialog(final Window parent, final CORSAssertion assertion) {
         super(CORSAssertion.class, parent, assertion, true);
@@ -67,7 +64,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
-        originsButtonGroup = new ButtonGroup();
+        ButtonGroup originsButtonGroup = new ButtonGroup();
         originsButtonGroup.add(originsAllRadioButton);
         originsButtonGroup.add(originsListRadioButton);
         originsAllRadioButton.addActionListener(enableDisableListener);
@@ -93,7 +90,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
-        headersButtonGroup = new ButtonGroup();
+        ButtonGroup headersButtonGroup = new ButtonGroup();
         headersButtonGroup.add(headersAllRadioButton);
         headersButtonGroup.add(headersListRadioButton);
         headersAllRadioButton.addActionListener(enableDisableListener);
@@ -119,7 +116,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
-        exposedHeadersButtonGroup = new ButtonGroup();
+        ButtonGroup exposedHeadersButtonGroup = new ButtonGroup();
         exposedHeadersButtonGroup.add(exposedHeadersAllRadioButton);
         exposedHeadersButtonGroup.add(exposedHeadersListRadioButton);
         exposedHeadersAllRadioButton.addActionListener(enableDisableListener);
@@ -263,7 +260,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         exposedHeadersAllRadioButton.setSelected(true);
         if(assertion.getExposedHeaders()!=null){
             exposedHeadersListRadioButton.setSelected(true);
-            for(String origin: assertion.getAcceptedOrigins()) {
+            for(String origin: assertion.getExposedHeaders()) {
                 exposedHeadersTableModel.addRow(new Object[]{origin});
             }
         }

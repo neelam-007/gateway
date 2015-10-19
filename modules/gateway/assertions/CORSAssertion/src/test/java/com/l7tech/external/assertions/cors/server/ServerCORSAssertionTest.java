@@ -1,32 +1,27 @@
 package com.l7tech.external.assertions.cors.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.cors.CORSAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
-import com.l7tech.message.*;
+import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Pair;
-import org.jetbrains.annotations.Nullable;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import javax.inject.Inject;
-import java.io.IOException;
 
 /**
  * Test the CORSAssertion.
@@ -35,20 +30,13 @@ import java.io.IOException;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerCORSAssertionTest {
-    @Inject
-    private ApplicationContext applicationContext;
 
-    @Inject
-    private StashManagerFactory stashManagerFactory;
-
-    private StashManager stashManager;
     private TestAudit testAudit;
     private SecurityManager originalSecurityManager;
 
     @Before
     public void setUp() {
         testAudit = new TestAudit();
-        stashManager = stashManagerFactory.createStashManager();
 
         originalSecurityManager = System.getSecurityManager();
         System.setSecurityManager(new GatewayPermissiveLoggingSecurityManager());
