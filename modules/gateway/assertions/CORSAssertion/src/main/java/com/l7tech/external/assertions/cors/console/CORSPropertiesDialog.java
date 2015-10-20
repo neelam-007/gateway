@@ -41,6 +41,15 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private JButton exposedHeadersListAdd;
     private JButton exposedHeadersListRemove;
     private JTable exposedHeadersTable;
+    private JCheckBox requireCorsCheckBox;
+    private JCheckBox getCheckBox;
+    private JCheckBox putCheckBox;
+    private JCheckBox postCheckBox;
+    private JCheckBox headCheckBox;
+    private JCheckBox deleteCheckBox;
+    private JCheckBox optionsCheckBox;
+    private JCheckBox patchCheckBox;
+    private JCheckBox supportsCredentialsCheckBox;
 
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(CORSPropertiesDialog.class.getName());
     private InputValidator validators;
@@ -158,6 +167,19 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (getCheckBox.isSelected() && !putCheckBox.isSelected() && !postCheckBox.isSelected()
+                        && !headCheckBox.isSelected() && !deleteCheckBox.isSelected()
+                        && !patchCheckBox.isSelected() && !optionsCheckBox.isSelected()) {
+                    return resourceBundle.getString("noMethodsEnabledError");
+                }
+
+                return null;
+            }
+        });
+
         return propertyPanel;
     }
 
@@ -236,6 +258,28 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
         assertion.setResponseCacheTime(responeCacheAgeCheckBox.isSelected()?Long.parseLong(responseCacheAgeTextField.getText()):null);
         assertion.setVariablePrefix(variablePrefixTextField.getVariable().trim());
+        assertion.setRequireCors(requireCorsCheckBox.isSelected());
+        assertion.setSupportsCredentials(supportsCredentialsCheckBox.isSelected());
+
+        ArrayList<String> methods = new ArrayList<>();
+
+        if (getCheckBox.isSelected())
+            methods.add("GET");
+        if (putCheckBox.isSelected())
+            methods.add("PUT");
+        if (postCheckBox.isSelected())
+            methods.add("POST");
+        if (headCheckBox.isSelected())
+            methods.add("HEAD");
+        if (deleteCheckBox.isSelected())
+            methods.add("DELETE");
+        if (patchCheckBox.isSelected())
+            methods.add("PATCH");
+        if (optionsCheckBox.isSelected())
+            methods.add("OPTIONS");
+
+        assertion.setAcceptedMethods(methods);
+
         return assertion;
     }
 
@@ -274,10 +318,20 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         String[] suffixes = CORSAssertion.VARIABLE_SUFFIXES.toArray( new String[CORSAssertion.VARIABLE_SUFFIXES.size()] );
         variablePrefixTextField.setSuffixes(suffixes);
 
+        requireCorsCheckBox.setSelected(assertion.isRequireCors());
+        supportsCredentialsCheckBox.setSelected(assertion.isSupportsCredentials());
+
+        if (assertion.getAcceptedMethods() != null) {
+            getCheckBox.setSelected(assertion.getAcceptedMethods().contains("GET"));
+            putCheckBox.setSelected(assertion.getAcceptedMethods().contains("PUT"));
+            postCheckBox.setSelected(assertion.getAcceptedMethods().contains("POST"));
+            headCheckBox.setSelected(assertion.getAcceptedMethods().contains("HEAD"));
+            deleteCheckBox.setSelected(assertion.getAcceptedMethods().contains("DELETE"));
+            patchCheckBox.setSelected(assertion.getAcceptedMethods().contains("PATCH"));
+            optionsCheckBox.setSelected(assertion.getAcceptedMethods().contains("OPTIONS"));
+        }
+
         enableDisableComponents();
         pack();
     }
-
-
-
 }

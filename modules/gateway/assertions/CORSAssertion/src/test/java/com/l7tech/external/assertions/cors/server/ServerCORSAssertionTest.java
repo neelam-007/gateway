@@ -46,15 +46,36 @@ public class ServerCORSAssertionTest {
     public void tearDown() throws Exception {
         System.setSecurityManager(originalSecurityManager);
     }
+    
+    @Test
+    public void testNonCorsRequest_NoOriginHeader_CorsVariablesFalse() throws Exception {
+        Message request = createRequest(HttpMethod.OPTIONS.toString());
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        CORSAssertion assertion = new CORSAssertion();
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.FALSIFIED, result);
+        Assert.assertEquals(false, context.getVariable("cors.isPreflight"));
+        Assert.assertEquals(false, context.getVariable("cors.isCors"));
+        Assert.assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+    }
 
     @Test
     public void testDefaultAcceptAllPreflight() throws Exception {
         final String acceptedOrigin = "acceptedOrigin";
 
         Message request = createRequest(HttpMethod.OPTIONS.toString());
-        request.getHeadersKnob().setHeader("origin",acceptedOrigin, HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().setHeader("Access-Control-Request-Method","GET", HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().setHeader("Access-Control-Request-Headers","param,x-param,x-requested-with", HeadersKnob.HEADER_TYPE_HTTP);
+        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
 
         Message response = createResponse();
 
@@ -69,22 +90,22 @@ public class ServerCORSAssertionTest {
         Assert.assertEquals(AssertionStatus.NONE, result);
         Assert.assertEquals(true, context.getVariable("cors.isPreflight"));
         Assert.assertEquals(true, context.getVariable("cors.isCors"));
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals(acceptedOrigin, context.getResponse().getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("true", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-methods", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("GET", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-headers", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("param,x-param,x-requested-with", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("param,x-param,x-requested-with", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
     }
 
     @Test
     public void testDefaultAcceptAllRequest() throws Exception {
         final String acceptedOrigin = "acceptedOrigin";
 
-        Message request = createRequest(HttpMethod.OPTIONS.toString());
-        request.getHeadersKnob().setHeader("origin",acceptedOrigin, HeadersKnob.HEADER_TYPE_HTTP);
+        Message request = createRequest(HttpMethod.GET.toString());
+        configureRequestHeaders(request, acceptedOrigin, null, null);
 
         Message response = createResponse();
 
@@ -99,10 +120,10 @@ public class ServerCORSAssertionTest {
         Assert.assertEquals(AssertionStatus.NONE, result);
         Assert.assertEquals(false, context.getVariable("cors.isPreflight"));
         Assert.assertEquals(true, context.getVariable("cors.isCors"));
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals(acceptedOrigin, context.getResponse().getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("true", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
     }
 
     @Test
@@ -110,9 +131,7 @@ public class ServerCORSAssertionTest {
         final String acceptedOrigin = "acceptedOrigin";
 
         Message request = createRequest(HttpMethod.OPTIONS.toString());
-        request.getHeadersKnob().setHeader("origin",acceptedOrigin, HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().setHeader("Access-Control-Request-Method","GET", HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().setHeader("Access-Control-Request-Headers","param,x-param,x-requested-with", HeadersKnob.HEADER_TYPE_HTTP);
+        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
 
         Message response = createResponse();
 
@@ -128,16 +147,26 @@ public class ServerCORSAssertionTest {
         Assert.assertEquals(AssertionStatus.NONE, result);
         Assert.assertEquals(true, context.getVariable("cors.isPreflight"));
         Assert.assertEquals(true, context.getVariable("cors.isCors"));
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals(acceptedOrigin, context.getResponse().getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("true", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-methods", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("GET", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        Assert.assertEquals(true, context.getResponse().getHeadersKnob().containsHeader("access-control-allow-headers", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("param,x-param,x-requested-with", context.getResponse().getHeadersKnob().getHeaderValues("access-control-allow-headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        Assert.assertEquals("param,x-param,x-requested-with", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
     }
 
+    private void configureRequestHeaders(Message message, String origin, String method, String headers) {
+        if (null != origin)
+            message.getHeadersKnob().setHeader("Origin", origin, HeadersKnob.HEADER_TYPE_HTTP);
+        
+        if (null != method)
+            message.getHeadersKnob().setHeader("Access-Control-Request-Method", method, HeadersKnob.HEADER_TYPE_HTTP);
+        
+        if (null != headers)
+            message.getHeadersKnob().setHeader("Access-Control-Request-Headers", headers, HeadersKnob.HEADER_TYPE_HTTP);
+    }
 
     private ServerCORSAssertion createServer(CORSAssertion assertion) {
         ServerCORSAssertion serverAssertion = new ServerCORSAssertion(assertion);

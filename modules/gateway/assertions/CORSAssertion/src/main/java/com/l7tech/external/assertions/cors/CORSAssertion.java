@@ -47,6 +47,14 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.acceptedHeaders = acceptedHeaders;
     }
 
+    public List<String> getAcceptedMethods() {
+        return acceptedMethods;
+    }
+
+    public void setAcceptedMethods(List<String> acceptedMethods) {
+        this.acceptedMethods = acceptedMethods;
+    }
+
     // Null if accept any
     public List<String> getAcceptedOrigins() {
         return acceptedOrigins;
@@ -75,6 +83,22 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.responseCacheTime = responseCacheTime;
     }
 
+    public boolean isSupportsCredentials() {
+        return supportsCredentials;
+    }
+
+    public void setSupportsCredentials(boolean supportsCredentials) {
+        this.supportsCredentials = supportsCredentials;
+    }
+
+    public boolean isRequireCors() {
+        return requireCors;
+    }
+
+    public void setRequireCors(boolean requireCors) {
+        this.requireCors = requireCors;
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         VariableMetadata[] metadata;
@@ -94,9 +118,12 @@ public class CORSAssertion extends Assertion implements SetsVariables {
 
     private String variablePrefix = "cors";
     private List<String> acceptedHeaders;
+    private List<String> acceptedMethods;
     private List<String> acceptedOrigins;
     private List<String> exposedHeaders;
     private Long responseCacheTime;
+    private boolean supportsCredentials = true;
+    private boolean requireCors = true;
 
 
     @Override

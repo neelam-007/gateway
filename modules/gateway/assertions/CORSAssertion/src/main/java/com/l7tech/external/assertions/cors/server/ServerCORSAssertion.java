@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.cors.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.cors.CORSAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -18,16 +19,16 @@ import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
 public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> {
 
-    public static final String PREFLIGHT_ORIGIN_HEADER = "Origin";
-    public static final String PREFLIGHT_REQUEST_METHOD_HEADER = "Access-Control-Request-Method";
-    public static final String PREFLIGHT_REQUEST_HEADERS_HEADER = "Access-Control-Request-Headers";
+    public static final String REQUEST_ORIGIN_HEADER = "Origin";
+    public static final String REQUEST_METHOD_HEADER = "Access-Control-Request-Method";
+    public static final String REQUEST_HEADERS_HEADER = "Access-Control-Request-Headers";
 
-    public static final String PREFLIGHT_RESPONSE_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
-    public static final String PREFLIGHT_RESPONSE_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-    public static final String PREFLIGHT_RESPONSE_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
-    public static final String PREFLIGHT_RESPONSE_CACHE_TIME = "access-control-max-age";
-    public static final String PREFLIGHT_RESPONSE_ALLOW_METHODS = "access-control-allow-methods";
-    public static final String PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS = "access-control-allow-headers";
+    public static final String RESPONSE_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    public static final String RESPONSE_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String RESPONSE_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+    public static final String RESPONSE_CACHE_TIME = "Access-Control-Max-Age";
+    public static final String RESPONSE_ALLOW_METHODS = "Access-Control-Allow-Methods";
+    public static final String RESPONSE_ALLOW_ACCESS_HEADERS = "Access-Control-Allow-Headers";
 
     public ServerCORSAssertion(final CORSAssertion assertion) {
         super(assertion);
@@ -43,77 +44,140 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, false);
 
         // is a CORS request if "Origin" header is present
-        if (requestHeadersKnob.containsHeader(PREFLIGHT_ORIGIN_HEADER, HEADER_TYPE_HTTP)) {
-            // check origin
-            final String origin = requestHeadersKnob.getHeaderValues(PREFLIGHT_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
+        if (requestHeadersKnob.containsHeader(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)) {
+            // check origin is accepted
+            final String origin = requestHeadersKnob.getHeaderValues(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
 
             if (assertion.getAcceptedOrigins() != null) {
-                if(!Functions.exists(assertion.getAcceptedOrigins(), new Functions.Unary<Boolean, String>() {
-                    @Override
-                    public Boolean call(String s) {
-                        return s.equals(origin);
-                    }
-                })) {
-                    return AssertionStatus.NONE;
+                if (!findCaseSensitive(origin, assertion.getAcceptedOrigins())) {
+                    logAndAudit(AssertionMessages.CORS_ORIGIN_NOT_ALLOWED, origin);
+                    return AssertionStatus.FALSIFIED;
                 }
             }
+
+            // all origins allowed, or origin found in accepted origin list
+            logAndAudit(AssertionMessages.CORS_ORIGIN_ALLOWED, origin);
 
             context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, true);
 
             final boolean isPreflight = request.getHttpRequestKnob().getMethod().equals(HttpMethod.OPTIONS) &&
-                    requestHeadersKnob.containsHeader(PREFLIGHT_REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
+                    requestHeadersKnob.containsHeader(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
 
             final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
 
             if (isPreflight) {
                 context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, true);
 
-                // check PREFLIGHT_REQUEST_METHOD_HEADER
-                String[] methods = requestHeadersKnob.getHeaderValues(PREFLIGHT_REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
-                // check PREFLIGHT_ACCESS_CONTROL_HEADERS_HEADER if exist
-                String[] accessHeaders = requestHeadersKnob.getHeaderValues(PREFLIGHT_REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
+                // check REQUEST_METHOD_HEADER
+                String[] methods = requestHeadersKnob.getHeaderValues(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
+                
+                if (methods.length != 1) {
+                    // TODO jwilliams: some kind of error - a single method must be specified
+                    return AssertionStatus.FALSIFIED;
+                }
 
+                String requestMethod = methods[0];
+                
+                try {
+                    HttpMethod.valueOf(requestMethod);
+                } catch (IllegalArgumentException e) {
+                    return AssertionStatus.FALSIFIED;
+                    // TODO jwilliams: unrecognized HTTP method
+                }
+                
+                // TODO jwilliams: may be multiple Access-Control-Request-Headers headers, each with comma-delimited values
+                // check ACCESS_CONTROL_HEADERS_HEADER if exist
+                String[] accessHeaders = requestHeadersKnob.getHeaderValues(REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
+
+
+                // if the method is not found (case-sensitive) in the accepted methods, fail
+                if (null != assertion.getAcceptedMethods() &&
+                        !findCaseSensitive(requestMethod, assertion.getAcceptedMethods())) {
+                    // TODO jwilliams: log error
+                    return AssertionStatus.FALSIFIED;
+                }
+
+                // if any header field name is not found in the accepted headers, fail
+                if (null != assertion.getAcceptedMethods()) {
+                    for (String headerName : accessHeaders) {
+                        if (!findCaseInsensitive(headerName, assertion.getAcceptedHeaders())) {
+                            // TODO jwilliams: log error
+                            return AssertionStatus.FALSIFIED;
+                        }
+                    }
+                }
+
+                // TODO jwilliams: skip if a simple method?
                 // set response Access-Control-Allow-Methods
-                // echo back the method, actual request will not be resolved by the gateway if method is not allowed
-                addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_METHODS, methods);
+                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_METHODS, requestMethod);
 
+                // TODO jwilliams: skip if all headers are simple and Content-Type not present?
                 // set response Access-Control-Allow-Headers
-                if (assertion.getAcceptedHeaders() == null) {
-                    // echo back if all headers are accepted
-                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS, accessHeaders);
-                } else {
-                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ACCESS_HEADERS, assertion.getAcceptedHeaders());
-                }
-
-                if (assertion.getExposedHeaders() != null) {
-                    addHeaders(responseHeadersKnob, PREFLIGHT_RESPONSE_EXPOSE_HEADERS, assertion.getExposedHeaders());
-                }
+                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS, accessHeaders);
 
                 if (assertion.getResponseCacheTime() != null) {
-                    setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_CACHE_TIME, assertion.getResponseCacheTime().toString());
+                    setHeader(responseHeadersKnob, RESPONSE_CACHE_TIME, assertion.getResponseCacheTime().toString());
+                }
+            } else {
+                // set the Access-Control-Expose-Headers
+                if (assertion.getExposedHeaders() != null) {
+                    addHeaders(responseHeadersKnob, RESPONSE_EXPOSE_HEADERS, assertion.getExposedHeaders());
                 }
             }
 
-            setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_ORIGIN, origin);
-
-            // always allow user credentials in the request
-            setHeader(responseHeadersKnob, PREFLIGHT_RESPONSE_ALLOW_CREDENTIALS, "true");
+            // if credentials are supported, set the header to indicate and allow requested origin
+            if (assertion.isSupportsCredentials()) {
+                setHeader(responseHeadersKnob, RESPONSE_ALLOW_CREDENTIALS, "true");
+                setHeader(responseHeadersKnob, RESPONSE_ALLOW_ORIGIN, origin);
+            } else if (null == assertion.getAcceptedOrigins()) {    // otherwise, if all origins accepted, indicate so
+                setHeader(responseHeadersKnob, RESPONSE_ALLOW_ORIGIN, "*");
+            } else {    // otherwise, only show requested origin as allowed
+                setHeader(responseHeadersKnob, RESPONSE_ALLOW_ORIGIN, origin);
+            }
+            
+            if (isPreflight) {
+                // TODO jwilliams: return HTTP 200, no body
+            } else {
+                // TODO jwilliams: continue to further request processing
+            }
+        } else if (assertion.isRequireCors()) {
+            // TODO jwilliams: Not a valid CORS request
+            return AssertionStatus.FALSIFIED;
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private boolean findCaseSensitive(final String term, final Iterable<String> list) {
+        return Functions.exists(list, new Functions.Unary<Boolean, String>() {
+            @Override
+            public Boolean call(String s) {
+                return s.equals(term);
+            }
+        });
+    }
+
+    private boolean findCaseInsensitive(final String term, final Iterable<String> list) {
+        return Functions.exists(list, new Functions.Unary<Boolean, String>() {
+            @Override
+            public Boolean call(String s) {
+                return s.equalsIgnoreCase(term);
+            }
+        });
     }
 
     private void setHeader(HeadersKnob headersKnob, String headerName, String headerValue) {
         headersKnob.setHeader(headerName, headerValue, HEADER_TYPE_HTTP);
     }
 
+    // TODO jwilliams: rewrite so values are concatenated, comma-delimited; set single header
     private void addHeaders(HeadersKnob headersKnob, String header, List<String> values) {
         for (String val : values) {
             headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
     }
 
-    private void addHeaders(HeadersKnob headersKnob, String header, String[] values) {
+    private void addHeaders(HeadersKnob headersKnob, String header, String ... values) {
         for (String val : values) {
             headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
