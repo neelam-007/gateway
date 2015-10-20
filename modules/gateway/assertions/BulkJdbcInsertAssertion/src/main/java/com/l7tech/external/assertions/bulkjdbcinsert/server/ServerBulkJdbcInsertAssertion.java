@@ -259,12 +259,14 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         if(assertion.getFieldDelimiter() != null && assertion.getFieldDelimiter().trim().length() == 1) {
             format = format.withDelimiter(assertion.getFieldDelimiter().trim().charAt(0));
         }
-        if(assertion.getEscapeQuote() != null && assertion.getEscapeQuote().trim().length() == 1) {
-            format = format.withEscape(assertion.getEscapeQuote().trim().charAt(0));
-        }
         if(assertion.getQuoteChar() != null && assertion.getQuoteChar().trim().length() == 1) {
             format = format.withQuote(assertion.getQuoteChar().trim().charAt(0));
         }
+        if(assertion.getEscapeQuote() != null && assertion.getEscapeQuote().trim().length() == 1) {
+            char escapeChar = assertion.getEscapeQuote().trim().charAt(0);
+            format = (format.getQuoteCharacter() != null && escapeChar == format.getQuoteCharacter())? format.withEscape(null) : format.withEscape(escapeChar);
+        }
+
         return format;
     }
 
