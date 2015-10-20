@@ -4,6 +4,7 @@ package com.l7tech.external.assertions.cors.server;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.cors.CORSAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Header;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -13,6 +14,8 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.Functions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
@@ -39,81 +42,92 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         final Message request = context.getRequest();
         final HeadersKnob requestHeadersKnob = request.getHeadersKnob();
 
-        // set default variable values
-        context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, false);
-        context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, false);
-
         // is a CORS request if "Origin" header is present
         if (requestHeadersKnob.containsHeader(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)) {
-            // check origin is accepted
-            final String origin = requestHeadersKnob.getHeaderValues(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
-
-            if (assertion.getAcceptedOrigins() != null) {
-                if (!findCaseSensitive(origin, assertion.getAcceptedOrigins())) {
-                    logAndAudit(AssertionMessages.CORS_ORIGIN_NOT_ALLOWED, origin);
-                    return AssertionStatus.FALSIFIED;
-                }
-            }
-
-            // all origins allowed, or origin found in accepted origin list
-            logAndAudit(AssertionMessages.CORS_ORIGIN_ALLOWED, origin);
-
             context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, true);
 
             final boolean isPreflight = request.getHttpRequestKnob().getMethod().equals(HttpMethod.OPTIONS) &&
                     requestHeadersKnob.containsHeader(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
 
+            context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, isPreflight);
+
+            // check origin is accepted
+            final String origin = requestHeadersKnob.getHeaderValues(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
+
+            if (assertion.getAcceptedOrigins() != null) {
+                if (!findCaseSensitive(origin, assertion.getAcceptedOrigins())) {
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Origin not allowed: " + origin);
+                    return AssertionStatus.FALSIFIED;
+                }
+            }
+
+            // all origins allowed, or origin found in accepted origin list
+            logAndAudit(AssertionMessages.USERDETAIL_FINE, "Origin allowed: " + origin);
+
             final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
 
             if (isPreflight) {
-                context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, true);
-
                 // check REQUEST_METHOD_HEADER
                 String[] methods = requestHeadersKnob.getHeaderValues(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
                 
                 if (methods.length != 1) {
-                    // TODO jwilliams: some kind of error - a single method must be specified
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING,
+                            "The request must contain exactly one " + REQUEST_METHOD_HEADER + " header.");
                     return AssertionStatus.FALSIFIED;
                 }
 
-                String requestMethod = methods[0];
+                String requestedMethod = methods[0];
                 
                 try {
-                    HttpMethod.valueOf(requestMethod);
+                    HttpMethod.valueOf(requestedMethod);
                 } catch (IllegalArgumentException e) {
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The value of the " +
+                            REQUEST_METHOD_HEADER + " header is not a recognized HTTP method: " + requestedMethod);
                     return AssertionStatus.FALSIFIED;
-                    // TODO jwilliams: unrecognized HTTP method
                 }
                 
-                // TODO jwilliams: may be multiple Access-Control-Request-Headers headers, each with comma-delimited values
-                // check ACCESS_CONTROL_HEADERS_HEADER if exist
-                String[] accessHeaders = requestHeadersKnob.getHeaderValues(REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
+                // check ACCESS_CONTROL_HEADERS_HEADER if exist (may be multiple)
+                Collection<Header> requestHeadersHeaders =
+                        requestHeadersKnob.getHeaders(REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
 
+                ArrayList<String> requestedHeaderFieldNames = new ArrayList<>();
+
+                // parse the comma delimited values of any request headers into header names
+                if (!requestHeadersHeaders.isEmpty()) {
+                    for (Header header : requestHeadersHeaders) {
+                        String headerValue = (String) header.getValue();
+
+                        for (String fieldName : headerValue.split(",")) {
+                            if (!fieldName.trim().isEmpty()) {
+                                requestedHeaderFieldNames.add(fieldName.trim());
+                            }
+                        }
+                    }
+                }
 
                 // if the method is not found (case-sensitive) in the accepted methods, fail
                 if (null != assertion.getAcceptedMethods() &&
-                        !findCaseSensitive(requestMethod, assertion.getAcceptedMethods())) {
-                    // TODO jwilliams: log error
+                        !findCaseSensitive(requestedMethod, assertion.getAcceptedMethods())) {
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, requestedMethod + " is not an accepted method.");
                     return AssertionStatus.FALSIFIED;
                 }
 
                 // if any header field name is not found in the accepted headers, fail
-                if (null != assertion.getAcceptedMethods()) {
-                    for (String headerName : accessHeaders) {
+                if (null != assertion.getAcceptedHeaders()) {
+                    for (String headerName : requestedHeaderFieldNames) {
                         if (!findCaseInsensitive(headerName, assertion.getAcceptedHeaders())) {
-                            // TODO jwilliams: log error
+                            logAndAudit(AssertionMessages.USERDETAIL_WARNING,
+                                    headerName + " is not an accepted header.");
                             return AssertionStatus.FALSIFIED;
                         }
                     }
                 }
 
-                // TODO jwilliams: skip if a simple method?
-                // set response Access-Control-Allow-Methods
-                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_METHODS, requestMethod);
+                // set response Access-Control-Allow-Methods; only list requested method (sufficient as per spec)
+                setHeader(responseHeadersKnob, RESPONSE_ALLOW_METHODS, requestedMethod);
 
-                // TODO jwilliams: skip if all headers are simple and Content-Type not present?
-                // set response Access-Control-Allow-Headers
-                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS, accessHeaders);
+                // set response Access-Control-Allow-Headers; only list requested headers (sufficient as per spec)
+                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS, requestedHeaderFieldNames);
 
                 if (assertion.getResponseCacheTime() != null) {
                     setHeader(responseHeadersKnob, RESPONSE_CACHE_TIME, assertion.getResponseCacheTime().toString());
@@ -125,7 +139,7 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 }
             }
 
-            // if credentials are supported, set the header to indicate and allow requested origin
+            // if credentials are supported, set the headers to indicate such and allow the requested origin
             if (assertion.isSupportsCredentials()) {
                 setHeader(responseHeadersKnob, RESPONSE_ALLOW_CREDENTIALS, "true");
                 setHeader(responseHeadersKnob, RESPONSE_ALLOW_ORIGIN, origin);
@@ -134,15 +148,14 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
             } else {    // otherwise, only show requested origin as allowed
                 setHeader(responseHeadersKnob, RESPONSE_ALLOW_ORIGIN, origin);
             }
-            
-            if (isPreflight) {
-                // TODO jwilliams: return HTTP 200, no body
-            } else {
-                // TODO jwilliams: continue to further request processing
+        } else {
+            context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_CORS, false);
+            context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, false);
+
+            if (assertion.isRequireCors()) {
+                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Request must be a valid CORS request.");
+                return AssertionStatus.FALSIFIED;
             }
-        } else if (assertion.isRequireCors()) {
-            // TODO jwilliams: Not a valid CORS request
-            return AssertionStatus.FALSIFIED;
         }
 
         return AssertionStatus.NONE;
@@ -170,14 +183,7 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         headersKnob.setHeader(headerName, headerValue, HEADER_TYPE_HTTP);
     }
 
-    // TODO jwilliams: rewrite so values are concatenated, comma-delimited; set single header
     private void addHeaders(HeadersKnob headersKnob, String header, List<String> values) {
-        for (String val : values) {
-            headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
-        }
-    }
-
-    private void addHeaders(HeadersKnob headersKnob, String header, String ... values) {
         for (String val : values) {
             headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }

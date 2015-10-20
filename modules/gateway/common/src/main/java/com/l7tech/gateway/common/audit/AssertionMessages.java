@@ -1428,7 +1428,7 @@ public class AssertionMessages extends Messages {
     // Highest ID reserved for AssertionMessages = 99999
 
     // CORS Assertion
-    public static final M CORS_ORIGIN_ALLOWED = m(11600, Level.FINE, "Origin allowed: {0}");
-    public static final M CORS_ORIGIN_NOT_ALLOWED = m(11601, Level.WARNING, "Origin not allowed: {0}");
+//    public static final M CORS_ORIGIN_ALLOWED = m(11600, Level.FINE, "Origin allowed: {0}");
+//    public static final M CORS_ORIGIN_NOT_ALLOWED = m(11601, Level.WARNING, "Origin not allowed: {0}");
 }
 

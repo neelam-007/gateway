@@ -97,7 +97,14 @@ public class ServerCORSAssertionTest {
         Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         Assert.assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
         Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("param,x-param,x-requested-with", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+
+        String[] allowedHeaderValues =
+                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+
+        Assert.assertEquals(3, allowedHeaderValues.length);
+        Assert.assertEquals("param", allowedHeaderValues[0]);
+        Assert.assertEquals("x-param", allowedHeaderValues[1]);
+        Assert.assertEquals("x-requested-with", allowedHeaderValues[2]);
     }
 
     @Test
@@ -154,7 +161,14 @@ public class ServerCORSAssertionTest {
         Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         Assert.assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
         Assert.assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-        Assert.assertEquals("param,x-param,x-requested-with", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+
+        String[] allowedHeaderValues =
+                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+
+        Assert.assertEquals(3, allowedHeaderValues.length);
+        Assert.assertEquals("param", allowedHeaderValues[0]);
+        Assert.assertEquals("x-param", allowedHeaderValues[1]);
+        Assert.assertEquals("x-requested-with", allowedHeaderValues[2]);
     }
 
     private void configureRequestHeaders(Message message, String origin, String method, String headers) {
