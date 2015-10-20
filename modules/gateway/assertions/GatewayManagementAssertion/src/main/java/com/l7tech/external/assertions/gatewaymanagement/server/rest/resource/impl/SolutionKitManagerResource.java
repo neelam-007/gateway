@@ -302,6 +302,11 @@ public class SolutionKitManagerResource {
             // pass in form fields as input parameters to customizations
             setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
+            // execute custom callbacks
+            for (SolutionKit solutionKit : selectedSolutionKits) {
+                skarProcessor.invokeCustomCallback(solutionKit);
+            }
+
             // Test all selected (child) solution kit(s) before actual installation.
             // This step is to prevent partial installation/upgrade
             testBundleImports(solutionKitAdminHelper, solutionKitsConfig);
@@ -355,8 +360,6 @@ public class SolutionKitManagerResource {
                 if (parentSKFromLoad != null) {
                     solutionKit.setParentGoid(parentGoid);
                 }
-
-                skarProcessor.invokeCustomCallback(solutionKit);
 
                 Triple<SolutionKit, String, Boolean> triple = skarProcessor.installOrUpgrade(solutionKit);
                 solutionKitAdminHelper.install(triple.left, triple.middle, triple.right);
