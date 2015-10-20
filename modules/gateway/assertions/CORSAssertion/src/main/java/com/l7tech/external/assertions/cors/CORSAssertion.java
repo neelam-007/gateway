@@ -133,8 +133,8 @@ public class CORSAssertion extends Assertion implements SetsVariables {
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Support CORS");
-        meta.put(AssertionMetadata.LONG_NAME, "Support Cross-Origin Resource Sharing");
+        meta.put(AssertionMetadata.SHORT_NAME, "Process CORS Request");
+        meta.put(AssertionMetadata.LONG_NAME, "Process Cross-Origin Resource Sharing Request");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
@@ -144,7 +144,7 @@ public class CORSAssertion extends Assertion implements SetsVariables {
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Support CORS Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Process CORS Request Properties");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");

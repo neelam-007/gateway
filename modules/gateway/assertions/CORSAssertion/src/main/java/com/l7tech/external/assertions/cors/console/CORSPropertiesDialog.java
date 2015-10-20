@@ -10,11 +10,11 @@ import com.l7tech.gui.util.Utilities;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-
 
 public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<CORSAssertion> {
 
@@ -35,9 +35,6 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private JButton headersListAdd;
     private JButton headersListRemove;
     private JPanel variablePrefixPanel;
-    private JRadioButton exposedHeadersAllRadioButton;
-    private JRadioButton exposedHeadersListRadioButton;
-    private JPanel exposedHeadersListPanel;
     private JButton exposedHeadersListAdd;
     private JButton exposedHeadersListRemove;
     private JTable exposedHeadersTable;
@@ -125,11 +122,6 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
-        ButtonGroup exposedHeadersButtonGroup = new ButtonGroup();
-        exposedHeadersButtonGroup.add(exposedHeadersAllRadioButton);
-        exposedHeadersButtonGroup.add(exposedHeadersListRadioButton);
-        exposedHeadersAllRadioButton.addActionListener(enableDisableListener);
-        exposedHeadersListRadioButton.addActionListener(enableDisableListener);
         exposedHeadersTableModel = new DefaultTableModel(0,1);
         exposedHeadersTable.setModel(exposedHeadersTableModel);
         exposedHeadersTable.setShowGrid(false);
@@ -170,7 +162,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (getCheckBox.isSelected() && !putCheckBox.isSelected() && !postCheckBox.isSelected()
+                if (!getCheckBox.isSelected() && !putCheckBox.isSelected() && !postCheckBox.isSelected()
                         && !headCheckBox.isSelected() && !deleteCheckBox.isSelected()
                         && !patchCheckBox.isSelected() && !optionsCheckBox.isSelected()) {
                     return resourceBundle.getString("noMethodsEnabledError");
@@ -208,14 +200,8 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             originsListRemove.setEnabled(originsTable.getSelectedRowCount() > 0);
         }
 
-        Utilities.setEnabled(exposedHeadersListPanel,exposedHeadersListRadioButton.isSelected());
-        if(exposedHeadersListRadioButton.isSelected()){
-            exposedHeadersListRemove.setEnabled(exposedHeadersTable.getSelectedRowCount()>0);
-        }
-
         responseCacheAgeTextField.setEnabled(responeCacheAgeCheckBox.isSelected());
         responseCacheAgeUnit.setEnabled(responeCacheAgeCheckBox.isSelected());
-
     }
 
     @Override
@@ -236,9 +222,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             assertion.setAcceptedOrigins(origins);
         }
 
-        if(headersAllRadioButton.isSelected()){
+        if (headersAllRadioButton.isSelected()) {
             assertion.setAcceptedHeaders(null);
-        }else{
+        } else {
             List<String> headers = new ArrayList<>();
             for(int i=0; i < headersTable.getRowCount(); i++){
                 headers.add(headersTable.getValueAt(i,0).toString());
@@ -246,9 +232,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             assertion.setAcceptedHeaders(headers);
         }
 
-        if(exposedHeadersAllRadioButton.isSelected()){
+        if (0 == exposedHeadersTable.getRowCount()) {
             assertion.setExposedHeaders(null);
-        }else{
+        } else {
             List<String> headers = new ArrayList<>();
             for(int i=0; i < exposedHeadersTable.getRowCount(); i++){
                 headers.add(exposedHeadersTable.getValueAt(i,0).toString());
@@ -301,9 +287,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         }
 
-        exposedHeadersAllRadioButton.setSelected(true);
-        if(assertion.getExposedHeaders()!=null){
-            exposedHeadersListRadioButton.setSelected(true);
+        if (null != assertion.getExposedHeaders()) {
             for(String origin: assertion.getExposedHeaders()) {
                 exposedHeadersTableModel.addRow(new Object[]{origin});
             }
