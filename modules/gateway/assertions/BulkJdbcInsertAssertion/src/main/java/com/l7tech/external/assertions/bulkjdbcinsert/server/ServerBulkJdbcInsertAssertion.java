@@ -20,7 +20,9 @@ import com.l7tech.util.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -50,21 +52,9 @@ import static java.lang.reflect.Array.newInstance;
  * @see com.l7tech.external.assertions.bulkjdbcinsert.BulkJdbcInsertAssertion
  */
 public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServerAssertion<BulkJdbcInsertAssertion> {
-    //private static Map<String,Transformer> transformerMap = new HashMap<>();//might be moved to the core so the transformers can be loaded
-
     private final String[] variablesUsed;
     private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
     private final Config config;
-
-/*    static{
-        //initialize transformers. Custom transformers can be added later via separate assertion module
-        transformerMap.put("String", new StringTransformer());
-        transformerMap.put("Regex2Bool", new Regex2BoolTransformer());
-        transformerMap.put("Regex2Int", new Regex2IntTransformer());
-        transformerMap.put("Subtract", new SubtractTransformer());
-        transformerMap.put("Add", new AddTransformer());
-        transformerMap.put("UUID", new GenerateUuidTransformer());
-    }*/
 
     public ServerBulkJdbcInsertAssertion( final BulkJdbcInsertAssertion assertion, final ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
@@ -238,8 +228,13 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
     private Connection getJdbcConnection(String connName) {
         Connection connection = null;
         try {
-            DataSource ds = jdbcConnectionPoolManager.getDataSource(connName);
-            connection = ds.getConnection();
+            if(StringUtils.isNotBlank(connName)) {
+                DataSource ds = jdbcConnectionPoolManager.getDataSource(connName);
+                connection = ds.getConnection();
+            }
+            else {
+                logAndAudit(AssertionMessages.JDBC_CONNECTION_ERROR, "JDBC connection name is blank");
+            }
         } catch (NamingException ne) {
             logAndAudit(AssertionMessages.JDBC_CONNECTION_ERROR, "Failed to find JDBC connection " + connName + ". " + ne.getMessage());
             logger.log(Level.SEVERE, "Failed to find JDBC connection " + connName + ". " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
@@ -251,23 +246,46 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
     }
 
     private CSVFormat getCVSFormat(final BulkJdbcInsertAssertion assertion) {
-        //TODO: configure format
-        CSVFormat format = CSVFormat.newFormat(',').withQuote('"').withRecordSeparator("\r\n").withIgnoreEmptyLines(true);//CSVFormat.DEFAULT;//start from the default format
+        //configure default format with ',' field delimiter, CRLF record delimiter
+        CSVFormat format = CSVFormat.newFormat(',').withIgnoreEmptyLines(true);//CSVFormat.DEFAULT;//start from the default format
         if(assertion.getRecordDelimiter() != null) {
-            format = format.withRecordSeparator(assertion.getRecordDelimiter().equals(BulkJdbcInsertAssertion.CRLF)? "\r\n":assertion.getRecordDelimiter());
+            format = configureDelimiter(assertion, format);
         }
         if(assertion.getFieldDelimiter() != null && assertion.getFieldDelimiter().trim().length() == 1) {
             format = format.withDelimiter(assertion.getFieldDelimiter().trim().charAt(0));
         }
-        if(assertion.getQuoteChar() != null && assertion.getQuoteChar().trim().length() == 1) {
-            format = format.withQuote(assertion.getQuoteChar().trim().charAt(0));
+        if(assertion.isQuoted()) {
+            if (assertion.getQuoteChar() != null && assertion.getQuoteChar().trim().length() == 1) {
+                format = format.withQuote(assertion.getQuoteChar().trim().charAt(0));
+            }
         }
-        if(assertion.getEscapeQuote() != null && assertion.getEscapeQuote().trim().length() == 1) {
+        else {
+            format = format.withQuote(null);
+        }
+
+        if (assertion.getEscapeQuote() != null && assertion.getEscapeQuote().trim().length() == 1) {
             char escapeChar = assertion.getEscapeQuote().trim().charAt(0);
-            format = (format.getQuoteCharacter() != null && escapeChar == format.getQuoteCharacter())? format.withEscape(null) : format.withEscape(escapeChar);
+            format = (format.getQuoteCharacter() != null && escapeChar == format.getQuoteCharacter()) ? format.withEscape(null) : format.withEscape(escapeChar);
         }
 
         return format;
+    }
+
+    private CSVFormat configureDelimiter(BulkJdbcInsertAssertion assertion, CSVFormat format) {
+        String delimiter;
+        if("CRLF".equals(assertion.getRecordDelimiter())) {
+            delimiter = BulkJdbcInsertAssertion.CRLF;
+        }
+        else if("CR".equals(assertion.getRecordDelimiter())) {
+            delimiter = BulkJdbcInsertAssertion.CR;
+        }
+        else if("LF".equals(assertion.getRecordDelimiter())) {
+            delimiter = BulkJdbcInsertAssertion.LF;
+        }
+        else {
+            delimiter = assertion.getRecordDelimiter();
+        }
+        return format.withRecordSeparator(delimiter);
     }
 
     private Pair<Charset,byte[]> getPartInfoBody( PartInfo partInfo) {

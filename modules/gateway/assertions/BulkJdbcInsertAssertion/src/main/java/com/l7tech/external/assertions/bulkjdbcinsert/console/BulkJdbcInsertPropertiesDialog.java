@@ -82,7 +82,15 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        inputValidator.constrainTextFieldToBeNonEmpty(tableNameLabel.getText(),tableNameTextField, null);
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(tableNameTextField) {
+            @Override
+            public String getValidationError() {
+                if(StringUtils.isBlank(tableNameTextField.getText())) {
+                    return resources.getString("table.name.empty.error");
+                }
+                return null;
+            }
+        });
         inputValidator.constrainTextFieldToMaxChars(fieldDelimiterLabel.getText(),fieldDelimiterTextField,1,null);
 
         quotedCheckBox.addActionListener(connectionListener);
@@ -171,8 +179,8 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         boolean quoted = quotedCheckBox.isSelected();
         quoteLabel.setEnabled(quoted);
         quoteTextField.setEnabled(quoted);
-        escapeQuoteTextField.setEnabled(quoted);
-        escapeQuoteLabel.setEnabled(quoted);
+        //escapeQuoteTextField.setEnabled(quoted);
+        //escapeQuoteLabel.setEnabled(quoted);
         enableOrDisableTableButtons();
     }
 

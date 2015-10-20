@@ -76,6 +76,8 @@ public class ServerBulkJdbcInsertAssertionTest {
        mockPreparedStatement = mock(PreparedStatement.class);
        assertion = new BulkJdbcInsertAssertion();
        assertion.setConnectionName("Connection");
+       assertion.setQuoted(true);
+       assertion.setQuoteChar("\"");
        when(mockDataSource.getConnection()).thenReturn(mockConnection);
        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
