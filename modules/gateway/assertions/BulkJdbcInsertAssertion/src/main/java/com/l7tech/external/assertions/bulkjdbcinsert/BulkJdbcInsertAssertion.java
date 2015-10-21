@@ -19,11 +19,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
  */
 public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implements JdbcConnectionable,UsesVariables {
     protected static final Logger logger = Logger.getLogger(BulkJdbcInsertAssertion.class.getName());
-    //public static final String CRLF = "CRLF";
-    //public static final String CR = "\r";
-    //public static final String LF = "\n";
-    //public static final String CRLF = CR + LF;
-
 
     public enum Compression {
         NONE, GZIP, DEFLATE;

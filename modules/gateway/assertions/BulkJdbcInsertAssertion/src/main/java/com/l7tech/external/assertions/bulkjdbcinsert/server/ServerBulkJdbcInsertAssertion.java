@@ -99,8 +99,8 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
 
                     try (final Reader reader = new InputStreamReader(new BOMInputStream(inputStream), StandardCharsets.UTF_8)) {
                         try (final CSVParser parser = new CSVParser(reader, getCVSFormat(assertion))) {
-                            List<CSVRecord> recordList = parser.getRecords();
-                            if(recordList.size() > 0) {
+                            Iterator<CSVRecord> recordIterator = parser.iterator();
+                            if(recordIterator.hasNext()) {
                                 Set<BulkJdbcInsertAssertion.ColumnMapper> columnMapperSet = getColumnMapperSet();
                                 String sqlCommand = buildSqlStatement(tableName, columnMapperSet);
                                 //column mapper set to map
@@ -110,9 +110,11 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                 }
                                 BulkJdbcInsertAssertion.ColumnMapper[] columnMappers = columnMapperSet.toArray(new BulkJdbcInsertAssertion.ColumnMapper[0]);
                                 PreparedStatement stmt = jdbcConnection.prepareStatement(sqlCommand);
+                                int recordCount = 0;
                                 int currentBatchSize = 0;
                                 int[] commitRespose = new int[0];
-                                for (final CSVRecord record : recordList) {
+                                do {
+                                    CSVRecord record = recordIterator.next();
                                     for(int i=0; i < columnMapperSet.size(); i++) {
                                         BulkJdbcInsertAssertion.ColumnMapper param = columnMappers[i];
                                         for (BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
@@ -136,8 +138,9 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                         commitRespose = concatArrays(commitRespose, count);
                                         currentBatchSize = 0;
                                     }
-                                }
-                                //make sure we executed the batch
+                                    recordCount++;
+                                } while(recordIterator.hasNext());
+                                //make sure we executed the last batch
                                 if(currentBatchSize > 0) {
                                     int[] count = stmt.executeBatch();
                                     logger.log(Level.FINE, "Executed the batch of " + count.length +" records");
@@ -147,7 +150,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                                     jdbcConnection.commit();
                                     logAndAudit(AssertionMessages.USERDETAIL_FINE, "Bulk JDBC Insert Assertion - " + commitRespose.length + " records were committed to the database");
                                 }
-                                logger.log(Level.FINE, "Total amount of records processed: " + recordList.size());
+                                logger.log(Level.FINE, "Total amount of records processed: " + recordCount);
                                 long processTime = System.currentTimeMillis() - startTime;
                                 logAndAudit(AssertionMessages.USERDETAIL_INFO, "Bulk JDBC Insert Assertion successfully processed data: inserted " + commitRespose.length + " records into the table " +  tableName + " in " + processTime + " ms");
                             }
