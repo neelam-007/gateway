@@ -20,9 +20,10 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implements JdbcConnectionable,UsesVariables {
     protected static final Logger logger = Logger.getLogger(BulkJdbcInsertAssertion.class.getName());
     //public static final String CRLF = "CRLF";
-    public static final String CR = "\r";
-    public static final String LF = "\n";
-    public static final String CRLF = CR + LF;
+    //public static final String CR = "\r";
+    //public static final String LF = "\n";
+    //public static final String CRLF = CR + LF;
+
 
     public enum Compression {
         NONE, GZIP, DEFLATE;
@@ -36,11 +37,19 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         }
     }
 
+    public static final Map<String,String> recordDelimiterMap;
+
     public static Map<String,Transformer> transformerMap = new HashMap<>();//might be moved to the core so the transformers can be loaded
 
     public static String[] TRANSFORMATIONS;
 
     static{
+        //initialize record delimiters
+        Map<String, String> delimiters = new HashMap<>();
+        delimiters.put("CR", "\r");
+        delimiters.put("LF", "\n");
+        delimiters.put("CRLF", "\r\n");
+        recordDelimiterMap = Collections.unmodifiableMap(delimiters);
         //initialize transformers. Custom transformers can be added later via separate assertion module
         transformerMap.put("String", new StringTransformer());
         transformerMap.put("Regex2Bool", new Regex2BoolTransformer());
@@ -51,6 +60,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         transformerMap.put("SetInt", new SetIntValueTransformer());
         transformerMap.put("SetString", new SetStringTransformer());
         TRANSFORMATIONS = transformerMap.keySet().toArray(new String[0]);
+        Arrays.sort(TRANSFORMATIONS);
     }
 
     private String connectionName;

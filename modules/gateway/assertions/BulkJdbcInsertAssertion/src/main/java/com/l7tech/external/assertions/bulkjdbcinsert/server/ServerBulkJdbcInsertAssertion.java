@@ -20,7 +20,6 @@ import com.l7tech.util.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
@@ -36,8 +35,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.naming.NamingException;
@@ -247,9 +244,12 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
 
     private CSVFormat getCVSFormat(final BulkJdbcInsertAssertion assertion) {
         //configure default format with ',' field delimiter, CRLF record delimiter
-        CSVFormat format = CSVFormat.newFormat(',').withIgnoreEmptyLines(true);//CSVFormat.DEFAULT;//start from the default format
+        CSVFormat format = CSVFormat.newFormat(',').withIgnoreEmptyLines(true);
         if(assertion.getRecordDelimiter() != null) {
-            format = configureDelimiter(assertion, format);
+            String delimiter = BulkJdbcInsertAssertion.recordDelimiterMap.get(assertion.getRecordDelimiter());
+            if(delimiter != null) {
+                format = format.withRecordSeparator(delimiter);
+            }
         }
         if(assertion.getFieldDelimiter() != null && assertion.getFieldDelimiter().trim().length() == 1) {
             format = format.withDelimiter(assertion.getFieldDelimiter().trim().charAt(0));
@@ -269,23 +269,6 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         }
 
         return format;
-    }
-
-    private CSVFormat configureDelimiter(BulkJdbcInsertAssertion assertion, CSVFormat format) {
-        String delimiter;
-        if("CRLF".equals(assertion.getRecordDelimiter())) {
-            delimiter = BulkJdbcInsertAssertion.CRLF;
-        }
-        else if("CR".equals(assertion.getRecordDelimiter())) {
-            delimiter = BulkJdbcInsertAssertion.CR;
-        }
-        else if("LF".equals(assertion.getRecordDelimiter())) {
-            delimiter = BulkJdbcInsertAssertion.LF;
-        }
-        else {
-            delimiter = assertion.getRecordDelimiter();
-        }
-        return format.withRecordSeparator(delimiter);
     }
 
     private Pair<Charset,byte[]> getPartInfoBody( PartInfo partInfo) {

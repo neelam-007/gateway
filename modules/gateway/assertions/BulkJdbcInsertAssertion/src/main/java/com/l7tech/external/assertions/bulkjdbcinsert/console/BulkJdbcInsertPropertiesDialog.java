@@ -37,7 +37,6 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     private JButton addButton;
     private JButton editButton;
     private JButton removeButton;
-    private JTextField recordDelimiterTextField;
     private JTextField fieldDelimiterTextField;
     private JCheckBox quotedCheckBox;
     private JComboBox decompressionComboBox;
@@ -50,6 +49,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     private JLabel escapeQuoteLabel;
     private JLabel tableNameLabel;
     private JLabel fieldDelimiterLabel;
+    private JComboBox recordDelimiterComboBox;
     private final Map<String,String> connToDriverMap = new HashMap<String, String>();
     private List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
     private ColumnMappingTableModel mappingTableModel;
@@ -64,6 +64,9 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     @Override
     protected void initComponents() {
         super.initComponents();
+
+        recordDelimiterComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.recordDelimiterMap.keySet().toArray(new String[0])));
+        recordDelimiterComboBox.setSelectedItem("CRLF");
 
         inputValidator = new InputValidator(this, getTitle());
         inputValidator.addRule(new InputValidator.ValidationRule() {
@@ -179,8 +182,6 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         boolean quoted = quotedCheckBox.isSelected();
         quoteLabel.setEnabled(quoted);
         quoteTextField.setEnabled(quoted);
-        //escapeQuoteTextField.setEnabled(quoted);
-        //escapeQuoteLabel.setEnabled(quoted);
         enableOrDisableTableButtons();
     }
 
@@ -202,7 +203,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         }
         tableNameTextField.setText(assertion.getTableName());
         quotedCheckBox.setSelected(assertion.isQuoted());
-        recordDelimiterTextField.setText(assertion.getRecordDelimiter());
+        recordDelimiterComboBox.setSelectedItem(assertion.getRecordDelimiter());
         fieldDelimiterTextField.setText(assertion.getFieldDelimiter());
         quoteTextField.setText(assertion.getQuoteChar());
         escapeQuoteTextField.setText(assertion.getEscapeQuote());
@@ -217,9 +218,14 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     @Override
     public BulkJdbcInsertAssertion getData(BulkJdbcInsertAssertion assertion) throws ValidationException {
         assertion.setConnectionName(( connectionComboBox.getSelectedItem()).toString());
-        assertion.setTableName(tableNameTextField.getText());
+        assertion.setTableName(tableNameTextField.getText().trim());
         assertion.setQuoted(quotedCheckBox.isSelected());
-        assertion.setRecordDelimiter(recordDelimiterTextField.getText());
+        if(recordDelimiterComboBox.getSelectedIndex() == -1) {
+            assertion.setRecordDelimiter("CRLF");
+        }
+        else {
+            assertion.setRecordDelimiter(recordDelimiterComboBox.getSelectedItem().toString());
+        }
         assertion.setFieldDelimiter(fieldDelimiterTextField.getText());
         assertion.setEscapeQuote(escapeQuoteTextField.getText());
         assertion.setQuoteChar(quoteTextField.getText());
