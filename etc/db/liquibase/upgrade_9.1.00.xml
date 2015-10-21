@@ -32,4 +32,28 @@
             <renameColumn tableName="solution_kit_meta" oldColumnName="readable" newColumnName="read_only" columnDataType="${tinyint.type}" />
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="solution_kit_meta_rename_readable_to_read_only">
+        <!-- discarding existing read-only flags -->
+        <dropDefaultValue tableName="solution_kit_meta" columnName="readable" />
+        <dropColumn tableName="solution_kit_meta" columnName="readable"/>
+        <!--
+        forcing all entities to not read-only (i.e. user editable) so that upgrade from Longbow could work properly
+        Unfortunately readonly-ness will be lost for skars installed after "solution_kit_meta_rename_read_only_to_readable_and_set_default_value" change-set.
+        -->
+        <addColumn tableName="solution_kit_meta">
+            <column name="read_only" type="${tinyint.type}" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropDefaultValue tableName="solution_kit_meta" columnName="read_only" />
+            <dropColumn tableName="solution_kit_meta" columnName="read_only"/>
+            <!-- as readonly-ness was already lost there is no way to properly rollback the previous values -->
+            <addColumn tableName="solution_kit_meta">
+                <column name="readable" type="${tinyint.type}" defaultValueBoolean="true">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

@@ -24,7 +24,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
     private SolutionKit solutionKit;
     private String entityId;
     private EntityType entityType;
-    private boolean readable = true;
+    private boolean readOnly = false;
     // When adding fields, update copyFrom() method
 
     @Deprecated
@@ -36,7 +36,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         this.solutionKit = solutionKit;
         this.entityId = entityId;
         this.entityType = entityType;
-        this.readable = !readOnly;
+        this.readOnly = readOnly;
     }
 
     @ManyToOne(optional=false)
@@ -65,12 +65,12 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         this.entityType = entityType;
     }
 
-    @Column(name="readable")
-    public boolean isReadable() {
-        return readable;
+    @Column(name="read_only", nullable = false)
+    public boolean isReadOnly() {
+        return readOnly;
     }
-    public void setReadable(boolean readable) {
-        this.readable = readable;
+    public void setReadOnly(final boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
     /**
@@ -89,7 +89,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         setSolutionKit(ownerSolutionKit);
         setEntityId(otherDescriptor.getEntityId());
         setEntityType(otherDescriptor.getEntityType());
-        setReadable(otherDescriptor.isReadable());
+        setReadOnly(otherDescriptor.isReadOnly());
     }
 
     /**
@@ -121,7 +121,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         // there is no need to check for owner solutionKit equality (pattern from other entities see Role->Permissions)
         return !(entityId != null ? !entityId.equals(that.entityId) : that.entityId != null)
                 && entityType == that.entityType
-                && readable == that.readable;
+                && readOnly == that.readOnly;
     }
 
     @Override
@@ -130,7 +130,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         // same as equals, there is no need to calc hash for owner solutionKit (pattern from other entities see Role->Permissions)
         result = 31 * result + (entityId != null ? entityId.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
-        result = 31 * result + Boolean.hashCode(readable);
+        result = 31 * result + Boolean.hashCode(readOnly);
         return result;
     }
 }

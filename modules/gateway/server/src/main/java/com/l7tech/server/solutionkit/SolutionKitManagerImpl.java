@@ -126,7 +126,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
 
         for (final SolutionKit solutionKit : findAll()) {
             for (final EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
-                if (!descriptor.isReadable()) {
+                if (descriptor.isReadOnly()) {
                     solutionKitOwnedEntities.add(Pair.pair(descriptor.getEntityType(), descriptor.getEntityId()));
                 }
             }

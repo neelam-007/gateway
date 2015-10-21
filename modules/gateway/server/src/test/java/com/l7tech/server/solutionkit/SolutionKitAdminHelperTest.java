@@ -134,15 +134,15 @@ public class SolutionKitAdminHelperTest {
             switch (descriptor.getEntityId()) {
                 case "37953ab3e89a8b7df721c055d4aeb6a1":
                     Assert.assertThat(descriptor.getEntityType(), Matchers.is(EntityType.SERVER_MODULE_FILE));
-                    Assert.assertFalse(descriptor.isReadable());
+                    Assert.assertTrue(descriptor.isReadOnly());
                     break;
                 case "37953ab3e89a8b7df721c055d4aeb6a3":
                     Assert.assertThat(descriptor.getEntityType(), Matchers.is(EntityType.POLICY));
-                    Assert.assertFalse(descriptor.isReadable());
+                    Assert.assertTrue(descriptor.isReadOnly());
                     break;
                 case "37953ab3e89a8b7df721c055d4aeb6a4":
                     Assert.assertThat(descriptor.getEntityType(), Matchers.is(EntityType.ENCAPSULATED_ASSERTION));
-                    Assert.assertTrue(descriptor.isReadable());
+                    Assert.assertFalse(descriptor.isReadOnly());
                     break;
                 default:
                     Assert.fail("Unexpected entity id: " + descriptor.getEntityId());

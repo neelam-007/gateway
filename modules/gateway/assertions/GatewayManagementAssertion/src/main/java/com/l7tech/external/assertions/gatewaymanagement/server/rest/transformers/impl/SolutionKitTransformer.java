@@ -253,7 +253,7 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                 entityOwnershipDescriptorMO.setId(entityOwnershipDescriptor.getId());
                 entityOwnershipDescriptorMO.setEntityId(entityOwnershipDescriptor.getEntityId());
                 entityOwnershipDescriptorMO.setEntityType(entityOwnershipDescriptor.getEntityType().name());
-                entityOwnershipDescriptorMO.setReadable(entityOwnershipDescriptor.isReadable());
+                entityOwnershipDescriptorMO.setReadOnly(entityOwnershipDescriptor.isReadOnly());
                 entityOwnershipDescriptorMOs.add(entityOwnershipDescriptorMO);
             }
             return entityOwnershipDescriptorMOs.isEmpty() ? null : Collections.unmodifiableList(entityOwnershipDescriptorMOs);
@@ -302,8 +302,8 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
 
                 // by default all entities are not read-only
                 boolean readOnly = false;
-                if (entityOwnershipDescriptorMO.isReadable() != null) {
-                    readOnly = !entityOwnershipDescriptorMO.isReadable();
+                if (entityOwnershipDescriptorMO.isReadOnly() != null) {
+                    readOnly = entityOwnershipDescriptorMO.isReadOnly();
                 }
 
                 assert entityId != null;

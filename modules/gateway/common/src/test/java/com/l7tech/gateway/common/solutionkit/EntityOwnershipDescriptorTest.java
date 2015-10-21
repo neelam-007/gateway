@@ -50,7 +50,7 @@ public class EntityOwnershipDescriptorTest {
         Assert.assertThat(descriptor2.getId(), Matchers.equalTo(descriptor1.getId()));
         Assert.assertThat(descriptor2.getEntityId(), Matchers.equalTo(descriptor1.getEntityId()));
         Assert.assertThat(descriptor2.getEntityType(), Matchers.equalTo(descriptor1.getEntityType()));
-        Assert.assertThat(descriptor2.isReadable(), Matchers.equalTo(descriptor1.isReadable()));
+        Assert.assertThat(descriptor2.isReadOnly(), Matchers.equalTo(descriptor1.isReadOnly()));
 
         EntityOwnershipDescriptor newDescriptor = EntityOwnershipDescriptor.createFrom(descriptor1, sk2);
         // make sure the owners are different
@@ -66,7 +66,7 @@ public class EntityOwnershipDescriptorTest {
         Assert.assertThat(newDescriptor.getId(), Matchers.equalTo(descriptor1.getId()));
         Assert.assertThat(newDescriptor.getEntityId(), Matchers.equalTo(descriptor1.getEntityId()));
         Assert.assertThat(newDescriptor.getEntityType(), Matchers.equalTo(descriptor1.getEntityType()));
-        Assert.assertThat(newDescriptor.isReadable(), Matchers.equalTo(descriptor1.isReadable()));
+        Assert.assertThat(newDescriptor.isReadOnly(), Matchers.equalTo(descriptor1.isReadOnly()));
         // make sure the owners are same
         Assert.assertThat(
                 newDescriptor.getSolutionKit(),
@@ -80,7 +80,7 @@ public class EntityOwnershipDescriptorTest {
         Assert.assertThat(newDescriptor.getId(), Matchers.equalTo(descriptor2.getId()));
         Assert.assertThat(newDescriptor.getEntityId(), Matchers.equalTo(descriptor2.getEntityId()));
         Assert.assertThat(newDescriptor.getEntityType(), Matchers.equalTo(descriptor2.getEntityType()));
-        Assert.assertThat(newDescriptor.isReadable(), Matchers.equalTo(descriptor2.isReadable()));
+        Assert.assertThat(newDescriptor.isReadOnly(), Matchers.equalTo(descriptor2.isReadOnly()));
     }
 
     /**
@@ -176,7 +176,7 @@ public class EntityOwnershipDescriptorTest {
         Assert.assertThat(descriptor1Copy, Matchers.equalTo(descriptor1));
         Assert.assertThat(descriptor1Copy.hashCode(), Matchers.equalTo(descriptor1.hashCode()));
         // now flip the read-only flag
-        descriptor1Copy.setReadable(!descriptor1.isReadable());
+        descriptor1Copy.setReadOnly(!descriptor1.isReadOnly());
         // make sure they are different
         Assert.assertThat(descriptor1Copy, Matchers.not(Matchers.equalTo(descriptor1)));
         Assert.assertThat(descriptor1Copy.hashCode(), Matchers.not(Matchers.equalTo(descriptor1.hashCode())));

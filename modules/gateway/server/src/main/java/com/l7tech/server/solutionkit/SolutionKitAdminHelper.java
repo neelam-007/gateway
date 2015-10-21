@@ -352,7 +352,7 @@ public class SolutionKitAdminHelper {
                     final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
                     if (existing != null) {
                         final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
-                        existing.setReadable(!isReadOnly);
+                        existing.setReadOnly(isReadOnly);
                     }
                 } else {
                     logger.log(Level.WARNING, "Unrecognized RESTMAN result action '" + restmanResultMappingAction + "'. Entity (" + entityId + "," + entityType + ") ownership information cannot be processed.");
