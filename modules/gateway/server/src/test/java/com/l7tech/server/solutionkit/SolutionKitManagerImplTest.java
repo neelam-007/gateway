@@ -1,12 +1,16 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -14,7 +18,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Document;
 
 import java.util.concurrent.Callable;
 
@@ -139,6 +145,51 @@ public class SolutionKitManagerImplTest {
 
     @Test
     public void importBundleRestmanError() throws Exception {
-        // TODO simulate error from restmanInvoker
+        // simulate error from restmanInvoker
+        GatewayManagementInvoker invoker = Mockito.mock(GatewayManagementInvoker.class);
+
+        //When RestmanMessage == null
+        RestmanInvoker rmInvoker = Mockito.spy(new RestmanInvoker(new Functions.Nullary<Boolean>() {
+            @Override
+            public Boolean call() {
+                // nothing to do in cancelled callback.
+                return true;
+            }
+        }, invoker));
+        Mockito.doReturn(null).when(rmInvoker).getRestmanMessage(pec);
+
+        try {
+            rmInvoker.callManagementCheckInterrupted(pec, REQUEST);
+            fail("Expected: server error response.");
+        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+            assertEquals("Unexpected exception: a call result was expected.", e.getMessage());
+        }
+
+
+        //When RestmanMessage.isErrorType() == true
+        final String response =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "           THIS IS A TEST RESTMAN MESSAGE RESPONSE\n" +
+                        "</l7:Item>\n";
+        Document document = XmlUtil.stringToDocument(response);
+        final RestmanMessage rmMessage= Mockito.spy(new RestmanMessage(document));
+        rmInvoker = Mockito.spy(new RestmanInvoker(new Functions.Nullary<Boolean>() {
+            @Override
+            public Boolean call() {
+                // nothing to do in cancelled callback.
+                return true;
+            }
+        }, invoker));
+        Mockito.doReturn(rmMessage).when(rmInvoker).getRestmanMessage(pec);
+        Mockito.doReturn(true).when(rmMessage).isErrorResponse();
+
+        try {
+            rmInvoker.callManagementCheckInterrupted(pec, REQUEST);
+            fail("Expected: server error response");
+        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+            assertEquals(response, e.getMessage());
+        }
+
     }
 }

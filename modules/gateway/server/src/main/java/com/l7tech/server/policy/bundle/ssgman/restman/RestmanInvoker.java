@@ -63,7 +63,7 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
         return callManagementAssertion(getContext(requestXml));
     }
 
-    private Pair<AssertionStatus, RestmanMessage> callManagementAssertion(
+    protected Pair<AssertionStatus, RestmanMessage> callManagementAssertion(
             final PolicyEnforcementContext context) throws GatewayManagementDocumentUtilities.AccessDeniedManagementResponse, UnexpectedManagementResponse {
         final AssertionStatus assertionStatus;
         try {
@@ -73,7 +73,7 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
         }
         final RestmanMessage responseMessage;
         try {
-            responseMessage = new RestmanMessage(context.getResponse());
+            responseMessage = getRestmanMessage(context);
 
             // check for unexpected internal error
             if (responseMessage == null) {
@@ -172,5 +172,10 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
         context.setService(service);
 
         return context;
+    }
+
+    //For unit testing purposes
+    public RestmanMessage getRestmanMessage(PolicyEnforcementContext context) throws IOException, NoSuchPartException, SAXException {
+        return new RestmanMessage(context.getResponse());
     }
 }

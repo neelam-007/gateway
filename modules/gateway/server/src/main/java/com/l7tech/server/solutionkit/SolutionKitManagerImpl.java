@@ -393,7 +393,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
     }
 
-    private RestmanInvoker getRestmanInvoker() throws SolutionKitException {
+    protected RestmanInvoker getRestmanInvoker() throws SolutionKitException {
         if (restmanInvoker != null) {
             // unit test invoker
             return restmanInvoker;
