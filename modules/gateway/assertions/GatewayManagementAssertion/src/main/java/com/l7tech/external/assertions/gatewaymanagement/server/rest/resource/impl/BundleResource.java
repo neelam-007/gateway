@@ -186,6 +186,8 @@ public class BundleResource {
      *                                            not export their dependencies and FailOnNew is set to true)
      * @param requiredWorkQueueIds                Marks these Work Queues as required in the bundle (does not export
      *                                            their dependencies and FailOnNew is set to true)
+     * @param requiredSolutionKitIds              Marks these Solution Kits as required in the bundle (does not export
+     *                                            their dependencies and FailOnNew is set to true)
      * @param fullGateway                         True to export the full gateway. False by default
      * @param includeDependencies                 True to export with dependencies. False by default
      * @param encryptSecrets                      True to export with encrypted secrets. False by default.
@@ -264,6 +266,7 @@ public class BundleResource {
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireServerModuleFile") List<String> requiredServerModuleFileIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSiteMinderConfiguration") List<String> requiredSiteMinderConfigurationIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireWorkQueue") List<String> requiredWorkQueueIds,
+                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSolutionKit") List<String> requiredSolutionKitIds,
 
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
                                      @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
@@ -337,6 +340,7 @@ public class BundleResource {
                 "requireServerModuleFile",
                 "requireSiteMinderConfiguration",
                 "requireWorkQueue",
+                "requireSolutionKit",
                 "all", "includeDependencies", "encryptSecrets", "encryptUsingClusterPassphrase"));
         final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
@@ -415,6 +419,7 @@ public class BundleResource {
         buildEntityHeaders(requiredServerModuleFileIds, entityHeadersToIgnoreDependencies, EntityType.SERVER_MODULE_FILE);
         buildEntityHeaders(requiredSiteMinderConfigurationIds, entityHeadersToIgnoreDependencies, EntityType.SITEMINDER_CONFIGURATION);
         buildEntityHeaders(requiredWorkQueueIds, entityHeadersToIgnoreDependencies, EntityType.WORK_QUEUE);
+        buildEntityHeaders(requiredSolutionKitIds, entityHeadersToIgnoreDependencies, EntityType.SOLUTION_KIT);
 
         if (fullGateway && !entityHeadersToExport.isEmpty()) {
             throw new InvalidArgumentException("If specifying full gateway export (all=true) do not give any other entity id's");
