@@ -52,12 +52,21 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
         this.maxIdleTime = getMaxIdleTime(connection.getOutboundMaxIdleTime(), 'O');
     }
 
+    public void createConnection(String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest) throws Exception {
+
+        createConnection(webSocketId,message,mockRequest,null);
+    }
+
     private void createConnection(String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+
+        // added for TAC-1375
+        URI dynamicURI = new URI(uri.toString() + getInboundHandler(handlerId).getIncomingRelativePartOfURL());
+
         if (connection.isOutboundSsl()) {
-            new SSGOutboundWebSocket(webSocketId, message.getClientId(), uri, WebSocketConnectionManager.getInstance().getOutBoundSslWebSocket(message.getOrigin(),
+            new SSGOutboundWebSocket(webSocketId, message.getClientId(), dynamicURI, WebSocketConnectionManager.getInstance().getOutBoundSslWebSocket(message.getOrigin(),
                     message.getProtocol(),maxIdleTime, handlerId), connection.getOutboundPolicyOID(), mockRequest, authContext);
         } else {
-            new SSGOutboundWebSocket(webSocketId, message.getClientId(), uri, WebSocketConnectionManager.getInstance().getOutBoundWebSocket(message.getOrigin(),
+            new SSGOutboundWebSocket(webSocketId, message.getClientId(), dynamicURI, WebSocketConnectionManager.getInstance().getOutBoundWebSocket(message.getOrigin(),
                     message.getProtocol(),maxIdleTime), connection.getOutboundPolicyOID(), mockRequest, authContext);
         }
     }

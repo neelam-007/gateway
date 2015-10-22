@@ -87,9 +87,9 @@ public class WebSocketUtils {
             }
         }
 
-        if (!newURL.toString().endsWith("/")) {
-            newURL.append("/");
-        }
+//        if (!newURL.toString().endsWith("/")) {
+//            newURL.append("/");
+//        }
 
         return newURL.toString();
     }

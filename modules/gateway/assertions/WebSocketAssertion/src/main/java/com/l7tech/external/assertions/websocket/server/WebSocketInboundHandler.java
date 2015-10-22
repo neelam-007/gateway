@@ -47,6 +47,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
     private boolean loopback;
     private int maxIdleTime;
     private int maxConnections;
+    private String incomingRelativeURL;
+
 
     public WebSocketInboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connection) {
         super(messageProcessor);
@@ -61,6 +63,11 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         WebSocketMessage msg;
         String gen_socketid = generateSocketId(request.getHeader("Sec-WebSocket-Protocol"));
+
+        // TAC-1375 - allow dynamic URL
+        // Get the URI and the query string in one line using the line below.
+        setIncomingRelativePartOfURL(((Request) request).getUri().getCompletePath());
+
         if ( (serviceGoid.getHi() != 0) && (serviceGoid.getLow() != 0) ) {
             try {
                 msg = new WebSocketMessage("");
@@ -100,6 +107,21 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         } else {
             super.handle(target, baseRequest, request, response);
         }
+    }
+
+    // If the outbound URL is ws://thecustomerserver.com:8098 and the inbound request is wss://mygateway:8081/mypath?myparam1=bob,
+    // the client request would look like: ws://thecustomerserver.com:8098/mypath?myparam1=bob
+    private void setIncomingRelativePartOfURL(String url){
+        if (url.isEmpty()){
+            incomingRelativeURL=null;
+        }
+        else {
+            incomingRelativeURL = url.substring(1);
+        }
+    }
+
+    public String getIncomingRelativePartOfURL() {
+        return incomingRelativeURL;
     }
 
     private String generateSocketId( String protocol ) {

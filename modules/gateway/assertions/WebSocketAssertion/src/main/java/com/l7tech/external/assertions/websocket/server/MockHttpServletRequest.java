@@ -129,7 +129,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(String s) {
-        Vector<String> headerEnum = headers.get(s.toLowerCase());
+        Vector<String> headerEnum = headers.get(s);
         if ( headerEnum != null) {
             return headerEnum.firstElement();
         }
@@ -137,18 +137,18 @@ public class MockHttpServletRequest implements HttpServletRequest {
     }
 
     public void setHeader(String key, String value) {
-        if ( headers.containsKey(key.toLowerCase())) {
-            headers.get(key.toLowerCase()).add(value);
+        if ( headers.containsKey(key)) {
+            headers.get(key).add(value);
         } else {
             Vector v = new Vector<String>();
             v.add(value);
-            headers.put(key.toLowerCase(), v );
+            headers.put(key, v );
         }
     }
 
     @Override
     public Enumeration getHeaders(String s) {
-        Vector v = headers.get(s.toLowerCase());
+        Vector v = headers.get(s);
         return v==null ? new Vector().elements() : v.elements();
     }
 
@@ -415,7 +415,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
             while ( e.hasMoreElements()) {
                 v.add(e.nextElement());
             }
-            headers.put(header.toLowerCase(), v);
+            headers.put(header, v);
         }
     }
 

@@ -19,5 +19,12 @@
         <dependency org="org.codehaus.jetty" name="jetty-server" rev="7.6.4"  force="true" conf="core"/>
         <dependency org="org.codehaus.jetty" name="jetty-util" rev="7.6.4"  force="true" conf="core"/>
         <dependency org="org.codehaus.jetty" name="jetty-websocket-custom" rev="7.6.4"  force="true" conf="core"/>
+		<dependency name="javax.inject" rev="1" org="javax.inject"/>
+        <dependency org="com.intellij" name="annotations" rev="13.1.6" force="true" conf="core"/>
+		<dependency name="javax.servlet-api" rev="3.0.1" org="javax.servlet"/>
+		<dependency name="spring-tx" rev="3.0.7.RELEASE" org="org.springframework"/>
+		<dependency name="spring-context" rev="3.0.7.RELEASE" org="org.springframework"/>
+		<dependency name="spring-beans" rev="3.0.7.RELEASE" org="org.springframework"/>
+		<dependency name="spring-core" rev="3.0.7.RELEASE" org="org.springframework"/>
 	</dependencies>
 </ivy-module>

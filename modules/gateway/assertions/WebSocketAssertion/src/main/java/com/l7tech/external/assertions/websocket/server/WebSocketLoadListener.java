@@ -15,7 +15,6 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
-import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.FirewallRulesManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -97,7 +96,7 @@ public class WebSocketLoadListener {
                         if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
                             logger.log(Level.INFO, "Created WebSocket Service " + entity.getId());
                             try {
-                                start(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class));
+                                start(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class), true);
                             } catch (FindException e) {
                                logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
                             }
@@ -190,7 +189,7 @@ public class WebSocketLoadListener {
         try {
             WebSocketConnectionManager.createConnectionManager(keyStoreManager,trustManager,secureRandom,defaultKey);
             for (WebSocketConnectionEntity connection : connections) {
-                start(connection);
+                start(connection, true);
             }
         } catch (WebSocketConnectionManagerException e) {
             logger.log(Level.WARNING, "Failed to initialize WebSocket Connection Manager ", e);
@@ -210,10 +209,10 @@ public class WebSocketLoadListener {
 
     private static void restart(WebSocketConnectionEntity connection) {
         stop(connection);
-        start(connection);
+        start(connection, false);
     }
 
-    private static void start(WebSocketConnectionEntity connection) {
+    private static void start(WebSocketConnectionEntity connection, boolean forceFirewall) {
         try {
             if (connection.isEnabled()) {
                 Server server = new Server(connection.getInboundListenPort());
@@ -249,7 +248,7 @@ public class WebSocketLoadListener {
                 }
                 statement.append("on port ").append(connection.getInboundListenPort());
                 //open the firewall for inbound port
-                if (connection.getRemovePortFlag()) {
+                if (connection.getRemovePortFlag() || forceFirewall) {
                     fwManager.openPort(connection.getId(), connection.getInboundListenPort());
                 }
 
