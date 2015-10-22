@@ -3,18 +3,20 @@ package com.l7tech.external.assertions.websocket.server;
 import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.external.assertions.websocket.WebSocketUtils;
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
-import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
+import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.FirewallRulesManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -52,6 +54,9 @@ public class WebSocketLoadListener {
     private static SecureRandom secureRandom;
     private static DefaultKey defaultKey;
     private static FirewallRulesManager fwManager;
+    private static LicenseManager licenseManager;
+
+    private static boolean isStarted = false;
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -63,31 +68,22 @@ public class WebSocketLoadListener {
         secureRandom = context.getBean("secureRandom", SecureRandom.class);
         defaultKey = context.getBean("defaultKey", DefaultKey.class);
         fwManager = context.getBean("ssgFirewallManager", FirewallRulesManager.class);
+        licenseManager = context.getBean("licenseManager", LicenseManager.class);
+
         init(context);
-        // Only initialize all the XMPP inbound/outbound resource managers when the SSG is "ready for messages"
+
+        // Only initialize all the WebSocket inbound/outbound resource managers when the SSG is "ready for messages"
         ApplicationEventProxy applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
-
-                // only do this when the SSG is ready for messages
-                if (event instanceof AssertionModuleRegistrationEvent ) {
-                    logger.log(Level.INFO, "Starting WebSocket Services");
-                    AssertionModuleRegistrationEvent registrationEvent = (AssertionModuleRegistrationEvent)event;
-                    // handle only ModularAssertionModule
-                    if (registrationEvent.getModule().isLeft()) {
-                        Set<? extends Assertion> protos = registrationEvent.getModule().left().getAssertionPrototypes();
-                        if (protos.size() > 0) {
-                            Assertion proto = protos.iterator().next();
-                            if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
-                                // Our module has just been registered.  Time to do our delayed initialization.
-                                try {
-                                    loadProps();
-                                    contextInitialized();
-                                } catch (FindException e) {
-                                    logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
-                                }
-                            }
+                if (event instanceof ReadyForMessages) {
+                    if (hasValidMobileLicense() && !isStarted) {
+                        try {
+                            loadProps();
+                            contextInitialized();
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
                         }
                     }
                 } else if (event instanceof Created) {
@@ -98,7 +94,7 @@ public class WebSocketLoadListener {
                             try {
                                 start(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class), true);
                             } catch (FindException e) {
-                               logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
+                                logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
                             }
                         }
                     }
@@ -131,24 +127,38 @@ public class WebSocketLoadListener {
                                     }
                                 }
                             }
+                        } else if (event instanceof LicenseEvent) {
+                            if (hasValidMobileLicense() && !isStarted) {
+                                try {
+                                    loadProps();
+                                    contextInitialized();
+                                } catch (FindException e) {
+                                    logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+                                }
+                            } else if (!hasValidMobileLicense()) {
+                                contextDestroyed();
+                            }
                         }
                     }
                 }
             }
         });
+    }
 
+    private static boolean hasValidMobileLicense() {
+        return licenseManager.isFeatureEnabled(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION);
     }
 
     private static int getProp(String key, int defaultValue) {
-         int prop;
-         try {
+        int prop;
+        try {
             String clusterProp = clusterPropertyManager.getProperty(key);
             if (clusterProp == null || "".equals(clusterProp)) {
                 prop = defaultValue;
             } else {
                 prop = Integer.parseInt(clusterProp);
             }
-        } catch (FindException e) {
+        } catch(FindException e){
             logger.log(Level.INFO, "Cluster property : " + key + " doesn't exist setting default");
             prop = defaultValue;
         }
@@ -191,6 +201,7 @@ public class WebSocketLoadListener {
             for (WebSocketConnectionEntity connection : connections) {
                 start(connection, true);
             }
+            isStarted = true;
         } catch (WebSocketConnectionManagerException e) {
             logger.log(Level.WARNING, "Failed to initialize WebSocket Connection Manager ", e);
         }
@@ -203,8 +214,9 @@ public class WebSocketLoadListener {
         Set<WebSocketConnectionEntity> connections = servers.keySet();
 
         for (WebSocketConnectionEntity connection : connections) {
-          stop(connection);
+            stop(connection);
         }
+        isStarted = false;
     }
 
     private static void restart(WebSocketConnectionEntity connection) {
@@ -247,8 +259,11 @@ public class WebSocketLoadListener {
                     statement.append("Starting WS listener ");
                 }
                 statement.append("on port ").append(connection.getInboundListenPort());
+
+                logger.log(Level.INFO, "Checking firewall state for port " + connection.getInboundListenPort() + " with connection state " + connection.getRemovePortFlag() + "," + forceFirewall);
                 //open the firewall for inbound port
                 if (connection.getRemovePortFlag() || forceFirewall) {
+                    logger.log(Level.INFO, "Adding firewall rules for port " + connection.getInboundListenPort());
                     fwManager.openPort(connection.getId(), connection.getInboundListenPort());
                 }
 
@@ -268,6 +283,7 @@ public class WebSocketLoadListener {
                 server.stop();
                 //remove the port from firewall only if port has changed
                 if (connection.getRemovePortFlag()){
+                    logger.log(Level.INFO, "Removing firewall rules for port " + connection.getInboundListenPort());
                     fwManager.removeRule(connection.getId());
                 }
             } catch (Exception e) {

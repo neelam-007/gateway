@@ -49,17 +49,17 @@ public class WebSocketConnectionManager {
     private DefaultKey defaultKey;
 
     public static void createConnectionManager(SsgKeyStoreManager keyStoreManager, TrustManager trustManager, SecureRandom secureRandom, DefaultKey defaultKey) throws IllegalStateException, WebSocketConnectionManagerException {
-        if (instance != null) {
+        if (instance == null ) {
+            instance = new WebSocketConnectionManager(keyStoreManager, trustManager, secureRandom, defaultKey);
+            try {
+                instance.start();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to start WebSocketConnectionManager", e);
+                instance = null;
+                throw new WebSocketConnectionManagerException("WebSocket Factory failed to start");
+            }
+        } else {
             logger.log(Level.WARNING, "Attempt to create a WebSocketConnectionManager that is already initialized");
-            throw new IllegalStateException("WebSocket Connection Manager already initialized");
-        }
-        instance = new WebSocketConnectionManager(keyStoreManager, trustManager, secureRandom, defaultKey);
-        try {
-            instance.start();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to start WebSocketConnectionManager", e);
-            instance = null;
-            throw new WebSocketConnectionManagerException("WebSocket Factory failed to start");
         }
     }
 
