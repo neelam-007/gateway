@@ -1,15 +1,18 @@
 package com.l7tech.gateway.common.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
@@ -19,8 +22,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.transform.dom.DOMSource;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.*;
 
@@ -296,58 +306,97 @@ public class SkarProcessorTest {
     }
 
     @Test
-    public void mergedBundle() throws Exception{
-        //Reloaded because Don't want to affect final variables used in other test cases
-        SolutionKitsConfig skConfig = new SolutionKitsConfig();
-        SkarProcessor mergeSkarProcessor = new SkarProcessor(skConfig);
-        InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
-        Assert.assertNotNull(inputStream);
-        // load the skar file
-        mergeSkarProcessor.load(inputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
-        SolutionKit solutionKit = skConfig.getLoadedSolutionKits().keySet().iterator().next();
+    public void mergeBundleEmptyUpgradeMappings() throws Exception {
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
 
-        //installBundle and it's mapping
-        Bundle installBundle = skConfig.getLoadedSolutionKits().get(solutionKit);
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
 
-        //reload solution kit to make mappings for a mock upgradeBundle
-        skConfig = new SolutionKitsConfig();
-        mergeSkarProcessor = new SkarProcessor(skConfig);
-        inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
-        Assert.assertNotNull(inputStream);
-        // load the skar file
-        mergeSkarProcessor.load(inputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
-        solutionKit = skConfig.getLoadedSolutionKits().keySet().iterator().next();
+        // setup install bundle
+        final Bundle installBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                    "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                    "    <l7:References/>\n" +   // references not used for this test
+                    "    <l7:Mappings>\n" +
+                    "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
+                    "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
+                    "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b89\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89\" type=\"ENCAPSULATED_ASSERTION\"/>\n" +
+                    "    </l7:Mappings>\n" +
+                    "</l7:Bundle>");
 
-        //mock upgradeBundle and its mapping
-        Bundle upgradeBundle = skConfig.getLoadedSolutionKits().get(solutionKit);
-        List<Mapping> upgradeMappings = skConfig.getBundle(solutionKit).getMappings();
-        //Delete this mapping again
-        upgradeMappings.remove(9);
-        //Change the 4th mapping from AlwaysCreateNew to NewOrExisting
-        upgradeMappings.get(4).setAction(Mapping.Action.valueOf("NewOrExisting"));
+        // setup upgrade bundle; empty mappings
+        final Bundle upgradeBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References/>\n" +   // references not used for this test
+                "    <l7:Mappings/>\n" +   // empty mappings
+                "</l7:Bundle>");
 
-        // make an solutionKitUpgradeList needed in mergeBundle
-        List<SolutionKit> solutionKitList = new ArrayList<>();
-        solutionKitList.add(solutionKit);
-        skConfig.setSolutionKitsToUpgrade(solutionKitList);
+        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
 
-        Bundle returnBundle = mergeSkarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+        // expect a merged original bundle (i.e. same as merged bundle)
+        assertEquals(installBundle, mergedBundle);
 
-        List<Mapping> returnBundleMappings = returnBundle.getMappings();
-        //Check that the return bundle decreases from 12 to 11 mappings
-        assertEquals(returnBundleMappings.size(), 11);
+        // expect original 3 mappings
+        assertEquals(3, mergedBundle.getMappings().size());
+    }
 
-        //Check that the returnBundleMappings is the same as install Mappings
-        boolean returnBundleIsMappedCorrectly = true;
-        for (int i=0; i<upgradeMappings.size();i++){
-            if (returnBundleMappings.get(i) != upgradeMappings.get(i)) {
-                returnBundleIsMappedCorrectly = false;
-                break;
-            }
+    @Test
+    public void mergeBundleChangedUpgradeMappings() throws Exception {
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+
+        final SolutionKit solutionKitToUpgrade = new SolutionKit();
+        solutionKitToUpgrade.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+        solutionKitToUpgrade.setGoid(new Goid("1f87436b7ca541c8941821d7a7848853"));
+        solutionKitToUpgrade.setVersion(1);
+
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        solutionKitsConfig.setSolutionKitsToUpgrade(Collections.singletonList(solutionKitToUpgrade));
+        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+
+        // setup install bundle
+        final Bundle installBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References/>\n" +   // references not used for this test
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
+                "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
+                "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b89\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89\" type=\"ENCAPSULATED_ASSERTION\"/>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>");
+
+        // setup upgrade bundle
+        final Bundle upgradeBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:References/>\n" +   // references not used for this test
+                "    <l7:Mappings>\n" +
+                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
+                "        <l7:Mapping action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
+                "    </l7:Mappings>\n" +
+                "</l7:Bundle>");
+
+        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+
+        // expect a merged original bundle (i.e. same as merged bundle)
+        assertEquals(installBundle, mergedBundle);
+
+        // expect the 2 upgrade mappings are not AlwaysCreateNew
+        assertEquals(2, mergedBundle.getMappings().size());
+        for (Mapping mapping : mergedBundle.getMappings()) {
+            assertNotEquals(Mapping.Action.AlwaysCreateNew, mapping.getAction());
         }
-        assertTrue(returnBundleIsMappedCorrectly);
+    }
 
-        //Check that the returnBundle updated with upgradeBundle
-        assertThat(returnBundleMappings.get(4).getAction().name(), Matchers.containsString("NewOrExisting"));
+    private Bundle createBundle(final String bundleStr) throws IOException, SAXException {
+        final InputStream inputStream = new ByteArrayInputStream(bundleStr.getBytes(StandardCharsets.UTF_8));
+        final DOMSource bundleSource = new DOMSource();
+        final Document bundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
+        final Element bundleEle = bundleDoc.getDocumentElement();
+        bundleSource.setNode(bundleEle);
+        return MarshallingUtils.unmarshal(Bundle.class, bundleSource, true);
     }
 }
