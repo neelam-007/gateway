@@ -182,18 +182,18 @@ public class ServerWebSocketValidationTest {
 
     @Test
     public void testUrlFix_MAG173() {
-        Assert.assertEquals("ws://test1.ca:80/", WebSocketUtils.normalizeUrl("test1.ca", false));
-        Assert.assertEquals("wss://test2.ca:443/", WebSocketUtils.normalizeUrl("test2.ca", true));
-        Assert.assertEquals("ws://test3.ca:80/", WebSocketUtils.normalizeUrl("ws://test3.ca", false));
-        Assert.assertEquals("wss://test4.ca:443/", WebSocketUtils.normalizeUrl("wss://test4.ca", true));
+        Assert.assertEquals("ws://test1.ca:80", WebSocketUtils.normalizeUrl("test1.ca", false));
+        Assert.assertEquals("wss://test2.ca:443", WebSocketUtils.normalizeUrl("test2.ca", true));
+        Assert.assertEquals("ws://test3.ca:80", WebSocketUtils.normalizeUrl("ws://test3.ca", false));
+        Assert.assertEquals("wss://test4.ca:443", WebSocketUtils.normalizeUrl("wss://test4.ca", true));
 
         Assert.assertEquals("wss://test5.ca:443/", WebSocketUtils.normalizeUrl("ws://test5.ca/", true));
         Assert.assertEquals("ws://test6.ca:80/", WebSocketUtils.normalizeUrl("wss://test6.ca/", false));
         Assert.assertEquals("wss://test7.ca:80/", WebSocketUtils.normalizeUrl("ws://test7.ca:80/", true));
         Assert.assertEquals("ws://test8.ca:443/", WebSocketUtils.normalizeUrl("wss://test8.ca:443/", false));
-        Assert.assertEquals("wss://test9.ca:443/test/", WebSocketUtils.normalizeUrl("wss://test9.ca/test", true));
-        Assert.assertEquals("wss://testA.ca:443/blah/testing/", WebSocketUtils.normalizeUrl("ws://testA.ca:443/blah/testing", true));
-        Assert.assertEquals("wss://testB.ca:443/blah/testing/", WebSocketUtils.normalizeUrl("ws://testB.ca/blah/testing", true));
+        Assert.assertEquals("wss://test9.ca:443/test", WebSocketUtils.normalizeUrl("wss://test9.ca/test", true));
+        Assert.assertEquals("wss://testA.ca:443/blah/testing", WebSocketUtils.normalizeUrl("ws://testA.ca:443/blah/testing", true));
+        Assert.assertEquals("wss://testB.ca:443/blah/testing", WebSocketUtils.normalizeUrl("ws://testB.ca/blah/testing", true));
     }
 
 

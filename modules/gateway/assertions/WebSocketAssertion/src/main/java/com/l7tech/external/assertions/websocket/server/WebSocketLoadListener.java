@@ -98,47 +98,45 @@ public class WebSocketLoadListener {
                             }
                         }
                     }
-                } else {
-                    if (event instanceof EntityInvalidationEvent) {
-                        if (event.getSource() instanceof GenericEntity) {
-                            GenericEntity entity = (GenericEntity) event.getSource();
-                            if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
-                                if (((EntityInvalidationEvent) event).getEntityOperations()[0] == 'U') {
-                                    logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
-                                    try {
-                                        restart(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class));
-                                    } catch (FindException e) {
-                                        logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
-                                    }
-                                }
-                            }
-                        }
-                    } else if (event instanceof Deleted) {
-                        if (((Deleted) event).getEntity() instanceof GenericEntity) {
-                            GenericEntity entity = (GenericEntity) ((Deleted) event).getEntity();
-                            if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
+                } else if (event instanceof EntityInvalidationEvent) {
+                    if (event.getSource() instanceof GenericEntity) {
+                        GenericEntity entity = (GenericEntity) event.getSource();
+                        if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
+                            if (((EntityInvalidationEvent) event).getEntityOperations()[0] == 'U') {
                                 logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
-                                Set<WebSocketConnectionEntity> connections = servers.keySet();
-
-                                for (WebSocketConnectionEntity connection : connections) {
-                                    if (connection.getId().equals(entity.getId())) {
-                                        connection.setRemovePortFlag(true);
-                                        stop(connection);
-                                    }
-                                }
-                            }
-                        } else if (event instanceof LicenseEvent) {
-                            if (hasValidMobileLicense() && !isStarted) {
                                 try {
-                                    loadProps();
-                                    contextInitialized();
+                                    restart(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class));
                                 } catch (FindException e) {
-                                    logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+                                    logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
                                 }
-                            } else if (!hasValidMobileLicense()) {
-                                contextDestroyed();
                             }
                         }
+                    }
+                } else if (event instanceof Deleted) {
+                    if (((Deleted) event).getEntity() instanceof GenericEntity) {
+                        GenericEntity entity = (GenericEntity) ((Deleted) event).getEntity();
+                        if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
+                            logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
+                            Set<WebSocketConnectionEntity> connections = servers.keySet();
+
+                            for (WebSocketConnectionEntity connection : connections) {
+                                if (connection.getId().equals(entity.getId())) {
+                                    connection.setRemovePortFlag(true);
+                                    stop(connection);
+                                }
+                            }
+                        }
+                    }
+                } else if (event instanceof LicenseEvent) {
+                    if (hasValidMobileLicense() && !isStarted) {
+                        try {
+                            loadProps();
+                            contextInitialized();
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+                        }
+                    } else if (!hasValidMobileLicense()) {
+                        contextDestroyed();
                     }
                 }
             }
