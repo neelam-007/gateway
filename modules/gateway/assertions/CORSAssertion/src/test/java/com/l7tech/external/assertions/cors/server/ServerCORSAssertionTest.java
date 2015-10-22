@@ -61,7 +61,7 @@ public class ServerCORSAssertionTest {
 
         AssertionStatus result = serverAssertion.checkRequest(context);
 
-        Assert.assertEquals(AssertionStatus.FALSIFIED, result);
+        Assert.assertEquals(AssertionStatus.BAD_REQUEST, result);
         Assert.assertEquals(false, context.getVariable("cors.isPreflight"));
         Assert.assertEquals(false, context.getVariable("cors.isCors"));
         Assert.assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));

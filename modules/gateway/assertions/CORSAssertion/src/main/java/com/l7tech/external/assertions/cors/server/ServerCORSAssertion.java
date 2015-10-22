@@ -73,7 +73,7 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 if (methods.length != 1) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING,
                             "The request must contain exactly one " + REQUEST_METHOD_HEADER + " header.");
-                    return AssertionStatus.FALSIFIED;
+                    return AssertionStatus.BAD_REQUEST;
                 }
 
                 String requestedMethod = methods[0];
@@ -83,7 +83,7 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 } catch (IllegalArgumentException e) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The value of the " +
                             REQUEST_METHOD_HEADER + " header is not a recognized HTTP method: " + requestedMethod);
-                    return AssertionStatus.FALSIFIED;
+                    return AssertionStatus.BAD_REQUEST;
                 }
                 
                 // check ACCESS_CONTROL_HEADERS_HEADER if exist (may be multiple)
@@ -154,7 +154,7 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
 
             if (assertion.isRequireCors()) {
                 logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Request must be a valid CORS request.");
-                return AssertionStatus.FALSIFIED;
+                return AssertionStatus.BAD_REQUEST;
             }
         }
 
