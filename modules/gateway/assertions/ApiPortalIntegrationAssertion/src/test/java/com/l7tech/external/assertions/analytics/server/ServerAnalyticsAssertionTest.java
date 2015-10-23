@@ -29,10 +29,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.mockito.Matchers;
 import org.mockito.Mock;
@@ -123,6 +120,7 @@ public class ServerAnalyticsAssertionTest {
   }
 
   //this test is time/thread dependent
+  @Ignore
   @Test
   public void testCaptureMetrics() throws Exception {
     MockServletContext servletContext = new MockServletContext();
@@ -150,6 +148,7 @@ public class ServerAnalyticsAssertionTest {
   }
 
   //this test is time/thread dependent
+  @Ignore
   @Test
   public void testCaptureMetrics_20_hits() throws Exception {
     MockServletContext servletContext = new MockServletContext();
