@@ -230,6 +230,16 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
     }
 
     @Override
+    public boolean canFinish() {
+        return true;
+    }
+
+    @Override
+    public boolean canAdvance() {
+        return false;
+    }
+
+    @Override
     public String getStepLabel() {
         return resources.getString("stepLabel");
     }

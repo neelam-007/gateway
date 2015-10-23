@@ -103,7 +103,7 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
 
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "Error publishing WSDL Query Handler.", "Error", JOptionPane.ERROR_MESSAGE, null);
+                "Error publishing Swagger service.", "Error", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private PublishedService createSwaggerService() throws IOException, SAXException {
