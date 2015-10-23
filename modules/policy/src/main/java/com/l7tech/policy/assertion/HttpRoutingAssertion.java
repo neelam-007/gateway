@@ -59,6 +59,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     public static final String VAR_HTTP_ROUTING_URL_BLACKLIST = "blacklist";
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
+    public static final String PROP_SSL_SESSION_CACHE_SIZE = HttpRoutingAssertion.class.getName() + ".sslSessionCacheSize";
+    public static final int DEFAULT_SSL_SESSION_CACHE_SIZE = 10000;
     public static final String KERBEROS_DATA = "kerberos.data";
     
     private static final String META_INITIALIZED = HttpRoutingAssertion.class.getName() + ".metadataInitialized";

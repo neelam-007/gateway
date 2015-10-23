@@ -177,6 +177,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
+            final int size = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_CACHE_SIZE, HttpRoutingAssertion.DEFAULT_SSL_SESSION_CACHE_SIZE );
+            sslContext.getClientSessionContext().setSessionCacheSize( size );
+
             sslSocketFactory = sslContext.getSocketFactory();
 
             if (assertion.getTlsCipherSuites() != null || assertion.getTlsVersion() != null) {
