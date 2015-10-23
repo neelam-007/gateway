@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.*;
 import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -82,6 +83,9 @@ public class PortalBootstrapManagerTest {
     private JdbcConnectionManager jdbcConnectionManager;
     @Mock
     private Config config;
+    @Mock
+    private ClusterPropertyManager clusterPropertyManager;
+ 
     private PortalBootstrapManager manager;
     private StashManagerFactory stashManagerFactory;
 
@@ -113,6 +117,7 @@ public class PortalBootstrapManagerTest {
                         .put("encapsulatedAssertionConfigManager", encapsulatedAssertionConfigManager)
                         .put("jdbcConnectionManager", jdbcConnectionManager)
                         .put("stashManagerFactory", stashManagerFactory)
+                        .put("clusterPropertyManager", clusterPropertyManager)
                         .unmodifiableMap()
         );
         when(config.getProperty("clusterHost", "")).thenReturn(LOCALHOST);
