@@ -383,12 +383,72 @@ public class SkarProcessorTest {
 
         // expect a merged original bundle (i.e. same as merged bundle)
         assertEquals(installBundle, mergedBundle);
+        assertEquals(installBundle.getMappings(), upgradeBundle.getMappings());
 
         // expect the 2 upgrade mappings are not AlwaysCreateNew
         assertEquals(2, mergedBundle.getMappings().size());
         for (Mapping mapping : mergedBundle.getMappings()) {
             assertNotEquals(Mapping.Action.AlwaysCreateNew, mapping.getAction());
         }
+
+        //expect the original Solution Kit's goid and version has been updated
+        assertEquals(solutionKit.getGoid(), solutionKitToUpgrade.getGoid());
+        assertEquals(solutionKit.getVersion(),1);
+    }
+
+    @Test
+    public void mergeBundleDifferentSolutionKitGuid() throws Exception {
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+
+        final SolutionKit solutionKitToUpgrade = new SolutionKit();
+        //Different guid
+        solutionKitToUpgrade.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a784aafe");
+        solutionKitToUpgrade.setGoid(new Goid("1f87436b7ca541c8941821d7a7848853"));
+        solutionKitToUpgrade.setVersion(1);
+
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        solutionKitsConfig.setSolutionKitsToUpgrade(Collections.singletonList(solutionKitToUpgrade));
+        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+
+        // setup install bundle
+        final Bundle installBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                        "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:References/>\n" +   // references not used for this test
+                        "    <l7:Mappings>\n" +
+                        "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
+                        "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
+                        "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b89\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89\" type=\"ENCAPSULATED_ASSERTION\"/>\n" +
+                        "    </l7:Mappings>\n" +
+                        "</l7:Bundle>");
+
+        // setup upgrade bundle
+        final Bundle upgradeBundle = createBundle(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                        "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:References/>\n" +   // references not used for this test
+                        "    <l7:Mappings>\n" +
+                        "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
+                        "        <l7:Mapping action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
+                        "    </l7:Mappings>\n" +
+                        "</l7:Bundle>");
+
+        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+
+        // expect the install and merged bundle to be different
+        assertEquals(installBundle, mergedBundle);
+        assertNotEquals(installBundle.getMappings(), upgradeBundle.getMappings());
+
+        // expect the install bundle is unchanged, and all the mappings are still AlwaysCreateNew
+        assertEquals(3, mergedBundle.getMappings().size());
+        for (Mapping mapping : mergedBundle.getMappings()) {
+            assertEquals(Mapping.Action.AlwaysCreateNew, mapping.getAction());
+        }
+
+        //expect the original Solution Kit's goid and version has not been updated
+        assertNotEquals(solutionKit.getGoid(), solutionKitToUpgrade.getGoid());
+        assertEquals(solutionKit.getVersion(),0);
     }
 
     private Bundle createBundle(final String bundleStr) throws IOException, SAXException {
