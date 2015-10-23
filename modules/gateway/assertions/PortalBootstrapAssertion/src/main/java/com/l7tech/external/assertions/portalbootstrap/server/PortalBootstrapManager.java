@@ -29,6 +29,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -131,6 +132,9 @@ public class PortalBootstrapManager {
     @Inject
     private StashManagerFactory stashManagerFactory;
 
+    @Inject
+    private ClusterPropertyManager clusterPropertyManager;
+
     private Config config = ConfigFactory.getCachedConfig();
 
     private PortalBootstrapManager( ApplicationContext context ) {
@@ -158,7 +162,7 @@ public class PortalBootstrapManager {
         }
     }
 
-    public void enrollWithPortal(String enrollmentUrl) throws IOException {
+    public void enrollWithPortal(String enrollmentUrl) throws IOException, FindException {
         final User user = JaasUtils.getCurrentUser();
         if ( null == user )
             throw new IllegalStateException( "No administrative user authenticated" );
@@ -170,6 +174,7 @@ public class PortalBootstrapManager {
 
         if ( ENROLL_PORT != url.getPort() )
             throw new IOException( "Incorrect port." );
+
 
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
@@ -202,6 +207,7 @@ public class PortalBootstrapManager {
         OutputStream output = null;
         PolicyEnforcementContext context = null;
         HttpsURLConnection connection;
+
         try {
             connection = (HttpsURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -210,7 +216,12 @@ public class PortalBootstrapManager {
             connection.setDoOutput(true);
             output = connection.getOutputStream();
             output.write(postBody);
-
+            // If the TSSG has already enrolled with a different portal pssg, it should not be allowed to re-enrolled
+            String new_pssg_identifier = connection.getHeaderField("portal-config-identifier");
+            String current_pssg_identifier = clusterPropertyManager.getProperty("portal.config.identifier");
+            if ((new_pssg_identifier!=null) && (current_pssg_identifier!=null) && (! new_pssg_identifier.equals(current_pssg_identifier))){
+                throw new IOException( "This TSSG has already enrolled with a portal pssg which is identified by id, '"+current_pssg_identifier+"'.  Aborting the enrollment" );
+            }
             ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
             boolean isBinary = contentTypeHeader.matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
             if (isBinary) {
