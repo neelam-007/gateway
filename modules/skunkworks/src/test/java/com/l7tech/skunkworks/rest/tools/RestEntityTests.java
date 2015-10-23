@@ -406,6 +406,11 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + badId.toString(), HttpMethod.DELETE, null, "");
         logger.log(Level.FINE, response.toString());
 
+        verifyDeleteNoExistingEntity(response);
+    }
+
+    protected void verifyDeleteNoExistingEntity(final RestResponse response) throws Exception {
+        Assert.assertNotNull(response);
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals("Expected successful response", 404, response.getStatus());
         Assert.assertNotNull("Expected not null response body", response.getBody());
