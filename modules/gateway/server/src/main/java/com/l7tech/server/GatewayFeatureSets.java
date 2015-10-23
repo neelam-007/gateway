@@ -141,6 +141,8 @@ public class GatewayFeatureSets {
     public static final String PROFILE_MAS_EXTENSION = "set:Profile:MAS";
 
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
+    public static final String FS_WEBSOCKETS = "set:WebSocket:Assertions";
+    public static final String FS_CSRSIGNER = "set:CsrSigner:Assertions";
 
     static {
         // Declare all baked-in feature sets
@@ -852,7 +854,7 @@ public class GatewayFeatureSets {
                         mass("assertion:RadiusAuthenticate"));
 
         GatewayFeatureSet csrSignerAssertions =
-                fsr("set:CsrSigner:Assertions",
+                fsr(FS_CSRSIGNER,
                         "Assertions to enable CSR Signing functionality",
                         mass("assertion:CsrSigner"));
 
@@ -886,7 +888,7 @@ public class GatewayFeatureSets {
                         mass("assertion:AppleFeedbackService"));
 
         GatewayFeatureSet webSocketAssertions =
-                fsr("set:WebSocket:Assertions",
+                fsr(FS_WEBSOCKETS,
                         "Assertions to enable WebSocket functionality.",
                         mass("assertion:WebSocket"),
                         mass("assertion:WebSocketEntityManager"),
@@ -1145,7 +1147,8 @@ public class GatewayFeatureSets {
                 "Gateway feature set including non mobile specific MAG assertions.",
                 fs(profileGateway),
                 xmppAssertions,
-                webSocketAssertions);
+                webSocketAssertions,
+                csrSignerAssertions);
 
         GatewayFeatureSet profileFederal =
         fsp(PROFILE_FEDERAL, "SecureSpan Federal",

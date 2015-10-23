@@ -78,7 +78,7 @@ public class WebSocketLoadListener {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof ReadyForMessages) {
-                    if (hasValidMobileLicense() && !isStarted) {
+                    if (hasValidWebSocketLicense() && !isStarted) {
                         try {
                             loadProps();
                             contextInitialized();
@@ -128,14 +128,14 @@ public class WebSocketLoadListener {
                         }
                     }
                 } else if (event instanceof LicenseEvent) {
-                    if (hasValidMobileLicense() && !isStarted) {
+                    if (hasValidWebSocketLicense() && !isStarted) {
                         try {
                             loadProps();
                             contextInitialized();
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
                         }
-                    } else if (!hasValidMobileLicense()) {
+                    } else if (!hasValidWebSocketLicense()) {
                         contextDestroyed();
                     }
                 }
@@ -143,10 +143,9 @@ public class WebSocketLoadListener {
         });
     }
 
-    private static boolean hasValidMobileLicense() {
-        return licenseManager.isFeatureEnabled(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION);
+    private static boolean hasValidWebSocketLicense() {
+        return licenseManager.isFeatureEnabled(GatewayFeatureSets.FS_WEBSOCKETS);
     }
-
     private static int getProp(String key, int defaultValue) {
         int prop;
         try {
