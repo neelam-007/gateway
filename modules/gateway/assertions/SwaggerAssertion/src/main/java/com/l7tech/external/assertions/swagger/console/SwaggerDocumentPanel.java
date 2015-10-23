@@ -113,6 +113,11 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
                 authorizationValues.add(new AuthorizationValue());
                 Swagger model = parser.parse(swaggerDocument, authorizationValues);
 
+                // the parser returns null if it could not parse the document
+                if (null == model) {
+                    return resources.getString("parseDocumentFailed");
+                }
+
                 lastParsedDocumentLocation = location;
                 parsedDocumentModel = model;
 
