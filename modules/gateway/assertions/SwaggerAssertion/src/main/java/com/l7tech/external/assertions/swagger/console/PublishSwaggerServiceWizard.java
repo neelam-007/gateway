@@ -2,18 +2,13 @@ package com.l7tech.external.assertions.swagger.console;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.panels.AbstractPublishServiceWizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.wsp.WspConstants;
@@ -27,6 +22,7 @@ import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumSet;
@@ -61,71 +57,48 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
 
     private void initWizard() {
         addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
-
-        addWizardListener(new WizardAdapter() {
-            @Override
-            public void wizardFinished(WizardEvent e) {
-                try {
-                    publishSwaggerService();
-                } catch (Exception ex) {
-                    handlePublishingError(ex);
-                }
-            }
-        });
     }
 
-    private void publishSwaggerService() throws IOException, SAXException {
-        final PublishedService swaggerService = createSwaggerService();
+    @Override
+    protected void finish(final ActionEvent evt) {
+        getSelectedWizardPanel().storeSettings(wizardInput);
 
-        final Runnable publisher = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Goid serviceGoid = Registry.getDefault().getServiceManager().savePublishedService(swaggerService);
-                    swaggerService.setGoid(serviceGoid);
+        try {
+            final PublishedService service = new PublishedService();
 
-                    Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                    Thread.sleep(1000);
+            service.setFolder(getTargetFolder());
+            service.setName(wizardInput.getServiceName());
+            service.setRoutingUri("/" + wizardInput.getRoutingUri());
+            service.setSoap(false);
+            service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
 
-                    PublishSwaggerServiceWizard.this.notify(new ServiceHeader(swaggerService));
-                } catch (final PermissionDeniedException e) {
-                    PermissionDeniedErrorHandler.showMessageDialog(e, logger);
-                } catch (final Exception e) {
-                    handlePublishingError(e);
-                }
-            }
-        };
+            String policyXml = readPolicyFile(TEMPLATE_SERVICE_POLICY_FILE);
 
-        checkResolutionConflict(swaggerService, publisher);
+            // TODO jwilliams: update template policy with defaults
+            String updatedPolicyXml = "" + policyXml;
+//                updatePolicyElementAttribute(policyXml, "PolicyGuid", "stringValue", "");
+
+            service.getPolicy().setXml(updatedPolicyXml);
+            service.getPolicy().setSecurityZone(wizardInput.getSecurityZone());
+            service.setSecurityZone(wizardInput.getSecurityZone());
+
+            checkResolutionConflictAndSave(service);
+        } catch (final Exception e) {
+            handlePublishingError(e);
+        }
     }
 
     private void handlePublishingError(Exception e) {
         logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
 
-        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "Error publishing Swagger service.", "Error", JOptionPane.ERROR_MESSAGE, null);
-    }
+        if (e instanceof PermissionDeniedException) {
+            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
+        } else {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "Error publishing Swagger service.", "Error", JOptionPane.ERROR_MESSAGE, null);
+        }
 
-    private PublishedService createSwaggerService() throws IOException, SAXException {
-        final PublishedService service = new PublishedService();
-
-        service.setFolder(getTargetFolder());
-        service.setName(wizardInput.getServiceName());
-        service.setRoutingUri("/" + wizardInput.getRoutingUri());
-        service.setSoap(false);
-        service.setHttpMethods(EnumSet.of(HttpMethod.GET));
-
-        String policyXml = readPolicyFile(TEMPLATE_SERVICE_POLICY_FILE);
-
-        // TODO jwilliams: update template policy with defaults
-        String updatedPolicyXml = "" + policyXml;
-//                updatePolicyElementAttribute(policyXml, "PolicyGuid", "stringValue", "");
-
-        service.getPolicy().setXml(updatedPolicyXml);
-        service.getPolicy().setSecurityZone(wizardInput.getSecurityZone());
-        service.setSecurityZone(wizardInput.getSecurityZone());
-
-        return service;
+        e.printStackTrace();
     }
 
     private String updatePolicyElementAttribute(String policyXml, String elementTagName,
