@@ -71,7 +71,7 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     private String uninstallBundle;
     private long lastUpdateTime;
     //private Set<SolutionKit> childrenSet;
-    private Set<EntityOwnershipDescriptor> entityOwnershipDescriptors;
+    private List<EntityOwnershipDescriptor> entityOwnershipDescriptors;
 
     public SolutionKit() {
     }
@@ -222,26 +222,26 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
 
     @Fetch(FetchMode.SUBSELECT)
     @OneToMany(mappedBy="solutionKit", cascade=CascadeType.ALL, fetch=FetchType.EAGER, orphanRemoval=true)
-    public Set<EntityOwnershipDescriptor> getEntityOwnershipDescriptors() {
+    public List<EntityOwnershipDescriptor> getEntityOwnershipDescriptors() {
         return entityOwnershipDescriptors;
     }
 
-    public void setEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+    public void setEntityOwnershipDescriptors(final List<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
         checkLocked();
         this.entityOwnershipDescriptors = entityOwnershipDescriptors;
     }
 
-    public void addEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+    public void addEntityOwnershipDescriptors(@NotNull final Collection<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
         checkLocked();
 
         if (null == this.entityOwnershipDescriptors) {
-            this.entityOwnershipDescriptors = new HashSet<>();
+            this.entityOwnershipDescriptors = new ArrayList<>();
         }
 
         this.entityOwnershipDescriptors.addAll(entityOwnershipDescriptors);
     }
 
-    public void removeEntityOwnershipDescriptors(Set<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
+    public void removeEntityOwnershipDescriptors(@NotNull final Collection<EntityOwnershipDescriptor> entityOwnershipDescriptors) {
         if (null != this.entityOwnershipDescriptors) {
             checkLocked();
             this.entityOwnershipDescriptors.removeAll(entityOwnershipDescriptors);

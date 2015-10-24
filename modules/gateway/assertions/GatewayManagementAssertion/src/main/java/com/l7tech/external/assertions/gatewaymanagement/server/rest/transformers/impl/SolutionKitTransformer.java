@@ -265,16 +265,15 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
      * Convert a collection of {@code EntityOwnershipDescriptorMO}'s into List of {@link EntityOwnershipDescriptor}'s.
      *
      * @param entityOwnershipDescriptorMOs    collection of {@code EntityOwnershipDescriptorMO}'s.  Optional and can be {@code null}.
-     * @return a Read-only set of {@link EntityOwnershipDescriptor}'s or {@code null} if the specified
-     * {@code entityOwnershipDescriptorMOs} is empty or {@code null}.
+     * @return a {@code list} of {@link EntityOwnershipDescriptor}'s or {@code null} if the specified {@code entityOwnershipDescriptorMOs} is empty or {@code null}.
      */
     @Nullable
-    private static Set<EntityOwnershipDescriptor> asEntityOwnershipDescriptors(
+    private static List<EntityOwnershipDescriptor> asEntityOwnershipDescriptors(
             @NotNull final SolutionKit solutionKitOwner,
             @Nullable final Collection<EntityOwnershipDescriptorMO> entityOwnershipDescriptorMOs
     ) throws ResourceFactory.InvalidResourceException {
         if (entityOwnershipDescriptorMOs != null) {
-            final Set<EntityOwnershipDescriptor> entityDescriptors = new HashSet<>(entityOwnershipDescriptorMOs.size());
+            final List<EntityOwnershipDescriptor> entityDescriptors = new ArrayList<>(entityOwnershipDescriptorMOs.size());
             for (final EntityOwnershipDescriptorMO entityOwnershipDescriptorMO : entityOwnershipDescriptorMOs) {
                 // ignore ids to avoid StaleStateException (practice for other entities as well)
 //                final String id = trimValue(entityOwnershipDescriptorMO.getId());
@@ -323,7 +322,7 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                 // add toi the returning list
                 entityDescriptors.add(entityOwnershipDescriptor);
             }
-            return entityDescriptors.isEmpty() ? null : Collections.unmodifiableSet(entityDescriptors);
+            return entityDescriptors.isEmpty() ? null : entityDescriptors;
         }
         return null;
     }

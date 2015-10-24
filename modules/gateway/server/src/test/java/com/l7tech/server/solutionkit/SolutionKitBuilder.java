@@ -24,6 +24,7 @@ public class SolutionKitBuilder {
     private String mappings;
     private String uninstallBundle;
     private Long lastUpdateTime;
+    private Goid parentGoid;
 
     private final Map<String, String> properties = new HashMap<>();
     private final Map<String, String> installProperties = new HashMap<>();
@@ -118,6 +119,16 @@ public class SolutionKitBuilder {
         return this;
     }
 
+    public SolutionKitBuilder parent(final Goid parentGoid) {
+        this.parentGoid = parentGoid;
+        return this;
+    }
+
+    public SolutionKitBuilder parent(final SolutionKit parentKit) {
+        this.parentGoid = parentKit != null ? parentKit.getGoid() : null;
+        return this;
+    }
+
     public SolutionKit build() {
         Assert.assertNotNull(solutionKit);
 
@@ -145,6 +156,9 @@ public class SolutionKitBuilder {
         if (lastUpdateTime != null) {
             solutionKit.setLastUpdateTime(lastUpdateTime);
         }
+        if (parentGoid != null) {
+            solutionKit.setParentGoid(parentGoid);
+        }
 
         final Set<String> propertyKeys = CollectionUtils.set(SolutionKit.getPropertyKeys());
         for (final Map.Entry<String, String> property : properties.entrySet()) {
@@ -159,7 +173,7 @@ public class SolutionKitBuilder {
             solutionKit.setInstallationProperty(property.getKey(), property.getValue());
         }
 
-        final Set<EntityOwnershipDescriptor> ownershipDescriptorSet = new HashSet<>(ownershipDescriptors.size());
+        final Collection<EntityOwnershipDescriptor> ownershipDescriptorSet = new ArrayList<>(ownershipDescriptors.size());
         for (final Triple<String, EntityType, Boolean> ownershipDescriptor : ownershipDescriptors) {
             Assert.assertTrue(StringUtils.isNotEmpty(ownershipDescriptor.left) && ownershipDescriptor.middle != null && ownershipDescriptor.right != null);
             ownershipDescriptorSet.add(

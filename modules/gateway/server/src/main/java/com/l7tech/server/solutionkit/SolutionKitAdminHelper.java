@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
@@ -22,8 +21,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_ATTRIBUTE;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_TAKEN_ATTRIBUTE;
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ERROR_TYPE_ATTRIBUTE;
 
 /**
  * This helper holds common logic used in more than one place (i.e. SolutionKitAdminImpl, SolutionKitManagerResource).
@@ -297,7 +296,7 @@ public class SolutionKitAdminHelper {
         // get solutionKit's current entity ownership descriptors
         // todo: consider locking the EntityOwnershipDescriptors set (or even this entire method) IF another thread is upgrading or updating the solution kit content
         // todo: shouldn't really happen though (we'd probably have bigger issues if same solution kit is installed from multiple threads)
-        final Set<EntityOwnershipDescriptor> entityOwnershipDescriptors = solutionKit.getEntityOwnershipDescriptors();
+        final Collection<EntityOwnershipDescriptor> entityOwnershipDescriptors = solutionKit.getEntityOwnershipDescriptors();
         // a bit of optimization, convert the ownership descriptors set into a map by entity-id
         final Map<String, EntityOwnershipDescriptor> ownershipDescriptorMap = new HashMap<>(entityOwnershipDescriptors != null ? entityOwnershipDescriptors.size() : 0);
         if (entityOwnershipDescriptors != null) {
@@ -310,8 +309,10 @@ public class SolutionKitAdminHelper {
             }
         }
 
-        final Set<EntityOwnershipDescriptor> newOwnershipDescriptors = new HashSet<>();
-        final Set<EntityOwnershipDescriptor> deletedOwnershipDescriptors = new HashSet<>();
+        // ArrayList is faster for add operations and List.addAll has the same performance for both ArrayList and HashSet
+        final Collection<EntityOwnershipDescriptor> newOwnershipDescriptors = new ArrayList<>();
+        // HashSet works faster with List.removeAll
+        final Collection<EntityOwnershipDescriptor> deletedOwnershipDescriptors = new HashSet<>();
 
         // Find all matches of srdId and targetId in result mappings and save them in a map.
         final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
@@ -319,14 +320,29 @@ public class SolutionKitAdminHelper {
         // loop through the result mappings from RESTMAN
         final Collection<Element> mappings = mappingsMsg.getMappings();
         for (final Element mapping : mappings) {
-            // get the initial author mapping action
-            final EntityMappingInstructions.MappingAction authorMappingAction = EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE));
-            // get the resulting restman mapping action
-            final EntityMappingResult.MappingAction restmanResultMappingAction = EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
-            // skip the entity if its ignored by either the author or restman i.e.
-            // if author action is Ignore or result action is Ignored then continue with the next one
+            if (mapping.hasAttribute(MAPPING_ERROR_TYPE_ATTRIBUTE)) {
+                // skip if this mapping contains an error
+                // highly unlikely that this would happen as any errors in the bundle would be caught before this method is even called
+                // if it got this far it means that the bundle is already installed, therefore the only logical thing to do is skip this one log the error and process remaining entities
+                logger.log(Level.WARNING, "Skipping mapping containing an error: errorType = '" + mapping.getAttribute(MAPPING_ERROR_TYPE_ATTRIBUTE) + "'");
+                continue;
+            }
+
+            // get the resulting restman mapping action (actionTaken)
+            final EntityMappingResult.MappingAction actionTaken;
+            try {
+                actionTaken = EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE));
+            } catch (final IllegalArgumentException e) {
+                // skip if we cannot determine the actionTaken
+                // highly unlikely that this would happen as any errors in the bundle would be caught before this method is even called
+                // if it got this far it means that the bundle is already installed, therefore the only logical thing to do is skip this one log the error and process remaining entities
+                logger.log(Level.WARNING, "Invalid Mapping actionTaken '" + mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE) + "':" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                continue;
+            }
+
+            // skip the entity if its ignored by restman i.e. if actionTaken is Ignored then continue with the next one
             // RESTMAN result action is Ignored if either the author action was Ignore or the author action was Delete but the target entity could not be found to be deleted.
-            if (EntityMappingInstructions.MappingAction.Ignore == authorMappingAction || EntityMappingResult.MappingAction.Ignored == restmanResultMappingAction) {
+            if (EntityMappingResult.MappingAction.Ignored == actionTaken) {
                 continue;
             }
 
@@ -334,18 +350,26 @@ public class SolutionKitAdminHelper {
             final String entityId = mapping.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
             final String entityType = mapping.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
             if (StringUtils.isNotBlank(entityId) && StringUtils.isNotBlank(entityType)) {
-                if (EntityMappingResult.MappingAction.Deleted == restmanResultMappingAction) {
+                if (EntityMappingResult.MappingAction.Deleted == actionTaken) {
                     // get the entity ownership descriptor for entityId
                     final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
                     if (existing != null) {
-                        // the solutionKit own this entityId so add it to the deletedOwnershipDescriptors
+                        // the solutionKit owns this entityId so add it to the deletedOwnershipDescriptors
                         deletedOwnershipDescriptors.add(existing);
                     }
-                } else if (EntityMappingResult.MappingAction.CreatedNew == restmanResultMappingAction) {
+                } else if (EntityMappingResult.MappingAction.CreatedNew == actionTaken) {
                     final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
-                    final EntityOwnershipDescriptor descriptor = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), isReadOnly);
-                    newOwnershipDescriptors.add(descriptor);
-                } else if (EntityMappingResult.MappingAction.UpdatedExisting == restmanResultMappingAction || EntityMappingResult.MappingAction.UsedExisting == restmanResultMappingAction) {
+                    // check if entity ownership descriptor already exists for this entityId
+                    final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
+                    if (existing != null) {
+                        // edge case: found an orphan entity (update the existing one)
+                        existing.setReadOnly(isReadOnly);
+                        existing.setEntityType(EntityType.valueOf(entityType));
+                    } else {
+                        final EntityOwnershipDescriptor descriptor = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), isReadOnly);
+                        newOwnershipDescriptors.add(descriptor);
+                    }
+                } else if (EntityMappingResult.MappingAction.UpdatedExisting == actionTaken || EntityMappingResult.MappingAction.UsedExisting == actionTaken) {
                     // this is an update
                     // check if the author is modifying entity read-only status
                     // this can only be done if the solution kit owns this entity
@@ -355,7 +379,7 @@ public class SolutionKitAdminHelper {
                         existing.setReadOnly(isReadOnly);
                     }
                 } else {
-                    logger.log(Level.WARNING, "Unrecognized RESTMAN result action '" + restmanResultMappingAction + "'. Entity (" + entityId + "," + entityType + ") ownership information cannot be processed.");
+                    logger.log(Level.WARNING, "Unrecognized RESTMAN result action '" + actionTaken + "'. Entity (" + entityId + "," + entityType + ") ownership information cannot be processed.");
                 }
             }
         }
