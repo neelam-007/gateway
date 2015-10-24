@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <L7p:CacheStorage>
+        <L7p:CacheEntryKey stringValue="${swagger.docUrl}"/>
+        <L7p:CacheId stringValue="swaggerCache"/>
+        <L7p:MaxEntries stringValue="1"/>
+        <L7p:MaxEntryAgeSeconds stringValue="60"/>
+        <L7p:MaxEntrySizeBytes stringValue="1000000"/>
+        <L7p:OtherTargetMessageVariable stringValue="swaggerDoc"/>
+        <L7p:Target target="OTHER"/>
+    </L7p:CacheStorage>
+</wsp:Policy>

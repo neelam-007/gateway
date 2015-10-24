@@ -1,31 +1,37 @@
 package com.l7tech.external.assertions.swagger.console;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.panels.AbstractPublishServiceWizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +45,9 @@ import static com.l7tech.external.assertions.swagger.console.PublishSwaggerServi
 public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<SwaggerServiceConfig> {
     private static final Logger logger = Logger.getLogger(PublishSwaggerServiceWizard.class.getName());
 
-    private static final String TEMPLATE_SERVICE_POLICY_FILE = "SwaggerServiceTemplatePolicy.xml";
+    private static final String HTTP_METHOD_COMPARISON_ASSERTION_POLICY_FILE = "httpMethodComparisonAssertion.xml";
+    private static final String CACHE_LOOKUP_ASSERTION_POLICY_FILE = "cacheLookupAssertion.xml";
+    private static final String CACHE_STORE_ASSERTION_POLICY_FILE = "cacheStoreAssertion.xml";
 
     protected PublishSwaggerServiceWizard(@NotNull Frame parent,
                                           @NotNull WizardStepPanel<SwaggerServiceConfig> firstPanel) {
@@ -72,13 +80,9 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
             service.setSoap(false);
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
 
-            String policyXml = readPolicyFile(TEMPLATE_SERVICE_POLICY_FILE);
+            service.setPolicy(generateServicePolicy());
 
-            // TODO jwilliams: update template policy with defaults
-            String updatedPolicyXml = "" + policyXml;
-//                updatePolicyElementAttribute(policyXml, "PolicyGuid", "stringValue", "");
-
-            service.getPolicy().setXml(updatedPolicyXml);
+            // set security zones
             service.getPolicy().setSecurityZone(wizardInput.getSecurityZone());
             service.setSecurityZone(wizardInput.getSecurityZone());
 
@@ -86,6 +90,123 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         } catch (final Exception e) {
             handlePublishingError(e);
         }
+    }
+
+    private Policy generateServicePolicy() throws IOException {
+        Policy servicePolicy;
+
+        AllAssertion policyAssertions = new AllAssertion();
+
+        policyAssertions.setChildren(generateServiceSettingsVariables());
+        policyAssertions.addChild(generateSwaggerDocDownloadAndCacheBranch());
+
+        OneOrMoreAssertion retrieveDocOrRouteBranch = new OneOrMoreAssertion(CollectionUtils.list(
+                generateSwaggerDocRequestBranch(), generateValidationAndRoutingBranch()
+        ));
+
+        policyAssertions.addChild(retrieveDocOrRouteBranch);
+
+        try (ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
+            WspWriter.writePolicy(policyAssertions, bo);
+            servicePolicy = new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false);
+        }
+
+        return servicePolicy;
+    }
+
+    private OneOrMoreAssertion generateSwaggerDocDownloadAndCacheBranch() throws IOException {
+        OneOrMoreAssertion swaggerDocDownloadAndCacheBranch;
+        String cacheRetrieveXml = readPolicyFile(CACHE_LOOKUP_ASSERTION_POLICY_FILE);
+        Assertion cacheRetrieveAssertion =
+                WspReader.getDefault().parsePermissively(cacheRetrieveXml, WspReader.Visibility.includeDisabled);
+
+        AllAssertion swaggerDocDownloadBranch = generateSwaggerDocDownloadBranch();
+
+        swaggerDocDownloadAndCacheBranch =
+                new OneOrMoreAssertion(CollectionUtils.list(cacheRetrieveAssertion, swaggerDocDownloadBranch));
+        return swaggerDocDownloadAndCacheBranch;
+    }
+
+    private AllAssertion generateSwaggerDocDownloadBranch() throws IOException {
+        AllAssertion branch = new AllAssertion();
+
+        AuditDetailAssertion auditDetailAssertion = new AuditDetailAssertion();
+        auditDetailAssertion.setLevel("WARNING");
+        auditDetailAssertion.setDetail("Obtaining Swagger document from: ${swagger.docUrl}");
+
+        final HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion("${swagger.docUrl}");
+        routingAssertion.setFollowRedirects(true);
+        routingAssertion.setHttpMethod(HttpMethod.GET);
+        routingAssertion.getRequestHeaderRules().setForwardAll(true);
+        routingAssertion.getRequestParamRules().setForwardAll(true);
+        routingAssertion.getResponseHeaderRules().setForwardAll(true);
+        routingAssertion.setResponseMsgDest("swaggerDoc");
+
+        String cacheStorageAssertionXml = readPolicyFile(CACHE_STORE_ASSERTION_POLICY_FILE);
+        Assertion cacheStorageAssertion = WspReader.getDefault()
+                .parsePermissively(cacheStorageAssertionXml, WspReader.Visibility.includeDisabled);
+
+        branch.setChildren(CollectionUtils.list(
+                auditDetailAssertion, routingAssertion, cacheStorageAssertion
+        ));
+
+        return branch;
+    }
+
+    private AllAssertion generateSwaggerDocRequestBranch() throws IOException {
+        AllAssertion branch = new AllAssertion();
+
+        Regex regexAssertion = new Regex();
+        regexAssertion.setAutoTarget(false);
+        regexAssertion.setCaseInsensitive(true);
+        regexAssertion.setIncludeEntireExpressionCapture(false);
+        regexAssertion.setOtherTargetMessageVariable("request.http.uri");
+        regexAssertion.setRegex("^.*/swagger.json$");
+        regexAssertion.setRegexName("Swagger Document Request");
+        regexAssertion.setReplacement("");
+        regexAssertion.setTarget(TargetMessageType.OTHER);
+
+        String httpMethodComparisonXml = readPolicyFile(HTTP_METHOD_COMPARISON_ASSERTION_POLICY_FILE);
+        Assertion httpMethodComparisonAssertion =
+                WspReader.getDefault().parsePermissively(httpMethodComparisonXml, WspReader.Visibility.includeDisabled);
+
+        HardcodedResponseAssertion hardcodedResponseAssertion = new HardcodedResponseAssertion();
+        hardcodedResponseAssertion.setBase64ResponseBody(HexUtils.encodeBase64("${swaggerDoc}".getBytes()));
+        hardcodedResponseAssertion.setResponseContentType("application/json");
+
+        branch.setChildren(CollectionUtils.list(
+                regexAssertion, httpMethodComparisonAssertion, hardcodedResponseAssertion
+        ));
+
+        return branch;
+    }
+
+    private List<SetVariableAssertion> generateServiceSettingsVariables() {
+        return CollectionUtils.list(
+                new SetVariableAssertion("swagger.host", wizardInput.getApiHost()),
+                new SetVariableAssertion("swagger.baseUri", wizardInput.getApiBasePath()),
+                new SetVariableAssertion("swagger.docUrl", wizardInput.getDocumentUrl())
+        );
+    }
+
+    private AllAssertion generateValidationAndRoutingBranch() {
+        AllAssertion branch = new AllAssertion();
+
+        SwaggerAssertion swaggerAssertion = new SwaggerAssertion();
+        swaggerAssertion.setSwaggerDoc("${swaggerDoc}");
+        swaggerAssertion.setValidatePath(wizardInput.isValidatePath());
+        swaggerAssertion.setValidateMethod(wizardInput.isValidateMethod());
+        swaggerAssertion.setValidateScheme(wizardInput.isValidateScheme());
+        swaggerAssertion.setRequireSecurityCredentials(wizardInput.isRequireSecurityCredentials());
+
+        final HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion("${request.url.protocol}://" +
+                "${swagger.host}" + "${swagger.baseUri}" + "${sw.apiUri}${request.url.query}");
+        routingAssertion.getRequestHeaderRules().setForwardAll(true);
+        routingAssertion.getResponseHeaderRules().setForwardAll(true);
+
+        branch.setChildren(CollectionUtils.list(swaggerAssertion, routingAssertion));
+
+        return branch;
     }
 
     private void handlePublishingError(Exception e) {
@@ -99,21 +220,6 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         }
 
         e.printStackTrace();
-    }
-
-    private String updatePolicyElementAttribute(String policyXml, String elementTagName,
-                                                String attributeName, String attributeValue)
-            throws SAXException, IOException {
-        Document policyDocument = XmlUtil.parse(policyXml);
-
-        NodeList nodes = policyDocument.getElementsByTagNameNS(WspConstants.L7_POLICY_NS, elementTagName);
-
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element element = (Element) nodes.item(i);
-            element.setAttribute(attributeName, attributeValue);
-        }
-
-        return XmlUtil.nodeToFormattedString(policyDocument);
     }
 
     private String readPolicyFile(final String policyResourceFile) throws IOException {

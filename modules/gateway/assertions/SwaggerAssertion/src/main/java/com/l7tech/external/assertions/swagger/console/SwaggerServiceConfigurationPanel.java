@@ -6,6 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
@@ -175,6 +176,16 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
                 return errorMsg;
             }
         });
+
+        RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
+            @Override
+            public void run() {
+                enableDisableComponents();
+            }
+        };
+
+        validatePathCheckBox.addChangeListener(enableDisableListener);
+        validateMethodCheckBox.addChangeListener(enableDisableListener);
     }
 
     @Override
@@ -215,6 +226,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
         securityZoneWidget.setSelectedZone(settings.getSecurityZone());
 
         updateUrlPreview();
+        enableDisableComponents();
     }
 
     private void updateUrlPreview() {
@@ -247,5 +259,20 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
     @Override
     public String getDescription() {
         return resources.getString("stepDescription");
+    }
+
+    private void enableDisableComponents() {
+        validateMethodCheckBox.setEnabled(validatePathCheckBox.isSelected());
+        validateSchemeCheckBox.setEnabled(validateMethodCheckBox.isSelected());
+        requireSecurityCredentialsToCheckBox.setEnabled(validateMethodCheckBox.isSelected());
+
+        if (!validatePathCheckBox.isSelected()) {
+            validateMethodCheckBox.setSelected(false);
+        }
+
+        if (!validateMethodCheckBox.isSelected()) {
+            validateSchemeCheckBox.setSelected(false);
+            requireSecurityCredentialsToCheckBox.setSelected(false);
+        }
     }
 }
