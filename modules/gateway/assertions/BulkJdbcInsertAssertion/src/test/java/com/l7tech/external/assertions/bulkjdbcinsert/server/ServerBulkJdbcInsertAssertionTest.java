@@ -78,9 +78,8 @@ public class ServerBulkJdbcInsertAssertionTest {
        assertion.setConnectionName("Connection");
        assertion.setQuoted(true);
        assertion.setQuoteChar("\"");
+       assertion.setTableName("TableOne");
        when(mockDataSource.getConnection()).thenReturn(mockConnection);
-       when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-       fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
     }
 
 
@@ -112,9 +111,45 @@ public class ServerBulkJdbcInsertAssertionTest {
         m2.setTransformation("String");
         mapperList.add(m2);
         assertion.setColumnMapperList(mapperList);
+        when(mockConnection.prepareStatement("INSERT INTO TableOne(ColumnOne,ColumnTwo) VALUES (?,?)")).thenReturn(mockPreparedStatement);
         doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
         when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{1});
         doNothing().when(mockConnection).commit();
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
+        assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
+        verify(mockPreparedStatement, atLeastOnce()).setString(eq(1), anyString());
+        verify(mockPreparedStatement, atLeastOnce()).setString(eq(2), anyString());
+        verify(mockPreparedStatement, times(3)).executeBatch();
+    }
+
+    @Test
+    public void shouldProcessMessageContainingCSV_tableAsContextVariable() throws Exception {
+        InputStream inputStream = ServerBulkJdbcInsertAssertionTest.class.getResourceAsStream("0700_20150625-072200.v2.csv.gz");
+        Message request = new Message(new ByteArrayStashManager(),
+                ContentTypeHeader.parseValue(MESSAGE_CONTENT_TYPE),
+                inputStream);
+        Message response = new Message();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable("table", "TableOne");
+        assertion.setConnectionName("Connection");
+        assertion.setTableName("${table}");
+        List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
+        BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m1.setName("ColumnOne");
+        m1.setOrder(1);
+        m1.setTransformation("String");
+        mapperList.add(m1);
+        BulkJdbcInsertAssertion.ColumnMapper m2 = new BulkJdbcInsertAssertion.ColumnMapper();
+        m2.setName("ColumnTwo");
+        m2.setOrder(3);
+        m2.setTransformation("String");
+        mapperList.add(m2);
+        assertion.setColumnMapperList(mapperList);
+        when(mockConnection.prepareStatement("INSERT INTO TableOne(ColumnOne,ColumnTwo) VALUES (?,?)")).thenReturn(mockPreparedStatement);
+        doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
+        when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{1});
+        doNothing().when(mockConnection).commit();
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(1), anyString());
         verify(mockPreparedStatement, atLeastOnce()).setString(eq(2), anyString());
@@ -184,9 +219,11 @@ public class ServerBulkJdbcInsertAssertionTest {
         m1.setTransformParam("0");
         mapperList.add(m1);
         assertion.setColumnMapperList(mapperList);
+        when(mockConnection.prepareStatement("INSERT INTO TableOne(ColumnOne) VALUES (?)")).thenReturn(mockPreparedStatement);
         doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
         when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{1});
         doNothing().when(mockConnection).commit();
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
         verify(mockPreparedStatement, atLeastOnce()).setLong(eq(1), anyLong());
         verify(mockPreparedStatement, times(3)).executeBatch();
@@ -210,9 +247,11 @@ public class ServerBulkJdbcInsertAssertionTest {
         m1.setTransformParam("0");
         mapperList.add(m1);
         assertion.setColumnMapperList(mapperList);
+        when(mockConnection.prepareStatement("INSERT INTO TableOne(ColumnOne) VALUES (?)")).thenReturn(mockPreparedStatement);
         doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
         when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{1});
         doNothing().when(mockConnection).commit();
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
         verify(mockPreparedStatement, atLeastOnce()).setLong(eq(1), anyLong());
         verify(mockPreparedStatement, times(3)).executeBatch();

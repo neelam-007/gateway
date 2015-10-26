@@ -170,7 +170,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions(connectionName);
+        return super.doGetVariablesUsed().withExpressions(connectionName, tableName);
     }
     //
     // Metadata
