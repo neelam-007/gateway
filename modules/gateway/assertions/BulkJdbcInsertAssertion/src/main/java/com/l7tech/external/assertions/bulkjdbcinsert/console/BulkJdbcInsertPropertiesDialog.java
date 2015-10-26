@@ -28,7 +28,7 @@ import java.util.List;
 public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelSupport<BulkJdbcInsertAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.bulkjdbcinsert.console.resources.BulkJdbcInsertPropertiesDialog");
     private static final int MAX_TABLE_COLUMN_NUM = 4;
-
+    private static final int UPPER_BOUND_MAX_RECORDS = Integer.MAX_VALUE;
 
     private JPanel mainPanel;
     private JComboBox connectionComboBox;
@@ -173,7 +173,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        batchSizeSpinner.setModel(new SpinnerNumberModel(1, 1, JdbcAdmin.UPPER_BOUND_MAX_RECORDS, 1));
+        batchSizeSpinner.setModel(new SpinnerNumberModel(1, 1, UPPER_BOUND_MAX_RECORDS, 1));
 
         enableOrDisableComponents();
 
