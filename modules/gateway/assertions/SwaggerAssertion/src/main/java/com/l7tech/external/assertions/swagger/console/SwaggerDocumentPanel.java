@@ -91,7 +91,8 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
                             SwaggerDocumentPanel.this.getOwner(),
                             resources.getString("documentLoadingDialog.title"),
                             MessageFormat.format(resources.getString("documentLoadingDialog.message"), location),
-                            serviceAdmin.resolveUrlTargetAsync(location, ServiceAdmin.DownloadDocumentType.UNKNOWN)); // TODO jwilliams: change document type param to cluster property for max download size?
+                            serviceAdmin.resolveUrlTargetAsync(location,
+                                    SwaggerAssertion.CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE));
                 } catch (InterruptedException e) {
                     // cancelled by the user - counts as validation failure
                     return resources.getString("documentDownloadInterruptedError");

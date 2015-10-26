@@ -23,7 +23,7 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     public static final String SWAGGER_HOST = ".host";
     public static final String SWAGGER_API_URI = ".apiUri";
 
-    public static final String CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE = "swagger.specification.maxDownloadSize";
+    public static final String CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE = "swagger.maxDownloadSize";
 
     private String prefix = DEFAULT_PREFIX;
     private String swaggerDoc;
@@ -31,7 +31,6 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     private boolean validateMethod = true;
     private boolean validatePath = true;
     private boolean validateScheme = true;
-    private boolean validateRequestArguments = true;
     private boolean requireSecurityCredentials = true;
 
     public boolean isValidateMethod() {
@@ -56,14 +55,6 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
 
     public void setValidateScheme(boolean validateScheme) {
         this.validateScheme = validateScheme;
-    }
-
-    public boolean isValidateRequestArguments() {
-        return validateRequestArguments;
-    }
-
-    public void setValidateRequestArguments(boolean validateRequestArguments) {
-        this.validateRequestArguments = validateRequestArguments;
     }
 
     public boolean isRequireSecurityCredentials() {
@@ -122,10 +113,12 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
+
+        props.put(CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE, new String[] {
+                "Maximum size in bytes of a Swagger specification document download, or 0 for unlimited (Integer).",
+                "${documentDownload.maxSize}"
+        });
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
