@@ -94,6 +94,8 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
                 return null;
             }
         });
+
+        inputValidator.constrainTextFieldToBeNonEmpty(fieldDelimiterLabel.getText(), fieldDelimiterTextField, null);
         inputValidator.constrainTextFieldToMaxChars(fieldDelimiterLabel.getText(),fieldDelimiterTextField,1,null);
 
         quotedCheckBox.addActionListener(connectionListener);

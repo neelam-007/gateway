@@ -478,7 +478,7 @@ public class InputValidator implements FocusListener {
                 String error = null;
                 final String val = comp.getText();
                 if (val != null && val.length() > maxChars) {
-                    error = "The " + fieldName + " field must have a maximum of " + maxChars + " characters.";
+                    error = "The " + fieldName + " field must have a maximum of " + maxChars + (maxChars == 1 ? " character." : " characters.");
                 }
                 return error;
             }
