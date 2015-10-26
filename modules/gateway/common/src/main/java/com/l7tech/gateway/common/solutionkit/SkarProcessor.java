@@ -350,10 +350,13 @@ public class SkarProcessor {
                 }
             }
 
-            //create a map of srcId -> mapping from the original install mappings; save a copy before merge/upgrade for use elsewhere
-            final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings();
+            //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
+            //a Map of installMappings - each one identifiable by soltuionKitGuid.  We're storing a handle to these initial installmappings
+            //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
+            //the original and prompt the user asking them if they'd like to re-create any missing entities
+            final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings(solutionKit.getSolutionKitGuid());
             for (Mapping installMapping : installBundle.getMappings()) {
-                    installMappings.put(installMapping.getSrcId(), installMapping);
+                installMappings.put(installMapping.getSrcId(), installMapping);
             }
 
             // replace with upgrade mappings

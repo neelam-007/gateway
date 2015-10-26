@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
@@ -31,9 +32,11 @@ public class SolutionKitMappingsPanel extends JPanel {
     private TableColumn resolvedColumn;
     private TableColumn targetIdColumn;
 
+    private SolutionKit solutionKit;
     private SimpleTableModel<Mapping> mappingsModel;
-    private Map<String, Item> bundleItems = new HashMap<>();    // key = bundle reference item id. value = bundle reference item.
-    private Map<String, String> resolvedEntityIds;              // key = from id. value  = to id.
+    private Map<String, Item> bundleItems = new HashMap<>();       // key = bundle reference item id. value = bundle reference item.
+    private Map<String, String> resolvedEntityIds;                 // key = from id. value  = to id.
+    private Map<String, String> resolvedOther = new HashMap<>();   // boolean as string is actually easier to handle than Boolean (e.g. Boolean.valueOf(string) does the null testing for us)
 
     /**
      * Create panel.
@@ -50,7 +53,7 @@ public class SolutionKitMappingsPanel extends JPanel {
      * @param bundle the bundle
      * @param resolvedEntityIds map of resolved entity IDs. Key is source ID, value is the resolved ID.
      */
-    public void setData(@NotNull Mappings mappings, @NotNull Bundle bundle, @NotNull Map<String, String> resolvedEntityIds) {
+    public void setData(@NotNull SolutionKit solutionKit, @NotNull Mappings mappings, @NotNull Bundle bundle, @NotNull Map<String, String> resolvedEntityIds) {
         bundleItems.clear();
         for (Item aItem : bundle.getReferences()) {
             bundleItems.put(aItem.getId(), aItem);
@@ -60,6 +63,8 @@ public class SolutionKitMappingsPanel extends JPanel {
         if (mappings.getMappings() != null) {
             mappingsModel.setRows(mappings.getMappings());
         }
+
+        this.solutionKit = solutionKit;
     }
 
     /**
@@ -73,6 +78,7 @@ public class SolutionKitMappingsPanel extends JPanel {
         if (mappings.getMappings() != null) {
             mappingsModel.setRows(mappings.getMappings());
         }
+        this.solutionKit = null;
     }
 
     /**
@@ -157,6 +163,15 @@ public class SolutionKitMappingsPanel extends JPanel {
         return resolvedEntityIds;
     }
 
+    @NotNull
+    public Map<String, String> getResolvedOther() {
+        return resolvedOther;
+    }
+
+    public SolutionKit getSolutionKit() {
+        return solutionKit;
+    }
+
     private void initialize() {
         mappingsModel = TableUtil.configureTable(mappingsTable,
             TableUtil.column("Name", 50, 200, 1000, new Functions.Unary<String, Mapping>() {
@@ -220,7 +235,9 @@ public class SolutionKitMappingsPanel extends JPanel {
 
                         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                             Component cellComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                            if ((mapping.getErrorType() != null) && (resolvedEntityIds.get(mapping.getSrcId()) == null)){
+                            //make sure we mark in RED/PINK not only for resolvedEntityIds, but also for resolvedOther (where entities have been deleted from
+                            //an original install and the user tries to upgrade
+                            if ((mapping.getErrorType() != null) && (resolvedEntityIds.get(mapping.getSrcId()) == null) && (resolvedOther.get(mapping.getSrcId()) == null)){
                                 cellComponent.setBackground(Color.PINK);
                                 cellComponent.setForeground(Color.RED);
                             }
@@ -243,7 +260,7 @@ public class SolutionKitMappingsPanel extends JPanel {
                     if (errorType == null) {
                         return "---";
                     }
-                    if (resolvedEntityIds.get(mapping.getSrcId()) == null) {
+                    if (resolvedEntityIds.get(mapping.getSrcId()) == null && !Boolean.valueOf(resolvedOther.get(mapping.getSrcId()))) {
                         return "No";
                     }
                     return "Yes";

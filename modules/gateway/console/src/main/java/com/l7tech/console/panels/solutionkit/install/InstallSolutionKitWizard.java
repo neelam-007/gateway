@@ -213,7 +213,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
                 solutionKitMappingsPanel.setPreferredSize(new Dimension(1000, 400));
                 solutionKitMappingsPanel.hideTargetIdColumn();
-                solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityId);
+                solutionKitMappingsPanel.setData(solutionKit, mappings, bundle, resolvedEntityId);
 
                 errorPanel.setLayout(new BorderLayout());
                 errorPanel.add(label, BorderLayout.NORTH);

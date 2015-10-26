@@ -5,8 +5,8 @@ import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Pair;
@@ -18,8 +18,13 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.l7tech.gateway.api.Mapping.ErrorType.TargetNotFound;
 
 /**
  * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
@@ -36,6 +41,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
     private Map<String, Integer> guidAndInstanceToActiveErrorMap = new HashMap<>(); //key = solution kit guid, value = number of active errors
     private List<String> guidAndInstanceArray = new ArrayList<>(); //list of all the guidAndInstanceArray
+
+    private SolutionKitsConfig settings = null;
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
@@ -64,6 +71,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         guidAndInstanceArray.clear();
         solutionKitMappingsTabbedPane.removeAll();
 
+        this.settings = settings;
+
         for (final SolutionKit solutionKit: settings.getSelectedSolutionKits()) {
             Bundle bundle = settings.getBundle(solutionKit);
             if (bundle == null) continue;
@@ -75,7 +84,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             resolvedEntityIdsMap.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, resolvedEntityIds));
 
             final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
-            solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityIds);
+            solutionKitMappingsPanel.setData(solutionKit, mappings, bundle, resolvedEntityIds);
             solutionKitMappingsPanel.setDoubleClickAction(resolveButton);
             solutionKitMappingsPanel.addListSelectionListener(new ListSelectionListener() {
                 @Override
@@ -137,19 +146,21 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
     private void refreshMappingsTableButtons() {
         boolean enabled = false;
+        boolean resolved;
         final Component selectedComponent = solutionKitMappingsTabbedPane.getSelectedComponent();
 
         if (selectedComponent instanceof SolutionKitMappingsPanel) {
             final SolutionKitMappingsPanel solutionKitMappingsPanel = (SolutionKitMappingsPanel) selectedComponent;
             Mapping mapping = solutionKitMappingsPanel.getSelectedMapping();
             if (mapping != null) {
-                Mapping.ErrorType errorType = mapping.getErrorType();
-                if (errorType != null) {
+                //for enabling/disabling the resolveButton, make sure we also take into account any resolvedOther issues (for entities that
+                //have been deleted from the original install.
+                resolved = solutionKitMappingsPanel.getResolvedEntityIds().get(mapping.getSrcId()) == null && !Boolean.valueOf(solutionKitMappingsPanel.getResolvedOther().get(mapping.getSrcId()));
+                if (mapping.getErrorType() != null && resolved) {
                     enabled = true;
                 }
             }
         }
-
         resolveButton.setEnabled(enabled);
     }
 
@@ -174,35 +185,109 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             return;
         }
 
-        if (!SolutionKitsConfig.allowOverride(mapping)) {
-            DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
-                            "<br>This mapping requires the property '" + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' be set to true by the .skar file author.</html>",
-                    "Error Resolving Entity Conflict", JOptionPane.ERROR_MESSAGE, null);
-            return;
-        }
+        final SolutionKit solutionKit = solutionKitMappingsPanel.getSolutionKit();
+        //Check whether any entities are missing from the original installation during an upgrade, and if so
+        //optionally re-create them depending on user input
+        if (isMissingOriginalInstall(mapping, settings.getInstallMappings(solutionKit.getSolutionKitGuid()))) {
+            if (optionallyRecreateDeletedEntity(solutionKitMappingsPanel.getResolvedOther(), mapping, solutionKit)) {
+                refreshPanel(solutionKitMappingsPanel);
+            }
+        } else {
+            if (!SolutionKitsConfig.allowOverride(mapping)) {
+                DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
+                                "<br>This mapping requires the property '" + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + "' be set to true by the .skar file author.</html>",
+                        "Error Resolving Entity Conflict", JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
 
-        final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping,
-            solutionKitMappingsPanel.getBundleItems().get(mapping.getSrcId())
-        );
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg);
+            final SolutionKitResolveMappingDialog dlg = new SolutionKitResolveMappingDialog(this.getOwner(), mapping,
+                    solutionKitMappingsPanel.getBundleItems().get(mapping.getSrcId())
+            );
+            dlg.pack();
+            Utilities.centerOnParentWindow(dlg);
+            DialogDisplayer.display(dlg);
 
-        if (dlg.isConfirmed()) {
-            solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
-            solutionKitMappingsPanel.reload();
-
-            String guidAndInstance = guidAndInstanceArray.get(solutionKitMappingsTabbedPane.getSelectedIndex());
-
-            int count = guidAndInstanceToActiveErrorMap.get(guidAndInstance) -1;
-            guidAndInstanceToActiveErrorMap.put(guidAndInstance, count);
-
-            //set the tab back to white if conditions are good
-            if (count < 1) {
-                guidAndInstanceToActiveErrorMap.remove(guidAndInstance);
-                solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.WHITE);
-                solutionKitMappingsTabbedPane.setForegroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(), Color.BLACK);
+            if (dlg.isConfirmed()) {
+                solutionKitMappingsPanel.getResolvedEntityIds().put(mapping.getSrcId(), dlg.getResolvedId());
+                refreshPanel(solutionKitMappingsPanel);
             }
         }
+    }
+
+    private void refreshPanel(@NotNull final SolutionKitMappingsPanel solutionKitMappingsPanel) {
+        solutionKitMappingsPanel.reload();
+
+        String guidAndInstance = guidAndInstanceArray.get(solutionKitMappingsTabbedPane.getSelectedIndex());
+
+        int count = guidAndInstanceToActiveErrorMap.get(guidAndInstance) -1;
+        guidAndInstanceToActiveErrorMap.put(guidAndInstance, count);
+
+        //set the tab back to white if conditions are good
+        if (count < 1) {
+            guidAndInstanceToActiveErrorMap.remove(guidAndInstance);
+            solutionKitMappingsTabbedPane.setBackgroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(),Color.WHITE);
+            solutionKitMappingsTabbedPane.setForegroundAt(solutionKitMappingsTabbedPane.getSelectedIndex(), Color.BLACK);
+        }
+    }
+
+    private boolean optionallyRecreateDeletedEntity(@NotNull final Map<String, String> resolvedOther, @NotNull Mapping responseMapping, @NotNull SolutionKit solutionKit) {
+        // get original install mappings
+        final Map<String, Mapping> installMappings = settings.getInstallMappings(solutionKit.getSolutionKitGuid());
+
+        // prompt the user and ask if they would like to recreate the entities from the original install
+        if (promptUserForMissingEntitiesAction() == JOptionPane.YES_OPTION) {
+
+            //iterate through the currently loaded solution kit and if we find a matching srcId, then swap in the original mapping for that srcId
+            final List<Mapping> currentMappings = settings.getLoadedSolutionKits().get(solutionKit).getMappings();
+            for (int i=0; i < currentMappings.size(); i++){
+                Mapping currentMapping = currentMappings.get(i);
+                if (currentMapping.getSrcId().equals(responseMapping.getSrcId())) {
+                    currentMappings.set(i, installMappings.get(currentMapping.getSrcId()));
+                    resolvedOther.put(responseMapping.getSrcId(), Boolean.TRUE.toString());
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Convenience method to check for any missing entities from the original install while performing an upgrade
+     * We check not only for "TargetNotFound" but also if there is a "FailOnNew" property that is set to true - this
+     * is what identifies a missing entity versus a standard RESTman error that could be caused by other reasons.
+     *
+     * @param responseMapping the response mapping
+     * @param installMappings the install mappings
+     * @return true if missing, false if not
+     */
+    private boolean isMissingOriginalInstall(@NotNull final Mapping responseMapping, @NotNull final Map<String, Mapping> installMappings) {
+        if (responseMapping.getErrorType() == TargetNotFound) {
+            Mapping installMapping = installMappings.get(responseMapping.getSrcId());
+            if (installMapping != null) {
+                Boolean isFailOnNew = installMapping.getProperty("FailOnNew");
+                if (isFailOnNew == null || !isFailOnNew) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private int promptUserForMissingEntitiesAction() {
+        final AtomicInteger result = new AtomicInteger();
+        DialogDisplayer.showConfirmDialog(
+                this.getOwner(),
+                "The entity from the initial install is missing.  Would you like to re-create?",
+                "Solution Kit Upgrade Error",
+                JOptionPane.YES_NO_OPTION,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        result.set(option);
+                    }
+                }
+        );
+        return result.get();
     }
 }
