@@ -4,6 +4,7 @@ import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.util.Either;
@@ -100,18 +101,30 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
 
                 if (resolveResult.isLeft()) {
                     // an error occurred retrieving the document
-                    final String errorMsg = MessageFormat.format(resources.getString("documentDownloadFailedError"),
+                    final String errorMsg =
+                            MessageFormat.format(resources.getString("documentDownloadFailedWithReasonError"),
                             resolveResult.left());
+                    logger.log(Level.FINE, errorMsg);
+                    return errorMsg;
+                } else if (resolveResult.right().isEmpty()) {
+                    final String errorMsg = resources.getString("documentDownloadFailedError");
                     logger.log(Level.FINE, errorMsg);
                     return errorMsg;
                 }
 
                 String swaggerDocument = resolveResult.right();
 
-                SwaggerParser parser = new SwaggerParser();
-                List<AuthorizationValue> authorizationValues = new ArrayList<>();
-                authorizationValues.add(new AuthorizationValue());
-                Swagger model = parser.parse(swaggerDocument, authorizationValues);
+                Swagger model;
+
+                try {
+                    SwaggerParser parser = new SwaggerParser();
+                    List<AuthorizationValue> authorizationValues = new ArrayList<>();
+                    authorizationValues.add(new AuthorizationValue());
+                    model = parser.parse(swaggerDocument, authorizationValues);
+                } catch (Exception e) {
+                    logger.log(Level.FINE, e.getMessage());
+                    return resources.getString("parseDocumentFailed");
+                }
 
                 // the parser returns null if it could not parse the document
                 if (null == model) {
