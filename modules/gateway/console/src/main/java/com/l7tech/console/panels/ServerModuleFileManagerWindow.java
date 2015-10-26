@@ -141,7 +141,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
             public void tableChanged(final TableModelEvent e) {
                 if (TableModelEvent.DELETE == e.getType()) {
                     // need custom handling for delete event as it can get triggered before row selection is cleared
-                    enableOrDisable(null);
+                    enableOrDisable(Collections.<ServerModuleFile>emptyList());
                 } else {
                     run();
                 }
@@ -286,9 +286,10 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        final Collection<ServerModuleFile> selectedModules = getSelectedServerModuleFiles();
-                        if (selectedModules.isEmpty())
+                        final Collection<ServerModuleFile> selectedModules = Collections.unmodifiableCollection(getSelectedServerModuleFiles().values());
+                        if (selectedModules.isEmpty()) {
                             return;
+                        }
 
                         DialogDisplayer.showSafeConfirmDialog(
                                 ServerModuleFileManagerWindow.this,
@@ -527,8 +528,9 @@ public class ServerModuleFileManagerWindow extends JDialog {
         // In this case, removed collection will contain the old entity(s), where as the added collection will contain
         // the same entity(s) (same id's) but with new values.
         // In this case we need to preserve selection.
-        final ServerModuleFile selectedModuleFile = getFirstSelectedServerModuleFile();
-        ServerModuleFile newlySelectedModuleFile = null;
+        final Map<Goid, ServerModuleFile> selectedModuleFiles = getSelectedServerModuleFiles();
+        final Map<Goid, ServerModuleFile> newlySelectedModuleFiles = new HashMap<>(getSelectedServerModuleFiles());
+        boolean updateSelection = false;
 
         // Removes removed items from model.
         if (removed != null) {
@@ -545,19 +547,28 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 } else {
                     serverModuleFilesTableModel.setRowObject(modelRowIndex, moduleFile);
                 }
-                if (selectedModuleFile != null && selectedModuleFile.getGoid() != null && selectedModuleFile.getGoid().equals(moduleFile.getGoid())) {
+                final ServerModuleFile selectedModuleFile = selectedModuleFiles.get(moduleFile.getGoid());
+                if (selectedModuleFile != null) {
                     // the select module was added again, preserve the selection
-                    newlySelectedModuleFile = moduleFile;
+                    updateSelection = true;
+                    newlySelectedModuleFiles.put(moduleFile.getGoid(), moduleFile);
                 }
             }
         }
 
-        if (newlySelectedModuleFile != null) {
-            final int newModelRowIndex = serverModuleFilesTableModel.getRowIndex(newlySelectedModuleFile);
-            if (newModelRowIndex > -1) {
-                final int newRowIndex = moduleTable.convertRowIndexToView(newModelRowIndex);
-                if (newRowIndex > -1) {
-                    moduleTable.setRowSelectionInterval(newRowIndex, newRowIndex);
+        // finally if updateSelection is set loop through all newlySelectedModuleFiles and reselect them
+        if (updateSelection) {
+            final ListSelectionModel selectionModel = moduleTable.getSelectionModel();
+            if (selectionModel != null) {
+                selectionModel.clearSelection();
+                for (final ServerModuleFile newlySelectedModuleFile : newlySelectedModuleFiles.values()) {
+                    final int newModelRowIndex = serverModuleFilesTableModel.getRowIndex(newlySelectedModuleFile);
+                    if (newModelRowIndex > -1) {
+                        final int newRowIndex = moduleTable.convertRowIndexToView(newModelRowIndex);
+                        if (newRowIndex > -1) {
+                            selectionModel.addSelectionInterval(newRowIndex, newRowIndex);
+                        }
+                    }
                 }
             }
         }
@@ -594,13 +605,23 @@ public class ServerModuleFileManagerWindow extends JDialog {
      */
     private void fireTableDataChanged() {
         if (serverModuleFilesTableModel != null) {
-            // get currently/originally selected row
-            final int rowIndex = moduleTable.getSelectedRow();
+            // get currently/originally selected rows
+            final int[] selectedRows = moduleTable.getSelectedRows();
             // fire data change event
             serverModuleFilesTableModel.fireTableDataChanged();
             // reselect originally selected row
-            if (rowIndex > -1) {
-                moduleTable.setRowSelectionInterval(rowIndex, rowIndex);
+            if (selectedRows != null && selectedRows.length > 0) {
+                final ListSelectionModel selectionModel = moduleTable.getSelectionModel();
+                if (selectionModel != null) {
+                    selectionModel.clearSelection();
+                    for (final int rowIndex : selectedRows) {
+                        selectionModel.addSelectionInterval(rowIndex, rowIndex);
+                    }
+                } else {
+                    // if there is no selectionModel select the first one
+                    final int rowIndex = selectedRows[0];
+                    moduleTable.setRowSelectionInterval(rowIndex, rowIndex);
+                }
             }
         }
     }
@@ -608,30 +629,22 @@ public class ServerModuleFileManagerWindow extends JDialog {
     /**
      * Get all selected {@link ServerModuleFile Server Module Files}, from the Modules Table.
      *
-     * @return a read-only list of {@code ServerModuleFile}'s of all selected rows, or an empty {@code collection} if no row is selected.
+     * @return a read-only map of {@code ServerModuleFile}'s and their {@code Goid}'s of all selected rows,
+     * or an empty {@code Map} if no row is selected.
      */
     @NotNull
-    private Collection<ServerModuleFile> getSelectedServerModuleFiles() {
+    private Map<Goid, ServerModuleFile> getSelectedServerModuleFiles() {
         final int[] selectedRows = moduleTable.getSelectedRows();
-        final Collection<ServerModuleFile> selectedModules = new ArrayList<>(selectedRows.length);
+        final Map<Goid, ServerModuleFile> selectedModules = new HashMap<>(selectedRows.length);
         // loop through selected row
         for (final int rowIndex : selectedRows) {
             final ServerModuleFile selectedModule = moduleFromRowIndex(rowIndex);
             if (selectedModule != null) {
-                selectedModules.add(selectedModule);
+                selectedModules.put(selectedModule.getGoid(), selectedModule);
             }
         }
         // finally return read-only collection
-        return Collections.unmodifiableCollection(selectedModules);
-    }
-
-    /**
-     * Get currently selected {@link ServerModuleFile Server Module File}, from the Modules Table,
-     * or {@code null} if no module is selected.
-     */
-    @Nullable
-    private ServerModuleFile getFirstSelectedServerModuleFile() {
-        return moduleFromRowIndex(moduleTable.getSelectedRow());
+        return Collections.unmodifiableMap(selectedModules);
     }
 
     /**
@@ -868,25 +881,38 @@ public class ServerModuleFileManagerWindow extends JDialog {
 
     /**
      * Enable or Disable buttons based on the user's (currently logged-on) RBAC permissions for the specified
-     * {@link ServerModuleFile Server Module File}.
+     * {@link ServerModuleFile Server Module File}'s.<br/>
+     * {@code Delete} button is enabled if at least one of the selected modules can be deleted by the user.
      *
-     * @param selected    the currently selected {@link ServerModuleFile Server Module File}.  Optional.
+     * @param selectedModules    the currently selected {@link ServerModuleFile Server Module File}'s.  Required and cannot be {@code null}.
      */
-    private void enableOrDisable(@Nullable final ServerModuleFile selected) {
+    private void enableOrDisable(@NotNull final Collection<ServerModuleFile> selectedModules) {
         final boolean isCurrentNodeSelected = isCurrentNodeSelected();
-        propertiesButton.setEnabled(selected != null);
-        deleteButton.setEnabled(selected != null && canUpload && isCurrentNodeSelected && getSecurityProvider().hasPermission(new AttemptedDeleteSpecific(EntityType.SERVER_MODULE_FILE, selected)));
+        propertiesButton.setEnabled(!selectedModules.isEmpty());
+        boolean canDelete = !selectedModules.isEmpty() && canUpload && isCurrentNodeSelected;
+        if (canDelete) {
+            final SecurityProvider securityProvider = getSecurityProvider();
+            for (final ServerModuleFile module : selectedModules) {
+                canDelete = securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.SERVER_MODULE_FILE, module));
+                if (canDelete) {
+                    // found at least one module that the user can delete, so break (one is enough to enable the delete button)
+                    break;
+                }
+            }
+
+        }
+        deleteButton.setEnabled(canDelete);
         uploadButton.setEnabled(canCreate && canUpload && isCurrentNodeSelected);
     }
 
     /**
      * Enable or Disable buttons based on the user's (currently logged-on) RBAC permissions for currently selected
-     * {@link ServerModuleFile Server Module File}.
+     * {@link ServerModuleFile Server Module File}'s.
      *
-     * @see #enableOrDisable(com.l7tech.gateway.common.module.ServerModuleFile)
+     * @see #enableOrDisable(java.util.Collection)
      */
     private void enableOrDisable() {
-        enableOrDisable(getFirstSelectedServerModuleFile());
+        enableOrDisable(Collections.unmodifiableCollection(getSelectedServerModuleFiles().values()));
     }
 
     /**
