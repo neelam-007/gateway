@@ -61,6 +61,9 @@ import java.util.logging.Logger;
 public class WssProcessorImpl implements WssProcessor {
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
 
+    static final boolean DEFAULT_CHECK_SIGNING_CERT_EXPIRY = true;
+    static boolean checkSigningCertExpiry = DEFAULT_CHECK_SIGNING_CERT_EXPIRY;
+
     static {
         JceProvider.init();
     }
@@ -2104,7 +2107,8 @@ public class WssProcessorImpl implements WssProcessor {
 
         if (signingCert != null) {
             try {
-                signingCert.checkValidity();
+                if ( checkSigningCertExpiry )
+                    signingCert.checkValidity();
             } catch (CertificateExpiredException e) {
                 logger.log(Level.FINE, "Signing certificate expired " + signingCert.getNotAfter(), ExceptionUtils.getDebugException(e));
                 throw new ProcessorException(e);

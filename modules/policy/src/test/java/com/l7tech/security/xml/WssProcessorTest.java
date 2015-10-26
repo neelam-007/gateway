@@ -181,6 +181,12 @@ public class WssProcessorTest {
         SyspropUtil.clearProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS);
         SyspropUtil.clearProperty(XencUtil.PROP_ENCRYPT_EMPTY_ELEMENTS);
         ConfigFactory.clearCachedConfig();
+        WssProcessorImplTestUtil.restoreDefaults();
+    }
+
+    @After
+    public void afterEachTest() {
+        WssProcessorImplTestUtil.restoreDefaults();
     }
 
     @AfterClass
@@ -189,6 +195,7 @@ public class WssProcessorTest {
             XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS
         );
     }
+
 
     @Test
     public void testDotnetEncryptedRequest() throws Exception {
@@ -533,39 +540,6 @@ public class WssProcessorTest {
     public TestDocument makeBug3754PingReqVordelSignedTestDocument() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3754_PING_REQ_VORDEL_SIGNED);
         return new TestDocument("Bug3754PingReqVordelSigned", d, null, null, null, null, null);
-    }
-
-    // TODO recreate test messsage using another cert
-    @Ignore("disabled because the cert that signed the test message has since expired")
-    @Test
-    public void testSignedSvAssertionWithThumbprintSha1() throws Exception {
-        TestDocument r;
-        Document ass = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedSvThumbAssertion.xml");
-        Document d = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        Element security = SoapUtil.getOrMakeSecurityElement(d);
-        security.appendChild(d.importNode(ass.getDocumentElement(), true));
-        SecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate());
-        r = new TestDocument("SignedSvAssertionWithThumbprintSha1", d, null, null, null, null, securityTokenResolver);
-        doTest(r);
-    }
-
-    // TODO recreate test messsage using another cert
-    @Ignore("Disabled because the cert that signed the test request has since expired")
-    @Test
-    public void testCompleteEggRequest() throws Exception {
-        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/ValidBlueCardRequest.xml");
-
-        Element sec = SoapUtil.getSecurityElement(d);
-        Element ass = DomUtils.findFirstChildElementByName(sec, SamlConstants.NS_SAML, "Assertion");
-
-        Document assDoc = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedAttrThumbAssertion.xml");
-        sec.replaceChild(d.importNode(assDoc.getDocumentElement(), true), ass);
-
-        //XmlUtil.nodeToOutputStream(d, new FileOutputStream("c:/eggerequest.xml"));
-
-        SecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate());
-        TestDocument td = new TestDocument("CompleteEggRequest", d, null, null, null, null, securityTokenResolver);
-        doTest(td);
     }
 
     @Test
@@ -1135,24 +1109,6 @@ public class WssProcessorTest {
         assertTrue(validity);
     }
 
-    @Ignore("Test signature needs to be regenerated after fix for Bug #7859")
-    @Test
-	public void testEcdsaSha256ignedRequest() throws Exception {
-        doTest(makeEttkTestDocument("ECDSA with SHA-256 signed request", TestDocuments.ECDSA_SHA256_REQUEST));
-    }
-
-    @Ignore("Temporarily disabled while RSA Jsafe problem is investigated")
-    @Test
-	public void testEcdsaSha384ignedRequest() throws Exception {
-        doTest(makeEttkTestDocument("ECDSA with SHA-384 signed request", TestDocuments.ECDSA_SHA384_REQUEST));
-    }
-
-    @Ignore("Test signature needs to be regenerated after fix for Bug #7859")
-    @Test
-    public void testEcdsaSha284RequestSignedUsingLuna() throws Exception {
-        doTest(makeEttkTestDocument("ECDSA with SHA-284 signed using Luna", XmlUtil.stringAsDocument(SIGNED_USING_SHA384_WITH_ECDSA)));
-    }
-
     @Test
     @BugNumber(7580)
     public void testBug7580ProcessWsscRequest() throws Exception {
@@ -1174,10 +1130,10 @@ public class WssProcessorTest {
         doTest( td );
     }
 
-    @Ignore("Test certificate has expired")
     @Test
     public void testEcdsaSignedFromMiltonAtGd() throws Exception {
-        doTest(makeEttkTestDocument("ECDSA signed by Milton", XmlUtil.stringAsDocument(ECDSA_EXAMPLE_FROM_MILTON_GD)));
+        WssProcessorImplTestUtil.disableSigningCertExpiryCheck(); // test cert has expired
+        doTest( makeEttkTestDocument( "ECDSA signed by Milton", XmlUtil.stringAsDocument( ECDSA_EXAMPLE_FROM_MILTON_GD ) ) );
     }
 
     @Test
@@ -1256,10 +1212,10 @@ public class WssProcessorTest {
         } );
     }
 
-    @Ignore("Temporary ignored until sample message (bug_9298_signed_with_pkipath.xml) is resigned (signature expired today i.e. 2015-10-05)")
     @Test
     @BugNumber(9298)
     public void testPkiPathBinarySecurityToken() throws Exception {
+        WssProcessorImplTestUtil.disableSigningCertExpiryCheck(); // test cert has expired
         Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug_9298_signed_with_pkipath.xml");
         TestDocument td = new TestDocument("testPkiPathBinarySecurityToken", d, null, null, null, null, null);
         doTest(td, new WssProcessorImpl(), new Functions.UnaryVoid<com.l7tech.security.xml.processor.ProcessorResult>() {
@@ -1287,10 +1243,10 @@ public class WssProcessorTest {
         });
     }
 
-    @Ignore("Temporary ignored until sample message (bug_9298_signed_with_cert_keyid.xml) is resigned (signature expired today i.e. 2015-10-05)")
     @Test
     @BugNumber(9298)
     public void testSignedWithCertEmbeddedInKeyIdentifier() throws Exception {
+        WssProcessorImplTestUtil.disableSigningCertExpiryCheck(); // test cert has expired
         Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug_9298_signed_with_cert_keyid.xml");
         TestDocument td = new TestDocument("testSignedWithCertEmbeddedInKeyIdentifier", d, null, null, null, null, null);
         doTest(td, new WssProcessorImpl(), new Functions.UnaryVoid<com.l7tech.security.xml.processor.ProcessorResult>() {
@@ -1472,40 +1428,6 @@ public class WssProcessorTest {
             "A4GBAKBixlrEeYq2Av8LqtFu6aC7yMINhHw5ICV+r5rsIRnbwBTeXbYAQ9HI3xZZ\n" +
             "gL//fxSkNnWKQK1JdMRmzVSq9kPvkyOF56YHNW5t6YAmOrEkNBEcl2x8mtRUl9Wy\n" +
             "EQTDNN63uJSIPSQnDkbOuBBywbxmJtgcPfOliMn/FnrD8NwO";
-
-    /** @deprecated this message was generated before the fix for bug #7859 and so encodes the ECDSA SignatureValue incorrectly (as ASN.1, rather than as raw r,s pair) */
-    @Deprecated
-    private static final String SIGNED_USING_SHA384_WITH_ECDSA =
-            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
-            "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/" +
-            "wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-ws" +
-            "security-utility-1.0.xsd\" actor=\"secure_span\" soapenv:mustUnderstand=\"1\"><wsu:Timestamp wsu:Id=\"Timestamp-2-47386e8ba38ee" +
-            "990fff2b55c6eb65b8c\"><wsu:Created>2009-04-29T18:38:49.359Z</wsu:Created><wsu:Expires>2009-04-29T18:43:49.359Z</wsu:Expires></w" +
-            "su:Timestamp><wsse:BinarySecurityToken EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-secu" +
-            "rity-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" wsu" +
-            ":Id=\"BinarySecurityToken-0-1cb7b9c6383e08e83467f25de2c233ab\">MIIB2TCCAV6gAwIBAgIJAJCW+P9mQT2aMAoGCCqGSM49BAMDMBgxFjAUBgNVBAMM" +
-            "DWVjY3Rlc3RjbGllbnQwHhcNMDkwNDI5MTgyODQ5WhcNMjkwNDI0MTgyODQ5WjAYMRYwFAYDVQQDDA1lY2N0ZXN0Y2xpZW50MHYwEAYHKoZIzj0CAQYFK4EEACIDYgA" +
-            "EMl9nqqnkh4KdCMuVesojNkrJ4d0X+jvfyz3sKVvNm1jS1XmCH5TeZkzjeHGsIOstiS0yZdhFRdwgfuB1FaONHW31Vw+OxZdH0/wj4qs5RdF2MLBn8GfZWAd7LEps5s" +
-            "INo3QwcjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIF4DASBgNVHSUBAf8ECDAGBgRVHSUAMB0GA1UdDgQWBBRn+VqVeSh2MgmUHblUzjkdOHG2CDAfBgNVHSMEG" +
-            "DAWgBRn+VqVeSh2MgmUHblUzjkdOHG2CDAKBggqhkjOPQQDAwNpADBmAjEA9RBr66e/Ygzjd5GBpljgsYpi3Ht4hJcj79x7NNpJyL+b9mj6zy3NP4/RqS2yLpVpAjEA" +
-            "+Rv3Vj8FFsIq/qS82Qi+98FZc6U9rZVBpDk3qJ9yZmQ9QotQbRncZayK72efFzQK</wsse:BinarySecurityToken><ds:Signature xmlns:ds=\"http://www." +
-            "w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:" +
-            "CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384\"></ds:SignatureMeth" +
-            "od><ds:Reference URI=\"#Body-1-70c6bfe2ac05e370eac521410ec6e054\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/20" +
-            "01/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#sha384" +
-            "\"></ds:DigestMethod><ds:DigestValue>BBbmAdQLiiyHnDEi12C659CYVN2q+wlcERpePTzP+N8OT6n9s41YnekZB3KzHIj2</ds:DigestValue></ds:Refe" +
-            "rence><ds:Reference URI=\"#Timestamp-2-47386e8ba38ee990fff2b55c6eb65b8c\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w" +
-            "3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-mor" +
-            "e#sha384\"></ds:DigestMethod><ds:DigestValue>danM1MmilxAzDjAW1aV7ZXt2FmYa0JyhTMK8rVaft9yIHnPQqH6xUNxuJwt2jy/u</ds:DigestValue><" +
-            "/ds:Reference></ds:SignedInfo><ds:SignatureValue>MGYCMQDC3K80d8XRHD30BpPGVuEm+ZlXg1HZw70LZtQgRqm+QP6oRpEgzWyEhsKk2RRuPIoCMQCCDm" +
-            "SqELyqSDStFAG9A+idVK9jQjrWXw4Sl19S2Yhq4qWhDgSrWp8GtIlN4o4q6w4=</ds:SignatureValue><ds:KeyInfo><wsse:SecurityTokenReference><wss" +
-            "e:Reference URI=\"#BinarySecurityToken-0-1cb7b9c6383e08e83467f25de2c233ab\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/" +
-            "oasis-200401-wss-x509-token-profile-1.0#X509v3\"></wsse:Reference></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></w" +
-            "sse:Security></soapenv:Header><soapenv:Body xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-util" +
-            "ity-1.0.xsd\" wsu:Id=\"Body-1-70c6bfe2ac05e370eac521410ec6e054\"><ns1:placeOrder xmlns:ns1=\"http://warehouse.acme.com/ws\" soa" +
-            "penv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><productid xsi:type=\"xsd:long\">-9206260647417300294</product" +
-            "id><amount xsi:type=\"xsd:long\">1</amount><price xsi:type=\"xsd:float\">5.0</price><accountid xsi:type=\"xsd:long\">228</accou" +
-            "ntid></ns1:placeOrder></soapenv:Body></soapenv:Envelope>";
 
     private static final String B7580_WSSC_IDENT = "http://www.layer7tech.com/uuid/ed0cc365c1d4f1b06d82e2db7872e65cadca160a";
     private static final byte[] B7580_WSSC_SHARED_SECRET = { -87,32,-79,-40,108,-31,-31,-66,-80,103,114,4,104,-43,54,-94 };

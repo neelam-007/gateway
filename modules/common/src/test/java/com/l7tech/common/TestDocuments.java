@@ -91,9 +91,6 @@ public final class TestDocuments {
     public static final String FIM2005APR_SERVER_RST = DIR + "fim/fim2005apr_server_rst.xml";
     public static final String FIM2005APR_SERVER_RSTR = DIR + "fim/fim2005apr_server_rstr.xml";
 
-    public static final String ECDSA_SHA256_REQUEST = DIR + "ecc/ecdsa_sha256_request.xml";
-    public static final String ECDSA_SHA384_REQUEST = DIR + "ecc/ecdsa_sha384_request.xml";
-
     public static final String WSS2005JUL_REQUEST = DIR + "wssInterop/regeneratedRequest.xml";
     public static final String WSS2005JUL_REQUEST_ORIG = DIR + "wssInterop2005July_request.xml";
     public static final String WSS2005JUL_RESPONSE = DIR + "wssInterop2005July_response.xml";
