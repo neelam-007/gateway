@@ -5,22 +5,23 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.bulkjdbcinsert.BulkJdbcInsertAssertion;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
-import java.util.List;
 
 /**
  * Created by moiyu01 on 15-09-25.
@@ -29,6 +30,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.bulkjdbcinsert.console.resources.BulkJdbcInsertPropertiesDialog");
     private static final int MAX_TABLE_COLUMN_NUM = 4;
     private static final int UPPER_BOUND_MAX_RECORDS = Integer.MAX_VALUE;
+    private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
 
     private JPanel mainPanel;
     private JComboBox connectionComboBox;
@@ -50,19 +52,20 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
     private JLabel tableNameLabel;
     private JLabel fieldDelimiterLabel;
     private JComboBox recordDelimiterComboBox;
+    private JButton upButton;
+    private JButton downButton;
     private final Map<String,String> connToDriverMap = new HashMap<String, String>();
-    private List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
-    private ColumnMappingTableModel mappingTableModel;
+    private SimpleTableModel<BulkJdbcInsertAssertion.ColumnMapper> mappingTableModel;
 
     InputValidator inputValidator;
 
     public BulkJdbcInsertPropertiesDialog(final Frame parent, final BulkJdbcInsertAssertion assertion) {
         super(BulkJdbcInsertAssertion.class, parent, assertion, true);
-        initComponents();
+        initComponents(parent);
     }
 
-    @Override
-    protected void initComponents() {
+
+    protected void initComponents(final Frame parent) {
         super.initComponents();
 
         recordDelimiterComboBox.setModel(new DefaultComboBoxModel(BulkJdbcInsertAssertion.recordDelimiterMap.keySet().toArray(new String[0])));
@@ -103,12 +106,22 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         ((JTextField)connectionComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(connectionListener);
         connectionComboBox.addItemListener(connectionListener);
         //Initialize mapping table
-        mappingTableModel = new ColumnMappingTableModel();
-        mappingTable.setModel(mappingTableModel);
-        mappingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        mappingTableModel = TableUtil.configureTable(
+                mappingTable,
+                TableUtil.column(resources.getString("column.label.name"), 50, 100, 100000, property("name"), String.class),
+                TableUtil.column(resources.getString("column.label.order"), 50, 100, 100000, property("order"), String.class),
+                TableUtil.column(resources.getString("column.label.transformation"), 50, 150, 100000, property("transformation"), String.class),
+                TableUtil.column(resources.getString("column.label.transformParam"), 50, 200, 100000, property("transformParam"), String.class)
+        );
+        mappingTable.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        mappingTable.getTableHeader().setReorderingAllowed(false);
         mappingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
+                int index = mappingTable.getSelectedRow();
+                boolean selectedMany = mappingTable.getSelectedRowCount() > 1;
+                upButton.setEnabled(index > 0 && !selectedMany);
+                downButton.setEnabled(index >= 0 && index < mappingTableModel.getRowCount() - 1 && !selectedMany);
                 enableOrDisableTableButtons();
             }
         });
@@ -122,7 +135,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
                 Utilities.centerOnScreen(dlg);
                 dlg.setVisible(true);
                 if (dlg.isConfirmed()) {
-                    mapperList.add(mapper);
+                    mappingTableModel.addRow(mapper);
                     mappingTableModel.fireTableDataChanged();
                 }
             }
@@ -133,32 +146,72 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             public void actionPerformed(ActionEvent e) {
                 final int selectedIndex = mappingTable.getSelectedRow();
                 if (selectedIndex >= 0) {
-                    BulkJdbcInsertAssertion.ColumnMapper mapper = mapperList.get(selectedIndex);
+                    BulkJdbcInsertAssertion.ColumnMapper mapper = mappingTableModel.getRowObject(selectedIndex);
                     BulkJdbcInsertTableMapperDialog dlg = new BulkJdbcInsertTableMapperDialog(BulkJdbcInsertPropertiesDialog.this, "Edit Mapping", mapper);
                     dlg.pack();
                     Utilities.centerOnScreen(dlg);
                     dlg.setVisible(true);
                     if (dlg.isConfirmed()) {
-                        mapperList.set(selectedIndex, mapper);
+                        mappingTableModel.setRowObject(selectedIndex, mapper);
                         mappingTableModel.fireTableDataChanged();
                     }
                 }
             }
         });
 
+        Utilities.setDoubleClickAction(mappingTable, editButton);
+
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final int selectedIndex = mappingTable.getSelectedRow();
-                if (selectedIndex >= 0) {
+                final int[] viewRows = mappingTable.getSelectedRows();
+                if (viewRows.length > 0) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < viewRows.length; i++) {
+                        //limit the length to max displayable so it won't go over
+                        if(sb.length() >= MAX_DISPLAYABLE_MESSAGE_LENGTH) {
+                            sb.append(" ...");
+                            break;
+                        }
+                        sb.append(mappingTableModel.getRowObject(viewRows[i]).getName());
+                        if (i != viewRows.length - 1) {
+                            sb.append(",");
+                        }
+                    }
                     Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
                     int result = JOptionPane.showOptionDialog(BulkJdbcInsertPropertiesDialog.this, resources.getString("confirmation.remove.mapping"),
                             resources.getString("dialog.title.remove.mapping"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-                    if(0 == result) {
-                        mapperList.remove(selectedIndex);
-                        mappingTableModel.fireTableDataChanged();
+                    if (result == 0) {
+                        for (int i = 0; i < viewRows.length; i++) {
+                            mappingTableModel.removeRowAt(mappingTable.getSelectedRow());
+                        }
                     }
                 }
+            }
+        });
+
+        upButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final int viewRow = mappingTable.getSelectedRow();
+                if (viewRow > 0) {
+                    int prevIndex = viewRow - 1;
+                    mappingTableModel.swapRows(prevIndex, viewRow);
+                    mappingTable.changeSelection(prevIndex, 0, false, false);
+                }
+                enableOrDisableTableButtons();
+            }
+        });
+        downButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final int viewRow = mappingTable.getSelectedRow();
+                if (viewRow > -1 && viewRow < mappingTableModel.getRowCount() - 1) {
+                    int nextIndex = viewRow + 1;
+                    mappingTableModel.swapRows(viewRow, nextIndex);
+                    mappingTable.changeSelection(nextIndex, 0, false, false);
+                }
+                enableOrDisableTableButtons();
             }
         });
 
@@ -189,8 +242,11 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
 
     private void enableOrDisableTableButtons() {
         boolean isSelected = mappingTable.getSelectedRow() >=0;
-        editButton.setEnabled(isSelected);
+        boolean selectedMany = mappingTable.getSelectedRowCount() > 1;
+        editButton.setEnabled(isSelected && !selectedMany);
         removeButton.setEnabled(isSelected);
+        upButton.setEnabled(isSelected && !selectedMany);
+        downButton.setEnabled(isSelected && !selectedMany);
     }
 
     @Override
@@ -210,7 +266,9 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         quoteTextField.setText(assertion.getQuoteChar());
         escapeQuoteTextField.setText(assertion.getEscapeQuote());
         if(assertion.getColumnMapperList() != null) {
-            mapperList.addAll(assertion.getColumnMapperList());
+            for(BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
+                mappingTableModel.addRow(mapper);
+            }
         }
         decompressionComboBox.setSelectedItem(assertion.getCompression());
         batchSizeSpinner.setValue(assertion.getBatchSize());
@@ -231,7 +289,12 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         assertion.setFieldDelimiter(fieldDelimiterTextField.getText());
         assertion.setEscapeQuote(escapeQuoteTextField.getText());
         assertion.setQuoteChar(quoteTextField.getText());
-        assertion.setColumnMapperList(mapperList);
+        if(mappingTableModel.getRowCount() > 0) {
+            assertion.setColumnMapperList(mappingTableModel.getRows());
+        }
+        else {
+            assertion.setColumnMapperList(Collections.EMPTY_LIST);
+        }
         assertion.setCompression((BulkJdbcInsertAssertion.Compression)decompressionComboBox.getSelectedItem());
         assertion.setBatchSize((Integer)batchSizeSpinner.getValue());
         return assertion;
@@ -286,61 +349,8 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         return reg.getJdbcConnectionAdmin();
     }
 
-    private class ColumnMappingTableModel extends AbstractTableModel {
-        @Override
-        public int getColumnCount() {
-            return MAX_TABLE_COLUMN_NUM;
-        }
-
-        @Override
-        public void fireTableDataChanged() {
-            super.fireTableDataChanged();
-            enableOrDisableTableButtons();
-        }
-
-        @Override
-        public int getRowCount() {
-            return mapperList.size();
-        }
-
-        @Override
-        public String getColumnName(int col) {
-            switch (col) {
-                case 0:
-                    return resources.getString("column.label.name");
-                case 1:
-                    return resources.getString("column.label.order");
-                case 2:
-                    return resources.getString("column.label.transformation");
-                case 3:
-                    return resources.getString("column.label.transformParam");
-                default:
-                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
-            }
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return false;
-        }
-
-        @Override
-        public Object getValueAt(int row, int col) {
-            BulkJdbcInsertAssertion.ColumnMapper columnMapper =  mapperList.get(row);
-
-            switch (col) {
-                case 0:
-                    return columnMapper.getName();
-                case 1:
-                    return columnMapper.getOrder();
-                case 2:
-                    return columnMapper.getTransformation();
-                case 3:
-                    return columnMapper.getTransformParam();
-                default:
-                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
-            }
-        }
+    private static Functions.Unary<String, BulkJdbcInsertAssertion.ColumnMapper> property(final String propName) {
+        return Functions.propertyTransform(BulkJdbcInsertAssertion.ColumnMapper.class, propName);
     }
 
 }
