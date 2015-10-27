@@ -3768,7 +3768,8 @@
         Target to build the skar signer and sign .aar file.
     -->
     <target name="sign-aar-full" depends="package.skarsigner,sign-aar" description="Sign an AAR file" />
-
+    <target name="sign-aar-gensmfxml-full" depends="package.skarsigner,sign-aar-gensmfxml" description="Build the SkarSigner package, sign an aar file and generate RESTman XML for the signed file" />
+    <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for the signed file" />
     <!--
         Target to sign .aar file.
     -->
@@ -3800,6 +3801,31 @@
             <arg line="-k &quot;${load.password}&quot;"/>
             <arg line="-s &quot;${src.root}/${input}&quot;"/>
             <arg line="-o &quot;${src.root}/${output}&quot;"/>
+        </java>
+    </target>
+
+    <target name="gensmfxml-saar" description="Generate RESTman XML for a SAAR file">
+        <fail unless="assertion" message="assertion is a required property (assertion name)"/>
+        <property name="skarSigner" value="${src.root}/modules/internal/build/SkarSigner.jar"/>
+        <fail message="Skar signer ${skarSigner} is not available. Try sign-aar-full.">
+            <condition>
+                <not>
+                    <available file="${skarSigner}" />
+                </not>
+            </condition>
+        </fail>
+
+        <!-- Defaults that could be overridden -->
+        <property name="saar-input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar"/>
+        <property name="xml-output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar.xml"/>
+
+        <echo level="info">Generate RESTman XML file, ${xml-output}, for ${saar-input}</echo>
+
+        <java jar="${skarSigner}" fork="true" failonerror="true">
+            <arg line="genSmfXml"/>
+            <arg line="-n &quot;${assertion}&quot;"/>
+            <arg line="-f &quot;${src.root}/${saar-input}&quot;"/>
+            <arg line="-o &quot;${src.root}/${xml-output}&quot;"/>
         </java>
     </target>
 </project>
