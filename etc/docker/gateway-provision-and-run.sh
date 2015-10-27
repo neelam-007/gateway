@@ -40,17 +40,17 @@ function logErrorAndExit() {
 
 function doWaitForServiceStartUp() {
         SERVICE_NAME="$1"
-        SERVICE_PORT="$2"
+        SERVICE_CHECK="$2"
         COUNTER=0
         END=120
 
         logInfo "waiting for the $SERVICE_NAME to start up"
 
-        ns=`netstat -tnap | grep "$SERVICE_PORT" | grep LISTEN`
+        ns=`eval $SERVICE_CHECK`
         while [ ! -n "$ns" -a $COUNTER -le $END ]; do
                 logInfo "$SERVICE_NAME is not running yet."
                 sleep 5
-                ns=`netstat -tnap | grep "$SERVICE_PORT" | grep LISTEN`
+                ns=`eval $SERVICE_CHECK`
                 COUNTER=$(($COUNTER+1))
                 if [ $COUNTER -gt $END ]; then
                         logErrorAndExit "giving up waiting for the $SERVICE_NAME to start up."
@@ -59,11 +59,11 @@ function doWaitForServiceStartUp() {
 }
 
 function doWaitForSSGStartUp() {
-        doWaitForServiceStartUp "gateway" "8443"
+        doWaitForServiceStartUp "gateway" 'find /opt/SecureSpan/Gateway/node/default/var -name started -print'
 }
 
 function doWaitForProcessControllerStartUp() {
-        doWaitForServiceStartUp "process controller" "8765"
+	doWaitForServiceStartUp "process controller" 'netstat -tnap | grep 8765 | grep LISTEN'
 }
 
 # collect config from Consul if it's available
