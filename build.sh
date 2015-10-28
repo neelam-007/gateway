@@ -76,7 +76,9 @@ fi
 
 test -d build || mkdir build
 "${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS} | tee build/build.log
-RESULT=${?}
+#2015-10-27 RCHAN fixed the incorrect returnCode
+#RESULT=${?}
+RESULT=${PIPESTATUS[0]}
 if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
   if [ ${RESULT} -eq 0 ] ; then
     echo -e "BUILD SUCCESSFUL\n"
