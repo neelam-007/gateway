@@ -11,6 +11,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 
@@ -28,7 +29,6 @@ import java.util.*;
  */
 public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelSupport<BulkJdbcInsertAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.bulkjdbcinsert.console.resources.BulkJdbcInsertPropertiesDialog");
-    private static final int MAX_TABLE_COLUMN_NUM = 4;
     private static final int UPPER_BOUND_MAX_RECORDS = Integer.MAX_VALUE;
     private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
 
@@ -98,8 +98,18 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        inputValidator.constrainTextFieldToBeNonEmpty(fieldDelimiterLabel.getText(), fieldDelimiterTextField, null);
-        inputValidator.constrainTextFieldToMaxChars(fieldDelimiterLabel.getText(),fieldDelimiterTextField,1,null);
+        inputValidator.constrainTextFieldToBeNonEmpty(fieldDelimiterLabel.getText(), fieldDelimiterTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(Syntax.getReferencedNames(fieldDelimiterTextField.getText()).length == 0) {
+                    if(fieldDelimiterTextField.getText().length() > 1) {
+                        return String.format(resources.getString("field.length.error"), fieldDelimiterLabel.getText());
+                    }
+                }
+                return null;
+            }
+        });
+        //inputValidator.constrainTextFieldToMaxChars(fieldDelimiterLabel.getText(), fieldDelimiterTextField, 1, null);
 
         quotedCheckBox.addActionListener(connectionListener);
 
@@ -215,8 +225,28 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        inputValidator.constrainTextFieldToMaxChars(quoteLabel.getText(),quoteTextField, 1, null);
-        inputValidator.constrainTextFieldToMaxChars(escapeQuoteLabel.getText(), escapeQuoteTextField, 1, null);
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(Syntax.getReferencedNames(quoteTextField.getText()).length == 0) {
+                    if(quoteTextField.getText().length() > 1) {
+                        return String.format(resources.getString("field.length.error"), quoteLabel.getText());
+                    }
+                }
+                return null;
+            }
+        });
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(Syntax.getReferencedNames(escapeQuoteTextField.getText()).length == 0) {
+                    if(escapeQuoteTextField.getText().length() > 1) {
+                        return String.format(resources.getString("field.length.error"), escapeQuoteLabel.getText());
+                    }
+                }
+                return null;
+            }
+        });
 
         mappingTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             public Component getTableCellRendererComponent

@@ -75,7 +75,6 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         //check if connection is a context variable
-
         final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
         final String tableName = ExpandVariables.process(assertion.getTableName(), variableMap, getAudit());
         long startTime = System.currentTimeMillis();
@@ -98,7 +97,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                     }
 
                     try (final Reader reader = new InputStreamReader(new BOMInputStream(inputStream), StandardCharsets.UTF_8)) {
-                        try (final CSVParser parser = new CSVParser(reader, getCVSFormat(assertion))) {
+                        try (final CSVParser parser = new CSVParser(reader, getCVSFormat(assertion, variableMap))) {
                             Iterator<CSVRecord> recordIterator = parser.iterator();
                             if(recordIterator.hasNext()) {
                                 Set<BulkJdbcInsertAssertion.ColumnMapper> columnMapperSet = getColumnMapperSet();
@@ -245,7 +244,7 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         return connection;
     }
 
-    private CSVFormat getCVSFormat(final BulkJdbcInsertAssertion assertion) {
+    private CSVFormat getCVSFormat(final BulkJdbcInsertAssertion assertion, final Map<String, Object> variableMap) {
         //configure default format with ',' field delimiter, CRLF record delimiter
         CSVFormat format = CSVFormat.newFormat(',').withIgnoreEmptyLines(true);
         if(assertion.getRecordDelimiter() != null) {
@@ -254,21 +253,34 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                 format = format.withRecordSeparator(delimiter);
             }
         }
-        if(assertion.getFieldDelimiter() != null && assertion.getFieldDelimiter().trim().length() == 1) {
-            format = format.withDelimiter(assertion.getFieldDelimiter().trim().charAt(0));
+        //check and set field delimiter
+        final String fieldDelimiter = ExpandVariables.process(assertion.getFieldDelimiter(), variableMap, getAudit());
+        if(fieldDelimiter.trim().length() == 1) {
+            format = format.withDelimiter(fieldDelimiter.trim().charAt(0));
         }
+        else {
+            throw new IllegalArgumentException("Illegal Field Delimiter used: " + fieldDelimiter);
+        }
+
         if(assertion.isQuoted()) {
-            if (assertion.getQuoteChar() != null && assertion.getQuoteChar().trim().length() == 1) {
-                format = format.withQuote(assertion.getQuoteChar().trim().charAt(0));
+            final String quoteChar = ExpandVariables.process(assertion.getQuoteChar(), variableMap, getAudit());
+            if (quoteChar.trim().length() == 1) {
+                format = format.withQuote(quoteChar.trim().charAt(0));
+            }
+            else {
+                throw new IllegalArgumentException("Illegal Quote Char used: " + quoteChar);
             }
         }
         else {
             format = format.withQuote(null);
         }
-
-        if (assertion.getEscapeQuote() != null && assertion.getEscapeQuote().trim().length() == 1) {
-            char escapeChar = assertion.getEscapeQuote().trim().charAt(0);
-            format = (format.getQuoteCharacter() != null && escapeChar == format.getQuoteCharacter()) ? format.withEscape(null) : format.withEscape(escapeChar);
+        final String escapeChar = ExpandVariables.process(assertion.getEscapeQuote(), variableMap, getAudit());
+        if (escapeChar.trim().length() == 1) {
+            char escape = escapeChar.trim().charAt(0);
+            format = (format.getQuoteCharacter() != null && escape == format.getQuoteCharacter()) ? format.withEscape(null) : format.withEscape(escape);
+        }
+        else if(escapeChar.trim().length() > 1) {
+            throw  new IllegalArgumentException("Illegal Escape Char used: " + escapeChar);
         }
 
         return format;

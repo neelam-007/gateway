@@ -76,9 +76,6 @@ public class ServerBulkJdbcInsertAssertionTest {
        mockPreparedStatement = mock(PreparedStatement.class);
        assertion = new BulkJdbcInsertAssertion();
        assertion.setConnectionName("Connection");
-       assertion.setQuoted(true);
-       assertion.setQuoteChar("\"");
-       assertion.setTableName("TableOne");
        when(mockDataSource.getConnection()).thenReturn(mockConnection);
     }
 
@@ -99,6 +96,7 @@ public class ServerBulkJdbcInsertAssertionTest {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         assertion.setConnectionName("Connection");
         assertion.setTableName("TableOne");
+        assertion.setQuoted(true);
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
         m1.setName("ColumnOne");
@@ -133,6 +131,7 @@ public class ServerBulkJdbcInsertAssertionTest {
         context.setVariable("table", "TableOne");
         assertion.setConnectionName("Connection");
         assertion.setTableName("${table}");
+        assertion.setQuoted(true);
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
         m1.setName("ColumnOne");
@@ -156,6 +155,39 @@ public class ServerBulkJdbcInsertAssertionTest {
         verify(mockPreparedStatement, times(3)).executeBatch();
     }
 
+
+    @Test
+    public void shouldProcessMessageContainingCSV_quoteFieldDelimiterEscapeAsContextVariables() throws Exception {
+        InputStream inputStream = ServerBulkJdbcInsertAssertionTest.class.getResourceAsStream("0700_20150625-072200.v2.csv.gz");
+        Message request = new Message(new ByteArrayStashManager(),
+                ContentTypeHeader.parseValue(MESSAGE_CONTENT_TYPE),
+                inputStream);
+        Message response = new Message();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable("quote", "\"");
+        context.setVariable("escape", "\"");
+        context.setVariable("delimiter", ",");
+        assertion.setConnectionName("Connection");
+        assertion.setTableName("TableOne");
+        assertion.setQuoteChar("${quote}");
+        assertion.setEscapeQuote("${escape}");
+        assertion.setFieldDelimiter("${delimiter}");
+        List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
+        BulkJdbcInsertAssertion.ColumnMapper mapper = new BulkJdbcInsertAssertion.ColumnMapper();
+        mapper.setName("ColumnOne");
+        mapper.setOrder(1);
+        mapper.setTransformation("String");
+        mapperList.add(mapper);
+        assertion.setColumnMapperList(mapperList);
+        when(mockConnection.prepareStatement("INSERT INTO TableOne(ColumnOne) VALUES (?)")).thenReturn(mockPreparedStatement);
+        doNothing().when(mockPreparedStatement).setString(eq(0), anyString());
+        when(mockPreparedStatement.executeBatch()).thenReturn(new int[]{100});
+        doNothing().when(mockConnection).commit();
+        fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
+        assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(context, request, null, new AuthenticationContext()));
+        verify(mockPreparedStatement, atLeastOnce()).setString(eq(1), anyString());
+        verify(mockPreparedStatement, times(3)).executeBatch();
+    }
     @Test
     public void testBuildSqlInsertStatement() throws Exception {
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
@@ -211,6 +243,8 @@ public class ServerBulkJdbcInsertAssertionTest {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         assertion.setConnectionName("Connection");
         assertion.setTableName("TableOne");
+        assertion.setQuoted(true);
+        assertion.setQuoteChar("\"");
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
         m1.setName("ColumnOne");
@@ -239,6 +273,8 @@ public class ServerBulkJdbcInsertAssertionTest {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         assertion.setConnectionName("Connection");
         assertion.setTableName("TableOne");
+        assertion.setQuoted(true);
+        assertion.setQuoteChar("\"");
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
         m1.setName("ColumnOne");
