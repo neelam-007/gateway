@@ -1,11 +1,9 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,16 +46,6 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     @NotNull
     @Override
     public Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<SolutionKitHeader> findAllExcludingChildren() throws FindException {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
         return Collections.emptyList();
     }
 }

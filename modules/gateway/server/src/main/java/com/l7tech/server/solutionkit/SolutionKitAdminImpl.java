@@ -47,7 +47,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public Collection<SolutionKitHeader> findSolutionKits() throws FindException {
+    public Collection<SolutionKitHeader> findHeaders() throws FindException {
         return solutionKitManager.findAllHeaders();
     }
 
@@ -61,18 +61,6 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Override
     public Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
         return getSolutionKitAdminHelper().findAllChildrenHeadersByParentGoid(parentGoid);
-    }
-
-    @NotNull
-    @Override
-    public Collection<SolutionKitHeader> findAllExcludingChildren() throws FindException {
-        return solutionKitManager.findAllExcludingChildren();
-    }
-
-    @NotNull
-    @Override
-    public Collection<SolutionKitHeader> findParentSolutionKits() throws FindException {
-        return solutionKitManager.findParentSolutionKits();
     }
 
     @Override

@@ -57,11 +57,30 @@ public class SolutionKitTablePanel extends JPanel {
         // The table sorting relies on the element order of solutionKitsDisplayed.
         // Thus, remove any row sorter from the table model and all elements of solutionKitsDisplayed will be sorted in some manner.
 
-        solutionKitsDisplayed = (List<SolutionKitHeader>) solutionKitAdmin.findAllExcludingChildren(); // Initially we do not display all children in the table.
+        Collection<SolutionKitHeader> allSolutionKits = solutionKitAdmin.findHeaders();
+
+        // determine possible parents and actual parent goids
+        List<SolutionKitHeader> possibleParents = new ArrayList<>(allSolutionKits.size());
+        Set<Goid> parentGoids = new HashSet<>(allSolutionKits.size());
+        for (SolutionKitHeader solutionKit : allSolutionKits) {
+            if (solutionKit.getParentGoid() == null) {
+                possibleParents.add(solutionKit);
+            } else {
+                parentGoids.add(solutionKit.getParentGoid());
+            }
+        }
+
+        solutionKitsDisplayed = possibleParents;  // Initially we do not display children in the table.
         Collections.sort(solutionKitsDisplayed);
         solutionKitsModel.setRows(solutionKitsDisplayed);
 
-        parentSolutionKits = (List<SolutionKitHeader>) solutionKitAdmin.findParentSolutionKits();
+        // build list of actual parents - skip any that don't have children
+        parentSolutionKits = new ArrayList<>(possibleParents.size());
+        for (SolutionKitHeader possibleParent : possibleParents) {
+            if (parentGoids.contains(possibleParent.getGoid())) {
+                parentSolutionKits.add(possibleParent);
+            }
+        }
     }
 
     /**

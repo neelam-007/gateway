@@ -64,18 +64,4 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      */
     @NotNull
     Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull final Goid parentGoid) throws FindException;
-
-    /**
-     * Find all solution kits but not including any child solution kits.
-     * @return a list of solution kits without any child solution kits.
-     * @throws FindException
-     */
-    List<SolutionKitHeader> findAllExcludingChildren() throws FindException;
-
-    /**
-     * Find all parent solution kits only
-     * @return a list of parent solution kits, which have child solution kit(s).
-     * @throws FindException
-     */
-    List<SolutionKitHeader> findParentSolutionKits() throws FindException;
 }

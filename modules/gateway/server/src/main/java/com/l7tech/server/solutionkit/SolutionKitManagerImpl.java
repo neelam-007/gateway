@@ -26,7 +26,6 @@ import org.apache.commons.lang.StringUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
@@ -42,7 +41,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -302,42 +304,6 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
     }
 
-    @Override
-    public List<SolutionKitHeader> findAllExcludingChildren() throws FindException {
-        try {
-            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
-                @Override
-                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
-                    return convertToHTList(
-                            session.createCriteria(SolutionKit.class).add(Restrictions.isNull("parentGoid")).list()
-                    );
-                }
-            });
-        } catch (Exception e) {
-            throw new FindException(e.toString(), e);
-        }
-    }
-
-    @Override
-    public List<SolutionKitHeader> findParentSolutionKits() throws FindException {
-        List<SolutionKitHeader> children = findChildSolutionKits();
-        Set<String> parentGoidStrSet = new HashSet<>(children.size());
-        for (SolutionKitHeader child: children) {
-            parentGoidStrSet.add(child.getParentGoid().toString());
-        }
-
-        List<SolutionKitHeader> parentList = new ArrayList<>();
-        SolutionKit parent;
-        for (String goidStr: parentGoidStrSet) {
-            parent = findByPrimaryKey(Goid.parseGoid(goidStr));
-            if (parent == null) continue;
-
-            parentList.add(new SolutionKitHeader(parent));
-        }
-
-        return parentList;
-    }
-
     public void handleEvent(ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
@@ -425,21 +391,6 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                     return true;
                 }
             }, invoker);
-        }
-    }
-
-    private List<SolutionKitHeader> findChildSolutionKits() throws FindException {
-        try {
-            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<SolutionKitHeader>>() {
-                @Override
-                protected List<SolutionKitHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
-                    return convertToHTList(
-                            session.createCriteria(SolutionKit.class).add(Restrictions.isNotNull("parentGoid")).list()
-                    );
-                }
-            });
-        } catch (Exception e) {
-            throw new FindException(e.toString(), e);
         }
     }
 

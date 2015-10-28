@@ -33,7 +33,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
-    Collection<SolutionKitHeader> findSolutionKits() throws FindException;
+    Collection<SolutionKitHeader> findHeaders() throws FindException;
 
     /**
      * Find a list of Solution Kits by a given GUID.
@@ -56,28 +56,6 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Collection<SolutionKitHeader> findAllChildrenByParentGoid(Goid parentGoid) throws FindException;
-
-    /**
-     * Retrieve all solution kits except child solution kits.
-     *
-     * @return a collection of solution kits except child solution kits.
-     * @throws FindException
-     */
-    @NotNull
-    @Transactional(readOnly = true)
-    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
-    Collection<SolutionKitHeader> findAllExcludingChildren() throws FindException;
-
-    /**
-     * Retrieve all solution kits, which have child solution kit(s).
-     *
-     * @return a collection of solution kits having child solution kit(s).
-     * @throws FindException
-     */
-    @NotNull
-    @Transactional(readOnly = true)
-    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
-    Collection<SolutionKitHeader> findParentSolutionKits() throws FindException;
 
     /**
      * Retrieve solution kit entity with the given ID.
