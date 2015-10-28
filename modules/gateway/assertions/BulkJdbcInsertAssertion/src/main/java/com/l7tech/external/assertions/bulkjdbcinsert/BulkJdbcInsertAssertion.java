@@ -12,6 +12,7 @@ import com.l7tech.search.Dependency;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 /**
@@ -191,7 +192,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Insert JDBC Data in Bulk");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Parses data from a compressed comma-separated file and then inserts them in bulk into a specified database table using a JDBC connection.");
 
         // Add to palette folder(s) 
@@ -203,6 +204,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
 
@@ -222,6 +224,28 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
+    private static final String baseName = "Insert JDBC Data in Bulk";
+    private static final int MAX_DISPLAY_LENGTH = 80;
+
+    private final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<BulkJdbcInsertAssertion>(){
+        @Override
+        public String getAssertionName( final BulkJdbcInsertAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuilder builder= new StringBuilder(assertion.getTargetName());
+            builder.append(": ")
+                    .append(baseName)
+                    .append(" into ")
+                    .append(assertion.tableName)
+                    .append(" Table via ")
+                    .append(assertion.connectionName);
+            if(builder.length() > MAX_DISPLAY_LENGTH) {
+                builder.replace(MAX_DISPLAY_LENGTH -1, builder.length() - 1, "...");
+            }
+            return builder.toString();
+        }
+    };
 
     public static class ColumnMapper {
         public String getName() {
