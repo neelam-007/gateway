@@ -1,16 +1,14 @@
 package com.l7tech.server.solutionkit;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -20,13 +18,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.w3c.dom.Document;
 
+import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -144,52 +140,109 @@ public class SolutionKitManagerImplTest {
     }
 
     @Test
-    public void importBundleRestmanError() throws Exception {
-        // simulate error from restmanInvoker
-        GatewayManagementInvoker invoker = Mockito.mock(GatewayManagementInvoker.class);
-
-        //When RestmanMessage == null
-        RestmanInvoker rmInvoker = Mockito.spy(new RestmanInvoker(new Functions.Nullary<Boolean>() {
-            @Override
-            public Boolean call() {
-                // nothing to do in cancelled callback.
-                return true;
-            }
-        }, invoker));
-        Mockito.doReturn(null).when(rmInvoker).getRestmanMessage(pec);
-
+    public void importBundleRestmanAccessDeniedManagementResponse() throws Exception {
+        // AccessDeniedManagementResponse
+        when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenThrow(
+                new GatewayManagementDocumentUtilities.AccessDeniedManagementResponse("", ""));
         try {
-            rmInvoker.callManagementCheckInterrupted(pec, REQUEST);
+            //test
+            solutionKitManager.importBundle(REQUEST, metadata, false);
             fail("Expected: server error response.");
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-            assertEquals("Unexpected exception: a call result was expected.", e.getMessage());
+        } catch (Exception e) {
+            assertThat(e, CoreMatchers.instanceOf(SolutionKitException.class));
         }
+    }
 
+    @Test
+    public void importBundleRestmanInterruptedException() throws Exception {
+        // InterruptedException is swallowed in SolutionKitManagerImpl.importBundle(); ignore for now
+        when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenThrow(new InterruptedException(""));
+        solutionKitManager.importBundle(REQUEST, metadata, false);
+    }
 
-        //When RestmanMessage.isErrorType() == true
-        final String response =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                        "           THIS IS A TEST RESTMAN MESSAGE RESPONSE\n" +
-                        "</l7:Item>\n";
-        Document document = XmlUtil.stringToDocument(response);
-        final RestmanMessage rmMessage= Mockito.spy(new RestmanMessage(document));
-        rmInvoker = Mockito.spy(new RestmanInvoker(new Functions.Nullary<Boolean>() {
-            @Override
-            public Boolean call() {
-                // nothing to do in cancelled callback.
-                return true;
-            }
-        }, invoker));
-        Mockito.doReturn(rmMessage).when(rmInvoker).getRestmanMessage(pec);
-        Mockito.doReturn(true).when(rmMessage).isErrorResponse();
-
+    @Test
+    public void importBundleRestmanRuntimeException() throws Exception {
+        // RuntimeException
+        when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenThrow(new RuntimeException(""));
         try {
-            rmInvoker.callManagementCheckInterrupted(pec, REQUEST);
-            fail("Expected: server error response");
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-            assertEquals(response, e.getMessage());
+            //test
+            solutionKitManager.importBundle(REQUEST, metadata, false);
+            fail("Expected: server error response.");
+        } catch (Exception e) {
+            assertThat(e, CoreMatchers.instanceOf(RuntimeException.class));
         }
+    }
+
+    @Test
+    public void importBundleRestmanUnexpectedManagementResponse() throws Exception {
+        // UnexpectedManagementResponse
+        when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenThrow(
+                new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(""));
+        try {
+            //test
+            solutionKitManager.importBundle(REQUEST, metadata, false);
+            fail("Expected: server error response.");
+        } catch (Exception e) {
+            assertThat(e, CoreMatchers.instanceOf(GatewayManagementDocumentUtilities.UnexpectedManagementResponse.class));
+        }
+    }
+
+    @Test
+    public void findBySolutionKitGuidAndIMSuccess() throws Exception{
+        SolutionKitManagerImpl skManager = Mockito.spy(new SolutionKitManagerImpl());
+        List<SolutionKit> solutionKits = new ArrayList<>();
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "one");
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "two");
+        solutionKits.add(solutionKit1);
+        solutionKits.add(solutionKit2);
+
+        Mockito.doReturn(solutionKits).when(skManager).findBySolutionKitGuid("mock guid");
+
+        //test
+        SolutionKit solutionKitReturned = skManager.findBySolutionKitGuidAndIM("mock guid", "one");
+
+        //expect the solutionKit with IM "one" is returned
+        assertEquals(solutionKitReturned, solutionKit1);
+    }
+
+    @Test
+    public void findBySolutionKitGuidNoMatch() throws Exception{
+        SolutionKitManagerImpl skManager = Mockito.spy(new SolutionKitManagerImpl());
+        List<SolutionKit> solutionKits = new ArrayList<>();
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "one");
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "two");
+        solutionKits.add(solutionKit1);
+        solutionKits.add(solutionKit2);
+
+        Mockito.doReturn(solutionKits).when(skManager).findBySolutionKitGuid("mock guid");
+
+        //test
+        SolutionKit solutionKitReturned = skManager.findBySolutionKitGuidAndIM("mock guid", "three");
+
+        //expect that no solution kit is returned
+        assertEquals(solutionKitReturned, null);
+    }
+
+    @Test
+    public void convertToHTListSuccess() {
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a784aafe");
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a784aaaa");
+        List<SolutionKit> solutionKits = new ArrayList<>(2);
+        solutionKits.add(solutionKit1);
+        solutionKits.add(solutionKit2);
+
+        //test
+        List<SolutionKitHeader> solutionKitHeaders = solutionKitManager.convertToHTList(solutionKits);
+
+        //expect solutionKit to be converted to solutionKitHeaders
+        assertEquals(solutionKitHeaders.get(0).getSolutionKitGuid(), solutionKit1.getSolutionKitGuid());
+        assertEquals(solutionKitHeaders.get(1).getSolutionKitGuid(), solutionKit2.getSolutionKitGuid());
 
     }
 }

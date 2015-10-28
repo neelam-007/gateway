@@ -394,7 +394,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
     }
 
-    private List<SolutionKitHeader> convertToHTList(@NotNull List<SolutionKit> skList) {
+    protected List<SolutionKitHeader> convertToHTList(@NotNull List<SolutionKit> skList) {
         List<SolutionKitHeader>  htList = new ArrayList<>(skList.size());
         for (SolutionKit solutionKit: skList) {
             htList.add(new SolutionKitHeader(solutionKit));
