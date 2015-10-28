@@ -226,7 +226,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
     }
 
     private static final String baseName = "Insert JDBC Data in Bulk";
-    private static final int MAX_DISPLAY_LENGTH = 80;
+    private static final int MAX_DISPLAY_LENGTH = 120;
 
     private final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<BulkJdbcInsertAssertion>(){
         @Override
@@ -241,7 +241,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
                     .append(" Table via ")
                     .append(assertion.connectionName);
             if(builder.length() > MAX_DISPLAY_LENGTH) {
-                builder.replace(MAX_DISPLAY_LENGTH -1, builder.length() - 1, "...");
+                builder.replace(MAX_DISPLAY_LENGTH -1, builder.length(), "...");
             }
             return builder.toString();
         }
