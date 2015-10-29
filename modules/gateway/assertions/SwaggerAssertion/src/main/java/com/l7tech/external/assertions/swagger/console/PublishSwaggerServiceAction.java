@@ -53,6 +53,8 @@ public class PublishSwaggerServiceAction extends AbstractPublishServiceAction {
                 }
             }
         });
+
+        putValue("MenuHint", "Services");
     }
 
     @Override

@@ -53,6 +53,8 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
                 }
             }
         });
+
+        putValue("MenuHint", "Services");
     }
 
     @Override

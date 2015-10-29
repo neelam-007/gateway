@@ -50,6 +50,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -131,10 +132,16 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
     private JMenu newProviderSubMenu = null;
-    private JMenu manageAdminUsersSubMenu = null;
+    private JMenu usersAndAuthenticationSubMenu = null;
+    private JMenu servicesAndAPIsSubMenu = null;
+    private JMenu transportsSubMenu = null;
+    private JMenu dataSourcesSubMenu = null;
+    private JMenu certsKeysAndSecretsSubMenu = null;
+    private JMenu globalSettingsSubMenu = null;
+    private JMenu extensionsAndAddOnsSubMenu = null;
+    private JMenu loggingAndAuditingSubMenu = null;
     private JMenu filterServiceAndPolicyTreeMenu = null;
     private JMenu sortServiceAndPolicyTreeMenu = null;
-    private JMenu customGlobalActionsMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -290,10 +297,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     public final static String FILTER_STATUS_SERVICES = "Filter: Services";
     public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
 
-    private static final String WARNING_BANNER_PROP_NAME = "logon.warningBanner";
     public static final String L7_GO_TO = "l7goto";
     public static final String L7_FIND = "l7search";
-    public static final String L7_ESC = "l7esc";
     public static final String L7_F3 = "l7f3";
     public static final String L7_SHIFT_F3 = "l7shiftf3";
     private final ActiveKeypairJob activeKeypairJob = new ActiveKeypairJob();
@@ -399,8 +404,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         assertionSearchLabel.setEnabled(false);
         getSearchComboBox().clearSearch();
         getAssertionSearchComboBox().clearSearch();
-        getCustomGlobalActionsMenu().removeAll();
-        getCustomGlobalActionsMenu().setEnabled(false);
     }
 
     public boolean isDisconnected() {
@@ -426,7 +429,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             connectMenuItem.setIcon(icon);
             int mnemonic = connectMenuItem.getText().toCharArray()[0];
             connectMenuItem.setMnemonic(mnemonic);
-            connectMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            connectMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
         }
         return connectMenuItem;
     }
@@ -447,7 +450,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         int mnemonic = disconnectMenuItem.getText().toCharArray()[0];
         disconnectMenuItem.setMnemonic(mnemonic);
-        disconnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        disconnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
 
         return disconnectMenuItem;
     }
@@ -468,7 +471,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             int mnemonic = myAccountMenuItem.getText().toCharArray()[2];
             myAccountMenuItem.setMnemonic(mnemonic);
             myAccountMenuItem.setAccelerator(
-                    KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), ActionEvent.ALT_MASK));
+                    KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), InputEvent.ALT_MASK));
         }
         return myAccountMenuItem;
     }
@@ -487,7 +490,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             if (accel) {
                 int mnemonic = menuItemPref.getText().toCharArray()[0];
                 menuItemPref.setMnemonic(mnemonic);
-                menuItemPref.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+                menuItemPref.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
             }
         }
         return menuItemPref;
@@ -507,7 +510,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             exitMenuItem.setToolTipText(resapplication.getString("ExitMenuItem.desc"));
             int mnemonic = 'X';
             exitMenuItem.setMnemonic(mnemonic);
-            exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
         }
         return exitMenuItem;
     }
@@ -651,7 +654,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             validateMenuItem.setText("Validate");
             int mnemonic = validateMenuItem.getText().toCharArray()[0];
             validateMenuItem.setMnemonic(mnemonic);
-            validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
         }
         return validateMenuItem;
     }
@@ -693,7 +696,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             showAstnLnsMenuItem.setText("Show Assertion Numbers");
             showAstnLnsMenuItem.setMnemonic(KeyEvent.VK_N);
             showAstnLnsMenuItem.setDisplayedMnemonicIndex(15);
-            showAstnLnsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.ALT_MASK));
+            showAstnLnsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.ALT_MASK));
         }
         return showAstnLnsMenuItem;
     }
@@ -707,7 +710,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             importMenuItem.setText("Import Policy");
             int mnemonic = importMenuItem.getText().toCharArray()[0];
             importMenuItem.setMnemonic(mnemonic);
-            importMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            importMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
         }
         return importMenuItem;
     }
@@ -721,7 +724,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             exportMenuItem.setText("Export Policy");
             exportMenuItem.setMnemonic(KeyEvent.VK_R);
             exportMenuItem.setDisplayedMnemonicIndex(4);
-            exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.ALT_MASK));
+            exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.ALT_MASK));
         }
         return exportMenuItem;
     }
@@ -794,7 +797,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             saveAndActivateMenuItem.setText("Save and Activate");
             int mnemonic = saveAndActivateMenuItem.getText().toCharArray()[0];
             saveAndActivateMenuItem.setMnemonic(mnemonic);
-            saveAndActivateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK));
+            saveAndActivateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK | InputEvent.CTRL_MASK));
         }
         return saveAndActivateMenuItem;
     }
@@ -808,7 +811,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             saveOnlyMenuItem.setText("Save");
             int mnemonic = saveOnlyMenuItem.getText().toCharArray()[0];
             saveOnlyMenuItem.setMnemonic(mnemonic);
-            saveOnlyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            saveOnlyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.ALT_MASK));
         }
         return saveOnlyMenuItem;
     }
@@ -1043,70 +1046,73 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private JMenu getTasksMenu() {
         if (tasksMenu == null) {
-            JMenu menu = new JMenu();
+            JMenu menu = new JMenu() {
+                private final LicenseListener listener = new LicenseListener() {
+                    @Override
+                    public void licenseChanged(final ConsoleLicenseManager licenseManager) {
+                        if (null != licenseManager.getLicense())
+                            populateMenusWithAdditionalActions();
+                    }
+                };
+                {
+                    Registry.getDefault().getLicenseManager().addLicenseListener( listener );
+                }
+            };
+
             //tasksMenu.setFocusable(false);
             menu.setText(resapplication.getString("Tasks"));
 
+            // Identity Providers
             menu.add(getNewProviderSubMenu());
-            menu.add(getNewInternalUserAction());
-            menu.add(getNewInternalGroupAction());
-            menu.add(getManageAdminUsersSubMenu());
-            menu.add(getFindIdentityAction());
 
-            menu.addSeparator();
+            // Users and Authentication
+            menu.add(getUsersAndAuthenticationSubMenu());
 
-            menu.add(getPublishServiceAction());
-            menu.add(getCreateServiceAction());
-            menu.add(getCreatePolicyAction());
-            menu.add(getPublishNonSoapServiceAction());
-            menu.add(getPublishRestServiceAction());
-            menu.add(getPublishInternalServiceAction());
-            menu.add(getPublishReverseWebProxyAction());
-            menu.addSeparator();
+            // Services and APIs
+            menu.add(getServicesAndAPIsSubMenu());
 
-            menu.add(getManageCertificatesMenuItem());
-            menu.add(getManagePrivateKeysMenuItem());
-            menu.add(getManageSecurePasswordsMenuItem());
-            menu.add(getRevokeCertificatesMenuItem());
-            menu.add(getManageGlobalResourcesMenuItem());
-            menu.add(getManageClusterPropertiesActionMenuItem());
-            menu.add(getManageSsgConnectorsAction());
+            // Transports
+            menu.add(getTransportsSubMenu());
+
+            // Certificates, Keys and Secrets
+            menu.add(getCertsKeysAndSecretsSubMenu());
+
+            // Data Sources
             menu.add(getManageDataSourcesAction());
-            menu.add(getManageJmsEndpointsMenuItem());
-            menu.add(getManageKerberosMenuItem());
-            menu.add(getManageRolesMenuItem());
-            menu.add(getManageScheduledTasksAction());
-            menu.add(getManageSecurityZonesAction());
-            menu.add(getManageAuditAlertOptionsMenuItem());
-            menu.add(getManageLogSinksAction());
-            menu.add(getManageEmailListenersAction());
-            menu.add(getConfigureFtpAuditArchiverAction());
-            menu.add(getManageTrustedEsmUsersAction());
-            menu.add(getManageUDDIRegistriesAction());
-            menu.add(getManageHttpConfigurationAction());
-            menu.add(getManageServiceResolutionMenuItem());
-            menu.add(getManageEncapsulatedAssertionsAction());
-            menu.add(getSiteMinderConfigurationAction());
-            menu.add(getManageServerModuleFilesAction());
-            if ( OFFER_MANAGE_WORK_QUEUES )
-                menu.add(getManageWorkQueuesAction());
-            menu.add(getManageSolutionKitsAction());
 
-            menu.add(getCustomGlobalActionsMenu());
+            // Global Settings
+            menu.add(getGlobalSettingsSubMenu());
+
+            // Extensions and Add-Ons
+            menu.add(getExtensionsAndAddOnsSubMenu());
+
+            // Logging and Auditing
+            menu.add(getLoggingAndAuditingSubMenu());
 
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
 
             tasksMenu = menu;
         }
+
         return tasksMenu;
     }
 
     private JMenu getManageDataSourcesAction() {
-        JMenu dataSourcesMenu = new JMenu("Manage Data Sources");
-        dataSourcesMenu.add(getManageJdbcConnectionsAction());
-        dataSourcesMenu.add(getManageCassandraConnectionsAction());
-        return dataSourcesMenu;
+        if (null == dataSourcesSubMenu) {
+            dataSourcesSubMenu = new JMenu();
+            dataSourcesSubMenu.setText(resapplication.getString("tasksMenu.dataSourcesSubMenu.title"));
+            dataSourcesSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/PerformJdbcQuery16x16.gif")));
+
+            populateDataSourcesSubMenu();
+        }
+
+        return dataSourcesSubMenu;
+    }
+
+    private void populateDataSourcesSubMenu() {
+        dataSourcesSubMenu.add(getManageJdbcConnectionsAction());
+        dataSourcesSubMenu.add(getManageCassandraConnectionsAction());
     }
 
     private JMenuItem getManageAuditAlertOptionsMenuItem() {
@@ -1126,39 +1132,201 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenu getNewProviderSubMenu() {
         if (newProviderSubMenu == null) {
             newProviderSubMenu = new JMenu();
-            //newProviderSubMenu.setFocusable(false);
-
-            newProviderSubMenu.setText("Create Identity Provider");
+            newProviderSubMenu.setText(resapplication.getString("tasksMenu.identityProvidersSubMenu.title"));
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CreateIdentityProvider16x16.gif")));
 
-            newProviderSubMenu.add(getNewProviderAction());
-            newProviderSubMenu.add(getNewBindOnlyLdapProviderAction());
-            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
-            newProviderSubMenu.add(getNewPolicyBackedIdentityProviderAction());
+            populateNewProviderSubMenu();
         }
+
         return newProviderSubMenu;
     }
 
-    private JMenu getManageAdminUsersSubMenu() {
-        if (manageAdminUsersSubMenu == null) {
-            manageAdminUsersSubMenu = new JMenu();
+    private void populateNewProviderSubMenu() {
+        newProviderSubMenu.add(getNewProviderAction());
+        newProviderSubMenu.add(getNewBindOnlyLdapProviderAction());
+        newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
+        newProviderSubMenu.add(getNewPolicyBackedIdentityProviderAction());
+    }
 
-            manageAdminUsersSubMenu.setText("Manage Account Policies");
-            manageAdminUsersSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ManageUserAccounts16.png")));
+    private JMenu getUsersAndAuthenticationSubMenu() {
+        if (usersAndAuthenticationSubMenu == null) {
+            usersAndAuthenticationSubMenu = new JMenu();
+            usersAndAuthenticationSubMenu.setText(resapplication.getString("tasksMenu.usersAndAuthenticationSubMenu.title"));
+            usersAndAuthenticationSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ManageUserAccounts16.png")));
 
-            final SecureAction mangeAdminUsers = new ManageAdminUserAccountAction();
-            disableUntilLogin(mangeAdminUsers);
-            manageAdminUsersSubMenu.add(mangeAdminUsers);
-
-            final SecureAction forceResetAction = new ForceAdminPasswordResetAction();
-            disableUntilLogin(forceResetAction);
-            manageAdminUsersSubMenu.add(forceResetAction);
-
-            final SecureAction managePasswdPolicyAction = new IdentityProviderManagePasswordPolicyAction();
-            disableUntilLogin(managePasswdPolicyAction);
-            manageAdminUsersSubMenu.add(managePasswdPolicyAction);
+            populateUsersAndAuthenticationSubMenu();
         }
-        return manageAdminUsersSubMenu;
+
+        return usersAndAuthenticationSubMenu;
+    }
+
+    private void populateUsersAndAuthenticationSubMenu() {
+        usersAndAuthenticationSubMenu.add(getNewInternalUserAction());
+        usersAndAuthenticationSubMenu.add(getNewInternalGroupAction());
+        usersAndAuthenticationSubMenu.add(getFindIdentityAction());
+
+        usersAndAuthenticationSubMenu.addSeparator();
+
+        final SecureAction manageAdminUsers = new ManageAdminUserAccountAction();
+        disableUntilLogin(manageAdminUsers);
+        usersAndAuthenticationSubMenu.add(manageAdminUsers);
+
+        final SecureAction managePasswdPolicyAction = new IdentityProviderManagePasswordPolicyAction();
+        disableUntilLogin(managePasswdPolicyAction);
+        usersAndAuthenticationSubMenu.add(managePasswdPolicyAction);
+
+        final SecureAction forceResetAction = new ForceAdminPasswordResetAction();
+        disableUntilLogin(forceResetAction);
+        usersAndAuthenticationSubMenu.add(forceResetAction);
+
+        usersAndAuthenticationSubMenu.add(getRevokeCertificatesMenuItem());
+
+        usersAndAuthenticationSubMenu.addSeparator();
+
+        usersAndAuthenticationSubMenu.add(getManageKerberosMenuItem());
+        usersAndAuthenticationSubMenu.add(getSiteMinderConfigurationAction());
+        usersAndAuthenticationSubMenu.add(getManageRolesMenuItem());
+        usersAndAuthenticationSubMenu.add(getManageSecurityZonesAction());
+        usersAndAuthenticationSubMenu.add(getManageTrustedEsmUsersAction());
+    }
+
+    private JMenu getServicesAndAPIsSubMenu() {
+        if (null == servicesAndAPIsSubMenu) {
+            servicesAndAPIsSubMenu = new JMenu();
+            servicesAndAPIsSubMenu.setText(resapplication.getString("tasksMenu.servicesAndAPIsSubMenu.title"));
+            servicesAndAPIsSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/services16.png")));
+
+            populateServicesAndAPIsSubMenu(null);
+        }
+
+        return servicesAndAPIsSubMenu;
+    }
+
+    private void populateServicesAndAPIsSubMenu(@Nullable List<Action> additionalActions) {
+        servicesAndAPIsSubMenu.add(getPublishServiceAction());
+        servicesAndAPIsSubMenu.add(getPublishNonSoapServiceAction());
+        servicesAndAPIsSubMenu.add(getPublishRestServiceAction());
+        servicesAndAPIsSubMenu.add(getPublishInternalServiceAction());
+        servicesAndAPIsSubMenu.add(getPublishReverseWebProxyAction());
+
+        if (null != additionalActions) {
+            for (Action action : additionalActions) {
+                servicesAndAPIsSubMenu.add(action);
+            }
+        }
+
+        servicesAndAPIsSubMenu.add(getCreateServiceAction());
+        servicesAndAPIsSubMenu.add(getCreatePolicyAction());
+    }
+
+    private JMenu getTransportsSubMenu() {
+        if (null == transportsSubMenu) {
+            transportsSubMenu = new JMenu();
+            transportsSubMenu.setText(resapplication.getString("tasksMenu.transportsSubMenu.title"));
+            transportsSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/interface.gif")));
+
+            populateTransportSubMenu(null);
+        }
+
+        return transportsSubMenu;
+    }
+
+    private void populateTransportSubMenu(@Nullable List<Action> additionalActions) {
+        transportsSubMenu.add(getManageSsgConnectorsAction());
+        transportsSubMenu.add(getManageJmsEndpointsMenuItem());
+        transportsSubMenu.add(getManageEmailListenersAction());
+        transportsSubMenu.add(getManageHttpConfigurationAction());
+        transportsSubMenu.add(getManageServiceResolutionMenuItem());
+
+        if (null != additionalActions) {
+            for (Action action : additionalActions) {
+                transportsSubMenu.add(action);
+            }
+        }
+    }
+
+    private JMenu getCertsKeysAndSecretsSubMenu() {
+        if (null == certsKeysAndSecretsSubMenu) {
+            certsKeysAndSecretsSubMenu = new JMenu();
+            certsKeysAndSecretsSubMenu.setText(resapplication.getString("tasksMenu.certsKeysAndSecretsSubMenu.title"));
+            certsKeysAndSecretsSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/cert16.gif")));
+
+            populateCertsKeysAndSecretsSubMenu();
+        }
+
+        return certsKeysAndSecretsSubMenu;
+    }
+
+    private void populateCertsKeysAndSecretsSubMenu() {
+        certsKeysAndSecretsSubMenu.add(getManageCertificatesMenuItem());
+        certsKeysAndSecretsSubMenu.add(getManagePrivateKeysMenuItem());
+        certsKeysAndSecretsSubMenu.add(getManageSecurePasswordsMenuItem());
+    }
+
+    private JMenu getGlobalSettingsSubMenu() {
+        if (null == globalSettingsSubMenu) {
+            globalSettingsSubMenu = new JMenu();
+            globalSettingsSubMenu.setText(resapplication.getString("tasksMenu.globalSettingsSubMenu.title"));
+            globalSettingsSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Properties16.gif")));
+
+            populateGlobalSettingsSubMenu();
+        }
+
+        return globalSettingsSubMenu;
+    }
+
+    private void populateGlobalSettingsSubMenu() {
+        globalSettingsSubMenu.add(getManageClusterPropertiesActionMenuItem());
+        globalSettingsSubMenu.add(getManageScheduledTasksAction());
+        globalSettingsSubMenu.add(getManageGlobalResourcesMenuItem());
+
+        if (OFFER_MANAGE_WORK_QUEUES)
+            globalSettingsSubMenu.add(getManageWorkQueuesAction());
+
+        globalSettingsSubMenu.add(getManageUDDIRegistriesAction());
+    }
+
+    private JMenu getExtensionsAndAddOnsSubMenu() {
+        if (null == extensionsAndAddOnsSubMenu) {
+            extensionsAndAddOnsSubMenu = new JMenu();
+            extensionsAndAddOnsSubMenu.setText(resapplication.getString("tasksMenu.extensionAndAddOnsSubMenu.title"));
+            extensionsAndAddOnsSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Properties16.gif")));
+
+            populateExtensionsAndAddOnsSubMenu(null);
+        }
+
+        return extensionsAndAddOnsSubMenu;
+    }
+
+    private void populateExtensionsAndAddOnsSubMenu(@Nullable List<Action> additionalActions) {
+        extensionsAndAddOnsSubMenu.add(getManageEncapsulatedAssertionsAction());
+        extensionsAndAddOnsSubMenu.add(getManageSolutionKitsAction());
+        extensionsAndAddOnsSubMenu.add(getManagePolicyBackedServicesAction());
+        extensionsAndAddOnsSubMenu.add(getManageServerModuleFilesAction());
+
+        if (null != additionalActions) {
+            for (Action action : additionalActions) {
+                extensionsAndAddOnsSubMenu.add(action);
+            }
+        }
+    }
+
+    private JMenu getLoggingAndAuditingSubMenu() {
+        if (null == loggingAndAuditingSubMenu) {
+            loggingAndAuditingSubMenu = new JMenu();
+            loggingAndAuditingSubMenu.setText(resapplication.getString("tasksMenu.loggingAndAuditingSubMenu.title"));
+            loggingAndAuditingSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/interface.gif")));
+
+            populateLoggingAndAuditingSubMenu();
+        }
+
+        return loggingAndAuditingSubMenu;
+    }
+
+    private void populateLoggingAndAuditingSubMenu() {
+        loggingAndAuditingSubMenu.add(getManageLogSinksAction());
+        loggingAndAuditingSubMenu.add(getConfigureFtpAuditArchiverAction());
+        loggingAndAuditingSubMenu.add(getManageAuditAlertOptionsMenuItem());
     }
 
     /**
@@ -1602,7 +1770,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     public void actionPerformed(ActionEvent event) {
                         refreshEntitiesProtectionCache();
 
-                        Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
+                        Collection<Refreshable> alreadyRefreshed = new ArrayList<>();
                         // no matter what, if id provider tree exists, always refresh it
                         if (identityProvidersTree != null) {
                             identityProvidersTree.refresh(identitiesRootNode);
@@ -2234,23 +2402,39 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         Registry.getDefault().getLicenseManager().addLicenseListener(paletteTreeLicenseListener);
 
-        updateCustomGlobalActionsMenu();
+        populateMenusWithAdditionalActions();
     }
 
-    private void updateCustomGlobalActionsMenu() {
-        JMenu menu = getCustomGlobalActionsMenu();
-        menu.removeAll();
+    private void populateMenusWithAdditionalActions() {
+        List<Action> servicesMenuActions = new ArrayList<>();
+        List<Action> transportsMenuActions = new ArrayList<>();
+        List<Action> extensionsMenuActions = new ArrayList<>();
 
-        List<Action> menuActions = new ArrayList<>();
-
-        boolean added = false;
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
         for (Assertion assertion : assertions) {
             if (Registry.getDefault().getLicenseManager().isAssertionEnabled(assertion)) {
                 try {
                     Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
                     if (actions != null) {
-                        menuActions.addAll(Arrays.asList(actions));
+                        for (Action action : actions) {
+                            String menuHint = (String) action.getValue("MenuHint");
+
+                            if (null == menuHint) { // if there's no hint, just add to the default menu and continue
+                                extensionsMenuActions.add(action);
+                                continue;
+                            }
+
+                            switch (menuHint) { // add to a matching menu, or the default menu if none found
+                                case "Services":
+                                    servicesMenuActions.add(action);
+                                    break;
+                                case "Transports":
+                                    transportsMenuActions.add(action);
+                                    break;
+                                default:
+                                    extensionsMenuActions.add(action);
+                            }
+                        }
                     }
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Exception while initializing global actions for assertion " + assertion.toString() + ": " + ExceptionUtils.getMessage(e), e);
@@ -2259,25 +2443,30 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         // Add actions from custom assertions.
-        //
-        menuActions.addAll(this.getCustomAssertionActions());
+        extensionsMenuActions.addAll(this.getCustomAssertionActions());
 
-        menuActions.add( getManagePolicyBackedServicesAction() );
+        // sort actions before sticking them into menus so they'll appear in the same order
+        ActionComparator comparator = new ActionComparator();
+        Collections.sort(servicesMenuActions, comparator);
+        Collections.sort(transportsMenuActions, comparator);
+        Collections.sort(extensionsMenuActions, comparator);
 
-        // sort actions before sticking them into Additional Actions menu
-        // so they'll appear in the same order
-        Collections.sort(menuActions, new ActionComparator());
-        //now add actions to the menu
-        for (Action action : menuActions) {
-            menu.add(action);
-            added = true;
-        }
+        // now add actions to the menu
+        JMenu servicesMenu = getServicesAndAPIsSubMenu();
+        servicesMenu.removeAll();
+        populateServicesAndAPIsSubMenu(servicesMenuActions);
 
-        menu.setEnabled(added);
+        JMenu transportsMenu = getTransportsSubMenu();
+        transportsMenu.removeAll();
+        populateTransportSubMenu(transportsMenuActions);
+
+        JMenu extensionsMenu = getExtensionsAndAddOnsSubMenu();
+        extensionsMenu.removeAll();
+        populateExtensionsAndAddOnsSubMenu(extensionsMenuActions);
     }
 
     private List<Action> getCustomAssertionActions() {
-        // This method is called twice on login by this.updateCustomGlobalActionsMenu(...):
+        // This method is called twice on login by this.populateMenusWithAdditionalActions(...):
         //  - once by LicenseListener.licenseChanged(...) before ConsoleAssertionRegistry.updateCustomAssertions()
         //  - then again by this.initializeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
 
@@ -2474,26 +2663,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         manageSolutionKitsAction = new ManageSolutionKitsAction();
         disableUntilLogin(manageSolutionKitsAction);
         return manageSolutionKitsAction;
-    }
-
-    private JMenu getCustomGlobalActionsMenu() {
-        if (customGlobalActionsMenu != null)
-            return customGlobalActionsMenu;
-
-        final JMenu menu = new JMenu("Additional Actions"){
-            private final LicenseListener listener = new LicenseListener() {
-                    @Override
-                    public void licenseChanged( final ConsoleLicenseManager licenseManager ) {
-                        if ( licenseManager.getLicense() != null )
-                            updateCustomGlobalActionsMenu();
-                    }
-                };
-            {
-                Registry.getDefault().getLicenseManager().addLicenseListener( listener );
-            }
-        };
-
-        return customGlobalActionsMenu = menu;
     }
 
     private void disableUntilLogin(SecureAction action) {
@@ -2740,7 +2909,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private JButton tbadd(JToolBar tb, Action a) {
         JButton b = tb.add(a);
-        b.setFont(new Font("Dialog", 1, 10));
+        b.setFont(new Font("Dialog", Font.BOLD, 10));
         b.setText((String) a.getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
@@ -2796,40 +2965,37 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             if (appletManagePopUpMenu == null) {
                 JPopupMenu manageMenu = new JPopupMenu("Manage...");
-                manageMenu.add(getManageAdminUsersSubMenu());
-                manageMenu.addSeparator();
+
+                // Identity Providers
+                manageMenu.add(getNewProviderSubMenu());
+
+                // Users and Authentication
+                manageMenu.add(getUsersAndAuthenticationSubMenu());
+
+                // Services and APIs
+                manageMenu.add(getServicesAndAPIsSubMenu());
+
+                // Transports
+                manageMenu.add(getTransportsSubMenu());
+
+                // Certificates, Keys and Secrets
+                manageMenu.add(getCertsKeysAndSecretsSubMenu());
+
+                // Data Sources
+                manageMenu.add(getManageDataSourcesAction());
+
+                // Global Settings
+                manageMenu.add(getGlobalSettingsSubMenu());
+
+                // Extensions and Add-Ons
+                manageMenu.add(getExtensionsAndAddOnsSubMenu());
+
+                // Logging and Auditing
+                manageMenu.add(getLoggingAndAuditingSubMenu());
 
                 manageMenu.add(getMenuItemPreferences(false));
-                manageMenu.add(getManageCertificatesMenuItem());
-                manageMenu.add(getManagePrivateKeysMenuItem());
-                manageMenu.add(getManageSecurePasswordsMenuItem());
-                manageMenu.add(getManageGlobalResourcesMenuItem());
-                manageMenu.add(getManageClusterPropertiesActionMenuItem());
-                manageMenu.add(getManageSsgConnectorsAction());
-                manageMenu.add(getManageDataSourcesAction());
-                manageMenu.add(getManageJmsEndpointsMenuItem());
-                manageMenu.add(getManageKerberosMenuItem());
-                manageMenu.add(getManageRolesMenuItem());
-                manageMenu.add(getManageScheduledTasksAction());
-                manageMenu.add(getManageSecurityZonesAction());
-                manageMenu.add(getManageAuditAlertOptionsMenuItem());
-                manageMenu.add(getManageClusterLicensesMenuItem());
                 manageMenu.add(getMyAccountMenuItem(false));
-                manageMenu.add(getManageLogSinksAction());
-                manageMenu.add(getManageEmailListenersAction());
-                manageMenu.add(getConfigureFtpAuditArchiverAction());
-                manageMenu.add(getManageTrustedEsmUsersAction());
-                manageMenu.add(getManageUDDIRegistriesAction());
-                manageMenu.add(getManageHttpConfigurationAction());
-                manageMenu.add(getManageServiceResolutionMenuItem());
-                manageMenu.add(getManageEncapsulatedAssertionsAction());
-                manageMenu.add(getSiteMinderConfigurationAction());
-                manageMenu.add(getManageServerModuleFilesAction());
-                if ( OFFER_MANAGE_WORK_QUEUES )
-                    manageMenu.add(getManageWorkQueuesAction());
-                manageMenu.add(getManageSolutionKitsAction());
 
-                manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;
             }
 
@@ -3173,9 +3339,10 @@ public class MainWindow extends JFrame implements SheetHolder {
             //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
             //and the JLabel will not grow to accommodate it, if it is larger than the size of the combo box component
             TextListCellRenderer<EntityHeaderNode> comboBoxRenderer =
-                    new TextListCellRenderer<EntityHeaderNode>(accessorFunction, null, iconAccessorFunction, false);
+                    new TextListCellRenderer<>(accessorFunction, null, iconAccessorFunction, false);
             comboBoxRenderer.setRenderClipped(true);
 
+            //noinspection unchecked
             searchComboBox.setRenderer(comboBoxRenderer);
 
             //create comparator to sort the filtered items
@@ -3249,9 +3416,10 @@ public class MainWindow extends JFrame implements SheetHolder {
             //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
             //and the JLabel will not grow to accommodate it, if it is larger than the size of the combo box component
             TextListCellRenderer<AbstractLeafPaletteNode> comboBoxRenderer =
-                    new TextListCellRenderer<AbstractLeafPaletteNode>(accessorFunction, null, iconAccessorFunction, false);
+                    new TextListCellRenderer<>(accessorFunction, null, iconAccessorFunction, false);
             comboBoxRenderer.setRenderClipped(true);
 
+            //noinspection unchecked
             assertionSearchComboBox.setRenderer(comboBoxRenderer);
 
             //create comparator to sort the filtered items
@@ -3332,6 +3500,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         RootNode rootNode = (RootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
+        //noinspection unchecked
         return (List<AbstractTreeNode>) rootNode.collectSearchableChildren(new Class[] {EntityHeaderNode.class, FolderNode.class}, filter);
     }
 
@@ -3343,6 +3512,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         AssertionsPaletteRootNode rootNode = (AssertionsPaletteRootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
+        //noinspection unchecked
         return (List<AbstractLeafPaletteNode>) rootNode.collectSearchableChildren(new Class[]{AbstractLeafPaletteNode.class}, filter);
     }
 
@@ -3574,8 +3744,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
         setTitle( resapplication.getString("SSG") + " " + BuildInfo.getProductVersion() );
 
-        String imagePath = null;
-        final ClassLoader classLoader = getClass().getClassLoader();
         ImageIcon smallIcon =
                 new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         ImageIcon largeIcon =
@@ -4644,9 +4812,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (serverSslCert == null) {
             try {
                 serverSslCert = Registry.getDefault().getTrustedCertManager().getSSGSslCert();
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to look up Gateway SSL cert: " + ExceptionUtils.getMessage(e), e);
-            } catch (CertificateException e) {
+            } catch (IOException | CertificateException e) {
                 log.log(Level.WARNING, "Unable to look up Gateway SSL cert: " + ExceptionUtils.getMessage(e), e);
             }
         }
@@ -4660,9 +4826,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (auditSigningCert == null) {
             try {
                 auditSigningCert = Registry.getDefault().getTrustedCertManager().getSSGAuditSigningCert();
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to look up Gateway audit signing cert: " + ExceptionUtils.getMessage(e), e);
-            } catch (CertificateException e) {
+            } catch (IOException | CertificateException e) {
                 log.log(Level.WARNING, "Unable to look up Gateway audit signing cert: " + ExceptionUtils.getMessage(e), e);
             }
         }

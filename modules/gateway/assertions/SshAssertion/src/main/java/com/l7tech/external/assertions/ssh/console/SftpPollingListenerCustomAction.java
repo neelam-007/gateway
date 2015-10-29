@@ -11,6 +11,12 @@ public class SftpPollingListenerCustomAction extends SecureAction {
 
     public SftpPollingListenerCustomAction() {
         super(new AttemptedAnyOperation(EntityType.SSG_ACTIVE_CONNECTOR));
+
+        init();
+    }
+
+    private void init() {
+        putValue("MenuHint", "Transports");
     }
 
     @Override

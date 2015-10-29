@@ -11,6 +11,12 @@ public class MqNativeCustomAction extends SecureAction {
 
     public MqNativeCustomAction() {
         super(new AttemptedAnyOperation(EntityType.SSG_ACTIVE_CONNECTOR));
+
+        init();
+    }
+
+    private void init() {
+        putValue("MenuHint", "Transports");
     }
 
     @Override
