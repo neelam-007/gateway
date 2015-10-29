@@ -389,7 +389,7 @@ public class SolutionKitManagerResource {
         return Response.ok().entity("Request completed successfully." + lineSeparator()).build();
     }
 
-    private void updateSolutionKitsToUpgradeBasedOnGivenParameters(@NotNull final SolutionKitsConfig solutionKitsConfig) throws FindException {
+    protected void updateSolutionKitsToUpgradeBasedOnGivenParameters(@NotNull final SolutionKitsConfig solutionKitsConfig) throws FindException {
         // Check precondition: the map must be filled already based on parameters given by user
         final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
         if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
@@ -956,7 +956,7 @@ public class SolutionKitManagerResource {
     /**
      * In headless upgrade, find all mappings for guid and instance modifier for selected solution kits, based on two parameters, "instanceModifier" and "solutionKitSelect".
      */
-    private void setSelectedGuidAndImForHeadlessUpgrade(final boolean isParent,
+    protected void setSelectedGuidAndImForHeadlessUpgrade(final boolean isParent,
                                                         @NotNull final String upgradeGuid,
                                                         @NotNull final SolutionKitsConfig solutionKitsConfig,
                                                         @Nullable final String instanceModifierParameter,

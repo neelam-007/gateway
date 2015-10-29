@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.server.solutionkit.SolutionKitManager;
@@ -866,6 +867,353 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
+    // TODO more tests
+    @Test
+    public void setSelectedGuidAndImForHeadlessUpgradeSuccess() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate child upgrade success
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        solutionKitsConfig = new SolutionKitsConfig();
+        Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+
+        //Test for solution kit upgrade child success
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(false, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im1", null );
+
+        //Expect only the solutionKitToUpgrade is selected
+        assertEquals(selectedGuidAndImForHeadlessUpgrade.get("1f87436b-7ca5-41c8-9418-21d7a7848853").left, "im1");
+        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate parent upgrade success
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        solutionKitsConfig = new SolutionKitsConfig();
+        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848853");
+
+        SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setGoid(parentGoidSame);
+        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848844");
+
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setParentGoid(parentGoidSame);
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setParentGoid(parentGoidSame);
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
+
+        final List<SolutionKit> childKits = new ArrayList<>(2);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit2);
+
+        when(solutionKitManager.findBySolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848844")).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+
+        //Test
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, "1f87436b-7ca5-41c8-9418-21d7a7848844", solutionKitsConfig, "im1", null );
+
+        selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+
+        //Expect only the kit with IM "im1" to be selected for upgrade
+        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey("1f87436b-7ca5-41c8-9418-21d7a7848988"));
+        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
+    }
+
+    @Test
+    public void setSelectedGuidAndImForHeadlessUpgradeError() throws Exception {
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate parent upgrade, same child error
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        solutionKitsConfig = new SolutionKitsConfig();
+        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848853");
+
+        SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setGoid(parentGoidSame);
+        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+
+        //Same children
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setParentGoid(parentGoidSame);
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setParentGoid(parentGoidSame);
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+
+        final List<SolutionKit> childKits = new ArrayList<>(2);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit1);
+
+
+        when(solutionKitManager.findBySolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853")).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+
+        //Test
+        try {
+            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, null, null);
+            fail("Same child error should be thrown");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            assertEquals(e.getResponse().getEntity().toString(), "Upgrade failed: at least two child solution kits with a same GUID (" + "1f87436b-7ca5-41c8-9418-21d7a7848999" + ") are selected for upgrade at same time.\n");
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate parent upgrade, no IM error
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        solutionKitsConfig = new SolutionKitsConfig();
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848977");
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im2");
+
+        //Test
+        try {
+            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im1", null);
+            fail("No child with IM error should be thrown");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            assertEquals(e.getResponse().getEntity().toString(), "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (im1) specified by the parameter 'instanceModifier'\n");
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate parent upgrade, no parent error
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        when(solutionKitManager.findBySolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853")).thenReturn(null);
+        //Test
+        try {
+            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, null, null);
+            fail("Parent solution kit not found error should be thrown");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + "1f87436b-7ca5-41c8-9418-21d7a7848853" + "'\n");
+        }
+
+    }
+
+    @Test
+    public void updateSolutionKitsToUpgradeBasedOnGivenParametersSuccess() throws Exception{
+        solutionKitsConfig = new SolutionKitsConfig();
+        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848853");
+
+        SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setGoid(parentGoidSame);
+        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setParentGoid(parentGoidSame);
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setParentGoid(parentGoidSame);
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im2");
+        SolutionKit solutionKit3 = new SolutionKit();
+        solutionKit3.setParentGoid(parentGoidSame);
+        solutionKit3.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848977");
+        solutionKit3.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im3");
+
+        final List<SolutionKit> childKits = new ArrayList<>(3);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit2);
+        childKits.add(solutionKit3);
+
+        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
+
+        when(solutionKitManager.findBySolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853")).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+
+        //Assume the list to be unchanged before test
+        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
+        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().size(),3);
+
+        //Test
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im2", null );
+        solutionKitResource.updateSolutionKitsToUpgradeBasedOnGivenParameters(solutionKitsConfig);
+
+        //Expect the solutionKitsConfig solution Kits upgrade list to be updated
+        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().size(), 1);
+        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().get(0).getSolutionKitGuid(), "1f87436b-7ca5-41c8-9418-21d7a7848988");
+    }
+
+    @Test
+    public void uninstallSuccess() throws Exception {
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate single solution kit uninstall based on GUID and IM
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
+        solutionKit1.setGoid(new Goid("1f87436b7ca541c8941821d7a7848853"));
+
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
+        solutionKit2.setGoid(new Goid("1f87436b7ca541c8941821d7a7848844"));
+
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(solutionKit1, solutionKit2));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+
+        Collection<SolutionKit> solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 2);
+        when(solutionKitManager.findBySolutionKitGuid(solutionKit1.getSolutionKitGuid())).thenReturn(Collections.singletonList(solutionKit1));
+        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit1.getSolutionKitGuid(), "im1")).thenReturn(solutionKit1);
+
+        //Test
+        solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+ "::im1", null);
+
+        //Expect solutionKit1 to be uninstalled
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 1);
+        assertFalse(solutionKitsInManager.contains(solutionKit1));
+        assertTrue(solutionKitsInManager.contains(solutionKit2));
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate parent and all children are uninstalled successfully
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848111");
+
+        SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setGoid(parentGoidSame);
+        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+        parentSolutionKit.setMappings("<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT");
+
+        solutionKit1.setParentGoid(parentGoidSame);
+
+        solutionKit2.setParentGoid(parentGoidSame);
+
+        SolutionKit solutionKit3 = new SolutionKit();
+        solutionKit3.setParentGoid(parentGoidSame);
+        solutionKit3.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848977");
+        solutionKit3.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im3");
+        solutionKit3.setGoid(new Goid("1f87436b7ca541c8941821d7a7848456"));
+
+        final List<SolutionKit> childKits = new ArrayList<>(3);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit2);
+        childKits.add(solutionKit3);
+
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 4);
+
+        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+
+        //Test uninstall parent kit
+        solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),null);
+
+        //expect all children and parent to be deleted
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 0);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate selected children are uninstalled
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 4);
+
+        //Children to uninstall
+        List<String> childrenToUninstall = new ArrayList<>();
+        childrenToUninstall.add(solutionKit1.getSolutionKitGuid()+"::im1");
+        childrenToUninstall.add(solutionKit2.getSolutionKitGuid());
+
+        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit1.getSolutionKitGuid(), "im1")).thenReturn(solutionKit1);
+        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit2.getSolutionKitGuid(), null)).thenReturn(solutionKit2);
+
+
+        //Test uninstall parent kit with specified child for uninstall
+        solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),childrenToUninstall);
+
+        //expect only parent kit and solutionkit3 to remain
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 2);
+        assertTrue(solutionKitsInManager.contains(solutionKit3));
+        assertTrue(solutionKitsInManager.contains(parentSolutionKit));
+    }
+
+    @Test
+    public void uninstallFail() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // solution kit to uninstall does not exist
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Test
+        Response error = solutionKitResource.uninstall(null, null);
+
+        //expect solution kit id empty error
+        assertEquals(error.getEntity(), "Solution Kit ID to uninstall is empty.\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // cannot find solution kit GUID and IM
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        SolutionKit solutionKit1 = new SolutionKit();
+        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
+        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
+        solutionKit1.setGoid(new Goid("1f87436b7ca541c8941821d7a7848853"));
+
+        when(solutionKitManager.findBySolutionKitGuid(solutionKit1.getSolutionKitGuid())).thenReturn(Collections.singletonList(solutionKit1));
+        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit1.getSolutionKitGuid(),"im2")).thenReturn(null);
+
+        //Test
+        error = solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+"::im2", null);
+
+        //expect solution kit does not exist error
+        assertEquals(error.getEntity(), "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
+        "',  Instance Modifier = 'im2') for uninstall.\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // no child with matching guid
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848111");
+
+        SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setGoid(parentGoidSame);
+        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
+        parentSolutionKit.setMappings("<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT");
+
+        solutionKit1.setParentGoid(parentGoidSame);
+
+        SolutionKit solutionKit2 = new SolutionKit();
+        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
+        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im2");
+        solutionKit2.setGoid(new Goid("1f87436b7ca541c8941821d7a7848844"));
+
+        SolutionKit solutionKit3 = new SolutionKit();
+        solutionKit3.setParentGoid(parentGoidSame);
+        solutionKit3.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848977");
+        solutionKit3.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im3");
+        solutionKit3.setGoid(new Goid("1f87436b7ca541c8941821d7a7848456"));
+
+        final List<SolutionKit> childKits = new ArrayList<>(3);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit2);
+        childKits.add(solutionKit3);
+
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+        Collection<SolutionKit> solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 4);
+
+        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
+
+        //Test
+        error = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList("NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555"));
+
+        //expect child kit selected to uninstall does not match any children from parent
+        assertEquals(error.getEntity(), "Uninstall failed: Cannot any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555' specified in the parameter 'solutionKitSelect'\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // no child with matching guid and IM
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Test
+        error = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList(solutionKit1.getSolutionKitGuid()+"::INVALID_IM"));
+
+        //expect child kit with IM selected does not match existing child kits
+        assertEquals(error.getEntity(),"Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
+                "',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
+    }
+
     private static InputStream[] creteSignedSampleChildScars(
             final int numChildren,
             final SignatureVerifier signer,
@@ -934,7 +1282,7 @@ public class SolutionKitManagerResourceTest {
             assertThat(installBundleXml, Matchers.not(Matchers.isEmptyOrNullString()));
         }
         metaXml = MessageFormat.format(metaXml, String.valueOf(isSkarOfSkars));
-        
+
         final ByteArrayOutputStream outputZip = new ByteArrayOutputStream(1024);
         try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
             // SK_FILENAME
@@ -958,6 +1306,4 @@ public class SolutionKitManagerResourceTest {
         // finally return the bytes
         return outputZip.toByteArray();
     }
-
-    // TODO more tests
 }
