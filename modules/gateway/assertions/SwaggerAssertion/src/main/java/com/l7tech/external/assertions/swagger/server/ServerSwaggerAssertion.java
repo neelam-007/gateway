@@ -222,8 +222,6 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
             if ( securityRequirementObjects == null || securityRequirementObjects.isEmpty() ) return true;  /* No Security Requirements Object = no security required */
 
-            boolean disjunctValid = false;
-
             for (Map<String, List<String>> securityRequirementObject : securityRequirementObjects) {
                 boolean conjunctValid = true;
                 Set<String> securitySchemeObjects = securityRequirementObject.keySet();
@@ -241,18 +239,17 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                     conjunctValid &= type.checkSecurity(httpRequestKnob,definition);
                 }
 
-                disjunctValid |= conjunctValid;
-                if(disjunctValid) break;// no need to validate other security requirements when we found valid one
+                if (conjunctValid) {
+                    return true;
+                }
             }
 
-            if (!disjunctValid) {
-                logAndAudit(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED, operation.getOperationId(), path);
-            }
-
-            return disjunctValid;
+            // We've processed all the RequirementObjects and not satisfied any of them so we return false;
+            logAndAudit(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED, operation.getOperationId(), path);
+            return false;
         }
         else {
-            //security is not required
+            //security is not required (no securityDefinitions)
             return true;
         }
     }
