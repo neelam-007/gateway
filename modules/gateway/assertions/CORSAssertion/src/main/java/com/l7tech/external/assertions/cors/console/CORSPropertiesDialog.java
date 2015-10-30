@@ -20,7 +20,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
     private JPanel propertyPanel;
     private JTextField responseCacheAgeTextField;
-    private JCheckBox responeCacheAgeCheckBox;
+    private JCheckBox responseCacheAgeCheckBox;
     private JRadioButton originsAllRadioButton;
     private JRadioButton originsListRadioButton;
     private JTable originsTable;
@@ -143,7 +143,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
-        responeCacheAgeCheckBox.addActionListener(enableDisableListener);
+        responseCacheAgeCheckBox.addActionListener(enableDisableListener);
 
         variablePrefixTextField = new TargetVariablePanel();
         variablePrefixPanel.setLayout(new BorderLayout());
@@ -151,7 +151,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         variablePrefixTextField.setAcceptEmpty(true);
 
         validators = new InputValidator( this, getTitle() );
-        validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("response.cache.age"), responseCacheAgeTextField,0,Long.MAX_VALUE));
+        validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("responseCacheAgeTitle"), responseCacheAgeTextField,0,Long.MAX_VALUE));
         validators.addRule(new InputValidator.ComponentValidationRule(variablePrefixTextField) {
             @Override
             public String getValidationError() {
@@ -200,8 +200,10 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             originsListRemove.setEnabled(originsTable.getSelectedRowCount() > 0);
         }
 
-        responseCacheAgeTextField.setEnabled(responeCacheAgeCheckBox.isSelected());
-        responseCacheAgeUnit.setEnabled(responeCacheAgeCheckBox.isSelected());
+        exposedHeadersListRemove.setEnabled(exposedHeadersTable.getSelectedRowCount() > 0);
+
+        responseCacheAgeTextField.setEnabled(responseCacheAgeCheckBox.isSelected());
+        responseCacheAgeUnit.setEnabled(responseCacheAgeCheckBox.isSelected());
     }
 
     @Override
@@ -242,7 +244,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             assertion.setExposedHeaders(headers);
         }
 
-        assertion.setResponseCacheTime(responeCacheAgeCheckBox.isSelected()?Long.parseLong(responseCacheAgeTextField.getText()):null);
+        assertion.setResponseCacheTime(responseCacheAgeCheckBox.isSelected()?Long.parseLong(responseCacheAgeTextField.getText()):null);
         assertion.setVariablePrefix(variablePrefixTextField.getVariable().trim());
         assertion.setRequireCors(requireCorsCheckBox.isSelected());
         assertion.setSupportsCredentials(supportsCredentialsCheckBox.isSelected());
@@ -293,8 +295,8 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         }
 
-        responeCacheAgeCheckBox.setSelected(assertion.getResponseCacheTime()!=null);
-        responseCacheAgeTextField.setText(responeCacheAgeCheckBox.isSelected()?assertion.getResponseCacheTime().toString():"");
+        responseCacheAgeCheckBox.setSelected(assertion.getResponseCacheTime() != null);
+        responseCacheAgeTextField.setText(responseCacheAgeCheckBox.isSelected()?assertion.getResponseCacheTime().toString():"");
 
         this.variablePrefixTextField.setVariable( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
         this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());

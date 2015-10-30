@@ -20,7 +20,7 @@
           <grid id="68df6" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="4" left="4" bottom="4" right="4"/>
             <constraints>
-              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="origins.title"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="acceptedOriginsTitle"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -30,7 +30,8 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="all"/>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="allowAll"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyOriginsRadioAllToolTip"/>
                 </properties>
               </component>
               <component id="4b900" class="javax.swing.JRadioButton" binding="originsListRadioButton">
@@ -38,7 +39,8 @@
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="origins"/>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyOrigins"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyOriginsRadioSpecifyToolTip"/>
                 </properties>
               </component>
               <grid id="b7ede" binding="originsListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -93,7 +95,7 @@
           <grid id="36b44" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="4" left="4" bottom="4" right="4"/>
             <constraints>
-              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="headers.title"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="acceptedHeadersTitle"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -103,7 +105,8 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="all"/>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="allowAll"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyHeadersRadioAllToolTip"/>
                 </properties>
               </component>
               <component id="e40bd" class="javax.swing.JRadioButton" binding="headersListRadioButton">
@@ -111,7 +114,8 @@
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="headers"/>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyHeaders"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="specifyHeadersRadioSpecifyToolTip"/>
                 </properties>
               </component>
               <grid id="9cb14" binding="headersListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -166,7 +170,7 @@
           <grid id="52543" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="4" left="4" bottom="4" right="4"/>
             <constraints>
-              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="exposed.headers"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="exposeHeadersTitle"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -199,7 +203,9 @@
                     <constraints>
                       <grid row="0" column="0" row-span="3" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="exposedHeadersTableToolTip"/>
+                    </properties>
                     <border type="none"/>
                     <children>
                       <component id="28233" class="javax.swing.JTable" binding="exposedHeadersTable">
@@ -301,12 +307,13 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="270d4" class="javax.swing.JCheckBox" binding="responeCacheAgeCheckBox">
+          <component id="270d4" class="javax.swing.JCheckBox" binding="responseCacheAgeCheckBox">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="response.cache.age"/>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="responseCacheAgeTitle"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="responseCacheAgeCheckBoxToolTip"/>
             </properties>
           </component>
           <component id="65b43" class="javax.swing.JTextField" binding="responseCacheAgeTextField">
@@ -315,7 +322,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="responseCacheAgeTextFieldToolTip"/>
+            </properties>
           </component>
           <component id="f2a72" class="javax.swing.JLabel" binding="responseCacheAgeUnit">
             <constraints>
@@ -330,7 +339,8 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="variable.prefix"/>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="variablePrefixTitle"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="variablePrefixToolTip"/>
             </properties>
           </component>
           <grid id="c9cf6" binding="variablePrefixPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -338,7 +348,9 @@
             <constraints>
               <grid row="2" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="variablePrefixToolTip"/>
+            </properties>
             <border type="none"/>
             <children/>
           </grid>
@@ -347,7 +359,8 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="requireCorsCheckBox.title"/>
+              <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="requireCorsCheckBoxTitle"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="requireCorsCheckBoxToolTip"/>
             </properties>
           </component>
           <component id="696b9" class="javax.swing.JCheckBox" binding="supportsCredentialsCheckBox" default-binding="true">
@@ -356,6 +369,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="supportsCredentialsCheckBox"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="supportsCredentialsCheckBoxToolTip"/>
             </properties>
           </component>
         </children>
