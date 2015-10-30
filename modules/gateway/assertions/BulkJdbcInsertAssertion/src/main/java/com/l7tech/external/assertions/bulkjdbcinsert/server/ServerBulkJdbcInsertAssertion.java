@@ -52,6 +52,9 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
     private final String[] variablesUsed;
     private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
     private final Config config;
+    protected final Map<String, List<BulkJdbcInsertAssertion.ColumnMapper>> columnMapperMap;
+    private final String[] columnNames;
+    protected final String sqlInsertTemplate;
 
     public ServerBulkJdbcInsertAssertion( final BulkJdbcInsertAssertion assertion, final ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
@@ -66,6 +69,14 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         }
 
         this.variablesUsed = assertion.getVariablesUsed();
+        //build a map of Transformations
+        this.columnMapperMap = Collections.unmodifiableMap(buildTransformationMap(assertion));
+        // get the column names from the map and sort them
+        String[] columnNames = this.columnMapperMap.keySet().toArray(new String[0]);
+        Arrays.sort(columnNames);
+        this.columnNames = columnNames;
+        //build sql insert statement template
+        this.sqlInsertTemplate = buildSqlStatement(assertion.getTableName(), this.columnNames);
     }
 
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
@@ -77,6 +88,14 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         //check if connection is a context variable
         final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
         final String tableName = ExpandVariables.process(assertion.getTableName(), variableMap, getAudit());
+        String sqlCommand;
+        if(!tableName.equals(assertion.getTableName())) {
+            //replace context variable in the sqlInsertTemplate with the real table name from the context variable
+            sqlCommand = this.sqlInsertTemplate.replace(assertion.getTableName(), tableName);
+        }
+        else {
+            sqlCommand = this.sqlInsertTemplate;
+        }
         long startTime = System.currentTimeMillis();
         //validate that the connection exists.
         final Connection jdbcConnection = getJdbcConnection(connName);
@@ -100,32 +119,22 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
                         try (final CSVParser parser = new CSVParser(reader, getCVSFormat(assertion, variableMap))) {
                             Iterator<CSVRecord> recordIterator = parser.iterator();
                             if(recordIterator.hasNext()) {
-                                Set<BulkJdbcInsertAssertion.ColumnMapper> columnMapperSet = getColumnMapperSet();
-                                String sqlCommand = buildSqlStatement(tableName, columnMapperSet);
-                                //column mapper set to map
-                                Map<String, BulkJdbcInsertAssertion.ColumnMapper> columnMapperMap = new HashMap<>();
-                                for(BulkJdbcInsertAssertion.ColumnMapper mapper : columnMapperSet) {
-                                    columnMapperMap.put(mapper.getName(), mapper);
-                                }
-                                BulkJdbcInsertAssertion.ColumnMapper[] columnMappers = columnMapperSet.toArray(new BulkJdbcInsertAssertion.ColumnMapper[0]);
                                 PreparedStatement stmt = jdbcConnection.prepareStatement(sqlCommand);
                                 int recordCount = 0;
                                 int currentBatchSize = 0;
                                 int[] commitRespose = new int[0];
                                 do {
                                     CSVRecord record = recordIterator.next();
-                                    for(int i=0; i < columnMapperSet.size(); i++) {
-                                        BulkJdbcInsertAssertion.ColumnMapper param = columnMappers[i];
-                                        for (BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
-                                            if(mapper.equals(param)) {
-                                                if(BulkJdbcInsertAssertion.transformerMap.keySet().contains(mapper.getTransformation())) {
-                                                    Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(mapper.getTransformation());
-                                                    transformer.transform(stmt, i + 1, mapper, record);
-                                                }
-                                                else {
-                                                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Bulk JDBC Insert Assertion failed due to: Unknown transformation " + mapper.getTransformation() + " found. Unable to process CSV");
-                                                    return AssertionStatus.FAILED;
-                                                }
+                                    for(int i=0; i < this.columnNames.length; i++) {
+                                        List<BulkJdbcInsertAssertion.ColumnMapper> mappers = this.columnMapperMap.get(columnNames[i]);
+                                        for (BulkJdbcInsertAssertion.ColumnMapper mapper : mappers) {
+                                            Transformer transformer = BulkJdbcInsertAssertion.transformerMap.get(mapper.getTransformation());
+                                            if(transformer != null) {
+                                                transformer.transform(stmt, i + 1, mapper, record);
+                                            }
+                                            else {
+                                                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Bulk JDBC Insert Assertion failed due to: Unknown transformation " + mapper.getTransformation() + " found. Unable to process CSV");
+                                                return AssertionStatus.FAILED;
                                             }
                                         }
                                     }
@@ -210,17 +219,37 @@ public class ServerBulkJdbcInsertAssertion extends AbstractMessageTargetableServ
         return mapperSet;
     }
 
-    protected String buildSqlStatement(final String tableName, final Set<BulkJdbcInsertAssertion.ColumnMapper> mapperSet) {
+    private String buildSqlStatement(final String tableName, final String[] columnNames) {
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
 
-        for(BulkJdbcInsertAssertion.ColumnMapper mapper : mapperSet) {
+        for(String columnName : columnNames) {
             if(sb1.length() > 0) sb1.append(",");
-            sb1.append(mapper.getName());
+            sb1.append(columnName);
             if(sb2.length() > 0) sb2.append(",");
             sb2.append("?");
         }
         return "INSERT INTO " + tableName + "(" + sb1.toString() + ") VALUES (" + sb2.toString() + ")";
+    }
+
+    private Map<String, List<BulkJdbcInsertAssertion.ColumnMapper>> buildTransformationMap(BulkJdbcInsertAssertion assertion) {
+        //build transformation map
+        Map<String, List<BulkJdbcInsertAssertion.ColumnMapper>> columnMapperMap = new HashMap<>();
+        if(assertion.getColumnMapperList() != null) {
+            for(BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
+                if(columnMapperMap.containsKey(mapper.getName())) {
+                    List<BulkJdbcInsertAssertion.ColumnMapper> mappers = columnMapperMap.get(mapper.getName());
+                    mappers.add(mapper);
+                }
+                else {
+                    List<BulkJdbcInsertAssertion.ColumnMapper> mappers = new ArrayList<>();
+                    mappers.add(mapper);
+                    columnMapperMap.put(mapper.getName(), mappers);
+                }
+            }
+        }
+
+        return columnMapperMap;
     }
 
     //TODO: implement caching of the connection name. Possibly in the JdbcConnectionManagerImpl

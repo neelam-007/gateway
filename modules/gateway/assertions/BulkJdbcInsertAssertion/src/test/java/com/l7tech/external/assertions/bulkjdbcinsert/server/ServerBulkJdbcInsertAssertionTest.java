@@ -30,13 +30,11 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -128,9 +126,9 @@ public class ServerBulkJdbcInsertAssertionTest {
                 inputStream);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        context.setVariable("table", "TableOne");
+        context.setVariable("table", "One");
         assertion.setConnectionName("Connection");
-        assertion.setTableName("${table}");
+        assertion.setTableName("Table${table}");
         assertion.setQuoted(true);
         List<BulkJdbcInsertAssertion.ColumnMapper> mapperList = new ArrayList<>();
         BulkJdbcInsertAssertion.ColumnMapper m1 = new BulkJdbcInsertAssertion.ColumnMapper();
@@ -207,8 +205,9 @@ public class ServerBulkJdbcInsertAssertionTest {
         mapperList.add(m2);
         mapperList.add(m1);
         assertion.setColumnMapperList(mapperList);
+        assertion.setTableName("tableOne");
         fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
-        assertEquals("INSERT INTO tableOne(Column1,Column2) VALUES (?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
+        assertEquals("INSERT INTO tableOne(Column1,Column2) VALUES (?,?)", fixture.sqlInsertTemplate);
     }
 
     @Test
@@ -229,8 +228,9 @@ public class ServerBulkJdbcInsertAssertionTest {
         mapperList.add(m2);
         mapperList.add(m1);
         assertion.setColumnMapperList(mapperList);
+        assertion.setTableName("tableOne");
         fixture = new ServerBulkJdbcInsertAssertion(assertion, mockApplicationContext);
-        assertEquals("INSERT INTO tableOne(Column1,Column2,Column3) VALUES (?,?,?)", fixture.buildSqlStatement("tableOne", fixture.getColumnMapperSet()));
+        assertEquals("INSERT INTO tableOne(Column1,Column2,Column3) VALUES (?,?,?)", fixture.sqlInsertTemplate);
     }
 
     @Test
@@ -300,6 +300,12 @@ public class ServerBulkJdbcInsertAssertionTest {
         int[] expectedArray = {1,2,3,4,5,6,7,8,9,10,0};
 
         assertArrayEquals(expectedArray, ServerBulkJdbcInsertAssertion.concatArrays(arrayOne, arrayTwo));
+    }
+
+    @Test
+    public void testNullKey() {
+        Map<String,Object> map = new HashMap<>();
+        assertFalse(map.containsKey(null));
     }
 
     public InputStreamReader newReader(final InputStream inputStream) {

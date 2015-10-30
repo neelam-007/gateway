@@ -53,8 +53,8 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         transformerMap.put("Subtract", new SubtractTransformer());
         transformerMap.put("Add", new AddTransformer());
         transformerMap.put("UUID", new GenerateUuidTransformer());
-        transformerMap.put("SetInt", new SetIntValueTransformer());
-        transformerMap.put("SetString", new SetStringTransformer());
+        transformerMap.put("ConstantInt", new SetIntValueTransformer());
+        transformerMap.put("ConstantString", new SetStringTransformer());
         TRANSFORMATIONS = transformerMap.keySet().toArray(new String[0]);
         Arrays.sort(TRANSFORMATIONS);
     }
