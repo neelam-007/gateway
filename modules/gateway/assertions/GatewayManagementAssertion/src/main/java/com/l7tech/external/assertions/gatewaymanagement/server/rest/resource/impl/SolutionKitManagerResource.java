@@ -761,7 +761,7 @@ public class SolutionKitManagerResource {
     /**
      * Set a list of solution kits for upgrade
      */
-    private void selectSolutionKitsForInstall(@NotNull final SolutionKitsConfig solutionKitsConfig,
+    protected void selectSolutionKitsForInstall(@NotNull final SolutionKitsConfig solutionKitsConfig,
                                               @Nullable final String instanceModifierParameter,
                                               @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException {
 
