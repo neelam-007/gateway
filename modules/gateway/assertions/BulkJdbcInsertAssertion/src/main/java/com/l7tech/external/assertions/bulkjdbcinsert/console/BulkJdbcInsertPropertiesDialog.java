@@ -22,6 +22,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -29,7 +30,7 @@ import java.util.*;
  */
 public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelSupport<BulkJdbcInsertAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.bulkjdbcinsert.console.resources.BulkJdbcInsertPropertiesDialog");
-    private static final int UPPER_BOUND_MAX_RECORDS = Integer.MAX_VALUE;
+    private static final BigInteger MAX_INT_VALUE = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
 
     private JPanel mainPanel;
@@ -256,8 +257,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         });
 
-        batchSizeSpinner.setModel(new SpinnerNumberModel(1, 1, UPPER_BOUND_MAX_RECORDS, 1));
-
+        batchSizeSpinner.setModel(new SpinnerBigIntegerModel(BigInteger.ONE, BigInteger.ONE, MAX_INT_VALUE, BigInteger.ONE));
         enableOrDisableComponents();
 
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
@@ -301,7 +301,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             }
         }
         decompressionComboBox.setSelectedItem(assertion.getCompression());
-        batchSizeSpinner.setValue(assertion.getBatchSize());
+        batchSizeSpinner.setValue(BigInteger.valueOf(assertion.getBatchSize()));
         enableOrDisableComponents();
     }
 
@@ -326,7 +326,7 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
             assertion.setColumnMapperList(Collections.EMPTY_LIST);
         }
         assertion.setCompression((BulkJdbcInsertAssertion.Compression)decompressionComboBox.getSelectedItem());
-        assertion.setBatchSize((Integer)batchSizeSpinner.getValue());
+        assertion.setBatchSize(((BigInteger) batchSizeSpinner.getValue()).intValue());
         return assertion;
     }
 
@@ -381,6 +381,48 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
 
     private static Functions.Unary<String, BulkJdbcInsertAssertion.ColumnMapper> property(final String propName) {
         return Functions.propertyTransform(BulkJdbcInsertAssertion.ColumnMapper.class, propName);
+    }
+
+    private static class SpinnerBigIntegerModel extends SpinnerNumberModel {
+
+        public SpinnerBigIntegerModel(BigInteger value, BigInteger minimum, BigInteger maximum, BigInteger stepSize) {
+            super(value, minimum, maximum, stepSize);
+        }
+        /**
+         * Returns the next number in the sequence.
+         *
+         * @return <code>value + stepSize</code> or <code>maximum</code> if the sum
+         *     exceeds <code>maximum</code>.
+         *
+         * @see SpinnerModel#getNextValue
+         * @see #getPreviousValue
+         * @see #setStepSize
+         */
+        @Override
+        public Object getNextValue() {
+            BigInteger currentVal = (BigInteger)getValue();
+            BigInteger nextVal = currentVal.add((BigInteger)getStepSize());
+            return nextVal.min((BigInteger)getMaximum());
+        }
+
+
+        /**
+         * Returns the previous number in the sequence.
+         *
+         * @return <code>value - stepSize</code>, or
+         *     <code>minimum</code> if the sum is less
+         *     than <code>minimum</code>.
+         *
+         * @see SpinnerModel#getPreviousValue
+         * @see #getNextValue
+         * @see #setStepSize
+         */
+        @Override
+        public Object getPreviousValue() {
+            BigInteger currentVal = (BigInteger)getValue();
+            BigInteger previousVal = currentVal.subtract((BigInteger)getStepSize());
+            return previousVal.max((BigInteger)getMinimum());
+        }
     }
 
 }
