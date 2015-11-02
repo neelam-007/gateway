@@ -168,7 +168,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             return false;
         }
         try {
-            //run the test for the first time
             Mappings mappings = testInstall(solutionKit, bundle, isUpgrade);
             if (null == mappings || null == mappings.getMappings()) {
                 DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);

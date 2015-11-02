@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.l7tech.gateway.api.Mapping.ErrorType.TargetNotFound;
 
@@ -187,11 +186,10 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
         final SolutionKit solutionKit = solutionKitMappingsPanel.getSolutionKit();
         //Check whether any entities are missing from the original installation during an upgrade, and if so
-        //optionally re-create them depending on user input
+        //inform the user that they need to re-install the original install before they can upgrade
         if (isMissingOriginalInstall(mapping, settings.getInstallMappings(solutionKit.getSolutionKitGuid()))) {
-            if (optionallyRecreateDeletedEntity(solutionKitMappingsPanel.getResolvedOther(), mapping, solutionKit)) {
-                refreshPanel(solutionKitMappingsPanel);
-            }
+            DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "An entity from the original install may be missing.  Please re-install the original Solution Kit before attempting to upgrade",
+                    "Error During Upgrade - Missing Entity", JOptionPane.ERROR_MESSAGE, null);
         } else {
             if (!SolutionKitsConfig.allowOverride(mapping)) {
                 DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "<html>This Solution Kit does not allow overriding of this mapping." +
@@ -230,28 +228,6 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         }
     }
 
-    private boolean optionallyRecreateDeletedEntity(@NotNull final Map<String, String> resolvedOther, @NotNull Mapping responseMapping, @NotNull SolutionKit solutionKit) {
-        // get original install mappings
-        final Map<String, Mapping> installMappings = settings.getInstallMappings(solutionKit.getSolutionKitGuid());
-
-        // prompt the user and ask if they would like to recreate the entities from the original install
-        if (promptUserForMissingEntitiesAction() == JOptionPane.YES_OPTION) {
-
-            //iterate through the currently loaded solution kit and if we find a matching srcId, then swap in the original mapping for that srcId
-            final List<Mapping> currentMappings = settings.getLoadedSolutionKits().get(solutionKit).getMappings();
-            for (int i=0; i < currentMappings.size(); i++){
-                Mapping currentMapping = currentMappings.get(i);
-                if (currentMapping.getSrcId().equals(responseMapping.getSrcId())) {
-                    currentMappings.set(i, installMappings.get(currentMapping.getSrcId()));
-                    resolvedOther.put(responseMapping.getSrcId(), Boolean.TRUE.toString());
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     /**
      * Convenience method to check for any missing entities from the original install while performing an upgrade
      * We check not only for "TargetNotFound" but also if there is a "FailOnNew" property that is set to true - this
@@ -272,22 +248,5 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             }
         }
         return false;
-    }
-
-    private int promptUserForMissingEntitiesAction() {
-        final AtomicInteger result = new AtomicInteger();
-        DialogDisplayer.showConfirmDialog(
-                this.getOwner(),
-                "The entity from the initial install is missing.  Would you like to re-create?",
-                "Solution Kit Upgrade Error",
-                JOptionPane.YES_NO_OPTION,
-                new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        result.set(option);
-                    }
-                }
-        );
-        return result.get();
     }
 }
