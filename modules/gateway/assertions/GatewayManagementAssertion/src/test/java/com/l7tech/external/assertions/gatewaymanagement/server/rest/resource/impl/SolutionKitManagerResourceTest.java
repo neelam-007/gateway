@@ -1,8 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
@@ -27,16 +25,12 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import javax.ws.rs.core.Response;
-import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -44,15 +38,10 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.FORM_FIELD_NAME_BUNDLE;
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.PARAMETER_DELIMINATOR;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
-import static com.l7tech.gateway.common.solutionkit.SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE;
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -871,7 +860,6 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
-    // TODO more tests
     @Test
     public void setSelectedGuidAndImForHeadlessUpgradeSuccess() throws Exception{
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -903,13 +891,13 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
 
         //Test
-        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im2", null );
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im2::newIM", null );
 
         selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
 
         //Expect only the kit with IM "im2" to be selected for upgrade
-        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKit2.getSolutionKitGuid()));
         assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
+        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKit2.getSolutionKitGuid()));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate selected solution kit for upgrade based on solutionKitSelect
@@ -925,7 +913,7 @@ public class SolutionKitManagerResourceTest {
         solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
 
         //Test, select for only solutionKit1
-        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", Collections.singletonList(solutionKitSelect));
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1::im2", Collections.singletonList(solutionKitSelect));
 
         selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
 
@@ -987,7 +975,7 @@ public class SolutionKitManagerResourceTest {
             solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, null, null);
             fail("Parent solution kit not found error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + "1f87436b-7ca5-41c8-9418-21d7a7848853" + "'\n");
+            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + parentSolutionKit.getSolutionKitGuid() + "'\n");
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1085,138 +1073,6 @@ public class SolutionKitManagerResourceTest {
         assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().size(), 1);
         assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().get(0).getSolutionKitGuid(), solutionKit2.getSolutionKitGuid());
     }
-
-//    @Test
-//    public void upgradeSuccess() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate single solution kit uninstall based on GUID and IM
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // create sample child signed child skars
-//        InputStream[] childScars = creteSignedSampleChildScars(2, TRUSTED_SIGNATURE_VERIFIER, TRUSTED_SIGNER_CERT_DNS[0]);
-//
-//        byte[] sampleSkarBytes = buildSampleSkar(SAMPLE_SOLUTION_KIT_META_XML, SAMPLE_INSTALL_BUNDLE_XML, childScars);
-//        Assert.assertNotNull(sampleSkarBytes);
-//        // sign
-//        byte[] signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNATURE_VERIFIER, new ByteArrayInputStream(sampleSkarBytes), TRUSTED_SIGNER_CERT_DNS[0]);
-//        Assert.assertNotNull(signedSampleSkarBytes);
-//
-//        Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848111");
-//
-//        SolutionKit parentSolutionKit = new SolutionKit();
-//        parentSolutionKit.setGoid(parentGoidSame);
-//        parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
-//        parentSolutionKit.setMappings("<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT");
-//
-//        SolutionKit solutionKit1 = new SolutionKit();
-//        solutionKit1.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848999");
-//        solutionKit1.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
-//        solutionKit1.setParentGoid(parentGoidSame);
-//        solutionKit1.setGoid(new Goid("1f87436b7ca541c8941821d7a7848853"));
-//        solutionKit1.setMappings("<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-//                "    <l7:Name>Bundle mappings</l7:Name>\n" +
-//                "    <l7:Type>BUNDLE MAPPINGS</l7:Type>\n" +
-//                "    <l7:TimeStamp>2015-10-29T14:55:27.906-07:00</l7:TimeStamp>\n" +
-//                "    <l7:Link rel=\"self\" uri=\"/1.0/bundle?versionComment=API-M+APM+Integration+%28v1.0.2%29\"/>\n" +
-//                "    <l7:Resource>\n" +
-//                "        <l7:Mappings>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"UsedExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76\" targetId=\"0000000000000000ffffffffffffec76\" targetUri=\"/1.0/folders/0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
-//                "                <l7:Properties>\n" +
-//                "                    <l7:Property key=\"FailOnNew\">\n" +
-//                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
-//                "                    </l7:Property>\n" +
-//                "                </l7:Properties>\n" +
-//                "            </l7:Mapping>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"CreatedNew\" srcId=\"a4bd31325abc9ad947c8b261b4294c3a\" srcUri=\"https://localhost:8443/restman/1.0/folders/a4bd31325abc9ad947c8b261b4294c3a\" targetId=\"a4bd31325abc9ad947c8b261b4294c3a\" targetUri=\"/1.0/folders/a4bd31325abc9ad947c8b261b4294c3a\" type=\"FOLDER\"/>\n" +
-//                "        </l7:Mappings>\n" +
-//                "    </l7:Resource>\n" +
-//                "</l7:Item>");
-//
-//        SolutionKit solutionKit2 = new SolutionKit();
-//        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
-//        solutionKit2.setParentGoid(parentGoidSame);
-//        solutionKit2.setGoid(new Goid("1f87436b7ca541c8941821d7a7848844"));
-//        solutionKit2.setMappings("<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-//                "    <l7:Name>Bundle mappings</l7:Name>\n" +
-//                "    <l7:Type>BUNDLE MAPPINGS</l7:Type>\n" +
-//                "    <l7:TimeStamp>2015-10-29T14:55:27.906-07:00</l7:TimeStamp>\n" +
-//                "    <l7:Link rel=\"self\" uri=\"/1.0/bundle?versionComment=API-M+APM+Integration+%28v1.0.2%29\"/>\n" +
-//                "    <l7:Resource>\n" +
-//                "        <l7:Mappings>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"UsedExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76\" targetId=\"0000000000000000ffffffffffffec76\" targetUri=\"/1.0/folders/0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
-//                "                <l7:Properties>\n" +
-//                "                    <l7:Property key=\"FailOnNew\">\n" +
-//                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
-//                "                    </l7:Property>\n" +
-//                "                </l7:Properties>\n" +
-//                "            </l7:Mapping>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"UsedExisting\" srcId=\"b84fcc273edf50b51d3f19348b44d7da\" srcUri=\"https://localhost:8443/restman/1.0/serverModuleFiles/b84fcc273edf50b51d3f19348b44d7da\" targetId=\"4a1987b064f02516b297c47d9a0d5513\" targetUri=\"/1.0/serverModuleFiles/4a1987b064f02516b297c47d9a0d5513\" type=\"SERVER_MODULE_FILE\">\n" +
-//                "                <l7:Properties>\n" +
-//                "                    <l7:Property key=\"MapBy\">\n" +
-//                "                        <l7:StringValue>moduleSha256</l7:StringValue>\n" +
-//                "                    </l7:Property>\n" +
-//                "                </l7:Properties>\n" +
-//                "            </l7:Mapping>\n" +
-//                "        </l7:Mappings>\n" +
-//                "    </l7:Resource>\n" +
-//                "</l7:Item>");
-//
-//        SolutionKit solutionKit3 = new SolutionKit();
-//        solutionKit3.setParentGoid(parentGoidSame);
-//        solutionKit3.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848977");
-//        solutionKit3.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im3");
-//        solutionKit3.setGoid(new Goid("1f87436b7ca541c8941821d7a7848456"));
-//        solutionKit3.setMappings("<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-//                "    <l7:Name>Bundle mappings</l7:Name>\n" +
-//                "    <l7:Type>BUNDLE MAPPINGS</l7:Type>\n" +
-//                "    <l7:TimeStamp>2015-10-29T14:55:27.906-07:00</l7:TimeStamp>\n" +
-//                "    <l7:Link rel=\"self\" uri=\"/1.0/bundle?versionComment=API-M+APM+Integration+%28v1.0.2%29\"/>\n" +
-//                "    <l7:Resource>\n" +
-//                "        <l7:Mappings>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"UsedExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76\" targetId=\"0000000000000000ffffffffffffec76\" targetUri=\"/1.0/folders/0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
-//                "                <l7:Properties>\n" +
-//                "                    <l7:Property key=\"FailOnNew\">\n" +
-//                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
-//                "                    </l7:Property>\n" +
-//                "                </l7:Properties>\n" +
-//                "            </l7:Mapping>\n" +
-//                "            <l7:Mapping action=\"NewOrExisting\" actionTaken=\"UsedExisting\" srcId=\"b84fcc273edf50b51d3f19348b44d7d1\" srcUri=\"https://localhost:8443/restman/1.0/serverModuleFiles/b84fcc273edf50b51d3f19348b44d7d1\" targetId=\"6de087b0e914de52951f696efbba63ba\" targetUri=\"/1.0/serverModuleFiles/6de087b0e914de52951f696efbba63ba\" type=\"SERVER_MODULE_FILE\">\n" +
-//                "                <l7:Properties>\n" +
-//                "                    <l7:Property key=\"MapBy\">\n" +
-//                "                        <l7:StringValue>moduleSha256</l7:StringValue>\n" +
-//                "                    </l7:Property>\n" +
-//                "                </l7:Properties>\n" +
-//                "            </l7:Mapping>\n" +
-//                "        </l7:Mappings>\n" +
-//                "    </l7:Resource>\n" +
-//                "</l7:Item>");
-//
-//        final List<SolutionKit> childKits = new ArrayList<>(3);
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//        childKits.add(solutionKit3);
-//
-//        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
-//        solutionKitResource.setSolutionKitManager(solutionKitManager);
-//        Collection<SolutionKit> solutionKitsInManager = solutionKitManager.findAll();
-//        assertEquals(solutionKitsInManager.size(), 4);
-//
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
-//        when(solutionKitManager.findAllChildrenByParentGoid(parentGoidSame)).thenReturn(childKits);
-//
-//        // Test Upgrade
-//        Response response = solutionKitResource.installOrUpgrade(
-//                new ByteArrayInputStream(signedSampleSkarBytes),
-//                "im1", // don't care about instanceModifier
-//                null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
-//                null, // don't care about entityIdReplaces
-//                parentSolutionKit.getSolutionKitGuid(), // guid to upgrade
-//                new FormDataMultiPart()
-//        );
-//
-//
-//    }
-
-
 
     @Test
     public void uninstallSuccess() throws Exception {
@@ -1433,13 +1289,91 @@ public class SolutionKitManagerResourceTest {
         // selected solution kits are empty
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        //this is supposed to test for lines 824-826 in SolutionKitManagerResource, however I think it's impossible to hit these lines. Please Review
+        // this is supposed to test for lines 824-826 in SolutionKitManagerResource, however I think it's impossible to hit these lines because there is an earlier
+        // condition for empty selected SKs. Please Review
     }
 
-    //TODO
     @Test
-    public void selectSolutionKitsForUpgradeSuccess(){
+    public void selectSolutionKitsForUpgradeSuccess() throws Exception {
+        initializeSolutionKits();
+        Map<String, Pair<String, String>> selectedGuidAndIm = new HashMap<>();
 
+        //Selected solutionKit1 and 2 for upgrade
+        selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
+        selectedGuidAndIm.put(solutionKit2.getSolutionKitGuid(), new Pair<>("im2", "newIM"));
+        when(solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade()).thenReturn(selectedGuidAndIm);
+
+        //Loaded all three solution kits
+        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
+        loadedSolutionKits.put(solutionKit1, null);
+        loadedSolutionKits.put(solutionKit2, null);
+        loadedSolutionKits.put(solutionKit3, null);
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        //Test
+        solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
+
+        //Expect the 2 solution kits selected to be upgraded from the ones already loaded
+        Set<SolutionKit> updateSelectedSK = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(updateSelectedSK.size(), 2);
+
+        //Expect all two solution kits to be in the set of updated solution Kit
+        assertTrue(updateSelectedSK.contains(solutionKit1));
+        assertTrue(updateSelectedSK.contains(solutionKit2));
+
+        //Expect that the instance modifier is updated to "newIM"
+        assertEquals(solutionKit1.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "newIM");
+        assertEquals(solutionKit2.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "newIM");
+
+    }
+
+    @Test
+    public void selectSolutionKitsForUpgradeFail() throws Exception {
+        initializeSolutionKits();
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // selected Guid and IM are empty
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        try {
+            //test
+            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
+            fail("Empty selected Guid and IM error should be thrown");
+        } catch (IllegalArgumentException e) {
+            //expect
+            assertEquals(e.getMessage(), "A map of guid and instance modifier for selected to-be-upgraded solution kits has not been initialized.");
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // selected Guid and IM are not in the set of loaded solution Kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Selected solutionKit1
+        Map<String, Pair<String, String>> selectedGuidAndIm = new HashMap<>();
+        selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
+        when(solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade()).thenReturn(selectedGuidAndIm);
+
+        //Loaded solutionKit2 and 3
+        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
+        loadedSolutionKits.put(solutionKit2, null);
+        loadedSolutionKits.put(solutionKit3, null);
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        try {
+            //test
+            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
+            fail("Selected Guid and IM not in loaded SKs error should be thrown");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            //expect
+            assertEquals(e.getResponse().getEntity(), "Solution Kit ID to upgrade: " +
+                    solutionKit1.getSolutionKitGuid() + " not found in the skar.\n");
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // selected SKs are empty
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // this is supposed to test for lines 882-883 in SolutionKitManagerResource, however I think it's impossible to hit these lines because there is an earlier
+        // condition that checks for empty selected Guid and IM. Please Review
     }
 
     private static InputStream[] creteSignedSampleChildScars(
@@ -1569,6 +1503,6 @@ public class SolutionKitManagerResourceTest {
         solutionKit3.setProperty(SolutionKit.SK_PROP_DESC_KEY, "Description 3");
         solutionKit3.setName("SolutionKit3");
         solutionKit3.setSolutionKitVersion("1");
-        solutionKit2.setGoid(new Goid("1f87436b7ca541c8941821d7a7848977"));
+        solutionKit3.setGoid(new Goid("1f87436b7ca541c8941821d7a7848977"));
     }
 }

@@ -821,6 +821,7 @@ public class SolutionKitManagerResource {
                 selectedSolutionKits.add(selectedSolutionKit);
             }
 
+            //TODO: redundant condition?
             if (selectedSolutionKits.isEmpty()) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
                     "There are no any solution kits being selectable for install." + lineSeparator()).build());
@@ -834,7 +835,7 @@ public class SolutionKitManagerResource {
      * Set a list of solution kits for upgrade
      * Precondition: The method setSelectedGuidAndImForHeadlessUpgrade must be called before this method is called.
      */
-    private void selectSolutionKitsForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
+    protected void selectSolutionKitsForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
         // Check the precondition:
         final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
         if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
@@ -878,6 +879,7 @@ public class SolutionKitManagerResource {
             selectedSolutionKits.add(loadedSK);
         }
 
+        //TODO: redundant condition?
         if (selectedSolutionKits.isEmpty()) {
             throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
                 "There are no any solution kits being selectable for upgrade." + lineSeparator()).build());
