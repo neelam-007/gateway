@@ -152,7 +152,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         variablePrefixTextField.setAcceptEmpty(true);
 
         validators = new InputValidator( this, getTitle() );
-        validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("responseCacheAgeTitle"), responseCacheAgeTextField,0,Long.MAX_VALUE));
+        validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("responseCacheAgeTitle"),
+                responseCacheAgeTextField, 0, Integer.MAX_VALUE));
+
         validators.addRule(new InputValidator.ComponentValidationRule(variablePrefixTextField) {
             @Override
             public String getValidationError() {
