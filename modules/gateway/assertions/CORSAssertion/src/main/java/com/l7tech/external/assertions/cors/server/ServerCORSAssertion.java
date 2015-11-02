@@ -76,16 +76,16 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                     return AssertionStatus.BAD_REQUEST;
                 }
 
+                boolean isNonStandardMethod = false;
                 String requestedMethod = methods[0];
-                
+
+                // determine if the requested method is non-standard
                 try {
                     HttpMethod.valueOf(requestedMethod);
                 } catch (IllegalArgumentException e) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The value of the " +
-                            REQUEST_METHOD_HEADER + " header is not a recognized HTTP method: " + requestedMethod);
-                    return AssertionStatus.BAD_REQUEST;
+                    isNonStandardMethod = true;
                 }
-                
+
                 // check ACCESS_CONTROL_HEADERS_HEADER if exist (may be multiple)
                 Collection<Header> requestHeadersHeaders =
                         requestHeadersKnob.getHeaders(REQUEST_HEADERS_HEADER, HEADER_TYPE_HTTP);
@@ -106,8 +106,13 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 }
 
                 // if the method is not found (case-sensitive) in the accepted methods, fail
-                if (null != assertion.getAcceptedMethods() &&
-                        !findCaseSensitive(requestedMethod, assertion.getAcceptedMethods())) {
+                if (isNonStandardMethod) {
+                    if (!assertion.isAllowNonStandardMethods()) {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, requestedMethod + " is not an accepted method.");
+                        return AssertionStatus.FALSIFIED;
+                    }
+                } else if (null != assertion.getAcceptedMethods() &&
+                                !findCaseSensitive(requestedMethod, assertion.getAcceptedMethods())) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING, requestedMethod + " is not an accepted method.");
                     return AssertionStatus.FALSIFIED;
                 }

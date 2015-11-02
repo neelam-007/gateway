@@ -26,6 +26,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -373,13 +374,13 @@ public class ServerCORSAssertionTest {
     }
 
     @Test
-    public void testPreflight_WithInvalidRequestedMethod_AssertionFailsAndWarningAudited() throws Exception {
+    public void testPreflight_WithDisallowedNonStandardRequestedMethod_AssertionFailsAndWarningAudited() throws Exception {
         final String origin = "allowed.com";
-        final String invalidMethod = "NOTAMETHOD";
+        final String unacceptedMethod = "NOTAMETHOD";
         final String header = "x-allowed";
 
         Message request = createRequest(HttpMethod.OPTIONS.toString());
-        configureRequestHeaders(request, origin, invalidMethod, header);
+        configureRequestHeaders(request, origin, unacceptedMethod, header);
 
         Message response = createResponse();
 
@@ -394,13 +395,12 @@ public class ServerCORSAssertionTest {
 
         AssertionStatus result = serverAssertion.checkRequest(context);
 
-        assertEquals(AssertionStatus.BAD_REQUEST, result);
+        assertEquals(AssertionStatus.FALSIFIED, result);
         assertEquals(2, testAudit.getAuditCount());
         assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
                 "Origin allowed: " + origin));
         assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_WARNING,
-                "The value of the " + ServerCORSAssertion.REQUEST_METHOD_HEADER +
-                        " header is not a recognized HTTP method: " + invalidMethod));
+                unacceptedMethod + " is not an accepted method."));
         assertEquals(true, context.getVariable("cors.isPreflight"));
         assertEquals(true, context.getVariable("cors.isCors"));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
@@ -408,6 +408,51 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+    }
+
+    @Test
+    public void testPreflight_WithAllowedNonStandardRequestedMethod_AssertionFailsAndWarningAudited() throws Exception {
+        final String origin = "allowed.com";
+        final String nonStandardMethod = "TRACE";
+        final String header = "x-allowed";
+
+        Message request = createRequest(HttpMethod.OPTIONS.toString());
+        configureRequestHeaders(request, origin, nonStandardMethod, header);
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(Arrays.asList(origin));
+        assertion.setAcceptedMethods(Arrays.asList("PUT"));
+        assertion.setAllowNonStandardMethods(true); // allow non-standard methods
+        assertion.setAcceptedHeaders(Arrays.asList(header));
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
+                "Origin allowed: " + origin));
+        assertEquals(true, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(origin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(nonStandardMethod, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+
+        String[] allowedHeaderValues =
+                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+
+        assertEquals(1, allowedHeaderValues.length);
+        assertEquals(header, allowedHeaderValues[0]);
     }
 
     @Test

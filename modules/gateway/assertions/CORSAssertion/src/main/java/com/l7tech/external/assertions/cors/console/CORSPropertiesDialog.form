@@ -295,6 +295,14 @@
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="patchCheckBox"/>
                 </properties>
               </component>
+              <component id="b86f6" class="javax.swing.JCheckBox" binding="allowNonStandardMethodsCheckBox">
+                <constraints>
+                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="otherCheckBox"/>
+                </properties>
+              </component>
             </children>
           </grid>
         </children>

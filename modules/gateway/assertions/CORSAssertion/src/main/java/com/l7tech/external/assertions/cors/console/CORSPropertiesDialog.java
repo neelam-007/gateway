@@ -46,6 +46,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private JCheckBox deleteCheckBox;
     private JCheckBox optionsCheckBox;
     private JCheckBox patchCheckBox;
+    private JCheckBox allowNonStandardMethodsCheckBox;
     private JCheckBox supportsCredentialsCheckBox;
 
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(CORSPropertiesDialog.class.getName());
@@ -164,7 +165,8 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             public String getValidationError() {
                 if (!getCheckBox.isSelected() && !putCheckBox.isSelected() && !postCheckBox.isSelected()
                         && !headCheckBox.isSelected() && !deleteCheckBox.isSelected()
-                        && !patchCheckBox.isSelected() && !optionsCheckBox.isSelected()) {
+                        && !patchCheckBox.isSelected() && !optionsCheckBox.isSelected()
+                        && !allowNonStandardMethodsCheckBox.isSelected()) {
                     return resourceBundle.getString("noMethodsEnabledError");
                 }
 
@@ -248,6 +250,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         assertion.setVariablePrefix(variablePrefixTextField.getVariable().trim());
         assertion.setRequireCors(requireCorsCheckBox.isSelected());
         assertion.setSupportsCredentials(supportsCredentialsCheckBox.isSelected());
+        assertion.setAllowNonStandardMethods(allowNonStandardMethodsCheckBox.isSelected());
 
         ArrayList<String> methods = new ArrayList<>();
 
@@ -306,6 +309,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
         requireCorsCheckBox.setSelected(assertion.isRequireCors());
         supportsCredentialsCheckBox.setSelected(assertion.isSupportsCredentials());
+        allowNonStandardMethodsCheckBox.setSelected(assertion.isAllowNonStandardMethods());
 
         if (assertion.getAcceptedMethods() != null) {
             getCheckBox.setSelected(assertion.getAcceptedMethods().contains("GET"));

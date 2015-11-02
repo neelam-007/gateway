@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.validator.AssertionValidatorSupport;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,7 +18,6 @@ import java.util.List;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLASSNAME;
 
 public class CORSAssertion extends Assertion implements SetsVariables {
-
 
     public static final String SUFFIX_IS_PREFLIGHT = "isPreflight";
     public static final String SUFFIX_IS_CORS = "isCORS";
@@ -29,6 +30,9 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         super();
     }
 
+    /**
+     * @return the prefix to give to the context variables set by this assertion
+     */
     public String getVariablePrefix() {
         return variablePrefix;
     }
@@ -37,16 +41,20 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.variablePrefix = variablePrefix;
     }
 
-    // Null if accept any
-    public List<String> getAcceptedHeaders() {
+    /**
+     * @return a list of accepted requested header names, or null if all should headers be accepted
+     */
+    public @Nullable List<String> getAcceptedHeaders() {
         return acceptedHeaders;
     }
 
-    // Null if accept any
-    public void setAcceptedHeaders(List<String> acceptedHeaders) {
+    public void setAcceptedHeaders(@Nullable List<String> acceptedHeaders) {
         this.acceptedHeaders = acceptedHeaders;
     }
 
+    /**
+     * @return a list of accepted method names
+     */
     public List<String> getAcceptedMethods() {
         return acceptedMethods;
     }
@@ -55,26 +63,31 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.acceptedMethods = acceptedMethods;
     }
 
-    // Null if accept any
-    public List<String> getAcceptedOrigins() {
+    /**
+     * @return a list of accepted origins, or null if all origins should be accepted
+     */
+    public @Nullable List<String> getAcceptedOrigins() {
         return acceptedOrigins;
     }
 
-    // Null if accept any
-    public void setAcceptedOrigins(List<String> acceptedOrigins) {
+    public void setAcceptedOrigins(@Nullable List<String> acceptedOrigins) {
         this.acceptedOrigins = acceptedOrigins;
     }
 
-    // Null if expose all
-    public List<String> getExposedHeaders() {
+    /**
+     * @return a list of header names for the value of the Access-Control-Expose-Headers header, or null if none exposed
+     */
+    public @Nullable List<String> getExposedHeaders() {
         return exposedHeaders;
     }
 
-    // Null if expose all
-    public void setExposedHeaders(List<String> exposedHeaders) {
+    public void setExposedHeaders(@Nullable List<String> exposedHeaders) {
         this.exposedHeaders = exposedHeaders;
     }
 
+    /**
+     * @return the value for the Access-Control-Max-Age header (seconds), or null if the header is not to be added
+     */
     public Long getResponseCacheTime() {
         return responseCacheTime;
     }
@@ -83,6 +96,9 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.responseCacheTime = responseCacheTime;
     }
 
+    /**
+     * @return true if an Access-Control-Allow-Credentials header should be added to the response
+     */
     public boolean isSupportsCredentials() {
         return supportsCredentials;
     }
@@ -91,12 +107,26 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         this.supportsCredentials = supportsCredentials;
     }
 
+    /**
+     * @return true if the assertion should fail when an Origin header is not present in the request message
+     */
     public boolean isRequireCors() {
         return requireCors;
     }
 
     public void setRequireCors(boolean requireCors) {
         this.requireCors = requireCors;
+    }
+
+    /**
+     * @return true if any non-standard HTTP method should be considered allowed
+     */
+    public boolean isAllowNonStandardMethods() {
+        return allowNonStandardMethods;
+    }
+
+    public void setAllowNonStandardMethods(boolean allowNonStandardMethods) {
+        this.allowNonStandardMethods = allowNonStandardMethods;
     }
 
     @Override
@@ -124,7 +154,7 @@ public class CORSAssertion extends Assertion implements SetsVariables {
     private Long responseCacheTime;
     private boolean supportsCredentials = true;
     private boolean requireCors = true;
-
+    private boolean allowNonStandardMethods = false;
 
     @Override
     public AssertionMetadata meta() {
@@ -151,10 +181,11 @@ public class CORSAssertion extends Assertion implements SetsVariables {
 
         meta.put(POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
 
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:CORS" rather than "set:modularAssertions"   "(fromClass)"
+        /**
+         * N.B. This is set to set:modularAssertions because the module is required to work on version 9.0 without
+         * any updates. It should be changed to (fromClass) in the future.
+         */
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
-//        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
