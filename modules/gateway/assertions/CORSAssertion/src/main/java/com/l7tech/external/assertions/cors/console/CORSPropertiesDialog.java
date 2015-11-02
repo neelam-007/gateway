@@ -149,7 +149,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         variablePrefixTextField = new TargetVariablePanel();
         variablePrefixPanel.setLayout(new BorderLayout());
         variablePrefixPanel.add(variablePrefixTextField, BorderLayout.CENTER);
-        variablePrefixTextField.setAcceptEmpty(true);
+        variablePrefixTextField.setSuffixes(CORSAssertion.VARIABLE_SUFFIXES);
+        variablePrefixTextField.setAcceptEmpty(false);
+        variablePrefixTextField.setValueWillBeWritten(true);
 
         validators = new InputValidator( this, getTitle() );
         validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("responseCacheAgeTitle"),
@@ -305,9 +307,6 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
         this.variablePrefixTextField.setVariable( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
         this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
-
-        String[] suffixes = CORSAssertion.VARIABLE_SUFFIXES.toArray( new String[CORSAssertion.VARIABLE_SUFFIXES.size()] );
-        variablePrefixTextField.setSuffixes(suffixes);
 
         requireCorsCheckBox.setSelected(assertion.isRequireCors());
         supportsCredentialsCheckBox.setSelected(assertion.isSupportsCredentials());

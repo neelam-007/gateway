@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.validator.AssertionValidatorSupport;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -19,6 +18,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLA
 
 public class CORSAssertion extends Assertion implements SetsVariables {
 
+    public static final String PREFIX_DEFAULT = "cors";
     public static final String SUFFIX_IS_PREFLIGHT = "isPreflight";
     public static final String SUFFIX_IS_CORS = "isCORS";
     public static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection(Arrays.asList(
@@ -146,7 +146,7 @@ public class CORSAssertion extends Assertion implements SetsVariables {
     //
     private static final String META_INITIALIZED = CORSAssertion.class.getName() + ".metadataInitialized";
 
-    private String variablePrefix = "cors";
+    private String variablePrefix = PREFIX_DEFAULT;
     private List<String> acceptedHeaders;
     private List<String> acceptedMethods;
     private List<String> acceptedOrigins;
