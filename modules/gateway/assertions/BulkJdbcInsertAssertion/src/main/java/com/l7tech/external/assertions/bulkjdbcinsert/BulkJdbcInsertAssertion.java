@@ -247,7 +247,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
         }
     };
 
-    public static class ColumnMapper {
+    public static class ColumnMapper implements Cloneable{
         public String getName() {
             return name;
         }
@@ -278,6 +278,16 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
 
         public void setTransformParam(String transformParam) {
             this.transformParam = transformParam;
+        }
+
+        @Override
+        public Object clone() {
+            ColumnMapper mapper = new ColumnMapper();
+            mapper.name = name;
+            mapper.order = order;
+            mapper.transformation = transformation;
+            mapper.transformParam = transformParam;
+            return mapper;
         }
 
         @Override

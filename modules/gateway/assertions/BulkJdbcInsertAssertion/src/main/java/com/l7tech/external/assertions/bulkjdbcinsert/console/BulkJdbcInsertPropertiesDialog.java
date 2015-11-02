@@ -297,7 +297,8 @@ public class BulkJdbcInsertPropertiesDialog extends AssertionPropertiesOkCancelS
         escapeQuoteTextField.setText(assertion.getEscapeQuote());
         if(assertion.getColumnMapperList() != null) {
             for(BulkJdbcInsertAssertion.ColumnMapper mapper : assertion.getColumnMapperList()) {
-                mappingTableModel.addRow(mapper);
+                //clone Mapper Objects
+                mappingTableModel.addRow((BulkJdbcInsertAssertion.ColumnMapper)mapper.clone());
             }
         }
         decompressionComboBox.setSelectedItem(assertion.getCompression());
