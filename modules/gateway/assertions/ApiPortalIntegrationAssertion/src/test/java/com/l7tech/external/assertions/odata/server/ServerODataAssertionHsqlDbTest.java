@@ -848,6 +848,7 @@ public class ServerODataAssertionHsqlDbTest {
     assertEquals(AssertionStatus.FALSIFIED, status);
     assertNotNull(payloadAsString);
     assertTrue("integrity constraint violation should be in the response", payloadAsString.indexOf("integrity constraint violation") >= 0);
+    assertTrue("<stacktrace> element should be included in <innererror> in the response", payloadAsString.indexOf("<innererror><stacktrace>") >= 0);
     assertEquals(TEXT_SERVICE_ERROR_EXCEPTION, removeInnerErrorElement(removeUpdatedDateElement(payloadAsString)));
   }
 
