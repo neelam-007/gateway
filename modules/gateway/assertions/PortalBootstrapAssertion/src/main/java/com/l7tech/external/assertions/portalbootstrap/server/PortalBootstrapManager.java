@@ -220,7 +220,8 @@ public class PortalBootstrapManager {
             String new_pssg_identifier = connection.getHeaderField("portal-config-identifier");
             String current_pssg_identifier = clusterPropertyManager.getProperty("portal.config.identifier");
             if ((new_pssg_identifier!=null) && (current_pssg_identifier!=null) && (! new_pssg_identifier.equals(current_pssg_identifier))){
-                throw new IOException( "This TSSG has already enrolled with a portal pssg which is identified by id, '"+current_pssg_identifier+"'.  Aborting the enrollment" );
+                logger.log( Level.WARNING, "Unable to enroll: This gateway has already enrolled with SaaS portal which is identified by , '"+current_pssg_identifier+"'. Enrollment has been aborted.");
+                throw new IOException( "This gateway has already enrolled with a different portal." );
             }
             ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
             boolean isBinary = contentTypeHeader.matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
