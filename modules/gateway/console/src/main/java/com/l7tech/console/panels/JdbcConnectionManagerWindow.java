@@ -321,12 +321,11 @@ public class JdbcConnectionManagerWindow extends JDialog {
                     resources.getString("dialog.title.remove.connection"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {
-            connectionList.remove(currentRow);
-
             JdbcAdmin admin = getJdbcConnectionAdmin();
             if (admin == null) return;
             try {
                 admin.deleteJdbcConnection(connection);
+                connectionList.remove(currentRow);
             } catch (DeleteException e) {
                 logger.warning("Cannot delete the JDBC connection " + connection.getName());
                 return;

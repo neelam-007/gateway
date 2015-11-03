@@ -218,12 +218,11 @@ public class CassandraConnectionManagerDialog extends JDialog {
                 resources.getString("dialog.title.remove.connection"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {
-            cassandraConnectionsTableModel.removeRowAt(currentModelRow);
-
             CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
             if (admin == null) return;
             try {
                 admin.deleteCassandraConnection(connection);
+                cassandraConnectionsTableModel.removeRowAt(currentModelRow);
             } catch (DeleteException e) {
                 logger.warning("Cannot delete the Cassandra connection " + connection.getName());
                 return;

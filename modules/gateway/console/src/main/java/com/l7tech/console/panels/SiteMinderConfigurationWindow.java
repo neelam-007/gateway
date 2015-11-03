@@ -165,7 +165,6 @@ public class SiteMinderConfigurationWindow extends JDialog {
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {
-            configurationList.remove(selectedRow);
 
             SiteMinderAdmin admin = getSiteMinderAdmin();
 
@@ -173,6 +172,8 @@ public class SiteMinderConfigurationWindow extends JDialog {
 
             try {
                 admin.deleteSiteMinderConfiguration(configuration);
+                //first delete configuration and then remove selected row.
+                configurationList.remove(selectedRow);
             } catch (DeleteException ex) {
                 logger.warning("Cannot delete the CA Single Sign-On configuration " + configuration.getName());
                 return;
