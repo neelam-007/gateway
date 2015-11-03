@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,6 +69,40 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
     }
 
     @Override
+    protected void advance() {
+        super.advance();
+
+        addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
+    }
+
+    @Override
+    protected void reverse() {
+        super.reverse();
+
+        addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
+    }
+
+    /**
+     * Custom back button that doesn't perform validation. Safe for this wizard
+     * because the Finish button is only enabled on the last panel.
+     */
+    protected JButton getButtonBack() {
+        if (buttonBack == null) {
+            buttonBack = new JButton();
+            buttonBack.setText("Back");
+            buttonBack.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    inputValidator.clearRules();
+                    reverse();
+                }
+            });
+        }
+
+        return buttonBack;
+    }
+
+    @Override
     protected void finish(final ActionEvent evt) {
         getSelectedWizardPanel().storeSettings(wizardInput);
 
@@ -76,7 +111,7 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
 
             service.setFolder(getTargetFolder());
             service.setName(wizardInput.getServiceName());
-            service.setRoutingUri("/" + wizardInput.getRoutingUri());
+            service.setRoutingUri(wizardInput.getRoutingUri());
             service.setSoap(false);
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
 

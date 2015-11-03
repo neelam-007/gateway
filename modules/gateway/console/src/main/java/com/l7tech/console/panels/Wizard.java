@@ -43,11 +43,11 @@ public class Wizard<ST> extends JDialog {
     private JPanel wizardStepPanel;
     private JPanel descriptionPanel;
     private JTextPane stepDescriptionTextPane;
-    private JButton buttonFinish;
-    private JButton cancelButton;
-    private JButton buttonNext;
-    private JButton buttonBack;
-    private JButton buttonHelp;
+    protected JButton buttonFinish;
+    protected JButton cancelButton;
+    protected JButton buttonNext;
+    protected JButton buttonBack;
+    protected JButton buttonHelp;
     private java.util.List<WizardLabel> stepLabels = new ArrayList<>();
 
     protected EventListenerList listenerList = new EventListenerList();

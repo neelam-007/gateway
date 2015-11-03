@@ -17,8 +17,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.ResourceBundle;
@@ -57,7 +57,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
 
         add(contentPanel);
 
-        gatewayUrlPrefixLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/");
+        gatewayUrlPrefixLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]");
 
         // listener updates service URL preview label as routing URI is updated
         routingUriTextField.getDocument().addDocumentListener(new DocumentListener() {
@@ -140,15 +140,15 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
                 if (StringUtils.isBlank(apiBasePath)) {
                     errorMessage = resources.getString("apiBasePathNotSpecifiedError");
                 } else if (!apiBasePath.startsWith("/")) {
-                    errorMessage = resources.getString("invalidApiBasePathError");
+                    errorMessage = resources.getString("noLeadingSlashApiBasePathError");
                 } else {
                     try {
-                        URL url = new URL(apiBasePath);
+                        URI uri = new URI(apiBasePath);
 
-                        if (!url.getPath().equals(apiBasePath)) {   // should be the path only - no file or parameters
+                        if (!uri.getPath().equals(apiBasePath)) {   // should be the path only - no file or parameters
                             errorMessage = resources.getString("invalidApiBasePathError");
                         }
-                    } catch (MalformedURLException e) {
+                    } catch (URISyntaxException e) {
                         errorMessage = resources.getString("invalidApiBasePathError");
                     }
                 }
@@ -167,15 +167,21 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
                     return resources.getString("routingUriNotSpecifiedError");
                 }
 
-                String errorMsg = ValidationUtils.isValidUriString("/" + routingUri);
-
-                if (null == errorMsg) {
-                    errorMsg = ValidatorUtils.validateResolutionPath("/" + routingUri, false, false);
+                if (!routingUri.startsWith("/")) {
+                    return resources.getString("routingUriMissingLeadingSlashError");
                 }
 
-                return errorMsg;
+                String errorMsg = ValidationUtils.isValidUriString(routingUri);
+
+                return null == errorMsg
+                        ? ValidatorUtils.validateResolutionPath(routingUri, true, true)
+                        : errorMsg;
             }
         });
+
+        InputValidator inputValidator = new InputValidator(this, "Wizard Warning");
+
+        inputValidator.validate();
 
         RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
             @Override
@@ -190,6 +196,9 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
 
     @Override
     public void storeSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
+
+
+
         settings.setServiceName(serviceNameTextField.getText().trim());
         settings.setApiHost(apiHostTextField.getText().trim());
         settings.setApiBasePath(apiBasePathTextField.getText().trim());
@@ -213,7 +222,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
         apiBasePathTextField.setText(settings.getApiBasePath());
 
         if (null == settings.getRoutingUri() || settings.getRoutingUri().isEmpty()) {
-            routingUriTextField.setText(settings.getApiBasePath().substring(1) + "*"); // strip the leading slash
+            routingUriTextField.setText("/" + settings.getApiBasePath().substring(1) + "/*"); // strip the leading slash
         } else {
             routingUriTextField.setText(settings.getRoutingUri());
         }
@@ -232,7 +241,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
     private void updateUrlPreview() {
         String routingUri = routingUriTextField.getText().trim();
 
-        if (routingUri.isEmpty() || (!routingUri.startsWith("/") && ValidationUtils.isValidUri(routingUri))) {
+        if (routingUri.startsWith("/") && ValidationUtils.isValidUri(routingUri)) {
             gatewayUrlPrefixLabel.setForeground(Color.BLACK);
             routingUriTextField.setForeground(Color.BLACK);
         } else {
