@@ -240,6 +240,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="getCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="getCheckBoxToolTip"/>
                 </properties>
               </component>
               <vspacer id="f127d">
@@ -253,6 +254,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="headCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="headCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="d00ab" class="javax.swing.JCheckBox" binding="deleteCheckBox">
@@ -261,6 +263,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="deleteCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="deleteCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="64d65" class="javax.swing.JCheckBox" binding="optionsCheckBox">
@@ -269,6 +272,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="optionsCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="optionsCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="380b5" class="javax.swing.JCheckBox" binding="putCheckBox">
@@ -277,6 +281,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="putCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="putCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="679d1" class="javax.swing.JCheckBox" binding="postCheckBox">
@@ -285,6 +290,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="postCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="postCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="82bae" class="javax.swing.JCheckBox" binding="patchCheckBox">
@@ -293,6 +299,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="patchCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="patchCheckBoxToolTip"/>
                 </properties>
               </component>
               <component id="b86f6" class="javax.swing.JCheckBox" binding="allowNonStandardMethodsCheckBox">
@@ -301,6 +308,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="otherCheckBox"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="otherCheckBoxToolTip"/>
                 </properties>
               </component>
             </children>
