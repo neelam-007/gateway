@@ -25,10 +25,13 @@ import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.SQLQuery;
 import org.hibernate.Session;
+import org.hibernate.type.StringType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
@@ -41,10 +44,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -126,11 +126,27 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     private void updateProtectedEntityTracking() throws FindException {
         final List< Pair< EntityType, String> > solutionKitOwnedEntities = new ArrayList<>();
 
+        // keeps last updated EntityOwnershipDescriptor (i.e. the one with latest version_stamp)
+        final Map<String, EntityOwnershipDescriptor> entityOwnerships = new HashMap<>();
+
         for (final SolutionKit solutionKit : findAll()) {
             for (final EntityOwnershipDescriptor descriptor : solutionKit.getEntityOwnershipDescriptors()) {
-                if (descriptor.isReadOnly()) {
-                    solutionKitOwnedEntities.add(Pair.pair(descriptor.getEntityType(), descriptor.getEntityId()));
+                final EntityOwnershipDescriptor entityOwnership = entityOwnerships.get(descriptor.getEntityId());
+                if (entityOwnership != null) {
+                    // entity owned by another skar, so make sure we are keeping the latest one
+                    if (descriptor.getVersionStamp() >= entityOwnership.getVersionStamp()) {
+                        entityOwnerships.put(descriptor.getEntityId(), descriptor);
+                    }
+                } else {
+                    entityOwnerships.put(descriptor.getEntityId(), descriptor);
                 }
+            }
+        }
+
+        // finally loop through our filtered entityOwnerships map
+        for (final EntityOwnershipDescriptor descriptor : entityOwnerships.values()) {
+            if (descriptor.isReadOnly()) {
+                solutionKitOwnedEntities.add(Pair.pair(descriptor.getEntityType(), descriptor.getEntityId()));
             }
         }
 
@@ -301,6 +317,37 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             });
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
+        }
+    }
+
+
+    // SQL for decrementing version_stamp for all entities owned by other solution kits (as this skGoid now takes over readonly-ness)
+    private static final String SQL_DECREMENT_ENTITIES_VERSION_STAMP = "UPDATE solution_kit_meta set version_stamp=version_stamp-1 WHERE entity_id in (:ids) and solution_kit_goid<>:skGoid";
+
+    @Override
+    @Transactional(readOnly=false)
+    public void decrementEntitiesVersionStamp(@NotNull final Collection<String> entityIds, @NotNull final Goid solutionKit) throws UpdateException {
+        if (!entityIds.isEmpty()) {
+            try {
+                getHibernateTemplate().execute(new HibernateCallback<Void>() {
+                    @Override
+                    public Void doInHibernate(final Session session) throws HibernateException, SQLException {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "Decrementing version_stamp of entities: " + CollectionUtils.mkString(entityIds, ",") + " owning kit is: " + solutionKit.toString() + "...");
+                        }
+                        final SQLQuery q = session.createSQLQuery(SQL_DECREMENT_ENTITIES_VERSION_STAMP);
+                        q.setParameterList("ids", entityIds, new StringType());
+                        q.setBinary("skGoid", solutionKit.getBytes());
+                        final int update = q.executeUpdate();
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "version_stamp decremented for " + update + " entities.");
+                        }
+                        return null;
+                    }
+                });
+            } catch (Exception he) {
+                throw new UpdateException(he.toString(), he);
+            }
         }
     }
 

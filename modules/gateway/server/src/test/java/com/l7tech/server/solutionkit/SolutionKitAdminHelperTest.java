@@ -952,7 +952,7 @@ public class SolutionKitAdminHelperTest {
         //          sk1_entity7 => POLICY               => true
         //          sk1_entity8 => SERVICE              => false
         //
-        // SOLUTION KIT sk6 => child kit//
+        // SOLUTION KIT sk6 => child kit
         //          sk5_entity1 => SERVICE   => true
         //
         // sk6 to take over sk1_entity3 and sk1_entity6 from sk1
@@ -1013,7 +1013,7 @@ public class SolutionKitAdminHelperTest {
                 )
         );
 
-        // make sure not sk1_entity3 and sk1_entity6 are in sk6
+        // make sure sk1_entity3 and sk1_entity6 are in sk6
         Assert.assertThat(
                 kit6.getEntityOwnershipDescriptors(),
                 Matchers.hasItems(

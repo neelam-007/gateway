@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<l7:Item xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Name>Bundle mappings</l7:Name>
+    <l7:Type>BUNDLE MAPPINGS</l7:Type>
+    <l7:TimeStamp>2015-11-03T09:37:20.586-08:00</l7:TimeStamp>
+    <l7:Link rel="self" uri="/1.0/bundle?versionComment=Test4+Solution+Kit+%28v1.0.01%29&amp;test=true"/>
+    <l7:Resource>
+        <l7:Mappings xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"/>
+    </l7:Resource>
+</l7:Item>

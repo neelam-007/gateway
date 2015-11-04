@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
@@ -313,6 +314,9 @@ public class SolutionKitAdminHelper {
         final Collection<EntityOwnershipDescriptor> newOwnershipDescriptors = new ArrayList<>();
         // HashSet works faster with List.removeAll
         final Collection<EntityOwnershipDescriptor> deletedOwnershipDescriptors = new HashSet<>();
+        // a hash-set of entities (entity-ids) to update readonly-ness (by default all updated and created entities are candidates)
+        // this is done by decrementing version_stamp of all updated and created entities owned by other solution kits
+        final Collection<String> entitiesToDecrementVersionStamp = new HashSet<>();
 
         // Find all matches of srdId and targetId in result mappings and save them in a map.
         final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
@@ -360,15 +364,20 @@ public class SolutionKitAdminHelper {
                 } else if (EntityMappingResult.MappingAction.CreatedNew == actionTaken) {
                     final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
                     // check if entity ownership descriptor already exists for this entityId
-                    final EntityOwnershipDescriptor existing = ownershipDescriptorMap.get(entityId);
-                    if (existing != null) {
+                    EntityOwnershipDescriptor descriptor = ownershipDescriptorMap.get(entityId);
+                    if (descriptor != null) {
                         // edge case: found an orphan entity (update the existing one)
-                        existing.setReadOnly(isReadOnly);
-                        existing.setEntityType(EntityType.valueOf(entityType));
+                        descriptor.setReadOnly(isReadOnly);
+                        descriptor.setEntityType(EntityType.valueOf(entityType));
                     } else {
-                        final EntityOwnershipDescriptor descriptor = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), isReadOnly);
+                        descriptor = new EntityOwnershipDescriptor(solutionKit, entityId, EntityType.valueOf(entityType), isReadOnly);
                         newOwnershipDescriptors.add(descriptor);
                     }
+                    descriptor.markAsOwned();
+                    // sanity check
+                    assert entityId != null;
+                    assert entityId.equals(descriptor.getEntityId());
+                    entitiesToDecrementVersionStamp.add(descriptor.getEntityId());
                 } else if (EntityMappingResult.MappingAction.UpdatedExisting == actionTaken || EntityMappingResult.MappingAction.UsedExisting == actionTaken) {
                     // this is an update
                     // check if the author is modifying entity read-only status
@@ -377,11 +386,24 @@ public class SolutionKitAdminHelper {
                     if (existing != null) {
                         final boolean isReadOnly = RestmanMessage.isMarkedAsReadOnly(mapping);
                         existing.setReadOnly(isReadOnly);
+                        existing.markAsOwned();
+                        // sanity check
+                        assert entityId != null;
+                        assert entityId.equals(existing.getEntityId());
+                        entitiesToDecrementVersionStamp.add(existing.getEntityId());
                     }
                 } else {
                     logger.log(Level.WARNING, "Unrecognized RESTMAN result action '" + actionTaken + "'. Entity (" + entityId + "," + entityType + ") ownership information cannot be processed.");
                 }
             }
+        }
+
+        try {
+            // edge case: decrementing version_stamp i.e. update readonly-ness for all updated and created entities
+            // owned by other solution kits (as this skar now takes over readonly-ness)
+            solutionKitManager.decrementEntitiesVersionStamp(Collections.unmodifiableCollection(entitiesToDecrementVersionStamp), solutionKit.getGoid());
+        } catch (UpdateException e) {
+            logger.log(Level.WARNING, "Failed to reset readonly-ness for created and updated entities not belonging to this skar: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         }
 
         // update solutionKit EntityOwnershipDescriptors

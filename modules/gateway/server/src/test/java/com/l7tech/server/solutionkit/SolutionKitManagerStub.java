@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,5 +48,10 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     @Override
     public Collection<SolutionKit> findAllChildrenByParentGoid(@NotNull Goid parentGoid) throws FindException {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void decrementEntitiesVersionStamp(@NotNull final Collection<String> entityIds, @NotNull final Goid solutionKit) throws UpdateException {
+        // nothing to do
     }
 }

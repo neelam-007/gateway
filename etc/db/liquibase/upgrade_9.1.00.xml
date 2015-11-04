@@ -56,4 +56,27 @@
             </addColumn>
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="solution_kit_meta_add_version_stamp_column">
+        <comment>
+            Fixing SSG-12307.
+            version_stamp is used to detect which readonly flag has priority in case when multiple skars own the same entity.
+            Entity Protection Tracker should use the entity which was updated or created the last.
+            Though timestamp is a logical choice in this case, unfortunately in a cluster environment there is no guarantee that
+            node clocks will be in sync.
+        </comment>
+        <addColumn tableName="solution_kit_meta">
+            <!--
+                Though better option would be to use defaultValueNumeric="9223372036854775807", however derby failed to create the column:
+                Error executing SQL ALTER TABLE APP.solution_kit_meta ADD version_stamp BIGINT DEFAULT 9.223372036854776E18 NOT NULL:
+                    DEFAULT value or IDENTITY attribute value is not valid for column 'VERSION_STAMP'.
+             -->
+            <column name="version_stamp" type="BIGINT(19)" defaultValueComputed="9223372036854775807">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropDefaultValue tableName="solution_kit_meta" columnName="version_stamp" />
+            <dropColumn tableName="solution_kit_meta" columnName="version_stamp" />
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

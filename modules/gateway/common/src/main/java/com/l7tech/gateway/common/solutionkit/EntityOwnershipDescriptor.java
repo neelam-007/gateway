@@ -21,22 +21,39 @@ import javax.persistence.*;
 @Table(name="solution_kit_meta")
 public class EntityOwnershipDescriptor extends PersistentEntityImp {
 
+    /**
+     * A {@code version_stamp} indicating that this entity descriptor is "owning" entity {@code read_only} flag.
+     * There is no higher long value that can be set.
+     */
+    public static final long OWNED_STAMP = Long.MAX_VALUE;
+
     private SolutionKit solutionKit;
     private String entityId;
     private EntityType entityType;
     private boolean readOnly = false;
+    /**
+     * Entity {@code version_stamp} is used to determine which readonly flag has priority, when the same entity (i.e. {@code entityId})
+     * is owned by multiple kits.<br/>
+     * Higher version number have priority over lower versions.
+     */
+    private long versionStamp = OWNED_STAMP;
     // When adding fields, update copyFrom() method
 
     @Deprecated
     @SuppressWarnings("unused")
     protected EntityOwnershipDescriptor() {}
 
-    public EntityOwnershipDescriptor(@NotNull SolutionKit solutionKit, @NotNull String entityId,
-                                     @NotNull EntityType entityType, boolean readOnly) {
+    public EntityOwnershipDescriptor(
+            @NotNull final SolutionKit solutionKit,
+            @NotNull final String entityId,
+            @NotNull final EntityType entityType,
+            final boolean readOnly
+    ) {
         this.solutionKit = solutionKit;
         this.entityId = entityId;
         this.entityType = entityType;
         this.readOnly = readOnly;
+        this.versionStamp = OWNED_STAMP;
     }
 
     @ManyToOne(optional=false)
@@ -53,6 +70,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         return entityId;
     }
     public void setEntityId(@NotNull final String entityId) {
+        checkLocked();
         this.entityId = entityId;
     }
 
@@ -62,6 +80,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         return entityType;
     }
     public void setEntityType(@NotNull final EntityType entityType) {
+        checkLocked();
         this.entityType = entityType;
     }
 
@@ -70,7 +89,25 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         return readOnly;
     }
     public void setReadOnly(final boolean readOnly) {
+        checkLocked();
         this.readOnly = readOnly;
+    }
+
+    @Column(name="version_stamp", nullable = false)
+    public long getVersionStamp() {
+        return versionStamp;
+    }
+    public void setVersionStamp(final long versionStamp) {
+        checkLocked();
+        this.versionStamp = versionStamp;
+    }
+
+    /**
+     * Mark that this entity descriptor is "owning" entity read_only flag, by setting its version_stamp to max long.
+     */
+    public void markAsOwned() {
+        checkLocked();
+        this.versionStamp = OWNED_STAMP;
     }
 
     /**
@@ -90,6 +127,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         setEntityId(otherDescriptor.getEntityId());
         setEntityType(otherDescriptor.getEntityType());
         setReadOnly(otherDescriptor.isReadOnly());
+        setVersionStamp(otherDescriptor.getVersionStamp());
     }
 
     /**
@@ -121,7 +159,8 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         // there is no need to check for owner solutionKit equality (pattern from other entities see Role->Permissions)
         return !(entityId != null ? !entityId.equals(that.entityId) : that.entityId != null)
                 && entityType == that.entityType
-                && readOnly == that.readOnly;
+                && readOnly == that.readOnly
+                && versionStamp == that.versionStamp;
     }
 
     @Override
@@ -131,6 +170,7 @@ public class EntityOwnershipDescriptor extends PersistentEntityImp {
         result = 31 * result + (entityId != null ? entityId.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
         result = 31 * result + Boolean.hashCode(readOnly);
+        result = 31 * result + Long.hashCode(versionStamp);
         return result;
     }
 }

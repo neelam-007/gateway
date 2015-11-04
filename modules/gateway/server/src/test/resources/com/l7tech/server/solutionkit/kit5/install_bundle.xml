@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+      Solution Kit5 (SK5):
+
+      Creates one folder (in the root folder) a fragment and a service (using the fragment), both inside the newly created folder.
+
+      Type     | Name           | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER   | test           | 57eac30c4a5648db1f90617a721642fd | true
+      POLICY   | testFragment1  | 57eac30c4a5648db1f90617a72164391 | true
+      SERVICE  | test01         | 57eac30c4a5648db1f90617a72164341 | true
+
+      Upgrade:
+      Type     | Name           | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER   | test           | 57eac30c4a5648db1f90617a721642fd | false
+      POLICY   | testFragment1  | 57eac30c4a5648db1f90617a72164391 | false
+      SERVICE  | test01         | 57eac30c4a5648db1f90617a72164341 | false
+
+      Uninstall:
+       * nothing is deleted
+-->
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>test</l7:Name>
+            <l7:Id>57eac30c4a5648db1f90617a721642fd</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2015-11-02T14:34:51.576-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="57eac30c4a5648db1f90617a721642fd" version="0">
+                    <l7:Name>test</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>testFragment1</l7:Name>
+            <l7:Id>57eac30c4a5648db1f90617a72164391</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2015-11-02T14:34:51.582-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Policy guid="a353a876-badb-4c65-ac12-ae4471f04062" id="57eac30c4a5648db1f90617a72164391" version="2">
+                    <l7:PolicyDetail folderId="57eac30c4a5648db1f90617a721642fd" guid="a353a876-badb-4c65-ac12-ae4471f04062" id="57eac30c4a5648db1f90617a72164391" version="2">
+                        <l7:Name>testFragment1</l7:Name>
+                        <l7:PolicyType>Include</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>3</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                &lt;L7p:AuditAssertion&gt;
+                                &lt;L7p:SaveRequest booleanValue=&quot;true&quot;/&gt;
+                                &lt;L7p:SaveResponse booleanValue=&quot;true&quot;/&gt;
+                                &lt;/L7p:AuditAssertion&gt;
+                                &lt;L7p:AuditDetailAssertion&gt;
+                                &lt;L7p:Detail stringValue=&quot;Policy Fragment: testFragment1&quot;/&gt;
+                                &lt;/L7p:AuditDetailAssertion&gt;
+                                &lt;L7p:SetVariable&gt;
+                                &lt;L7p:Base64Expression stringValue=&quot;ZnJvbSB0ZXN0RnJhZ21lbnQx&quot;/&gt;
+                                &lt;L7p:VariableToSet stringValue=&quot;var1&quot;/&gt;
+                                &lt;/L7p:SetVariable&gt;
+                                &lt;/wsp:All&gt;
+                                &lt;/wsp:Policy&gt;
+                            </l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>test01</l7:Name>
+            <l7:Id>57eac30c4a5648db1f90617a72164341</l7:Id>
+            <l7:Type>SERVICE</l7:Type>
+            <l7:TimeStamp>2015-11-02T14:34:51.618-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Service id="57eac30c4a5648db1f90617a72164341" version="2">
+                    <l7:ServiceDetail folderId="57eac30c4a5648db1f90617a721642fd" id="57eac30c4a5648db1f90617a72164341" version="2">
+                        <l7:Name>test01</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                        <l7:ServiceMappings>
+                            <l7:HttpMapping>
+                                <l7:UrlPattern>/test01</l7:UrlPattern>
+                                <l7:Verbs>
+                                    <l7:Verb>GET</l7:Verb>
+                                    <l7:Verb>POST</l7:Verb>
+                                    <l7:Verb>PUT</l7:Verb>
+                                    <l7:Verb>DELETE</l7:Verb>
+                                </l7:Verbs>
+                            </l7:HttpMapping>
+                        </l7:ServiceMappings>
+                        <l7:Properties>
+                            <l7:Property key="internal">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="policyRevision">
+                                <l7:LongValue>3</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="tracingEnabled">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="wssProcessingEnabled">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:ServiceDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy" version="2">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                &lt;L7p:AuditAssertion&gt;
+                                &lt;L7p:SaveRequest booleanValue=&quot;true&quot;/&gt;
+                                &lt;L7p:SaveResponse booleanValue=&quot;true&quot;/&gt;
+                                &lt;/L7p:AuditAssertion&gt;
+                                &lt;L7p:Include&gt;
+                                &lt;L7p:PolicyGuid stringValue=&quot;a353a876-badb-4c65-ac12-ae4471f04062&quot;/&gt;
+                                &lt;/L7p:Include&gt;
+                                &lt;L7p:HardcodedResponse&gt;
+                                &lt;L7p:Base64ResponseBody stringValue=&quot;JHt2YXIxfQ==&quot;/&gt;
+                                &lt;L7p:ResponseContentType stringValue=&quot;text/plain; charset=UTF-8&quot;/&gt;
+                                &lt;/L7p:HardcodedResponse&gt;
+                                &lt;/wsp:All&gt;
+                                &lt;/wsp:Policy&gt;
+                            </l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Service>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="http://127.0.0.1:8080/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="57eac30c4a5648db1f90617a721642fd" srcUri="http://127.0.0.1:8080/restman/1.0/folders/57eac30c4a5648db1f90617a721642fd" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="57eac30c4a5648db1f90617a72164391" srcUri="http://127.0.0.1:8080/restman/1.0/policies/57eac30c4a5648db1f90617a72164391" type="POLICY">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="57eac30c4a5648db1f90617a72164341" srcUri="http://127.0.0.1:8080/restman/1.0/services/57eac30c4a5648db1f90617a72164341" type="SERVICE">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>

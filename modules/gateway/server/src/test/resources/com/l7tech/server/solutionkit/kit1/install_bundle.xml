@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+      Solution Kit1 (SK1):
+
+      Creates 3 folders in the root folder.
+      Ownership is taken over (i.e. action Delete followed by AlwaysCreateNew)
+
+      Install:
+      Type    | Name     | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER  | Folder1  | 12acd9006a6f7d2ea9b992f3882e98c2 | true
+      FOLDER  | Folder2  | 12acd9006a6f7d2ea9b992f3882e9904 | false
+      FOLDER  | Folder3  | 12acd9006a6f7d2ea9b992f3882e9945 | false
+
+      Upgrade:
+      Type    | Name     | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER  | Folder1  | 12acd9006a6f7d2ea9b992f3882e98c2 | true
+      FOLDER  | Folder2  | 12acd9006a6f7d2ea9b992f3882e9904 | true
+      FOLDER  | Folder3  | 12acd9006a6f7d2ea9b992f3882e9945 | true
+
+      Uninstall:
+       * nothing is deleted
+-->
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>Folder1</l7:Name>
+            <l7:Id>12acd9006a6f7d2ea9b992f3882e98c2</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2015-10-13T12:26:38.025-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="12acd9006a6f7d2ea9b992f3882e98c2" version="1">
+                    <l7:Name>Folder1</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>Folder2</l7:Name>
+            <l7:Id>12acd9006a6f7d2ea9b992f3882e9904</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2015-10-13T12:26:38.025-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="12acd9006a6f7d2ea9b992f3882e9904" version="5">
+                    <l7:Name>Folder2</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>Folder3</l7:Name>
+            <l7:Id>12acd9006a6f7d2ea9b992f3882e9945</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2015-10-13T12:26:38.025-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="12acd9006a6f7d2ea9b992f3882e9945" version="5">
+                    <l7:Name>Folder3</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="http://localhost:8080/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e98c2" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e98c2" type="FOLDER"/>
+        <l7:Mapping action="AlwaysCreateNew" srcId="12acd9006a6f7d2ea9b992f3882e98c2" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e98c2" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e9904" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9904" type="FOLDER"/>
+        <l7:Mapping action="AlwaysCreateNew" srcId="12acd9006a6f7d2ea9b992f3882e9904" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9904" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>false</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e9945" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9945" type="FOLDER"/>
+        <l7:Mapping action="AlwaysCreateNew" srcId="12acd9006a6f7d2ea9b992f3882e9945" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9945" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>false</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>

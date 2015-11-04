@@ -247,6 +247,14 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                 !OperationType.READ.equals( attemptedOperation ) &&
                 protectedEntityTracker.isEntityProtectionEnabled() &&
                 protectedEntityTracker.isReadOnlyEntity( entity ) ) {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(
+                        Level.FINEST,
+                        "Denying " + (OperationType.OTHER.equals(attemptedOperation) ? OperationType.OTHER.name() + ":[" + otherOperationName + "]" : attemptedOperation.name())
+                                + " access to Read-Only Entity: " + entity.getId()
+                                + " of Type: " + EntityType.findTypeByEntity(entity.getClass()).name()
+                );
+            }
             return false;
         }
 

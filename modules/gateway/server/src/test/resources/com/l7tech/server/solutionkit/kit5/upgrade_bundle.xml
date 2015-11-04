@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+      Solution Kit5 (SK5):
+
+      Creates one folder (in the root folder) a fragment and a service (using the fragment), both inside the newly created folder.
+
+      Type     | Name           | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER   | test           | 57eac30c4a5648db1f90617a721642fd | true
+      POLICY   | testFragment1  | 57eac30c4a5648db1f90617a72164391 | true
+      SERVICE  | test01         | 57eac30c4a5648db1f90617a72164341 | true
+
+      Upgrade:
+      Type     | Name           | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER   | test           | 57eac30c4a5648db1f90617a721642fd | false
+      POLICY   | testFragment1  | 57eac30c4a5648db1f90617a72164391 | false
+      SERVICE  | test01         | 57eac30c4a5648db1f90617a72164341 | false
+
+      Uninstall:
+       * nothing is deleted
+-->
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Mappings>
+        <l7:Mapping action="NewOrUpdate" srcId="57eac30c4a5648db1f90617a721642fd" srcUri="http://127.0.0.1:8080/restman/1.0/folders/57eac30c4a5648db1f90617a721642fd" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>false</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrUpdate" srcId="57eac30c4a5648db1f90617a72164391" srcUri="http://127.0.0.1:8080/restman/1.0/policies/57eac30c4a5648db1f90617a72164391" type="POLICY">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>false</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrUpdate" srcId="57eac30c4a5648db1f90617a72164341" srcUri="http://127.0.0.1:8080/restman/1.0/services/57eac30c4a5648db1f90617a72164341" type="SERVICE">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>false</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>

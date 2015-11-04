@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+      Solution Kit1 (SK1):
+
+      Creates 3 folders in the root folder.
+      Ownership is taken over (i.e. action Delete followed by AlwaysCreateNew)
+
+      Install:
+      Type    | Name     | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER  | Folder1  | 12acd9006a6f7d2ea9b992f3882e98c2 | true
+      FOLDER  | Folder2  | 12acd9006a6f7d2ea9b992f3882e9904 | false
+      FOLDER  | Folder3  | 12acd9006a6f7d2ea9b992f3882e9945 | false
+
+      Upgrade:
+      Type    | Name     | Goid                             | Read-Only
+      ==================================================================================================================
+      FOLDER  | Folder1  | 12acd9006a6f7d2ea9b992f3882e98c2 | true
+      FOLDER  | Folder2  | 12acd9006a6f7d2ea9b992f3882e9904 | true
+      FOLDER  | Folder3  | 12acd9006a6f7d2ea9b992f3882e9945 | true
+
+      Uninstall:
+       * nothing is deleted
+-->
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="12acd9006a6f7d2ea9b992f3882e98c2" srcUri="http://jk91-01.ca.com:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e98c2" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="12acd9006a6f7d2ea9b992f3882e9904" srcUri="http://jk91-01.ca.com:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9904" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="12acd9006a6f7d2ea9b992f3882e9945" srcUri="http://jk91-01.ca.com:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9945" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_ReadOnlyEntity"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>
