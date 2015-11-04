@@ -42,6 +42,7 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
     private JCheckBox validateMethodCheckBox;
     private JCheckBox validateSchemeCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
+    private JLabel credentialsWarningLabel;
 
     public SwaggerServiceConfigurationPanel(WizardStepPanel<SwaggerServiceConfig> next) {
         super(next);
@@ -56,6 +57,21 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
         setLayout(new BorderLayout());
 
         add(contentPanel);
+
+        // add a bold, red warning label that is visible when "Require Security Credentials to be Present" is checked
+        credentialsWarningLabel.setVisible(false);
+        credentialsWarningLabel.setForeground(Color.RED);
+        Font warningFont = credentialsWarningLabel.getFont()
+                .deriveFont(Font.BOLD, credentialsWarningLabel.getFont().getSize() - 1);
+        credentialsWarningLabel.setFont(warningFont);
+        credentialsWarningLabel.setText(resources.getString("credentialsWarning"));
+
+        requireSecurityCredentialsToCheckBox.addChangeListener(new RunOnChangeListener() {
+            @Override
+            protected void run() {
+                credentialsWarningLabel.setVisible(requireSecurityCredentialsToCheckBox.isSelected());
+            }
+        });
 
         gatewayUrlPrefixLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]");
 
@@ -196,9 +212,6 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
 
     @Override
     public void storeSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
-
-
-
         settings.setServiceName(serviceNameTextField.getText().trim());
         settings.setApiHost(apiHostTextField.getText().trim());
         settings.setApiBasePath(apiBasePathTextField.getText().trim());
