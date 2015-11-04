@@ -603,6 +603,9 @@ public class SolutionKitManagerResource {
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
+        final Set<String> uninstallSuccessMessages = new HashSet<>();
+        final Set<String> errorMessages = new HashSet<>();
+
         try {
             if (StringUtils.isEmpty(deleteGuidIM)) {
                 // HTTP DELETE, using 404 not found to be consistent with other restman resources
@@ -637,13 +640,23 @@ public class SolutionKitManagerResource {
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
             if (isParent) {
-                int numOfUninstalled = 0;
-
-                // No child list specified means uninstall all child solution kits.
-                if (childGuidIMList == null || childGuidIMList.isEmpty()) {
+                // No child list and no instance modifier specified means uninstall all child solution kits.
+                if ((childGuidIMList == null || childGuidIMList.isEmpty()) && isBlank(instanceModifier)) {
                     for (SolutionKit child: childrenList) {
                         solutionKitAdminHelper.uninstall(child.getGoid());
-                        numOfUninstalled++;
+                        uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid:" + child.getSolutionKitGuid() + lineSeparator());
+                    }
+                }
+                // No child list and instance modifier specified means uninstall all child kits with the instance modifier
+                else if ((childGuidIMList == null || childGuidIMList.isEmpty())) {
+                    for (SolutionKit child: childrenList) {
+                        if (StringUtils.equals(child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY),instanceModifier)) {
+                            solutionKitAdminHelper.uninstall(child.getGoid());
+                            uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid:" + child.getSolutionKitGuid() + lineSeparator());
+                        } else {
+                            errorMessages.add("Uninstall failed: Cannot find any child solution kit matching the GUID '" + child.getSolutionKitGuid() + "' and instance modifier '" +
+                                    instanceModifier + "'" + lineSeparator());
+                        }
                     }
                 }
                 // Otherwise, uninstall specified child solution kits.
@@ -662,46 +675,46 @@ public class SolutionKitManagerResource {
 
                         // If the solutionKitSelect specifies an invalid guid, then report this error
                         if (! childGuids.contains(guid)) {
-                            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Uninstall failed: Cannot any child solution kit matching the GUID '" + guid + "' specified in the parameter 'solutionKitSelect'" + lineSeparator()).build());
+                            errorMessages.add("Uninstall failed: Cannot find any child solution kit matching the GUID '" + guid + "' specified in the parameter 'solutionKitSelect'" + lineSeparator() );
+                            continue;
                         }
 
-                        // Firstly check if individual instance modifier is specified.
-                        // The individual instance modifier will override the global instance modifier.
-                        String finalIM;
-                        if (StringUtils.isNotBlank(individualInstanceModifier)) {
-                            finalIM = individualInstanceModifier;
-                        }
-                        // Secondly check if global instance modifier is specified.
-                        else if (StringUtils.isNotBlank(instanceModifier)) {
-                            finalIM = instanceModifier;
-                        }
-                        // By default
-                        else {
-                            finalIM = null;
-                        }
+                        String finalIM = getInstanceModifier(instanceModifier, individualInstanceModifier);
                         selectedSolutionKit = solutionKitManager.findBySolutionKitGuidAndIM(guid, finalIM);
 
                         if (selectedSolutionKit == null) {
                             final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + guid +
-                                "',  Instance Modifier = '" + InstanceModifier.getDisplayName(finalIM) + "') for uninstall.";
+                                "',  Instance Modifier = '" + InstanceModifier.getDisplayName(finalIM) + "') for uninstall." + lineSeparator();
                             logger.warning(warningMsg);
-                            return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
+                            errorMessages.add(warningMsg);
+                        } else {
+                            solutionKitAdminHelper.uninstall(selectedSolutionKit.getGoid());
+                            String uninstallMessage = "Successfully uninstalled child solution kit with guid: " + selectedSolutionKit.getSolutionKitGuid() +
+                                    (StringUtils.isBlank(finalIM)? lineSeparator() : " and instance modifier: " + finalIM + lineSeparator());
+                            uninstallSuccessMessages.add(uninstallMessage);
                         }
-
-
-                        solutionKitAdminHelper.uninstall(selectedSolutionKit.getGoid());
-                        numOfUninstalled++;
                     }
                 }
 
+                // if no child solution kits were uninstalled, return 404 error
+                if (uninstallSuccessMessages.isEmpty()) {
+                    String errors = "UNINSTALL ERRORS:" + lineSeparator();
+                    for(String error : errorMessages) {
+                        errors += error;
+                    }
+                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(errors).build());
+                }
+
                 // Delete the parent solution kit, after all children are deleted at the above step.
-                if (numOfUninstalled == childrenList.size()) {
+                if (uninstallSuccessMessages.size() == childrenList.size()) {
                     solutionKitManager.delete(solutionKitToUninstall.getGoid());
+                    uninstallSuccessMessages.add("Successfully uninstalled parent solution kit with guid: " + solutionKitToUninstall.getSolutionKitGuid() + lineSeparator());
                 }
             }
             // Uninstall a non-parent solution kit
             else {
                 solutionKitAdminHelper.uninstall(solutionKitToUninstall.getGoid());
+                uninstallSuccessMessages.add("Successfully uninstalled Solution kit with guid: " + solutionKitToUninstall.getSolutionKitGuid() + lineSeparator());
             }
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -711,7 +724,39 @@ public class SolutionKitManagerResource {
             return status(INTERNAL_SERVER_ERROR).entity(e.getMessage() + lineSeparator()).build();
         }
 
-        return Response.noContent().build();
+        //As long as some solution kits are uninstalled, return with OK status
+        String uninstallSuccesses = "Uninstalled solution kits:" + lineSeparator();
+        for (String success : uninstallSuccessMessages) {
+            uninstallSuccesses += success;
+        }
+
+        // show any errors in uninstall for selected solution kits
+        String uninstallErrors = "";
+        if(!(childGuidIMList == null || childGuidIMList.isEmpty()) && !errorMessages.isEmpty()) {
+            uninstallErrors = "Solution kits selected for uninstall that failed:" + lineSeparator();
+            for (String error: errorMessages) {
+                uninstallErrors += error;
+            }
+        }
+        return status(OK).entity(uninstallSuccesses + lineSeparator() + uninstallErrors).build();
+    }
+
+    private String getInstanceModifier(String globalInstanceModifier, String individualInstanceModifier) {
+        // Firstly check if individual instance modifier is specified.
+        // The individual instance modifier will override the global instance modifier.
+        String finalIM;
+        if (StringUtils.isNotBlank(individualInstanceModifier)) {
+            finalIM = individualInstanceModifier;
+        }
+        // Secondly check if global instance modifier is specified.
+        else if (StringUtils.isNotBlank(globalInstanceModifier)) {
+            finalIM = globalInstanceModifier;
+        }
+        // By default
+        else {
+            finalIM = null;
+        }
+        return finalIM;
     }
 
     // validate input params
