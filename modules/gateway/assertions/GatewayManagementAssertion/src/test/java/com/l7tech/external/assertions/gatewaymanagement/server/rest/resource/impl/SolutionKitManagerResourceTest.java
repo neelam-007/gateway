@@ -1091,7 +1091,7 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit1.getSolutionKitGuid(), "im1")).thenReturn(solutionKit1);
 
         //Test
-        solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+ "::im1", null);
+        Response resultResponse = solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+ "::im1", null);
 
         //Expect solutionKit1 to be uninstalled
         solutionKitsInManager = solutionKitManager.findAll();
@@ -1099,6 +1099,11 @@ public class SolutionKitManagerResourceTest {
         assertFalse(solutionKitsInManager.contains(solutionKit1));
         assertTrue(solutionKitsInManager.contains(solutionKit2));
         assertTrue(solutionKitsInManager.contains(solutionKit3));
+
+        //response to show solutionKit1 is uninstalled
+        assertEquals("Uninstalled solution kits:\n" +
+                "Successfully uninstalled Solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848999\n" +
+                "\n", resultResponse.getEntity());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate parent and all children are uninstalled successfully
@@ -1117,11 +1122,20 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
 
         //Test uninstall parent kit
-        solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),null);
+        resultResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),null);
 
         //expect all children and parent to be deleted
         solutionKitsInManager = solutionKitManager.findAll();
         assertEquals(solutionKitsInManager.size(), 0);
+
+        //response to show which solution kits are successfully uninstalled
+        assertEquals("Uninstalled solution kits:\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848999\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848988\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848977\n" +
+                "Successfully uninstalled parent solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848853\n" +
+                "\n", resultResponse.getEntity());
+
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate selected children are uninstalled
@@ -1142,75 +1156,130 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit2.getSolutionKitGuid(), "im2")).thenReturn(solutionKit2);
 
         //Test uninstall parent kit with specified child for uninstall
-        solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),childrenToUninstall);
+        resultResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),childrenToUninstall);
 
         //expect only parent kit and solutionkit3 to remain
         solutionKitsInManager = solutionKitManager.findAll();
         assertEquals(solutionKitsInManager.size(), 2);
         assertTrue(solutionKitsInManager.contains(solutionKit3));
         assertTrue(solutionKitsInManager.contains(parentSolutionKit));
+
+        //expect response to show which solution kits are successfully uninstalled
+        assertEquals("Uninstalled solution kits:\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848999 and instance modifier: im1\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848988 and instance modifier: im2\n" +
+                "\n", resultResponse.getEntity());
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //simulate selected children are uninstalled based on global instance modifier
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 4);
+
+        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
+
+        //Test uninstall all children with the instance modifier "im2", which is solutionKit2
+        resultResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid() + "::im2", null);
+
+        //expect only solutionKit2 to be removed
+        solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 3);
+        assertTrue(solutionKitsInManager.contains(solutionKit3));
+        assertTrue(solutionKitsInManager.contains(parentSolutionKit));
+        assertTrue(solutionKitsInManager.contains(solutionKit1));
+        assertFalse(solutionKitsInManager.contains(solutionKit2));
+
+        //expect response to show which solution kits are successfully uninstalled
+        assertEquals("Uninstalled solution kits:\n" +
+                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
+                "\n", resultResponse.getEntity());
     }
 
-//    @Test
-//    public void uninstallFail() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // solution kit to uninstall fields are empty
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //Test
-//        Response error = solutionKitResource.uninstall(null, null);
-//
-//        //expect solution kit id empty error
-//        assertEquals(error.getEntity(), "Solution Kit ID to uninstall is empty.\n");
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // cannot find solution kit GUID and IM
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        when(solutionKitManager.findBySolutionKitGuid(solutionKit1.getSolutionKitGuid())).thenReturn(Collections.singletonList(solutionKit1));
-//        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit1.getSolutionKitGuid(),"im2")).thenReturn(null);
-//
-//        //Test
-//        error = solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+"::im2", null);
-//
-//        //expect solution kit does not exist error
-//        assertEquals(error.getEntity(), "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
-//        "',  Instance Modifier = 'im2') for uninstall.\n");
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // no child with matching guid
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        final List<SolutionKit> childKits = new ArrayList<>(3);
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//        childKits.add(solutionKit3);
-//
-//        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
-//        solutionKitResource.setSolutionKitManager(solutionKitManager);
-//        Collection<SolutionKit> solutionKitsInManager = solutionKitManager.findAll();
-//        assertEquals(solutionKitsInManager.size(), 4);
-//
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
-//        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
-//
-//        //Test
-//        error = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList("NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555"));
-//
-//        //expect child kit selected to uninstall does not match any children from parent
-//        assertEquals(error.getEntity(), "Uninstall failed: Cannot any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555' specified in the parameter 'solutionKitSelect'\n");
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // no child with matching guid and IM
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //Test
-//        error = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList(solutionKit1.getSolutionKitGuid()+"::INVALID_IM"));
-//
-//        //expect child kit with IM selected does not match existing child kits
-//        assertEquals(error.getEntity(),"Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
-//                "',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
-//    }
+    @Test
+    public void uninstallFail() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // solution kit to uninstall fields are empty
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Test
+        Response errorResponse = solutionKitResource.uninstall(null, null);
+
+        //expect solution kit id empty error
+        assertEquals(errorResponse.getEntity(), "Solution Kit ID to uninstall is empty.\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // cannot find solution kit GUID and IM
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitManager.findBySolutionKitGuid(solutionKit1.getSolutionKitGuid())).thenReturn(Collections.singletonList(solutionKit1));
+
+        //Test
+        errorResponse = solutionKitResource.uninstall(solutionKit1.getSolutionKitGuid()+"::INVALID_IM", null);
+
+        //expect solution kit does not exist error
+        assertEquals(errorResponse.getEntity(), "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
+        "',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // no child with matching guid
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        final List<SolutionKit> childKits = new ArrayList<>(3);
+        childKits.add(solutionKit1);
+        childKits.add(solutionKit2);
+        childKits.add(solutionKit3);
+
+        solutionKitManager = Mockito.spy(new SolutionKitManagerStub(parentSolutionKit, solutionKit1, solutionKit2, solutionKit3));
+        solutionKitResource.setSolutionKitManager(solutionKitManager);
+        Collection<SolutionKit> solutionKitsInManager = solutionKitManager.findAll();
+        assertEquals(solutionKitsInManager.size(), 4);
+
+        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
+        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
+
+        //Test
+        errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList("NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555"));
+
+        //expect child kit selected to uninstall does not match any children from parent
+        assertEquals(errorResponse.getEntity(), "UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555' specified in the parameter 'solutionKitSelect'\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // no child with matching guid and IM
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Test
+        errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList(solutionKit1.getSolutionKitGuid()+"::INVALID_IM"));
+
+        //expect child kit with IM selected does not match existing child kits
+        assertEquals(errorResponse.getEntity(),"UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
+                "',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // when child kits are selected, show which child kits uninstalled successfully, and which have errors
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Children to uninstall
+        List<String> childrenToUninstall = new ArrayList<>();
+        childrenToUninstall.add(solutionKit1.getSolutionKitGuid()+"::INVALID_IM");
+        childrenToUninstall.add(solutionKit2.getSolutionKitGuid()+"::im2");
+
+        when(solutionKitManager.findBySolutionKitGuidAndIM(solutionKit2.getSolutionKitGuid(), "im2")).thenReturn(solutionKit2);
+
+        //Test
+        errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),childrenToUninstall);
+
+        //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
+        assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:\n" +
+                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848988 and instance modifier: im2\n" +
+                "\n" +
+                "Solution kits selected for uninstall that failed:\n" +
+                "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
+    }
 
     @Test
     public void selectSolutionKitsForInstallSuccess() throws Exception{

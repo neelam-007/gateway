@@ -575,9 +575,10 @@ public class SolutionKitManagerResource {
      * <ul>
      *     <li>Use a <code>DELETE</code> request.</li>
      *     <li>Specify the Solution Kit ID as a query parameter in the URL. The ID consists of two parts, solution kit GUID and instance modifier used. The two parts are separated by "::".</li>
-     *     <li>Three types of ID URL format:
+     *     <li>Four types of ID URL format:
      *          <ul>
      *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=[Non-Parent_GUID]::[IM]</li>
+     *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=[Parent_GUID]::[IM]</li>
      *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=[Parent_GUID]</li>
      *              <li>https://localhost:8443/restman/1.0/solutionKitManagers?id=[Parent_GUID]::[IM]&childId=[Child_1_GUID]::[IM1]...&childId=[Child_n_GUID]::[IMn]</li>
      *          </ul>
@@ -586,8 +587,9 @@ public class SolutionKitManagerResource {
      * In the URL, [IM] is an instance modifier, which combines with a GUID to find a unique solution kit. If [IM] is missed, then a default instance modifier (empty value) will be used.
      * <ul>
      *     <li>Use the type (1), if deleting a single non-parent solution kit.</li>
-     *     <li>Use the type (2), if deleting all child solution kits.</li>
-     *     <li>Use the type (3), if deleting some of child solution kits. Each individual instance modifier [IMx] will overwrite the global instance modifier [IM]. If individual solution kits don't specify [IMx], then the global instance modifier will be used.</li>
+     *     <li>Use the type (2), if deleting all child solution kits with the specified instance modifier.</li>
+     *     <li>Use the type (3), if deleting all child solution kits.</li>
+     *     <li>Use the type (4), if deleting some of child solution kits. Each individual instance modifier [IMx] will overwrite the global instance modifier [IM]. If individual solution kits don't specify [IMx], then the global instance modifier will be used.</li>
      * </ul>
      *
      * @param deleteGuidIM Solution kit GUID and instance modifier of a single solution kit or a collection of solution kits to delete.
@@ -603,8 +605,8 @@ public class SolutionKitManagerResource {
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
-        final Set<String> uninstallSuccessMessages = new HashSet<>();
-        final Set<String> errorMessages = new HashSet<>();
+        final List<String> uninstallSuccessMessages = new ArrayList<>();
+        final List<String> errorMessages = new ArrayList<>();
 
         try {
             if (StringUtils.isEmpty(deleteGuidIM)) {
@@ -644,7 +646,7 @@ public class SolutionKitManagerResource {
                 if ((childGuidIMList == null || childGuidIMList.isEmpty()) && isBlank(instanceModifier)) {
                     for (SolutionKit child: childrenList) {
                         solutionKitAdminHelper.uninstall(child.getGoid());
-                        uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid:" + child.getSolutionKitGuid() + lineSeparator());
+                        uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: " + child.getSolutionKitGuid() + lineSeparator());
                     }
                 }
                 // No child list and instance modifier specified means uninstall all child kits with the instance modifier
@@ -652,9 +654,10 @@ public class SolutionKitManagerResource {
                     for (SolutionKit child: childrenList) {
                         if (StringUtils.equals(child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY),instanceModifier)) {
                             solutionKitAdminHelper.uninstall(child.getGoid());
-                            uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid:" + child.getSolutionKitGuid() + lineSeparator());
+                            uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: '" + child.getSolutionKitGuid() + "' and instance modifier: '" +
+                                    instanceModifier + "'" + lineSeparator());
                         } else {
-                            errorMessages.add("Uninstall failed: Cannot find any child solution kit matching the GUID '" + child.getSolutionKitGuid() + "' and instance modifier '" +
+                            errorMessages.add("Uninstall failed: Cannot find any child solution kit matching the GUID '" + child.getSolutionKitGuid() + "' and instance modifier: '" +
                                     instanceModifier + "'" + lineSeparator());
                         }
                     }
