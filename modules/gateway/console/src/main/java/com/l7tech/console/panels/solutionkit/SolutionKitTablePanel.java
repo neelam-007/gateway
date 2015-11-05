@@ -257,7 +257,7 @@ public class SolutionKitTablePanel extends JPanel {
      */
     void insertChildren(SolutionKitHeader parent) {
         try {
-            final List<SolutionKitHeader> allChildren = (List<SolutionKitHeader>) solutionKitAdmin.findAllChildrenByParentGoid(parent.getGoid());
+            final List<SolutionKitHeader> allChildren = (List<SolutionKitHeader>) solutionKitAdmin.findHeaders(parent.getGoid());
             Collections.sort(allChildren);
 
             int index = solutionKitsDisplayed.indexOf(parent);

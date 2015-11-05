@@ -195,15 +195,14 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         return success;
     }
 
-    private Mappings testInstall (final SolutionKit solutionKit, final String bundle, final boolean isUpgrade)
-            throws Throwable {
+    private Mappings testInstall(final SolutionKit solutionKit, final String bundle, final boolean isUpgrade) throws Throwable {
 
         final String result = AdminGuiUtils.doAsyncAdminWithException(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Testing Solution Kit",
                 "The gateway is testing selected solution kit(s)",
-                solutionKitAdmin.testInstall(solutionKit, bundle, isUpgrade),
+                solutionKitAdmin.testInstallAsync(solutionKit, bundle, isUpgrade),
                 false);
 
         Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));

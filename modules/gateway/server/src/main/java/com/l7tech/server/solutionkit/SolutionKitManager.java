@@ -40,7 +40,7 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
     SolutionKit findBySolutionKitGuidAndIM(@NotNull final String solutionKitGuid, @Nullable String instanceModifier) throws FindException;
 
 
-    // TODO: ghuang; consider to deprecate this method and use {@link #findAllChildrenByParentGoid(com.l7tech.objectmodel.Goid)}
+    // TODO: ghuang; consider to deprecate this method and use {@link #findHeaders(com.l7tech.objectmodel.Goid)}
     // TODO: as in most of the cases the caller will get the {@link com.l7tech.gateway.common.solutionkit.SolutionKit} object anyways
     // TODO: which eventually will produce way more DB traffic and transactions
 

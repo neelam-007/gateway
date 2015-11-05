@@ -103,9 +103,9 @@ public class SkarProcessor {
     }
 
     /**
-     * Install or upgrade the SKAR
+     * Get solution kit from the SKAR for install or upgrade.
      */
-    public Triple<SolutionKit, String, Boolean> installOrUpgrade(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
+    public Triple<SolutionKit, String, Boolean> installOrUpgrade(@NotNull final SolutionKit solutionKit) throws SolutionKitException {   // TODO (TL refactor) rename to getAsSolutionKit() ?
         // Update resolved mapping target IDs.
         solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
 
@@ -351,7 +351,7 @@ public class SkarProcessor {
             }
 
             //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
-            //a Map of installMappings - each one identifiable by soltuionKitGuid.  We're storing a handle to these initial installmappings
+            //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings
             //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
             //the original and warn the user
             final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings(solutionKit.getSolutionKitGuid());
@@ -424,7 +424,6 @@ public class SkarProcessor {
         return classLoader;
     }
 
-    // may need to move class loading logic to the server (i.e. admin) for headless to work
     void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
         if (classLoader != null) {
             try {

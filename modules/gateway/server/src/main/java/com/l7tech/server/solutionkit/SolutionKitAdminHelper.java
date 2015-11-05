@@ -2,10 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
@@ -17,6 +14,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.SignatureException;
 import java.util.*;
 import java.util.logging.Level;
@@ -28,7 +26,7 @@ import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPP
 /**
  * This helper holds common logic used in more than one place (i.e. SolutionKitAdminImpl, SolutionKitManagerResource).
  */
-public class SolutionKitAdminHelper {
+public class SolutionKitAdminHelper implements SolutionKitAdmin {
     private static final Logger logger = Logger.getLogger(SolutionKitAdminHelper.class.getName());
 
     private final SolutionKitManager solutionKitManager;
@@ -41,47 +39,38 @@ public class SolutionKitAdminHelper {
         this.signatureVerifier = signatureVerifier;
     }
 
-    /**
-     * Retrieve all child solution kit headers, whose parent's GOID is the same as a given parentGoid.
-     *
-     * @return a collection of child solution kits associated with parentGoid.
-     * @throws FindException
-     */
+    public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
+        signatureVerifier.verify(digest, signatureProperties);
+    }
+
     @NotNull
-    public Collection<SolutionKitHeader> findAllChildrenHeadersByParentGoid(Goid parentGoid) throws FindException {
-        return solutionKitManager.findAllChildrenHeadersByParentGoid(parentGoid);
+    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) throws FindException {   // TODO (TL refactor) looks out of place?
+        final List<SolutionKit> skList = new ArrayList<>();
+        if (solutionKit == null) return skList;
+
+        // Case 1:
+        final Goid parentGoid = solutionKit.getParentGoid();
+        if (parentGoid != null) {
+            final SolutionKit parent = get(parentGoid);
+            if (parent != null) {
+                skList.add(parent);
+            } else {
+                throw new FindException("The parent of a child solution kit '" + solutionKit.getName() + "' does not exist.");
+            }
+        }
+
+        // Case 1 + Case 2 + Case 3:
+        skList.add(solutionKit);
+
+        // Case 3:
+        final Collection<SolutionKit> children = find(solutionKit.getGoid());
+        for (final SolutionKit child: children) {
+            skList.add(child);
+        }
+
+        return skList;
     }
 
-    /**
-     * Retrieve all child solution kits, whose parent's GOID is the same as a given parentGoid.
-     *
-     * @return a collection of child solution kits associated with parentGoid.
-     * @throws FindException
-     */
-    @NotNull
-    public Collection<SolutionKit> findAllChildrenByParentGoid(Goid parentGoid) throws FindException {
-        return solutionKitManager.findAllChildrenByParentGoid(parentGoid);
-    }
-
-    /**
-     * Retrieve solution kit entity with the given ID.
-     *
-     * @param goid the ID of solution kit entity
-     * @return the solution kit entity
-     * @throws FindException
-     */
-    public SolutionKit get(@NotNull Goid goid) throws FindException {
-        return solutionKitManager.findByPrimaryKey(goid);
-    }
-
-    /**
-     * Test installation for the given bundle.
-     *
-     * @param solutionKit the solution kit to test
-     * @param bundle the bundle XML to test
-     * @param isUpgrade indicate if the soluton kit is to be upgraded or installed.
-     * @return the resulting mapping XML
-     */
     @NotNull
     public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
@@ -90,14 +79,19 @@ public class SolutionKitAdminHelper {
         return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
 
-    /**
-     * Install the given solution kit.
-     *
-     * @param solutionKit the solution kit to install
-     * @param bundle the bundle XML to install
-     * @param isUpgrade true if this is a upgrade install; false for new first time install
-     * @return the saved solution kit entity ID
-     */
+    private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
+        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
+            throw new ForbiddenException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
+        }
+    }
+
+    @NotNull
+    @Override
+    public JobId<String> testInstallAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
+        throw new UnsupportedOperationException();
+    }
+
     @NotNull
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
@@ -129,12 +123,42 @@ public class SolutionKitAdminHelper {
         }
     }
 
+    @NotNull
+    @Override
+    public JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
-     * Uninstall solution kit identified by the given ID.
-     *
-     * @param goid the ID of solution kit entity
-     * @return an empty string
+     * After a new instance of a solution kit is installed and an instance modifier might be specified, the entity mappings
+     * will contains targetId to replace srcId. In this case, the original uninstall mappings should be updated based on
+     * the given entity mappings.
      */
+    private String updateUninstallBundleBySettingTargetIds(@NotNull final String uninstallBundle, @NotNull final String resultMappings) throws SAXException, IOException {
+        final Map<String, String> idsMap = new HashMap<>();
+        String srcId, targetId;
+
+        // Find all matches of srdId and targetId in result mappings and save them in a map.
+        final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
+        for (Element element: mappingsMsg.getMappings()) {
+            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+            targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
+            if (!StringUtils.isEmpty(srcId) && !StringUtils.isEmpty(targetId))
+                idsMap.put(srcId, targetId);
+        }
+
+        // Add targetId in the uninstall mappings
+        final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
+        for (Element element: uninstallMappingsMsg.getMappings()) {
+            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+            if (idsMap.containsKey(srcId)) {
+                element.setAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE, idsMap.get(srcId));
+            }
+        }
+
+        return uninstallMappingsMsg.getAsString();
+    }
+
     @NotNull
     public String uninstall(@NotNull final Goid goid) throws Exception {
         final boolean isTest = false;
@@ -170,55 +194,10 @@ public class SolutionKitAdminHelper {
         return resultMappings;
     }
 
-    /**
-     * Checks signature and also verifies that signer cert is trusted.
-     *
-     * @param digest                 SHA-256 digest of the raw input material (i.e. Skar file raw bytes).  Required and cannot be {@code null}.
-     *                               Note: this MUST NOT just be the value claimed by the sender -- it must be a freshly
-     *                               computed value from hashing the information covered by the signature.
-     * @param signatureProperties    Signature properties reader, holding ASN.1 encoded X.509 certificate as Base64 string
-     *                               and ASN.1 encoded signature value as Base64 string.
-     * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
-     */
-    public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
-        signatureVerifier.verify(digest, signatureProperties);
-    }
-
-    /**
-     * Get a list of solution kits for upgrade, depending on the following three cases:
-     * Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
-     * Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
-     * Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
-     *
-     * @param solutionKit: the selected solution kit, which user selects to upgrade.
-     * @return a list of solution kits for upgrade
-     */
     @NotNull
-    public List<SolutionKit> getSolutionKitsToUpgrade(@Nullable SolutionKit solutionKit) throws FindException {
-        final List<SolutionKit> skList = new ArrayList<>();
-        if (solutionKit == null) return skList;
-
-        // Case 1:
-        final Goid parentGoid = solutionKit.getParentGoid();
-        if (parentGoid != null) {
-            final SolutionKit parent = get(parentGoid);
-            if (parent != null) {
-                skList.add(parent);
-            } else {
-                throw new FindException("The parent of a child solution kit '" + solutionKit.getName() + "' does not exist.");
-            }
-        }
-
-        // Case 1 + Case 2 + Case 3:
-        skList.add(solutionKit);
-
-        // Case 3:
-        final Collection<SolutionKit> children = findAllChildrenByParentGoid(solutionKit.getGoid());
-        for (final SolutionKit child: children) {
-            skList.add(child);
-        }
-
-        return skList;
+    @Override
+    public JobId<String> uninstallAsync(@NotNull Goid goid) {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -235,7 +214,7 @@ public class SolutionKitAdminHelper {
      * @return true if validation is passed; Otherwise false returns.
      * @throws BadRequestException: any errors or rule violation will throw BadRequestException
      */
-    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {
+    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {  // TODO (TL refactor) can move?
         final Goid sourceGoid = sourceSK.getGoid();
         final String sourceGuid = sourceSK.getSolutionKitGuid();
 
@@ -280,11 +259,19 @@ public class SolutionKitAdminHelper {
         return true;
     }
 
-    private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
-        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
-        if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
-            throw new ForbiddenException(solutionKit.getName() + " is unlicensed.  Required feature set " + featureSet);
-        }
+    @Override
+    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -411,33 +398,41 @@ public class SolutionKitAdminHelper {
         solutionKit.addEntityOwnershipDescriptors(newOwnershipDescriptors);
     }
 
-    /**
-     * After a new instance of a solution kit is installed and an instance modifier might be specified, the entity mappings
-     * will contains targetId to replace srcId. In this case, the original uninstall mappings should be updated based on
-     * the given entity mappings.
-     */
-    private String updateUninstallBundleBySettingTargetIds(@NotNull final String uninstallBundle, @NotNull final String resultMappings) throws SAXException, IOException {
-        final Map<String, String> idsMap = new HashMap<>();
-        String srcId, targetId;
 
-        // Find all matches of srdId and targetId in result mappings and save them in a map.
-        final RestmanMessage mappingsMsg = new RestmanMessage(resultMappings);
-        for (Element element: mappingsMsg.getMappings()) {
-            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
-            targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
-            if (!StringUtils.isEmpty(srcId) && !StringUtils.isEmpty(targetId))
-                idsMap.put(srcId, targetId);
-        }
+    @NotNull
+    public Collection<SolutionKitHeader> findHeaders() throws FindException {
+        return solutionKitManager.findAllHeaders();
+    }
 
-        // Add targetId in the uninstall mappings
-        final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
-        for (Element element: uninstallMappingsMsg.getMappings()) {
-            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
-            if (idsMap.containsKey(srcId)) {
-                element.setAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE, idsMap.get(srcId));
-            }
-        }
+    @NotNull
+    public Collection<SolutionKitHeader> findHeaders(@NotNull final Goid parentGoid) throws FindException {
+        return solutionKitManager.findAllChildrenHeadersByParentGoid(parentGoid);
+    }
 
-        return uninstallMappingsMsg.getAsString();
+    @NotNull
+    public Collection<SolutionKit> find(@NotNull final Goid parentGoid) throws FindException {
+        return solutionKitManager.findAllChildrenByParentGoid(parentGoid);
+    }
+
+    @NotNull
+    public Collection<SolutionKit> find(@NotNull String solutionKitGuid) throws FindException {
+        return solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
+    }
+
+    public SolutionKit get(@NotNull Goid goid) throws FindException {
+        return solutionKitManager.findByPrimaryKey(goid);
+    }
+
+    @NotNull
+    public Goid save(@NotNull SolutionKit solutionKit) throws SaveException {
+        return solutionKitManager.save(solutionKit);
+    }
+
+    public void update(@NotNull SolutionKit solutionKit) throws UpdateException {
+        solutionKitManager.update(solutionKit);
+    }
+
+    public void delete(@NotNull Goid goid) throws FindException, DeleteException {
+        solutionKitManager.delete(goid);
     }
 }

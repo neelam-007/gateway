@@ -80,7 +80,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
         lastUpdatedFieldLabel.setText(new Date(solutionKit.getLastUpdateTime()).toString());
 
         try {
-            final Set<SolutionKitHeader> allChildren = new TreeSet<>(solutionKitAdmin.findAllChildrenByParentGoid(solutionKit.getGoid()));
+            final Set<SolutionKitHeader> allChildren = new TreeSet<>(solutionKitAdmin.findHeaders(solutionKit.getGoid()));
 
             if (allChildren.isEmpty()) {
                 // Maybe the solution kit is a parent solution kit, but it does not have any children.

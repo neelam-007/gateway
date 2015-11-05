@@ -12,17 +12,11 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,73 +78,35 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
-        final SolutionKit parentSKFromLoad = wizardInput.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
-        Goid parentGoid = null;
 
-        if (parentSKFromLoad != null) {
-            final List<SolutionKit> solutionKitsToUpgrade = wizardInput.getSolutionKitsToUpgrade();
-            final boolean isParentSKToUpgrade = (! solutionKitsToUpgrade.isEmpty()) && solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentSKFromLoad.getSolutionKitGuid());
+        // install or upgrade
+        try {
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(wizardInput, solutionKitAdmin, new SkarProcessor(wizardInput));
+            solutionKitProcessor.installOrUpgrade(errorKitList, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
 
-            try {
-                // Case 1: Parent for upgrade
-                if (isParentSKToUpgrade) {
-                    final SolutionKit parentSKFromDB = solutionKitsToUpgrade.get(0); // The first element is a real parent solution kit.
-                    parentGoid = parentSKFromDB.getGoid();
-                    // Update the parent solution kit attributes
-                    parentSKFromDB.setName(parentSKFromLoad.getName());
-                    parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
-                    parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
+                @Override
+                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Exception {
+                    Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
+                            solutionKitAdmin,
+                            InstallSolutionKitWizard.this.getOwner(),
+                            "Install Solution Kit",
+                            "The gateway is installing the selected solution kit, \"" + loaded.left.getName() + "\".",
+                            solutionKitAdmin.installAsync(loaded.left, loaded.middle, loaded.right),
+                            false);
 
-                    solutionKitAdmin.updateSolutionKit(parentSKFromDB);
-                }
-                // Case 2: Parent for install
-                else {
-                    final List<SolutionKit> solutionKitsExistingOnGateway = (List<SolutionKit>) solutionKitAdmin.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
-                    // Case 2.1: Find the parent already installed on gateway
-                    if (solutionKitsExistingOnGateway.size() > 0) {
-                        final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
-                        parentGoid = parentExistingOnGateway.getGoid();
-                        solutionKitAdmin.updateSolutionKit(parentExistingOnGateway);
-                    }
-                    // Case 2.2: No such parent installed on gateway
-                    else {
-                        parentGoid = solutionKitAdmin.saveSolutionKit(parentSKFromLoad);
+                    if (result.isLeft()) {
+                        // Solution kit failed to install.
+                        String msg = result.left();
+                        logger.log(Level.WARNING, msg);
+                        errorKitList.add(new Pair<>(msg, loaded.left));
                     }
                 }
-            } catch (Exception e) {
-                String msg = ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                errorKitList.add(new Pair<>(msg, parentSKFromLoad));
-            }
-        }
 
-        for (SolutionKit solutionKit: wizardInput.getSelectedSolutionKits()) {
-            if (parentSKFromLoad != null) {
-                solutionKit.setParentGoid(parentGoid);
-            }
-            try {
-                Triple<SolutionKit, String, Boolean> loaded = new SkarProcessor(wizardInput).installOrUpgrade(solutionKit);
-                Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
-                    solutionKitAdmin,
-                    this.getOwner(),
-                    "Install Solution Kit",
-                    "The gateway is installing the selected solution kit, \"" + solutionKit.getName() + "\".",
-                    solutionKitAdmin.install(loaded.left, loaded.middle, loaded.right),
-                    false);
-
-                if (result.isLeft()) {
-                    // Solution kit failed to install.
-                    String msg = result.left();
-                    logger.log(Level.WARNING, msg);
-                    errorKitList.add(new Pair<>(msg, solutionKit));
-                }
-            } catch (InterruptedException e) {
-                // user cancelled. do nothing.
-            } catch (Exception e) {
-                String msg = ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                errorKitList.add(new Pair<>(msg, solutionKit));
-            }
+            });
+        } catch (Exception e) {
+            final String msg = "Unable to install solution kit: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
         }
 
         // Display errors if applicable

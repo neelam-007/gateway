@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.signer.SignatureVerifier;
@@ -21,7 +20,6 @@ import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -311,66 +309,17 @@ public class SolutionKitManagerResource {
             // This step is to prevent partial installation/upgrade
             testBundleImports(solutionKitAdminHelper, solutionKitsConfig);
 
-            // Check if the loaded skar is a collection of skars
-            final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded();
-            Goid parentGoid = null;
+            // install or upgrade
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper, skarProcessor);
+            solutionKitProcessor.installOrUpgrade(null, null);
 
-            // Process parent solution kit first, if a parent solution kit is loaded.
-            if (parentSKFromLoad != null) {
-                // Case 1: Parent for upgrade
-                if (isUpgrade) {
-                    assert solutionKitsConfig.getSolutionKitsToUpgrade().size() > 0; // should always be grater then 0 as check is done above (early fail)
-                    final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitsToUpgrade().get(0);
-
-                    if (!parentSKFromLoad.getSolutionKitGuid().equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
-                        String warningMsg = "The query parameter 'id' (" + upgradeGuid + ") does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
-                        logger.warning(warningMsg);
-
-                        return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
-                    }
-
-                    // Update the parent solution kit attributes
-                    parentSKFromDB.setName(parentSKFromLoad.getName());
-                    parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
-                    parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
-
-                    parentGoid = parentSKFromDB.getGoid();
-                    solutionKitManager.update(parentSKFromDB);
-                }
-                // Case 2: Parent for install
-                else {
-                    final List<SolutionKit> solutionKitsExistingOnGateway = solutionKitManager.findBySolutionKitGuid(parentSKFromLoad.getSolutionKitGuid());
-                    // Case 2.1: Find the parent already installed on gateway
-                    if (solutionKitsExistingOnGateway.size() > 0) {
-                        final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.get(0);
-                        parentGoid = parentExistingOnGateway.getGoid();
-                        solutionKitManager.update(parentExistingOnGateway);
-                    }
-                    // Case 2.2: No such parent installed on gateway
-                    else {
-                        parentGoid = solutionKitManager.save(parentSKFromLoad);
-                    }
-                }
-            }
-
-            // install or upgrade skars
-            // After processing the parent, process selected solution kits if applicable.
-            for (SolutionKit solutionKit : selectedSolutionKits) {
-                // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
-                if (parentSKFromLoad != null) {
-                    solutionKit.setParentGoid(parentGoid);
-                }
-
-                Triple<SolutionKit, String, Boolean> triple = skarProcessor.installOrUpgrade(solutionKit);
-                solutionKitAdminHelper.install(triple.left, triple.middle, triple.right);
-            }
         } catch (AddendumBundleHandler.AddendumBundleException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
-        } catch (UntrustedSolutionKitException | SignatureException e) {
+        } catch (UntrustedSolutionKitException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (ForbiddenException e) {
@@ -475,7 +424,7 @@ public class SolutionKitManagerResource {
             // Install: if an existing solution kit is found as same as the target, fail install.
             // Upgrade: if the selected solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
             try {
-                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
+                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);   // TODO (TL refactor) can remove?  already called in SKAdminHelper.testInstall()!
             }
             // This exception already has a well-info message containing name, GUID, and instance modifier.
             catch (BadRequestException e) {
@@ -638,7 +587,7 @@ public class SolutionKitManagerResource {
             }
 
             final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
-            final Collection<SolutionKit> childrenList = solutionKitAdminHelper.findAllChildrenByParentGoid(solutionKitToUninstall.getGoid());
+            final Collection<SolutionKit> childrenList = solutionKitAdminHelper.find(solutionKitToUninstall.getGoid());
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
             if (isParent) {
@@ -744,7 +693,7 @@ public class SolutionKitManagerResource {
         return status(OK).entity(uninstallSuccesses + lineSeparator() + uninstallErrors).build();
     }
 
-    private String getInstanceModifier(String globalInstanceModifier, String individualInstanceModifier) {
+    private String getInstanceModifier(String globalInstanceModifier, String individualInstanceModifier) {  // TODO (TL refactor) move to InstanceModifier class?
         // Firstly check if individual instance modifier is specified.
         // The individual instance modifier will override the global instance modifier.
         String finalIM;

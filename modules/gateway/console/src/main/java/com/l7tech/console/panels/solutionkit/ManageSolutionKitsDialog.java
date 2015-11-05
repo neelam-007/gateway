@@ -74,7 +74,7 @@ public class ManageSolutionKitsDialog extends JDialog {
                 final SolutionKitHeader solutionKitHT = solutionKitTablePanel.getFirstSelectedSolutionKit();
                 try {
                     // The solution kit is a parent solution kit
-                    if (solutionKitAdmin.findAllChildrenByParentGoid(solutionKitHT.getGoid()).size() > 0) {
+                    if (solutionKitAdmin.findHeaders(solutionKitHT.getGoid()).size() > 0) {
                         if (solutionKitTablePanel.findDisplayingType(solutionKitHT) == SolutionKitTablePanel.SolutionKitDisplayingType.PARENT_EXPENDED) {
                             onProperties();
                         } else {
@@ -184,7 +184,7 @@ public class ManageSolutionKitsDialog extends JDialog {
                         for (SolutionKitHeader header : headers) {
                             Pair<Boolean, String> result = new Pair<>(true, "");
                             try {
-                                Collection<SolutionKitHeader> children = solutionKitAdmin.findAllChildrenByParentGoid(header.getGoid());
+                                Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
                                 if (!children.isEmpty()) {
                                     for (SolutionKitHeader child : children) {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
@@ -195,7 +195,7 @@ public class ManageSolutionKitsDialog extends JDialog {
                                 final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
                                 if (result.left && selectedSK != null) {
                                     if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
-                                        solutionKitAdmin.deleteSolutionKit(header.getGoid());
+                                        solutionKitAdmin.delete(header.getGoid());
                                         result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
                                     } else {
                                         result = uninstallSolutionKit(header.getName(), header.getGoid());
@@ -230,7 +230,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             ManageSolutionKitsDialog.this,
             "Uninstall Solution Kit",
             "The gateway is uninstalling the solution kit, " + skName,
-            solutionKitAdmin.uninstall(skGoid),
+            solutionKitAdmin.uninstallAsync(skGoid),
             false);
 
         if (result.isLeft()) {
