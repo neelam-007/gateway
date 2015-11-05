@@ -2,6 +2,7 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.EntityProtectionInfo;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
@@ -62,6 +63,13 @@ public class ProtectedEntityTracker {
         final String id = e.getId();
         final EntityProtectionInfo perm = id == null ? null : getEntityProtection( id );
         return perm != null && perm.matchesTypeOf( e ) && perm.isReadOnly();
+    }
+
+    public boolean isReadOnlyEntity( @NotNull final EntityHeaderRef eh ) {
+        final String id = eh.getStrId();
+        final EntityProtectionInfo perm = id == null ? null : getEntityProtection( id );
+        return perm != null && perm.matchesTypeOf( eh ) && perm.isReadOnly();
+
     }
 
     public boolean isEntityProtectionEnabled() {

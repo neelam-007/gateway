@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.EntityProtectionInfo;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
@@ -105,36 +106,42 @@ public class ProtectedEntityTrackerTest {
                 )
         );
         Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new ServerModuleFile()));
+        Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SERVER_MODULE_FILE, null)));
         Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new ServerModuleFile() {
             @Override
             public String getId() {
                 return "id2";
             }
         }));
+        Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SERVER_MODULE_FILE, "id2")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new ServerModuleFile() {
             @Override
             public String getId() {
                 return "id1";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SERVER_MODULE_FILE, "id1")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new SecurePassword() {
             @Override
             public String getId() {
                 return "id2";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SECURE_PASSWORD, "id2")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new CustomKeyValueStore() {
             @Override
             public String getId() {
                 return "id3";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.CUSTOM_KEY_VALUE_STORE, "id3")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new Folder() {
             @Override
             public String getId() {
                 return "id4";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.FOLDER, "id4")));
 
         // add few test samples (id11, id12, id13, id14 and id15) with duplicates (id11, id13 and id14)
         protectedEntityTracker.bulkUpdateReadOnlyEntitiesList(
@@ -168,48 +175,56 @@ public class ProtectedEntityTrackerTest {
                 return "id11";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.ENCAPSULATED_ASSERTION, "id11")));
         Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new ServerModuleFile() {
             @Override
             public String getId() {
                 return "id11";
             }
         }));
+        Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SERVER_MODULE_FILE, "id11")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new SecurePassword() {
             @Override
             public String getId() {
                 return "id12";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SECURE_PASSWORD, "id12")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new PublishedService() {
             @Override
             public String getId() {
                 return "id13";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.SERVICE, "id13")));
         Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new CustomKeyValueStore() {
             @Override
             public String getId() {
                 return "id13";
             }
         }));
+        Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.CUSTOM_KEY_VALUE_STORE, "id13")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new Policy() {
             @Override
             public String getId() {
                 return "id14";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.POLICY, "id14")));
         Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new Folder() {
             @Override
             public String getId() {
                 return "id14";
             }
         }));
+        Assert.assertFalse(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.FOLDER, "id14")));
         Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new Folder() {
             @Override
             public String getId() {
                 return "id15";
             }
         }));
+        Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(new EntityHeaderRef(EntityType.FOLDER, "id15")));
     }
 
     @Test
@@ -258,11 +273,34 @@ public class ProtectedEntityTrackerTest {
                         }
                 )
         );
+        // test with protection enabled
         Assert.assertThat(testEntities, Matchers.allOf(Matchers.notNullValue(), Matchers.hasSize(4)));
         for (final Entity entity : testEntities) {
             Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(entity));
         }
+        // now test with protection disabled
+        protectedEntityTracker.doWithEntityProtectionDisabled(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Assert.assertFalse(protectedEntityTracker.isEntityProtectionEnabled());
+                return null;
+            }
+        });
 
+        // make sure our test samples are read-only
+        final Collection<EntityHeaderRef> testEntityHeaders = Collections.unmodifiableCollection(
+                CollectionUtils.list(
+                        new EntityHeaderRef(EntityType.SERVER_MODULE_FILE, "id1"),
+                        new EntityHeaderRef(EntityType.SECURE_PASSWORD, "id2"),
+                        new EntityHeaderRef(EntityType.CUSTOM_KEY_VALUE_STORE, "id3"),
+                        new EntityHeaderRef(EntityType.SERVICE, "id4")
+                )
+        );
+        // test with protection enabled
+        Assert.assertThat(testEntityHeaders, Matchers.allOf(Matchers.notNullValue(), Matchers.hasSize(4)));
+        for (final EntityHeaderRef entityHeader : testEntityHeaders) {
+            Assert.assertTrue(protectedEntityTracker.isReadOnlyEntity(entityHeader));
+        }
         // now test with protection disabled
         protectedEntityTracker.doWithEntityProtectionDisabled(new Callable<Void>() {
             @Override

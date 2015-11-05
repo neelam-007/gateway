@@ -68,7 +68,7 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      * <p/>
      * This is a workaround for an edge case where an entity owned by solution kit 1 (aka. sk1) is deleted and recreated by solution kit 2 (aka. sk2),
      * thus taking over entity readonly-ness (i.e. {@link com.l7tech.server.security.rbac.ProtectedEntityTracker ProtectedEntityTracker}
-     * would prioritize entity readonly flag from sk1 over sk2).<br/>
+     * would prioritize entity readonly flag from sk2 over sk1).<br/>
      * This allows entity readonly flag to be updated from both sk1 and sk2, therefore {@code ProtectedEntityTracker} would prioritize
      * entity readonly flag from the last solution kit that made the update (of course including recreation of the entity).<br/>
      * Traditional timestamp is not used here, as in a cluster environment there is no guarantee that the nodes clocks would be in sync.<br/>

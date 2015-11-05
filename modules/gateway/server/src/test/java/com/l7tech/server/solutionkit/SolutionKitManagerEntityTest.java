@@ -3,9 +3,12 @@ package com.l7tech.server.solutionkit;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.EntityManagerTest;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
@@ -18,6 +21,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -41,6 +46,15 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
 
     @After
     public void tearDown() throws Exception {
+    }
+
+    private <T> T getTargetObject(final Object proxy, final Class<T> targetClass) throws Exception {
+        Assert.assertNotNull(proxy);
+        Assert.assertNotNull(targetClass);
+        if (AopUtils.isJdkDynamicProxy(proxy)) {
+            return getTargetObject(((Advised)proxy).getTargetSource().getTarget(), targetClass);
+        }
+        return targetClass.cast(proxy); // expected to be cglib proxy then, which is simply a specialized class
     }
 
     private static SolutionKit createSampleKit(final long ordinal) {
@@ -460,6 +474,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                     }
                 }
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), false)
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -501,6 +522,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                 .unmodifiableMap();
                     }
                 }
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), false)
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -551,6 +579,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                 .unmodifiableMap();
                     }
                 }
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -610,6 +645,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                     }
                 }
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -647,6 +689,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                         .unmodifiableMap()
                         )
                         .unmodifiableMap()
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -692,6 +741,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                         )
                         .unmodifiableMap()
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), false)
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -736,6 +792,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                         )
                         .unmodifiableMap()
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), true),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), true),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true)
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -765,6 +828,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                         .unmodifiableMap()
                         )
                         .unmodifiableMap()
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), false)
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -820,6 +890,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                     }
                 }
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -863,6 +940,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                         .unmodifiableMap()
                         )
                         .unmodifiableMap()
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -922,6 +1006,16 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                     }
                 }
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e9945"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "57eac30c4a5648db1f90617a721642fd"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.POLICY , "57eac30c4a5648db1f90617a72164391"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.SERVICE, "57eac30c4a5648db1f90617a72164341"), true )
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -974,6 +1068,16 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                         )
                         .unmodifiableMap()
         );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "12acd9006a6f7d2ea9b992f3882e9945"), true ),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER , "57eac30c4a5648db1f90617a721642fd"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.POLICY , "57eac30c4a5648db1f90617a72164391"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.SERVICE, "57eac30c4a5648db1f90617a72164341"), false)
+                )
+        );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1011,6 +1115,13 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                                         .unmodifiableMap()
                         )
                         .unmodifiableMap()
+        );
+        verifyProtectedEntityTracker(
+                CollectionUtils.list(
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e98c2"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9904"), false),
+                        Pair.pair(new EntityHeaderRef(EntityType.FOLDER, "12acd9006a6f7d2ea9b992f3882e9945"), true )
+                )
         );
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1140,6 +1251,43 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                 Assert.assertThat(descriptor.isReadOnly(), Matchers.is(expectedDescriptor.middle));
                 Assert.assertThat(descriptor.getVersionStamp(), Matchers.is(expectedDescriptor.right));
             }
+        }
+    }
+
+    private SolutionKitManagerImpl solutionKitManagerImpl;
+    private SolutionKitManagerImpl getSolutionKitManagerImpl() throws Exception {
+        if (solutionKitManagerImpl == null) {
+            solutionKitManagerImpl = getTargetObject(solutionKitManager, SolutionKitManagerImpl.class);
+        }
+        return solutionKitManagerImpl;
+    }
+
+    private ProtectedEntityTracker protectedEntityTracker;
+    private ProtectedEntityTracker getProtectedEntityTracker() throws Exception {
+        if (protectedEntityTracker == null) {
+            protectedEntityTracker = applicationContext.getBean("protectedEntityTracker", ProtectedEntityTracker.class);
+        }
+        return protectedEntityTracker;
+    }
+
+    private void verifyProtectedEntityTracker(
+            Collection<Pair<EntityHeaderRef, Boolean>> expectedReadOnlyFlags
+    ) throws Exception {
+        Assert.assertNotNull(expectedReadOnlyFlags);
+        final SolutionKitManagerImpl solutionKitManagerImpl = getSolutionKitManagerImpl();
+        Assert.assertNotNull(solutionKitManagerImpl);
+        final ProtectedEntityTracker protectedEntityTracker = getProtectedEntityTracker();
+        Assert.assertNotNull(protectedEntityTracker);
+        // updateProtectedEntityTracking by emulating EntityInvalidationEvent
+        solutionKitManagerImpl.handleEvent(new EntityInvalidationEvent(this, SolutionKit.class, new Goid[0], new char[0]));
+        // now make sure the protected entity tracker has the right state
+        for (final Pair<EntityHeaderRef, Boolean> expectedReadOnlyFlag : expectedReadOnlyFlags) {
+            Assert.assertNotNull(expectedReadOnlyFlag.left);
+            Assert.assertNotNull(expectedReadOnlyFlag.right);
+            Assert.assertThat(
+                    protectedEntityTracker.isReadOnlyEntity(expectedReadOnlyFlag.left),
+                    Matchers.is(expectedReadOnlyFlag.right)
+            );
         }
     }
 

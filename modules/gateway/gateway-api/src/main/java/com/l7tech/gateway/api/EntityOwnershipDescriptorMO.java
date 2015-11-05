@@ -12,7 +12,7 @@ import java.util.List;
 /**
  */
 @XmlRootElement(name = "EntityOwnershipDescriptor")
-@XmlType(name = "EntityOwnershipDescriptorType", propOrder = {"entityId", "entityType", "readOnly", "extension", "extensions"})
+@XmlType(name = "EntityOwnershipDescriptorType", propOrder = {"entityId", "entityType", "readOnly", "versionStamp", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "entityOwnershipDescriptor")
 public class EntityOwnershipDescriptorMO extends AccessibleObject{
 
@@ -45,6 +45,15 @@ public class EntityOwnershipDescriptorMO extends AccessibleObject{
         this.readOnly = readOnly;
     }
 
+    @XmlElement(name = "VersionStamp")
+    public Long getVersionStamp() {
+        return versionStamp;
+    }
+
+    public void setVersionStamp(final Long versionStamp) {
+        this.versionStamp = versionStamp;
+    }
+
     //- PROTECTED
 
     @XmlElement(name="Extension")
@@ -71,4 +80,5 @@ public class EntityOwnershipDescriptorMO extends AccessibleObject{
     private String entityId;
     private String entityType;
     private Boolean readOnly;
+    private Long versionStamp;
 }

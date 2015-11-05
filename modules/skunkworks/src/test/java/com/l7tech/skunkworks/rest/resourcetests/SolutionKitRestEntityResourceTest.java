@@ -21,7 +21,6 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import net.sf.saxon.functions.*;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -31,7 +30,6 @@ import org.junit.Before;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.Collection;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class SolutionKitRestEntityResourceTest extends RestEntityTests<SolutionKit, SolutionKitMO> {
@@ -58,7 +56,9 @@ public class SolutionKitRestEntityResourceTest extends RestEntityTests<SolutionK
                 CollectionUtils.set(
                         new EntityOwnershipDescriptor(solutionKit, "id1", EntityType.FOLDER, true),
                         new EntityOwnershipDescriptor(solutionKit, "id2", EntityType.SECURE_PASSWORD, false),
-                        new EntityOwnershipDescriptor(solutionKit, "id3", EntityType.SERVICE, true),
+                        new EntityOwnershipDescriptor(solutionKit, "id3", EntityType.SERVICE, true) {{
+                            setVersionStamp(12);
+                        }},
                         new EntityOwnershipDescriptor(solutionKit, "id4", EntityType.SERVER_MODULE_FILE, false)
                 )
         );
@@ -314,7 +314,7 @@ public class SolutionKitRestEntityResourceTest extends RestEntityTests<SolutionK
                 for (EntityOwnershipDescriptor eod : entity.getEntityOwnershipDescriptors()) {
                     boolean matches = false;
                     for (EntityOwnershipDescriptorMO eodMO : managedObject.getEntityOwnershipDescriptors()) {
-                        if (eod.getEntityId().equals(eodMO.getEntityId()) && eod.getEntityType().equals(EntityType.valueOf(eodMO.getEntityType())) && eod.isReadOnly() == eodMO.isReadOnly()) {
+                        if (eod.getEntityId().equals(eodMO.getEntityId()) && eod.getEntityType().equals(EntityType.valueOf(eodMO.getEntityType())) && eod.isReadOnly() == eodMO.isReadOnly() && eod.getVersionStamp() == eodMO.getVersionStamp()) {
                             matches = true;
                             break;
                         }

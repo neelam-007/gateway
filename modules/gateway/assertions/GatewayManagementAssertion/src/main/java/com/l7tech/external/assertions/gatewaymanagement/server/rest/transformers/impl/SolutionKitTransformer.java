@@ -254,6 +254,7 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                 entityOwnershipDescriptorMO.setEntityId(entityOwnershipDescriptor.getEntityId());
                 entityOwnershipDescriptorMO.setEntityType(entityOwnershipDescriptor.getEntityType().name());
                 entityOwnershipDescriptorMO.setReadOnly(entityOwnershipDescriptor.isReadOnly());
+                entityOwnershipDescriptorMO.setVersionStamp(entityOwnershipDescriptor.getVersionStamp());
                 entityOwnershipDescriptorMOs.add(entityOwnershipDescriptorMO);
             }
             return entityOwnershipDescriptorMOs.isEmpty() ? null : Collections.unmodifiableList(entityOwnershipDescriptorMOs);
@@ -305,6 +306,12 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                     readOnly = entityOwnershipDescriptorMO.isReadOnly();
                 }
 
+                // by default set to EntityOwnershipDescriptor.OWNED_STAMP
+                long versionStamp = EntityOwnershipDescriptor.OWNED_STAMP;
+                if (entityOwnershipDescriptorMO.getVersionStamp() != null) {
+                    versionStamp = entityOwnershipDescriptorMO.getVersionStamp();
+                }
+
                 assert entityId != null;
                 assert entityType != null;
 
@@ -315,6 +322,7 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                         entityType,
                         readOnly
                 );
+                entityOwnershipDescriptor.setVersionStamp(versionStamp);
 
                 // ignore ids to avoid StaleStateException (practice for other entities as well)
                 //entityOwnershipDescriptor.setId(id);

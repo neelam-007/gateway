@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,5 +28,9 @@ public final class EntityProtectionInfo implements Serializable {
 
     public boolean matchesTypeOf(@Nullable final Entity e) {
         return e != null && entityType.getEntityClass().isAssignableFrom(e.getClass());
+    }
+
+    public boolean matchesTypeOf(@Nullable final EntityHeaderRef eh) {
+        return eh != null && entityType == eh.getType();
     }
 }
