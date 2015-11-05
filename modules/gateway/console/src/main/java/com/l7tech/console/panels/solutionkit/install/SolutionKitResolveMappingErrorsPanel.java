@@ -188,7 +188,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         //Check whether any entities are missing from the original installation during an upgrade, and if so
         //inform the user that they need to re-install the original install before they can upgrade
         if (isMissingOriginalInstall(mapping, settings.getInstallMappings(solutionKit.getSolutionKitGuid()))) {
-            DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "An entity from the original install may be missing.  Please re-install the original Solution Kit before attempting to upgrade",
+            DialogDisplayer.showMessageDialog(SolutionKitResolveMappingErrorsPanel.this, "An entity from the original install may be missing.  Please re-install the original Solution Kit before attempting to upgrade.",
                     "Error During Upgrade - Missing Entity", JOptionPane.ERROR_MESSAGE, null);
         } else {
             if (!SolutionKitsConfig.allowOverride(mapping)) {
