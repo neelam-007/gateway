@@ -139,6 +139,11 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
                 generateSwaggerDocRequestBranch(), generateValidationAndRoutingBranch()
         ));
 
+        Assertion.Comment retrieveDocOrRouteBranchComment = new Assertion.Comment();
+        retrieveDocOrRouteBranchComment.setComment("// Validate and route the request, or return the Swagger document",
+                Assertion.Comment.RIGHT_COMMENT);
+        retrieveDocOrRouteBranch.setAssertionComment(retrieveDocOrRouteBranchComment);
+
         policyAssertions.addChild(retrieveDocOrRouteBranch);
 
         try (ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
@@ -155,10 +160,21 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         Assertion cacheRetrieveAssertion =
                 WspReader.getDefault().parsePermissively(cacheRetrieveXml, WspReader.Visibility.includeDisabled);
 
+        Assertion.Comment swaggerDocDownloadBranchComment = new Assertion.Comment();
+        swaggerDocDownloadBranchComment.setComment("// Download and cache Swagger document.",
+                Assertion.Comment.RIGHT_COMMENT);
+
         AllAssertion swaggerDocDownloadBranch = generateSwaggerDocDownloadBranch();
+        swaggerDocDownloadBranch.setAssertionComment(swaggerDocDownloadBranchComment);
+
+        Assertion.Comment swaggerDocDownloadAndCacheBranchComment = new Assertion.Comment();
+        swaggerDocDownloadAndCacheBranchComment.setComment("// Retrieve Swagger document from cache, or download it",
+                Assertion.Comment.RIGHT_COMMENT);
 
         swaggerDocDownloadAndCacheBranch =
                 new OneOrMoreAssertion(CollectionUtils.list(cacheRetrieveAssertion, swaggerDocDownloadBranch));
+        swaggerDocDownloadAndCacheBranch.setAssertionComment(swaggerDocDownloadAndCacheBranchComment);
+
         return swaggerDocDownloadAndCacheBranch;
     }
 
@@ -172,9 +188,10 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         final HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion("${swagger.docUrl}");
         routingAssertion.setFollowRedirects(true);
         routingAssertion.setHttpMethod(HttpMethod.GET);
-        routingAssertion.getRequestHeaderRules().setForwardAll(true);
-        routingAssertion.getRequestParamRules().setForwardAll(true);
+        routingAssertion.getRequestHeaderRules().setForwardAll(false);
+        routingAssertion.getRequestParamRules().setForwardAll(false);
         routingAssertion.getResponseHeaderRules().setForwardAll(true);
+        routingAssertion.setRequestMsgSrc("swaggerDoc");
         routingAssertion.setResponseMsgDest("swaggerDoc");
 
         String cacheStorageAssertionXml = readPolicyFile(CACHE_STORE_ASSERTION_POLICY_FILE);
@@ -213,6 +230,11 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
                 regexAssertion, httpMethodComparisonAssertion, hardcodedResponseAssertion
         ));
 
+        Assertion.Comment branchComment = new Assertion.Comment();
+        branchComment.setComment("// Return the Swagger document if it was requested",
+                Assertion.Comment.RIGHT_COMMENT);
+        branch.setAssertionComment(branchComment);
+
         return branch;
     }
 
@@ -240,6 +262,11 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         routingAssertion.getResponseHeaderRules().setForwardAll(true);
 
         branch.setChildren(CollectionUtils.list(swaggerAssertion, routingAssertion));
+
+        Assertion.Comment branchComment = new Assertion.Comment();
+        branchComment.setComment("// Validate request against Swagger document and route to service",
+                Assertion.Comment.RIGHT_COMMENT);
+        branch.setAssertionComment(branchComment);
 
         return branch;
     }
