@@ -25,6 +25,7 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
     private JCheckBox validateSchemeCheckBox;
     private JCheckBox requireSecurityCredentialsToCheckBox;
     private JTextField serviceBaseTextField;
+    private JLabel credentialsWarningLabel;
 
     public SwaggerPropertiesDialog(final Window parent, final SwaggerAssertion assertion) {
         super(SwaggerAssertion.class, parent, assertion, true);
@@ -71,6 +72,21 @@ public class SwaggerPropertiesDialog extends AssertionPropertiesOkCancelSupport<
         validatePathCheckBox.setSelected(true);
         validateSchemeCheckBox.setSelected(true);
         requireSecurityCredentialsToCheckBox.setSelected(true);
+
+        // add a bold, red warning label that is visible when "Require Security Credentials to be Present" is checked
+        credentialsWarningLabel.setVisible(true);
+        credentialsWarningLabel.setForeground(Color.RED);
+        Font warningFont = credentialsWarningLabel.getFont()
+                .deriveFont(Font.BOLD, credentialsWarningLabel.getFont().getSize() - 1);
+        credentialsWarningLabel.setFont(warningFont);
+        credentialsWarningLabel.setText(resourceBundle.getString("credentialsWarning"));
+
+        requireSecurityCredentialsToCheckBox.addChangeListener(new RunOnChangeListener() {
+            @Override
+            protected void run() {
+                credentialsWarningLabel.setVisible(requireSecurityCredentialsToCheckBox.isSelected());
+            }
+        });
 
         InputValidator validator = new InputValidator(this, getTitle());
         validator.addRule(new InputValidator.ValidationRule() {

@@ -30,9 +30,9 @@ import io.swagger.models.auth.SecuritySchemeDefinition;
 import io.swagger.parser.SwaggerParser;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.UriTemplate;
+
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,20 +45,18 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAssertion> {
     public static final String AUTHORIZATION_HEADER = "authorization";
     private final String[] variablesUsed;
-    private AtomicReference<Swagger> swaggerModel = new AtomicReference<>(null);
-    private AtomicReference<PathResolver> pathResolver = new AtomicReference<>(null);
-    private AtomicInteger swaggerDocumentHash = new AtomicInteger();
+    private final AtomicReference<SwaggerModelHolder> swaggerModelHolder = new AtomicReference<>(null);
     private Lock lock = new ReentrantLock();
     private Map<String,ValidateSecurity> securityTypeMap;
 
-
-    public ServerSwaggerAssertion( final SwaggerAssertion assertion ) {
+    public ServerSwaggerAssertion(final SwaggerAssertion assertion) {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         securityTypeMap = new HashMap<>();
         securityTypeMap.put("basic", new ValidateBasicSecurity());
         securityTypeMap.put("apiKey", new ValidateApiKeySecurity());
         securityTypeMap.put("oauth2", new ValidateOauth2Security());
+        swaggerModelHolder.set(new SwaggerModelHolder(null, null, 0));
     }
 
     @Override
@@ -66,7 +64,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             throws IOException, PolicyAssertionException {
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
-        String doc = extractContextVarValue(assertion.getSwaggerDoc(), variableMap, getAudit());
+        String doc = extractSwaggerDocFromContextVar(assertion.getSwaggerDoc(), variableMap, getAudit());
 
         if (doc == null) {
             logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
@@ -74,38 +72,41 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             return AssertionStatus.FAILED;
         }
 
-        Swagger model;
-        PathResolver resolver;
+        int docHashCode = doc.hashCode();
+        int currentDocHashCode = swaggerModelHolder.get().getDocumentHash();
 
-        lock.lock();
+        // check the hash of the document value so we can avoid redundant parsing
+        if (currentDocHashCode == 0 || currentDocHashCode != docHashCode) {
+            // lock for writing
+            lock.lock();
 
-        try {
-            // store a hash of the document value so we can avoid redundant parsing
-            if (swaggerDocumentHash.get() == 0 || swaggerDocumentHash.get() != doc.hashCode()) {
-                model = parseSwaggerJson(doc);
+            try {
+                currentDocHashCode = swaggerModelHolder.get().getDocumentHash();
 
-                //check if the document parsed properly
-                if (model != null) {
-                    resolver = new PathResolver(model);
-                    pathResolver.set(resolver);
-                    swaggerModel.set(model);
-                    swaggerDocumentHash.set(doc.hashCode());
-                } else {
-                    swaggerModel.set(null);
-                    pathResolver.set(null);
-                    swaggerDocumentHash.set(0);
-                    logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
-                            (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
-                    return AssertionStatus.FAILED;
+                if (currentDocHashCode == 0 || currentDocHashCode != docHashCode) {
+                    Swagger newModel = parseSwaggerJson(doc);
+
+                    //check if the document parsed properly
+                    if (newModel != null) {
+                        PathResolver newResolver = new PathResolver(newModel);
+                        swaggerModelHolder.set(new SwaggerModelHolder(newModel, newResolver, docHashCode));
+                    } else {
+                        swaggerModelHolder.set(new SwaggerModelHolder(null, null, 0));
+                        logAndAudit(AssertionMessages.SWAGGER_INVALID_DOCUMENT,
+                                (String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
+                        return AssertionStatus.FAILED;
+                    }
                 }
-            } else {
-                model = swaggerModel.get();
-                resolver = pathResolver.get();
+            } finally {
+                //release the lock
+                lock.unlock();
             }
-        } finally {
-            //release the lock
-            lock.unlock();
         }
+
+        SwaggerModelHolder currentSwaggerModelHolder = swaggerModelHolder.get();
+
+        Swagger model = currentSwaggerModelHolder.getSwaggerModel();
+        PathResolver resolver = currentSwaggerModelHolder.getPathResolver();
 
         HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
         // calculate the apiUri
@@ -271,7 +272,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         }
     }
 
-    private String extractContextVarValue(String var, Map<String, Object> varMap, Audit audit) {
+    private String extractSwaggerDocFromContextVar(String var, Map<String, Object> varMap, Audit audit) {
         if (StringUtils.isNotBlank(var)) {
             Object expanded = ExpandVariables.processSingleVariableAsObject(Syntax.SYNTAX_PREFIX + var + Syntax.SYNTAX_SUFFIX, varMap, audit);
             if(expanded instanceof Message) {
@@ -310,16 +311,17 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             if (null == requestUri || requestUri.isEmpty())
                 return null;
 
-            PathDefinition requestPath = new PathDefinition(requestUri);
+            final List<String> segments = Arrays.asList(requestUri.split("/"));
 
             PathDefinition closestMatch = null;
 
             for (PathDefinition p : pathDefinitions) {
-                if (p.segments.size() == requestPath.segments.size()) {
-                    if (p.equals(requestPath))
+                if (p.segments.size() == segments.size()) {
+                    if (p.path.equals(requestUri) && p.segments.equals(segments)) {
                         return p;
+                    }
 
-                    if (p.matches(requestPath)) {
+                    if (p.matches(requestUri)) {
                         if (null == closestMatch ||
                                 closestMatch.getVariableNames().size() > p.getVariableNames().size()) {
                             closestMatch = p;
@@ -351,22 +353,36 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             Collections.addAll(segments, path.split("/"));
         }
 
-        public boolean matches(PathDefinition that) {
-            return uriTemplate.matches(that.path);
+        public boolean matches(String path) {
+            return uriTemplate.matches(path);
         }
 
         public List<String> getVariableNames() {
             return uriTemplate.getVariableNames();
         }
+    }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+    private static class SwaggerModelHolder {
+        private final Swagger swaggerModel;
+        private final PathResolver pathResolver;
+        private final int documentHash;
 
-            PathDefinition that = (PathDefinition) o;
+        private SwaggerModelHolder(Swagger swaggerModel, PathResolver pathResolver, int documentHash) {
+            this.swaggerModel = swaggerModel;
+            this.pathResolver = pathResolver;
+            this.documentHash = documentHash;
+        }
 
-            return this.path.equals(that.path) && this.segments.equals(that.segments);
+        public Swagger getSwaggerModel() {
+            return swaggerModel;
+        }
+
+        public PathResolver getPathResolver() {
+            return pathResolver;
+        }
+
+        public int getDocumentHash() {
+            return documentHash;
         }
     }
 }
