@@ -4,6 +4,7 @@ import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.InputValidator;
@@ -115,6 +116,12 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
 
                 String swaggerDocument = resolveResult.right();
 
+                // if this is the applet, don't try parsing - library not available
+                if (TopComponents.getInstance().isApplet()) {
+                    lastParsedDocumentLocation = location;
+                    return null;
+                }
+
                 Swagger model;
 
                 try {
@@ -156,7 +163,9 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
     public void storeSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
         settings.setDocumentUrl(lastParsedDocumentLocation);
 
-        if (null == parsedDocumentModel.getHost() || parsedDocumentModel.getHost().isEmpty()) {
+        if (null == parsedDocumentModel ||
+                null == parsedDocumentModel.getHost() ||
+                parsedDocumentModel.getHost().isEmpty()) {
             String apiHost = null;
 
             try {
@@ -176,9 +185,11 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
             settings.setApiHost(parsedDocumentModel.getHost());
         }
 
-        settings.setApiBasePath(parsedDocumentModel.getBasePath());
+        if (null != parsedDocumentModel) {
+            settings.setApiBasePath(parsedDocumentModel.getBasePath());
+        }
 
-        if (null != parsedDocumentModel.getInfo()) {
+        if (null != parsedDocumentModel && null != parsedDocumentModel.getInfo()) {
             settings.setApiTitle(parsedDocumentModel.getInfo().getTitle());
         }
     }

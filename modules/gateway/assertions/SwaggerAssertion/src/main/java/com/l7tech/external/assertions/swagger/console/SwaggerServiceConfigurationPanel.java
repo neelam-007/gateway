@@ -234,8 +234,9 @@ public class SwaggerServiceConfigurationPanel extends WizardStepPanel<SwaggerSer
         apiHostTextField.setText(settings.getApiHost());
         apiBasePathTextField.setText(settings.getApiBasePath());
 
-        if (null == settings.getRoutingUri() || settings.getRoutingUri().isEmpty()) {
-            routingUriTextField.setText("/" + settings.getApiBasePath().substring(1) + "/*"); // strip the leading slash
+        if ((null != settings.getApiBasePath() && !settings.getApiBasePath().isEmpty()) &&
+                (null == settings.getRoutingUri() || settings.getRoutingUri().isEmpty())) {
+            routingUriTextField.setText(settings.getApiBasePath() + "/*");
         } else {
             routingUriTextField.setText(settings.getRoutingUri());
         }
