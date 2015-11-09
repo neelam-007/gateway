@@ -233,14 +233,14 @@ public class SolutionKitManagerResource {
                     solutionKitForUpgrade = resultOfCheckingParent.right;
                 } else {
                     final String currentIM = instanceModifierParameter == null?
-                        null : substringBefore(URLDecoder.decode(instanceModifierParameter, CharEncoding.UTF_8), PARAMETER_DELIMINATOR).trim();
+                            null : substringBefore(URLDecoder.decode(instanceModifierParameter, CharEncoding.UTF_8), PARAMETER_DELIMINATOR).trim();
 
                     final SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(upgradeGuid, currentIM);
                     if (tempSK == null) {
                         //There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
                         // - dis-allow upgrade if you don't have SK already installed (install only)
                         final String warningMsg = "Upgrade failed: cannot find any existing solution kit (GUID = '" + upgradeGuid +
-                            "',  Instance Modifier = '" + InstanceModifier.getDisplayName(currentIM) + "') for upgrade.";
+                                "',  Instance Modifier = '" + InstanceModifier.getDisplayName(currentIM) + "') for upgrade.";
                         logger.warning(warningMsg);
                         return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                     } else {
@@ -263,13 +263,13 @@ public class SolutionKitManagerResource {
             // load skar
             final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
             skarProcessor.load(
-                fileInputStream,
-                new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
-                    @Override
-                    public void call(final byte[] digest, final String signature) throws SignatureException {
-                        solutionKitAdminHelper.verifySkarSignature(digest, signature);
+                    fileInputStream,
+                    new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
+                        @Override
+                        public void call(final byte[] digest, final String signature) throws SignatureException {
+                            solutionKitAdminHelper.verifySkarSignature(digest, signature);
+                        }
                     }
-                }
             );
 
             // handle any user selection(s) - child solution kits
@@ -290,7 +290,7 @@ public class SolutionKitManagerResource {
             final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(selectedSolutionKits);
             if (StringUtils.isNotBlank(errorReport)) {
                 return status(CONFLICT).entity(
-                    "There are more than two selected solution kits having same GUID and Instance Modifier." + lineSeparator() + errorReport + lineSeparator()
+                        "There are more than two selected solution kits having same GUID and Instance Modifier." + lineSeparator() + errorReport + lineSeparator()
                 ).build();
             }
 
@@ -438,15 +438,15 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
             } catch (final ForbiddenException e) {
                 throw new SolutionKitManagerResourceException(
-                    status(FORBIDDEN).entity(
-                        MessageFormat.format(
-                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                            solutionKit.getName(),
-                            solutionKit.getSolutionKitGuid(),
-                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                        )
-                    ).build(),
-                    e
+                        status(FORBIDDEN).entity(
+                                MessageFormat.format(
+                                        TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                        solutionKit.getName(),
+                                        solutionKit.getSolutionKitGuid(),
+                                        lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                )
+                        ).build(),
+                        e
                 );
             }
 
@@ -459,27 +459,27 @@ public class SolutionKitManagerResource {
                     mappingsStr = solutionKitManager.importBundle(bundle, solutionKit, true);
                 } catch (final BadRequestException e) {
                     throw new SolutionKitManagerResourceException(
-                        status(BAD_REQUEST).entity(
-                            MessageFormat.format(
-                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                solutionKit.getName(),
-                                solutionKit.getSolutionKitGuid(),
-                                lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                        ).build(),
-                        e
+                            status(BAD_REQUEST).entity(
+                                    MessageFormat.format(
+                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                            solutionKit.getName(),
+                                            solutionKit.getSolutionKitGuid(),
+                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                    )
+                            ).build(),
+                            e
                     );
                 } catch (final Exception e) {
                     throw new SolutionKitManagerResourceException(
-                        status(INTERNAL_SERVER_ERROR).entity(
-                            MessageFormat.format(
-                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                solutionKit.getName(),
-                                solutionKit.getSolutionKitGuid(),
-                                lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                        ).build(),
-                        e
+                            status(INTERNAL_SERVER_ERROR).entity(
+                                    MessageFormat.format(
+                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                            solutionKit.getName(),
+                                            solutionKit.getSolutionKitGuid(),
+                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                    )
+                            ).build(),
+                            e
                     );
                 }
 
@@ -491,27 +491,27 @@ public class SolutionKitManagerResource {
                         message = new RestmanMessage(mappingsStr);
                     } catch (final SAXException e) {
                         throw new SolutionKitManagerResourceException(
-                            status(INTERNAL_SERVER_ERROR).entity(
-                                MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKit.getName(),
-                                    solutionKit.getSolutionKitGuid(),
-                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                                )
-                            ).build(),
-                            e
+                                status(INTERNAL_SERVER_ERROR).entity(
+                                        MessageFormat.format(
+                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                solutionKit.getName(),
+                                                solutionKit.getSolutionKitGuid(),
+                                                lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                        )
+                                ).build(),
+                                e
                         );
                     }
                     if (message.hasMappingError()) {
                         throw new SolutionKitManagerResourceException(
-                            status(CONFLICT).entity(
-                                MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKit.getName(),
-                                    solutionKit.getSolutionKitGuid(),
-                                    lineSeparator() + mappingsStr + lineSeparator()
-                                )
-                            ).build()
+                                status(CONFLICT).entity(
+                                        MessageFormat.format(
+                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                solutionKit.getName(),
+                                                solutionKit.getSolutionKitGuid(),
+                                                lineSeparator() + mappingsStr + lineSeparator()
+                                        )
+                                ).build()
                         );
                     }
                 }
@@ -547,8 +547,8 @@ public class SolutionKitManagerResource {
      */
     @DELETE
     public Response uninstall(
-        final @QueryParam("id") String deleteGuidIM,
-        final @QueryParam("childId") List<String> childGuidIMList) {
+            final @QueryParam("id") String deleteGuidIM,
+            final @QueryParam("childId") List<String> childGuidIMList) {
 
         // Couldn't use Solution Kit ID in the URL to upgrade (i.e. @Path("{id}") and @PathParam("id")).
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
@@ -578,7 +578,7 @@ public class SolutionKitManagerResource {
                     // There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
                     // - dis-allow upgrade if you don't have SK already installed (install only)
                     final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + deleteGuid +
-                        "',  Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "') for uninstall.";
+                            "',  Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "') for uninstall.";
                     logger.warning(warningMsg);
                     return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
                 } else {
@@ -598,8 +598,8 @@ public class SolutionKitManagerResource {
                         childIM = child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
                         solutionKitAdminHelper.uninstall(child.getGoid());
                         uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: " + child.getSolutionKitGuid() +
-                            (StringUtils.isBlank(childIM)?
-                                lineSeparator() : " and instance modifier: " + childIM+ lineSeparator()));
+                                (StringUtils.isBlank(childIM)?
+                                        lineSeparator() : " and instance modifier: " + childIM+ lineSeparator()));
                     }
                 }
                 // No child list and instance modifier specified means uninstall all child kits with the instance modifier
@@ -610,11 +610,11 @@ public class SolutionKitManagerResource {
                             solutionKitAdminHelper.uninstall(child.getGoid());
                             uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: '" + child.getSolutionKitGuid() +
                                     (StringUtils.isBlank(instanceModifier)?
-                                    "'" + lineSeparator() : "' and instance modifier: '" + instanceModifier + "'" + lineSeparator()));
+                                            "'" + lineSeparator() : "' and instance modifier: '" + instanceModifier + "'" + lineSeparator()));
                         } else {
                             errorMessages.add("Child solution kit matching the GUID '" + child.getSolutionKitGuid() +
                                     (StringUtils.isBlank(childIM)?
-                                    "'" + lineSeparator() : "' and instance modifier: '" + childIM + "'" + lineSeparator()));
+                                            "' with no instance modifier" + lineSeparator() : "' and instance modifier: '" + childIM + "'" + lineSeparator()));
                         }
                     }
 
@@ -634,6 +634,17 @@ public class SolutionKitManagerResource {
                         }
                         //Display kits that were successfully uninstalled and kits that failed at uninstall
                         throw new SolutionKitManagerResourceException(status(ACCEPTED).entity(message.toString()).build());
+                    }
+
+                    // if no child solution kits were uninstalled given the IM, then return 404 error
+                    StringBuilder message = new StringBuilder();
+                    if (uninstallSuccessMessages.isEmpty()) {
+                        message.append("Uninstall failed. There were no solution kits with the specified GUID and IM." + lineSeparator() +
+                                "Solution kits from parent not removed:" + lineSeparator());
+                        for(String error : errorMessages) {
+                            message.append(error);
+                        }
+                        throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(message.toString()).build());
                     }
                 }
 
@@ -657,12 +668,12 @@ public class SolutionKitManagerResource {
                             continue;
                         }
 
-                        String finalIM = getInstanceModifier(instanceModifier, individualInstanceModifier);
+                        String finalIM = useInstanceModifier(instanceModifier, individualInstanceModifier);
                         selectedSolutionKit = solutionKitManager.findBySolutionKitGuidAndIM(guid, finalIM);
 
                         if (selectedSolutionKit == null) {
                             final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + guid +
-                                "',  Instance Modifier = '" + InstanceModifier.getDisplayName(finalIM) + "') for uninstall." + lineSeparator();
+                                    "',  Instance Modifier = '" + InstanceModifier.getDisplayName(finalIM) + "') for uninstall." + lineSeparator();
                             logger.warning(warningMsg);
                             errorMessages.add(warningMsg);
                         } else {
@@ -672,16 +683,16 @@ public class SolutionKitManagerResource {
                             uninstallSuccessMessages.add(uninstallMessage);
                         }
                     }
-                }
 
-                // if no child solution kits were uninstalled, return 404 error
-                StringBuilder message = new StringBuilder();
-                if (uninstallSuccessMessages.isEmpty()) {
-                    message.append("UNINSTALL ERRORS:" + lineSeparator());
-                    for(String error : errorMessages) {
-                        message.append(error);
+                    // if no child selected solution kits were uninstalled, return 404 error
+                    StringBuilder message = new StringBuilder();
+                    if (uninstallSuccessMessages.isEmpty()) {
+                        message.append("UNINSTALL ERRORS:" + lineSeparator());
+                        for(String error : errorMessages) {
+                            message.append(error);
+                        }
+                        throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(message.toString()).build());
                     }
-                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(message.toString()).build());
                 }
 
             }
@@ -707,10 +718,10 @@ public class SolutionKitManagerResource {
                 }
 
                 //Some solution kits where uninstall failed
-                    message.append(lineSeparator() + "Solution kits selected for uninstall that failed:" + lineSeparator());
-                    for (String error : errorMessages) {
-                        message.append(error);
-                    }
+                message.append(lineSeparator() + "Solution kits selected for uninstall that failed:" + lineSeparator());
+                for (String error : errorMessages) {
+                    message.append(error);
+                }
                 //Display kits that were successfully uninstalled and kits that failed at uninstall
                 throw new SolutionKitManagerResourceException(status(ACCEPTED).entity(message.toString()).build());
             }
@@ -727,7 +738,7 @@ public class SolutionKitManagerResource {
         return Response.noContent().build();
     }
 
-    private String getInstanceModifier(String globalInstanceModifier, String individualInstanceModifier) {  // TODO (TL refactor) move to InstanceModifier class?
+    private String useInstanceModifier(String globalInstanceModifier, String individualInstanceModifier) {  // TODO (TL refactor) move to InstanceModifier class?
         // Firstly check if individual instance modifier is specified.
         // The individual instance modifier will override the global instance modifier.
         String finalIM;
@@ -774,10 +785,10 @@ public class SolutionKitManagerResource {
      * @throws UnsupportedEncodingException
      */
     private void setUserSelections(
-        @NotNull final SolutionKitsConfig solutionKitsConfig,
-        @Nullable final List<FormDataBodyPart> solutionKitSelects,
-        final boolean isInstall,
-        @Nullable final String instanceModifierParameter) throws SolutionKitManagerResourceException, UnsupportedEncodingException {
+            @NotNull final SolutionKitsConfig solutionKitsConfig,
+            @Nullable final List<FormDataBodyPart> solutionKitSelects,
+            final boolean isInstall,
+            @Nullable final String instanceModifierParameter) throws SolutionKitManagerResourceException, UnsupportedEncodingException {
 
         // Case 1: For Install
         if (isInstall) {
@@ -793,8 +804,8 @@ public class SolutionKitManagerResource {
      * Set a list of solution kits for upgrade
      */
     protected void selectSolutionKitsForInstall(@NotNull final SolutionKitsConfig solutionKitsConfig,
-                                              @Nullable final String instanceModifierParameter,
-                                              @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException {
+                                                @Nullable final String instanceModifierParameter,
+                                                @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException {
 
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
 
@@ -833,7 +844,7 @@ public class SolutionKitManagerResource {
 
                 if (!loadedSolutionKitMap.containsKey(guid)) {
                     throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Solution Kit ID to install: " +
-                        guid + " not found in the skar." + lineSeparator()).build());
+                            guid + " not found in the skar." + lineSeparator()).build());
                 }
 
                 selectedSolutionKit = loadedSolutionKitMap.get(guid);
@@ -855,7 +866,7 @@ public class SolutionKitManagerResource {
             //TODO: redundant condition?
             if (selectedSolutionKits.isEmpty()) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                    "There are no any solution kits being selectable for install." + lineSeparator()).build());
+                        "There are no any solution kits being selectable for install." + lineSeparator()).build());
             }
 
             solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
@@ -890,7 +901,7 @@ public class SolutionKitManagerResource {
         for (String selectedGuid: selectedGuidSet) {
             if (! loadedGuidSet.contains(selectedGuid)) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Solution Kit ID to upgrade: " +
-                    selectedGuid + " not found in the skar." + lineSeparator()).build());
+                        selectedGuid + " not found in the skar." + lineSeparator()).build());
             }
         }
 
@@ -913,7 +924,7 @@ public class SolutionKitManagerResource {
         //TODO: redundant condition?
         if (selectedSolutionKits.isEmpty()) {
             throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                "There are no any solution kits being selectable for upgrade." + lineSeparator()).build());
+                    "There are no any solution kits being selectable for upgrade." + lineSeparator()).build());
         }
 
         solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
@@ -990,10 +1001,10 @@ public class SolutionKitManagerResource {
      * In headless upgrade, find all mappings for guid and instance modifier for selected solution kits, based on two parameters, "instanceModifier" and "solutionKitSelect".
      */
     protected void setSelectedGuidAndImForHeadlessUpgrade(final boolean isParent,
-                                                        @NotNull final String upgradeGuid,
-                                                        @NotNull final SolutionKitsConfig solutionKitsConfig,
-                                                        @Nullable final String instanceModifierParameter,
-                                                        @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException, FindException {
+                                                          @NotNull final String upgradeGuid,
+                                                          @NotNull final SolutionKitsConfig solutionKitsConfig,
+                                                          @Nullable final String instanceModifierParameter,
+                                                          @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException, FindException {
         // Don't create a new return map.  Just use a map from SolutionKitConfig, so the result of this map can be shared thru accessing SolutionKitConfig.
         final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();  // it should be emtpy at beginning.
         final Pair<String, String> globalIMPair = processGlobalInstanceModifiers(instanceModifierParameter);
@@ -1021,7 +1032,7 @@ public class SolutionKitManagerResource {
                         childGuid = child.getSolutionKitGuid();
                         if (selectedGuidAndImForHeadlessUpgrade.keySet().contains(childGuid)) {
                             throw new SolutionKitManagerResourceException(status(CONFLICT).entity(
-                                "Upgrade failed: at least two child solution kits with a same GUID (" + childGuid + ") are selected for upgrade at same time."  + lineSeparator()).build());
+                                    "Upgrade failed: at least two child solution kits with a same GUID (" + childGuid + ") are selected for upgrade at same time."  + lineSeparator()).build());
                         }
 
                         selectedGuidAndImForHeadlessUpgrade.put(child.getSolutionKitGuid(), new Pair<>(currentGlobalIM, newGlobalIM));
@@ -1031,8 +1042,8 @@ public class SolutionKitManagerResource {
                 // If the parent has children, but no any children were found by global instance modifier, then report error.
                 if (children.size() > 0 && selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
                     throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                        "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (" +
-                        InstanceModifier.getDisplayName(currentGlobalIM) + ") specified by the parameter 'instanceModifier'" + lineSeparator()).build());
+                            "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (" +
+                                    InstanceModifier.getDisplayName(currentGlobalIM) + ") specified by the parameter 'instanceModifier'" + lineSeparator()).build());
                 }
             }
             // Case 1.2: There are some im2 "solutionKitSelect" parameters specified
@@ -1053,8 +1064,8 @@ public class SolutionKitManagerResource {
                     guidSet = selectedGuidAndImForHeadlessUpgrade.keySet();
                     if (guidSet.contains(givenGuidFromPara)) {
                         throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                            "Upgrade failed: at least two 'solutionKitSelect' parameters specify a same GUID (" +
-                                givenGuidFromPara + "), since two solution kit instances cannot be upgraded at the same time."  + lineSeparator()).build());
+                                "Upgrade failed: at least two 'solutionKitSelect' parameters specify a same GUID (" +
+                                        givenGuidFromPara + "), since two solution kit instances cannot be upgraded at the same time."  + lineSeparator()).build());
                     }
 
                     numOfDeliminator = StringUtils.countMatches(decodedStr, PARAMETER_DELIMINATOR);
@@ -1077,8 +1088,8 @@ public class SolutionKitManagerResource {
                     // Do not allow the guid specified from the parameter, but not matched any solution kit from the upgrade list.
                     if (! guidAndInstanceModifierMapFromUpgrade.keySet().contains(givenGuidFromPara)) {
                         throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                            "Cannot find any to-be-upgraded solution kit, whose GUID matches to the given GUID (" +
-                                givenGuidFromPara + ") specified from the parameter 'solutionKitSelect'" + lineSeparator()).build());
+                                "Cannot find any to-be-upgraded solution kit, whose GUID matches to the given GUID (" +
+                                        givenGuidFromPara + ") specified from the parameter 'solutionKitSelect'" + lineSeparator()).build());
                     }
 
                     instanceModifierSetFromUpgrade = guidAndInstanceModifierMapFromUpgrade.get(givenGuidFromPara);
@@ -1093,8 +1104,8 @@ public class SolutionKitManagerResource {
                     }
                     if (! matched) {
                         throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
-                            "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" + givenGuidFromPara +
-                                ") and the given Instance Modifier (" + InstanceModifier.getDisplayName(currentIM) + ")" + lineSeparator()).build());
+                                "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" + givenGuidFromPara +
+                                        ") and the given Instance Modifier (" + InstanceModifier.getDisplayName(currentIM) + ")" + lineSeparator()).build());
                     }
                 }
             }
