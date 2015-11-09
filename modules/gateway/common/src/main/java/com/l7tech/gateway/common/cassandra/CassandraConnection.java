@@ -229,6 +229,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.setEnabled(other.isEnabled());
         this.setProperties(other.getProperties());
         this.setSecurityZone(other.getSecurityZone());
+        this.setVersion(other.getVersion());
     }
 
     @Override

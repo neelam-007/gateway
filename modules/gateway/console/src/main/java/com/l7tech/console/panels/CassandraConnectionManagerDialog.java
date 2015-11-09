@@ -192,8 +192,9 @@ public class CassandraConnectionManagerDialog extends JDialog {
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
-
-        editAndSave(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)), false);
+        CassandraConnection connToEdit = new CassandraConnection();
+        connToEdit.copyFrom(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)));
+        editAndSave(connToEdit, false);
     }
 
     private void doClone() {

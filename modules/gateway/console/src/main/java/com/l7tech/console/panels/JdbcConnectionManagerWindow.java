@@ -251,8 +251,9 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
-
-        editAndSave(connectionList.get(selectedRow), false);
+        JdbcConnection connToEdit = new JdbcConnection();
+        connToEdit.copyFrom(connectionList.get(selectedRow));
+        editAndSave(connToEdit, false);
     }
 
     private void editAndSave(final JdbcConnection connection, final boolean selectName) {

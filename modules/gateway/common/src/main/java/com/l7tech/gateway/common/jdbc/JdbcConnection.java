@@ -227,5 +227,6 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         this.setEnabled(other.isEnabled());
         this.setAdditionalProperties(other.getAdditionalProperties());
         this.setSecurityZone(other.getSecurityZone());
+        this.setVersion(other.getVersion());
     }
 }
