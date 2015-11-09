@@ -300,8 +300,12 @@ public class ClusterPropertyDialog extends JDialog {
                 knownProperties = reg.getClusterStatusAdmin().getAllPropertyDescriptors();
             }
 
+            // create a copy of the cluster property
+            final ClusterProperty propCopy = new ClusterProperty();
+            propCopy.copyFrom(prop);
+            // pass the copy into the dialog (to avoid modifications of the original object if save fails with uncaught exception)
             final CaptureProperty dlg = new CaptureProperty(this, title,
-                    prop.getProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY), prop, knownProperties, canEdit);
+                    propCopy.getProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY), propCopy, knownProperties, canEdit);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             DialogDisplayer.display(dlg, new Runnable() {
@@ -312,7 +316,7 @@ public class ClusterPropertyDialog extends JDialog {
 
                     if (canEdit) {
                         try {
-                            reg.getClusterStatusAdmin().saveProperty(prop);
+                            reg.getClusterStatusAdmin().saveProperty(propCopy);
                         } catch (SaveException e) {
                             logger.log(Level.SEVERE, "exception setting property", e);
                         } catch (UpdateException e) {

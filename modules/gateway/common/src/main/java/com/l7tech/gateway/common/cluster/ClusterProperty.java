@@ -35,6 +35,7 @@ public class ClusterProperty extends NamedEntityWithPropertiesImp implements Com
     public static final String DESCRIPTION_PROPERTY_KEY = "description";
 
     private String value;
+    // make sure to update copyFrom when adding new fields
 
     // Cluster properties that are hidden in the cluster properties GUI _even if_ they are customized with a non-default value.
     // Currently, there are only a few hidden properties
@@ -149,5 +150,13 @@ public class ClusterProperty extends NamedEntityWithPropertiesImp implements Com
         if (originalPropName == null || comparedPropName == null) throw new NullPointerException("Cluster Property Name must not be null.");
 
         return originalPropName.toLowerCase().compareTo(comparedPropName.toLowerCase());
+    }
+
+    public void copyFrom(@org.jetbrains.annotations.NotNull final ClusterProperty other) {
+        this.setGoid(other.getGoid());
+        this.setName(other.getName());
+        this.setVersion(other.getVersion());
+        this.setXmlProperties(other.getXmlProperties());
+        this.setValue(other.getValue());
     }
 }
