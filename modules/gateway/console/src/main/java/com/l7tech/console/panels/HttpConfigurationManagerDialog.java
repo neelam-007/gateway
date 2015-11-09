@@ -220,7 +220,8 @@ public class HttpConfigurationManagerDialog extends JDialog {
         final int selectedRow = httpConfigurationTable.getSelectedRow();
         if ( selectedRow >= 0 ) {
             final int modelRow = httpConfigurationTable.convertRowIndexToModel( selectedRow );
-            doEdit( httpConfigurationTableModel.getRowObject( modelRow ), !flags.canUpdateSome() );
+            final HttpConfiguration httpConfToEdit = new HttpConfiguration(httpConfigurationTableModel.getRowObject( modelRow ), false);
+            doEdit( httpConfToEdit, !flags.canUpdateSome() );
         }
     }
 
