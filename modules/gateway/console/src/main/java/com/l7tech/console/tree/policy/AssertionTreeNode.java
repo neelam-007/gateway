@@ -12,6 +12,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -392,6 +393,42 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Utility method for checking if logged on user can perform specific update operation on the node service or policy.
+     *
+     * @return {@code true} if the logged on user can perform update the service or policy associated with this node, or {@code false} otherwise.
+     * @throws RuntimeException if an error happens while retrieving this node service or policy.
+     */
+    public final boolean hasEditPermission() throws RuntimeException {
+        try {
+            // Case 1: if the node is associated to a published service
+            PublishedService svc = getService();
+            boolean hasPermission = canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+            // Case 2: if the node is associated to a policy fragment
+            if (svc == null) {
+                Policy policy = getPolicy();
+                hasPermission = canAttemptOperation(new AttemptedUpdate(EntityType.POLICY, policy));
+            }
+            return hasPermission;
+        } catch (final Exception e) {
+            throw new RuntimeException("Couldn't get current service or policy", e);
+        }
+    }
+
+    /**
+     * Utility method for checking if logged on user can perform the specified operation.
+     *
+     * @param ao    the {@code AttemptedOperation} to check.
+     * @return {@code true} if the logged on user can perform the specified operation or {@code false} otherwise.
+     */
+    private boolean canAttemptOperation(final AttemptedOperation ao) {
+        if (ao == null) return true;
+        //noinspection SimplifiableIfStatement
+        if (!Registry.getDefault().isAdminContextPresent()) return false;
+        return Registry.getDefault().getSecurityProvider().hasPermission(ao);
+    }
+
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -438,48 +475,33 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             list.add(new CreateIncludeFragmentAction(this));
         }
 
-        try {
-            // Case 1: if the node is associated to a published service
-            PublishedService svc = getService();
-            boolean hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+        if (hasEditPermission()) {
+            Action da = new DeleteAssertionAction(this);
+            da.setEnabled(canDelete());
+            list.add(da);
 
-            // Case 2: if the node is associated to a policy fragment
-            if (svc == null && !hasPermission) {
-                Policy policy = getPolicy();
-                hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
+            Action mu = new AssertionMoveUpAction(this);
+            mu.setEnabled(canMoveUp());
+            list.add(mu);
+
+            Action md = new AssertionMoveDownAction(this);
+            md.setEnabled(canMoveDown());
+            list.add(md);
+
+            // Add a disable assertion action or an enable assertion action.
+            if (isAssertionEnabled()) {
+                list.add(new DisableAssertionAction(this));
+            } else {
+                list.add(new EnableAssertionAction(this));
             }
 
-            if (hasPermission) {
-                Action da = new DeleteAssertionAction(this);
-                da.setEnabled(canDelete());
-                list.add(da);
-
-                Action mu = new AssertionMoveUpAction(this);
-                mu.setEnabled(canMoveUp());
-                list.add(mu);
-
-                Action md = new AssertionMoveDownAction(this);
-                md.setEnabled(canMoveDown());
-                list.add(md);
-
-                // Add a disable assertion action or an enable assertion action.
-                if (isAssertionEnabled()) {
-                    list.add(new DisableAssertionAction(this));
-                } else {
-                    list.add(new EnableAssertionAction(this));
-                }
-
-                // Add "Enable All Assertions" action onto a composite tree node.
-                if (this instanceof CompositeAssertionTreeNode) {
-                    list.add(new EnableAllAssertionsAction(this));
-                }
-
-                list.add( new AddEditDeleteCommentAction(this));
-                if(assertion.getAssertionComment() != null) list.add(new AddEditDeleteCommentAction(this, true));
-
+            // Add "Enable All Assertions" action onto a composite tree node.
+            if (this instanceof CompositeAssertionTreeNode) {
+                list.add(new EnableAllAssertionsAction(this));
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service or policy", e);
+
+            list.add(new AddEditDeleteCommentAction(this));
+            if (assertion.getAssertionComment() != null) list.add(new AddEditDeleteCommentAction(this, true));
         }
 
         list.add(new AssertionInfoAction(assertion));

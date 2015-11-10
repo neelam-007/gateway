@@ -5,10 +5,6 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.util.Collection;
@@ -32,20 +28,8 @@ public abstract class PolicyUpdatingAssertionAction extends NodeActionWithMetaSu
     @Override
     public final boolean isAuthorized() {
         if (!Registry.getDefault().isAdminContextPresent()) return false;
+        //noinspection SimplifiableIfStatement
         if (assertionTreeNode == null) return false;
-        try {
-            // Case 1: if the node is associated to a published service
-            PublishedService svc = assertionTreeNode.getService();
-            boolean authorized = canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
-
-            // Case 2: if the node is associated to a policy fragment
-            if (svc == null && !authorized) {
-                Policy policy = assertionTreeNode.getPolicy();
-                authorized = canAttemptOperation(new AttemptedUpdate(EntityType.POLICY, policy));
-            }
-            return authorized;
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service or policy", e);
-        }
+        return assertionTreeNode.hasEditPermission();
     }
 }

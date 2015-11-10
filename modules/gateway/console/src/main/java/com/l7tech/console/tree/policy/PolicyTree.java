@@ -7,18 +7,17 @@ import com.l7tech.console.panels.ForEachLoopAssertionPolicyNode;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TransferableTreePath;
+import com.l7tech.console.tree.TransferableTreePaths;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.*;
@@ -610,22 +609,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
             if (!Registry.getDefault().isAdminContextPresent()) return false;
 
-            try {
-                // Case 1: if the node is associated to a published service
-                PublishedService svc = node.getService();
-                boolean hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
-
-                // Case 2: if the node is associated to a policy fragment
-                if (svc == null && !hasPermission) {
-                    Policy policy = node.getPolicy();
-                    hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
-                }
-
-                if (!hasPermission) {
-                    return false;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Couldn't get current service or policy", e);
+            if (!node.hasEditPermission()) {
+                return false;
             }
 
             boolean delete = false;

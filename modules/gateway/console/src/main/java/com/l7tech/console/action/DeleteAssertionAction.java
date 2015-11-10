@@ -3,10 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -86,21 +82,7 @@ public class DeleteAssertionAction extends SecureAction {
 
     @Override
     public boolean isAuthorized() {
-        if (node == null) return true;
-        try {
-            // Case 1: if the node is associated to a published service
-            PublishedService svc = node.getService();
-            boolean authorized = canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
-
-            // Case 2: if the node is associated to a policy fragment
-            if (svc == null && !authorized) {
-                Policy policy = node.getPolicy();
-                authorized = canAttemptOperation(new AttemptedUpdate(EntityType.POLICY, policy));
-            }
-            return authorized;
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service or policy", e);
-        }
+        return node == null || node.hasEditPermission();
     }
 
     private void delete(final AssertionTreeNode treeNode) {

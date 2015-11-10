@@ -2,15 +2,9 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.policy.Policy;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -346,22 +340,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         if (!validPolicyAssertionNode && !validPNode) {
             return;
         }
-        SecurityProvider sp = Registry.getDefault().getSecurityProvider();
-        if (rootAssertionNode == null) return;
-        boolean canUpdate;
-        try {
-            // Case 1: if the node is associated to a published service
-            PublishedService svc = rootAssertionNode.getService();
-            canUpdate = sp.hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
 
-            // Case 2: if the node is associated to apolicy fragment
-            if (svc == null && !canUpdate) {
-                Policy policy = rootAssertionNode.getPolicy();
-                canUpdate = sp.hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service or policy", e);
-        }
+        if (rootAssertionNode == null) return;
+        final boolean canUpdate = rootAssertionNode.hasEditPermission();
 
         enableOrDisableButton.setAction(getDisableOrEnableAssertionAction());
         enableOrDisableButton.setText(null);
@@ -505,7 +486,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     };
 
     private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
-        java.util.List<AssertionTreeNode> assertionTreeNodes = new ArrayList<AssertionTreeNode>();
+        java.util.List<AssertionTreeNode> assertionTreeNodes = new ArrayList<>();
 
         if (paths != null) {
             for (TreePath path : paths) {
