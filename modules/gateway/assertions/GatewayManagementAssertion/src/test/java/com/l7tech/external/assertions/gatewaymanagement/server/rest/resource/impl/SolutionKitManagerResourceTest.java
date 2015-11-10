@@ -1187,9 +1187,7 @@ public class SolutionKitManagerResourceTest {
         assertEquals("Uninstalled solution kits:\n" +
                 "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
                 "\n" +
-                "Solution kits from parent not removed:\n" +
-                "Child solution kit matching the GUID '1f87436b-7ca5-41c8-9418-21d7a7848999' and instance modifier: 'im1'\n" +
-                "Child solution kit matching the GUID '1f87436b-7ca5-41c8-9418-21d7a7848977' and instance modifier: 'im3'\n",
+                "Total solution kits deleted: 1\n",
                 resultResponse.getEntity());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1226,10 +1224,8 @@ public class SolutionKitManagerResourceTest {
 
         //expect response to show that solution kit 2 is successfully uninstalled with no im specified
         assertEquals("Uninstalled solution kits:\n" +
-                        "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988'\n\n" +
-                        "Solution kits from parent not removed:\n" +
-                        "Child solution kit matching the GUID '1f87436b-7ca5-41c8-9418-21d7a7848999' and instance modifier: 'im1'\n" +
-                        "Child solution kit matching the GUID '1f87436b-7ca5-41c8-9418-21d7a7848977' and instance modifier: 'im3'\n",
+                        "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'N/A'\n\n" +
+                        "Total solution kits deleted: 1\n",
                 resultResponse.getEntity());
     }
 
@@ -1308,7 +1304,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
         assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:\n" +
-                "Successfully uninstalled child solution kit with guid: 1f87436b-7ca5-41c8-9418-21d7a7848988 and instance modifier: im2\n" +
+                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
                 "\n" +
                 "Solution kits selected for uninstall that failed:\n" +
                 "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall.\n");

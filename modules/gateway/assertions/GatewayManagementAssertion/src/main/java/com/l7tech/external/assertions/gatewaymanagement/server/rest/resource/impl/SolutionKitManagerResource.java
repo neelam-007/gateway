@@ -597,9 +597,8 @@ public class SolutionKitManagerResource {
                     for (SolutionKit child: childrenList) {
                         childIM = child.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
                         solutionKitAdminHelper.uninstall(child.getGoid());
-                        uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: " + child.getSolutionKitGuid() +
-                                (StringUtils.isBlank(childIM)?
-                                        lineSeparator() : " and instance modifier: " + childIM+ lineSeparator()));
+                        uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: '" + child.getSolutionKitGuid() +
+                                "' and instance modifier: '" + InstanceModifier.getDisplayName(childIM) + "'" + lineSeparator());
                     }
                 }
                 // No child list and instance modifier specified means uninstall all child kits with the instance modifier
@@ -609,12 +608,10 @@ public class SolutionKitManagerResource {
                         if ((StringUtils.isBlank(childIM) && StringUtils.isBlank(instanceModifier)) || StringUtils.equals(childIM,instanceModifier)) {
                             solutionKitAdminHelper.uninstall(child.getGoid());
                             uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: '" + child.getSolutionKitGuid() +
-                                    (StringUtils.isBlank(instanceModifier)?
-                                            "'" + lineSeparator() : "' and instance modifier: '" + instanceModifier + "'" + lineSeparator()));
+                                    "' and instance modifier: '" + InstanceModifier.getDisplayName(instanceModifier) + "'" + lineSeparator());
                         } else {
                             errorMessages.add("Child solution kit matching the GUID '" + child.getSolutionKitGuid() +
-                                    (StringUtils.isBlank(childIM)?
-                                            "' with no instance modifier" + lineSeparator() : "' and instance modifier: '" + childIM + "'" + lineSeparator()));
+                                    "' and instance modifier: '" + InstanceModifier.getDisplayName(childIM) + "'" + lineSeparator());
                         }
                     }
 
@@ -622,28 +619,19 @@ public class SolutionKitManagerResource {
                     if (!uninstallSuccessMessages.isEmpty() && !errorMessages.isEmpty()) {
                         StringBuilder message = new StringBuilder();
                         //Some solution kits uninstalled
-                        message.append("Uninstalled solution kits:" + lineSeparator());
+                        message.append("Uninstalled solution kits:").append(lineSeparator());
                         for (String success : uninstallSuccessMessages) {
                             message.append(success);
                         }
-
-                        //Some solution kits where uninstall failed
-                        message.append(lineSeparator() + "Solution kits from parent not removed:" + lineSeparator());
-                        for (String error : errorMessages) {
-                            message.append(error);
-                        }
-                        //Display kits that were successfully uninstalled and kits that failed at uninstall
+                        message.append(lineSeparator()).append("Total solution kits deleted: ").append(uninstallSuccessMessages.size()).append(lineSeparator());
                         throw new SolutionKitManagerResourceException(status(ACCEPTED).entity(message.toString()).build());
                     }
 
                     // if no child solution kits were uninstalled given the IM, then return 404 error
                     StringBuilder message = new StringBuilder();
                     if (uninstallSuccessMessages.isEmpty()) {
-                        message.append("Uninstall failed. There were no solution kits with the specified GUID and IM." + lineSeparator() +
-                                "Solution kits from parent not removed:" + lineSeparator());
-                        for(String error : errorMessages) {
-                            message.append(error);
-                        }
+                        message.append("Uninstall failed. There were no child solution kits under parent solution kit with GUID '").append(deleteGuid).append("' and IM '")
+                                .append(InstanceModifier.getDisplayName(instanceModifier)).append("'").append(lineSeparator());
                         throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(message.toString()).build());
                     }
                 }
@@ -678,8 +666,8 @@ public class SolutionKitManagerResource {
                             errorMessages.add(warningMsg);
                         } else {
                             solutionKitAdminHelper.uninstall(selectedSolutionKit.getGoid());
-                            String uninstallMessage = "Successfully uninstalled child solution kit with guid: " + selectedSolutionKit.getSolutionKitGuid() +
-                                    (StringUtils.isBlank(finalIM)? lineSeparator() : " and instance modifier: " + finalIM + lineSeparator());
+                            String uninstallMessage = "Successfully uninstalled child solution kit with guid: '" + selectedSolutionKit.getSolutionKitGuid() +
+                                    "' and instance modifier: '" + InstanceModifier.getDisplayName(finalIM) + "'" + lineSeparator();
                             uninstallSuccessMessages.add(uninstallMessage);
                         }
                     }
@@ -687,7 +675,7 @@ public class SolutionKitManagerResource {
                     // if no child selected solution kits were uninstalled, return 404 error
                     StringBuilder message = new StringBuilder();
                     if (uninstallSuccessMessages.isEmpty()) {
-                        message.append("UNINSTALL ERRORS:" + lineSeparator());
+                        message.append("UNINSTALL ERRORS:").append(lineSeparator());
                         for(String error : errorMessages) {
                             message.append(error);
                         }
@@ -712,13 +700,13 @@ public class SolutionKitManagerResource {
             if (!uninstallSuccessMessages.isEmpty() && !errorMessages.isEmpty()) {
                 StringBuilder message = new StringBuilder();
                 //Some solution kits uninstalled
-                message.append("Uninstalled solution kits:" + lineSeparator());
+                message.append("Uninstalled solution kits:").append(lineSeparator());
                 for (String success : uninstallSuccessMessages) {
                     message.append(success);
                 }
 
                 //Some solution kits where uninstall failed
-                message.append(lineSeparator() + "Solution kits selected for uninstall that failed:" + lineSeparator());
+                message.append(lineSeparator()).append("Solution kits selected for uninstall that failed:").append(lineSeparator());
                 for (String error : errorMessages) {
                     message.append(error);
                 }
