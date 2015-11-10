@@ -722,8 +722,7 @@
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 module="${ant.project.name}"               
                      resolver="artifactory-snapshot"
-					 pubrevision="${version}"
-					 status="snapshot"
+					 pubrevision="${version}"				
 					 overwrite="true"/>
         <echo message="project ${ant.project.name} published to artifactory"/>
     </target>
