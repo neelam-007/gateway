@@ -716,6 +716,38 @@
                 />
         <echo message="project ${ant.project.name} released with version ${version}"/>
     </target>
+	
+	<target name="publish-all-artifactory" depends="info, clean, skiptests, package, packagetests"
+            description="Publish all artifacts for this project to the Artifactory repository (Skip tests)">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+					 module="${ant.project.name}"               
+                     resolver="artifactory-snapshot"
+					 pubrevision="${version}"
+					 status="snapshot"
+					 overwrite="true"/>
+        <echo message="project ${ant.project.name} published to artifactory"/>
+    </target>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <!--
     -->

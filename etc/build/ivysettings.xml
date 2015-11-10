@@ -5,7 +5,7 @@
 
     <settings
         defaultResolver="libs-and-build"/>
-
+	<credentials host="apim-artifactory-poc.l7tech.com" realm="Artifactory Realm" username="system.user" passwd="AP6krWWQbjzdgzpD"/>
     <resolvers>
         <chain name="libs-and-build">
             <filesystem name="localfile" checksums="">
@@ -16,6 +16,11 @@
                 <artifact pattern="${src.root}/build/ivy/repository/[artifact]-[revision].[ext]"/>
                 <ivy pattern="${src.root}/build/ivy/repository/[module]-ivy-[revision].xml"/>
             </filesystem>
+			<url name="artifactory-snapshot" m2compatible="true">
+                <ivy pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision].xml" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact].[ext]" />
+            </url>
         </chain>
     </resolvers>
     

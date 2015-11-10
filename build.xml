@@ -618,6 +618,9 @@
         <modules target="publish-all-quick" buildpathref="module-build-all-path"/>
     </target>
 
+    <target name="publish-all-modules-artifactory" depends="prepare.base, build-module-list-all">
+        <modules target="publish-all-artifactory" buildpathref="module-build-all-path"/>
+    </target>
     <target name="clean-modules" depends="build-module-list-all">
         <modules target="clean" buildpathref="module-build-all-path"/>
     </target>
