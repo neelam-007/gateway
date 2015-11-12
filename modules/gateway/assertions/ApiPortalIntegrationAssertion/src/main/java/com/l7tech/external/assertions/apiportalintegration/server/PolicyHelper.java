@@ -57,48 +57,57 @@ public class PolicyHelper {
   private final AssertionLicense licenseManager;
   private final PolicyValidator policyValidator;
 
-  public OperationResult updatePolicy(@NotNull final String guid, @NotNull final String policyXml, final String userLogin) {
-    final OperationResult result = new OperationResult("Error");
-    final TransactionTemplate template = new TransactionTemplate(transactionManager);
-    template.execute(new TransactionCallbackWithoutResult() {
-      @Override
-      protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+    public OperationResult updatePolicy(@NotNull final String guid, @NotNull final String policyXml, final String userLogin) {
+        final OperationResult result = new OperationResult("Error");
+
         try {
-          OperationResult validateResult = validatePolicy(guid, policyXml);
-          result.setPolicyValidationResult(validateResult.getPolicyValidationResult());
-          if (validateResult.hasError()) {
-            result.setResult(validateResult.result);
-          } else {
-            final Policy policy = policyManager.findByGuid(guid);
-            if (policy == null) {
-              throw new FindException();
-            }
-            policy.setXml(policyXml);
             doAsSystem(new Callable<Void>() {
-              @Override
-              public Void call() throws Exception {
-                PolicyVersion policyVersion = policyVersionManager.checkpointPolicy(policy, true, false);
-                if (userLogin != null && userLogin.length() > 0) {
-                  policyVersion.setUserLogin(userLogin);
-                  policyVersionManager.save(policyVersion);
+                @Override
+                public Void call() throws Exception {
+                    final TransactionTemplate template = new TransactionTemplate(transactionManager);
+                    template.execute(new TransactionCallbackWithoutResult() {
+                        @Override
+                        protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                            try {
+                                OperationResult validateResult = validatePolicy(guid, policyXml);
+                                result.setPolicyValidationResult(validateResult.getPolicyValidationResult());
+                                if (validateResult.hasError()) {
+                                    result.setResult(validateResult.result);
+                                } else {
+                                    final Policy policy = policyManager.findByGuid(guid);
+                                    if (policy == null) {
+                                        final String message = "GUID " + guid + " does not exist";
+                                        result.setResult(message);
+                                        return;
+                                    }
+                                    policy.setXml(policyXml);
+                                    PolicyVersion policyVersion = policyVersionManager.checkpointPolicy(policy, true, false);
+                                    if (userLogin != null && userLogin.length() > 0) {
+                                        policyVersion.setUserLogin(userLogin);
+                                        policyVersionManager.save(policyVersion);
+                                    }
+                                    result.setResult(null);
+                                }
+                            } catch (FindException e) {
+                                final String message = "GUID " + guid + " does not exist";
+                                result.setResult(message);
+                            } catch (ObjectModelException e) {
+                                final String message = "Error Updating fragment - " + guid + " : " + e.getMessage();
+                                result.setResult(message);
+                                transactionStatus.setRollbackOnly();
+                            }
+                        }
+                    });
+                    return null;
                 }
-                return null;
-              }
             });
-            result.setResult(null);
-          }
-        } catch (FindException e) {
-          final String message = "GUID " + guid + " does not exist";
-          result.setResult(message);
         } catch (ObjectModelException e) {
-          final String message = "Error Updating fragment - " + guid + " : " + e.getMessage();
-          result.setResult(message);
-          transactionStatus.setRollbackOnly();
+            final String message = "Error Updating fragment - " + guid + " : " + e.getMessage();
+            result.setResult(message);
         }
-      }
-    });
-    return result;
-  }
+
+        return result;
+    }
 
   public OperationResult validatePolicy(@NotNull final String guid, @NotNull final String policyXml) throws ResourceAccessException {
     final OperationResult operationResult = new OperationResult("Validator Error(s)");
