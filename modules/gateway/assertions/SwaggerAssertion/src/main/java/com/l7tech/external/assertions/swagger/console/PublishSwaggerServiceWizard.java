@@ -191,15 +191,16 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         AllAssertion branch = new AllAssertion();
 
         AuditDetailAssertion auditDetailAssertion = new AuditDetailAssertion();
-        auditDetailAssertion.setLevel("WARNING");
+        auditDetailAssertion.setLevel("INFO");
         auditDetailAssertion.setDetail("Obtaining Swagger document from: ${swagger.docUrl}");
 
         final HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion("${swagger.docUrl}");
+
         routingAssertion.setFollowRedirects(true);
         routingAssertion.setHttpMethod(HttpMethod.GET);
-        routingAssertion.getRequestHeaderRules().setForwardAll(false);
-        routingAssertion.getRequestParamRules().setForwardAll(false);
-        routingAssertion.getResponseHeaderRules().setForwardAll(true);
+        routingAssertion.setRequestHeaderRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
+        routingAssertion.setRequestParamRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
+        routingAssertion.setResponseHeaderRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
         routingAssertion.setRequestMsgSrc("swaggerDoc");
         routingAssertion.setResponseMsgDest("swaggerDoc");
 
