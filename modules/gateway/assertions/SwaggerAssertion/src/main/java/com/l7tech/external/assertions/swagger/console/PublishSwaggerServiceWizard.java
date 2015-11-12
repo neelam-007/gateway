@@ -106,15 +106,24 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
     protected void finish(final ActionEvent evt) {
         getSelectedWizardPanel().storeSettings(wizardInput);
 
+        String routingUri = wizardInput.getRoutingUri();
+
+        if (!routingUri.endsWith("/*")) {
+            if (routingUri.endsWith("/")) {
+                routingUri += "*";
+            } else {
+                routingUri += "/*";
+            }
+        }
+
         try {
             final PublishedService service = new PublishedService();
 
             service.setFolder(getTargetFolder());
             service.setName(wizardInput.getServiceName());
-            service.setRoutingUri(wizardInput.getRoutingUri());
+            service.setRoutingUri(routingUri);
             service.setSoap(false);
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
-
             service.setPolicy(generateServicePolicy());
 
             // set security zones
