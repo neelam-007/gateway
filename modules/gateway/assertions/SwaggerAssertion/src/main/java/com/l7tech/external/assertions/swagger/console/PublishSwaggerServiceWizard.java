@@ -201,7 +201,6 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         routingAssertion.setRequestHeaderRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
         routingAssertion.setRequestParamRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
         routingAssertion.setResponseHeaderRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
-        routingAssertion.setRequestMsgSrc("swaggerDoc");
         routingAssertion.setResponseMsgDest("swaggerDoc");
 
         String cacheStorageAssertionXml = readPolicyFile(CACHE_STORE_ASSERTION_POLICY_FILE);
