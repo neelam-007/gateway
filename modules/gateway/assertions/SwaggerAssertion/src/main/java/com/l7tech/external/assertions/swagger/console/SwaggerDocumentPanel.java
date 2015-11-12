@@ -4,15 +4,11 @@ import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.swagger.SwaggerAssertion;
-import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.external.assertions.swagger.SwaggerAdmin;
+import com.l7tech.external.assertions.swagger.SwaggerApiMetadata;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
-import io.swagger.models.Swagger;
-import io.swagger.models.auth.AuthorizationValue;
-import io.swagger.parser.SwaggerParser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +17,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,7 +33,7 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
     private JButton manageHttpOptionsButton;
 
     private String lastParsedDocumentLocation = null;
-    private Swagger parsedDocumentModel = null;
+    private SwaggerApiMetadata parsedApiMetadata = null;
 
     public SwaggerDocumentPanel(WizardStepPanel<SwaggerServiceConfig> next) {
         super(next);
@@ -82,18 +77,18 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
                     return MessageFormat.format(resources.getString("invalidDocumentLocationUrlError"), location);
                 }
 
-                final ServiceAdmin serviceAdmin = getServiceAdmin();
+                final SwaggerAdmin swaggerAdmin = getSwaggerAdmin();
 
-                Either<String, String> resolveResult;
+                Either<String, SwaggerApiMetadata> resolveResult;
 
                 try {
                     resolveResult = AdminGuiUtils.doAsyncAdmin(
-                            serviceAdmin,
+                            swaggerAdmin,
                             SwaggerDocumentPanel.this.getOwner(),
                             resources.getString("documentLoadingDialog.title"),
                             MessageFormat.format(resources.getString("documentLoadingDialog.message"), location),
-                            serviceAdmin.resolveUrlTargetAsync(location,
-                                    SwaggerAssertion.CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE));
+                            swaggerAdmin.retrieveApiMetadataAsync(location)
+                    );
                 } catch (InterruptedException e) {
                     // cancelled by the user - counts as validation failure
                     return resources.getString("documentDownloadInterruptedError");
@@ -102,70 +97,43 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
                 }
 
                 if (resolveResult.isLeft()) {
-                    // an error occurred retrieving the document
-                    final String errorMsg =
-                            MessageFormat.format(resources.getString("documentDownloadFailedWithReasonError"),
-                            resolveResult.left());
+                    // an error occurred retrieving the metadata
+                    final String errorMsg = resolveResult.left();
                     logger.log(Level.FINE, errorMsg);
                     return errorMsg;
-                } else if (resolveResult.right().isEmpty()) {
+                } else if (null == resolveResult.right()) {
                     final String errorMsg = resources.getString("documentDownloadFailedError");
                     logger.log(Level.FINE, errorMsg);
                     return errorMsg;
                 }
 
-                String swaggerDocument = resolveResult.right();
-
-                // if this is the applet, don't try parsing - library not available
-                if (TopComponents.getInstance().isApplet()) {
-                    lastParsedDocumentLocation = location;
-                    return null;
-                }
-
-                Swagger model;
-
-                try {
-                    SwaggerParser parser = new SwaggerParser();
-                    List<AuthorizationValue> authorizationValues = new ArrayList<>();
-                    authorizationValues.add(new AuthorizationValue());
-                    model = parser.parse(swaggerDocument, authorizationValues);
-                } catch (Exception e) {
-                    logger.log(Level.FINE, e.getMessage());
-                    return resources.getString("parseDocumentFailed");
-                }
-
-                // the parser returns null if it could not parse the document
-                if (null == model) {
-                    return resources.getString("parseDocumentFailed");
-                }
-
                 lastParsedDocumentLocation = location;
-                parsedDocumentModel = model;
+                parsedApiMetadata = resolveResult.right();
 
                 return null;
             }
         });
     }
 
-    private ServiceAdmin getServiceAdmin() {
+    private SwaggerAdmin getSwaggerAdmin() {
         final Registry reg = Registry.getDefault();
 
-        final ServiceAdmin serviceAdmin = reg.getServiceManager();
+        final SwaggerAdmin swaggerAdmin = reg.getExtensionInterface(SwaggerAdmin.class, null);
 
-        if (null == serviceAdmin) {
-            throw new RuntimeException("No access to registry. Cannot download document.");
+        if (null == swaggerAdmin) {
+            throw new RuntimeException("No access to registry. Cannot parse document.");
         }
 
-        return serviceAdmin;
+        return swaggerAdmin;
     }
 
     @Override
     public void storeSettings(SwaggerServiceConfig settings) throws IllegalArgumentException {
         settings.setDocumentUrl(lastParsedDocumentLocation);
 
-        if (null == parsedDocumentModel ||
-                null == parsedDocumentModel.getHost() ||
-                parsedDocumentModel.getHost().isEmpty()) {
+        if (null == parsedApiMetadata ||
+                null == parsedApiMetadata.getHost() ||
+                parsedApiMetadata.getHost().isEmpty()) {
             String apiHost = null;
 
             try {
@@ -182,15 +150,12 @@ public class SwaggerDocumentPanel extends WizardStepPanel<SwaggerServiceConfig> 
 
             settings.setApiHost(apiHost);
         } else {
-            settings.setApiHost(parsedDocumentModel.getHost());
+            settings.setApiHost(parsedApiMetadata.getHost());
         }
 
-        if (null != parsedDocumentModel) {
-            settings.setApiBasePath(parsedDocumentModel.getBasePath());
-        }
-
-        if (null != parsedDocumentModel && null != parsedDocumentModel.getInfo()) {
-            settings.setApiTitle(parsedDocumentModel.getInfo().getTitle());
+        if (null != parsedApiMetadata) {
+            settings.setApiTitle(parsedApiMetadata.getTitle());
+            settings.setApiBasePath(parsedApiMetadata.getBasePath());
         }
     }
 

@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.swagger;
 
+import com.l7tech.external.assertions.swagger.server.SwaggerAdminImpl;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -7,6 +8,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 
@@ -120,6 +123,17 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
         });
 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
+
+        // Add extension interface
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final ExtensionInterfaceBinding<SwaggerAdmin> binding =
+                        new ExtensionInterfaceBinding<>(SwaggerAdmin.class, null, new SwaggerAdminImpl(appContext));
+
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
+            }
+        });
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Validate Against Swagger Document");
