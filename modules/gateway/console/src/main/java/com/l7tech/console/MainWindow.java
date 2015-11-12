@@ -2417,7 +2417,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
                     if (actions != null) {
                         for (Action action : actions) {
-                            String menuHint = (String) action.getValue("MenuHint");
+                            String menuHint = (String) action.getValue(ActionMetadata.MENU_HINT);
 
                             if (null == menuHint) { // if there's no hint, just add to the default menu and continue
                                 extensionsMenuActions.add(action);
@@ -2425,10 +2425,10 @@ public class MainWindow extends JFrame implements SheetHolder {
                             }
 
                             switch (menuHint) { // add to a matching menu, or the default menu if none found
-                                case "Services":
+                                case ActionMetadata.SERVICES_AND_APIS_MENU_HINT:
                                     servicesMenuActions.add(action);
                                     break;
-                                case "Transports":
+                                case ActionMetadata.TRANSPORTS_MENU_HINT:
                                     transportsMenuActions.add(action);
                                     break;
                                 default:

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.swagger.console;
 
 import com.l7tech.console.action.AbstractPublishServiceAction;
+import com.l7tech.console.action.ActionMetadata;
 import com.l7tech.console.panels.AbstractPublishServiceWizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
@@ -54,7 +55,7 @@ public class PublishSwaggerServiceAction extends AbstractPublishServiceAction {
             }
         });
 
-        putValue("MenuHint", "Services");
+        putValue(ActionMetadata.MENU_HINT, ActionMetadata.SERVICES_AND_APIS_MENU_HINT);
     }
 
     @Override

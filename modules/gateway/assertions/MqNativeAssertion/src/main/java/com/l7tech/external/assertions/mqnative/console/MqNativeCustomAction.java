@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative.console;
 
+import com.l7tech.console.action.ActionMetadata;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
@@ -16,7 +17,7 @@ public class MqNativeCustomAction extends SecureAction {
     }
 
     private void init() {
-        putValue("MenuHint", "Transports");
+        putValue(ActionMetadata.MENU_HINT, ActionMetadata.TRANSPORTS_MENU_HINT);
     }
 
     @Override
