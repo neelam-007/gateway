@@ -945,7 +945,7 @@ public class SolutionKitManagerResourceTest {
             solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, null, null);
             fail("Same child error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-            assertEquals(e.getResponse().getEntity().toString(), "Upgrade failed: at least two child solution kits with a same GUID (" + "1f87436b-7ca5-41c8-9418-21d7a7848999" + ") are selected for upgrade at same time.\n");
+            assertEquals(e.getResponse().getEntity().toString(), "Upgrade failed: at least two child solution kits with a same GUID (" + "1f87436b-7ca5-41c8-9418-21d7a7848999" + ") are selected for upgrade at same time." + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -963,7 +963,7 @@ public class SolutionKitManagerResourceTest {
             solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "INVALID_IM", null);
             fail("No child with IM error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-            assertEquals(e.getResponse().getEntity().toString(), "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (INVALID_IM) specified by the parameter 'instanceModifier'\n");
+            assertEquals(e.getResponse().getEntity().toString(), "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (INVALID_IM) specified by the parameter 'instanceModifier'" + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -975,7 +975,7 @@ public class SolutionKitManagerResourceTest {
             solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, null, null);
             fail("Parent solution kit not found error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + parentSolutionKit.getSolutionKitGuid() + "'\n");
+            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + parentSolutionKit.getSolutionKitGuid() + "'" + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -999,7 +999,7 @@ public class SolutionKitManagerResourceTest {
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
             assertEquals(e.getResponse().getEntity().toString(),
                     "Cannot find any to-be-upgraded solution kit, whose GUID matches to the given GUID (" +
-                    solutionKit1.getSolutionKitGuid()+"INVALID) specified from the parameter 'solutionKitSelect'\n");
+                    solutionKit1.getSolutionKitGuid()+"INVALID) specified from the parameter 'solutionKitSelect'" + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1027,7 +1027,7 @@ public class SolutionKitManagerResourceTest {
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
            assertEquals(e.getResponse().getEntity().toString(),
                     "Upgrade failed: at least two 'solutionKitSelect' parameters specify a same GUID (" +
-                            solutionKit2.getSolutionKitGuid() + "), since two solution kit instances cannot be upgraded at the same time.\n");
+                            solutionKit2.getSolutionKitGuid() + "), since two solution kit instances cannot be upgraded at the same time." + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1043,7 +1043,7 @@ public class SolutionKitManagerResourceTest {
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
             assertEquals(e.getResponse().getEntity().toString(),
                     "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" + solutionKit3.getSolutionKitGuid() +
-                            ") and the given Instance Modifier (INVALID_IM)\n");
+                            ") and the given Instance Modifier (INVALID_IM)" + System.lineSeparator());
         }
     }
 
@@ -1232,7 +1232,7 @@ public class SolutionKitManagerResourceTest {
         Response errorResponse = solutionKitResource.uninstall(null, null);
 
         //expect solution kit id empty error
-        assertEquals(errorResponse.getEntity(), "Solution Kit ID to uninstall is empty.\n");
+        assertEquals(errorResponse.getEntity(), "Solution Kit ID to uninstall is empty." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // cannot find solution kit GUID and IM
@@ -1270,7 +1270,7 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList("NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555"));
 
         //expect child kit selected to uninstall does not match any children from parent
-        assertEquals(errorResponse.getEntity(), "UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555'\n");
+        assertEquals(errorResponse.getEntity(), "UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555'" + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // no child with matching guid and IM
@@ -1280,7 +1280,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect child kit with IM selected does not match existing child kits
         assertEquals(errorResponse.getEntity(),"UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
-                "',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
+                "',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // when child kits are selected, show which child kits uninstalled successfully, and which have errors
@@ -1297,13 +1297,13 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),childrenToUninstall);
 
         //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
-        assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:\n" +
-                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
-                "\n" +
-                "Total Solution Kits deleted: 1\n" +
-                "\n" +
-                "Solution kits selected for uninstall that failed:\n" +
-                "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
+        assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:" + System.lineSeparator() +
+                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'" + System.lineSeparator() +
+                System.lineSeparator() +
+                "Total Solution Kits deleted: 1" + System.lineSeparator() +
+                System.lineSeparator() +
+                "Solution kits selected for uninstall that failed:" + System.lineSeparator() +
+                "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
     }
 
     @Test
@@ -1376,7 +1376,7 @@ public class SolutionKitManagerResourceTest {
             fail("Solution kit to install not found in skar error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
             assertEquals(e.getResponse().getEntity().toString(), "Solution Kit ID to install: " +
-                    solutionKit1.getSolutionKitGuid() + " not found in the skar.\n");
+                    solutionKit1.getSolutionKitGuid() + " not found in the skar." + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1459,7 +1459,7 @@ public class SolutionKitManagerResourceTest {
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
             //expect
             assertEquals(e.getResponse().getEntity(), "Solution Kit ID to upgrade: " +
-                    solutionKit1.getSolutionKitGuid() + " not found in the skar.\n");
+                    solutionKit1.getSolutionKitGuid() + " not found in the skar." + System.lineSeparator());
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
