@@ -203,26 +203,34 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         inputValidator.addRule(new InputValidator.ComponentValidationRule(originsTable) {
             @Override
             public String getValidationError() {
-                String error = null;
+                if (originsListRadioButton.isSelected()) {
+                    if (originsTable.getRowCount() == 0) {
+                        return resourceBundle.getString("originsNotSpecifiedError");
+                    }
 
-                if (originsListRadioButton.isSelected() && originsTable.getRowCount() == 0) {
-                    error = resourceBundle.getString("originsNotSpecifiedError");
+                    if (!validateTableRowsNonEmpty(originsTable)) {
+                        return resourceBundle.getString("originsEmptyRowError");
+                    }
                 }
 
-                return error;
+                return null;
             }
         });
 
         inputValidator.addRule(new InputValidator.ComponentValidationRule(headersTable) {
             @Override
             public String getValidationError() {
-                String error = null;
+                if (headersListRadioButton.isSelected()) {
+                    if (headersTable.getRowCount() == 0) {
+                        return resourceBundle.getString("acceptedHeadersNotSpecifiedError");
+                    }
 
-                if (headersListRadioButton.isSelected() && headersTable.getRowCount() == 0) {
-                    error = resourceBundle.getString("acceptedHeadersNotSpecifiedError");
+                    if (!validateTableRowsNonEmpty(headersTable)) {
+                        return resourceBundle.getString("acceptedHeadersEmptyRowError");
+                    }
                 }
 
-                return error;
+                return null;
             }
         });
 
@@ -287,7 +295,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         }else{
             List<String> origins = new ArrayList<>();
             for(int i=0; i < originsTable.getRowCount(); i++){
-                origins.add(originsTable.getValueAt(i,0).toString());
+                origins.add(originsTable.getValueAt(i,0).toString().trim());
             }
             assertion.setAcceptedOrigins(origins);
         }
@@ -297,7 +305,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         } else {
             List<String> headers = new ArrayList<>();
             for(int i=0; i < headersTable.getRowCount(); i++){
-                headers.add(headersTable.getValueAt(i,0).toString());
+                headers.add(headersTable.getValueAt(i,0).toString().trim());
             }
             assertion.setAcceptedHeaders(headers);
         }
@@ -307,7 +315,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         } else {
             List<String> headers = new ArrayList<>();
             for(int i=0; i < exposedHeadersTable.getRowCount(); i++){
-                headers.add(exposedHeadersTable.getValueAt(i,0).toString());
+                headers.add(exposedHeadersTable.getValueAt(i,0).toString().trim());
             }
             assertion.setExposedHeaders(headers);
         }
@@ -386,5 +394,17 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
         enableDisableComponents();
         pack();
+    }
+
+    private boolean validateTableRowsNonEmpty(JTable tableModel) {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            String value = (String) tableModel.getValueAt(i, 0);
+
+            if (value.trim().isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
