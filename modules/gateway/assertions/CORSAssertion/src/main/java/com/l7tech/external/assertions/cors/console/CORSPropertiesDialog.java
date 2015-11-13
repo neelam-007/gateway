@@ -200,6 +200,32 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(originsTable) {
+            @Override
+            public String getValidationError() {
+                String error = null;
+
+                if (originsListRadioButton.isSelected() && originsTable.getRowCount() == 0) {
+                    error = resourceBundle.getString("originsNotSpecifiedError");
+                }
+
+                return error;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(headersTable) {
+            @Override
+            public String getValidationError() {
+                String error = null;
+
+                if (headersListRadioButton.isSelected() && headersTable.getRowCount() == 0) {
+                    error = resourceBundle.getString("acceptedHeadersNotSpecifiedError");
+                }
+
+                return error;
+            }
+        });
+
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
