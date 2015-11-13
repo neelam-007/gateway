@@ -2,14 +2,11 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.*;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.*;
@@ -60,6 +57,8 @@ public class AuditRecordManagerImpl
     private static final String HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED = "from AuditRecord where goid in (:"+IDS_PARAMETER+") and (requestXml is null or length(requestXml) < :"+MAX_SIZE_PARAMETER+") and (responseXml is null or length(responseXml) < :"+MAX_SIZE_PARAMETER+")";
 
     private ValidatedConfig validatedConfig;
+
+    private AtomicBoolean databaseFull = new AtomicBoolean(false);
 
     //- PUBLIC
 
@@ -478,6 +477,32 @@ public class AuditRecordManagerImpl
         validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 0);
         validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
         this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 10485760);  // 10MB
+    }
+
+    @Override
+    public void setDatabaseFull(boolean val) {
+        databaseFull.set(val);
+    }
+
+    @Override
+    public void update(AuditRecord entity) throws UpdateException {
+        if(!databaseFull.get()) {
+            super.update(entity);
+        }
+        else {
+            logger.log(Level.WARNING, "Unable to update AuditRecord: Database is full!");
+        }
+    }
+
+    @Override
+    public Goid save(AuditRecord entity) throws SaveException {
+        if(!databaseFull.get()) {
+            return super.save(entity);
+        }
+        else {
+            logger.log(Level.WARNING, "Unable to save AuditRecord: Database is full!");
+            return null;
+        }
     }
 
     @Override

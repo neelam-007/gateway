@@ -404,6 +404,7 @@
                                 <value>auditArchiverStopThreshold</value>
                                 <value>auditArchiverBatchSize</value>
                                 <value>auditArchiverWarningThreshold</value>
+                                <value>auditManagementStrategy</value>
                             </list>
                         </entry>
                         <entry key="auditArchiveReceiver">

@@ -40,6 +40,18 @@ import static com.l7tech.server.ServerConfigParams.*;
  */
 public class AuditArchiver implements ApplicationContextAware, PostStartupApplicationListener, PropertyChangeListener {
 
+    private enum AuditManagementStrategy {
+        STOP, BYPASS, DELETE;
+
+        public static AuditManagementStrategy toValue(String val) {
+            try {
+                return valueOf(val);
+            }catch (IllegalArgumentException ex) {
+                return STOP;
+            }
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(AuditArchiver.class.getName());
     private final ValidatedConfig validatedConfig;
     private final Config config;
@@ -56,6 +68,8 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
     private int batchSize;
     private static final int MAX_BATCH_SIZE = 10000;
     public static final long MYSQL_STATS_UPDATE_SLEEP_WAIT = 15000L; // milliseconds
+
+    private AuditManagementStrategy auditManagementStrategy = AuditManagementStrategy.STOP;
 
     private Timer timer;
     private Lock lock;
@@ -134,6 +148,8 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
         stopThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
 
         batchSize = config.getIntProperty( PARAM_AUDIT_ARCHIVER_BATCH_SIZE, 100 );
+
+        auditManagementStrategy = AuditManagementStrategy.toValue(config.getProperty(PARAM_AUDIT_MANAGEMENT_STRATEGY, "STOP"));
 
         long newStaleTimeout = config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
         if (newStaleTimeout != staleTimeout) {
@@ -255,10 +271,22 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
                     logger.info("Current database space usage is " + usage + "%");
 
                 // use real usage for actions that modify the processing state
-                if (usage >= shutdownThreshold )
-                    ssgSuspend("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + ")");
-                else
+                if (usage >= shutdownThreshold ) {
+                    switch (auditManagementStrategy) {
+                        case BYPASS:
+                            recordManager.setDatabaseFull(true);
+                            logger.warning("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + "). Audit records will not be saved!");
+                            ssgRestart();
+                            break;
+                        case STOP:
+                        default:
+                            ssgSuspend("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + ")");
+                    }
+                }
+                else {
+                    recordManager.setDatabaseFull(false);
                     ssgRestart();
+                }
 
                 return adjustment > 0L ? adjustedUsage : usage;
             } else {

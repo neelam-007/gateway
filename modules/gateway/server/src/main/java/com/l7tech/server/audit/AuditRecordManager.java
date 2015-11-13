@@ -113,5 +113,7 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
     public long getMaxTableSpace() throws FindException;
     
     public long getCurrentUsage() throws FindException;
+
+    void setDatabaseFull(boolean val);
 }
 

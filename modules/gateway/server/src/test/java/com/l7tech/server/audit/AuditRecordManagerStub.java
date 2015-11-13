@@ -77,4 +77,9 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditR
     public long getCurrentUsage() throws FindException {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void setDatabaseFull(boolean val) {
+        //nothing
+    }
 }
