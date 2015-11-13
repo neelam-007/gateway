@@ -609,22 +609,7 @@ public class SolutionKitManagerResource {
                             solutionKitAdminHelper.uninstall(child.getGoid());
                             uninstallSuccessMessages.add("Successfully uninstalled child solution kit with guid: '" + child.getSolutionKitGuid() +
                                     "' and instance modifier: '" + InstanceModifier.getDisplayName(instanceModifier) + "'" + lineSeparator());
-                        } else {
-                            errorMessages.add("Child solution kit matching the GUID '" + child.getSolutionKitGuid() +
-                                    "' and instance modifier: '" + InstanceModifier.getDisplayName(childIM) + "'" + lineSeparator());
                         }
-                    }
-
-                    //Response 202 for partial deletion
-                    if (!uninstallSuccessMessages.isEmpty() && !errorMessages.isEmpty()) {
-                        StringBuilder message = new StringBuilder();
-                        //Some solution kits uninstalled
-                        message.append("Uninstalled solution kits:").append(lineSeparator());
-                        for (String success : uninstallSuccessMessages) {
-                            message.append(success);
-                        }
-                        message.append(lineSeparator()).append("Total solution kits deleted: ").append(uninstallSuccessMessages.size()).append(lineSeparator());
-                        throw new SolutionKitManagerResourceException(status(ACCEPTED).entity(message.toString()).build());
                     }
 
                     // if no child solution kits were uninstalled given the IM, then return 404 error
@@ -704,6 +689,8 @@ public class SolutionKitManagerResource {
                 for (String success : uninstallSuccessMessages) {
                     message.append(success);
                 }
+
+                message.append(lineSeparator()).append("Total Solution Kits deleted: ").append(uninstallSuccessMessages.size()).append(lineSeparator());
 
                 //Some solution kits where uninstall failed
                 message.append(lineSeparator()).append("Solution kits selected for uninstall that failed:").append(lineSeparator());

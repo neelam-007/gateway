@@ -1184,11 +1184,8 @@ public class SolutionKitManagerResourceTest {
         assertFalse(solutionKitsInManager.contains(solutionKit2));
 
         //expect response to show that solution kit 2 is successfully uninstalled
-        assertEquals("Uninstalled solution kits:\n" +
-                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
-                "\n" +
-                "Total solution kits deleted: 1\n",
-                resultResponse.getEntity());
+        assertEquals( 204,
+                resultResponse.getStatus());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate selected children without im are installed with empty im
@@ -1223,10 +1220,7 @@ public class SolutionKitManagerResourceTest {
         assertFalse(solutionKitsInManager.contains(solutionKit2));
 
         //expect response to show that solution kit 2 is successfully uninstalled with no im specified
-        assertEquals("Uninstalled solution kits:\n" +
-                        "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'N/A'\n\n" +
-                        "Total solution kits deleted: 1\n",
-                resultResponse.getEntity());
+        assertEquals(204, resultResponse.getStatus());
     }
 
     @Test
@@ -1305,6 +1299,8 @@ public class SolutionKitManagerResourceTest {
         //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
         assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:\n" +
                 "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'\n" +
+                "\n" +
+                "Total Solution Kits deleted: 1\n" +
                 "\n" +
                 "Solution kits selected for uninstall that failed:\n" +
                 "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall.\n");
