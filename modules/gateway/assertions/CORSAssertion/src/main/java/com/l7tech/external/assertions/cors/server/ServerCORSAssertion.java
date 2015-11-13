@@ -11,12 +11,15 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Functions;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
@@ -33,8 +36,12 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
     public static final String RESPONSE_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String RESPONSE_ALLOW_ACCESS_HEADERS = "Access-Control-Allow-Headers";
 
+    private final String[] variablesUsed;
+
     public ServerCORSAssertion(final CORSAssertion assertion) {
         super(assertion);
+
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     @Override
@@ -50,6 +57,9 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                     requestHeadersKnob.containsHeader(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
 
             context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, isPreflight);
+
+            // get response cache time
+            Integer cacheTime = getResponseCacheTime(context);
 
             // check origin is accepted
             final String origin = requestHeadersKnob.getHeaderValues(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
@@ -134,8 +144,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 // set response Access-Control-Allow-Headers; only list requested headers (sufficient as per spec)
                 addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS, requestedHeaderFieldNames);
 
-                if (assertion.getResponseCacheTime() != null) {
-                    setHeader(responseHeadersKnob, RESPONSE_CACHE_TIME, assertion.getResponseCacheTime().toString());
+                if (null != cacheTime) {
+                    setHeader(responseHeadersKnob, RESPONSE_CACHE_TIME, cacheTime.toString());
                 }
             } else {
                 // set the Access-Control-Expose-Headers
@@ -192,5 +202,25 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         for (String val : values) {
             headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
+    }
+
+    private Integer getResponseCacheTime(PolicyEnforcementContext context) {
+        final Map<String,?> variables = context.getVariableMap(variablesUsed, getAudit());
+
+        Integer cacheTime = null;
+
+        if (assertion.getResponseCacheTime() != null) {
+            String cacheTimeStr = ExpandVariables.process(assertion.getResponseCacheTime(), variables, getAudit());
+
+            try {
+                cacheTime = Integer.parseInt(cacheTimeStr);
+            } catch (NumberFormatException e) {
+                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Failed to add Access-Control-Max-Age header: '" +
+                                cacheTimeStr + "' is not a valid Response Cache Age value.");
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        }
+
+        return cacheTime;
     }
 }

@@ -1,11 +1,9 @@
 package com.l7tech.external.assertions.cors;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidatorSupport;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +14,7 @@ import java.util.List;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLASSNAME;
 
-public class CORSAssertion extends Assertion implements SetsVariables {
+public class CORSAssertion extends Assertion implements SetsVariables, UsesVariables {
 
     public static final String PREFIX_DEFAULT = "cors";
     public static final String SUFFIX_IS_PREFLIGHT = "isPreflight";
@@ -88,11 +86,11 @@ public class CORSAssertion extends Assertion implements SetsVariables {
     /**
      * @return the value for the Access-Control-Max-Age header (seconds), or null if the header is not to be added
      */
-    public Long getResponseCacheTime() {
+    public String getResponseCacheTime() {
         return responseCacheTime;
     }
 
-    public void setResponseCacheTime(Long responseCacheTime) {
+    public void setResponseCacheTime(String responseCacheTime) {
         this.responseCacheTime = responseCacheTime;
     }
 
@@ -141,6 +139,11 @@ public class CORSAssertion extends Assertion implements SetsVariables {
         return metadata;
     }
 
+    @Override
+    public String[] getVariablesUsed() {
+        return Syntax.getReferencedNames(responseCacheTime);
+    }
+
     //
     // Metadata
     //
@@ -151,7 +154,7 @@ public class CORSAssertion extends Assertion implements SetsVariables {
     private List<String> acceptedMethods;
     private List<String> acceptedOrigins;
     private List<String> exposedHeaders;
-    private Long responseCacheTime;
+    private String responseCacheTime;
     private boolean supportsCredentials = true;
     private boolean requireCors = true;
     private boolean allowNonStandardMethods = false;

@@ -13,6 +13,7 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.CollectionUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -25,9 +26,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the CORSAssertion.
@@ -78,6 +79,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -104,6 +106,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -145,6 +148,8 @@ public class ServerCORSAssertionTest {
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
+
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -186,6 +191,8 @@ public class ServerCORSAssertionTest {
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
+
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -226,6 +233,8 @@ public class ServerCORSAssertionTest {
         assertEquals(2, exposedHeaderValues.length);
         assertEquals(exposedHeader1, exposedHeaderValues[0]);
         assertEquals(exposedHeader2, exposedHeaderValues[1]);
+
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -268,6 +277,142 @@ public class ServerCORSAssertionTest {
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
+
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
+    }
+
+    @Test
+    public void testAcceptedOriginPreflight_WithCacheLimit_ResponseContainsMaxAgeHeader() throws Exception {
+        final String acceptedOrigin = "acceptedOrigin";
+        final String cacheLimitSetting = "30";
+
+        Message request = createRequest(HttpMethod.OPTIONS.toString());
+        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(CollectionUtils.list(acceptedOrigin));
+        assertion.setResponseCacheTime(cacheLimitSetting);   // cache max age set
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
+                "Origin allowed: " + acceptedOrigin));
+        assertEquals(true, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+
+        String[] allowedHeaderValues =
+                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+
+        assertEquals(3, allowedHeaderValues.length);
+        assertEquals("param", allowedHeaderValues[0]);
+        assertEquals("x-param", allowedHeaderValues[1]);
+        assertEquals("x-requested-with", allowedHeaderValues[2]);
+
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(cacheLimitSetting, response.getHeadersKnob().getHeaderValues("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+    }
+
+    @Test
+    public void testAcceptedOriginPreflight_WithCacheLimitFromVariable_ResponseContainsMaxAgeHeader() throws Exception {
+        final String acceptedOrigin = "acceptedOrigin";
+        final String cacheLimitContextVariable = "cacheLimitVar";
+        final String cacheLimitSetting = "30";
+
+        Message request = createRequest(HttpMethod.OPTIONS.toString());
+        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable(cacheLimitContextVariable, cacheLimitSetting);
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(CollectionUtils.list(acceptedOrigin));
+        assertion.setResponseCacheTime("${" + cacheLimitContextVariable + "}");   // cache max age set
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
+                "Origin allowed: " + acceptedOrigin));
+        assertEquals(true, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+
+        String[] allowedHeaderValues =
+                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+
+        assertEquals(3, allowedHeaderValues.length);
+        assertEquals("param", allowedHeaderValues[0]);
+        assertEquals("x-param", allowedHeaderValues[1]);
+        assertEquals("x-requested-with", allowedHeaderValues[2]);
+
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(cacheLimitSetting, response.getHeadersKnob().getHeaderValues("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+    }
+
+    @Test
+    public void testAcceptedOriginPreflight_WithInvalidCacheLimitFromVariable_ResponseContainsMaxAgeHeader() throws Exception {
+        final String acceptedOrigin = "acceptedOrigin";
+        final String cacheLimitContextVariable = "cacheLimitVar";
+        final String cacheLimitSetting = "not a valid integer"; // invalid cache limit value
+
+        Message request = createRequest(HttpMethod.OPTIONS.toString());
+        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable(cacheLimitContextVariable, cacheLimitSetting);
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(CollectionUtils.list(acceptedOrigin));
+        assertion.setResponseCacheTime("${" + cacheLimitContextVariable + "}");   // cache max age set
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException!");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+        }
+
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_WARNING,
+                "Failed to add Access-Control-Max-Age header: '" + cacheLimitSetting + "' is not a valid Response Cache Age value."));
+        assertEquals(true, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -297,6 +442,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -334,6 +480,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -371,6 +518,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -408,6 +556,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -453,6 +602,8 @@ public class ServerCORSAssertionTest {
 
         assertEquals(1, allowedHeaderValues.length);
         assertEquals(header, allowedHeaderValues[0]);
+
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     @Test
@@ -493,6 +644,7 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
 
     private void configureRequestHeaders(Message message, String origin, String method, String headers) {

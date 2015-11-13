@@ -6,12 +6,14 @@ import com.l7tech.external.assertions.cors.CORSAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -50,7 +52,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private JCheckBox supportsCredentialsCheckBox;
 
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(CORSPropertiesDialog.class.getName());
-    private InputValidator validators;
+    private InputValidator inputValidator;
     private TargetVariablePanel variablePrefixTextField;
     private DefaultTableModel originsTableModel;
     private DefaultTableModel headersTableModel;
@@ -153,18 +155,52 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         variablePrefixTextField.setAcceptEmpty(false);
         variablePrefixTextField.setValueWillBeWritten(true);
 
-        validators = new InputValidator( this, getTitle() );
-        validators.addRule(validators.constrainTextFieldToNumberRange(resourceBundle.getString("responseCacheAgeTitle"),
-                responseCacheAgeTextField, 0, Integer.MAX_VALUE));
+        inputValidator = new InputValidator(this, getTitle());
 
-        validators.addRule(new InputValidator.ComponentValidationRule(variablePrefixTextField) {
+        inputValidator.constrainTextField(responseCacheAgeTextField, new InputValidator.ComponentValidationRule(responseCacheAgeTextField) {
+            @Override
+            public String getValidationError() {
+                if (!responseCacheAgeCheckBox.isSelected()) {
+                    return null;
+                }
+
+                String expression = responseCacheAgeTextField.getText().trim();
+
+                if (Syntax.isOnlyASingleVariableReferenced(expression)) {
+                    // no validation of a context variable reference.
+                    return null;
+                }
+
+                final String[] refs = Syntax.getReferencedNames(expression);
+
+                if (refs.length > 0) {
+                    return resourceBundle.getString("cacheAgeSingleVariableOnlyError");
+                } else {
+                    try {
+                        int val = Integer.parseInt(expression);
+
+                        if (val < 0) {
+                            return MessageFormat.format(resourceBundle.getString("cacheAgeInvalidNumberError"),
+                                    String.valueOf(Integer.MAX_VALUE));
+                        }
+                    } catch (NumberFormatException e) {
+                        return MessageFormat.format(resourceBundle.getString("cacheAgeInvalidNumberError"),
+                                String.valueOf(Integer.MAX_VALUE));
+                    }
+                }
+
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(variablePrefixTextField) {
             @Override
             public String getValidationError() {
                 return variablePrefixTextField.getErrorMessage();
             }
         });
 
-        validators.addRule(new InputValidator.ValidationRule() {
+        inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
                 if (!getCheckBox.isSelected() && !putCheckBox.isSelected() && !postCheckBox.isSelected()
@@ -214,7 +250,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
     @Override
     public CORSAssertion getData( final CORSAssertion assertion ) throws ValidationException {
-        final String error = validators.validate();
+        final String error = inputValidator.validate();
 
         if(error != null) {
             throw new ValidationException(error);
@@ -250,7 +286,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             assertion.setExposedHeaders(headers);
         }
 
-        assertion.setResponseCacheTime(responseCacheAgeCheckBox.isSelected()?Long.parseLong(responseCacheAgeTextField.getText()):null);
+        assertion.setResponseCacheTime(responseCacheAgeCheckBox.isSelected() ? responseCacheAgeTextField.getText() : null);
         assertion.setVariablePrefix(variablePrefixTextField.getVariable().trim());
         assertion.setRequireCors(requireCorsCheckBox.isSelected());
         assertion.setSupportsCredentials(supportsCredentialsCheckBox.isSelected());
@@ -303,9 +339,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         }
 
         responseCacheAgeCheckBox.setSelected(assertion.getResponseCacheTime() != null);
-        responseCacheAgeTextField.setText(responseCacheAgeCheckBox.isSelected()?assertion.getResponseCacheTime().toString():"");
+        responseCacheAgeTextField.setText(responseCacheAgeCheckBox.isSelected() ? assertion.getResponseCacheTime() : "");
 
-        this.variablePrefixTextField.setVariable( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
+        this.variablePrefixTextField.setVariable(assertion.getVariablePrefix() == null ? "" : assertion.getVariablePrefix());
         this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
 
         requireCorsCheckBox.setSelected(assertion.isRequireCors());
