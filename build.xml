@@ -3768,8 +3768,22 @@
         Target to build the skar signer and sign .aar file.
     -->
     <target name="sign-aar-full" depends="package.skarsigner,sign-aar" description="Sign an AAR file" />
-    <target name="sign-aar-gensmfxml-full" depends="package.skarsigner,sign-aar-gensmfxml" description="Build the SkarSigner package, sign an aar file and generate RESTman XML for the signed file" />
-    <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for the signed file" />
+    <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign a aar file and generate RESTman XML for an signed file" />
+    <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign aa aar file and generate RESTman XML for an signed file" />
+
+
+    <!-- check if the SkarSigner jar file exists -->
+    <target name="skar-jar-check">
+        <condition property="skar-jar-exists">
+            <available file="${src.root}/modules/internal/build/SkarSigner.jar"/>
+        </condition>
+    </target>
+
+    <!-- build SkarSigner only if the jar file does not exist -->
+    <target name="build-skar-if-not-exists" depends="skar-jar-check" unless="skar-jar-exists">
+        <antcall target="package.skarsigner"></antcall>
+    </target>
+
     <!--
         Target to sign .aar file.
     -->
@@ -3819,7 +3833,7 @@
         <property name="saar-input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar"/>
         <property name="xml-output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.saar.xml"/>
 
-        <echo level="info">Generate RESTman XML file, ${xml-output}, for ${saar-input}</echo>
+        <echo level="info">Generate RESTman XML for ${saar-input} as ${xml-output}</echo>
 
         <java jar="${skarSigner}" fork="true" failonerror="true">
             <arg line="genSmfXml"/>
