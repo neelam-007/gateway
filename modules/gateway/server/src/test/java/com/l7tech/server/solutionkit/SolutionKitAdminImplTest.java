@@ -2,6 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.server.security.signer.SignatureTestUtils;
 import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.*;
@@ -37,6 +38,8 @@ public class SolutionKitAdminImplTest {
     private LicenseManager licenseManager;
     @Mock
     private SolutionKitManager solutionKitManager;
+    @Mock
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     private SolutionKitAdmin solutionKitAdmin;
 
@@ -55,7 +58,7 @@ public class SolutionKitAdminImplTest {
 
     @Before
     public void before() throws Exception {
-        solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, SIGNATURE_VERIFIER);
+        solutionKitAdmin = new SolutionKitAdminImpl(licenseManager, solutionKitManager, SIGNATURE_VERIFIER, identityProviderConfigManager);
         Assert.assertNotNull("SolutionKitAdmin is created", solutionKitAdmin);
     }
 

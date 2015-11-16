@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
@@ -26,6 +27,8 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     private SolutionKitManager solutionKitManager;
     @Inject
     private LicenseManager licenseManager;
+    @Inject
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     @Inject
     @Named( "signatureVerifier" )
@@ -37,10 +40,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @SuppressWarnings("unused")   // used for spring configuration
     public SolutionKitAdminImpl() {}
 
-    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager, SignatureVerifier signatureVerifier) {
+    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager, SignatureVerifier signatureVerifier, IdentityProviderConfigManager identityProviderConfigManager) {
         this.licenseManager = licenseManager;
         this.solutionKitManager = solutionKitManager;
         this.signatureVerifier = signatureVerifier;
+        this.identityProviderConfigManager = identityProviderConfigManager;
     }
 
     @Override
@@ -186,6 +190,6 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
      * Override for unit tests.
      */
     SolutionKitAdminHelper getSolutionKitAdminHelper() {
-        return new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+        return new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
     }
 }

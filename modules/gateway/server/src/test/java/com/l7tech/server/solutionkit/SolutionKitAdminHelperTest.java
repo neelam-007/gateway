@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureVerifier;
@@ -33,6 +34,8 @@ public class SolutionKitAdminHelperTest {
     private static SignatureVerifier signatureVerifier;
     @Mock
     private LicenseManager licenseManager;
+    @Mock
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     private SolutionKitManager solutionKitManager;
 
@@ -45,7 +48,7 @@ public class SolutionKitAdminHelperTest {
         final SolutionKit[] kits = createSampleSolutionKits();
         solutionKitManager = Mockito.spy(new SolutionKitManagerStub(kits));
         Assert.assertThat(solutionKitManager.findAll(), Matchers.containsInAnyOrder(kits));
-        solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+        solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
         Assert.assertNotNull("SolutionKitAdminHelper is created", solutionKitAdminHelper);
 
         goidToGuidMap.clear();

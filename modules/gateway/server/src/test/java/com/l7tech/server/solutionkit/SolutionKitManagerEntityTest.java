@@ -3,6 +3,7 @@ package com.l7tech.server.solutionkit;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -410,8 +411,12 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
                 )
         );
         Assert.assertNotNull(skManager);
+
+        // Mock IdentityProviderConfigManager as it's not available as a bean
+        final IdentityProviderConfigManager identityProviderConfigManager = Mockito.mock(IdentityProviderConfigManager.class);
+
         // create the admin helper
-        final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, signatureVerifier);
+        final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, signatureVerifier, identityProviderConfigManager);
         Assert.assertNotNull(helper);
 
         // samples

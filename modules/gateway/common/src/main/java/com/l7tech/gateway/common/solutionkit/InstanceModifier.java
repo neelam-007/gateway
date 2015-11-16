@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.solutionkit;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -35,9 +36,11 @@ public class InstanceModifier {
     public static final String ATTRIBUTE_NAME_STRING_VALUE = "stringValue";
     public static final String ATTRIBUTE_NAME_TARGET_ID = "targetId";
     public static final String ATTRIBUTE_NAME_TYPE = "type";
+    public static final String TAG_NAME_L7_ID = "l7:Id";
     public static final String TAG_NAME_L7_GUID = "l7:Guid";
     public static final String TAG_NAME_L7_NAME = "l7:Name";
     public static final String TAG_NAME_L7_TYPE = "l7:Type";
+    public static final String TAG_NAME_L7_IP_TYPE = "l7:IdentityProviderType";
     public static final String TAG_NAME_L7_URL_PATTERN = "l7:UrlPattern";
     public static final String TAG_NAME_L7P_ENCASS_CONFIG_GUID = "L7p:EncapsulatedAssertionConfigGuid";
     public static final String TAG_NAME_L7P_POLICY_GUID = "L7p:PolicyGuid";
@@ -63,6 +66,7 @@ public class InstanceModifier {
     public void apply() {
 
         // modify items
+        final List<String> pbidList = new ArrayList<>(); // An id list of policy-backed identity providers
         String entityTypeStr, actionStr;
         Node node;
         for (Element item : bundleReferenceItems) {
@@ -155,6 +159,22 @@ public class InstanceModifier {
                                 }
                             });
                             break;
+                        case ID_PROVIDER_CONFIG:
+                            if (IdentityProviderType.POLICY_BACKED.description().equals(getIdentityProviderType(item))) {
+                                final NodeList idNodeList = item.getElementsByTagName(TAG_NAME_L7_ID);
+                                if (idNodeList.getLength() > 0) {
+                                    node = idNodeList.item(0);
+                                    pbidList.add(node.getTextContent());
+                                }
+
+                                applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                                    @Override
+                                    public String call(String version, String name) {
+                                        return getPrefixedPolicyBackedIdentityProviderName(version, name);
+                                    }
+                                });
+                            }
+                            break;
                         default:
                             break;
                     }
@@ -164,13 +184,15 @@ public class InstanceModifier {
 
         // modify mappings
         Mapping.Action action;
+        String srcId;
         for (Element item : bundleMappings) {
             entityTypeStr = item.getAttribute(ATTRIBUTE_NAME_TYPE);
             actionStr = item.getAttribute(ATTRIBUTE_NAME_ACTION);
+            srcId = item.getAttribute(ATTRIBUTE_NAME_SRC_ID);
             if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
                 action = Mapping.Action.valueOf(actionStr);
                 if (action == Mapping.Action.AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))) {
-                    if (isModifiableType(entityTypeStr)) {
+                    if (isModifiableType(entityTypeStr, (pbidList.contains(srcId)? IdentityProviderType.POLICY_BACKED.description(): null))) {
                         // deterministically set targetId for the version modified entity
                         item.setAttribute(ATTRIBUTE_NAME_TARGET_ID, getModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
                     }
@@ -198,13 +220,25 @@ public class InstanceModifier {
         return modifiedGoid.substring(0, 8) + "-" + modifiedGoid.substring(8, 12) + "-" + modifiedGoid.substring(12, 16) + "-" + modifiedGoid.substring(16, 20) + "-" + modifiedGoid.substring(20, 32);
     }
 
-    public static boolean isModifiableType(@Nullable final String entityTypeStr) {
+    /**
+     * Check if an entity is modifiable (i.e., non-shareable).
+     *
+     * @param entityTypeStr: the string of an entity type
+     * @param subEntityTypeStr: the string of sub-type of an entity.  This parameter is only applied to identity providers so far.
+     * @return true if the entity is a folder, service, encapsulated assertion, scheduled task, policy-backed server,
+     *         or policy-backed identity provider.  Otherwise, return false.
+     */
+    public static boolean isModifiableType(@Nullable final String entityTypeStr, @Nullable final String subEntityTypeStr) {
         if (isEmpty(entityTypeStr)) {
             return false;
         } else {
             final EntityType entityType = valueOf(entityTypeStr);
 
-            // IMPORTANT these types must match ALL cases in the switch statement in apply() above
+            // If it is an identity provider, check subEntityTypeStr.
+            // If it is a policy-backed identity provider, return true.  If it is other types of identity providers, return false.
+            if (ID_PROVIDER_CONFIG == entityType) {
+                return IdentityProviderType.POLICY_BACKED.description().equals(subEntityTypeStr);
+            }
 
             return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE;
         }
@@ -244,6 +278,10 @@ public class InstanceModifier {
 
     public static String getPrefixedPolicyBackedServiceName(@Nullable String versionModifier, @NotNull String policyBackedServiceName) {
         return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyBackedServiceName : policyBackedServiceName;
+    }
+
+    public static String getPrefixedPolicyBackedIdentityProviderName(@Nullable String versionModifier, @NotNull String policyBackedIdentityProviderName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyBackedIdentityProviderName : policyBackedIdentityProviderName;
     }
 
     public static boolean isValidVersionModifier(@Nullable String versionModifier) {
@@ -450,5 +488,19 @@ public class InstanceModifier {
                 throw new RuntimeException("Unexpected error processing instance modifier; error serializing or de-serializing XML: " + e.getMessage(), e);
             }
         }
+    }
+
+    private static String getIdentityProviderType(@NotNull final Element item) {
+        final NodeList nodeList = item.getElementsByTagName(TAG_NAME_L7_IP_TYPE);
+
+        // Get identity provider type
+        if (nodeList.getLength() > 0) {
+            final Node node = nodeList.item(0);
+            final String type = node.getTextContent();
+
+            return StringUtils.isBlank(type)? null : type.trim();
+        }
+
+        return null;
     }
 }

@@ -1,0 +1,71 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>SK PBIP Policy Fragment</l7:Name>
+            <l7:Id>deebb2d7d2a3a8a13263ae91ce39095e</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2015-09-08T16:31:33.793-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Policy guid="cd8e04c4-d0e2-4093-9302-697a4abf6e90" id="deebb2d7d2a3a8a13263ae91ce39095e" version="0">
+                    <l7:PolicyDetail folderId="0000000000000000ffffffffffffec76" guid="cd8e04c4-d0e2-4093-9302-697a4abf6e90" id="deebb2d7d2a3a8a13263ae91ce39095e" version="0">
+                        <l7:Name>SK PBIP Policy Fragment</l7:Name>
+                        <l7:PolicyType>Identity Provider</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="tag">
+                                <l7:StringValue>password-auth</l7:StringValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                &lt;L7p:AuditDetailAssertion&gt;
+                                &lt;L7p:Detail stringValue=&quot;Policy Fragment: SK PBIP Policy Fragment&quot;/&gt;
+                                &lt;/L7p:AuditDetailAssertion&gt;
+                                &lt;/wsp:All&gt;
+                                &lt;/wsp:Policy&gt;
+                            </l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>SK Policy-backed Identity Provider</l7:Name>
+            <l7:Id>97630bf7d884b37b4a192806860573e8</l7:Id>
+            <l7:Type>ID_PROVIDER_CONFIG</l7:Type>
+            <l7:TimeStamp>2015-09-08T16:31:33.821-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:IdentityProvider id="97630bf7d884b37b4a192806860573e8" version="0">
+                    <l7:Name>SK Policy-backed Identity Provider</l7:Name>
+                    <l7:IdentityProviderType>Policy-Backed</l7:IdentityProviderType>
+                    <l7:Properties>
+                        <l7:Property key="adminEnabled">
+                            <l7:BooleanValue>false</l7:BooleanValue>
+                        </l7:Property>
+                    </l7:Properties>
+                    <l7:Extension>
+                        <l7:PolicyBackedIdentityProviderDetail>
+                            <l7:AuthenticationPolicyId>deebb2d7d2a3a8a13263ae91ce39095e</l7:AuthenticationPolicyId>
+                        </l7:PolicyBackedIdentityProviderDetail>
+                    </l7:Extension>
+                </l7:IdentityProvider>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="deebb2d7d2a3a8a13263ae91ce39095e" srcUri="https://localhost:8443/restman/1.0/policies/deebb2d7d2a3a8a13263ae91ce39095e" type="POLICY"/>
+        <l7:Mapping action="NewOrExisting" srcId="97630bf7d884b37b4a192806860573e8" srcUri="https://localhost:8443/restman/1.0/identityProviders/97630bf7d884b37b4a192806860573e8" type="ID_PROVIDER_CONFIG"/>
+    </l7:Mappings>
+</l7:Bundle>

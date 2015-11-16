@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
@@ -166,6 +167,8 @@ public class SolutionKitManagerResourceTest {
     @Mock
     private LicenseManager licenseManager;
     @Mock
+    private IdentityProviderConfigManager identityProviderConfigManager;
+    @Mock
     private FormDataMultiPart formDataMultiPart;
     @Mock
     private SolutionKitsConfig solutionKitsConfig;
@@ -216,6 +219,7 @@ public class SolutionKitManagerResourceTest {
         solutionKitResource.setSolutionKitManager(solutionKitManager);
         solutionKitResource.setLicenseManager(licenseManager);
         solutionKitResource.setSignatureVerifier(TRUSTED_SIGNATURE_VERIFIER);
+        solutionKitResource.setIdentityProviderConfigManager(identityProviderConfigManager);
     }
 
     @After

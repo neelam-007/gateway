@@ -1,0 +1,13 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrUpdate" srcId="deebb2d7d2a3a8a13263ae91ce39095e" srcUri="https://localhost:8443/restman/1.0/policies/deebb2d7d2a3a8a13263ae91ce39095e" type="POLICY">
+            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrUpdate" srcId="97630bf7d884b37b4a192806860573e8" srcUri="https://localhost:8443/restman/1.0/identityProviders/97630bf7d884b37b4a192806860573e8" type="ID_PROVIDER_CONFIG">
+            <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>

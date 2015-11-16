@@ -2,6 +2,9 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
@@ -32,11 +35,14 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     private final SolutionKitManager solutionKitManager;
     private final LicenseManager licenseManager;
     private final SignatureVerifier signatureVerifier;
+    private final IdentityProviderConfigManager identityProviderConfigManager;
 
-    public SolutionKitAdminHelper(@NotNull final LicenseManager licenseManager, @NotNull final SolutionKitManager solutionKitManager, @NotNull final SignatureVerifier signatureVerifier) {
+    public SolutionKitAdminHelper(@NotNull final LicenseManager licenseManager, @NotNull final SolutionKitManager solutionKitManager,
+                                  @NotNull final SignatureVerifier signatureVerifier, @NotNull final IdentityProviderConfigManager identityProviderConfigManager) {
         this.solutionKitManager = solutionKitManager;
         this.licenseManager = licenseManager;
         this.signatureVerifier = signatureVerifier;
+        this.identityProviderConfigManager = identityProviderConfigManager;
     }
 
     public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
@@ -173,11 +179,20 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
             // mappings from the deletion mappings.  Otherwise, use the full deletion mappings without any changes.
             if (numOfInstances > 1) {
                 final List<String> toBeIgnoredEntityTypes = new ArrayList<>();
-                String entityTypeStr;
+                String entityTypeStr, subEntityTypeStr, targetId;
                 final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
                 for (Element element: uninstallMappingsMsg.getMappings()) {
                     entityTypeStr = element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
-                    if (!InstanceModifier.isModifiableType(entityTypeStr)) {
+
+                    // Retrieve a sub entity type if the entity type is identity provider.  If it is not identity provider, just simply return null.
+                    if (EntityType.valueOf(entityTypeStr) == EntityType.ID_PROVIDER_CONFIG) {
+                        targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
+                        subEntityTypeStr = getIdentityProviderType(targetId);
+                    } else {
+                        subEntityTypeStr = null;
+                    }
+
+                    if (!InstanceModifier.isModifiableType(entityTypeStr, subEntityTypeStr)) {
                         toBeIgnoredEntityTypes.add(entityTypeStr);
                     }
                 }
@@ -192,6 +207,18 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         }
         solutionKitManager.delete(solutionKit);
         return resultMappings;
+    }
+
+    private String getIdentityProviderType(final String identityProviderGoid) {
+        try {
+            final IdentityProviderConfig identityProviderConfig = identityProviderConfigManager.findByPrimaryKey(Goid.parseGoid(identityProviderGoid));
+            if (identityProviderConfig == null) return null;
+
+            return IdentityProviderType.fromVal(identityProviderConfig.getTypeVal()).description();
+        } catch (FindException e) {
+            logger.warning("Error on finding an identity provider with GOID = '" + identityProviderGoid + "'");
+            return null;
+        }
     }
 
     @NotNull

@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
@@ -80,6 +81,12 @@ public class SolutionKitManagerResource {
     @SpringBean
     public void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
         this.signatureVerifier = signatureVerifier;
+    }
+
+    private IdentityProviderConfigManager identityProviderConfigManager;
+    @SpringBean
+    public void setIdentityProviderConfigManager(final IdentityProviderConfigManager identityProviderConfigManager) {
+        this.identityProviderConfigManager = identityProviderConfigManager;
     }
 
     public SolutionKitManagerResource() {}
@@ -214,7 +221,7 @@ public class SolutionKitManagerResource {
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+        final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
 
         try {
             validateParams(fileInputStream);
@@ -586,7 +593,7 @@ public class SolutionKitManagerResource {
                 }
             }
 
-            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier);
+            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
             final Collection<SolutionKit> childrenList = solutionKitAdminHelper.find(solutionKitToUninstall.getGoid());
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
