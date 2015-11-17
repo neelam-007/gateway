@@ -19,6 +19,7 @@
             <!-- copy artifacts into correct name to be published -->
             <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.1.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
             <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.1.00.saar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-saar.saar"/>
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.1.00.saar.xml" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-saar-xml.saar-xml"/>
         </sequential>
     </macrodef>
 </project>

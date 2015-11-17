@@ -4,5 +4,6 @@
         <artifact name="api-portal-assertion9.1" type="pom" ext="pom"/>
         <artifact name="api-portal-assertion9.1" type="aar" ext="aar"/>
         <artifact name="api-portal-assertion9.1" type="saar" ext="saar"/>
+        <artifact name="api-portal-assertion9.1" type="saar-xml" ext="saar-xml"/>
     </publications>
 </ivy-module>
