@@ -170,4 +170,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.solutionkit.SolutionKitAdmin"/>
     </bean>
 
+    <bean name="/SignatureVerifierAdmin" parent="httpInvokerParent">
+        <property name="service" ref="signatureVerifierAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin"/>
+    </bean>
+
 </beans>

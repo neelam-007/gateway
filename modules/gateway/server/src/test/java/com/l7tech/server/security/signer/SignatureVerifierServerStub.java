@@ -7,15 +7,15 @@ import java.io.InputStream;
 import java.security.SignatureException;
 
 /**
- * <p>Stub for {@code com.l7tech.server.security.signer.SignatureVerifier}.<br/>
+ * <p>Stub for {@code SignatureVerifier}.<br/>
  * Basically acts as a proxy class, allowing you to set the real {@code SignatureVerifier},
- * using the {@link #setProxyVerifier(SignatureVerifier)}.</p>
+ * using the {@link #setProxyVerifier(SignatureVerifierServer)}.</p>
  *
  * Throws {@code IllegalStateException} if the proxy object {@link #proxyVerifier} is not set.
  */
-public class SignatureVerifierStub implements SignatureVerifier {
+public class SignatureVerifierServerStub implements SignatureVerifierServer {
 
-    private SignatureVerifier proxyVerifier;
+    private SignatureVerifierServer proxyVerifier;
 
     @Override
     public void verify(@NotNull final InputStream zipToVerify) throws SignatureException {
@@ -41,7 +41,15 @@ public class SignatureVerifierStub implements SignatureVerifier {
         proxyVerifier.verify(content, signatureProperties);
     }
 
-    public void setProxyVerifier(@NotNull final SignatureVerifier proxyVerifier) {
+    @Override
+    public void verify(@NotNull final byte[] digest, @Nullable final byte[] signatureProperties) throws SignatureException {
+        if (proxyVerifier == null) {
+            throw new IllegalStateException("proxyVerifier not set");
+        }
+        proxyVerifier.verify(digest, signatureProperties);
+    }
+
+    public void setProxyVerifier(@NotNull final SignatureVerifierServer proxyVerifier) {
         this.proxyVerifier = proxyVerifier;
     }
 }

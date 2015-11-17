@@ -15,7 +15,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
@@ -521,7 +521,7 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
         // test not trusted signer cert
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // create another signer with same DN's
-        SignatureVerifier newSigVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        SignatureVerifierServer newSigVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
         moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
         moduleFileMO.setId(new Goid(++idInc, 101).toString());
         moduleFileMO.setName("test custom server module file");

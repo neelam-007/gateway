@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -82,6 +83,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private ClusterStatusAdmin clusterStatusAdmin;
     private SecurityProvider securityProvider;
     private ClusterNodeInfo currentClusterNode;
+    private SignatureVerifierAdmin signatureVerifierAdmin;
 
     private final boolean canCreate;
     private final boolean canUpload;
@@ -414,7 +416,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                                     if (!HexUtils.hexDump(digest).equals(entity.getModuleSha256())) {
                                         throw new SaveException("Digest mismatch");
                                     }
-                                    getClusterStatusAdmin().verifyServerModuleFileSignature(digest, entity.getData().getSignatureProperties());
+                                    getSignatureVerifierAdmin().verify(digest, entity.getData().getSignatureProperties());
                                 }
                                 final Goid id = getClusterStatusAdmin().saveServerModuleFile(entity);
                                 entity.setGoid(id);
@@ -691,6 +693,17 @@ public class ServerModuleFileManagerWindow extends JDialog {
             clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         }
         return clusterStatusAdmin;
+    }
+
+    /**
+     * Get our cached {@link SignatureVerifierAdmin}
+     */
+    @NotNull
+    private SignatureVerifierAdmin getSignatureVerifierAdmin() {
+        if (signatureVerifierAdmin == null) {
+            signatureVerifierAdmin = Registry.getDefault().getSignatureVerifierAdmin();
+        }
+        return signatureVerifierAdmin;
     }
 
     /**

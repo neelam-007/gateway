@@ -1,11 +1,9 @@
 package com.l7tech.server.security.signer;
 
 import com.l7tech.gateway.common.module.ModuleDigest;
-import com.l7tech.gateway.common.security.signer.SignedZipVisitor;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.util.*;
 import org.hamcrest.Matchers;
-import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 
 import java.io.*;
@@ -19,10 +17,10 @@ import java.util.zip.ZipOutputStream;
 /**
  * Testing modules signature verifier as well as signer.
  */
-public class SignatureVerifierTest extends SignatureTestUtils {
+public class SignatureVerifierServerTest extends SignatureTestUtils {
 
     // we are going to treat this verifier (and holder of the signer certs) as trustworthy
-    private static SignatureVerifier TRUSTED_VERIFIER;
+    private static SignatureVerifierServer TRUSTED_VERIFIER;
     private static final String[] TRUSTED_SIGNER_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",
@@ -31,7 +29,7 @@ public class SignatureVerifierTest extends SignatureTestUtils {
     };
 
     // we are going to treat this verifier (and holder of the signer certs) as untrustworthy
-    private static SignatureVerifier UNTRUSTED_VERIFIER;
+    private static SignatureVerifierServer UNTRUSTED_VERIFIER;
     // the first 4 are the same DN's as trusted ones
     private static final String[] UNTRUSTED_SIGNER_DNS =
             ArrayUtils.concat(
@@ -74,37 +72,15 @@ public class SignatureVerifierTest extends SignatureTestUtils {
         Assert.assertNotNull(signedZip);
         Assert.assertNotNull(modifyCallback);
 
-        // signed data and signature properties bytes
         // process input sip file
-        final Pair<
-                byte[], // data bytes
-                byte[]  // signature properties bytes
-        > signedDataAndSignatureBytes = SignerUtils.walkSignedZip(
-                signedZip,
-                new SignedZipVisitor<byte[], byte[]>() {
-                    @Override
-                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
-                        final byte[] dataBytes = IOUtils.slurpStream(inputStream);
-                        Assert.assertNotNull(dataBytes);
-                        Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
-                        return dataBytes;
-                    }
-
-                    @Override
-                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                        final byte[] signatureBytes = IOUtils.slurpStream(inputStream);
-                        Assert.assertNotNull(signatureBytes);
-                        Assert.assertThat(signatureBytes.length, Matchers.greaterThan(0));
-                        return signatureBytes;
-                    }
-                },
-                true
-        );
+        final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(signedZip);
+        Assert.assertNotNull(zipContent);
 
         // get signed data and signature properties bytes
-        final byte[] dataBytes = signedDataAndSignatureBytes.left;
-        final byte[] signatureBytes = signedDataAndSignatureBytes.right;
+        final byte[] dataBytes = zipContent.getDataBytes();
+        final byte[] signatureBytes = zipContent.getSignaturePropertiesBytes();
         // make sure both are read correctly
+        //noinspection ConstantConditions
         if (dataBytes == null || signatureBytes == null) {
             throw new IOException("Invalid signed Zip file. Either 'Signed Data' or 'Signature Properties' or both are missing from signed Zip");
         }

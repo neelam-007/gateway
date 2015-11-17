@@ -15,7 +15,7 @@ import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.util.*;
@@ -1700,7 +1700,7 @@ public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
 
         // save test; not trusted signer cert
         // create another signer with same DN's
-        SignatureVerifier newSigner = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        SignatureVerifierServer newSigner = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
         modulesSize = admin.findAllServerModuleFiles().size();
         moduleFile = new ServerModuleFile();
         moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);

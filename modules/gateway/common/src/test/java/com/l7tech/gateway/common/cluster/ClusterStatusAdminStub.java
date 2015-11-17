@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.security.SignatureException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -365,11 +364,6 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     @Override
     public void deleteServerModuleFile( @NotNull Goid id ) {
-    }
-
-    @Override
-    public void verifyServerModuleFileSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
-        // nothing to do; verified
     }
 
     @NotNull

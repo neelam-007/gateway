@@ -531,4 +531,7 @@
     <!-- Solution kit admin imple -->
     <bean id="solutionKitAdmin" class="com.l7tech.server.solutionkit.SolutionKitAdminImpl"/>
 
+    <!-- SignatureVerifier admin impl -->
+    <bean id="signatureVerifierAdmin" class="com.l7tech.server.security.signer.SignatureVerifierAdminImpl"/>
+
 </beans>

@@ -15,7 +15,7 @@ import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -51,10 +51,11 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     @Named("serverConfig")
     private Config config;
 
-    private SignatureVerifier signatureVerifier;
+    private SignatureVerifierServer signatureVerifier;
 
     @Inject
-    public void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+    @Named("signatureVerifier")
+    public void setSignatureVerifier(final SignatureVerifierServer signatureVerifier) {
         this.signatureVerifier = signatureVerifier;
     }
 

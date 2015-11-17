@@ -1,10 +1,9 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
@@ -12,9 +11,11 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -24,7 +25,9 @@ import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
-import com.l7tech.policy.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -303,6 +306,14 @@ public abstract class Registry {
     public abstract SolutionKitAdmin getSolutionKitAdmin();
 
     /**
+     * Get the {@link SignatureVerifierAdmin} interface implementation.
+     *
+     * @return the signature verifier admin interface implementation. Never {@code null}.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    public abstract SignatureVerifierAdmin getSignatureVerifierAdmin();
+
+    /**
      * Get an EntityNameResolver which can be used to determine display names for entities and/or headers.
      *
      * @return an EntityNameResolver which can be used to determine display names for entities and/or headers.
@@ -528,6 +539,11 @@ public abstract class Registry {
 
         @Override
         public SolutionKitAdmin getSolutionKitAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public SignatureVerifierAdmin getSignatureVerifierAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

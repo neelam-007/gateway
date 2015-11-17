@@ -5,15 +5,12 @@ import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.solutionkit.SkarProcessor;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierHelper;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +21,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.text.MessageFormat;
@@ -48,11 +44,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private JButton fileButton;
 
     private SolutionKitsConfig solutionKitsConfig;
-    private final SolutionKitAdmin solutionKitAdmin;
+    private final SignatureVerifierAdmin signatureVerifierAdmin;
 
     public SolutionKitLoadPanel() {
         super(null);
-        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+        signatureVerifierAdmin = Registry.getDefault().getSignatureVerifierAdmin();
         initialize();
     }
 
@@ -95,26 +91,14 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             return false;
         }
 
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(file);
-            new SkarProcessor(solutionKitsConfig).load(
-                    fis,
-                    new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
-                        @Override
-                        public void call(final byte[] digest, final String signature) throws SignatureException {
-                            solutionKitAdmin.verifySkarSignature(digest, signature);
-                        }
-                    }
-            );
-        } catch (IOException | SolutionKitException e) {
+        try (final SignerUtils.SignedZipContent zipContent = new SignatureVerifierHelper(signatureVerifierAdmin).verifyZip(file)) {
+            new SkarProcessor(solutionKitsConfig).load(zipContent.getDataStream());
+        } catch (IOException | SignatureException | SolutionKitException e) {
             solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
-        } finally {
-            ResourceUtils.closeQuietly(fis);
         }
 
         // Check the license of the parent SKAR, before the next wizard step SolutionKitSelectionPanel proceeds.

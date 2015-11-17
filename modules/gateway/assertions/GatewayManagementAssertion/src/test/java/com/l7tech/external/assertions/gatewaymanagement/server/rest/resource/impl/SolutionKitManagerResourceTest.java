@@ -9,7 +9,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.util.*;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.when;
 public class SolutionKitManagerResourceTest {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResourceTest.class.getName());
 
-    private static SignatureVerifier TRUSTED_SIGNATURE_VERIFIER;
+    private static SignatureVerifierServer TRUSTED_SIGNATURE_VERIFIER;
     private static final String[] TRUSTED_SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com"
@@ -424,7 +424,7 @@ public class SolutionKitManagerResourceTest {
                         "cn=signer.untrusted.apim.ca.com"
                 }
         );
-        final SignatureVerifier untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
+        final SignatureVerifierServer untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
 
         // test using untrusted signer with all signing cert DNs
         for (final String signerDN : untrustedDNs) {
@@ -542,7 +542,7 @@ public class SolutionKitManagerResourceTest {
                         "cn=signer.untrusted.apim.ca.com"
                 }
         );
-        final SignatureVerifier untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
+        final SignatureVerifierServer untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
 
         // create sample skar of skars
         final InputStream[] childSkarsStream = creteUnsignedSampleChildScars(2);
@@ -1476,7 +1476,7 @@ public class SolutionKitManagerResourceTest {
 
     private static InputStream[] creteSignedSampleChildScars(
             final int numChildren,
-            final SignatureVerifier signer,
+            final SignatureVerifierServer signer,
             final String signerDn
     ) throws Exception {
         return creteSampleChildScars(numChildren, true, signer, signerDn);
@@ -1494,7 +1494,7 @@ public class SolutionKitManagerResourceTest {
     private static InputStream[] creteSampleChildScars(
             final int numChildren,
             final boolean sign,
-            @Nullable final SignatureVerifier signer,
+            @Nullable final SignatureVerifierServer signer,
             @Nullable final String signerDn
     ) throws Exception {
         assertThat(numChildren, Matchers.greaterThanOrEqualTo(1));

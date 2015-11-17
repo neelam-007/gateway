@@ -5,17 +5,20 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.SignatureVerifier;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.internal.signer.LazyFileOutputStream;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.transform.dom.DOMResult;
 import java.io.*;
+import java.security.SignatureException;
 import java.util.*;
 
 import static com.l7tech.internal.signer.SignerErrorCodes.*;
@@ -169,7 +172,48 @@ public class GenerateServerModuleFileCommand extends Command {
         if (serverModuleFileUtils == null) {
             serverModuleFileUtils = new ServerModuleFileUtils(
                     new CustomAssertionsScannerHelper("custom_assertions.properties"),
-                    new ModularAssertionsScannerHelper("ModularAssertion-List")
+                    new ModularAssertionsScannerHelper("ModularAssertion-List"),
+                    // we can only verify signature but cannot check if the signer is trusted.
+                    new SignatureVerifier() {
+                        @Override
+                        public void verify(@NotNull byte[] digest, @Nullable String signatureProperties) throws SignatureException {
+                            // if no signature provided throw
+                            if (StringUtils.isBlank(signatureProperties)) {
+                                throw new SignatureException("Module is not signed");
+                            }
+
+                            // extract content signer cert
+                            assert signatureProperties != null;
+                            try (final StringReader reader = new StringReader(signatureProperties)) {
+                                final Properties sigProps = new Properties();
+                                sigProps.load(reader);
+                                SignerUtils.verifySignatureWithDigest(digest, sigProps);
+                            } catch (final SignatureException e) {
+                                throw e;
+                            } catch (final Exception e) {
+                                throw new SignatureException("Failed to verify and extract signer certificate", e);
+                            }
+                        }
+
+                        @Override
+                        public void verify(@NotNull byte[] digest, @Nullable byte[] signatureProperties) throws SignatureException {
+                            // if no signature provided throw
+                            if (ArrayUtils.isEmpty(signatureProperties)) {
+                                throw new SignatureException("Module is not signed");
+                            }
+
+                            // extract content signer cert
+                            try {
+                                final Properties sigProps = new Properties();
+                                sigProps.load(new ByteArrayInputStream(signatureProperties));
+                                SignerUtils.verifySignatureWithDigest(digest, sigProps);
+                            } catch (final SignatureException e) {
+                                throw e;
+                            } catch (final Exception e) {
+                                throw new SignatureException("Failed to verify and extract signer certificate", e);
+                            }
+                        }
+                    }
             );
         }
         return serverModuleFileUtils;

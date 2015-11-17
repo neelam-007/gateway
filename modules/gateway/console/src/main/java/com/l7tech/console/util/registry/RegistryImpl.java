@@ -1,7 +1,5 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
@@ -9,6 +7,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
@@ -16,9 +15,11 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -29,7 +30,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
-import com.l7tech.policy.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
@@ -97,6 +100,7 @@ public final class RegistryImpl extends Registry
     private EntityNameResolver entityNameResolver;
     private WorkQueueManagerAdmin workQueueManagerAdmin;
     private SolutionKitAdmin solutionKitAdmin;
+    private SignatureVerifierAdmin signatureVerifierAdmin;
     // When you add an admin interface don't forget to
     // add it to the reset method
 
@@ -463,6 +467,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public SignatureVerifierAdmin getSignatureVerifierAdmin() {
+        checkAdminContext();
+        if (signatureVerifierAdmin != null) {
+            return signatureVerifierAdmin;
+        }
+        signatureVerifierAdmin = adminContext.getAdminInterface(SignatureVerifierAdmin.class);
+        return signatureVerifierAdmin;
+    }
+
+    @Override
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
@@ -578,6 +592,7 @@ public final class RegistryImpl extends Registry
         workQueueManagerAdmin = null;
         scheduledTaskAdmin = null;
         solutionKitAdmin = null;
+        signatureVerifierAdmin = null;
     }
 
 

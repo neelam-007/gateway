@@ -3,6 +3,7 @@ package com.l7tech.server.security.signer;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,9 +15,9 @@ import java.security.cert.X509Certificate;
 import java.util.Properties;
 
 /**
- * Implementation of {@link SignatureVerifier}
+ * Implementation of {@link SignatureVerifierServer}
  */
-public class SignatureVerifierImpl implements SignatureVerifier {
+public class SignatureVerifierServerImpl implements SignatureVerifierServer {
 
     /**
      * Trust store file containing trusted signers certs
@@ -47,7 +48,7 @@ public class SignatureVerifierImpl implements SignatureVerifier {
      * @param password               trusted signers {@code KeyStore} password to use for decrypting or unlocking the key store.
      *                               Generally required by software (file-based) key stores.
      */
-    SignatureVerifierImpl(
+    SignatureVerifierServerImpl(
             final File trustedSignersStore,
             final String type,
             char[] password
@@ -93,8 +94,9 @@ public class SignatureVerifierImpl implements SignatureVerifier {
      * The .ZIP file must be created using our signer tool, as the content of the zip must be in specified order.
      *
      * @param zipToVerify    a {@code InputStream} containing .ZIP file as produced by the signer tool.  Required and cannot be {@code null}.
-     * @throws java.security.SignatureException if signature cannot be validated or signer cert is not trusted.
+     * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
      */
+    @Override
     public void verify(@NotNull final InputStream zipToVerify) throws SignatureException {
         final X509Certificate sawSigner;
         try {
@@ -115,10 +117,41 @@ public class SignatureVerifierImpl implements SignatureVerifier {
     /**
      * Validates signature and also verifies that signer cert is trusted.
      *
-     * @param digest                Calculated digest of the file content to check signature.  Required and cannot be {@code null}.
-     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool.
+     * @param content               {@code InputStream} of the file content to check signature.  Required and cannot be {@code null}.
+     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool,
+     *                              holding ASN.1 encoded X.509 certificate as Base64 string and ASN.1 encoded signature value as Base64 string.
      *                              Optional and can be {@code null} if module is not signed.
-     * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
+     * @throws SignatureException
+     */
+    @Override
+    public void verify(@NotNull final InputStream content, @Nullable final String signatureProperties) throws SignatureException {
+        // if no signature provided throw
+        if (StringUtils.isBlank(signatureProperties)) {
+            throw new SignatureException("Module is not signed");
+        }
+        // get or compute digest
+        final byte[] computedDigest;
+        try {
+            final DigestInputStream dis = new DigestInputStream(content, MessageDigest.getInstance("SHA-256"));
+            IOUtils.copyStream(dis, new NullOutputStream());
+            computedDigest = dis.getMessageDigest().digest();
+        } catch (final NoSuchAlgorithmException | IOException e) {
+            throw new SignatureException("Failed to calculate content digest", e);
+        }
+        verify(computedDigest, signatureProperties);
+    }
+
+    /**
+     * Validates signature and also verifies that signer cert is trusted.
+     *
+     * @param digest                Calculated SHA-256 digest of the content to check signature.  Required and cannot be {@code null}.
+     *                              Note: this MUST NOT just be the value claimed by the sender -- it must be a
+     *                              freshly computed value from hashing the information covered by the signature.
+     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool,
+     *                              holding ASN.1 encoded X.509 certificate as Base64 string and ASN.1 encoded signature
+     *                              value as Base64 string.
+     *                              Optional and can be {@code null} if module is not signed.
+     * @throws SignatureException
      */
     @Override
     public void verify(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
@@ -151,29 +184,38 @@ public class SignatureVerifierImpl implements SignatureVerifier {
     /**
      * Validates signature and also verifies that signer cert is trusted.
      *
-     * @param content               {@code InputStream} of the file content to check signature.  Required and cannot be {@code null}.
-     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool.
-     *                              Optional and can be {@code null} if module is not signed.
-     * @throws SignatureException if signature cannot be validated or signer cert is not trusted.
+     * @param digest              Calculated SHA-256 digest of the content to check signature.  Required and cannot be {@code null}.
+     *                            Note: this MUST NOT just be the value claimed by the sender -- it must be a
+     *                            freshly computed value from hashing the information covered by the signature.
+     * @param signatureProperties Signature properties bytes, as produced by the signer tool, holding ASN.1 encoded
+     *                            X.509 certificate as Base64 string and ASN.1 encoded signature value as Base64 string.
+     *                            Optional and can be {@code null} if module is not signed.
+     * @throws SignatureException
      */
     @Override
-    public void verify(@NotNull final InputStream content, @Nullable final String signatureProperties) throws SignatureException {
+    public void verify(@NotNull final byte[] digest, @Nullable final byte[] signatureProperties) throws SignatureException {
         // if no signature provided throw
-        if (StringUtils.isBlank(signatureProperties)) {
+        if (ArrayUtils.isEmpty(signatureProperties)) {
             throw new SignatureException("Module is not signed");
         }
 
-        // get or compute digest
-        final byte[] computedDigest;
-        // if content is provided calculate digest
+        // extract content signer cert
+        final X509Certificate sawSigner;
         try {
-            final DigestInputStream dis = new DigestInputStream(content, MessageDigest.getInstance("SHA-256"));
-            IOUtils.copyStream(dis, new NullOutputStream());
-            computedDigest = dis.getMessageDigest().digest();
-        } catch (final NoSuchAlgorithmException | IOException e) {
-            throw new SignatureException("Failed to calculate content digest", e);
+            final Properties sigProps = new Properties();
+            sigProps.load(new ByteArrayInputStream(signatureProperties));
+            sawSigner = SignerUtils.verifySignatureWithDigest(digest, sigProps);
+        } catch (final SignatureException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new SignatureException("Failed to verify and extract signer certificate", e);
         }
 
-        verify(computedDigest, signatureProperties);
+        // verify that content signer cert is trusted
+        try {
+            SignerUtils.verifySignerCertIsTrusted(trustedSignersStore, trustedSignersStoreType, trustedSignersStorePassword, sawSigner);
+        } catch (final Exception e) {
+            throw new SignatureException("Failed to verify signer certificate", e);
+        }
     }
 }

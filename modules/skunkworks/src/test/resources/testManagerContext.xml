@@ -1762,5 +1762,5 @@
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
     </bean>
 
-    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierStub" />
+    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierServerStub" />
 </beans>

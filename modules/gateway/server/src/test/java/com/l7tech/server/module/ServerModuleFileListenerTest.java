@@ -17,7 +17,7 @@ import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.module.*;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
@@ -102,7 +102,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     private String currentNodeId = "currentClusterNode";
 
     // untrusted signer and signer cert DN's
-    private static SignatureVerifier untrustedModuleSigner;
+    private static SignatureVerifierServer untrustedModuleSigner;
     private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
 
     @BeforeClass

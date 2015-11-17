@@ -11,11 +11,9 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,7 +29,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.SignatureException;
 import java.util.*;
 
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
@@ -66,22 +63,13 @@ public class SkarProcessorTest {
 
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
-    // do nothing to verify signature (simulate skar is trusted)
-    private static final Functions.BinaryVoidThrows<byte[], String, SignatureException> DUMMY_SIGNATURE_VERIFIER_CALLBACK =
-            new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
-                @Override
-                public void call(byte[] digest, String signature) throws SignatureException {
-                    // do nothing to verify signature (simulate skar is trusted)
-                }
-            };
-
     @BeforeClass
     public static void load() throws Exception {
         // get the input stream of a signed solution kit
-        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-signed.skar");
+        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1.skar");
         Assert.assertNotNull(inputStream);
         // load the skar file
-        skarProcessor.load(inputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+        skarProcessor.load(inputStream);
     }
 
     @Test
@@ -237,10 +225,10 @@ public class SkarProcessorTest {
         // expect error message "... value cannot be empty."
         SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
         SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements-signed.skar");
+        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("value cannot be empty."));
@@ -249,10 +237,10 @@ public class SkarProcessorTest {
         // expect error message "Required element ... not found"
         invalidSolutionKitsConfig = new SolutionKitsConfig();
         invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements-signed.skar");
+        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Required element"));
@@ -261,10 +249,10 @@ public class SkarProcessorTest {
         // expect error message "Missing required file ..."
         invalidSolutionKitsConfig = new SolutionKitsConfig();
         invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle-signed.skar");
+        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle.skar");
         Assert.assertNotNull(invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+            invalidSkarProcessor.load(invalidInputStream);
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Missing required file"));
@@ -272,37 +260,16 @@ public class SkarProcessorTest {
     }
 
     @Test
-    public void unsignedSkar() throws Exception {
-        // mock SolutionKitAdmin
-        final SolutionKitAdmin solutionKitAdmin = Mockito.mock(SolutionKitAdmin.class);
-        Mockito.doNothing().when(solutionKitAdmin).verifySkarSignature(Mockito.any(byte[].class), Mockito.anyString());
-
-        // expect error message "... Invalid signed Zip."
-        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-        final InputStream unsignedSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1-unsigned.skar");
-        Assert.assertNotNull(unsignedSkarStream);
-        try {
-            skarProcessor.load(unsignedSkarStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
-            fail("Expected: an invalid .skar file.");
-        } catch (UntrustedSolutionKitException e) {
-            assertThat(e.getMessage(), Matchers.containsString("Invalid signed Zip"));
-        }
-    }
-
-    @Test
     public void signedSkarOfSkars() throws Exception {
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         final SkarProcessor skarProcessor = Mockito.spy(new SkarProcessor(solutionKitsConfig));
-        final InputStream signedSkarOfSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars-signed.skar");
+        final InputStream signedSkarOfSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars.skar");
         Assert.assertNotNull(signedSkarOfSkarStream);
 
         // load the skar-of-skars
-        skarProcessor.load(signedSkarOfSkarStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
-        // verifySkarSignature is called only once
-        Mockito.verify(skarProcessor, Mockito.times(1)).load(signedSkarOfSkarStream, DUMMY_SIGNATURE_VERIFIER_CALLBACK);
+        skarProcessor.load(signedSkarOfSkarStream);
         // 3 times; once for the parent and twice for two children
-        Mockito.verify(skarProcessor, Mockito.times(3)).loadWithoutSignatureCheck(Mockito.<InputStream>any());
+        Mockito.verify(skarProcessor, Mockito.times(3)).load(Mockito.<InputStream>any());
     }
 
     @Test

@@ -6,6 +6,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGateway
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierHelper;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
@@ -14,12 +16,11 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.solutionkit.AddendumBundleHandler;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -77,9 +79,10 @@ public class SolutionKitManagerResource {
         this.licenseManager = licenseManager;
     }
 
-    private SignatureVerifier signatureVerifier;
+    private SignatureVerifierServer signatureVerifier;
     @SpringBean
-    public void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
+    @Named("signatureVerifier")
+    public void setSignatureVerifier(final SignatureVerifierServer signatureVerifier) {
         this.signatureVerifier = signatureVerifier;
     }
 
@@ -221,7 +224,7 @@ public class SolutionKitManagerResource {
         //              junit.framework.AssertionFailedError: Invalid doc for param 'id' on request on method with id: 'null' at resource path: {id} ...
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
+        final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
 
         try {
             validateParams(fileInputStream);
@@ -267,17 +270,12 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
             }
 
-            // load skar
-            final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-            skarProcessor.load(
-                    fileInputStream,
-                    new Functions.BinaryVoidThrows<byte[], String, SignatureException>() {
-                        @Override
-                        public void call(final byte[] digest, final String signature) throws SignatureException {
-                            solutionKitAdminHelper.verifySkarSignature(digest, signature);
-                        }
-                    }
-            );
+            // verify signed skar signature and load the skar afterwards
+            final SkarProcessor skarProcessor;
+            try (final SignerUtils.SignedZipContent zipContent = new SignatureVerifierHelper(signatureVerifier).verifyZip(fileInputStream)) {
+                skarProcessor = new SkarProcessor(solutionKitsConfig);
+                skarProcessor.load(zipContent.getDataStream());
+            }
 
             // handle any user selection(s) - child solution kits
             setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifierParameter);
@@ -326,7 +324,7 @@ public class SolutionKitManagerResource {
         } catch (SolutionKitManagerResourceException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
-        } catch (UntrustedSolutionKitException e) {
+        } catch (SignatureException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (ForbiddenException e) {
@@ -593,7 +591,7 @@ public class SolutionKitManagerResource {
                 }
             }
 
-            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
+            final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
             final Collection<SolutionKit> childrenList = solutionKitAdminHelper.find(solutionKitToUninstall.getGoid());
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.

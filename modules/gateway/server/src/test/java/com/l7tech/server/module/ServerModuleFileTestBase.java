@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.policy.module.ModulesScannerTestBase;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.Either;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
@@ -34,7 +34,7 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     // our signer utils object
-    protected static SignatureVerifier SIGNATURE_VERIFIER;
+    protected static SignatureVerifierServer SIGNATURE_VERIFIER;
     protected static final String[] SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",

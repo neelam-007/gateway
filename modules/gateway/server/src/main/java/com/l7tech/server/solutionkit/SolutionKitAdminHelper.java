@@ -8,7 +8,6 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +17,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.SignatureException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,19 +32,12 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
 
     private final SolutionKitManager solutionKitManager;
     private final LicenseManager licenseManager;
-    private final SignatureVerifier signatureVerifier;
     private final IdentityProviderConfigManager identityProviderConfigManager;
 
-    public SolutionKitAdminHelper(@NotNull final LicenseManager licenseManager, @NotNull final SolutionKitManager solutionKitManager,
-                                  @NotNull final SignatureVerifier signatureVerifier, @NotNull final IdentityProviderConfigManager identityProviderConfigManager) {
+    public SolutionKitAdminHelper(@NotNull final LicenseManager licenseManager, @NotNull final SolutionKitManager solutionKitManager, @NotNull final IdentityProviderConfigManager identityProviderConfigManager) {
         this.solutionKitManager = solutionKitManager;
         this.licenseManager = licenseManager;
-        this.signatureVerifier = signatureVerifier;
         this.identityProviderConfigManager = identityProviderConfigManager;
-    }
-
-    public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
-        signatureVerifier.verify(digest, signatureProperties);
     }
 
     @NotNull

@@ -20,8 +20,8 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifier;
-import com.l7tech.server.security.signer.SignatureVerifierStub;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
+import com.l7tech.server.security.signer.SignatureVerifierServerStub;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -58,7 +58,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     private Set<String> moduleShas;
 
     // our signer utils object
-    private static SignatureVerifier trustedSignatureVerifier;
+    private static SignatureVerifierServer trustedSignatureVerifier;
     private static final String[] SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",
@@ -66,7 +66,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
             "cn=signer.team4.apim.ca.com"
     };
     // untrusted signers
-    private static SignatureVerifier untrustedSignatureVerifier;
+    private static SignatureVerifierServer untrustedSignatureVerifier;
     private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
 
     @BeforeClass
@@ -91,7 +91,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         uploadEnabledOverride = null;
 
         // change the default (stub) signature verifier with our own
-        final SignatureVerifierStub signatureVerifierStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("signatureVerifier", SignatureVerifierStub.class);
+        final SignatureVerifierServerStub signatureVerifierStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("signatureVerifier", SignatureVerifierServerStub.class);
         Assert.assertNotNull(signatureVerifierStub);
         signatureVerifierStub.setProxyVerifier(trustedSignatureVerifier);
 
@@ -232,7 +232,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     /**
      * Utility method for signing the specified content byte array and getting the signature in one step.
      */
-    private static String signAndGetSignature(final SignatureVerifier verifier, final byte[] content, final String signerCertDn) {
+    private static String signAndGetSignature(final SignatureVerifierServer verifier, final byte[] content, final String signerCertDn) {
         Assert.assertThat(content, Matchers.notNullValue());
         Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
         try {

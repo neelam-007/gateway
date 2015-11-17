@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
-import java.security.SignatureException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -709,21 +708,6 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
      */
     @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = DELETE_BY_ID )
     void deleteServerModuleFile( @NotNull Goid id ) throws DeleteException;
-
-    /**
-     * Checks signature and also verifies that signer cert is trusted.
-     *
-     * @param digest                 SHA-256 digest of the raw input material.  Required and cannot be {@code null}.
-     *                               Note: this MUST NOT just be the value claimed by the sender -- it must be a
-     *                               freshly computed value from hashing the information covered by the signature.
-     * @param signatureProperties    Signature properties reader, holding ASN.1 encoded X.509 certificate as Base64 string
-     *                               and ASN.1 encoded signature value as Base64 string.
-     * @throws java.security.SignatureException if signature cannot be validated or signer cert is not trusted.
-     */
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Administrative(licensed=false, background = true)
-    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    void verifyServerModuleFileSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException;
 
     /**
      * Get server module configurations.

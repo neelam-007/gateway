@@ -7,7 +7,6 @@ import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.w3c.dom.Document;
@@ -56,25 +55,12 @@ public class SignerUtilsTest {
     private Pair<byte[], byte[]> extractSignedZipDataAndSignature(final InputStream signedZipStream) throws Exception {
         Assert.assertNotNull("Signed Zip InputStream is null", signedZipStream);
 
-        // verify signed zip file
+        // read signed zip file
+        final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(signedZipStream);
         final Pair<
                 byte[],  // signed.dat bytes
                 byte[]   // signature.properties bytes
-                > dataAndSignatureBytes = SignerUtils.walkSignedZip(
-                signedZipStream,
-                new SignedZipVisitor<byte[], byte[]>() {
-                    @Override
-                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
-                        return IOUtils.slurpStream(inputStream);
-                    }
-
-                    @Override
-                    public byte[] visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                        return IOUtils.slurpStream(inputStream);
-                    }
-                },
-                true
-        );
+                > dataAndSignatureBytes = Pair.pair(zipContent.getDataBytes(), zipContent.getSignaturePropertiesBytes());
 
         // make sure both signed.dat and signature.properties bytes are read.
         Assert.assertNotNull("signed.dat bytes are not null", dataAndSignatureBytes.left);
@@ -194,7 +180,7 @@ public class SignerUtilsTest {
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                     }
                 },
-                true
+                false // order does matter after refactoring
         );
 
         // test with invalid signed zip missing signed.dat
@@ -481,45 +467,6 @@ public class SignerUtilsTest {
         }
     }
 
-    @Test
-    public void testCloseStreamWhileWalkingSignedZip() throws Exception {
-        final byte[] testData = "some test data".getBytes(Charsets.UTF8);
-        final Pair<X509Certificate, PrivateKey> keyPair = generateSelfSignedKeyPair();
-
-        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            // sign content
-            SignerUtils.signZip(
-                    keyPair.left,
-                    keyPair.right,
-                    new ByteArrayInputStream(testData),
-                    baos
-            );
-
-            try (final ByteArrayInputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
-                final Pair<String, String> ret = SignerUtils.walkSignedZip(
-                        bis,
-                        new SignedZipVisitor<String, String>() {
-                            @Override
-                            public String visitData(@NotNull final InputStream inputStream) throws IOException {
-                                inputStream.close();
-                                return "data_closed";
-                            }
-
-                            @Override
-                            public String visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                                inputStream.close();
-                                return "sig_closed";
-                            }
-                        },
-                        true
-                );
-
-                Assert.assertThat(ret.left, Matchers.is("data_closed"));
-                Assert.assertThat(ret.right, Matchers.is("sig_closed"));
-            }
-        }
-    }
-
     /**
      * Convenient  unit test to sign {@code ServerModuleFile)'s within a SKAR file.<br/>
      * The output skar file will be in the same folder as the skarToSign suffixed with "-signed"<br/>
@@ -696,26 +643,10 @@ public class SignerUtilsTest {
     private static Properties getSignatureProperties(final byte[] signedContent) throws Exception {
         Assert.assertNotNull(signedContent);
         try (final InputStream is = new ByteArrayInputStream(signedContent)) {
-            // process the signed zip file
-            return SignerUtils.walkSignedZip(
-                    is,
-                    new SignedZipVisitor<Void, Properties>() {
-                        @Override
-                        public Void visitData(@NotNull final InputStream inputStream) throws IOException {
-                            // don't care
-                            return null;
-                        }
-
-                        @Override
-                        public Properties visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                            // read the signature
-                            final Properties sigProps = new Properties();
-                            sigProps.load(inputStream);
-                            return sigProps;
-                        }
-                    },
-                    true
-            ).right;
+            // read the signed zip file
+            final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(is);
+            Assert.assertNotNull(zipContent);
+            return zipContent.getSignatureProperties();
         }
     }
 

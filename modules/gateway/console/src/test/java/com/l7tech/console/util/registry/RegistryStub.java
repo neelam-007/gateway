@@ -1,8 +1,5 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
@@ -13,6 +10,7 @@ import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditAdminStub;
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdminStub;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -21,9 +19,12 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
+import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
@@ -621,6 +622,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public SolutionKitAdmin getSolutionKitAdmin() {
+        return null;
+    }
+
+    @Override
+    public SignatureVerifierAdmin getSignatureVerifierAdmin() {
         return null;
     }
 

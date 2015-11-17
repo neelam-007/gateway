@@ -11,7 +11,7 @@ import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
-import com.l7tech.server.security.signer.SignatureVerifier;
+import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.apache.commons.lang.ObjectUtils;
@@ -59,7 +59,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     @NotNull protected final Config config;
     @NotNull protected final ServerAssertionRegistry modularAssertionRegistrar;
     @NotNull protected final CustomAssertionsRegistrar customAssertionRegistrar;
-    @NotNull protected final SignatureVerifier signatureVerifier;
+    @NotNull protected final SignatureVerifierServer signatureVerifier;
     private ApplicationContext applicationContext;
 
     /**
@@ -162,7 +162,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             @NotNull final Config config,
             @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
             @NotNull final CustomAssertionsRegistrar customAssertionRegistrar,
-            @NotNull final SignatureVerifier signatureVerifier
+            @NotNull final SignatureVerifierServer signatureVerifier
     ) {
         this.serverModuleFileManager = serverModuleFileManager;
         this.transactionManager = transactionManager;

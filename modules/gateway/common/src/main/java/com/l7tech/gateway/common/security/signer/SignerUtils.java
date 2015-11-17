@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.security.*;
 import java.security.cert.*;
@@ -298,6 +299,196 @@ public class SignerUtils {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // VERIFYING
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // 1 MB
+    private static final int INITIAL_OUTPUT_STREAM_SIZE = 1024*1024;
+
+    /**
+     * Contains signed zip content i.e. Signed Data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.<br/>
+     * Call {@link #close()} after you are done with buffer, to properly cleanup buffers.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public static final class SignedZipContent implements Closeable {
+        @NotNull private final byte[] data;
+        private final int dataSize;
+        @NotNull private final byte[] dataDigest;
+        @NotNull private final byte[] signatureProps;
+        private final int signaturePropsSize;
+
+        // private constructor
+        private SignedZipContent(
+                @NotNull final PoolByteArrayOutputStream dataStream,
+                @NotNull final byte[] dataDigest,
+                @NotNull final PoolByteArrayOutputStream signaturePropsStream
+        ) {
+            this.dataSize = dataStream.size();
+            this.data = dataStream.detachPooledByteArray();
+            this.dataDigest = dataDigest;
+            this.signaturePropsSize = signaturePropsStream.size();
+            this.signatureProps = signaturePropsStream.detachPooledByteArray();
+        }
+
+        /**
+         * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signed data.
+         *
+         * @return a new {@code ByteArrayInputStream} with {@link #data} and {@link #dataSize} ready to be read, never {@code null}.
+         */
+        @NotNull
+        public InputStream getDataStream() {
+            assert dataSize >= 0;
+            return new ByteArrayInputStream(data, 0, dataSize);
+        }
+
+        /**
+         * Get a copy of signed data buffer.
+         *
+         * @return a copy of signed data buffer {@link #data}, never {@code null}.
+         */
+        @NotNull
+        public byte[] getDataBytes() {
+            assert dataSize >= 0;
+            final byte [] returnBuf = new byte[dataSize];
+            System.arraycopy(data, 0, returnBuf, 0, dataSize);
+            return returnBuf;
+        }
+
+        /**
+         * Retrieve signed data buffer size in bytes.
+         */
+        public int getDataSize() {
+            return dataSize;
+        }
+
+        /**
+         * Retrieve signed data digest.
+         */
+        @NotNull
+        public byte[] getDataDigest() {
+            return dataDigest;
+        }
+
+        /**
+         * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signature properties.
+         *
+         * @return a new {@code ByteArrayInputStream} with {@link #signatureProps} and {@link #signaturePropsSize} ready to be read.
+         */
+        @NotNull
+        public InputStream getSignaturePropertiesStream() {
+            assert signaturePropsSize >= 0;
+            return new ByteArrayInputStream(signatureProps, 0, signaturePropsSize);
+        }
+
+        /**
+         * Get a copy of signature properties buffer.
+         *
+         * @return a copy of signature properties buffer {@link #signatureProps}, never {@code null}.
+         */
+        @NotNull
+        public byte[] getSignaturePropertiesBytes() {
+            assert signaturePropsSize >= 0;
+            final byte [] returnBuf = new byte[signaturePropsSize];
+            System.arraycopy(signatureProps, 0, returnBuf, 0, signaturePropsSize);
+            return returnBuf;
+        }
+
+        /**
+         * Get Signature Properties as String.
+         *
+         * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
+         */
+        @NotNull
+        public String getSignaturePropertiesString() throws IOException {
+            final StringWriter writer = new StringWriter();
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(getSignaturePropertiesStream(), StandardCharsets.ISO_8859_1))) {
+                IOUtils.copyStream(reader, writer);
+                writer.flush();
+            }
+            return writer.toString();
+        }
+
+        /**
+         * Get Signature {@link java.util.Properties}.
+         *
+         * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
+         */
+        @NotNull
+        public Properties getSignatureProperties() throws IOException {
+            final Properties signatureProperties = new Properties();
+            signatureProperties.load(getSignaturePropertiesStream());
+            return signatureProperties;
+        }
+
+        /**
+         * Retrieve signature properties buffer size in bytes.
+         */
+        public int getSignaturePropertiesSize() {
+            return signaturePropsSize;
+        }
+
+        /**
+         * Cleanup resources i.e. return signed data and signature properties buffers to the pool.
+         */
+        @Override
+        public void close() throws IOException {
+            BufferPool.returnBuffer(data);
+            BufferPool.returnBuffer(signatureProps);
+        }
+    }
+
+    /**
+     * Unwraps signed data and signature properties from the specified {@code signedZip}.<br/>
+     * Use this method for reading the content of a signed zip file.  It'll provide a consistent way of processing signed zip file.
+     * <p/>
+     * The caller must close {@code SignedZipContent} after done using, in order to properly release data and signature buffers.
+     *
+     * @param signedZip    input stream containing .ZIP file as produced by signZip.  Required and cannot be {@code null}.
+     * @return a {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZipContent} object containing
+     * signed data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.  Never {@code null}.
+     * @throws IOException if an error happens while reading {@code signedZip} or calculating digest.
+     */
+    @NotNull
+    public static SignedZipContent readSignedZip(@NotNull final InputStream signedZip) throws IOException, NoSuchAlgorithmException {
+        // get message digest (SHA-256)
+        final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
+        // read zip stream
+        try (
+                final ZipInputStream zis = new ZipInputStream(signedZip);
+                final PoolByteArrayOutputStream signedDataOut = new PoolByteArrayOutputStream(INITIAL_OUTPUT_STREAM_SIZE);
+                final PoolByteArrayOutputStream sigPropOut = new PoolByteArrayOutputStream(/* default is fine as signature props shouldn't be big */)
+        ) {
+            // get the first entry
+            final ZipEntry signedEntry = zis.getNextEntry();
+            // signed.dat must be the first entry in the zip
+            if (signedEntry == null) {
+                throw new IOException("'" + SIGNED_DATA_ZIP_ENTRY + "' entry is missing");
+            } else if (signedEntry.isDirectory() || !SIGNED_DATA_ZIP_ENTRY.equals(signedEntry.getName())) {
+                throw new IOException("First zip entry is not a plain file named '" + SIGNED_DATA_ZIP_ENTRY + "'");
+            }
+            // read signed data into signedDataOut and at the same time calculate signed data digest (SHA-256)
+            TeeInputStream tis = new TeeInputStream(zis, signedDataOut);
+            final DigestInputStream dis = new DigestInputStream(tis, digest);
+            IOUtils.copyStream(dis, new NullOutputStream());
+            final byte[] computedDigest = dis.getMessageDigest().digest();
+
+            // get the next entry
+            final ZipEntry sigEntry = zis.getNextEntry();
+            // signature.properties must be the next entry in the zip
+            if (sigEntry == null){
+                throw new IOException("'" + SIGNATURE_PROPS_ZIP_ENTRY + "' entry is missing");
+            } else if (sigEntry.isDirectory() || !SIGNATURE_PROPS_ZIP_ENTRY.equals(sigEntry.getName())) {
+                throw new IOException("Second zip entry is not a plain file named '" + SIGNATURE_PROPS_ZIP_ENTRY + "'");
+            }
+            // read the signature props into sigPropOut
+            tis = new TeeInputStream(zis, sigPropOut);
+            IOUtils.copyStream(tis, new NullOutputStream());
+
+            // finally return SignedZipInfo containing signed data InputStream, calculated signed data digest and signature InputStream
+            // note that SignedZipContent will detach both signedDataOut and sigPropOut buffers and will be responsible for properly releasing them
+            return new SignedZipContent(signedDataOut, computedDigest, sigPropOut);
+        }
+    }
+
     /**
      * Verify a signature created by {@link #signZip}.
      * <p/>
@@ -310,155 +501,10 @@ public class SignerUtils {
      * @throws Exception if a problem occurs or if signature cannot be verified
      */
     public static X509Certificate verifyZip(@NotNull final InputStream zipToVerify) throws Exception {
-        // get SHA-256 the message digest
-        final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-
-        // process zipToVerify
-        final Pair<byte[], Properties> digestAndSignature = walkSignedZip(
-                zipToVerify,
-                new SignedZipVisitor<byte[], Properties>() {
-                    @Override
-                    public byte[] visitData(@NotNull final InputStream inputStream) throws IOException {
-                        // calc SHA-256 of SIGNED_DATA_ZIP_ENTRY
-                        final DigestInputStream dis = new DigestInputStream(inputStream, messageDigest);
-                        IOUtils.copyStream(dis, new com.l7tech.common.io.NullOutputStream());
-                        return dis.getMessageDigest().digest();
-                    }
-
-                    @Override
-                    public Properties visitSignature(@NotNull final InputStream inputStream) throws IOException {
-                        final Properties signatureProperties = new Properties();
-                        signatureProperties.load(inputStream);
-                        return signatureProperties;
-                    }
-                },
-                true
-        );
-
-        // get digest and signature props
-        final byte[] computedDigest = digestAndSignature.left;
-        final Properties signatureProperties = digestAndSignature.right;
-        // check if both are read correctly
-        if (computedDigest != null && signatureProperties != null) {
-            return verifySignatureWithDigest(computedDigest, signatureProperties);
-        }
-
-        // shouldn't happen though, just in case throw
-        final String detailedMessage;
-        if (computedDigest == null && signatureProperties == null) {
-            detailedMessage = "Both '" + SIGNED_DATA_ZIP_ENTRY + "' and '" + SIGNATURE_PROPS_ZIP_ENTRY + "' entries are missing";
-        } else if (computedDigest == null) {
-            detailedMessage = "'" + SIGNED_DATA_ZIP_ENTRY + "' entry is missing";
-        } else {
-            detailedMessage = "'" + SIGNATURE_PROPS_ZIP_ENTRY + "' entry is missing";
-        }
-        // missing required zip entries; throw IOException
-        throw new IOException("Invalid signed Zip: " + detailedMessage);
-    }
-
-    /**
-     * Convenient method with zip file.
-     *
-     * @see #walkSignedZip(java.io.InputStream, SignedZipVisitor, boolean)
-     */
-    @NotNull
-    public static <Data, SigProps> Pair<Data, SigProps> walkSignedZip(
-            @NotNull final File zipFile,
-            @NotNull final SignedZipVisitor<Data, SigProps> visitor,
-            final boolean strict
-    ) throws IOException {
-        try (final InputStream bis = new BufferedInputStream(new FileInputStream(zipFile))) {
-            return walkSignedZip(bis, visitor, strict);
-        }
-    }
-
-    /**
-     * Walks a signed zip file tree.
-     *
-     * <p>This method walks through each zip-entry in the specified signed zip {@code InputStream} (created using {@link #signZip} method).<br/>
-     * If the entry is the signed file contents then {@link SignedZipVisitor#visitData(java.io.InputStream)}
-     * is invoked with the entry's {@code ZipInputStream}, so that content can be read. <br/>
-     * If the entry is the signature properties then {@link SignedZipVisitor#visitSignature(java.io.InputStream)}
-     * is invoked with the entry's {@code ZipInputStream}, so that content can be read. <br/>
-     * When {@code strict} is specified the method will stop and throw {@code IOException} on any unexpected zip-entry in the signed zip.
-     * </p>
-     *
-     * @param zipFileStream    signed zip {@code InputStream}.  Required and cannot be {@code null}.
-     * @param visitor          the signed zip visitor to invoke for each relevant zip-entry found.  Required and cannot be {@code null}.
-     * @param strict           a flag indicating whether this method will fail (with {@code IOException}) on any unexpected zip-entry,
-     *                         found in the signed zip, before visiting signed data and signature properties.
-     * @throws IOException if either signed data or signature properties entries have not been found in the signed zip
-     * or an IO error happens while walking through the signed zip.
-     */
-    @NotNull
-    public static <Data, SigProps> Pair<Data, SigProps> walkSignedZip(
-            @NotNull final InputStream zipFileStream,
-            @NotNull final SignedZipVisitor<Data, SigProps> visitor,
-            final boolean strict
-    ) throws IOException {
-        // create new zip input stream from the zipFileStream InputStream.
-        try (final ZipInputStream zis = (zipFileStream instanceof ZipInputStream ? (ZipInputStream)zipFileStream : new ZipInputStream(zipFileStream))) {
-            // flags indicating whether signed.dat and signature.properties entries have been found
-            boolean foundSignedDat = false, foundSigProps = false;
-            Data data = null;
-            SigProps sigProps = null;
-            // get the first zip entry
-            ZipEntry entry = zis.getNextEntry();
-            // loop while there are more entries
-            while (entry != null) {
-                // check if entry is directory
-                try {
-                    if (!entry.isDirectory()) {
-                        // check if entity name is blank
-                        final String entryName = entry.getName();
-                        if (SIGNED_DATA_ZIP_ENTRY.equals(entryName)) {
-                            if (!foundSignedDat) {
-                                foundSignedDat = true;
-                                data = visitor.visitData(new NonCloseableInputStream(zis));
-                            }
-                        } else if (SIGNATURE_PROPS_ZIP_ENTRY.equals(entryName)) {
-                            if (!foundSigProps) {
-                                foundSigProps = true;
-                                sigProps = visitor.visitSignature(new NonCloseableInputStream(zis));
-                            }
-                        } else if (strict) {
-                            // throw exception if this entry is a directory
-                            throw new IOException("Invalid signed Zip: Unexpected entry: " + entryName);
-                        }
-                    } else if (strict) {
-                        throw new IOException("Invalid signed Zip: Unexpected directory entry: " + entry.getName());
-                    }
-                } finally {
-                    // close the entry
-                    zis.closeEntry();
-                }
-
-                // check if all entries have been read already
-                if (foundSignedDat && foundSigProps) {
-                    // nothing more to read
-                    break;
-                }
-
-                // finally move to the next entry
-                entry = zis.getNextEntry();
-            }
-
-            // check zip validity
-            if (!foundSignedDat || !foundSigProps) {
-                final String detailedMessage;
-                if (!foundSignedDat && !foundSigProps) {
-                    detailedMessage = "Both '" + SIGNED_DATA_ZIP_ENTRY + "' and '" + SIGNATURE_PROPS_ZIP_ENTRY + "' entries are missing";
-                } else if (!foundSignedDat) {
-                    detailedMessage = "'" + SIGNED_DATA_ZIP_ENTRY + "' entry is missing";
-                } else {
-                    detailedMessage = "'" + SIGNATURE_PROPS_ZIP_ENTRY + "' entry is missing";
-                }
-                // missing required zip entries; throw IOException
-                throw new IOException("Invalid signed Zip: " + detailedMessage);
-            }
-
-            // finally return requested data and signature properties
-            return Pair.pair(data, sigProps);
+        // read signed zip
+        try (final SignedZipContent zipContent = readSignedZip(zipToVerify)) {
+            // verify signature
+            return verifySignatureWithDigest(zipContent.getDataDigest(), zipContent.getSignatureProperties());
         }
     }
 
@@ -470,13 +516,14 @@ public class SignerUtils {
      *                  value from hashing the information covered by the signature.
      * @param props     Signature properties, holding ASN.1 encoded X.509 certificate as Base64 string and ASN.1 encoded
      *                  signature value as Base64 string.  Required and cannot be {@code null}.
-     * @return the signing cert, when verification succeeded.  Never {@code null}.
+     * @return the signing cert, which has NOT YET BEEN VERIFIED AS TRUSTED.  Never {@code null}.
      * Caller must still check that the cert is trusted and otherwise acceptable (expiry date, basic constraints, etc).
      * @throws java.security.cert.CertificateException
      * @throws java.security.NoSuchAlgorithmException
      * @throws java.security.InvalidKeyException
      * @throws java.security.SignatureException
      */
+    @NotNull
     public static X509Certificate verifySignatureWithDigest(
             @NotNull final byte[] digest,
             @NotNull final Properties props
@@ -493,8 +540,15 @@ public class SignerUtils {
 
         // decode signature
         final byte[] signatureValue = HexUtils.decodeBase64(signatureB64);
+        if (signatureValue == null) {
+            throw new SignatureException("Failed to decode signature value.");
+        }
+
         // decode signing cert
         final X509Certificate signingCert = CertUtils.decodeCert(HexUtils.decodeBase64(signingCertB64));
+        if (signingCert == null) {
+            throw new SignatureException("Failed to decode signer certificate.");
+        }
 
         final PublicKey verifyKey = signingCert.getPublicKey();
         final String keyAlg = verifyKey.getAlgorithm().toUpperCase();
@@ -503,6 +557,9 @@ public class SignerUtils {
         }
         final String sigAlg = "SHA512with" + ("EC".equals(keyAlg) ? "ECDSA" : keyAlg);
         final Signature signature = Signature.getInstance(sigAlg);
+        if (signature == null) {
+            throw new SignatureException("Failed to get signature instance of algorithm: " + sigAlg);
+        }
         signature.initVerify(signingCert);
         signature.update(digest);
         if (!signature.verify(signatureValue)) {
@@ -580,12 +637,13 @@ public class SignerUtils {
      * @param trustStoreFile trust store file to load from disk.  Required and cannot be {@code null}.
      * @param type           trust store type.  Required and cannot be {@code null}.
      * @param password       trust store password to use for decrypting or unlocking the key store.  Generally required by software (file-based) key stores.
-     * @return a collection containing every X.509 certificate from a trusted certificate entry within the trust store.
+     * @return a collection containing every X.509 certificate from a trusted certificate entry within the trust store, never {@code null}.
      * @throws KeyStoreException if the key store file format is invalid
      * @throws CertificateException if any of the certificates in the trust store could not be loaded
      * @throws java.security.NoSuchAlgorithmException if a needed cryptographic primitive is unavailable in the current environment
      * @throws IOException if there is an error reading the file (including file not found, permission denied, etc)
      */
+    @NotNull
     public static Collection<X509Certificate> loadTrustedCertsFromTrustStore(
             @NotNull final File trustStoreFile,
             @NotNull final String type,

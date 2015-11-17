@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.EntityManagerTest;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
-import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
@@ -394,9 +393,6 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
         // mock LicenseManager as it's not available as a bean
         final LicenseManager licenseManager = Mockito.mock(LicenseManager.class);
         Assert.assertNotNull(licenseManager);
-        // mock SignatureVerifier as it's not available as a bean
-        final SignatureVerifier signatureVerifier = Mockito.mock(SignatureVerifier.class);
-        Assert.assertNotNull(signatureVerifier);
 
         // mock our own proxy SolutionKitManager, save and update are proxied via the real solutionKitManager
         final SolutionKitManager skManager = Mockito.spy(
@@ -416,7 +412,7 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
         final IdentityProviderConfigManager identityProviderConfigManager = Mockito.mock(IdentityProviderConfigManager.class);
 
         // create the admin helper
-        final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, signatureVerifier, identityProviderConfigManager);
+        final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, identityProviderConfigManager);
         Assert.assertNotNull(helper);
 
         // samples

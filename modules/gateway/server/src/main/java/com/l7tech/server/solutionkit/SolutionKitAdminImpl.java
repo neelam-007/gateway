@@ -8,14 +8,11 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
-import com.l7tech.server.security.signer.SignatureVerifier;
 import com.l7tech.util.Background;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import java.security.SignatureException;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimerTask;
@@ -30,26 +27,13 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     @Inject
     private IdentityProviderConfigManager identityProviderConfigManager;
 
-    @Inject
-    @Named( "signatureVerifier" )
-    final void setSignatureVerifier(final SignatureVerifier signatureVerifier) {
-        this.signatureVerifier = signatureVerifier;
-    }
-    private SignatureVerifier signatureVerifier;
-
     @SuppressWarnings("unused")   // used for spring configuration
     public SolutionKitAdminImpl() {}
 
-    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager, SignatureVerifier signatureVerifier, IdentityProviderConfigManager identityProviderConfigManager) {
+    public SolutionKitAdminImpl(LicenseManager licenseManager, SolutionKitManager solutionKitManager, IdentityProviderConfigManager identityProviderConfigManager) {
         this.licenseManager = licenseManager;
         this.solutionKitManager = solutionKitManager;
-        this.signatureVerifier = signatureVerifier;
         this.identityProviderConfigManager = identityProviderConfigManager;
-    }
-
-    @Override
-    public void verifySkarSignature(@NotNull final byte[] digest, @Nullable final String signatureProperties) throws SignatureException {
-        getSolutionKitAdminHelper().verifySkarSignature(digest, signatureProperties);
     }
 
     @NotNull
@@ -190,6 +174,6 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
      * Override for unit tests.
      */
     SolutionKitAdminHelper getSolutionKitAdminHelper() {
-        return new SolutionKitAdminHelper(licenseManager, solutionKitManager, signatureVerifier, identityProviderConfigManager);
+        return new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
     }
 }

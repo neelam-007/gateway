@@ -2749,7 +2749,7 @@
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
-    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierImpl" depends-on="systemProperties">
+    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierServerImpl" depends-on="systemProperties">
         <constructor-arg index="0" type="java.io.File" value="file:${com.l7tech.server.configDirectory}${file.separator}trusted_signers"/>
         <constructor-arg index="1" type="java.lang.String" value="jks"/>
         <!--
