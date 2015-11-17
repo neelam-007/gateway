@@ -234,6 +234,17 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             }
         });
 
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(exposedHeadersTable) {
+            @Override
+            public String getValidationError() {
+                if (exposedHeadersTable.getRowCount() > 0 && !validateTableRowsNonEmpty(exposedHeadersTable)) {
+                    return resourceBundle.getString("exposedHeadersEmptyRowError");
+                }
+
+                return null;
+            }
+        });
+
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -271,7 +282,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             headersListRemove.setEnabled(headersTable.getSelectedRowCount()>0);
         }
 
-        Utilities.setEnabled(originsListPanel,originsListRadioButton.isSelected());
+        Utilities.setEnabled(originsListPanel, originsListRadioButton.isSelected());
         if(originsListRadioButton.isSelected()){
             originsListRemove.setEnabled(originsTable.getSelectedRowCount() > 0);
         }
@@ -367,8 +378,8 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         }
 
         if (null != assertion.getExposedHeaders()) {
-            for(String origin: assertion.getExposedHeaders()) {
-                exposedHeadersTableModel.addRow(new Object[]{origin});
+            for(String header: assertion.getExposedHeaders()) {
+                exposedHeadersTableModel.addRow(new Object[]{header});
             }
         }
 
@@ -376,7 +387,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         responseCacheAgeTextField.setText(responseCacheAgeCheckBox.isSelected() ? assertion.getResponseCacheTime() : "");
 
         this.variablePrefixTextField.setVariable(assertion.getVariablePrefix() == null ? "" : assertion.getVariablePrefix());
-        this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
+        this.variablePrefixTextField.setAssertion(assertion, getPreviousAssertion());
 
         requireCorsCheckBox.setSelected(assertion.isRequireCors());
         supportsCredentialsCheckBox.setSelected(assertion.isSupportsCredentials());
