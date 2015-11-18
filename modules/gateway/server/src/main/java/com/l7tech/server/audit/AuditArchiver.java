@@ -275,11 +275,12 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
                     switch (auditManagementStrategy) {
                         case BYPASS:
                             recordManager.setDatabaseFull(true);
-                            logger.warning("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + "). Audit records will not be saved!");
+                            logger.severe("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + "). Audit records will not be saved!");
                             ssgRestart();
                             break;
                         case STOP:
                         default:
+                            recordManager.setDatabaseFull(true);
                             ssgSuspend("Audit records database disk usage exceeded emergency limit (" + usage + " >= " + shutdownThreshold + ")");
                     }
                 }
