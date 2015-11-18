@@ -1,5 +1,6 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -170,15 +171,23 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
             // mappings from the deletion mappings.  Otherwise, use the full deletion mappings without any changes.
             if (numOfInstances > 1) {
                 final List<String> toBeIgnoredEntityTypes = new ArrayList<>();
-                String entityTypeStr, subEntityTypeStr, targetId;
+                String actionStr, entityTypeStr, subEntityTypeStr, srcId, targetId;
                 final RestmanMessage uninstallMappingsMsg = new RestmanMessage(uninstallBundle);
                 for (Element element: uninstallMappingsMsg.getMappings()) {
+                    actionStr = element.getAttribute(RestmanMessage.MAPPING_ACTION_ATTRIBUTE);
+                    if (Mapping.Action.Ignore == Mapping.Action.valueOf(actionStr)) continue;
+
                     entityTypeStr = element.getAttribute(RestmanMessage.MAPPING_TYPE_ATTRIBUTE);
 
                     // Retrieve a sub entity type if the entity type is identity provider.  If it is not identity provider, just simply return null.
                     if (EntityType.valueOf(entityTypeStr) == EntityType.ID_PROVIDER_CONFIG) {
                         targetId = element.getAttribute(RestmanMessage.MAPPING_TARGET_ID_ATTRIBUTE);
-                        subEntityTypeStr = getIdentityProviderType(targetId);
+                        if (StringUtils.isBlank(targetId)) {
+                            srcId = element.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+                            subEntityTypeStr = StringUtils.isBlank(srcId)? null : getIdentityProviderType(srcId);
+                        } else {
+                            subEntityTypeStr = getIdentityProviderType(targetId);
+                        }
                     } else {
                         subEntityTypeStr = null;
                     }
