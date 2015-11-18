@@ -178,7 +178,6 @@
 
     <target name="increment-release-version">
         <increment-revision/>
-        <version-ivy-file version="${build.version.new}"/>
         <antcall target="bump-revision-in-version-file"/>
         <antcall target="scm-update-revision"/>
     </target>
@@ -194,7 +193,6 @@
             <commit message="[Automated-by-TeamCity] - updating version number.">
                 <fileset dir="${src.root}">
                     <include name="${version.filename}"/>
-                    <include name="${ivy.build.file}"/>
                 </fileset>
             </commit>
         </svn>
