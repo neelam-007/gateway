@@ -17,7 +17,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="68df6" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="68df6" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="4" left="4" bottom="4" right="4"/>
             <constraints>
               <tabbedpane title-resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" title-key="acceptedOriginsTitle"/>
@@ -27,7 +27,7 @@
             <children>
               <component id="b483c" class="javax.swing.JRadioButton" binding="originsAllRadioButton">
                 <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="allowAll"/>
@@ -46,7 +46,7 @@
               <grid id="b7ede" binding="originsListPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -90,6 +90,14 @@
                   </vspacer>
                 </children>
               </grid>
+              <component id="e0d04" class="javax.swing.JCheckBox" binding="acceptSameOriginCheckBox">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/cors/console/CORSPropertiesDialog" key="acceptSameOriginCheckBox"/>
+                </properties>
+              </component>
             </children>
           </grid>
           <grid id="36b44" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

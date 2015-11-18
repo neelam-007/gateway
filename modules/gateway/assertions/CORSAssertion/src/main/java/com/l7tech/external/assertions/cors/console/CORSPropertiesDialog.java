@@ -50,6 +50,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     private JCheckBox patchCheckBox;
     private JCheckBox allowNonStandardMethodsCheckBox;
     private JCheckBox supportsCredentialsCheckBox;
+    private JCheckBox acceptSameOriginCheckBox;
 
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(CORSPropertiesDialog.class.getName());
     private InputValidator inputValidator;
@@ -204,7 +205,7 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
             @Override
             public String getValidationError() {
                 if (originsListRadioButton.isSelected()) {
-                    if (originsTable.getRowCount() == 0) {
+                    if (originsTable.getRowCount() == 0 && !acceptSameOriginCheckBox.isSelected()) {
                         return resourceBundle.getString("originsNotSpecifiedError");
                     }
 
@@ -277,13 +278,20 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
     }
 
     private void enableDisableComponents() {
-        Utilities.setEnabled(headersListPanel,headersListRadioButton.isSelected());
-        if(headersListRadioButton.isSelected()){
+        Utilities.setEnabled(headersListPanel, headersListRadioButton.isSelected());
+
+        if (headersListRadioButton.isSelected()) {
             headersListRemove.setEnabled(headersTable.getSelectedRowCount()>0);
         }
 
         Utilities.setEnabled(originsListPanel, originsListRadioButton.isSelected());
-        if(originsListRadioButton.isSelected()){
+        Utilities.setEnabled(acceptSameOriginCheckBox, originsListRadioButton.isSelected());
+
+        if (originsAllRadioButton.isSelected()) {
+            acceptSameOriginCheckBox.setSelected(false);
+        }
+
+        if (originsListRadioButton.isSelected()) {
             originsListRemove.setEnabled(originsTable.getSelectedRowCount() > 0);
         }
 
@@ -303,12 +311,14 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
 
         if(originsAllRadioButton.isSelected()){
             assertion.setAcceptedOrigins(null);
+            assertion.setAcceptSameOriginRequests(false);
         }else{
             List<String> origins = new ArrayList<>();
             for(int i=0; i < originsTable.getRowCount(); i++){
                 origins.add(originsTable.getValueAt(i,0).toString().trim());
             }
             assertion.setAcceptedOrigins(origins);
+            assertion.setAcceptSameOriginRequests(acceptSameOriginCheckBox.isSelected());
         }
 
         if (headersAllRadioButton.isSelected()) {
@@ -370,9 +380,9 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
         }
 
         originsAllRadioButton.setSelected(true);
-        if(assertion.getAcceptedOrigins()!=null){
+        if (assertion.getAcceptedOrigins() != null || assertion.isAcceptSameOriginRequests()) {
             originsListRadioButton.setSelected(true);
-            for(String origin: assertion.getAcceptedOrigins()) {
+            for (String origin : assertion.getAcceptedOrigins()) {
                 originsTableModel.addRow(new Object[]{origin});
             }
         }
@@ -382,6 +392,8 @@ public class CORSPropertiesDialog extends AssertionPropertiesOkCancelSupport<COR
                 exposedHeadersTableModel.addRow(new Object[]{header});
             }
         }
+
+        acceptSameOriginCheckBox.setSelected(assertion.isAcceptSameOriginRequests());
 
         responseCacheAgeCheckBox.setSelected(assertion.getResponseCacheTime() != null);
         responseCacheAgeTextField.setText(responseCacheAgeCheckBox.isSelected() ? assertion.getResponseCacheTime() : "");

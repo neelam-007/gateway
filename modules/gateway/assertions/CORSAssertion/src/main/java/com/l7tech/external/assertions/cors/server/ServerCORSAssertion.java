@@ -16,6 +16,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Functions;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -64,10 +65,21 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
             // check origin is accepted
             final String origin = requestHeadersKnob.getHeaderValues(REQUEST_ORIGIN_HEADER, HEADER_TYPE_HTTP)[0];
 
-            if (assertion.getAcceptedOrigins() != null) {
-                if (!findCaseSensitive(origin, assertion.getAcceptedOrigins())) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Origin not allowed: " + origin);
-                    return AssertionStatus.FALSIFIED;
+            if (assertion.isAcceptSameOriginRequests() || assertion.getAcceptedOrigins() != null) {
+                boolean sameOrigin = false;
+
+                // if Same-Origin requests are allowed, compare the value of the origin header to the request URL
+                if (assertion.isAcceptSameOriginRequests()) {
+                    sameOrigin = getRequestOrigin(request).equals(origin);
+                }
+
+                // if it's not a Same-Origin request, check against any specified origins
+                if (!sameOrigin) {
+                    if (assertion.getAcceptedOrigins() == null ||
+                            !findCaseSensitive(origin, assertion.getAcceptedOrigins())) {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Origin not allowed: " + origin);
+                        return AssertionStatus.FALSIFIED;
+                    }
                 }
             }
 
@@ -174,6 +186,16 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private String getRequestOrigin(Message request) {
+        URL requestUrl = request.getHttpRequestKnob().getRequestURL();
+        String requestOrigin = requestUrl.getProtocol() + "://" + requestUrl.getHost();
+
+        if (requestUrl.getPort() != -1) {
+            requestOrigin += ":" + requestUrl.getPort();
+        }
+        return requestOrigin;
     }
 
     private boolean findCaseSensitive(final String term, final Iterable<String> list) {

@@ -127,6 +127,14 @@ public class CORSAssertion extends Assertion implements SetsVariables, UsesVaria
         this.allowNonStandardMethods = allowNonStandardMethods;
     }
 
+    public boolean isAcceptSameOriginRequests() {
+        return acceptSameOriginRequests;
+    }
+
+    public void setAcceptSameOriginRequests(boolean acceptSameOriginRequests) {
+        this.acceptSameOriginRequests = acceptSameOriginRequests;
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         VariableMetadata[] metadata;
@@ -158,6 +166,7 @@ public class CORSAssertion extends Assertion implements SetsVariables, UsesVaria
     private boolean supportsCredentials = true;
     private boolean requireCors = true;
     private boolean allowNonStandardMethods = false;
+    private boolean acceptSameOriginRequests = false;
 
     @Override
     public AssertionMetadata meta() {

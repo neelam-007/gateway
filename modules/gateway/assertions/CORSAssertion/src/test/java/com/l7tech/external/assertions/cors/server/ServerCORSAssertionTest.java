@@ -446,6 +446,70 @@ public class ServerCORSAssertionTest {
     }
 
     @Test
+    public void testSameOriginAccepted_Succeeds() throws Exception {
+        final String origin = "http://www.example.com:8080";
+
+        Message request = createRequest(HttpMethod.GET.toString());
+        configureRequestHeaders(request, origin, null, null);
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(Arrays.asList("allowed.com"));
+        assertion.setAcceptSameOriginRequests(true);    // accept same-origin requests
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
+                "Origin allowed: " + origin));
+        assertEquals(false, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(origin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
+    }
+
+    @Test
+    public void testSameOriginNotAccepted_AssertionFalsifiedAndWarningAudited() throws Exception {
+        final String origin = "http://www.example.com:8080";
+
+        Message request = createRequest(HttpMethod.GET.toString());
+        configureRequestHeaders(request, origin, null, null);
+
+        Message response = createResponse();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        CORSAssertion assertion = new CORSAssertion();
+        assertion.setAcceptedOrigins(Arrays.asList("allowed.com"));
+        assertion.setAcceptSameOriginRequests(false);    // DO NOT accept same-origin requests (default setting)
+
+        ServerCORSAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus result = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, result);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_WARNING,
+                "Origin not allowed: " + origin));
+        assertEquals(false, context.getVariable("cors.isPreflight"));
+        assertEquals(true, context.getVariable("cors.isCors"));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
+        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
+    }
+
+    @Test
     public void testPreflight_WithUnacceptedRequestedHeader_AssertionFalsifiedAndWarningAudited() throws Exception {
         final String origin = "allowed.com";
         final String method = "DELETE";
@@ -672,6 +736,9 @@ public class ServerCORSAssertionTest {
     private Message createRequest(String method) {
         MockHttpServletRequest hRequest = new MockHttpServletRequest();
         hRequest.setMethod(method);
+        hRequest.setProtocol("http");
+        hRequest.setServerPort(8080);
+        hRequest.setServerName("www.example.com");
 
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
