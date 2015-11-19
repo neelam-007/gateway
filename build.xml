@@ -1481,7 +1481,7 @@
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip">
-            <fileset dir="modules" includes=""/>
+            <fileset dir="modules" excludes="*"/>
         </ivy:buildlist>
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
