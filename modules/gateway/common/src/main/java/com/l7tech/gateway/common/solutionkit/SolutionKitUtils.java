@@ -1,10 +1,14 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
@@ -129,6 +133,73 @@ public final class SolutionKitUtils {
         }
 
         return securePassword;
+    }
+
+    /**
+     * Convert a EncapsulatedAssertionMO object to a EncapsulatedAssertionConfig object.
+     * Note: Do not set policy in this mehtod, since SolutionKitUtils cannot access PolicyAdmin or PolicyManager.
+     *
+     * @param mo: a EncapsulatedAssertionMO object containing EncapsulatedAssertionConfig information.
+     * @return a EncapsulatedAssertionConfig object
+     */
+    public static EncapsulatedAssertionConfig fromMangedObject (@NotNull final EncapsulatedAssertionMO mo) {
+        final EncapsulatedAssertionConfig encapsulatedAssertionConfig = new EncapsulatedAssertionConfig();
+        final String guid = mo.getGuid() == null? UUID.randomUUID().toString() : mo.getGuid();
+
+        encapsulatedAssertionConfig.setName(mo.getName());
+        encapsulatedAssertionConfig.setGuid(guid);
+        encapsulatedAssertionConfig.setProperties(mo.getProperties() != null ? new HashMap<>(mo.getProperties()) : new HashMap<String, String>());
+        encapsulatedAssertionConfig.setArgumentDescriptors(getArgumentDescriptorSet(mo, encapsulatedAssertionConfig));
+        encapsulatedAssertionConfig.setResultDescriptors(getResultDescriptorSet(mo, encapsulatedAssertionConfig));
+
+        return encapsulatedAssertionConfig;
+    }
+
+    // Since EncapsulatedAssertionResourceFactory is not accessible from this class,
+    // this method is copied from EncapsulatedAssertionResourceFactory#getArgumentDescriptorSet.
+    private static Set<EncapsulatedAssertionArgumentDescriptor> getArgumentDescriptorSet(EncapsulatedAssertionMO encassResource, EncapsulatedAssertionConfig entity) {
+        Set<EncapsulatedAssertionArgumentDescriptor> ret = entity.getArgumentDescriptors();
+        if (ret == null)
+            ret = new HashSet<>();
+        ret.clear();
+
+        List<EncapsulatedAssertionMO.EncapsulatedArgument> args = encassResource.getEncapsulatedArguments();
+        if (args != null) {
+            for (EncapsulatedAssertionMO.EncapsulatedArgument arg : args) {
+                EncapsulatedAssertionArgumentDescriptor r = new EncapsulatedAssertionArgumentDescriptor();
+                r.setArgumentName(arg.getArgumentName());
+                r.setArgumentType(arg.getArgumentType());
+                r.setGuiLabel(arg.getGuiLabel());
+                r.setGuiPrompt(arg.isGuiPrompt());
+                r.setOrdinal(arg.getOrdinal());
+                r.setEncapsulatedAssertionConfig(entity);
+                ret.add(r);
+            }
+        }
+
+        return ret;
+    }
+
+    // Since EncapsulatedAssertionResourceFactory is not accessible from this class,
+    // This method is copied from EncapsulatedAssertionResourceFactory#getResultDescriptorSet.
+    private static Set<EncapsulatedAssertionResultDescriptor> getResultDescriptorSet(EncapsulatedAssertionMO encassResource, EncapsulatedAssertionConfig entity) {
+        Set<EncapsulatedAssertionResultDescriptor> ret = entity.getResultDescriptors();
+        if (ret == null)
+            ret = new HashSet<>();
+        ret.clear();
+
+        List<EncapsulatedAssertionMO.EncapsulatedResult> results = encassResource.getEncapsulatedResults();
+        if (results != null) {
+            for (EncapsulatedAssertionMO.EncapsulatedResult result : results) {
+                EncapsulatedAssertionResultDescriptor r = new EncapsulatedAssertionResultDescriptor();
+                r.setResultName(result.getResultName());
+                r.setResultType(result.getResultType());
+                r.setEncapsulatedAssertionConfig(entity);
+                ret.add(r);
+            }
+        }
+
+        return ret;
     }
 
     /**

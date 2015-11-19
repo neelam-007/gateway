@@ -83,6 +83,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
     private Map<String, ImageIcon> iconCache = new HashMap<>();
     private PermissionFlags flags;
+    private EncapsulatedAssertionConfig defaultConfig;
 
     public EncapsulatedAssertionManagerWindow(Window parent) {
         super(parent, "Manage Encapsulated Assertion Configurations", ModalityType.APPLICATION_MODAL);
@@ -106,7 +107,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         createButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doProperties(new EncapsulatedAssertionConfig(), true);
+                doProperties(defaultConfig == null? new EncapsulatedAssertionConfig() : defaultConfig, true);
+                defaultConfig = null;
             }
         });
 
@@ -184,6 +186,14 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         loadEncapsulatedAssertionConfigs(false);
         initFiltering();
         enableOrDisable();
+    }
+
+    /**
+     * Set a default EncapsulatedAssertionConfig for display when createButton is clicked.
+     * @param defaultConfig: a default EncapsulatedAssertionConfig object
+     */
+    public void setDefaultConfig(EncapsulatedAssertionConfig defaultConfig) {
+        this.defaultConfig = defaultConfig;
     }
 
     private String createDeleteConfirmationMsg(final Collection<EncapsulatedAssertionConfig> selected) {

@@ -1,17 +1,21 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.encass.EncapsulatedAssertionManagerWindow;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.JDBCConnectionMO;
-import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.Policy;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -46,6 +50,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     private SecurePasswordComboBox securePasswordComboBox;
     private PrivateKeysComboBox privateKeysComboBox;
     private JdbcConnectionComboBox jdbcConnectionComboBox;
+    private EncapsulatedAssertionConfigComboBox encapsulatedAssertionConfigComboBox;
 
     /**
      * Create dialog. Currently store passwords, private keys, and JDBC connections are supported.
@@ -80,6 +85,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             return keyStoreId.toString() + ":" + keyAlias;
         } else if (jdbcConnectionComboBox != null) {
             return jdbcConnectionComboBox.getSelectedJdbcConnection().toString();
+        } else if (encapsulatedAssertionConfigComboBox != null) {
+            return encapsulatedAssertionConfigComboBox.getSelectedEncapsulatedAssertion().getGoid().toString();
         } else {
             return null;
         }
@@ -126,6 +133,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             privateKeysComboBox.repopulate();
         } else if (jdbcConnectionComboBox != null) {
             jdbcConnectionComboBox.reload();
+        } else if (encapsulatedAssertionConfigComboBox != null) {
+            encapsulatedAssertionConfigComboBox.reload();
         }
         // else, unsupported entity type. Do nothing.
     }
@@ -137,6 +146,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             managePrivateKeys();
         } else if (jdbcConnectionComboBox != null) {
             manageJdbcConnections();
+        } else if (encapsulatedAssertionConfigComboBox != null) {
+            manageEncapsulatedAssertionConfigComboBox();
         }
         // else, unsupported entity type. Do nothing.
     }
@@ -192,6 +203,48 @@ public class SolutionKitResolveMappingDialog extends JDialog {
         privateKeysComboBox.repopulate();
     }
 
+    private void manageEncapsulatedAssertionConfigComboBox() {
+        final EncapsulatedAssertionManagerWindow dlg = new EncapsulatedAssertionManagerWindow(this);
+        if (item != null) {
+            final EncapsulatedAssertionMO resource = (EncapsulatedAssertionMO) item.getContent();
+            final EncapsulatedAssertionConfig encapsulatedAssertionConfig = SolutionKitUtils.fromMangedObject(resource);
+
+            // Reset guid as null, since a new encapsulated assertion before saved must have a null guid.  Otherwise,
+            // Validate.isTrue(config.getGuid() == null, "The EncapsulatedAssertionConfig has already been persisted.")
+            // in CreateEncapsulatedAssertionAction will be failed.
+            encapsulatedAssertionConfig.setGuid(null);
+
+            // Retried the policy fragment associated with this encapsulated assertion
+            encapsulatedAssertionConfig.setPolicy(getPolicyByGoid(GoidUpgradeMapper.mapId(EntityType.POLICY, resource.getPolicyReference().getId())));
+
+            dlg.setDefaultConfig(encapsulatedAssertionConfig);
+        }
+
+        DialogDisplayer.pack(dlg);
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
+            }
+        });
+        encapsulatedAssertionConfigComboBox.reload();
+    }
+
+    private Policy getPolicyByGoid(final Goid policyGoid) {
+        final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+        if (policyAdmin == null) {
+            logger.warning("Cannot get Policy Admin since the AdminContext is not available.");
+            return null;
+        }
+        try {
+            return policyAdmin.findPolicyByPrimaryKey(policyGoid);
+        } catch (FindException e) {
+            logger.warning("Cannot find a policy with GOID = " + policyGoid.toString());
+            return null;
+        }
+    }
+
     private void onOk() {
         if (entityComboBox.getSelectedIndex() == -1) {
             JOptionPane.showMessageDialog(this,
@@ -226,6 +279,11 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             case JDBC_CONNECTION:
                 jdbcConnectionComboBox = new JdbcConnectionComboBox();
                 entityComboBox = jdbcConnectionComboBox;
+                break;
+
+            case ENCAPSULATED_ASSERTION:
+                encapsulatedAssertionConfigComboBox = new EncapsulatedAssertionConfigComboBox();
+                entityComboBox = encapsulatedAssertionConfigComboBox;
                 break;
 
             default:
