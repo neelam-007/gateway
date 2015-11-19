@@ -166,7 +166,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
                 JPanel errorPanel = new JPanel();
                 JLabel label = new JLabel("Failed to install solution kit(s) due to following entity conflicts:");
-                SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
+                SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel("Name");
                 solutionKitMappingsPanel.setPreferredSize(new Dimension(1000, 400));
                 solutionKitMappingsPanel.hideTargetIdColumn();
                 solutionKitMappingsPanel.setData(solutionKit, mappings, bundle, resolvedEntityId);

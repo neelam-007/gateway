@@ -9,6 +9,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_TAKEN_ATTRIBUTE;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ERROR_TYPE_ATTRIBUTE;
 
@@ -95,30 +97,71 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         checkFeatureEnabled(solutionKit);
 
         // Install bundle.
-        String mappings = solutionKitManager.importBundle(bundle, solutionKit, false);
+        String resultMappings = solutionKitManager.importBundle(bundle, solutionKit, false);
+
+        // get mappings with entity name added as a property
+        resultMappings = getMappingsWithEntityNameAddedToProperties(bundle, resultMappings);
 
         // Save solution kit entity.
-        solutionKit.setMappings(mappings);
+        solutionKit.setMappings(resultMappings);
 
         // Update the delete mapping probably due to new entities created or an instance modifier specified.
         final String uninstallBundle = solutionKit.getUninstallBundle();
         if (! StringUtils.isEmpty(uninstallBundle)) {
             solutionKit.setUninstallBundle(
                     // Set 'targetId' in the uninstall bundle.
-                    updateUninstallBundleBySettingTargetIds(uninstallBundle, mappings)
+                    updateUninstallBundleBySettingTargetIds(uninstallBundle, resultMappings)
             );
         }
 
         if (isUpgrade) {
-            updateEntityOwnershipDescriptors(mappings, solutionKit);
+            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
             solutionKitManager.update(solutionKit);
             return solutionKit.getGoid();
         } else {
             Goid solutionKitGoid = solutionKitManager.save(solutionKit);
-            updateEntityOwnershipDescriptors(mappings, solutionKit);
+            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
             solutionKitManager.update(solutionKit);
             return solutionKitGoid;
         }
+    }
+
+    protected String getMappingsWithEntityNameAddedToProperties(@NotNull final String bundleStr, @NotNull final String resultMappingsStr) throws IOException, SAXException {
+        final Map<String, String> srcIdToNameMap = new HashMap<>();
+
+        // find all entity names for a given srcId and save them in a map.
+        final RestmanMessage bundle = new RestmanMessage(bundleStr);
+        for (Element itemElement: bundle.getBundleReferenceItems()) {
+            Element srcIdElement = DomUtils.findFirstChildElementByName(itemElement, MGMT_VERSION_NAMESPACE, RestmanMessage.NODE_NAME_ID);
+            String srcId = srcIdElement != null ? srcIdElement.getTextContent() : null;
+
+            Element nameElement = DomUtils.findFirstChildElementByName(itemElement, MGMT_VERSION_NAMESPACE, RestmanMessage.NODE_NAME_NAME);
+            String name = nameElement != null ? nameElement.getTextContent() : null;
+
+            if (!StringUtils.isEmpty(srcId) && !StringUtils.isEmpty(name)) {
+                srcIdToNameMap.put(srcId, name);
+            }
+        }
+
+        // put installed entity name into the result mapping
+        final RestmanMessage resultMappings = new RestmanMessage(resultMappingsStr);
+        for (Element mappingElement: resultMappings.getMappings()) {
+            String srcId = mappingElement.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+
+            if (srcIdToNameMap.containsKey(srcId)) {
+                Element propertiesElement = DomUtils.findFirstChildElementByName(mappingElement, MGMT_VERSION_NAMESPACE, RestmanMessage.NODE_NAME_PROPERTIES);
+                if (propertiesElement == null) {  //There is no <l7:Properties> node so create that first
+                    propertiesElement = DomUtils.createAndAppendElement(mappingElement, RestmanMessage.NODE_NAME_PROPERTIES);
+                }
+                //Append <l7:Property> node with attribute 'key' = 'SK_SavedEntityName'
+                Element propertyElem = DomUtils.createAndAppendElement(propertiesElement, RestmanMessage.NODE_NAME_PROPERTY);
+                propertyElem.setAttribute(RestmanMessage.NODE_ATTRIBUTE_NAME_KEY, RestmanMessage.MAPPING_PROPERTY_NAME_SK_SAVED_ENTITY_NAME);
+                //Append <l7:StringValue> node with the name of the entity
+                Element propValueElem = DomUtils.createAndAppendElement(propertyElem, RestmanMessage.NODE_NAME_STRING_VALUE);
+                propValueElem.setTextContent(srcIdToNameMap.get(srcId));
+            }
+        }
+        return resultMappings.getAsFormattedString();
     }
 
     @NotNull

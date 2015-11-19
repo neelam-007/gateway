@@ -39,11 +39,14 @@ public class RestmanMessage {
 
     private static final String NS_L7 = "l7";
     private static final String NODE_NAME_L7_ERROR = NS_L7 + ":Error";
-    private static final String NODE_NAME_PROPERTIES = "Properties";
-    private static final String NODE_NAME_PROPERTY = "Property";
+    public static final String NODE_NAME_NAME = "Name";
+    public static final String NODE_NAME_ID = "Id";
+    public static final String NODE_NAME_PROPERTIES = "Properties";
+    public static final String NODE_NAME_PROPERTY = "Property";
     private static final String NODE_NAME_BOOLEAN_VALUE = "BooleanValue";
+    public static final String NODE_NAME_STRING_VALUE = "StringValue";
     private static final String XMLNS_L7 = "xmlns:" + NS_L7;
-    private static final String NODE_ATTRIBUTE_NAME_KEY = "key";
+    public static final String NODE_ATTRIBUTE_NAME_KEY = "key";
     private static final String ROOT_FOLDER_ID = Folder.ROOT_FOLDER_ID.toHexString();
 
     private static final String ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE =
@@ -52,6 +55,7 @@ public class RestmanMessage {
         "</l7:Mapping>\n";
 
     private static final String MAPPING_PROPERTY_NAME_SK_READ_ONLY_ENTITY = "SK_ReadOnlyEntity";
+    public static final String MAPPING_PROPERTY_NAME_SK_SAVED_ENTITY_NAME = "SK_SavedEntityName";
 
     private List<Element> mappingErrors;
     private List<Element> bundles;

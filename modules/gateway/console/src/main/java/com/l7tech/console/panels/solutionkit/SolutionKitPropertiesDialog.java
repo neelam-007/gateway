@@ -19,7 +19,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,8 +116,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     }
 
     private SolutionKitMappingsPanel createSolutionKitMappingsPanel(SolutionKit solutionKit) {
-        final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
-        solutionKitMappingsPanel.hideNameColumn();
+        final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel("Installed As");
         solutionKitMappingsPanel.hideErrorTypeColumn();
         solutionKitMappingsPanel.hideResolvedColumn();
 

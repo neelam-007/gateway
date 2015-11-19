@@ -7,7 +7,9 @@ import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.test.BugId;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.hamcrest.Matchers;
@@ -18,9 +20,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Element;
 
 import java.text.MessageFormat;
 import java.util.*;
+
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 
 /**
  * {@code SolutionKitAdminHelper} unit test.<br/>
@@ -45,7 +50,7 @@ public class SolutionKitAdminHelperTest {
         final SolutionKit[] kits = createSampleSolutionKits();
         solutionKitManager = Mockito.spy(new SolutionKitManagerStub(kits));
         Assert.assertThat(solutionKitManager.findAll(), Matchers.containsInAnyOrder(kits));
-        solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
+        solutionKitAdminHelper = Mockito.spy(new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager));
         Assert.assertNotNull("SolutionKitAdminHelper is created", solutionKitAdminHelper);
 
         goidToGuidMap.clear();
@@ -327,6 +332,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting,   Mapping.ActionTaken.CreatedNew,      "37953ab3e89a8b7df721c055d4aeb6a9", EntityType.FOLDER, false)
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         // create a sample Kit without any ownership descriptors
         SolutionKit solutionKit = new SolutionKitBuilder()
@@ -426,6 +432,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting,   Mapping.ActionTaken.UsedExisting,    "37953ab3e89a8b7df721c055d4aeb6ab", EntityType.GENERIC, true) // should be ignored
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         solutionKit = solutionKitManager.findByPrimaryKey(goid);
         Assert.assertNotNull(solutionKit);
@@ -520,6 +527,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting,   Mapping.ActionTaken.CreatedNew,      "37953ab3e89a8b7df721c055d4aeb6ab", EntityType.GENERIC, false)
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         solutionKit = solutionKitManager.findByPrimaryKey(goid);
         Assert.assertNotNull(solutionKit);
@@ -644,6 +652,7 @@ public class SolutionKitAdminHelperTest {
                         )
                 );
                 Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+                Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
                 Goid goid = solutionKitAdminHelper.install(solutionKit, "", true);
                 Assert.assertNotNull(goid);
@@ -682,6 +691,7 @@ public class SolutionKitAdminHelperTest {
                         )
                 );
                 Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+                Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
                 goid = solutionKitAdminHelper.install(solutionKit, "", true);
                 Assert.assertNotNull(goid);
@@ -714,6 +724,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting, Mapping.ActionTaken.Ignored,         "37953ab3e89a8b7df721c055d4aeb6a4", EntityType.SERVICE, true) // should be ignored
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // test install
@@ -808,6 +819,7 @@ public class SolutionKitAdminHelperTest {
                 )
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         goid = solutionKitAdminHelper.install(solutionKit, "", true);
         Assert.assertThat(goid, Matchers.equalTo(solutionKit.getGoid()));
@@ -869,6 +881,7 @@ public class SolutionKitAdminHelperTest {
                 )
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         goid = solutionKitAdminHelper.install(solutionKit, "", true);
         Assert.assertNotNull(goid);
@@ -891,6 +904,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting, Mapping.ActionTaken.CreatedNew, "7bf91daabff1558dd35b12b9f1f3ab73", EntityType.SECURE_PASSWORD, true)
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         // create a sample Kit without any ownership descriptors
         final SolutionKit solutionKit = new SolutionKitBuilder()
@@ -997,6 +1011,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting, Mapping.ActionTaken.CreatedNew, "sk1_entity6", EntityType.FOLDER, false) // flip the flag
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         Goid goid = solutionKitAdminHelper.install(kit6, "", true);
         Assert.assertNotNull(goid);
@@ -1030,6 +1045,7 @@ public class SolutionKitAdminHelperTest {
                 new RestmanMapping(Mapping.Action.NewOrExisting, Mapping.ActionTaken.Deleted, "sk1_entity6", EntityType.FOLDER, false)
         );
         Mockito.doReturn(restmanMappings).when(solutionKitManager).importBundle(Mockito.anyString(), Mockito.any(SolutionKit.class), Mockito.anyBoolean());
+        Mockito.doReturn(restmanMappings).when(solutionKitAdminHelper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         goid = solutionKitAdminHelper.install(kit6, "", true);
         Assert.assertNotNull(goid);
@@ -1058,6 +1074,152 @@ public class SolutionKitAdminHelperTest {
         );
         Assert.assertThat(kit6.getEntityOwnershipDescriptors(), Matchers.hasSize(sk6OrgSize));
 
+    }
+
+    @Test
+    public void testGetMappingsWithEntityNameAddedToProperties () throws Exception {
+        final String installBundle = "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "\t\t\t<l7:References>\n" +
+                "\t\t\t\t<l7:Item>\n" +
+                "\t\t\t\t\t<l7:Name>cassandra_2_36_1_5</l7:Name>\n" +
+                "\t\t\t\t\t<l7:Id>a23e999b6ac5fbb0c30217c04644878d</l7:Id>\n" +
+                "\t\t\t\t\t<l7:Type>CASSANDRA_CONFIGURATION</l7:Type>\n" +
+                "\t\t\t\t\t<l7:TimeStamp>2015-08-10T12:56:48.825-07:00</l7:TimeStamp>\n" +
+                "\t\t\t\t\t<l7:Resource>\n" +
+                "\t\t\t\t\t\t<l7:CassandraConnection id=\"a23e999b6ac5fbb0c30217c04644878d\" version=\"0\">\n" +
+                "\t\t\t\t\t\t\t<l7:Name>cassandra_2_36_1_5</l7:Name>\n" +
+                "\t\t\t\t\t\t\t<l7:Keyspace>qa</l7:Keyspace>\n" +
+                "\t\t\t\t\t\t\t<l7:ContactPoint>10.7.33.102</l7:ContactPoint>\n" +
+                "\t\t\t\t\t\t\t<l7:Port>9042</l7:Port>\n" +
+                "\t\t\t\t\t\t\t<l7:Username>cassandra_Updated</l7:Username>\n" +
+                "\t\t\t\t\t\t\t<l7:Compression>NONE</l7:Compression>\n" +
+                "\t\t\t\t\t\t\t<l7:Ssl>false</l7:Ssl>\n" +
+                "\t\t\t\t\t\t\t<l7:Enabled>true</l7:Enabled>\n" +
+                "\t\t\t\t\t\t\t<l7:Properties>\n" +
+                "\t\t\t\t\t\t\t\t<l7:Property key=\"ConnectionProperty\">\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:StringValue>Property Value</l7:StringValue>\n" +
+                "\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t</l7:Properties>\n" +
+                "\t\t\t\t\t\t</l7:CassandraConnection>\n" +
+                "\t\t\t\t\t</l7:Resource>\n" +
+                "\t\t\t\t</l7:Item>\n" +
+                "\t\t\t\t<l7:Item>\n" +
+                "\t\t\t\t\t<l7:Name>service_2_36_1_5</l7:Name>\n" +
+                "\t\t\t\t\t<l7:Id>a23e999b6ac5fbb0c30217c046448799</l7:Id>\n" +
+                "\t\t\t\t\t<l7:Type>SERVICE</l7:Type>\n" +
+                "\t\t\t\t\t<l7:TimeStamp>2015-08-10T12:56:48.844-07:00</l7:TimeStamp>\n" +
+                "\t\t\t\t\t<l7:Resource>\n" +
+                "\t\t\t\t\t\t<l7:Service id=\"a23e999b6ac5fbb0c30217c046448799\" version=\"2\">\n" +
+                "\t\t\t\t\t\t\t<l7:ServiceDetail folderId=\"0000000000000000ffffffffffffec76\" id=\"a23e999b6ac5fbb0c30217c046448799\" version=\"2\">\n" +
+                "\t\t\t\t\t\t\t\t<l7:Name>service_2_36_1_5</l7:Name>\n" +
+                "\t\t\t\t\t\t\t\t<l7:Enabled>true</l7:Enabled>\n" +
+                "\t\t\t\t\t\t\t\t<l7:ServiceMappings>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:HttpMapping>\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:UrlPattern>/service_2_36_1_5</l7:UrlPattern>\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:Verbs>\n" +
+                "\t\t\t\t\t\t\t\t\t\t\t<l7:Verb>GET</l7:Verb>\n" +
+                "\t\t\t\t\t\t\t\t\t\t\t<l7:Verb>POST</l7:Verb>\n" +
+                "\t\t\t\t\t\t\t\t\t\t\t<l7:Verb>PUT</l7:Verb>\n" +
+                "\t\t\t\t\t\t\t\t\t\t\t<l7:Verb>DELETE</l7:Verb>\n" +
+                "\t\t\t\t\t\t\t\t\t\t</l7:Verbs>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:HttpMapping>\n" +
+                "\t\t\t\t\t\t\t\t</l7:ServiceMappings>\n" +
+                "\t\t\t\t\t\t\t\t<l7:Properties>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Property key=\"internal\">\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Property key=\"policyRevision\">\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:LongValue>2</l7:LongValue>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Property key=\"soap\">\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Property key=\"tracingEnabled\">\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Property key=\"wssProcessingEnabled\">\n" +
+                "\t\t\t\t\t\t\t\t\t\t<l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t\t\t\t</l7:Properties>\n" +
+                "\t\t\t\t\t\t\t</l7:ServiceDetail>\n" +
+                "\t\t\t\t\t\t\t<l7:Resources>\n" +
+                "\t\t\t\t\t\t\t\t<l7:ResourceSet tag=\"policy\">\n" +
+                "\t\t\t\t\t\t\t\t\t<l7:Resource type=\"policy\" version=\"1\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+                "        &lt;L7p:CassandraQuery&gt;\n" +
+                "            &lt;L7p:ConnectionName stringValue=&quot;cassandra_11_5_1_61&quot;/&gt;\n" +
+                "            &lt;L7p:FetchSize intValue=&quot;5000&quot;/&gt;\n" +
+                "            &lt;L7p:MaxRecords intValue=&quot;10&quot;/&gt;\n" +
+                "            &lt;L7p:QueryDocument stringValue=&quot;test&quot;/&gt;\n" +
+                "            &lt;L7p:QueryTimeout stringValueNull=&quot;null&quot;/&gt;\n" +
+                "        &lt;/L7p:CassandraQuery&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;\n" +
+                "\t\t\t\t\t\t\t\t\t</l7:Resource>\n" +
+                "\t\t\t\t\t\t\t\t</l7:ResourceSet>\n" +
+                "\t\t\t\t\t\t\t</l7:Resources>\n" +
+                "\t\t\t\t\t\t</l7:Service>\n" +
+                "\t\t\t\t\t</l7:Resource>\n" +
+                "\t\t\t\t</l7:Item>\n" +
+                "\t\t\t</l7:References>\n" +
+                "\t\t\t<l7:Mappings>\n" +
+                "\t\t\t\t<l7:Mapping action=\"NewOrExisting\" srcId=\"a23e999b6ac5fbb0c30217c04644878d\" srcUri=\"http://david90.ca.com:8080/restman/1.0/cassandraConnections/a23e999b6ac5fbb0c30217c04644878d\" type=\"CASSANDRA_CONFIGURATION\"/>\n" +
+                "\t\t\t\t<l7:Mapping action=\"NewOrExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"http://david90.ca.com:8080/restman/1.0/folders/0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
+                "\t\t\t\t\t<l7:Properties>\n" +
+                "\t\t\t\t\t\t<l7:Property key=\"FailOnNew\">\n" +
+                "\t\t\t\t\t\t\t<l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t</l7:Properties>\n" +
+                "\t\t\t\t</l7:Mapping>\n" +
+                "\t\t\t\t<l7:Mapping action=\"AlwaysCreateNew\" srcId=\"a23e999b6ac5fbb0c30217c046448799\" srcUri=\"http://david90.ca.com:8080/restman/1.0/services/a23e999b6ac5fbb0c30217c046448799\" type=\"SERVICE\"/>\n" +
+                "\t\t\t</l7:Mappings>\n" +
+                "\t\t</l7:Bundle>";
+
+        final String installMappings = "<l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:Name>Bundle mappings</l7:Name>\n" +
+                "    <l7:Type>BUNDLE MAPPINGS</l7:Type>\n" +
+                "    <l7:TimeStamp>2015-11-03T09:37:20.586-08:00</l7:TimeStamp>\n" +
+                "    <l7:Link rel=\"self\" uri=\"/1.0/bundle?versionComment=Test4+Solution+Kit+%28v1.0.01%29&amp;test=true\"/>\n" +
+                "    <l7:Resource>\n" +
+                "        <l7:Mappings>\n" +
+                "\t\t\t\t<l7:Mapping action=\"NewOrExisting\" srcId=\"a23e999b6ac5fbb0c30217c04644878d\" srcUri=\"http://david90.ca.com:8080/restman/1.0/cassandraConnections/a23e999b6ac5fbb0c30217c04644878d\" type=\"CASSANDRA_CONFIGURATION\"/>\n" +
+                "\t\t\t\t<l7:Mapping action=\"NewOrExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"http://david90.ca.com:8080/restman/1.0/folders/0000000000000000ffffffffffffec76\" type=\"FOLDER\">\n" +
+                "\t\t\t\t\t<l7:Properties>\n" +
+                "\t\t\t\t\t\t<l7:Property key=\"FailOnNew\">\n" +
+                "\t\t\t\t\t\t\t<l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "\t\t\t\t\t\t</l7:Property>\n" +
+                "\t\t\t\t\t</l7:Properties>\n" +
+                "\t\t\t\t</l7:Mapping>\n" +
+                "\t\t\t\t<l7:Mapping action=\"AlwaysCreateNew\" srcId=\"a23e999b6ac5fbb0c30217c046448799\" srcUri=\"http://david90.ca.com:8080/restman/1.0/services/a23e999b6ac5fbb0c30217c046448799\" type=\"SERVICE\"/>\n" +
+                "\t\t\t</l7:Mappings>\n" +
+                "    </l7:Resource>\n" +
+                "</l7:Item>";
+
+        //run the method we're testing
+        String resultMappings = solutionKitAdminHelper.getMappingsWithEntityNameAddedToProperties(installBundle, installMappings);
+        Assert.assertNotNull(resultMappings);
+
+        //iterate through the returned result mappings and check to see if for a given srcId, we have a new property
+        //with a 'name' that matches the one in our static install bundle above
+        final RestmanMessage resultMappingsMessage = new RestmanMessage(resultMappings);
+        for (Element mappingElement: resultMappingsMessage.getMappings()) {
+            Assert.assertNotNull(mappingElement);
+            String srcId = mappingElement.getAttribute(RestmanMessage.MAPPING_SRC_ID_ATTRIBUTE);
+            Assert.assertNotNull(srcId);
+            //Get the Properties element
+            Element propertiesElement = DomUtils.findFirstChildElementByName(mappingElement, MGMT_VERSION_NAMESPACE, RestmanMessage.NODE_NAME_PROPERTIES);
+            Assert.assertNotNull(propertiesElement);
+            //From Properties, get the Property element
+            Element propertyElement = DomUtils.findFirstChildElementByName(propertiesElement, MGMT_VERSION_NAMESPACE, RestmanMessage.NODE_NAME_PROPERTY);
+            Assert.assertNotNull(propertyElement);
+            if (srcId.equals("a23e999b6ac5fbb0c30217c04644878d")) {
+                Assert.assertThat("cassandra_2_36_1_5", Matchers.equalToIgnoringWhiteSpace(propertyElement.getTextContent()));
+            }
+            if (srcId.equals("a23e999b6ac5fbb0c30217c046448799")) {
+                Assert.assertThat("service_2_36_1_5", Matchers.equalToIgnoringWhiteSpace(propertyElement.getTextContent()));
+            }
+        }
     }
 
     // TODO: add more SolutionKitAdminHelper tests here

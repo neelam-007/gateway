@@ -17,8 +17,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.awt.Component;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This panel contains a table that contains the mappings.
@@ -41,9 +42,9 @@ public class SolutionKitMappingsPanel extends JPanel {
     /**
      * Create panel.
      */
-    public SolutionKitMappingsPanel() {
+    public SolutionKitMappingsPanel(String nameColumnLabel) {
         super();
-        initialize();
+        initialize(nameColumnLabel);
     }
 
     /**
@@ -172,9 +173,9 @@ public class SolutionKitMappingsPanel extends JPanel {
         return solutionKit;
     }
 
-    private void initialize() {
+    private void initialize(String nameColumnLabel) {
         mappingsModel = TableUtil.configureTable(mappingsTable,
-            TableUtil.column("Name", 50, 200, 1000, new Functions.Unary<String, Mapping>() {
+            TableUtil.column(nameColumnLabel, 50, 200, 1000, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     if ("0000000000000000ffffffffffffec76".equals(mapping.getSrcId()) &&
@@ -191,6 +192,11 @@ public class SolutionKitMappingsPanel extends JPanel {
                         }
 
                     }
+
+                    if (mapping.getProperty("SK_SavedEntityName") != null) {
+                        return mapping.getProperty("SK_SavedEntityName");
+                    }
+
                     return "---";
                 }
             }),

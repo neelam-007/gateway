@@ -82,7 +82,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
             Map<String, String> resolvedEntityIds = new HashMap<>();
             resolvedEntityIdsMap.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, resolvedEntityIds));
 
-            final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel();
+            final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel("Name");
             solutionKitMappingsPanel.setData(solutionKit, mappings, bundle, resolvedEntityIds);
             solutionKitMappingsPanel.setDoubleClickAction(resolveButton);
             solutionKitMappingsPanel.addListSelectionListener(new ListSelectionListener() {

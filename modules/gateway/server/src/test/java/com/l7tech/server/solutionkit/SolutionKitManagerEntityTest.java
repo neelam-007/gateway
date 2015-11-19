@@ -412,7 +412,8 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
         final IdentityProviderConfigManager identityProviderConfigManager = Mockito.mock(IdentityProviderConfigManager.class);
 
         // create the admin helper
-        final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, identityProviderConfigManager);
+        //final SolutionKitAdminHelper helper = new SolutionKitAdminHelper(licenseManager, skManager, identityProviderConfigManager);
+        final SolutionKitAdminHelper helper = Mockito.spy(new SolutionKitAdminHelper(licenseManager, skManager, identityProviderConfigManager));
         Assert.assertNotNull(helper);
 
         // samples
@@ -1143,6 +1144,7 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
 
         // mock importBundle to return sk install mappings (i.e. builder.getInstallMappings())
         Mockito.doReturn(builder.getInstallMappings()).when(skManager).importBundle(Mockito.anyString(), Mockito.<SolutionKit>any(), Mockito.anyBoolean());
+        Mockito.doReturn(builder.getInstallMappings()).when(helper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         // solutionKit sanity check
         Assert.assertThat(solutionKit.getGoid(), Matchers.anyOf(Matchers.equalTo(Goid.DEFAULT_GOID), Matchers.nullValue()));
@@ -1178,6 +1180,8 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
 
         // mock importBundle to return sk uninstall mappings (i.e. builder.getInstallMappings())
         Mockito.doReturn(builder.getUninstallMappings()).when(skManager).importBundle(Mockito.anyString(), Mockito.<SolutionKit>any(), Mockito.anyBoolean());
+        Mockito.doReturn(builder.getUninstallMappings()).when(helper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
+
 
         // uninstall the kit
         helper.uninstall(skGoid);
@@ -1206,6 +1210,7 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
 
         // mock importBundle to return sk upgrade mappings (i.e. builder.getUpgradeMappings())
         Mockito.doReturn(builder.getUpgradeMappings()).when(skManager).importBundle(Mockito.anyString(), Mockito.<SolutionKit>any(), Mockito.anyBoolean());
+        Mockito.doReturn(builder.getUpgradeMappings()).when(helper).getMappingsWithEntityNameAddedToProperties(Mockito.anyString(), Mockito.anyString());
 
         flushSession(); // flush hibernate session just in case
         // get the kit to upgrade
