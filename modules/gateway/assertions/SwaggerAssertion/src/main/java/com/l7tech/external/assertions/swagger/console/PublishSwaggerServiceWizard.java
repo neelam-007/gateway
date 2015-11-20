@@ -259,7 +259,7 @@ public class PublishSwaggerServiceWizard extends AbstractPublishServiceWizard<Sw
         AllAssertion branch = new AllAssertion();
 
         SwaggerAssertion swaggerAssertion = new SwaggerAssertion();
-        swaggerAssertion.setSwaggerDoc("${swaggerDoc}");
+        swaggerAssertion.setSwaggerDoc("swaggerDoc");
         swaggerAssertion.setValidatePath(wizardInput.isValidatePath());
         swaggerAssertion.setValidateMethod(wizardInput.isValidateMethod());
         swaggerAssertion.setValidateScheme(wizardInput.isValidateScheme());
