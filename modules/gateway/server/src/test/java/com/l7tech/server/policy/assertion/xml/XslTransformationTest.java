@@ -80,9 +80,15 @@ public class XslTransformationTest {
             "    </soap:Body>\n" +
             "    \n" +
             "</soap:Envelope>";
+
     private static final String EXPECTED_VAR_RESULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
     "VARIABLE CONTENT routingStatus=None" +
     "</soap:Envelope>";
+
+    private static final String EXPECTED_NOVAR_RESULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
+            "defaultValueOfParam routingStatus=None" +
+            "</soap:Envelope>";
+
     private Auditor auditor = new Auditor(this, null, logger);
 
     private Document transform(String xslt, String src) throws Exception {
@@ -119,7 +125,7 @@ public class XslTransformationTest {
     }
 
     @Test
-    public void testNonXmlInputParsePhoneNumberXS20() throws Exception {
+    public void testNonXmlInputParsePhoneNumberXS20_noVar() throws Exception {
         XslTransformation ass = new XslTransformation();
         ass.setTarget(TargetMessageType.REQUEST);
         ass.setWhichMimePart(0);
@@ -136,6 +142,77 @@ public class XslTransformationTest {
         assertEquals(AssertionStatus.NONE, result);
         String after = toString(req);
         assertEquals("num=555-2938,area=604", after);
+    }
+
+    @Test
+    @BugId( "SSG-12209" )
+    public void testNonXmlInputParsePhoneNumberXS20_withVar() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setTarget(TargetMessageType.REQUEST);
+        ass.setWhichMimePart(0);
+        ass.setResourceInfo(new StaticResourceInfo(PARSE_PHONE_NUMBER_REGEX_XSLT20));
+        ass.setXsltVersion("2.0");
+        ServerXslTransformation sass = new TestStaticOnlyServerXslTransformation(ass);
+
+        // An XML target message is currently still required in order to run an XSLT, so we will use a dummy value
+        Message req = new Message(XmlUtil.stringAsDocument("<dummy/>"));
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, null);
+        context.setVariable( "phone", "542-555-5753" );
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String after = toString(req);
+
+        // TODO Remove this test after XsltUtil is fixed per SSG-12209
+        assertEquals( "value from context variable is currently ignored (for Saxon only) if a select expression is specified",
+                "num=555-2938,area=604", after);
+
+        // TODO Uncomment this test after XsltUtil is fixed per SSG-12209
+        // assertEquals( "value from context variable shall override value from select expression", "num=555-5753,area=542", after);
+    }
+
+    @Test
+    public void testNonXmlInputParsePhoneNumberXS20_fromVariable() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setTarget(TargetMessageType.REQUEST);
+        ass.setWhichMimePart(0);
+        ass.setResourceInfo( new StaticResourceInfo( PARSE_PHONE_NUMBER_REGEX_XSLT20_NO_SELECT_EXPR ) );
+        ass.setXsltVersion("2.0");
+        ServerXslTransformation sass = new TestStaticOnlyServerXslTransformation(ass);
+
+        // An XML target message is currently still required in order to run an XSLT, so we will use a dummy value
+        Message req = new Message(XmlUtil.stringAsDocument("<dummy/>"));
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, null);
+        context.setVariable( "phone", "761-555-8371" );
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String after = toString(req);
+        assertEquals("num=555-8371,area=761", after);
+    }
+
+    @Test
+    public void testNonXmlInputParsePhoneNumberXS20_fromVariable_noVar() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setTarget(TargetMessageType.REQUEST);
+        ass.setWhichMimePart(0);
+        ass.setResourceInfo( new StaticResourceInfo( PARSE_PHONE_NUMBER_REGEX_XSLT20_NO_SELECT_EXPR ) );
+        ass.setXsltVersion("2.0");
+        ServerXslTransformation sass = new TestStaticOnlyServerXslTransformation(ass);
+
+        // An XML target message is currently still required in order to run an XSLT, so we will use a dummy value
+        Message req = new Message(XmlUtil.stringAsDocument("<dummy/>"));
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, null);
+        // Allow source var to not exist
+        //context.setVariable( "phone", "761-555-8371" );
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String after = toString(req);
+        assertEquals( "No output should be produced -- regex should fail to match empty input", "", after);
     }
 
     private String toString(Message req) throws Exception {
@@ -301,6 +378,31 @@ public class XslTransformationTest {
     }
 
     @Test
+    public void testContextVariablesStatic_contextVariableDoesntExist() throws Exception {
+        StaticResourceInfo ri = new StaticResourceInfo();
+        ri.setDocument(ECF_MDE_ID_XSL);
+
+        XslTransformation assertion = new XslTransformation();
+        assertion.setTarget(TargetMessageType.REQUEST);
+        assertion.setResourceInfo(ri);
+        BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
+            put("httpClientFactory", new TestingHttpClientFactory());
+        }});
+        ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
+
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        Message response = new Message();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        // Do NOT set variable, and ensure result takes default value from select expr
+        //context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
+        sa.checkRequest(context);
+
+        String res = new String( IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
+
+        Assert.assertEquals(res, EXPECTED_NOVAR_RESULT);
+    }
+
+    @Test
     public void testContextVariablesStaticWithSaxon() throws Exception {
         SyspropUtil.setProperty("com.l7tech.xml.xslt.useSaxon", "true");
 
@@ -323,7 +425,12 @@ public class XslTransformationTest {
 
         String res = new String( IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
 
-        Assert.assertEquals(res, EXPECTED_VAR_RESULT);
+        // TODO Remove this test after XsltUtil is fixed per SSG-12209
+        Assert.assertEquals( "value from context variable is currently ignored (for Saxon) if a select expression is specified",
+                res, EXPECTED_NOVAR_RESULT );
+
+        // TODO Uncomment this test after XsltUtil is fixed per SSG-12209
+        // Assert.assertEquals( "value from select expression is overridded by context variable", res, EXPECTED_VAR_RESULT);
 
         // Ensure Saxon was actually used
         CompiledStylesheet cs = sa.resourceGetter.getResource(request.getXmlKnob(), context.getVariableMap(assertion.getVariablesUsed(), auditor));
@@ -418,7 +525,7 @@ public class XslTransformationTest {
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<xsl:transform version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\n" +
             "                             xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-            "<xsl:param name=\"ecf-mde-id\"/>" +
+            "<xsl:param name=\"ecf-mde-id\" select=\"'defaultValueOfParam'\" />" +
             "<xsl:param name=\"routingStatus\"/>" +
             "<xsl:template match=\"soapenv:Body\">" +
             "<xsl:value-of select=\"$ecf-mde-id\"/>" +
@@ -451,6 +558,27 @@ public class XslTransformationTest {
             "</xsl:template>\n" +
             "\n" +
             "</xsl:stylesheet>\n";
+
+    private static final String PARSE_PHONE_NUMBER_REGEX_XSLT20_NO_SELECT_EXPR =
+            "<?xml version=\"1.0\"?>\n" +
+                    "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xdt=\"http://www.w3.org/2003/05/xpath-datatypes\" version=\"2.0\">\n" +
+                    "<xsl:output method=\"text\"/>\n" +
+                    "<xsl:param name=\"phOne\" />\n" +
+                    "<xsl:template match=\"/\">\n" +
+                    "  <xsl:analyze-string select=\"$phOne\" \n" +
+                    "       regex=\"([0-9]+)-([0-9]+)-([0-9]+)\">\n" +
+                    "    <xsl:matching-substring>\n" +
+                    "      <xsl:text>num=</xsl:text>\n" +
+                    "      <xsl:number value=\"regex-group(2)\" format=\"01\"/>\n" +
+                    "      <xsl:text>-</xsl:text>\n" +
+                    "      <xsl:number value=\"regex-group(3)\" format=\"0001\"/>\n" +
+                    "      <xsl:text>,area=</xsl:text>\n" +
+                    "      <xsl:number value=\"regex-group(1)\" format=\"01\"/>\n" +
+                    "    </xsl:matching-substring>\n" +
+                    "  </xsl:analyze-string>\n" +
+                    "</xsl:template>\n" +
+                    "\n" +
+                    "</xsl:stylesheet>\n";
 
     // What the SOAPMSG_WITH_WSSE is expected to look like after the body substitution xslt is performed
     public static final String EXPECTED_AFTER_BODY_SUBSTITUTION =
