@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
@@ -87,7 +88,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
             if (allChildren.isEmpty()) {
                 // Maybe the solution kit is a parent solution kit, but it does not have any children.
                 // If it is this case, then do not show any mappings.
-                if (! SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKit.getMappings())) {
+                if (! SolutionKitUtils.isParentSolutionKit(solutionKit)) {
                     solutionKitMappingsPanelsContainer.add(createSolutionKitMappingsPanel(solutionKit), BorderLayout.CENTER);
                 }
             } else {

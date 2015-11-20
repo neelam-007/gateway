@@ -356,7 +356,7 @@ public class SolutionKitManagerResource {
         // Add the parent first if the first element is a parent.
         if (solutionKitsToUpgrade.size() > 0) {
             final SolutionKit parentCandidate = solutionKitsToUpgrade.get(0);
-            if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(parentCandidate.getMappings())) {
+            if (SolutionKitUtils.isParentSolutionKit(parentCandidate)) {
                 finalUpgradeList.add(parentCandidate);
             }
         }
@@ -392,7 +392,7 @@ public class SolutionKitManagerResource {
 
         final SolutionKit parentCandidate = solutionKits.get(0);
 
-        if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(parentCandidate.getMappings())) {
+        if (SolutionKitUtils.isParentSolutionKit(parentCandidate)) {
             return new Pair<>(true, parentCandidate);
         }
 

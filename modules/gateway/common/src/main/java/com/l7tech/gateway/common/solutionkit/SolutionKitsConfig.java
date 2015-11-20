@@ -237,7 +237,7 @@ public class SolutionKitsConfig {
 
         for (int i = startIdx; i < solutionKitsToUpgrade.size(); i++) {
             final SolutionKit solutionKitToUpgrade = solutionKitsToUpgrade.get(i);
-            if (!SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(solutionKitToUpgrade.getMappings())) {
+            if (! SolutionKitUtils.isParentSolutionKit(solutionKitToUpgrade)) {
                 try {
                     final Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKitToUpgrade.getMappings())));
                     // TODO: ghuang; can this happen and if so throw appropriate error

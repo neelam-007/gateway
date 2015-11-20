@@ -404,5 +404,9 @@ public final class SolutionKitUtils {
         return guidInstanceModifierMapFromUpgrade;
     }
 
+    public static boolean isParentSolutionKit(@NotNull final SolutionKit candidate) {
+        return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)) && StringUtils.isBlank(candidate.getMappings());
+    }
+
     private SolutionKitUtils() {}
 }

@@ -40,7 +40,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SolutionKitManagerResource.PARAMETER_DELIMINATOR;
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS;
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -1574,7 +1573,8 @@ public class SolutionKitManagerResourceTest {
         parentSolutionKit = new SolutionKit();
         parentSolutionKit.setGoid(parentGoidSame);
         parentSolutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
-        parentSolutionKit.setMappings(PARENT_SOLUTION_KIT_DUMMY_MAPPINGS);
+        parentSolutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true");
+        parentSolutionKit.setMappings("");
 
         solutionKit1 = new SolutionKit();
         solutionKit1.setParentGoid(parentGoidSame);

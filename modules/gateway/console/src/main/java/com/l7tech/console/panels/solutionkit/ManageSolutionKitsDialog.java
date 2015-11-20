@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -194,7 +195,7 @@ public class ManageSolutionKitsDialog extends JDialog {
 
                                 final SolutionKit selectedSK = solutionKitAdmin.get(header.getGoid());
                                 if (result.left && selectedSK != null) {
-                                    if (SolutionKit.PARENT_SOLUTION_KIT_DUMMY_MAPPINGS.equals(selectedSK.getMappings())) {
+                                    if (SolutionKitUtils.isParentSolutionKit(selectedSK)) {
                                         solutionKitAdmin.delete(header.getGoid());
                                         result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
                                     } else {

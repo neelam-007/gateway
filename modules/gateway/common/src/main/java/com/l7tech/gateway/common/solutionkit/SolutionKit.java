@@ -60,8 +60,6 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     // TODO: I couldn't find any install properties, so remove this if proven there are none
     private static final String[] ALL_INSTALL_PROPERTY_KEYS = {};
 
-    public static final String PARENT_SOLUTION_KIT_DUMMY_MAPPINGS = "<NO_MAPPINGS_FOR_PARENT_SOLUTION_KIT";
-
     private Goid parentGoid;
     private String sk_guid;
     private String sk_version;
@@ -70,7 +68,6 @@ public class SolutionKit extends NamedEntityWithPropertiesImp implements Compara
     private String mappings;
     private String uninstallBundle;
     private long lastUpdateTime;
-    //private Set<SolutionKit> childrenSet;
     private List<EntityOwnershipDescriptor> entityOwnershipDescriptors;
 
     public SolutionKit() {
