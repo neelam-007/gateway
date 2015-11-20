@@ -15,6 +15,8 @@ import static com.l7tech.util.TextUtils.trim;
 import com.l7tech.util.ValidationUtils.Validator;
 import static java.util.Collections.list;
 import static java.util.Collections.reverse;
+
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -697,7 +699,8 @@ public class ConfigFactory {
             mergeProperties( properties, propertiesAccessor( propsUrl, includedResource ) );
         }
 
-        final String includedFile = expandPropertyValue( properties.getProperty( "include-file" ), propertyGetter );
+        // SSG-5508 remove any stray quotes added to the path, e.g. "/opt/SecureSpan/Gateway/node/default"/etc/conf/serverconfig_override.properties
+        final String includedFile = StringUtils.remove(expandPropertyValue( properties.getProperty( "include-file" ), propertyGetter ), '"');
         if ( includedFile != null ) {
             final File propsFile = new File( includedFile );
             mergeProperties( properties, propertiesAccessor( propsFile ) );
