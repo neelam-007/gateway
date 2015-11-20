@@ -27,7 +27,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -182,6 +183,8 @@ public class ManageSolutionKitsDialog extends JDialog {
                             return;
                         }
 
+                        List<String> resultMsgs = new ArrayList<>();
+
                         for (SolutionKitHeader header : headers) {
                             Pair<Boolean, String> result = new Pair<>(true, "");
                             try {
@@ -189,7 +192,12 @@ public class ManageSolutionKitsDialog extends JDialog {
                                 if (!children.isEmpty()) {
                                     for (SolutionKitHeader child : children) {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
-                                        if (!result.left) break;
+                                        if (!result.left) {
+                                            resultMsgs.add("<br/>Solution Kit that failed at uninstall:<br/>- " + child.getName() + " with Instance Modifier: '" +
+                                                    child.getInstanceModifier() + "' <br/><br/>Please check audit logs for more details. ");
+                                            break;
+                                        }
+                                        resultMsgs.add("- " + child.getName() + " with Instance Modifier: '" + child.getInstanceModifier() + "' <br/> ");
                                     }
                                 }
 
@@ -210,7 +218,23 @@ public class ManageSolutionKitsDialog extends JDialog {
 
                             if (!result.left) {
                                 Throwable throwable = new Throwable(result.right);
-                                ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, "Solution Kit Manager has encountered an unexpected error", throwable);
+
+                                String resultsWithErrors = "<html>";
+                                if (resultMsgs.size()>1) {
+                                    resultsWithErrors += "Number of solution kits that uninstalled before failure: " + (resultMsgs.size()-1) +
+                                            "<br/><br/>Solution Kit(s) that uninstalled successfully: <br/>";
+                                    for (String resultString: resultMsgs) {
+                                        resultsWithErrors += resultString;
+                                    }
+                                } else
+                                if (resultMsgs.size()==1){
+                                    resultsWithErrors += resultMsgs.get(0);
+                                } else {
+                                    resultsWithErrors += "Solution Kit Manager failed to uninstall this solution kit.<br/> Please check audit logs for details. ";
+                                }
+                                resultsWithErrors += "</html>";
+
+                                ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, resultsWithErrors, throwable);
                                 Utilities.centerOnParentWindow(errorMessageDialog);
                                 DialogDisplayer.pack(errorMessageDialog);
                                 DialogDisplayer.display(errorMessageDialog);
