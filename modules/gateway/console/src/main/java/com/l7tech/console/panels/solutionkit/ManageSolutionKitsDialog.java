@@ -5,10 +5,7 @@ import com.l7tech.console.panels.solutionkit.install.InstallSolutionKitWizard;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -194,10 +191,10 @@ public class ManageSolutionKitsDialog extends JDialog {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
                                         if (!result.left) {
                                             resultMsgs.add("<br/>Solution Kit that failed at uninstall:<br/>- " + child.getName() + " with Instance Modifier: '" +
-                                                    child.getInstanceModifier() + "' <br/><br/>Please check audit logs for more details. ");
+                                                    InstanceModifier.getDisplayName(child.getInstanceModifier()) + "' <br/><br/>Please check audit logs for more details. ");
                                             break;
                                         }
-                                        resultMsgs.add("- " + child.getName() + " with Instance Modifier: '" + child.getInstanceModifier() + "' <br/> ");
+                                        resultMsgs.add("- " + child.getName() + " with Instance Modifier: '" + InstanceModifier.getDisplayName(child.getInstanceModifier()) + "' <br/> ");
                                     }
                                 }
 
