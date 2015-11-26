@@ -75,7 +75,7 @@ public class ServerModuleFileUtils {
 
             // make sure the module is either modular or custom assertion
             try (final AutoCloseStreams auto = new AutoCloseStreams()) {
-                if (modularAssertionsScannerHelper.isModularAssertion(auto.add(new JarInputStream(zipContent.getDataStream())))) {
+                if (modularAssertionsScannerHelper.isModularAssertion(auto.add(new JarInputStream(zipContent.getDataStream(), false)))) {
                     serverModuleFile.setModuleType(ModuleType.MODULAR_ASSERTION);
                     serverModuleFile.setProperty(
                             ServerModuleFile.PROP_ASSERTIONS,
