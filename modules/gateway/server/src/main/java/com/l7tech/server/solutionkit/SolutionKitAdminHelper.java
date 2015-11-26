@@ -322,7 +322,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
             if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
 
             if (sourceIM.equals(instanceModifier)) {
-                throw new SolutionKitConflictException("Installation Failed: found one other existing solution kit matching '" + sourceSK.getName() + "' (GUID = " + sourceGuid + ", Instance Modifier = " + sourceIMDisplayName + ")");
+                throw new SolutionKitConflictException("This solution kit already exists. To install it again, specify a unique instance modifier");
             }
         }
 

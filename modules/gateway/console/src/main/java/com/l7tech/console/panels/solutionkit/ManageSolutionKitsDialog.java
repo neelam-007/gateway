@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -181,20 +182,23 @@ public class ManageSolutionKitsDialog extends JDialog {
                         }
 
                         List<String> resultMsgs = new ArrayList<>();
+                        Pair<Boolean, String> result = new Pair<>(true, "");
 
                         for (SolutionKitHeader header : headers) {
-                            Pair<Boolean, String> result = new Pair<>(true, "");
                             try {
                                 Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
                                 if (!children.isEmpty()) {
                                     for (SolutionKitHeader child : children) {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
                                         if (!result.left) {
-                                            resultMsgs.add("<br/>Solution Kit that failed at uninstall:<br/>- " + child.getName() + " with Instance Modifier: '" +
-                                                    InstanceModifier.getDisplayName(child.getInstanceModifier()) + "' <br/><br/>Please check audit logs for more details. ");
+                                            resultMsgs.add("<br/>Solution Kit that failed at uninstall:<br/>- " + child.getName() +
+                                                    (!StringUtils.isBlank(child.getInstanceModifier()) ? " (Instance Modifier: '" + child.getInstanceModifier()+"')" :
+                                                    " (no Instance Modifier)") + "<br/> ");
                                             break;
                                         }
-                                        resultMsgs.add("- " + child.getName() + " with Instance Modifier: '" + InstanceModifier.getDisplayName(child.getInstanceModifier()) + "' <br/> ");
+                                        resultMsgs.add("- " + child.getName() +
+                                                (!StringUtils.isBlank(child.getInstanceModifier()) ? " (Instance Modifier: '" + child.getInstanceModifier()+"')" :
+                                                " (no Instance Modifier)") + "<br/> ");
                                     }
                                 }
 
@@ -205,6 +209,15 @@ public class ManageSolutionKitsDialog extends JDialog {
                                         result = new Pair<>(true, "Solution kit " + "'" + header.getName() + "' uninstalled successfully.");
                                     } else {
                                         result = uninstallSolutionKit(header.getName(), header.getGoid());
+                                        if (!result.left) {
+                                            resultMsgs.add("<br/>Solution Kit that failed at uninstall:<br/>- " + header.getName() +
+                                                    (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
+                                                    " (no Instance Modifier)") + "<br/> ");
+                                        } else {
+                                            resultMsgs.add("- " + header.getName() +
+                                                    (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
+                                                    " (no Instance Modifier)") + "<br/> ");
+                                        }
                                     }
                                 }
                             } catch (Exception e) {
@@ -212,30 +225,33 @@ public class ManageSolutionKitsDialog extends JDialog {
                                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
                                 result = new Pair<>(false, msg);
                             }
+                        }
 
-                            if (!result.left) {
-                                Throwable throwable = new Throwable(result.right);
+                        if (!result.left) {
+                            Throwable throwable = new Throwable(result.right);
 
-                                String resultsWithErrors = "<html>";
+                            String resultsWithErrors = "<html>";
                                 if (resultMsgs.size()>1) {
-                                    resultsWithErrors += "Number of solution kits that uninstalled before failure: " + (resultMsgs.size()-1) +
-                                            "<br/><br/>Solution Kit(s) that uninstalled successfully: <br/>";
-                                    for (String resultString: resultMsgs) {
-                                        resultsWithErrors += resultString;
-                                    }
-                                } else
+                                resultsWithErrors += "Uninstall failed with one or more errors. See Summary below: <br/><br/>" +
+                                        "Number of solution kits that uninstalled before failure: " + (resultMsgs.size()-1) +
+                                        "<br/><br/>Solution Kit(s) that uninstalled successfully: <br/>";
+                                for (String resultString: resultMsgs) {
+                                    resultsWithErrors += resultString;
+                                }
+                            } else
                                 if (resultMsgs.size()==1){
                                     resultsWithErrors += resultMsgs.get(0);
-                                } else {
-                                    resultsWithErrors += "Solution Kit Manager failed to uninstall this solution kit.<br/> Please check audit logs for details. ";
-                                }
-                                resultsWithErrors += "</html>";
-
-                                ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, resultsWithErrors, throwable);
-                                Utilities.centerOnParentWindow(errorMessageDialog);
-                                DialogDisplayer.pack(errorMessageDialog);
-                                DialogDisplayer.display(errorMessageDialog);
+                            } else {
+                                resultsWithErrors += "Solution Kit Manager failed to uninstall this solution kit.";
                             }
+                            resultsWithErrors += "<br/>" +
+                                    "Refer to audit logs for details. Click “OK” to continue or “Report” to view an error report that can assist CA Support. " +
+                                    "Use “Close Manager” only if this error occurs repeatedly.</html>";
+
+                            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(ManageSolutionKitsDialog.this, resultsWithErrors, throwable);
+                            Utilities.centerOnParentWindow(errorMessageDialog);
+                            DialogDisplayer.pack(errorMessageDialog);
+                            DialogDisplayer.display(errorMessageDialog);
                         }
 
                         refreshSolutionKitsTable();
