@@ -3833,7 +3833,7 @@
     </target>
 	
 <!--
-	Publish everything in lib/repository to artifactory
+	Publish everything in lib/repository to artifactory (recurive call to publish-third-party)
 -->
 	<target name="publish-third-party-all">
 		<foreach param="var" target="publish-third-party">
@@ -3845,6 +3845,9 @@
 		</foreach>
 	</target>
 
+<!--
+	Publish a single artifact based on its ivy.xml, also copy the ivy.xml to build/ivy/thirdparty on local filesystem
+-->
 	<target name="publish-third-party">
 		<ivy:settings  id="ivy.settings" file="${src.root}/etc/build/ivysettings.xml"/>
 		<echo>${var}</echo>
@@ -3854,8 +3857,11 @@
 		<ivy:publish resolver="artifactory-thirdparty" overwrite="true" settingsRef="ivy.settings" haltonmissing="false">
 			<artifacts pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
 		</ivy:publish>
-		</target>
+	</target>
 
+<!--
+	Enable "foreach" task
+-->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 		<classpath>
 			<pathelement location="lib/ant-contrib-1.0b3.jar"/>
