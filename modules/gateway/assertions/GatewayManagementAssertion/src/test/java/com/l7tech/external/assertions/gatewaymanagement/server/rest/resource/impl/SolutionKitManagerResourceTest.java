@@ -1249,7 +1249,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect solution kit does not exist error
         assertEquals(errorResponse.getEntity(), "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
-        "',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+        "', instance modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // no child with matching guid
@@ -1273,7 +1273,7 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList("NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555"));
 
         //expect child kit selected to uninstall does not match any children from parent
-        assertEquals(errorResponse.getEntity(), "UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any child solution kit matching the GUID 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555'" + System.lineSeparator());
+        assertEquals(errorResponse.getEntity(), "UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any child solution kit matching the GUID = 'NO_MATCH_GUID_1f87436b-7ca5-41c8-9418-21d7a7855555'" + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // no child with matching guid and IM
@@ -1282,8 +1282,8 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall(parentSolutionKit.getSolutionKitGuid(),Collections.singletonList(solutionKit1.getSolutionKitGuid()+"::INVALID_IM"));
 
         //expect child kit with IM selected does not match existing child kits
-        assertEquals(errorResponse.getEntity(),"UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
-                "',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+        assertEquals(errorResponse.getEntity(),"UNINSTALL ERRORS:" + System.lineSeparator() + "Uninstall failed: Cannot find any existing solution kit (GUID = '" + solutionKit1.getSolutionKitGuid() +
+                "', instance modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // when child kits are selected, show which child kits uninstalled successfully, and which have errors
@@ -1301,12 +1301,12 @@ public class SolutionKitManagerResourceTest {
 
         //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
         assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:" + System.lineSeparator() +
-                "Successfully uninstalled child solution kit with guid: '1f87436b-7ca5-41c8-9418-21d7a7848988' and instance modifier: 'im2'" + System.lineSeparator() +
+                "- 'SolutionKit2' (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848988', instance modifier = 'im2')" + System.lineSeparator() +
                 System.lineSeparator() +
                 "Total Solution Kits deleted: 1" + System.lineSeparator() +
                 System.lineSeparator() +
                 "Solution kits selected for uninstall that failed:" + System.lineSeparator() +
-                "Uninstall failed: cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999',  Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+                "Uninstall failed: Cannot find any existing solution kit (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999', instance modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
     }
 
     @Test
