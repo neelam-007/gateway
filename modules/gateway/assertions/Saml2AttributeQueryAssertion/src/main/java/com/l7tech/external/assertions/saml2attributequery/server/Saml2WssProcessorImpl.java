@@ -1290,7 +1290,7 @@ public class Saml2WssProcessorImpl {
             Element encMethod = XmlUtil.findOnlyOneChildElementByName(asElement(),
                                                                       SoapUtil.XMLENC_NS,
                                                                       "EncryptionMethod");
-            secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
+            secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepDigestAlg( encMethod ), XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
 
             // Since we've just done the expensive work, ensure that it gets saved for future reuse
             maybePublish();

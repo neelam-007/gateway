@@ -1,5 +1,7 @@
 package com.l7tech.security.xml;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 /**
@@ -17,16 +19,17 @@ public enum SupportedDigestMethods {
     SHA384("SHA-384", "http://www.w3.org/2001/04/xmldsig-more#sha384", "SHA384"),
     SHA512("SHA-512", "http://www.w3.org/2001/04/xmlenc#sha512", "SHA512");
 
-    SupportedDigestMethods(String canonicalName, String identifier, String... aliases) {
+    SupportedDigestMethods(@NotNull String canonicalName, @NotNull String identifier, String... aliases) {
         this.canonicalName = canonicalName;
         this.identifier = identifier;
-        this.aliases = new ArrayList<String>(Arrays.asList(aliases));
+        this.aliases = new ArrayList<>( Arrays.asList( aliases ) );
         this.aliases.add(0, canonicalName);
     }
 
     /**
      * @return the message digest method's canonical name, e.g. "SHA-1"
      */
+    @NotNull
     public String getCanonicalName() {
         return canonicalName;
     }
@@ -34,6 +37,7 @@ public enum SupportedDigestMethods {
     /**
      * @return the message digest method identifier, e.g. http://www.w3.org/2000/09/xmldsig#sha1
      */
+    @NotNull
     public String getIdentifier() {
         return identifier;
     }
@@ -46,7 +50,7 @@ public enum SupportedDigestMethods {
     }
 
     public static List<String> getAlgorithmIds() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for(SupportedDigestMethods digest : values()) {
             result.add(digest.getIdentifier());
         }
@@ -59,7 +63,7 @@ public enum SupportedDigestMethods {
      * @return an array of canonical algorithm names (ie, { "SHA-1", "SHA-256" } ).  Never null or empty.
      */
     public static String[] getDigestNames() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for(SupportedDigestMethods digest : values()) {
             result.add(digest.getCanonicalName());
         }
@@ -107,11 +111,11 @@ public enum SupportedDigestMethods {
 
     // - PRIVATE
 
-    private final String canonicalName;
-    private final String identifier;
+    @NotNull private final String canonicalName;
+    @NotNull private final String identifier;
     private final List<String> aliases;
 
-    private static final Map<String, SupportedDigestMethods> allAliases = new HashMap<String, SupportedDigestMethods>();
+    private static final Map<String, SupportedDigestMethods> allAliases = new HashMap<>();
     static {
         for(SupportedDigestMethods digest : SupportedDigestMethods.values()) {
             for(String alias : digest.getAliases()) {

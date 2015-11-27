@@ -15,6 +15,7 @@ import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
+import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -110,51 +111,6 @@ public class XencUtil {
     public static String computeEncryptedKeySha1(byte[] encryptedKeyBytes) {
         final byte[] secretKeyDigest = HexUtils.getSha1Digest(encryptedKeyBytes);
         return HexUtils.encodeBase64(secretKeyDigest, true);
-    }
-
-    /**
-     * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
-     *
-     * Exceprt from the spec:
-     * the padding is of the following special form:
-     * 02 | PS* | 00 | key
-     * where "|" is concatenation, "02" and "00" are fixed octets of the corresponding hexadecimal value, PS is
-     * a string of strong pseudo-random octets [RANDOM] at least eight octets long, containing no zero octets,
-     * and long enough that the value of the quantity being CRYPTed is one octet shorter than the RSA modulus,
-     * and "key" is the key being transported. The key is 192 bits for TRIPLEDES and 128, 192, or 256 bits for
-     * AES. Support of this key transport algorithm for transporting 192 bit keys is MANDATORY to implement.
-     *
-     * @param paddedKey the decrpted but still padded key
-     * @return the unpadded decrypted key
-     * @throws IllegalArgumentException  if padded key has wrong format
-     */
-    public static byte[] unPadRSADecryptedSymmetricKey(byte[] paddedKey) throws IllegalArgumentException {
-        int pos = 0;
-        // the first byte should be 02
-        if (paddedKey[0] != 2) {
-            // note, certain providers insist in appending a 0 byte in front.
-            // we will honor this but might not be portable
-            if (paddedKey[1] == 2) {
-                logger.warning("Padding for received EncryptedKey not following to xmlenc spec. Accepting anyway.");
-                pos = 1;
-            } else {
-                throw new IllegalArgumentException("paddedKey has wrong format");
-            }
-        }
-        // traverse the next series of byte until we get to the first 00
-        for (; pos < paddedKey.length; pos++) {
-            if (paddedKey[pos] == 0) {
-                break;
-            }
-        }
-        // the remainder is the key to return
-        int keylength = paddedKey.length - 1 - pos;
-        if (keylength < 16) {
-            throw new IllegalArgumentException("key length " + keylength + "is not a valid length");
-        }
-        byte[] output = new byte[keylength];
-        System.arraycopy(paddedKey, pos+1, output, 0, keylength);
-        return output;
     }
 
     /**
@@ -340,9 +296,7 @@ public class XencUtil {
             Element encMethod = DomUtils.findExactlyOneChildElementByName(encryptedDataEl, SoapConstants.XMLENC_NS, "EncryptionMethod");
             String alg = encMethod.getAttribute("Algorithm");
             return doesEncryptionAlgorithmRequireGcm(alg);
-        } catch (MissingRequiredElementException e) {
-            throw new XencException(e);
-        } catch (TooManyChildElementsException e) {
+        } catch ( InvalidDocumentFormatException e ) {
             throw new XencException(e);
         }
     }
@@ -486,7 +440,7 @@ public class XencUtil {
                                                                            "EncryptionMethod");
 
         // we got the value, decrypt it
-        return decryptKey(cipherValueB64, getOaepBytes(encryptionMethodEl), recipientKey);
+        return decryptKey(cipherValueB64, getOaepDigestAlg( encryptionMethodEl ), getOaepBytes(encryptionMethodEl), recipientKey);
     }
 
 
@@ -510,6 +464,37 @@ public class XencUtil {
         return DomUtils.getTextValue(cipherValue);
     }
 
+
+    /**
+     * Get the digest algorithm name to use for the specified encryption method by checking for a ds:DigestMethod element
+     * under the specified xenc:EncryptionMethod element.
+     *
+     * @param encryptionMethodEl an xenc EncryptedMethod element (as a DOM Element) that may or may not contain a DigestMethod sub element.  Required.
+     * @return the algorithm name to use.  Never null.
+     */
+    @NotNull
+    public static SupportedDigestMethods getOaepDigestAlg( @NotNull Element encryptionMethodEl ) throws InvalidDocumentFormatException {
+        SupportedDigestMethods alg = SupportedDigestMethods.SHA1; // Default to SHA-1 for compat
+
+        Element digestMethodEl =
+                DomUtils.findOnlyOneChildElementByName( encryptionMethodEl, SoapUtil.DIGSIG_URI, "DigestMethod" );
+        if ( digestMethodEl != null ) {
+            String uri = digestMethodEl.getAttribute( "Algorithm" );
+            if ( uri != null && uri.length() > 0 ) {
+                try {
+                    SupportedDigestMethods digestMethod = SupportedDigestMethods.fromAlgorithmId( uri );
+                    if ( digestMethod != null ) {
+                        alg = digestMethod;
+                    }
+                } catch ( IllegalArgumentException e ) {
+                    throw new InvalidDocumentFormatException( "Unsupported DigestMethod for EncryptedKey EncryptionMethod: " + ExceptionUtils.getMessage( e ), e );
+                }
+
+            }
+        }
+
+        return alg;
+    }
 
     /**
      * Get the RSA OAEP bytes for the specified EncryptedKey EncryptionMethod, if applicable.
@@ -539,33 +524,17 @@ public class XencUtil {
      * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
      *
      * @param b64edEncryptedKey    the base64ed EncryptedKey value
-     * @param recipientKey         the private key to use to decrypt the element
-     * @return the decrypted key bytes.  Will never be null.
-     * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
-     * @throws java.security.GeneralSecurityException if there was a crypto problem
-     */
-    public static byte[] decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
-            throws InvalidDocumentFormatException, GeneralSecurityException
-    {
-        return decryptKey(b64edEncryptedKey, null, recipientKey);
-    }
-
-    /**
-     * Caller is responsible for ensuring that
-     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
-     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
-     *
-     * @param b64edEncryptedKey    the base64ed EncryptedKey value
+     * @param digestAlg  the digest algorithm for OAEP (e.g. SHA1 or SHA256) or null to default to SHA1
      * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null.
      * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(String b64edEncryptedKey, @Nullable byte[] oaepParams, PrivateKey recipientKey)
+    public static byte[] decryptKey(String b64edEncryptedKey, @Nullable SupportedDigestMethods digestAlg, @Nullable byte[] oaepParams, PrivateKey recipientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException
     {
-        return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), oaepParams, recipientKey);
+        return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), digestAlg, oaepParams, recipientKey);
     }
 
 
@@ -575,19 +544,20 @@ public class XencUtil {
      * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
      *
      * @param encryptedKeyBytes    the already un-base64ed EncryptedKey value
+     * @param digestAlg  the digest algorithm for OAEP (e.g. SHA1 or SHA256) or null to default to SHA1
      * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null or empty.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(byte[] encryptedKeyBytes, byte[] oaepParams, PrivateKey recipientKey) throws GeneralSecurityException {
+    public static byte[] decryptKey(byte[] encryptedKeyBytes, @Nullable SupportedDigestMethods digestAlg, byte[] oaepParams, PrivateKey recipientKey) throws GeneralSecurityException {
         final byte[] unencryptedKey;
         if(oaepParams != null) {
             // decrypt
             try {
                 Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
                 if ( oaepParams.length > 0 ) {
-                    rsa.init( Cipher.DECRYPT_MODE, recipientKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec( oaepParams ) );
+                    rsa.init( Cipher.DECRYPT_MODE, recipientKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
                 } else {
                     rsa.init( Cipher.DECRYPT_MODE, recipientKey );
                 }
@@ -672,12 +642,15 @@ public class XencUtil {
      * @param keyBytes the bytes of the symmetric key to encrypt
      * @param recipientCert the certificate corresponding to the public key.
      * @param publicKey the public key of the recipient of the key
+     * @param digestAlg  the digest algorithm for OAEP (e.g. SHA1 or SHA256) or null to default to SHA1
      * @param oaepParams the OAEP mask generation arg (may be null)
      * @return the padded and encrypted keyBytes for the passed publicKey recipient, ready to be base64 encoded
      * @throws GeneralSecurityException if the key is not a valid RSA public key, a needed cipher is unavailable,
      *                                  or no support for OAEP is available.
      */
-    public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
+    public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey,
+                                                       @Nullable SupportedDigestMethods digestAlg, byte[] oaepParams) throws GeneralSecurityException
+    {
         if (!("RSA".equalsIgnoreCase(publicKey.getAlgorithm())))
             throw new UnsupportedKeyTypeException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
 
@@ -685,7 +658,7 @@ public class XencUtil {
         try {
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
             if ( oaepParams != null && oaepParams.length > 0 ) {
-                rsa.init( Cipher.ENCRYPT_MODE, publicKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec( oaepParams ) );
+                rsa.init( Cipher.ENCRYPT_MODE, publicKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
             } else {
                 rsa.init( Cipher.ENCRYPT_MODE, publicKey );
             }
@@ -696,14 +669,18 @@ public class XencUtil {
         return rsa.doFinal(keyBytes);
     }
 
-    /**
-     * Put JDK 1.5 stuff here to allow (degraded) runtime 1.4.x use (1.5 compilation required)
-     */
-    private static class JDK5Dependent {
-        private static AlgorithmParameterSpec buildOAEPMGF1SHA1ParameterSpec(byte[] oaepParams) {
-            PSource pSource = oaepParams==null ? PSource.PSpecified.DEFAULT : new PSource.PSpecified(oaepParams);
-            return new OAEPParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, pSource);
-        }
+    private static AlgorithmParameterSpec buildOaepParameterSpec( @Nullable SupportedDigestMethods oaepDigest,
+                                                                  @Nullable MGF1ParameterSpec mgf1Digest,
+                                                                  byte[] oaepParams )
+    {
+        if ( null == oaepDigest )
+            oaepDigest = SupportedDigestMethods.SHA1;
+
+        if ( null == mgf1Digest )
+            mgf1Digest = MGF1ParameterSpec.SHA1;
+
+        PSource pSource = oaepParams==null ? PSource.PSpecified.DEFAULT : new PSource.PSpecified(oaepParams);
+        return new OAEPParameterSpec( oaepDigest.getCanonicalName(), "MGF1", mgf1Digest, pSource );
     }
 
     /**

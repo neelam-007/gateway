@@ -146,7 +146,7 @@ public class XmlElementDecryptor {
         SignerInfo signerInfo = findSignerInfoForEncryptedType(encryptedKey, securityTokenResolver, keyInfoErrorListener);
         String cipherValueB64 = XencUtil.getEncryptedKeyCipherValue(encryptedKey);
         byte[] encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
-        byte[] secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
+        byte[] secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepDigestAlg(encMethod), XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
         return new Pair<X509Certificate, byte[]>(signerInfo.getCertificate(), secretKeyBytes);
     }

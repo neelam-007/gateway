@@ -32,6 +32,7 @@ import java.security.cert.X509Certificate;
 public class XmlElementEncryptor {
     private static final SecureRandom random = new SecureRandom();
     public static final String PROP_ENCRYPT_FOR_EXPIRED_CERT = "com.l7tech.security.xml.encryptForExpiredCert";
+    public static final String PROP_OAEP_DIGEST_SHA256 = "com.l7tech.security.xml.oaep.digest.sha256";
 
     final XmlElementEncryptionResolvedConfig config;
 
@@ -47,6 +48,15 @@ public class XmlElementEncryptor {
     }
 
     /**
+     * @return the currently configured global default for OAEP digest method when creating new encrypted keys using OAEP key wrapping.
+     */
+    public static SupportedDigestMethods defaultOaepDigestMethod() {
+        return ConfigFactory.getBooleanProperty( PROP_OAEP_DIGEST_SHA256, false )
+                ? SupportedDigestMethods.SHA256
+                : SupportedDigestMethods.SHA1;
+    }
+
+    /**
      * Create a new EncryptedKey element using the specified document factory.  A new ephemeral key will be generated
      * for use according to the current element encryption config.  The new key will be wrapped for the recipient
      * certificate in the current encryption config.
@@ -56,55 +66,65 @@ public class XmlElementEncryptor {
      *
      * @param factory a DOM document to use as a factory for new DOM nodes.  Required.
      * @param oaep true to use OAEP key wrapping.  False to use RSA 1.5 key wrapping.
+     * @param oaepDigest digest method to use for OAEP mask generation, or null to use default value (SHA-1 by default but can be changed to SHA-256 with a system property)
      * @param oaepParams parameters for OAEP mask generation, or null to use defaults.  Ignroed if oaep is false.
      * @return a Pair consisting of the new EncryptedKey DOM Element and the new SecretKey that was generated for it.  Never null, and neither element is ever null.
      * @throws GeneralSecurityException if there is an error performing the encryption.
      */
-    public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory, boolean oaep, @Nullable byte[] oaepParams) throws GeneralSecurityException {
+    public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory, boolean oaep, @Nullable SupportedDigestMethods oaepDigest, @Nullable byte[] oaepParams) throws GeneralSecurityException {
         byte[] keybytes = new byte[32];
         random.nextBytes(keybytes);
         SecretKey secretKey = new XencUtil.XmlEncKey(config.getXencAlgorithm(), keybytes).getSecretKey();
-        final Element encryptedKey = createEncryptedKey(factory, config.getRecipientCert(), secretKey, oaep, oaepParams);
+        final Element encryptedKey = createEncryptedKey(factory, config.getRecipientCert(), secretKey, oaep, oaepDigest, oaepParams);
         final String recipientAttrValue = config.getEncryptedKeyRecipientAttribute();
         if (recipientAttrValue != null) {
             encryptedKey.setAttribute("Recipient", recipientAttrValue);
         }
-        return new Pair<Element, SecretKey>(encryptedKey, secretKey);
+        return new Pair<>( encryptedKey, secretKey );
     }
 
     /**
      * Create a new EncryptedKey element using the specified document factory, recipient certificate, and ephemeral symmetric key.
      * The specified key will be wrapped for the specified recipient certificate.
      *
-     * @param factory a DOM document to use as a factory for new DOM nodes.  Required.
+     * @param factory       a DOM document to use as a factory for new DOM nodes.  Required.
      * @param recipientCert the recipient certificate.  Required.
-     * @param secretKey the secret key to wrap. Required.
-     * @param oaep true to use OAEP key wrapping.  False to use RSA 1.5 key wrapping.
-     * @param oaepParams parameters for OAEP generation, or null to use defaults.  Ignored if oaep is false.
+     * @param secretKey     the secret key to wrap. Required.
+     * @param oaep          true to use OAEP key wrapping.  False to use RSA 1.5 key wrapping.
+     * @param oaepDigest    digest method to use for OAEP mask generation, or null to use the default (SHA-1 by default but may be changed to SHA-256 with a system property)
+     * @param oaepParams    parameters for OAEP generation, or null to use defaults.  Ignored if oaep is false.
      * @return a Pair consisting of the new EncryptedKey DOM Element and the new SecretKey that was generated for it.  Never null, and neither element is ever null.
      * @throws GeneralSecurityException if there is an error performing the encryption.
      */
-    public static Element createEncryptedKey(@NotNull Document factory, @NotNull X509Certificate recipientCert, @NotNull SecretKey secretKey, boolean oaep, @Nullable byte[] oaepParams) throws GeneralSecurityException {
+    public static Element createEncryptedKey( @NotNull Document factory, @NotNull X509Certificate recipientCert, @NotNull SecretKey secretKey, boolean oaep, @Nullable SupportedDigestMethods oaepDigest, @Nullable byte[] oaepParams ) throws GeneralSecurityException {
         final String xencNs = SoapUtil.XMLENC_NS;
         final String xenc = "xenc";
-        Element encryptedKey = factory.createElementNS(xencNs, "xenc:EncryptedKey");
-        encryptedKey.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:xenc", xencNs);
-        Element encryptionMethod = DomUtils.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
-        IssuerSerialKeyInfoDetails iskid = new IssuerSerialKeyInfoDetails(recipientCert, false);
-        iskid.createAndAppendKeyInfoElement(new NamespaceFactory(), encryptedKey);
-        Element cipherData = DomUtils.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
-        Element cipherValue = DomUtils.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
+        Element encryptedKey = factory.createElementNS( xencNs, "xenc:EncryptedKey" );
+        encryptedKey.setAttributeNS( XmlUtil.XMLNS_NS, "xmlns:xenc", xencNs );
+        Element encryptionMethod = DomUtils.createAndAppendElementNS( encryptedKey, "EncryptionMethod", xencNs, xenc );
+        IssuerSerialKeyInfoDetails iskid = new IssuerSerialKeyInfoDetails( recipientCert, false );
+        iskid.createAndAppendKeyInfoElement( new NamespaceFactory(), encryptedKey );
+        Element cipherData = DomUtils.createAndAppendElementNS( encryptedKey, "CipherData", xencNs, xenc );
+        Element cipherValue = DomUtils.createAndAppendElementNS( cipherData, "CipherValue", xencNs, xenc );
         final byte[] encryptedKeyBytes;
-        encryptionMethod.setAttribute("Algorithm", oaep ? SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2 : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
-        if (!ConfigFactory.getBooleanProperty(PROP_ENCRYPT_FOR_EXPIRED_CERT, false))
+        encryptionMethod.setAttribute( "Algorithm", oaep ? SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2 : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO );
+        if ( !ConfigFactory.getBooleanProperty( PROP_ENCRYPT_FOR_EXPIRED_CERT, false ) )
             recipientCert.checkValidity();
-        if (oaep) {
-            encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey(), oaepParams);
+        if ( oaep ) {
+            if ( null == oaepDigest ) {
+                oaepDigest = defaultOaepDigestMethod();
+            }
+            if ( !SupportedDigestMethods.SHA1.equals( oaepDigest ) ) {
+                // Need to insert a DigestMethod subelement
+                Element digestMethod = DomUtils.createAndAppendElementNS( encryptionMethod, "DigestMethod", SoapUtil.DIGSIG_URI, "dsig" );
+                digestMethod.setAttribute( "Algorithm", oaepDigest.getIdentifier() );
+            }
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1( secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey(), oaepDigest, oaepParams );
         } else {
-            encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad( secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey() );
         }
-        final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
-        cipherValue.appendChild(DomUtils.createTextNode(factory, base64));
+        final String base64 = HexUtils.encodeBase64( encryptedKeyBytes, true );
+        cipherValue.appendChild( DomUtils.createTextNode( factory, base64 ) );
         return encryptedKey;
     }
 

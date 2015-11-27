@@ -47,6 +47,8 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
 
     private boolean useOaep = false;
 
+    // TODO add ability to configure OAEP digest method and possibly OAEP parameters as well
+
     @Override
     public Object clone() {
         try {

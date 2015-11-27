@@ -473,7 +473,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
         final Pair<Element,SecretKey> encryptedKey;
         try {
-            encryptedKey = encryptor.createEncryptedKey(samlpDoc, xmlEncryptConfig.isUseOaep(), null);
+            // TODO expose ability to configure OAEP digest method (or at least to use SHA-256 instead of SHA-1) and perhaps parameters
+            encryptedKey = encryptor.createEncryptedKey(samlpDoc, xmlEncryptConfig.isUseOaep(), null, null);
         } catch (GeneralSecurityException e) {
             throw new SamlpAssertionException("Unable to create encrypted key for NameID encryption: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));

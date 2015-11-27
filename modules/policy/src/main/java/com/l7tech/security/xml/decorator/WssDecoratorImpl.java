@@ -1558,12 +1558,14 @@ public class WssDecoratorImpl implements WssDecorator {
         c.lastEncryptedKeySecretKey = secretKey;
         final byte[] encryptedKeyBytes;
         if ( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(algorithm)) {
+            // TODO allow decoration requirements to specify OAEP digest method and perhaps OAEP params as well
             byte[] params = new byte[0];
 
             encryptionMethod.setAttributeNS(null, "Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
                                               recipientCertificate,
                                               recipientCertificate.getPublicKey(),
+                                              null, // TODO ((SupportedDigestMethods)c.dreq.getOaepDigestMethod()).getCanonicalName()
                                               params);
 
             if (params.length > 0) {

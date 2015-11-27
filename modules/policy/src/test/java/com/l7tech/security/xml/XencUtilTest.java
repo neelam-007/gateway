@@ -8,6 +8,7 @@ import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.prov.JceProvider;
@@ -70,7 +71,7 @@ public class XencUtilTest {
 
     // Find all static string fields whose fieldname begins with PROP_ and returns their values, assuming them to be system property names
     private static Collection<String> getSystemPropertyNames(Class c) throws IllegalAccessException {
-        Collection<String> ret = new ArrayList<String>();
+        Collection<String> ret = new ArrayList<>();
         Field[] fields = c.getFields();
         for (Field field : fields) {
             if (Modifier.isStatic(field.getModifiers()) && field.getName().startsWith("PROP_") && String.class.equals(field.getType())) {
@@ -112,7 +113,7 @@ public class XencUtilTest {
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCert, publicKey), true);
-        byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey);
+        byte[] decrypted = XencUtil.decryptKey( paddedB64, null, null, pkey );
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
@@ -123,8 +124,44 @@ public class XencUtilTest {
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] oaepParams = new byte[128];
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
-        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, recipientCert, publicKey, oaepParams), true);
-        byte[] decrypted = XencUtil.decryptKey(paddedB64, oaepParams, pkey);
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, recipientCert, publicKey, null, oaepParams), true);
+        byte[] decrypted = XencUtil.decryptKey( paddedB64, null, oaepParams, pkey );
+        assertTrue(Arrays.equals(keyBytes, decrypted));
+    }
+
+    @Test
+    public void testRoundTripRsaOaepEncryptedKey_OaepSha256Mgf1Sha1() throws Exception {
+        PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
+        X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] oaepParams = new byte[128];
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, recipientCert, publicKey, SupportedDigestMethods.SHA256, oaepParams), true);
+        byte[] decrypted = XencUtil.decryptKey( paddedB64,SupportedDigestMethods.SHA256, oaepParams, pkey );
+        assertTrue(Arrays.equals(keyBytes, decrypted));
+    }
+
+    @Test
+    public void testRoundTripRsaOaepEncryptedKey_OaepSha384Mgf1Sha1() throws Exception {
+        PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
+        X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] oaepParams = new byte[128];
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, recipientCert, publicKey, SupportedDigestMethods.SHA384, oaepParams), true);
+        byte[] decrypted = XencUtil.decryptKey( paddedB64,SupportedDigestMethods.SHA384, oaepParams, pkey );
+        assertTrue(Arrays.equals(keyBytes, decrypted));
+    }
+
+    @Test
+    public void testRoundTripRsaOaepEncryptedKey_OaepSha512Mgf1Sha1() throws Exception {
+        PrivateKey pkey = TestKeys.getKey( "RSA", TestKeys.RSA_2048_KEY_PKCS8_B64 );
+        X509Certificate recipientCert = TestKeys.getCert( TestKeys.RSA_2048_CERT_X509_B64 );
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] oaepParams = new byte[128];
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, recipientCert, publicKey, SupportedDigestMethods.SHA512, oaepParams), true);
+        byte[] decrypted = XencUtil.decryptKey( paddedB64,SupportedDigestMethods.SHA512, oaepParams, pkey );
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
@@ -137,7 +174,7 @@ public class XencUtilTest {
         }
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
         String keypaddedandencryptedwithsunjce = "TK0T2LPWmCYDUtE32P7s7aVvjnfJ9flQm+GOiriGyY677g2/RgDbWncSJcPipm1zRmYRkmvKbNYFpReVl1SrVqsCbYudX/y8WQyI3LVInoc3TNfBPryphoVrxtjLDeAhfxxdsxYSq12Ze62RvLr3Y3k9vxaKotJcOejMtyHj9T4=";
-        byte[] decrypted = XencUtil.decryptKey(keypaddedandencryptedwithsunjce, pkey);
+        byte[] decrypted = XencUtil.decryptKey( keypaddedandencryptedwithsunjce, null, null, pkey );
         byte[] originalBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         assertTrue(Arrays.equals(originalBytes, decrypted));
     }
@@ -196,7 +233,7 @@ public class XencUtilTest {
         random.nextBytes(keybytes);
         XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(EncryptionMethod.AES256_CBC, keybytes);
         XencUtil.encryptElement(element, encKey, true);
-        return new Pair<Element, XencUtil.XmlEncKey>(element, encKey);
+        return new Pair<>( element, encKey );
     }
 
     @Test

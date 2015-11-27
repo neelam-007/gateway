@@ -83,7 +83,8 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
         Element encMethod = DomUtils.findOnlyOneChildElementByName(asElement(),
                                                                   SoapConstants.XMLENC_NS,
                                                                   "EncryptionMethod");
-        secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
+        secretKeyBytes = XencUtil.decryptKey( encryptedKeyBytes, XencUtil.getOaepDigestAlg( encMethod ),
+                XencUtil.getOaepBytes( encMethod ), signerInfo.getPrivate() );
         if (signerInfo.isRestrictedAccess()) {
             // Prevent publishing of secret keys unwrapped using a restricted access private key
             tokenResolver = null;

@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -615,8 +617,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         encryptedKeyXml.append("<xenc:CipherData>" +
             "<xenc:CipherValue>");
         final String encryptedKeyValue = oaep ?
-                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(sharedSecret, requestorCert, requestorCert.getPublicKey(), new byte[0]), true) :
-                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()), true);
+                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(sharedSecret, requestorCert, requestorCert.getPublicKey(), XmlElementEncryptor.defaultOaepDigestMethod(), new byte[0]), true) :
+                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad( sharedSecret, requestorCert, requestorCert.getPublicKey() ), true);
 
         encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +
