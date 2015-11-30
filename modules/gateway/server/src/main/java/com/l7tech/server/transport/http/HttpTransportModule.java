@@ -209,7 +209,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.addMimeMapping("css", "text/css");
 
         StandardWrapper dflt = (StandardWrapper)context.createWrapper();
-        dflt.setServletClass(DefaultServlet.class.getName());
+        dflt.setServletClass(SsgDefaultServlet.class.getName());
         dflt.setName("default");
         dflt.setLoadOnStartup(1);
         context.addChild(dflt);
