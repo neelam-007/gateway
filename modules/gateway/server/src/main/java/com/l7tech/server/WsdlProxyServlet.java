@@ -130,11 +130,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } catch (FindException e) {
             // if they ask for an invalid services WSDL return 404 since that WSDL doc does not exist
             logger.log(Level.INFO, "Invalid service requested (" + e.getMessage() + ")", ExceptionUtils.getDebugException(e));
-            sendBackError(res, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            sendBackError(res, HttpServletResponse.SC_NOT_FOUND, "Invalid service requested" );
             return;
         } catch (AmbiguousServiceException e) {
             logger.log(Level.INFO, "Service request ambiguous: "  + ExceptionUtils.getMessage( e ) );
-            sendBackError(res, HttpServletResponse.SC_MULTIPLE_CHOICES, e.getMessage());
+            sendBackError(res, HttpServletResponse.SC_MULTIPLE_CHOICES, "Service request ambiguous" );
             return;
         }
 
