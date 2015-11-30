@@ -17,6 +17,7 @@ public interface SiteMinderAgentConstants {
     public static final String ATTR_MAXSESSIONTIMEOUT = "ATTR_MAXSESSIONTIMEOUT";
     public static final String ATTR_STARTSESSIONTIME = "ATTR_STARTSESSIONTIME";
     public static final String ATTR_LASTSESSIONTIME = "ATTR_LASTSESSIONTIME";
+    public static final String ATTR_CURRENTSERVERTIME = "ATTR_CURRENTSERVERTIME";
     public static final String ATTR_USERMSG = "ATTR_USERMSG";
     public static final String ATTR_IDENTITYSPEC = "ATTR_IDENTITYSPEC";
     public static final String ATTR_USERUNIVERSALID = "ATTR_USERUNIVERSALID";
@@ -30,4 +31,5 @@ public interface SiteMinderAgentConstants {
     public static final String SESS_DEF_REASON = "SESS_DEF_REASON";
 
     public static final int SM_AGENT_API_INVALID_SESSIONID = -57;
+    public static final int ATTR_CURRENTAGENTTIME = 153; //Added as the AgentAPI list of constants do not include the ATTR_CURRENTSERVERTIME;
 }

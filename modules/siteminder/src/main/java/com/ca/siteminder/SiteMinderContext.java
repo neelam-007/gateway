@@ -1,5 +1,7 @@
 package com.ca.siteminder;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +38,7 @@ public class SiteMinderContext {
     private String ssoToken;
     private SiteMinderLowLevelAgent agent;
     private String sourceIpAddress;
+    private SiteMinderConfiguration config;
 
     public SiteMinderContext() {
 
@@ -111,6 +114,14 @@ public class SiteMinderContext {
 
     public void setSourceIpAddress(@Nullable String sourceIpAddress) {
         this.sourceIpAddress = sourceIpAddress;
+    }
+
+    public SiteMinderConfiguration getConfig() {
+        return config;
+    }
+
+    public void setConfig(SiteMinderConfiguration config) {
+        this.config = config;
     }
 
     public static class SessionDef  {

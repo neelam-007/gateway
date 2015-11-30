@@ -79,6 +79,8 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
             smContext.setSourceIpAddress(userIpAddress);
         }
 
+        smContext.setConfig(getSmConfig(assertion.getAgentGoid()));
+
         try {
             //check if protected and return AssertionStatus.NONE if it is
             if(hla.checkProtected(getClientIp(message, smContext), smAgentName, resource, action, smContext)) {

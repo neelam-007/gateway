@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.SiteMinderAgentConstants;
-import com.ca.siteminder.SiteMinderApiClassException;
-import com.ca.siteminder.SiteMinderContext;
-import com.ca.siteminder.SiteMinderCredentials;
+import com.ca.siteminder.*;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;

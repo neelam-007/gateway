@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.UserCredentials;
 import netegrity.siteminder.javaagent.Attribute;
 
@@ -15,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -338,5 +340,18 @@ public abstract class SiteMinderUtil {
             s = creds.certUserDN;
         }
         return s;
+    }
+
+    /**
+     * returns null if not found or the value as an Object
+     * The caller will have to handle any required data type conversion
+     */
+    public static Object getAttribute(List<Pair<String, Object>> attributes, String id) {
+        for(Pair<String, Object> attr: attributes) {
+            if( attr.left.equals(id) ){
+                return attr.getValue();
+            }
+        }
+        return  null;
     }
 }

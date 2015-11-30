@@ -45,6 +45,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     public static final String USER_PASSWORD = "password";
     public static final byte[] certBytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
     public static final String SOURCE_IP = "10.7.22.22";
+    public static final String JWT_HMAC = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ2YWx1ZSIsICJ1c2VyIjoic2FzY2hhLnByZWliaXNjaCIsImRvbWFpbiI6InRhbnQveHl6IiwgIm5vbmNlIjoxMjM0NTYsICJleHBpcmVzX2F0IjoxNDMwMjYzNDQ4fQ.JfwSj51O2wvT0YK5Kh4EbNL9j2s9dQBSlDMUkEOB_Wo";
 
     @Mock
     SiteMinderContext mockContext;
