@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="layer7-classloader-utilities"
+          status="integration">
+    </info>
+    <configurations>
+        <include file="../../../etc/build/ivyconfigurations.xml"/>
+    </configurations>
+    <publications>
+        <artifact name="layer7-classloader-utilities" type="jar" ext="jar" conf="core"/>
+    </publications>
+    <dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration" force="true" conf="compile->compile;runtime->runtime;test->test"/>
+    </dependencies>
+</ivy-module>
