@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 
 import java.util.Set;
@@ -17,7 +19,7 @@ import java.util.EnumSet;
 /**
  * @author mike
  */
-public class WssReplayProtection extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable, UsesEntities, UsesVariables {
+public class WssReplayProtection extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable, UsesEntities, UsesVariables, SetsVariables {
 
     //- PUBLIC
 
@@ -87,6 +89,37 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
                 new EntityHeader[0];
     }
 
+    public boolean isBypassUniqueCheck() {
+        return bypassUniqueCheck;
+    }
+
+    public void setBypassUniqueCheck(boolean bypassUniqueCheck) {
+        this.bypassUniqueCheck = bypassUniqueCheck;
+    }
+
+    public boolean isSaveIdAndExpiry() {
+        return saveIdAndExpiry;
+    }
+
+    public void setSaveIdAndExpiry(boolean saveIdAndExpiry) {
+        this.saveIdAndExpiry = saveIdAndExpiry;
+    }
+
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
+
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = variablePrefix;
+    }
+
+    /**
+     * @return an array of all the variable suffixes.
+     */
+    public static String[] getVariableSuffixes() {
+        return new String[] {WssReplayProtection.ID_SUFFIX, WssReplayProtection.EXPIRY_SUFFIX};
+    }
+
     @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
@@ -133,7 +166,21 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
                 super.doGetVariablesUsed();
     }
 
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return saveIdAndExpiry
+                ? super.doGetVariablesSet().withVariables(
+                new VariableMetadata(variablePrefix + "." + ID_SUFFIX, true, false, null, true, DataType.STRING),
+                new VariableMetadata(variablePrefix + "." + EXPIRY_SUFFIX, true, false, null, true, DataType.STRING)
+        )
+                : super.doGetVariablesSet();
+    }
+
     //- PRIVATE
+
+    public static final String VARIABLE_PREFIX = "messageIdAndExpiry";
+    public static final String ID_SUFFIX = "id";
+    public static final String EXPIRY_SUFFIX = "expiry";
 
     private static final String baseName = "Protect Against Message Replay";
     private static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WssReplayProtection>(){
@@ -150,4 +197,7 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
     private String customScope;
     private String customIdentifierVariable;
     private int customExpiryTime;
+    private boolean bypassUniqueCheck;
+    private boolean saveIdAndExpiry;
+    private String variablePrefix = VARIABLE_PREFIX;
 }

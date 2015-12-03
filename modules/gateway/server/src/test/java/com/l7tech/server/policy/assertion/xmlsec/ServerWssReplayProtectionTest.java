@@ -45,6 +45,27 @@ public class ServerWssReplayProtectionTest {
     }
 
     /**
+     * Basic success test with saving ID and expiry to context variables
+     */
+    @Test
+    public void testCustomProtectionWithSaveIdAndExpiryToVariables() throws Exception {
+        final WssReplayProtection wrp = buildAssertion( 15000, "var", null );
+        wrp.setSaveIdAndExpiry(true);
+
+        String variablePrefix = "test";
+        wrp.setVariablePrefix(variablePrefix);
+
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable( "var", "customid" );
+
+        final AssertionStatus result = buildServerAssertion( wrp ).checkRequest(context);
+        assertEquals( "Status", AssertionStatus.NONE, result );
+
+        assertNotNull(context.getVariable(variablePrefix + "." + WssReplayProtection.ID_SUFFIX));
+        assertNotNull(context.getVariable(variablePrefix + "." + WssReplayProtection.EXPIRY_SUFFIX));
+    }
+
+    /**
      * Basic success with scopes
      */
     @Test
@@ -52,19 +73,19 @@ public class ServerWssReplayProtectionTest {
         final WssReplayProtection wrp = buildAssertion( 15000, "var", "${myScope}" );
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
-        context.setVariable( "myScope", "scope" );
+        context.setVariable("myScope", "scope");
 
-        final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
+        final ServerWssReplayProtection swrp = buildServerAssertion(wrp);
         final AssertionStatus result = swrp.checkRequest(context);
         assertEquals( "Status", AssertionStatus.NONE, result );
 
-        context.setVariable( "var", "customid2" );
+        context.setVariable("var", "customid2");
         final AssertionStatus result2 = swrp.checkRequest(context);
         assertEquals( "Status", AssertionStatus.NONE, result2 );
 
         context.setVariable( "var", "customid3" );
         final AssertionStatus result3 = swrp.checkRequest(context);
-        assertEquals( "Status", AssertionStatus.NONE, result3 );
+        assertEquals("Status", AssertionStatus.NONE, result3);
     }
 
     /**
@@ -122,6 +143,39 @@ public class ServerWssReplayProtectionTest {
 
         final AssertionStatus result2 = swrp.checkRequest(context);
         assertEquals( "Status", AssertionStatus.BAD_REQUEST, result2 );
+    }
+
+    /**
+     * Replay with static scope bypassing uniqueness check
+     */
+    @Test
+    public void testCustomProtectionReplayWithStaticScopeBypassUniquenessCheck() throws Exception {
+        final WssReplayProtection wrp = buildAssertion( 900000, "var", "scope" );
+        wrp.setBypassUniqueCheck(true);
+
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable( "var", "customid" );
+
+        final MockMessageIdManager mockManager = createMockMessageIdManager(wrp);
+
+        final ServerWssReplayProtection swrp = new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("serverConfig", new MockConfig(new Properties()));
+            put("securityTokenResolver", new SimpleSecurityTokenResolver());
+            put("distributedMessageIdManager", mockManager);
+        }})){
+            @Override
+            protected TimeSource getTimeSource() {
+                return testTimeSource;
+            }
+        };
+
+        final AssertionStatus result1 = swrp.checkRequest(context);
+        assertEquals( "Status", AssertionStatus.NONE, result1 );
+
+        final AssertionStatus result2 = swrp.checkRequest(context);
+        assertEquals( "Status", AssertionStatus.NONE, result2 );
+
+        assertEquals(0, mockManager.ids.size());
     }
 
     @Test
@@ -192,7 +246,7 @@ public class ServerWssReplayProtectionTest {
         return new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("serverConfig", new MockConfig(new Properties()));
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
-            put("distributedMessageIdManager", new MockMessageIdManager(wrp.getCustomExpiryTime()));
+            put("distributedMessageIdManager", createMockMessageIdManager(wrp));
         }})){
             @Override
             protected TimeSource getTimeSource() {
@@ -201,9 +255,13 @@ public class ServerWssReplayProtectionTest {
         };
     }
 
+    private MockMessageIdManager createMockMessageIdManager(WssReplayProtection wrp) {
+        return new MockMessageIdManager(wrp.getCustomExpiryTime());
+    }
+
     private static final class MockMessageIdManager implements MessageIdManager {
         private final int expectedExpiryTime;
-        private final Set<String> ids = new HashSet<String>();
+        private final Set<String> ids = new HashSet<>();
 
         public MockMessageIdManager( int expectedExpiryTime ) {
             this.expectedExpiryTime = expectedExpiryTime;
