@@ -1,3 +1,0 @@
-<project name="AsymmetricKeyEncryptionDecryptionAssertion" default="compile">
-    <import file="../assertion-build.xml"/>
-</project>
