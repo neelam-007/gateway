@@ -15,9 +15,9 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * Utility code for launching web help.
@@ -29,8 +29,8 @@ public class HelpUtil {
      * the default help URL.  May be overridden once we connect to the Gateway.
      */
     private static final String PROP_DEFAULT_HELP_URL = "com.l7tech.gui.util.HelpUtil.defaultHelpUrl";
-    private static final String DEFAULT_DEFAULT_HELP_URL = "http://wiki.ca.com/display/gateway" + BuildInfo.getProductVersionMajor() + BuildInfo.getProductVersionMinor();
-    private static final String XVC_HELP_URI = "https://wiki.ca.com/xvc";
+    private static final String DEFAULT_DEFAULT_HELP_URL = "http://docops.ca.com/display/gateway" + BuildInfo.getProductVersionMajor() + BuildInfo.getProductVersionMinor();
+    private static final String XVC_HELP_URI = "https://docops.ca.com/xvc";
     public static final String DEFAULT_HELP_URL = SyspropUtil.getString( PROP_DEFAULT_HELP_URL, DEFAULT_DEFAULT_HELP_URL );
     private static BrowserLauncher browserLauncher;
     private static String helpUrl = null;
