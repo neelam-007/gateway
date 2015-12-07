@@ -43,7 +43,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
     private JButton closeButton;
 
     private SimpleTableModel<CassandraConnection> cassandraConnectionsTableModel;
-
+    private CassandraConnection defaultConnection;
     private PermissionFlags flags;
 
     /**
@@ -70,6 +70,15 @@ public class CassandraConnectionManagerDialog extends JDialog {
     public CassandraConnectionManagerDialog(Frame owner) {
         super(owner, resources.getString("dialog.title.manage.cassandra.connections"));
         initialize();
+    }
+
+    public CassandraConnectionManagerDialog(Dialog owner) {
+        super(owner, resources.getString("dialog.title.manage.cassandra.connections"));
+        initialize();
+    }
+
+    public void setDefaultConnection(final CassandraConnection defaultConnection) {
+        this.defaultConnection = defaultConnection;
     }
 
     private void initialize() {
@@ -185,8 +194,9 @@ public class CassandraConnectionManagerDialog extends JDialog {
     }
 
     private void doAdd() {
-        CassandraConnection connection = new CassandraConnection();
+        final CassandraConnection connection = defaultConnection == null? new CassandraConnection() : defaultConnection;
         editAndSave(connection, true);
+        defaultConnection = null;
     }
 
     private void doEdit() {

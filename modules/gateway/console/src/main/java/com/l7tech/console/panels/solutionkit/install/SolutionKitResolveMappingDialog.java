@@ -5,6 +5,7 @@ import com.l7tech.console.panels.encass.EncapsulatedAssertionManagerWindow;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -51,6 +52,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     private PrivateKeysComboBox privateKeysComboBox;
     private JdbcConnectionComboBox jdbcConnectionComboBox;
     private EncapsulatedAssertionConfigComboBox encapsulatedAssertionConfigComboBox;
+    private CassandraConnectionComboBox cassandraConnectionComboBox;
 
     /**
      * Create dialog. Currently store passwords, private keys, and JDBC connections are supported.
@@ -87,6 +89,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             return jdbcConnectionComboBox.getSelectedJdbcConnection().toString();
         } else if (encapsulatedAssertionConfigComboBox != null) {
             return encapsulatedAssertionConfigComboBox.getSelectedEncapsulatedAssertion().getGoid().toString();
+        } else if (cassandraConnectionComboBox != null) {
+            return cassandraConnectionComboBox.getSelectedCassandraConnection().getGoid().toString();
         } else {
             return null;
         }
@@ -135,6 +139,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             jdbcConnectionComboBox.reload();
         } else if (encapsulatedAssertionConfigComboBox != null) {
             encapsulatedAssertionConfigComboBox.reload();
+        } else if (cassandraConnectionComboBox != null) {
+            cassandraConnectionComboBox.reload();
         }
         // else, unsupported entity type. Do nothing.
     }
@@ -148,6 +154,8 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             manageJdbcConnections();
         } else if (encapsulatedAssertionConfigComboBox != null) {
             manageEncapsulatedAssertionConfigComboBox();
+        } else if (cassandraConnectionComboBox != null) {
+            manageCassandraConnectionComboBox();
         }
         // else, unsupported entity type. Do nothing.
     }
@@ -245,6 +253,25 @@ public class SolutionKitResolveMappingDialog extends JDialog {
         }
     }
 
+    private void manageCassandraConnectionComboBox() {
+        final CassandraConnectionManagerDialog dlg = new CassandraConnectionManagerDialog(this);
+        if (item != null) {
+            final CassandraConnectionMO resource = (CassandraConnectionMO) item.getContent();
+            final CassandraConnection cassandraConnection = SolutionKitUtils.fromMangedObject(resource);
+            dlg.setDefaultConnection(cassandraConnection);
+        }
+
+        DialogDisplayer.pack(dlg);
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
+            }
+        });
+        cassandraConnectionComboBox.reload();
+    }
+
     private void onOk() {
         if (entityComboBox.getSelectedIndex() == -1) {
             JOptionPane.showMessageDialog(this,
@@ -284,6 +311,11 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             case ENCAPSULATED_ASSERTION:
                 encapsulatedAssertionConfigComboBox = new EncapsulatedAssertionConfigComboBox();
                 entityComboBox = encapsulatedAssertionConfigComboBox;
+                break;
+
+            case CASSANDRA_CONFIGURATION:
+                cassandraConnectionComboBox = new CassandraConnectionComboBox();
+                entityComboBox = cassandraConnectionComboBox;
                 break;
 
             default:

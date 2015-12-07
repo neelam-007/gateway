@@ -1,11 +1,14 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.CassandraConnectionMO;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.api.StoredPasswordMO;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -136,8 +139,8 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Convert a EncapsulatedAssertionMO object to a EncapsulatedAssertionConfig object.
-     * Note: Do not set policy in this mehtod, since SolutionKitUtils cannot access PolicyAdmin or PolicyManager.
+     * Convert an EncapsulatedAssertionMO object to an EncapsulatedAssertionConfig object.
+     * Note: Do not set policy in this method, since SolutionKitUtils cannot access PolicyAdmin or PolicyManager.
      *
      * @param mo: a EncapsulatedAssertionMO object containing EncapsulatedAssertionConfig information.
      * @return a EncapsulatedAssertionConfig object
@@ -179,6 +182,31 @@ public final class SolutionKitUtils {
 
         return ret;
     }
+
+    /**
+     * Convert a CassandraConnectionMO object to a CassandraConnection object.
+     *
+     * @param mo: a CassandraConnectionMO object containing CassandraConnection information.
+     * @return a CassandraConnection object
+     */
+    public static CassandraConnection fromMangedObject (@NotNull final CassandraConnectionMO mo) {
+        final CassandraConnection cassandraConnection = new CassandraConnection();
+
+        cassandraConnection.setName(mo.getName());
+        cassandraConnection.setKeyspaceName(mo.getKeyspace());
+        cassandraConnection.setContactPoints(mo.getContactPoint());
+        cassandraConnection.setPort(mo.getPort());
+        cassandraConnection.setUsername(mo.getUsername());
+        cassandraConnection.setPasswordGoid(mo.getPasswordId() == null ? null : new Goid(mo.getPasswordId()));
+        cassandraConnection.setCompression(mo.getCompression());
+        cassandraConnection.setSsl(mo.isSsl());
+        cassandraConnection.setTlsEnabledCipherSuites(mo.getTlsciphers());
+        cassandraConnection.setEnabled(mo.isEnabled());
+        cassandraConnection.setProperties(mo.getProperties());
+
+        return cassandraConnection;
+    }
+
 
     // Since EncapsulatedAssertionResourceFactory is not accessible from this class,
     // This method is copied from EncapsulatedAssertionResourceFactory#getResultDescriptorSet.
