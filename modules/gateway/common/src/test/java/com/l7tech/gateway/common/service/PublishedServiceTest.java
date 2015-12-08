@@ -149,6 +149,14 @@ public class PublishedServiceTest {
         assertEquals( SoapVersion.UNKNOWN, s1.getSoapVersion() );
     }
 
+    @Test
+    @BugId( "APIM-1048" )
+    public void testServicePropertyCopy() throws Exception {
+        s1.putProperty("key","val");
+        PublishedService s1Copy = new PublishedService(s1);
+        assertNotNull( s1Copy );
+        assertEquals( s1.getProperty("key") , s1Copy.getProperty("key"));
+    }
     private static final String WSDL_PREFIX =
         "<definitions name=\"test\" targetNamespace=\"urn:test\"\n" +
         "    xmlns=\"http://schemas.xmlsoap.org/wsdl/\"\n" +
