@@ -22,6 +22,7 @@ import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.PropertyEditDialog;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -29,19 +30,22 @@ import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.apache.commons.lang.ObjectUtils;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,6 +119,10 @@ public class ServicePropertiesDialog extends JDialog {
     private JLabel readOnlyWarningLabel;
     private JLabel resolutionConflictWarningLabel;
     private SecurityZoneWidget zoneControl;
+    private JTable propertiesTable;
+    private JButton propertiesAddButton;
+    private JButton propertiesEditButton;
+    private JButton propertiesRemoveButton;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -123,6 +131,11 @@ public class ServicePropertiesDialog extends JDialog {
     private String originalServiceEndPoint;
     private Long lastModifiedTimeStamp;
     private String accessPointURL;
+
+    private PropertiesTableModel propertiesTableModel;
+    private static final int MAX_TABLE_COLUMN_NUM = 2;
+    private Map<String, String> propertiesMap;
+
 
     public ServicePropertiesDialog( final Window owner,
                                     final PublishedService svc,
@@ -489,6 +502,42 @@ public class ServicePropertiesDialog extends JDialog {
 
         zoneControl.configure(Goid.isDefault(subject.getGoid()) ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, subject);
 
+        propertiesTableModel = new PropertiesTableModel();
+        propertiesTable.setModel(propertiesTableModel);
+        propertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        propertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableTableButtons();
+            }
+        });
+        propertiesTable.addMouseListener(new MouseAdapter() {
+          public void mouseClicked(MouseEvent e) {
+            if (e.getClickCount() == 2 && e.getButton() == 1)
+              doEdit();
+          }
+        });
+
+        // hide buttons
+        propertiesAddButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doAdd();
+            }
+        });
+        propertiesEditButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doEdit();
+            }
+        });
+        propertiesRemoveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doRemove();
+            }
+        });
+
         updateURL();
 
         modelToView();
@@ -548,6 +597,95 @@ public class ServicePropertiesDialog extends JDialog {
             monitoringUpdateWsdlCheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
             monitoringDisableServicecheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
         }
+        enableOrDisableTableButtons();
+    }
+
+    private void enableOrDisableTableButtons() {
+        int selectedRow = propertiesTable.getSelectedRow();
+
+        boolean editEnabled = selectedRow >= 0;
+        boolean removeEnabled = selectedRow >= 0;
+
+        propertiesEditButton.setEnabled(editEnabled);
+        propertiesRemoveButton.setEnabled(removeEnabled);
+    }
+
+    private void doAdd() {
+        editAndSave("", "");
+    }
+
+    private void doEdit() {
+        int selectedRow = propertiesTable.getSelectedRow();
+        if (selectedRow < 0) return;
+
+        String queryResultName = (String) propertiesMap.keySet().toArray()[selectedRow];
+        String contextVarName = propertiesMap.get(queryResultName);
+
+        editAndSave(queryResultName, contextVarName);
+    }
+
+    private void editAndSave(final String propertyName, final String propertyValue) {
+        final PropertyEditDialog dlg = new PropertyEditDialog(this, "Service Property Editor", propertyName,propertyValue);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.isOk()) {
+                    // Check if the input entry is duplicated.
+                    String warningMessage = isDuplicatedColumnOrVariable(propertyName, dlg.getPropertyName(), dlg.getPropertyValue());
+                    if (warningMessage != null) {
+                        DialogDisplayer.showMessageDialog(ServicePropertiesDialog.this, warningMessage,
+                                "Invalid values", JOptionPane.WARNING_MESSAGE, null);
+                        return;
+                    }
+
+                    // remove old value
+                    propertiesMap.remove(dlg.getPropertyName(), dlg.getPropertyValue());
+                    // put new value
+                    propertiesMap.put(dlg.getPropertyName(), dlg.getPropertyValue());
+
+                    // Refresh the table
+                    propertiesTableModel.fireTableDataChanged();
+
+                    // Refresh the selection highlight
+                    ArrayList<String> keyset = new ArrayList<String>();
+                    keyset.addAll(propertiesMap.keySet());
+                    int currentRow = keyset.indexOf(dlg.getPropertyName());
+                    propertiesTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+
+                }
+            }
+        });
+    }
+
+    private String isDuplicatedColumnOrVariable(final String oldPropertyName, final String propertyName, final String propertyValue) {
+        if(!oldPropertyName.equals(propertyName) && propertiesMap.containsKey(propertyName)) {
+            return "duplicate name";
+        }
+
+        return null;
+    }
+
+    private void doRemove() {
+        int currentRow = propertiesTable.getSelectedRow();
+        if (currentRow < 0) return;
+
+        String propName = (String) propertiesMap.keySet().toArray()[currentRow];
+        Object[] options = {"Remove", "Cancel"};
+        int result = JOptionPane.showOptionDialog(
+                this, MessageFormat.format("Remove service property", propName),
+                "Remove service property", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+        if (result == 0) {
+            // Refresh the list
+            propertiesMap.remove(propName);
+            // Refresh the table
+            propertiesTableModel.fireTableDataChanged();
+            // Refresh the selection highlight
+            if (currentRow == propertiesMap.size()) currentRow--; // If the previous deleted row was the last row
+            if (currentRow >= 0) propertiesTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+        }
     }
 
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
@@ -605,6 +743,9 @@ public class ServicePropertiesDialog extends JDialog {
             monitoringUpdateWsdlCheckBox.setSelected( false );
             monitoringDisableServicecheckBox.setSelected( false );
         }
+
+        // populate service properties
+        propertiesMap = new HashMap<String, String>( getService().getProperties());
     }
 
     private void showErrorMessage(String title, String msg, Throwable e, boolean log) {
@@ -1032,6 +1173,7 @@ public class ServicePropertiesDialog extends JDialog {
         }
 
         subject.setSecurityZone(zoneControl.getSelectedZone());
+        subject.setProperties(propertiesMap);
     }
 
     public PublishedService getService(){
@@ -1147,5 +1289,54 @@ public class ServicePropertiesDialog extends JDialog {
     public void selectNameField() {
         nameField.requestFocus();
         nameField.selectAll();
+    }
+
+    private class PropertiesTableModel extends AbstractTableModel {
+        @Override
+        public int getColumnCount() {
+            return MAX_TABLE_COLUMN_NUM;
+        }
+
+        @Override
+        public void fireTableDataChanged() {
+            super.fireTableDataChanged();
+            enableOrDisableTableButtons();
+        }
+
+        @Override
+        public int getRowCount() {
+            return propertiesMap.size();
+        }
+
+        @Override
+        public String getColumnName(int col) {
+            switch (col) {
+                case 0:
+                    return "name";
+                case 1:
+                    return "value";
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return false;
+        }
+
+        @Override
+        public Object getValueAt(int row, int col) {
+            String name = (String) propertiesMap.keySet().toArray()[row];
+
+            switch (col) {
+                case 0:
+                    return name;
+                case 1:
+                    return propertiesMap.get(name);
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
     }
 }
