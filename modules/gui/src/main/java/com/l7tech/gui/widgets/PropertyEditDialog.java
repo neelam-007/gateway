@@ -5,6 +5,7 @@ package com.l7tech.gui.widgets;
 
 import com.l7tech.gui.util.RunOnChangeListener;
 
+import com.l7tech.gui.util.Utilities;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -65,6 +66,8 @@ public class PropertyEditDialog extends JDialog {
         });
 
         enableOrDisableOkButton();
+
+        Utilities.setEscAction(this, cancelButton);
 
         add(mainPanel);
     }

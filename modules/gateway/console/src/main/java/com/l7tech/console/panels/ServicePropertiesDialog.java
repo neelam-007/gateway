@@ -606,8 +606,8 @@ public class ServicePropertiesDialog extends JDialog {
         boolean editEnabled = selectedRow >= 0;
         boolean removeEnabled = selectedRow >= 0;
 
-        propertiesEditButton.setEnabled(editEnabled);
-        propertiesRemoveButton.setEnabled(removeEnabled);
+        propertiesEditButton.setEnabled(canUpdate && editEnabled);
+        propertiesRemoveButton.setEnabled(canUpdate && removeEnabled);
     }
 
     private void doAdd() {
@@ -615,6 +615,7 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     private void doEdit() {
+        if(!canUpdate) return;
         int selectedRow = propertiesTable.getSelectedRow();
         if (selectedRow < 0) return;
 
@@ -641,7 +642,7 @@ public class ServicePropertiesDialog extends JDialog {
                     }
 
                     // remove old value
-                    propertiesMap.remove(dlg.getPropertyName(), dlg.getPropertyValue());
+                    propertiesMap.remove(propertyName);
                     // put new value
                     propertiesMap.put(dlg.getPropertyName(), dlg.getPropertyValue());
 
@@ -834,6 +835,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(laxResolutionCheckbox);
         enableIfHasUpdatePermission(enableWSSSecurityProcessingCheckBox);
         enableIfHasUpdatePermission(tracingCheckBox);
+        enableIfHasUpdatePermission(propertiesAddButton);
     }
 
     private void applyReadOnlySettings(boolean isReadOnly) {
@@ -1312,9 +1314,9 @@ public class ServicePropertiesDialog extends JDialog {
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return "name";
+                    return "Key";
                 case 1:
-                    return "value";
+                    return "Value";
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }
