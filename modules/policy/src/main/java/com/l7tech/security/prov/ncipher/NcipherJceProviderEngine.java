@@ -52,6 +52,11 @@ public class NcipherJceProviderEngine extends JceProvider {
                 PROVIDER = new nCipherKM();
                 Security.removeProvider(existing.getName());
                 Security.insertProviderAt(PROVIDER, 1);
+
+                // TODO consider disabling all but RSA services from nCipherKM by setting system properties on command line:
+                //
+                // -Dcom.ncipher.provider.announcemode=off -Dcom.ncipher.provider.enable=Signature.SHA1withRSA,Signature.SHA256withRSA,Signature.SHA384withRSA,Signature.SHA512withRSA,KeyPairGenerator.RSA
+
             } else {
                 // Leave existing provider order unchanged
                 PROVIDER = existing;
