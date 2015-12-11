@@ -44,9 +44,9 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
 
         assertion.setBypassUniqueCheck(bypassUniqueCheckCheckBox.isSelected());
         assertion.setSaveIdAndExpiry(saveIdAndExpiryCheckBox.isSelected());
-        assertion.setVariablePrefix(saveIdAndExpiryCheckBox.isSelected()
-                ? prefixTargetVariablePanel.getVariable()
-                : null);
+        if (saveIdAndExpiryCheckBox.isSelected()) {
+            assertion.setVariablePrefix(prefixTargetVariablePanel.getVariable());
+        }
 
         return assertion;
     }
