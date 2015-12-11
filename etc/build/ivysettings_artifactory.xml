@@ -1,0 +1,69 @@
+<!--
+  Ivy settings file for use with the build
+  This file does not contain local filesystems as resolvers
+-->
+<ivysettings>
+
+    <settings
+        defaultResolver="artifactory"/>
+	<credentials host="apim-artifactory-poc.l7tech.com" realm="Artifactory Realm" username="system.user" passwd="AP6krWWQbjzdgzpD"/>
+	<credentials host="isl-dsdc-dev.ca.com" realm="Artifactory Realm" username="bld-apim-teamcity" passwd="AP4YRjSYic3u9tFPkUzDZCGEHfd"/>
+	<credentials host="isl-dsdc.ca.com" realm="Artifactory Realm" username="bld-apim-teamcity" passwd="AP4YRjSYic3u9tFPkUzDZCGEHfd"/>
+    <resolvers>
+        <chain name="artifactory">
+<!-- For artifactory download -->
+			<!-- local sandbox
+			<ibiblio name="artifactory-download" root="http://apim-artifactory-poc.l7tech.com:8081/artifactory/libs-snapshot" m2compatible="true" usepoms="false" />
+			-->
+			<!-- CA Dev -->
+			<ibiblio name="artifactory-download" root="http://isl-dsdc-dev.ca.com/artifactory/maven-repo/" m2compatible="true" usepoms="false" />
+			
+			<!-- CA Prod
+			<ibiblio name="artifactory-download" root="http://isl-dsdc.ca.com/artifactory/maven-repo/" m2compatible="true" usepoms="false" />
+			-->
+			
+<!-- For artifactory L7 builds snapshot upload -->
+			<url name="artifactory-snapshot" m2compatible="true">
+				<!-- local sandbox
+                <ivy pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision].xml" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-snapshot-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact].[ext]" />
+				-->
+				<!-- CA Dev -->
+                <ivy pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision].xml" />
+                <artifact pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact].[ext]" />
+	
+				<!-- CA Prod
+                <ivy pattern="http://isl-dsdc.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision].xml" />
+                <artifact pattern="http://isl-dsdc.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://isl-dsdc.ca.com/artifactory/maven-integration-local/[organisation]/[module]/[revision]-SNAPSHOT/[artifact].[ext]" />
+				-->						
+            </url>
+
+<!-- For artifactory thirdparty upload -->
+			<url name="artifactory-thirdparty" m2compatible="true">
+				<!-- local sandbox
+				<ivy pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-thirdparty-local/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-thirdparty-local/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://apim-artifactory-poc.l7tech.com:8081/artifactory/apim-maven-thirdparty-local/[organisation]/[module]/[revision]/[artifact].[ext]" />
+				-->
+				<!-- CA Dev -->
+				<ivy pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://isl-dsdc-dev.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/[artifact].[ext]" />
+				
+				<!-- CA Prod
+				<ivy pattern="http://isl-dsdc.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="http://isl-dsdc.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
+                <artifact pattern="http://isl-dsdc.ca.com/artifactory/maven-third-party-local/[organisation]/[module]/[revision]/[artifact].[ext]" />
+				-->
+            </url>
+        </chain>
+    </resolvers>
+    
+    <!-- 
+      Note that this can cause an NPE if used when installing dependencies
+    -->
+    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache" memorySize="25000"/>
+</ivysettings>
