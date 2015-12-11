@@ -1,0 +1,8 @@
+<l7:SolutionKit xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Id>62cd392f-559f-412c-8e5d-1b68ebbf9bb1</l7:Id>
+    <l7:Version>1.0</l7:Version>
+    <l7:Name>Solution Kit Demo Policy-Backed Identity Provider</l7:Name>
+    <l7:Description>Demonstrate Policy-Backed Identity Provider can be instance modified.</l7:Description>
+    <l7:TimeStamp>2015-12-09T08:56:35.603-08:00</l7:TimeStamp>
+    <l7:IsCollection>false</l7:IsCollection>
+</l7:SolutionKit>

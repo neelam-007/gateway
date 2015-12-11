@@ -1,0 +1,40 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>SK Demo Cassandra Connection</l7:Name>
+            <l7:Id>48694d14e26a63f68d33248758b18e9f</l7:Id>
+            <l7:Type>CASSANDRA_CONFIGURATION</l7:Type>
+            <l7:TimeStamp>2015-12-03T13:55:14.207-08:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://127.0.0.1:8443/restman/1.0/cassandraConnections/48694d14e26a63f68d33248758b18e9f" />
+            <l7:Resource>
+                <l7:CassandraConnection id="48694d14e26a63f68d33248758b18e9f" version="0">
+                    <l7:Name>SK Demo Cassandra Connection</l7:Name>
+                    <l7:Keyspace>kkk</l7:Keyspace>
+                    <l7:ContactPoint>abc.com</l7:ContactPoint>
+                    <l7:Port>9042</l7:Port>
+                    <l7:Username>abc</l7:Username>
+                    <l7:PasswordId>a374840d936af86e42c580fd27e54787</l7:PasswordId>
+                    <l7:Compression>LZ4</l7:Compression>
+                    <l7:Ssl>true</l7:Ssl>
+                    <l7:Enabled>false</l7:Enabled>
+                    <l7:Properties>
+                        <l7:Property key="connectTimeoutMillis">
+                            <l7:StringValue>5000</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="keepAlive">
+                            <l7:StringValue>true</l7:StringValue>
+                        </l7:Property>
+                    </l7:Properties>
+                </l7:CassandraConnection>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="48694d14e26a63f68d33248758b18e9f" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/48694d14e26a63f68d33248758b18e9f" type="CASSANDRA_CONFIGURATION">
+            <l7:Properties>
+                <l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+                <l7:Property key="SK_AllowMappingOverride"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+    </l7:Mappings>
+</l7:Bundle>

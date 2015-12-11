@@ -1,0 +1,8 @@
+<l7:SolutionKit xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Id>6cc6a233-5a54-45c5-ac66-2e64f55f6bdf</l7:Id>
+    <l7:Version>1.0</l7:Version>
+    <l7:Name>Solution Kit Demo Cassandra Connection Configurable</l7:Name>
+    <l7:Description>Demonstrate Cassandra Connection is a user configurable entity.</l7:Description>
+    <l7:TimeStamp>2015-12-09T11:56:35.603-08:00</l7:TimeStamp>
+    <l7:IsCollection>false</l7:IsCollection>
+</l7:SolutionKit>
