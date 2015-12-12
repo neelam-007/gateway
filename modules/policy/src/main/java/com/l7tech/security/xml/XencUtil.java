@@ -556,11 +556,7 @@ public class XencUtil {
             // decrypt
             try {
                 Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
-                if ( oaepParams.length > 0 ) {
-                    rsa.init( Cipher.DECRYPT_MODE, recipientKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
-                } else {
-                    rsa.init( Cipher.DECRYPT_MODE, recipientKey );
-                }
+                rsa.init( Cipher.DECRYPT_MODE, recipientKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
                 unencryptedKey = rsa.doFinal(encryptedKeyBytes);
             }
             catch(NoClassDefFoundError ncdfe) {
@@ -657,11 +653,7 @@ public class XencUtil {
         Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
         try {
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
-            if ( oaepParams != null && oaepParams.length > 0 ) {
-                rsa.init( Cipher.ENCRYPT_MODE, publicKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
-            } else {
-                rsa.init( Cipher.ENCRYPT_MODE, publicKey );
-            }
+            rsa.init( Cipher.ENCRYPT_MODE, publicKey, buildOaepParameterSpec( digestAlg, null, oaepParams ) );
         }
         catch(NoClassDefFoundError ncdfe) {
             throw (GeneralSecurityException) new GeneralSecurityException("Platform support for OAEP not available.").initCause(ncdfe);
@@ -671,7 +663,7 @@ public class XencUtil {
 
     private static AlgorithmParameterSpec buildOaepParameterSpec( @Nullable SupportedDigestMethods oaepDigest,
                                                                   @Nullable MGF1ParameterSpec mgf1Digest,
-                                                                  byte[] oaepParams )
+                                                                  @Nullable byte[] oaepParams )
     {
         if ( null == oaepDigest )
             oaepDigest = SupportedDigestMethods.SHA1;
