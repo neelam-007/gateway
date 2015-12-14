@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
@@ -22,6 +23,7 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
     public ReplayProtectionPropertiesDialog( final Window parent,
                                              final WssReplayProtection assertion ) {
         super( WssReplayProtection.class, parent, assertion, true );
+        this.assertion = assertion;
         initComponents();
         setData(assertion);
     }
@@ -102,6 +104,7 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
         prefixTargetVariablePanel.setValueWillBeWritten(true);
         prefixTargetVariablePanel.setDefaultVariableOrPrefix(WssReplayProtection.VARIABLE_PREFIX);
         prefixTargetVariablePanel.setSuffixes(WssReplayProtection.getVariableSuffixes());
+        prefixTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
 
         RunOnChangeListener listener = new RunOnChangeListener( new Runnable(){
             @Override
@@ -134,6 +137,7 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
     private JPanel prefixVariablePanelHolder;
     private JCheckBox saveIdAndExpiryCheckBox;
     private TargetVariablePanel prefixTargetVariablePanel;
+    private Assertion assertion;
 
     private void enableAndDisableComponents() {
         if ( isReadOnly() ) {
