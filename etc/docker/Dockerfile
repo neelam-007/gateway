@@ -32,6 +32,9 @@ RUN yum install -y which telnet nc strace
 # include envconsul in the build to support setting environment variable from Consul
 RUN wget -O - https://github.com/hashicorp/envconsul/releases/download/v0.5.0/envconsul_0.5.0_linux_amd64.tar.gz | tar xzf - -O envconsul_0.5.0_linux_amd64/envconsul > /usr/local/bin/envconsul && chmod 755 /usr/local/bin/envconsul
 
+# include etcdctl in the build to support setting environment variables from etcd
+RUN wget -O - https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.2-linux-amd64.tar.gz | tar xzf - -O etcd-v2.2.2-linux-amd64/etcdctl > /usr/local/bin/etcdctl && chmod 755 /usr/local/bin/etcdctl
+
 # set the timezone
 RUN echo "ZONE=\"America/Vancouver\"" > /etc/sysconfig/clock
 RUN ln -sf /usr/share/zoneinfo/America/Vancouver /etc/localtime
