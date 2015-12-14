@@ -105,6 +105,7 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
         prefixTargetVariablePanel.setDefaultVariableOrPrefix(WssReplayProtection.VARIABLE_PREFIX);
         prefixTargetVariablePanel.setSuffixes(WssReplayProtection.getVariableSuffixes());
         prefixTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
+        prefixTargetVariablePanel.setToolTipText(resources.getString("variablePrefixTooltip"));
 
         RunOnChangeListener listener = new RunOnChangeListener( new Runnable(){
             @Override

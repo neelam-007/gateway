@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="7" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="8" left="8" bottom="8" right="8"/>
     <constraints>
-      <xy x="20" y="20" width="440" height="309"/>
+      <xy x="20" y="20" width="447" height="309"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -15,6 +15,7 @@
         <properties>
           <selected value="true"/>
           <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="type.default.label"/>
+          <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="findIdAndExpiryTooltip"/>
         </properties>
       </component>
       <component id="1f9ae" class="javax.swing.JRadioButton" binding="customRadioButton" default-binding="true">
@@ -23,6 +24,7 @@
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="type.custom.label"/>
+          <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="specifyIdAndExpiryTooltip"/>
         </properties>
       </component>
       <grid id="f85e4" binding="customControlsPanel" layout-manager="GridLayoutManager" row-count="3" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -40,6 +42,7 @@
             <properties>
               <labelFor value="b207d"/>
               <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="custom.identifiervariable.label"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="identifierVariableTooltip"/>
             </properties>
           </component>
           <component id="ab536" class="javax.swing.JLabel">
@@ -49,6 +52,7 @@
             <properties>
               <labelFor value="82c93"/>
               <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="custom.scope.label"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="scopeTooltip"/>
             </properties>
           </component>
           <component id="82c93" class="javax.swing.JTextField" binding="scopeTextField">
@@ -57,7 +61,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="scopeTooltip"/>
+            </properties>
           </component>
           <component id="b207d" class="javax.swing.JTextField" binding="identifierVariableTextField">
             <constraints>
@@ -65,7 +71,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="identifierVariableTooltip"/>
+            </properties>
           </component>
           <component id="fd542" class="javax.swing.JLabel">
             <constraints>
@@ -74,6 +82,7 @@
             <properties>
               <labelFor value="cec58"/>
               <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="custom.expiry.label"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="expiryTooltip"/>
             </properties>
           </component>
           <component id="cec58" class="javax.swing.JTextField" binding="expiryTextField">
@@ -86,6 +95,7 @@
             <properties>
               <horizontalAlignment value="4"/>
               <text value=""/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="expiryTooltip"/>
             </properties>
           </component>
           <component id="2b6fd" class="javax.swing.JComboBox" binding="expiryUnitComboBox">
@@ -124,6 +134,7 @@
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="failIfIdNotUniqueCheckBox.label"/>
+          <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="failIfIdNotUniqueCheckBoxTooltip"/>
         </properties>
       </component>
       <grid id="b5e61" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -149,6 +160,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="saveIdAndExpiryCheckBox.label"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/ReplayProtectionPropertiesDialog" key="saveIdAndExpiryCheckBoxTooltip"/>
             </properties>
           </component>
         </children>
