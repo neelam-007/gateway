@@ -1,6 +1,8 @@
 # build a docker container using the ssg RPM and with the latest version of CentOS 6 as a base
 FROM centos:centos6
 MAINTAINER Heinrich Butow <heinrich.butow@ca.com>
+LABEL License="Commercial"
+LABEL Vendor="CA Technologies"
 
 # the list of ports that we will expose between containers
 # this should only contain the ports that gateway nodes need to communicate with each other
