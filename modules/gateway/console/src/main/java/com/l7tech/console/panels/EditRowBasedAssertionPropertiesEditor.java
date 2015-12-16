@@ -76,7 +76,8 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
      */
     protected JPanel createPropertyPanel() {
         editRows.clear();
-        JPanel propPanel = new JPanel(new GridBagLayout());
+        JPanel propPanel = new VariableWidthScrollableJPanel();
+        propPanel.setLayout( new GridBagLayout() );
         int y = 0;
         GridBagConstraints gc = new GridBagConstraints();
         gc.fill = GridBagConstraints.HORIZONTAL;
@@ -114,7 +115,43 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
         gc.weighty = 99999.0;
         propPanel.add(Box.createGlue(), gc);
 
-        return propPanel;
+        JScrollPane pane = new JScrollPane(propPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        pane.setBorder( null );
+        pane.getViewport().setBackground( propPanel.getBackground() );
+
+        JPanel panePanel = new JPanel();
+        panePanel.setLayout( new BorderLayout() );
+        panePanel.add( pane, BorderLayout.CENTER );
+
+        return panePanel;
+        //return propPanel;
+    }
+
+    private static class VariableWidthScrollableJPanel extends JPanel implements Scrollable {
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement( Rectangle visibleRect, int orientation, int direction ) {
+            return 5;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement( Rectangle visibleRect, int orientation, int direction ) {
+            return 5;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
     }
 
     /**
