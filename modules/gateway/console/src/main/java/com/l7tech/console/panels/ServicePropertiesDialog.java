@@ -1314,7 +1314,7 @@ public class ServicePropertiesDialog extends JDialog {
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return "Key";
+                    return "Name";
                 case 1:
                     return "Value";
                 default:
