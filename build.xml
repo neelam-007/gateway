@@ -619,8 +619,11 @@
     </target>
 
     <target name="publish-all-modules-artifactory" depends="prepare.base, build-module-list-all">
-        <modules target="publish-all-artifactory" buildpathref="module-build-all-path"/>
+		<delete dir="${build.dir}/ivy/repository"/>
+		<delete dir="${build.dir}/ivy/cache"/>
+		<modules target="publish-all-artifactory" buildpathref="module-build-all-path"/>
     </target>
+	
     <target name="clean-modules" depends="build-module-list-all">
         <modules target="clean" buildpathref="module-build-all-path"/>
     </target>
@@ -3833,10 +3836,11 @@
     </target>
 	
 <!--
-	Publish everything in lib/repository to artifactory (recurive call to publish-third-party)
+	Publish everything in lib/repository to artifactory recursively
 -->
 	<target name="publish-third-party-all">
-		<foreach param="var" target="publish-third-party">
+		<delete dir="${src.root}/build/ivy/cache"/>
+		<foreach param="var" target="publish-third-party-helper">
 			<path>
 				<fileset dir="${src.root}/lib/repository">
 					<include name="**/*.xml"/>
@@ -3846,30 +3850,24 @@
 	</target>
 
 <!--
-	Publish a single artifact based on its ivy.xml, also copy the ivy.xml to build/ivy/thirdparty on local filesystem
+	Check if the specified artifact revision in ivy file already exist on Artifactory
 -->
-	<target name="publish-third-party">
+	<target name="publish-third-party-helper">
 		<ivy:settings  id="ivy.settings" file="${src.root}/etc/build/ivysettings_artifactory.xml"/>
-		<ivy:info file="${var}"/>
+		<ivy:info file="${var}" settingsRef="ivy.settings"/>
 		<echo>Ivy file	${ivy.organisation} ${ivy.module} ${ivy.revision}</echo>
-		<ivy:info organisation="${ivy.organisation}" module="${ivy.module}" revision="${ivy.revision}" property="check"/>
-		<echo>Repo		${check.organisation} ${check.module} ${check.revision}</echo>
-		<if>
-			<equals arg1="${ivy.revision}" arg2="${check.revision}"/>
-			<then>
-				<echo>File exists</echo>
-			</then>
-			<else>
-				<ivy:resolve file="${var}" haltonfailure="false"/>
-				<mkdir dir="${src.root}/build/ivy/thirdparty"/>
-				<ivy:deliver deliverpattern="${src.root}/build/ivy/thirdparty/${ivy.organisation}/${ivy.module}-ivy-${ivy.revision}.xml" status="release"/>
-				<ivy:publish resolver="artifactory-thirdparty" overwrite="false" settingsRef="ivy.settings" haltonmissing="false">
-					<artifacts pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
-				</ivy:publish>
-			</else>
-		</if>
+		<ivy:info organisation="${ivy.organisation}" module="${ivy.module}" revision="${ivy.revision}" property="check" settingsRef="ivy.settings"/>
+		<echo>Repo	${check.organisation} ${check.module} ${check.revision}</echo>
+		<antcall target="publish-third-party"/>
 	</target>
-
+<!--
+	Publish a single artifact (unless artifact revision already present)
+-->
+	<target name="publish-third-party" unless="check.revision">
+		<ivy:resolve file="${var}" haltonfailure="false"/>
+		<ivy:publish resolver="artifactory-thirdparty" overwrite="false" haltonmissing="false" srcivypattern="${var}" conf="default,master"
+			artifactspattern="${src.root}/lib/repository/[organisation]/[module]-[revision].[ext]"/>
+	</target>
 <!--
 	Enable antcontrib for external tasks (foreach, if)
 -->
