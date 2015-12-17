@@ -9,11 +9,15 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -26,7 +30,10 @@ import java.util.concurrent.ConcurrentMap;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SiteMinderConfigurationManagerImpl
     extends HibernateEntityManager<SiteMinderConfiguration, EntityHeader>
-    implements SiteMinderConfigurationManager {
+    implements SiteMinderConfigurationManager, InitializingBean {
+
+    @Inject
+    ApplicationEventProxy applicationEventProxy;
 
     protected final ConcurrentMap<Goid, SiteMinderLowLevelAgent> cache = new ConcurrentHashMap<Goid, SiteMinderLowLevelAgent>();
 
@@ -74,17 +81,25 @@ public class SiteMinderConfigurationManagerImpl
         }
     }
 
+
     @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        // if a SiteMinderConfiguration has been modified, remove it from the cache
-        if (event instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
-            if (SiteMinderConfiguration.class.equals(entityInvalidationEvent.getEntityClass())) {
-                final Goid[] ids = entityInvalidationEvent.getEntityIds();
-                for (final Goid id : ids) {
-                    cache.remove(id);
+    protected void initDao() throws Exception {
+        if ( applicationEventProxy != null ) {
+            applicationEventProxy.addApplicationListener( new ApplicationListener() {
+                @Override
+                public void onApplicationEvent( ApplicationEvent event ) {
+                    // if a SiteMinderConfiguration has been modified, remove it from the cache
+                    if ( event instanceof EntityInvalidationEvent ) {
+                        final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
+                        if (SiteMinderConfiguration.class.equals(entityInvalidationEvent.getEntityClass())) {
+                            final Goid[] ids = entityInvalidationEvent.getEntityIds();
+                            for (final Goid id : ids) {
+                                cache.remove(id);
+                            }
+                        }
+                    }
                 }
-            }
+            } );
         }
     }
 }

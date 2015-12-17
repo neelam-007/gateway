@@ -6,9 +6,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.EntityManagerStub;
-import org.springframework.context.ApplicationEvent;
 
 public class SiteMinderConfigurationManagerStub extends EntityManagerStub<SiteMinderConfiguration, EntityHeader> implements SiteMinderConfigurationManager {
 
@@ -33,9 +31,5 @@ public class SiteMinderConfigurationManagerStub extends EntityManagerStub<SiteMi
 
     @Override
     public void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException {
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
     }
 }

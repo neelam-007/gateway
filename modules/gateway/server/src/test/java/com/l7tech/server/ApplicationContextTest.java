@@ -79,7 +79,20 @@ public class ApplicationContextTest  {
         EntityType.ESM_NOTIFICATION_RULE,
         EntityType.ESM_LOG,
         EntityType.VALUE_REFERENCE);
-    private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set( "adminAuditListener", "applicationEventProxy", "cryptoInit", "gatewayState", "keystoreMutatorSwitch", "messageProcessingAuditListener", "systemAuditListener", "jdbcQueryingManager" );
+    private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set(
+            "adminAuditListener",
+            "applicationEventProxy",
+            "cryptoInit",
+            "gatewayState",
+            "keystoreMutatorSwitch",
+            "messageProcessingAuditListener",
+            "systemAuditListener",
+            "jdbcQueryingManager",
+            "messageProcessingEventChannel",
+            "folderCache",     // TODO legacy - figure out if FolderCache should use PostStartup instead
+            "licenseManager"   // TODO legacy - figure out if LicenseManager should use PostStartup instead
+            // Do not add a new bean here unless you know it needs and is safe for it to use ApplicationListener instead of PostStartupApplicationListener
+    );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the
@@ -524,12 +537,13 @@ public class ApplicationContextTest  {
         final Collection<String> beans = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         int postStartupListenerCount = 0;
         for ( final String beanId : dlbf.getBeanDefinitionNames() ) {
+            final BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+            if ( beanDef.getBeanClassName()==null ) continue;
+            final Class<?> beanClass = Class.forName(beanDef.getBeanClassName());
+            if ( HibernateEntityManager.class.isAssignableFrom( beanClass ) && ApplicationListener.class.isAssignableFrom( beanClass ) )
+                Assert.fail( "Bean " + beanId + " is a HibernateEntityManager implementing ApplicationListener -- this may cause every application event to trigger a transaction" );
             if ( !IGNORED_APPLICATION_LISTENER_BEANS.contains(beanId) ) {
-                final BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
-                if ( beanDef.getBeanClassName()==null ) continue;
-                final Class<?> beanClass = Class.forName(beanDef.getBeanClassName());
-
-                if ( ArrayUtils.contains( beanClass.getInterfaces(), ApplicationListener.class ) ) {
+                if ( ApplicationListener.class.isAssignableFrom( beanClass ) ) {
                     beans.add( beanId );
                 } else if ( ArrayUtils.contains( beanClass.getInterfaces(), PostStartupApplicationListener.class ) ) {
                     postStartupListenerCount++;
@@ -541,7 +555,8 @@ public class ApplicationContextTest  {
             Assert.fail( "Beans "+beans+" implement ApplicationListener, consider switching to PostStartupApplicationListener (or add to IGNORED_APPLICATION_LISTENER_BEANS whitelist)" );
 
         // Sanity check to ensure test is still working
-        if (postStartupListenerCount==0) Assert.fail("Failed to find any listeners.");
+        if (postStartupListenerCount==0)
+            Assert.fail("Failed to find any listeners.");
     }
 
     @SuppressWarnings({"unchecked"})

@@ -17,7 +17,7 @@ import org.springframework.context.ApplicationListener;
  * Time: 10:53 AM
  * To change this template use File | Settings | File Templates.
  */
-public interface SiteMinderConfigurationManager extends EntityManager<SiteMinderConfiguration, EntityHeader>, ApplicationListener {
+public interface SiteMinderConfigurationManager extends EntityManager<SiteMinderConfiguration, EntityHeader> {
 
     /**
      * Retrieve a SiteMinder configuration entity from the database by using a configuration name.
