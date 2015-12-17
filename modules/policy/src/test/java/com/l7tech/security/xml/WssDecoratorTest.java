@@ -668,7 +668,7 @@ public class WssDecoratorTest {
 
     @Test
     public void testEncryptionReferenceTypes() throws Exception {
-        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME, STR_THUMBPRINT );
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME, STR_THUMBPRINT, STR_KEYID_LITERAL_X509 );
         final Functions.BinaryVoid<KeyInfoInclusionType,Document> verifier = new Functions.BinaryVoid<KeyInfoInclusionType,Document>(){
             @Override
             public void call( final KeyInfoInclusionType expectedKeyInfoInclusionType, final Document document ) {
@@ -710,7 +710,7 @@ public class WssDecoratorTest {
 
     @Test
     public void testSignatureReferenceTypes() throws Exception {
-        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, STR_THUMBPRINT ); // KEY_NAME not supported for signature
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, STR_THUMBPRINT, STR_KEYID_LITERAL_X509 ); // KEY_NAME not supported for signature
         final Functions.BinaryVoid<KeyInfoInclusionType,Document> verifier = new Functions.BinaryVoid<KeyInfoInclusionType,Document>(){
             @Override
             public void call( final KeyInfoInclusionType expectedKeyInfoInclusionType, final Document document ) {

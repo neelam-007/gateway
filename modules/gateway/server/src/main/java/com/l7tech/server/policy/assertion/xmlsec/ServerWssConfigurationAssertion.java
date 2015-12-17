@@ -120,6 +120,8 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
             return KeyInfoInclusionType.KEY_NAME;
         } else if (KeyReference.THUMBPRINT_SHA1.getName().equals(keyReferenceName)) {
             return KeyInfoInclusionType.STR_THUMBPRINT;
+        } else if (KeyReference.STR_KEYID_X509_LITERAL.getName().equals(keyReferenceName)) {
+            return KeyInfoInclusionType.STR_KEYID_LITERAL_X509;
         } else {
             throw new PolicyAssertionException(assertion, "Invalid key reference type: " + keyReferenceName);
         }

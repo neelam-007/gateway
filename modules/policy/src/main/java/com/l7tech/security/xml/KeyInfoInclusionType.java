@@ -33,6 +33,11 @@ public enum KeyInfoInclusionType {
     STR_SKI,
 
     /**
+     * //KeyInfo/SecurityTokenReference/KeyIdentifier[@valueType="...#X509v3] (the actual literal cert as the KeyIdentifier)
+     */
+    STR_KEYID_LITERAL_X509,
+
+    /**
      * //KeyInfo/SecurityTokenReference/X509Data/X509IssuerSerial (issuer DN &amp; serial number)
      * ...or sometimes...
      * //KeyInfo/X509Data/X509IssuerSerial (issuer DN &amp; serial number)

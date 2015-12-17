@@ -441,6 +441,9 @@ public class WssDecoratorImpl implements WssDecorator {
                     KeyInfoDetails keyinfo = KeyInfoDetails.makeKeyId(senderSki, SoapUtil.VALUETYPE_SKI);
                     senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
                     break; }
+                case STR_KEYID_LITERAL_X509: {
+                    senderCertKeyInfo = new Pair<>( senderMessageSigningCert, KeyInfoDetails.makeStrKeyIdLiteralX509( senderMessageSigningCert ) );
+                    break; }
                 case ISSUER_SERIAL: {
                     senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
                     break; }
@@ -1545,9 +1548,11 @@ public class WssDecoratorImpl implements WssDecorator {
         } else if ( recipientKeyReferenceType==KeyInfoInclusionType.KEY_NAME ) {
             keyInfo = KeyInfoDetails.makeKeyName( recipientCertificate, true );
         } else if ( recipientKeyReferenceType==KeyInfoInclusionType.STR_THUMBPRINT ) {
-            keyInfo = KeyInfoDetails.makeThumbprintSha1(recipientCertificate);
+            keyInfo = KeyInfoDetails.makeThumbprintSha1( recipientCertificate );
+        } else if ( recipientKeyReferenceType==KeyInfoInclusionType.STR_KEYID_LITERAL_X509 ) {
+            keyInfo = KeyInfoDetails.makeStrKeyIdLiteralX509( recipientCertificate );
         } else {
-            throw new DecoratorException("Unsupported encryptio KeyInfoInclusionType: " + recipientKeyReferenceType);
+            throw new DecoratorException("Unsupported encryption KeyInfoInclusionType: " + recipientKeyReferenceType);
         }
 
         keyInfo.createAndAppendKeyInfoElement(c.nsf, encryptedKey);

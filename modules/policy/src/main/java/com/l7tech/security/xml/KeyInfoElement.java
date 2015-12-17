@@ -113,10 +113,13 @@ public class KeyInfoElement implements ParsedElement {
                         cert = securityTokenResolver.lookup(value);
                         keyInfoInclusionType = KeyInfoInclusionType.STR_THUMBPRINT;
                     } else if (vt.endsWith( SoapConstants.VALUETYPE_SKI_SUFFIX)) {
-                        cert = securityTokenResolver.lookupBySki(value);
+                        cert = securityTokenResolver.lookupBySki( value );
                         keyInfoInclusionType = KeyInfoInclusionType.STR_SKI;
+                    } else if (vt.endsWith( SoapConstants.VALUETYPE_X509_SUFFIX)) {
+                        cert = CertUtils.decodeFromPEM( value, false );
+                        keyInfoInclusionType = KeyInfoInclusionType.STR_KEYID_LITERAL_X509;
                     } else {
-                        throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
+                        throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1, SKI, or X509: " + vt);
                     }
                 } else if (x509Data != null) {
                     final Pair<X509Certificate,KeyInfoInclusionType> certAndInfo = handleX509Data(x509Data, securityTokenResolver, allowedTypes);

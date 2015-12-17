@@ -127,6 +127,17 @@ public abstract class KeyInfoDetails {
     }
 
     /**
+     * Prepare to create a new KeyInfo element using KeyInfo/SecurityTokenReference/KeyIdentifier[@valueType="...#X509v3]
+     *
+     * @param certificate the certificate from which to extract the Issuer DN and Serial number.
+     * @return a new KeyInfoDetails instance, ready to create the requested KeyInfo element.  Never null.
+     */
+    public static KeyInfoDetails makeStrKeyIdLiteralX509( X509Certificate certificate ) throws CertificateEncodingException {
+        String value = HexUtils.encodeBase64( certificate.getEncoded(), true );
+        return new KeyIdentifierKeyInfoDetails( value, SoapConstants.VALUETYPE_X509, true );
+    }
+
+    /**
      * Prepare to create a new KeyInfo element using KeyInfo/[SecurityTokenReference/]KeyName.
      *
      * @param certificate the certificate from which to extract the Subject DN.
