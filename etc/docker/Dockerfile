@@ -24,6 +24,9 @@ RUN rm /root/ssg-*.rpm
 # WARNING: this is a hack to get around the process controller not starting (trying to do something like "su gateway -c /bin/echo hello" fails)
 RUN rm -f /etc/security/limits.d/*
 
+# CCE-27033-0
+RUN echo "*     hard   core    0" >> /etc/security/limits.d/97-disable-core-dumps.conf
+
 # WARNING: this is probably a hack
 # it seems we need this so that node.properties is successfully created when provisioning
 RUN chmod 770 /opt/SecureSpan/Gateway/node/default/etc/conf/
