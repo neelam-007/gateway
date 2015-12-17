@@ -148,7 +148,6 @@ function createServicesFiles() {
 	        mkdir "$GATEWAY_SERVICES_DIR" || logErrorAndExit "could not create directory \"$GATEWAY_SERVICES_DIR\""
 	        chmod 755 "$GATEWAY_SERVICES_DIR" || logErrorAndExit "could not chmod directory \"$GATEWAY_SERVICES_DIR\""
 	fi
-	logInfo "DEBUG: SSG_INTERNAL_SERVICES=\"$SSG_INTERNAL_SERVICES\""
 	for SSG_INTERNAL_SERVICE in `echo "$SSG_INTERNAL_SERVICES"`; do
 		touch "$GATEWAY_SERVICES_DIR/$SSG_INTERNAL_SERVICE" &> /dev/null
 		if [ $? -ne 0 ]; then
@@ -166,7 +165,7 @@ function startTheProcessController() {
 
 function waitForMySQLToBeReady() {
 	# TODO: we probably need to replace this with a better way to wait for the MySQL instance to be ready for a connection
-	echo "WARNING! TEMP WORKAROUND: waiting for MySQL to become ready"
+	logInfo "waiting for MySQL to become ready"
 	sleep 5
 }
 
@@ -224,7 +223,7 @@ admin.pass=$SSG_ADMIN_PASS
 .
 ENDOFFILE
 )
-echo "SSG_HEADLESS_AUTOCONFIG=$SSG_HEADLESS_AUTOCONFIG"
+# echo "DEBUG: SSG_HEADLESS_AUTOCONFIG=$SSG_HEADLESS_AUTOCONFIG"
 }
 
 function provisionAndStartGateway() {
