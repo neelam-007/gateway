@@ -1,7 +1,7 @@
 ssg:
 #  image: heinrichbutowatca/ssg:9.1.00-1.svn20151027
 #  image: teamcity/ssg:9.0.00-1.svn20150828
-  image: hbutow/ssg:9.1.00-1.svn20151214
+  image: hbutow/ssg:9.1.00-1.svn20151217
 #  image: 894ff82da593
 #  mem_limit: 2147483648
 #  mem_limit: 1073741824
@@ -19,7 +19,7 @@ ssg:
     - "9443"
 # for the environment, we use a YAML dictionary instead of an array as this lets us use a quoted string with a space in it for SSG_INTERNAL_SERVICES
   environment:
-    ETCDCTL_ENDPOINT: "http://10.242.12.246:4001"
+#    ETCDCTL_ENDPOINT: "http://10.242.12.246:4001"
     SSG_CLUSTER_HOST: localhost
     SSG_CLUSTER_PASSWORD: 7layer
     SSG_DATABASE_TYPE: mysql

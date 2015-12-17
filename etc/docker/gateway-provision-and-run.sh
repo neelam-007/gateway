@@ -231,17 +231,9 @@ function provisionAndStartGateway() {
 	# we don't need to start the gateway as the headless autoconfig does this for us
 	logInfo "running gateway's headless autoconfig"
 	generateGatewayConfig "true"
-	#echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" headless appliance-full
-	(echo "create-db"; echo "$SSG_HEADLESS_AUTOCONFIG") | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
+	echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
 	if [ $? -ne 0 ]; then
-		logInfo "gateway headless autoconfig failed. Perhaps the database already exists. Checking to see if it does."
-		mysql --batch --disable-column-names --host="$SSG_DATABASE_HOST" -e "show databases" | grep "^$SSG_DATABASE_NAME\$" &> /dev/null
-		if [ $? -ne 0 ]; then
-			logErrorAndExit "gateway headless autoconfig failed. Database doesn't already exist."
-		fi
-		logInfo "gateway database already exists. Joining node to existing database."
-		generateGatewayConfig "false"
-		echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
+		logErrorAndExit "gateway headless autoconfig failed"
 	fi
 	
 	logInfo "gateway is now starting up"
