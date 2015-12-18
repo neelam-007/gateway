@@ -63,6 +63,11 @@ public interface DependencyAnalyzer {
     public static final String FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey = "findSecurePasswordDependencyFromContextVariablePlaintext";
 
     /**
+     * This includes or excludes Solution Kits from full gateway bundle. The default is false
+     */
+    public static final String IncludeSolutionKitsOptionKey = "includeSolutionKits";
+
+    /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling {@link
      * #getDependencies(com.l7tech.objectmodel.EntityHeader, java.util.Map)} with an empty map for search options,
      * implying default options

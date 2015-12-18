@@ -6,6 +6,8 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -31,6 +33,7 @@ import com.l7tech.server.search.objects.BrokenDependency;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
+import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -52,12 +55,20 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     private static final String IncludeRequestFolder = "false";
     private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
     private static final String DefaultMapBy = "ID";
+    public static final String IncludeSolutionKitsOption = "IncludeSolutionKits";
+    private static final String IncludeSolutionKits = "false";
+    /**
+     * The mapping action for read-only entities owned by {@code SolutionKit}'s.
+     */
+    private static final EntityMappingInstructions.MappingAction DEFAULT_READ_ONLY_ENTITY_MAPPING_ACTION = EntityMappingInstructions.MappingAction.NewOrExisting;
     @Inject
     private DependencyAnalyzer dependencyAnalyzer;
     @Inject
     private EntityCrud entityCrud;
     @Inject
     private MappingInstructionsBuilder mappingInstructionsBuilder;
+    @Inject
+    private SolutionKitManager solutionKitManager;
 
     /**
      * Builder the dependency analyzer options from the bundleExportProperties
@@ -74,6 +85,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         if (bundleExportProperties.containsKey(IgnoreDependenciesOption)) {
             optionBuilder.put(DependencyAnalyzer.IgnoreDependenciesSearchOptionKey, bundleExportProperties.get(IgnoreDependenciesOption));
         }
+        optionBuilder.put(DependencyAnalyzer.IncludeSolutionKitsOptionKey, Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeSolutionKitsOption, IncludeSolutionKits)));
         // do not need assertion dependency results for building export bundle
         optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
         return optionBuilder.map();
@@ -95,6 +107,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
         //create a flat dependency list
         final List<Dependency> dependentObjects = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResults, true);
+
+        // gather all read-only entities owned by Solution Kits
+        final Set<String> readOnlyEntities = getReadOnlyEntities();
 
         final ArrayList<EntityContainer> entityContainers = new ArrayList<>();
         final ArrayList<EntityMappingInstructions> mappings = new ArrayList<>();
@@ -145,7 +160,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     throw new FindException("Could not load entity from dependency found: " + ((DependentEntity) dependentObject.getDependent()).getEntityHeader().toStringVerbose());
                 }
 
-                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity);
+                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity, readOnlyEntities);
                 addEntities(bundleExportProperties, entity, entityContainers);
             }
         }
@@ -189,8 +204,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
      * @param mappings               The list of mappings to add the mapping to
      * @param dependentObject        The dependent object to create the mapping for
      * @param entity                 The entity that this dependent object is for
+     * @param readOnlyEntities       All read-only entities (entity id's) owned by {@code SolutionKit}'s
      */
-    private void addMapping(@NotNull final Properties bundleExportProperties, @NotNull final ArrayList<EntityMappingInstructions> mappings, @NotNull final DependentEntity dependentObject, @NotNull final Entity entity) {
+    private void addMapping(@NotNull final Properties bundleExportProperties, @NotNull final ArrayList<EntityMappingInstructions> mappings, @NotNull final DependentEntity dependentObject, @NotNull final Entity entity, @NotNull final Set<String> readOnlyEntities) {
         if (entity instanceof HasFolder && !(bundleExportProperties.containsKey(IgnoreDependenciesOption) && ((List)bundleExportProperties.get(IgnoreDependenciesOption)).contains(EntityHeaderUtils.fromEntity(entity)))) {
             // include parent folder mapping if not already in mapping.
             final Folder parentFolder = ((HasFolder) entity).getFolder();
@@ -198,7 +214,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 final EntityMappingInstructions folderMapping = new EntityMappingInstructions(
                         EntityHeaderUtils.fromEntity(parentFolder),
                         null,
-                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        calcAction(parentFolder, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                         true,
                         false);
                 if( !mappings.contains(folderMapping) ) {
@@ -216,14 +232,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         null,
-                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                         true,
                         false);
             }else if(secretsEncrypted){
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         null,
-                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                         false,
                         false);
             }else{
@@ -231,7 +247,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         null,
-                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                         true,
                         false);
             }
@@ -240,7 +256,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                     true,
                     false);
         }else if (entity instanceof Identity && !(entity instanceof InternalGroup || entity instanceof FederatedUser || entity instanceof FederatedGroup || entity instanceof VirtualGroup)){
@@ -248,7 +264,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         null,
-                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                         true,
                         false);
         }else if((entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
@@ -259,7 +275,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                     true,
                     false);
         } else if (entity instanceof Role && !((Role)entity).isUserCreated()){
@@ -268,7 +284,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY),
-                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                         true,
                         false);
             } else {
@@ -276,7 +292,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 mapping = new EntityMappingInstructions(
                         dependentObject.getEntityHeader(),
                         null,
-                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                         true,
                         false);
             }
@@ -285,7 +301,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
-                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                     true,
                     false);
         } else if(entity instanceof PublishedService && entity.getId().equals(bundleExportProperties.getProperty(ServiceUsed)) ) {
@@ -293,7 +309,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
-                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                     true,
                     false);
         } else if(entity instanceof ClusterProperty || entity instanceof AssertionAccess) {
@@ -301,7 +317,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
-                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                     false,
                     false);
         } else if(entity instanceof ServerModuleFile) {
@@ -309,13 +325,13 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265),
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.NewOrExisting),
                     false,
                     false);
         } else {
             //create the default mapping instructions
             mapping = mappingInstructionsBuilder.createDefaultMapping(dependentObject.getEntityHeader(),
-                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    calcAction(entity, readOnlyEntities, EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString()))),
                     EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
         }
 
@@ -331,6 +347,30 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     }
 
     /**
+     * Generate the {@link EntityMappingInstructions.MappingAction MappingAction} for the specified {@code entity}.
+     *
+     * @param entity                  the entity to check
+     * @param readOnlyEntities        read-only entities owned by {@link SolutionKit}'s.
+     * @param defaultMappingAction    the original requested action for the entity.
+     * @return If the specified {@code entity} is read-only (i.e. its id is contained inside {@code readOnlyEntities} {@code Set})
+     * then return {@link EntityMappingInstructions.MappingAction#NewOrExisting NewOrExisting}, otherwise return the {@code defaultMappingAction}.
+     */
+    private EntityMappingInstructions.MappingAction calcAction(
+            @NotNull final Entity entity,
+            @NotNull final Set<String> readOnlyEntities,
+            @NotNull final EntityMappingInstructions.MappingAction defaultMappingAction
+    ) {
+        // if DEFAULT_READ_ONLY_ENTITY_MAPPING_ACTION is already requested then we don't need to check the readonly-ness
+        if (DEFAULT_READ_ONLY_ENTITY_MAPPING_ACTION.equals(defaultMappingAction)) {
+            return defaultMappingAction;
+        }
+        // todo: add entity type checks if needed, for instance skip entities that cannot be read-only (if there are such)
+        return readOnlyEntities.contains(entity.getId())
+                ? DEFAULT_READ_ONLY_ENTITY_MAPPING_ACTION // if entity is read-only then force DEFAULT_READ_ONLY_ENTITY_MAPPING_ACTION (i.e. currently NewOrExisting)
+                : defaultMappingAction; // otherwise use the default action
+    }
+
+    /**
      * Returns true if the name given is a name for a default listen port.
      * @param name The name to test
      * @return True is this is a name for a default listen port, false otherwise.
@@ -341,5 +381,26 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         "Default HTTPS (8443)".equals(name) ||
                         "Default HTTPS (9443)".equals(name) ||
                         "Node HTTPS (2124)".equals(name));
+    }
+
+    /**
+     * @return Unmodifiable {@code Set} of read-only entity ids, owned by {@link com.l7tech.gateway.common.solutionkit.SolutionKit SolutionKit}'s
+     */
+    private Set<String> getReadOnlyEntities() throws FindException {
+        final Set<String> roEntities = new HashSet<>();
+        final Collection<SolutionKit> solutionKits = solutionKitManager.findAll();
+        if (solutionKits != null && !solutionKits.isEmpty()) {
+            for (final SolutionKit solutionKit : solutionKits) {
+                final Collection<EntityOwnershipDescriptor> descriptors = solutionKit.getEntityOwnershipDescriptors();
+                if (descriptors != null && !descriptors.isEmpty()) {
+                    for (final EntityOwnershipDescriptor descriptor : descriptors) {
+                        if (descriptor.isReadOnly()) {
+                            roEntities.add(descriptor.getEntityId());
+                        }
+                    }
+                }
+            }
+        }
+        return Collections.unmodifiableSet(roEntities);
     }
 }

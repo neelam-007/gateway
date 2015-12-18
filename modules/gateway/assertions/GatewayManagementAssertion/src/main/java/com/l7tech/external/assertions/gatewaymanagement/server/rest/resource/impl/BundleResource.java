@@ -190,6 +190,9 @@ public class BundleResource {
      *                                            their dependencies and FailOnNew is set to true)
      * @param fullGateway                         True to export the full gateway. False by default
      * @param includeDependencies                 True to export with dependencies. False by default
+     * @param includeSolutionKits                 True to export with Solution Kit entities (i.e. Solution Kit entities
+     *                                            them self and not the entities owned by Solution Kits). False by default.
+     *                                            Valid only on full Gateway export (i.e. if fullGateway is True)
      * @param encryptSecrets                      True to export with encrypted secrets. False by default.
      * @param encryptUsingClusterPassphrase       True to use the cluster passphrase if encrypting secrets. False by
      *                                            default.
@@ -270,6 +273,7 @@ public class BundleResource {
 
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
                                      @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
+                                     @QueryParam("includeSolutionKits") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_2) Boolean includeSolutionKits,
                                      @QueryParam("encryptSecrets") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptSecrets,
                                      @QueryParam("encryptUsingClusterPassphrase") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptUsingClusterPassphrase,
                                      @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
@@ -341,7 +345,7 @@ public class BundleResource {
                 "requireSiteMinderConfiguration",
                 "requireWorkQueue",
                 "requireSolutionKit",
-                "all", "includeDependencies", "encryptSecrets", "encryptUsingClusterPassphrase"));
+                "all", "includeDependencies", "includeSolutionKits", "encryptSecrets", "encryptUsingClusterPassphrase"));
         final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
         if (activeConnectorIds.isEmpty() && cassandraConnectionIds.isEmpty() && trustedCertificateIds.isEmpty() && clusterPropertyIds.isEmpty() && customKeyValueIds.isEmpty() && emailListenerIds.isEmpty() && encapsulatedAssertionIds.isEmpty() &&
@@ -427,6 +431,7 @@ public class BundleResource {
 
         final Bundle bundle = createBundle(true, Mapping.Action.valueOf(defaultAction), "id",
                 exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, entityHeadersToIgnoreDependencies,
+                fullGateway && includeSolutionKits, // SK can be included only with full gateway export
                 entityHeadersToExport.toArray(new EntityHeader[entityHeadersToExport.size()]));
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
@@ -491,7 +496,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), header);
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), false /* do not include solution kits on partial export*/, header);
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
@@ -549,6 +554,7 @@ public class BundleResource {
      * @param defaultAction        The default mapping action to take
      * @param defaultMapBy         The default map by property
      * @param includeDependencies  true to include dependencies
+     * @param includeSolutionKits  true to include Solution Kits entities during export.
      * @param headers              The header to bundle a bundle for
      * @return The bundle from the headers
      */
@@ -562,6 +568,7 @@ public class BundleResource {
                                 boolean encryptSecrets,
                                 @Nullable final String encodedKeyPassphrase,
                                 @NotNull final List<EntityHeader> ignoreEntityDependencies,
+                                boolean includeSolutionKits,
                                 @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
@@ -569,6 +576,7 @@ public class BundleResource {
         bundleOptionsBuilder.setProperty(BundleExporter.DefaultMappingActionOption, defaultAction.toString());
         bundleOptionsBuilder.setProperty(BundleExporter.DefaultMapByOption, defaultMapBy);
         bundleOptionsBuilder.setProperty(BundleExporter.EncryptSecrets, Boolean.toString(encryptSecrets));
+        bundleOptionsBuilder.setProperty(BundleExporter.IncludeSolutionKitsOption, Boolean.toString(includeSolutionKits));
 
         //ignore the rest man service so it is not exported
         if (containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService) {

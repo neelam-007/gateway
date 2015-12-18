@@ -345,6 +345,10 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                         throw new FindException("Unexpected header type for role: " + header.getClass());
                     }
                 }
+            } else if (SolutionKit.class.equals(entityClass)) {
+                entityHeaders = (PropertiesUtil.getOption(DependencyAnalyzer.IncludeSolutionKitsOptionKey, Boolean.class, false, searchOptions))
+                        ? entityCrud.findAll(entityClass)
+                        : null;
             } else {
                 entityHeaders = entityCrud.findAll(entityClass);
             }

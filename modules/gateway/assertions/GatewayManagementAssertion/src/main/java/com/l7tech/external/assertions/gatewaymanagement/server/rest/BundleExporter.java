@@ -31,6 +31,7 @@ public class BundleExporter {
     public static final String IgnoreDependenciesOption = "IgnoreDependencies";
     public static final String EncryptSecrets = "EncryptSecrets";
     public static final String ServiceUsed = "ServiceUsed";
+    public static final String IncludeSolutionKitsOption = "IncludeSolutionKits";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject
