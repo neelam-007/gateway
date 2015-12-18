@@ -62,7 +62,7 @@ public class JsonFacet extends MessageFacet{
 
                 jsonData =  JSONFactory.getInstance().newJsonData(jsonDataStr);
             }else{
-                logger.log(Level.WARNING, "Did not need to create json data");   
+                logger.log(Level.FINE, "Did not need to create json data");
             }
             return jsonData;
         }
