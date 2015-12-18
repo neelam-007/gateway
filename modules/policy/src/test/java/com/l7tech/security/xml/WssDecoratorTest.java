@@ -70,6 +70,7 @@ public class WssDecoratorTest {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
     private static final String ACTOR_NONE = "";
     public static final String TEST_WSSC_SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
+    public static boolean prettyPrintLoggedXml = SyspropUtil.getBoolean( "com.l7tech.test.prettyPrintLoggedXml", true );
 
     @BeforeClass
     public static void beforeClass() {
@@ -99,7 +100,11 @@ public class WssDecoratorTest {
         public Element accountid;
 
         Context() throws IOException, SAXException {
-            message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+            this( false );
+        }
+
+        Context( boolean oneLine ) throws IOException, SAXException {
+            message = TestDocuments.getTestDocument( oneLine ? TestDocuments.PLACEORDER_CLEARTEXT_ONELINE : TestDocuments.PLACEORDER_CLEARTEXT );
             messageMessage = new Message(message);
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
@@ -242,17 +247,27 @@ public class WssDecoratorTest {
 
     private WssDecorator.DecorationResult runTest(final TestDocument d, final Functions.UnaryVoid<Document> verifier) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
-        log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+
+
+        log.info("Before decoration:" + nodeToString( d.c.message ));
 
         WssDecorator.DecorationResult results = decorator.decorateMessage(new Message(d.c.message), d.req);
 
-        log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+        log.info("Decorated message:" + nodeToString( d.c.message ));
 
         if ( verifier != null ) {
             verifier.call( d.c.message );
         }
 
         return results;
+    }
+
+    private static String nodeToString( Node n ) throws IOException {
+        if ( prettyPrintLoggedXml ) {
+            return " (*note: pretty-printed):" + XmlUtil.nodeToFormattedString( n );
+        } else {
+            return XmlUtil.nodeToString( n );
+        }
     }
 
     /**
@@ -1295,6 +1310,28 @@ public class WssDecoratorTest {
                                 true, null, new String[]{null}, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 false, true);
+    }
+
+    @Test
+    public void testSignedAndEncryptedUsernameTokenOaepDk() throws Exception {
+        runTest(getSignedAndEncryptedUsernameTokenOaepDkTestDocument(), verifier( false, 2, true ) );
+    }
+
+    public TestDocument getSignedAndEncryptedUsernameTokenOaepDkTestDocument() throws Exception {
+        final Context c = new Context( true );
+        TestDocument td = new TestDocument(c, null, null, null,
+                TestDocuments.getDotNetServerCertificate(),
+                TestDocuments.getDotNetServerPrivateKey(),
+                true, null, null,
+                new Element[]{c.body},
+                null, false,
+                KeyInfoInclusionType.STR_SKI,
+                true, null, new String[]{null}, null,
+                new UsernameTokenImpl("testuser", "password".toCharArray()),
+                true, true);
+        td.req.setProtectTokens( true );
+        td.req.setKeyEncryptionAlgorithm( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2 );
+        return td;
     }
 
     @Test
