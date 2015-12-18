@@ -145,7 +145,7 @@ public class SkarProcessorTest {
     }
 
     @Test
-    public void installOrUpgrade() throws Exception {
+    public void entityIdReplace() throws Exception {
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // simulate remapping of IDs in the bundle (secure password and JDBC)
@@ -156,7 +156,8 @@ public class SkarProcessorTest {
         resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
-        skarProcessor.installOrUpgrade(solutionKit);
+        solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+        skarProcessor.getAsSolutionKitTriple(solutionKit);
 
         // verify secure password and JDBC were resolved via mapping targetId in the bundle
         final String bundleStr = solutionKitsConfig.getBundleAsString(solutionKit);
@@ -165,7 +166,7 @@ public class SkarProcessorTest {
     }
 
     @Test
-    public  void notAllowedEntityIdReplace() throws Exception {
+    public void entityIdReplaceNotAllowed() throws Exception {
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // set <l7:Property key="SkmEntityIdReplaceable"> to false
@@ -185,10 +186,19 @@ public class SkarProcessorTest {
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
         try {
-            skarProcessor.installOrUpgrade(solutionKit);
+            solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+            skarProcessor.getAsSolutionKitTriple(solutionKit);
             fail("Expected: mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
+        }
+
+        // test skip override check = true
+        try {
+            solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit, true);
+            skarProcessor.getAsSolutionKitTriple(solutionKit);
+        } catch (SolutionKitException e) {
+            fail("Expected: skipOverrideCheck = true should allow mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
         }
     }
 

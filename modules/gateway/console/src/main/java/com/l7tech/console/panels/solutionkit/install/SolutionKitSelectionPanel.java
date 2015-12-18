@@ -15,10 +15,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -37,6 +34,7 @@ import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,7 +57,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
-    private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
+    private final Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Set<SolutionKit> solutionKitsLoaded = new TreeSet<>();
     private Set<SolutionKit> solutionKitsSelected = new TreeSet<>();
     private Map<String, Set<String>> guidAndInstanceModifierMapFromUpgrade = new HashMap<>();
@@ -106,7 +104,6 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        settings.setSelectedSolutionKits(solutionKitsSelected);
         settings.setTestMappings(testMappings);
     }
 
@@ -127,54 +124,38 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             return false;
         }
 
-        // Test on each individual solution kit
-        final boolean isUpgrade = settings.isUpgrade();
-        for (SolutionKit solutionKitSelected: solutionKitsSelected) {
-            boolean success = testInstall(solutionKitSelected, isUpgrade);
-            if (! success) return false;
-        }
-
-        return true;
+        return testInstall();
     }
 
-    private boolean testInstall(final SolutionKit solutionKit, final boolean isUpgrade) {
-        boolean success = false;
+    private boolean testInstall() {
+        final AtomicBoolean success = new AtomicBoolean(false);
         String errorMessage;
-
-        // For installation, check if instance modifier is unique for a selected solution kit.
-        // However, this checking will be ignored for any solution kit upgrade bundle.
-
-        // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
-        // contain UpgradeBundle.xml, then display warning
-        if (isUpgrade && !settings.isUpgradeInfoProvided(solutionKit)) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "Solution kit '" + solutionKit.getName() + "' cannot be used for upgrade due to that its SKAR file does not include UpgradeBundle.xml.",
-                "Solution Kit Upgrade Warning", JOptionPane.WARNING_MESSAGE, null);
-
-            return false;
-        }
-
-        // invoke custom callback
         try {
-            new SkarProcessor(settings).invokeCustomCallback(solutionKit);
-        } catch (SolutionKitException e) {
-            errorMessage = ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
-        }
+            settings.setSelectedSolutionKits(solutionKitsSelected);
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin, new SkarProcessor(settings));
+            solutionKitProcessor.testInstallOrUpgrade(true, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
 
-        final String bundle = settings.getBundleAsString(solutionKit);
-        if (bundle == null) {
-            DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit bundle.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
-            return false;
-        }
-        try {
-            Mappings mappings = testInstall(solutionKit, bundle, isUpgrade);
-            if (null == mappings || null == mappings.getMappings()) {
-                DialogDisplayer.showMessageDialog(this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
-                return false;
-            }
-            testMappings.put(solutionKit, mappings);
-            success = true;
+                @Override
+                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
+                    final String  result = AdminGuiUtils.doAsyncAdminWithException(
+                            solutionKitAdmin,
+                            SolutionKitSelectionPanel.this.getOwner(),
+                            "Testing Solution Kit",
+                            "The gateway is testing selected solution kit(s)",
+                            solutionKitAdmin.testInstallAsync(loaded.left, loaded.middle, loaded.right),
+                            false);
+
+                    final Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
+                    Mappings mappings = (Mappings) item.getContent();
+                    if (null == mappings || null == mappings.getMappings()) {
+                        DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                        success.set(false);
+                    }
+                    testMappings.put(loaded.left, mappings);
+                }
+
+            });
+            success.set(true);
         } catch (InvocationTargetException | IOException e) {
             testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
@@ -192,21 +173,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             DialogDisplayer.display(errorMessageDialog);
         }
 
-        return success;
-    }
-
-    private Mappings testInstall(final SolutionKit solutionKit, final String bundle, final boolean isUpgrade) throws Throwable {
-
-        final String result = AdminGuiUtils.doAsyncAdminWithException(
-                solutionKitAdmin,
-                this.getOwner(),
-                "Testing Solution Kit",
-                "The gateway is testing selected solution kit(s)",
-                solutionKitAdmin.testInstallAsync(solutionKit, bundle, isUpgrade),
-                false);
-
-        Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result)));
-        return (Mappings) item.getContent();
+        return success.get();
     }
 
     @Override

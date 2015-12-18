@@ -21,7 +21,9 @@ import com.l7tech.server.solutionkit.AddendumBundleHandler;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.Triple;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -44,6 +46,7 @@ import java.net.URLDecoder;
 import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -305,17 +308,12 @@ public class SolutionKitManagerResource {
             // pass in form fields as input parameters to customizations
             setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
-            // execute custom callbacks
-            for (SolutionKit solutionKit : selectedSolutionKits) {
-                skarProcessor.invokeCustomCallback(solutionKit);
-            }
-
             // Test all selected (child) solution kit(s) before actual installation.
             // This step is to prevent partial installation/upgrade
-            testBundleImports(solutionKitAdminHelper, solutionKitsConfig);
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper, skarProcessor);
+            testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper, solutionKitsConfig);
 
             // install or upgrade
-            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper, skarProcessor);
             solutionKitProcessor.installOrUpgrade(null, null);
 
         } catch (AddendumBundleHandler.AddendumBundleException e) {
@@ -405,122 +403,99 @@ public class SolutionKitManagerResource {
     private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE = "Test install/upgrade failed for solution kit: {0} ({1}). {2}";
 
     /**
-     * Will attempt a dry-run (i.e. test bundle import) of the selected solution kits.<br/>
-     * Method simply calls {@link SolutionKitManager#importBundle(String, SolutionKit, boolean)} and handles potential conflicts.
+     * Attempt test install or upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
      *
+     * @param solutionKitProcessor class containing the test install / upgrade logic
      * @param solutionKitAdminHelper the helper class used to call validating solution kit for install or upgrade
      * @param solutionKitsConfig the SolutionKit config object.  Required and cannot be {@code null}.
      * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
      */
-    private void testBundleImports(@NotNull final SolutionKitAdminHelper solutionKitAdminHelper, @NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
-        final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
-        final boolean isUpgrade = solutionKitsConfig.isUpgrade();
+    private void testInstallOrUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor,
+                                      @NotNull final SolutionKitAdminHelper solutionKitAdminHelper,
+                                      @NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
 
-        for (final SolutionKit solutionKit: selectedSolutionKits) {
+        final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
+        try {
+            solutionKitProcessor.testInstallOrUpgrade(false, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+                @Override
+                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
+                    solutionKitReference.set(loaded.left);
 
-            // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
-            // contain UpgradeBundle.xml, then throw exception with warning
-            if (isUpgrade && !solutionKitsConfig.isUpgradeInfoProvided(solutionKit)) {
-                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity("Solution kit '" + solutionKit.getName() +
-                        "' cannot be used for upgrade due to that its SKAR file does not include UpgradeBundle.xml." + lineSeparator()).build());
-            }
+                    final String mappingsStr = solutionKitAdminHelper.testInstall(loaded.left, loaded.middle, loaded.right);
 
-            // Check if a target solution kit is good for install or upgrade.
-            // Install: if an existing solution kit is found as same as the target, fail install.
-            // Upgrade: if the selected solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-            try {
-                solutionKitAdminHelper.validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);   // TODO (TL refactor) can remove?  already called in SKAdminHelper.testInstall()!
-            }
-            // This exception already has a well-info message containing name, GUID, and instance modifier.
-            catch (BadRequestException e) {
-                throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
-            } catch (SolutionKitConflictException e) {
-                throw new SolutionKitManagerResourceException(status(CONFLICT).entity(ExceptionUtils.getMessage(e) + lineSeparator()).build(), e);
-            }
-
-            // Update resolved mapping target IDs.
-            try {
-                solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
-            } catch (final ForbiddenException e) {
-                throw new SolutionKitManagerResourceException(
-                        status(FORBIDDEN).entity(
-                                MessageFormat.format(
-                                        TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                        solutionKit.getName(),
-                                        solutionKit.getSolutionKitGuid(),
-                                        lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                                )
-                        ).build(),
-                        e
-                );
-            }
-
-            final String bundle = solutionKitsConfig.getBundleAsString(solutionKit);
-            // make sense to process only if the solution kit has bundle
-            if (StringUtils.isNotBlank(bundle)) {
-                assert bundle != null; // intellij intellisense doesn't know how isNotBlank works
-                final String mappingsStr;
-                try {
-                    mappingsStr = solutionKitManager.importBundle(bundle, solutionKit, true);
-                } catch (final BadRequestException e) {
-                    throw new SolutionKitManagerResourceException(
-                            status(BAD_REQUEST).entity(
-                                    MessageFormat.format(
-                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                            solutionKit.getName(),
-                                            solutionKit.getSolutionKitGuid(),
-                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                                    )
-                            ).build(),
-                            e
-                    );
-                } catch (final Exception e) {
-                    throw new SolutionKitManagerResourceException(
-                            status(INTERNAL_SERVER_ERROR).entity(
-                                    MessageFormat.format(
-                                            TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                            solutionKit.getName(),
-                                            solutionKit.getSolutionKitGuid(),
-                                            lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                                    )
-                            ).build(),
-                            e
-                    );
-                }
-
-                // no mappings; looks like there are no errors
-                if (StringUtils.isNotBlank(mappingsStr)) {
-                    // create a RestmanMessage in order to parse error mappings
-                    final RestmanMessage message;
-                    try {
-                        message = new RestmanMessage(mappingsStr);
-                    } catch (final SAXException e) {
-                        throw new SolutionKitManagerResourceException(
-                                status(INTERNAL_SERVER_ERROR).entity(
-                                        MessageFormat.format(
-                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                                solutionKit.getName(),
-                                                solutionKit.getSolutionKitGuid(),
-                                                lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                                        )
-                                ).build(),
-                                e
-                        );
-                    }
-                    if (message.hasMappingError()) {
-                        throw new SolutionKitManagerResourceException(
-                                status(CONFLICT).entity(
-                                        MessageFormat.format(
-                                                TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                                solutionKit.getName(),
-                                                solutionKit.getSolutionKitGuid(),
-                                                lineSeparator() + mappingsStr + lineSeparator()
-                                        )
-                                ).build()
-                        );
+                    // no mappings; looks like there are no errors
+                    if (StringUtils.isNotBlank(mappingsStr)) {
+                        // create a RestmanMessage in order to parse error mappings
+                        final RestmanMessage message;
+                        try {
+                            message = new RestmanMessage(mappingsStr);
+                        } catch (final SAXException e) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(INTERNAL_SERVER_ERROR).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    loaded.left.getName(),
+                                                    loaded.left.getSolutionKitGuid(),
+                                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                            )
+                                    ).build(),
+                                    e
+                            );
+                        }
+                        if (message.hasMappingError()) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(CONFLICT).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    loaded.left.getName(),
+                                                    loaded.left.getSolutionKitGuid(),
+                                                    lineSeparator() + mappingsStr + lineSeparator()
+                                            )
+                                    ).build()
+                            );
+                        }
                     }
                 }
-            }
+
+            });
+        } catch (final ForbiddenException e) {
+            throw new SolutionKitManagerResourceException(
+                    status(FORBIDDEN).entity(
+                            MessageFormat.format(
+                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
+                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                            )
+                    ).build(),
+                    e
+            );
+        } catch (final BadRequestException e) {
+            throw new SolutionKitManagerResourceException(
+                    status(BAD_REQUEST).entity(
+                            MessageFormat.format(
+                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
+                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                            )
+                    ).build(),
+                    e
+            );
+        } catch (final SolutionKitManagerResourceException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new SolutionKitManagerResourceException(
+                    status(INTERNAL_SERVER_ERROR).entity(
+                            MessageFormat.format(
+                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
+                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                            )
+                    ).build(),
+                    e
+            );
         }
     }
 

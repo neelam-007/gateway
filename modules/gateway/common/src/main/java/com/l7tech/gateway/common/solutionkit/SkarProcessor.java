@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -90,6 +91,8 @@ public class SkarProcessor {
                 customCallback.preMigrationBundleImport(null);
             }
         } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
+            String errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException("Unexpected error during custom callback invocation.", e);
         }
     }
@@ -97,11 +100,8 @@ public class SkarProcessor {
     /**
      * Get solution kit from the SKAR for install or upgrade.
      */
-    public Triple<SolutionKit, String, Boolean> installOrUpgrade(@NotNull final SolutionKit solutionKit) throws SolutionKitException {   // TODO (TL refactor) rename to getAsSolutionKit() ?
-        // Update resolved mapping target IDs.
-        solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
-
-        String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
+    public Triple<SolutionKit, String, Boolean> getAsSolutionKitTriple(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
+     String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
         if (bundleXml == null) {
             throw new BadRequestException("Unexpected error: unable to get Solution Kit bundle.");
         }

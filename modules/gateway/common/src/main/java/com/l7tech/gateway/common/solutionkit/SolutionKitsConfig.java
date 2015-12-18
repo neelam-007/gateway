@@ -100,8 +100,6 @@ public class SolutionKitsConfig {
     public void setBundle(@NotNull SolutionKit solutionKit, Document bundleDocument) throws IOException {
         final DOMSource bundleSource = new DOMSource();
         bundleSource.setNode(bundleDocument.getDocumentElement());
-
-        // TODO fix duplicate HashMap bug where put(...) does not replace previous value
         loaded.put(solutionKit, MarshallingUtils.unmarshal(Bundle.class, bundleSource, true));
     }
 
@@ -261,20 +259,21 @@ public class SolutionKitsConfig {
 
     /**
      * Utility method for updating resolved mapping target IDs into the bundle itself, before executing dry-run or install.
+     * When to resolve an entity ID?
+     *  - User configurable entity (e.g. map JDBC connection ID in bundle to JDBC connection already in user's environment)
+     *  - On upgrade, map ID in bundle to actual installed ID (needed for instance modified entity which uses a modified ID)
      *
-     * @param solutionKit    the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
+     * @param solutionKit the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
+     * @param skipOverrideCheck skip only in specific cases (e.g. resolve target ids of previously install for test upgrade via UI)
      * @throws ForbiddenException if {@link #MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE} is not set by the SKAR author.
      */
-    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit) throws ForbiddenException {
-        // TODO: this todo is valid only during headless install
-        // TODO: the logic looks safe enough to be executed twice i.e. once per dry-run and afterwards (assuming no conflicts) on install (SkarProcessor.installOrUpgrade)
-        // TODO: ghuang; would you double-check if this logic can be called twice in a row?
+    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit, boolean skipOverrideCheck) throws ForbiddenException {
         final Pair<SolutionKit, Map<String, String>> resolvedEntityIds = getResolvedEntityIds(solutionKit.getSolutionKitGuid());
         final Bundle bundle = getBundle(solutionKit);
         if (bundle != null) {
             for (final Mapping mapping : bundle.getMappings()) {
                 final String resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
-                if (resolvedId != null) {
+                if (resolvedId != null && !skipOverrideCheck) {
                     if (allowOverride(mapping)) {
                         mapping.setTargetId(resolvedId);
                     } else {
@@ -284,6 +283,16 @@ public class SolutionKitsConfig {
                 }
             }
         }
+    }
+
+    /**
+     * Utility method for updating resolved mapping target IDs into the bundle itself, before executing dry-run or install.
+     *
+     * @param solutionKit    the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
+     * @throws ForbiddenException if {@link #MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE} is not set by the SKAR author.
+     */
+    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit) throws ForbiddenException {
+        updateResolvedMappingsIntoBundle(solutionKit, false);
     }
 
     public static boolean allowOverride(@NotNull final Mapping mapping) {
