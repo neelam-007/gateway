@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="bulk-jdbc-insert-assertion9.1" default="deploy" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+    <description>
+        Ant build file for deploy and release task of BulkJdbcInsertAssertion to Nexus
+    </description>
+
+     <!-- set environment properties -->
+    <property name="build.name" value="bulk-jdbc-insert-assertion9.1" />
+    <property name="ivy.file.name" value="bulk-jdbc-insert-assertion.ivy.nexus.xml" />
+
+    <import file="./common.build.nexus.xml" as="nexus"/>
+
+    <macrodef name="nexus-prepare">
+        <attribute name="build-version" default="${build.version}" />
+        <sequential>
+            <!-- convert ivy.xml to pom.xml type -->
+            <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}" status="release"/>
+            <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
+            <!-- copy artifacts into correct name to be published -->
+            <copy file="${src.root}/build/ivy/repository/BulkJdbcInsertAssertion-9.1.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
+            <copy file="${src.root}/build/ivy/repository/BulkJdbcInsertAssertion-9.1.00.saar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-saar.saar"/>
+            <copy file="${src.root}/build/ivy/repository/BulkJdbcInsertAssertion-9.1.00.saar.xml" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-saar-xml.saar-xml"/>
+            <copy file="${src.root}/build/ivy/repository/BulkJdbcInsertAssertion-9.1.00.bundle.xml" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-bundle-xml.bundle-xml"/>
+        </sequential>
+    </macrodef>
+</project>
