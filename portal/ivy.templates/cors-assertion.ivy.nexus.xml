@@ -3,6 +3,8 @@
     <publications>
         <artifact name="cors-assertion9.1" type="pom" ext="pom"/>
         <artifact name="cors-assertion9.1" type="aar" ext="aar"/>
+        <artifact name="cors-assertion9.1" type="saar" ext="saar"/>
         <artifact name="cors-assertion9.1" type="saar-xml" ext="saar-xml"/>
+        <artifact name="cors-assertion9.1" type="bundle-xml" ext="bundle-xml"/>
     </publications>
 </ivy-module>
