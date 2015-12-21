@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="UneasyRooster" default="dev" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="UneasyRooster" default="dev" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:sonar="antlib:org.sonar.ant">
     <description>
         Ant build file for UneasyRooster
     </description>
@@ -24,10 +24,14 @@
       Mainly DB info, compiler settings, etc.
     -->
     <property file="etc/build/default_build.properties"/>
-
-
     <property file="etc/build/install.properties"/>
 
+	<!-- Add Artifactory properties -->
+	<property file="etc/build/artifactory.properties"/>
+	
+	<!-- Add SonarQube properties -->
+	<property file="etc/build/sonarqube.properties"/>
+	
     <!--
       Ivy initialization is global
     -->
@@ -3876,5 +3880,28 @@
 			<pathelement location="lib/ant-contrib-1.0b3.jar"/>
 		</classpath>
 	</taskdef>
+
+<!--
+	Publish all RPMs in dist folder
+-->
+	<target name="publish-rpms-all">
+		<foreach param="var" target="publish-rpm" parallel="true" maxThreads="3">
+			<path>
+				<fileset dir="${src.root}/dist">
+					<include name="*.rpm"/>
+				</fileset>
+			</path>
+		</foreach>
+	</target>
 	
+<!--
+	Publish an RPM
+-->
+	<target name="publish-rpm">
+		<basename property="rpm.filename" file="${var}"/>
+		<exec executable="curl">
+			<arg line="-i -u ${artifactory.login}:${artifactory.password} -T ./dist/${rpm.filename} ${artifactory.url.yum}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
+		</exec>
+	</target>
+
 </project>
