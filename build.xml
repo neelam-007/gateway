@@ -602,6 +602,7 @@
                 <propertyref name="ivy.settings.filepath"/>
                 <propertyref name="module.official.build"/>
                 <propertyref prefix="idea"/>
+				<propertyref name="publish.enable"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -611,7 +612,7 @@
     </target>
 
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
-        <modules target="publish"/>
+		<modules target="publish"/>
     </target>
 
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
