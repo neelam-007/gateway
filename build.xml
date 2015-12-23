@@ -623,8 +623,8 @@
     </target>
 
     <target name="publish-all-modules-artifactory" depends="prepare.base, build-module-list-all">
-		<delete dir="${build.dir}/ivy/repository"/>
-		<delete dir="${build.dir}/ivy/cache"/>
+		<delete dir="${ivy.shared.dir}"/>
+		<delete dir="${ivy.cache.dir}"/>
 		<modules target="publish-all-artifactory" buildpathref="module-build-all-path"/>
     </target>
 	
@@ -3840,13 +3840,13 @@
     </target>
 	
 <!--
-	Publish everything in lib/repository to artifactory recursively
+	Publish everything in ivy local repo to artifactory recursively
 -->
 	<target name="publish-third-party-all">
-		<delete dir="${src.root}/build/ivy/cache"/>
+		<delete dir="${ivy.cache.dir}"/>
 		<foreach param="var" target="publish-third-party-helper">
 			<path>
-				<fileset dir="${src.root}/lib/repository">
+				<fileset dir="${ivy.local.dir}">
 					<include name="**/*.xml"/>
 				</fileset>
 			</path>
@@ -3859,9 +3859,8 @@
 	<target name="publish-third-party-helper">
 		<ivy:settings  id="ivy.settings" file="${src.root}/etc/build/ivysettings_artifactory.xml"/>
 		<ivy:info file="${var}" settingsRef="ivy.settings"/>
-		<echo>Ivy file	${ivy.organisation} ${ivy.module} ${ivy.revision}</echo>
 		<ivy:info organisation="${ivy.organisation}" module="${ivy.module}" revision="${ivy.revision}" property="check" settingsRef="ivy.settings"/>
-		<echo>Repo	${check.organisation} ${check.module} ${check.revision}</echo>
+		<echo message="Artifact Search: ${check.organisation} ${check.module} ${check.revision}"/>
 		<antcall target="publish-third-party"/>
 	</target>
 <!--
@@ -3870,7 +3869,7 @@
 	<target name="publish-third-party" unless="check.revision">
 		<ivy:resolve file="${var}" haltonfailure="false"/>
 		<ivy:publish resolver="artifactory-thirdparty" overwrite="false" haltonmissing="false" srcivypattern="${var}" conf="default,master"
-			artifactspattern="${src.root}/lib/repository/[organisation]/[module]-[revision].[ext]"/>
+			artifactspattern="${ivy.local.dir}/[organisation]/[module]-[revision].[ext]"/>
 	</target>
 <!--
 	Enable antcontrib for external tasks (foreach, if)
@@ -3900,7 +3899,7 @@
 	<target name="publish-rpm">
 		<basename property="rpm.filename" file="${var}"/>
 		<exec executable="curl">
-			<arg line="-i -u ${artifactory.login}:${artifactory.password} -T ./dist/${rpm.filename} ${artifactory.url.yum}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
+			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${artifactory.yum.snapshot}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
 		</exec>
 	</target>
 
