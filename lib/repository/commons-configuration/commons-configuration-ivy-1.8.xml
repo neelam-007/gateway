@@ -30,7 +30,7 @@
 		<artifact name="commons-configuration" type="source" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies>
-		<dependency org="commons-collections" name="commons-collections" rev="3.2.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="commons-collections" name="commons-collections" rev="3.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-digester" name="commons-digester" rev="1.8.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

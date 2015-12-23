@@ -57,8 +57,8 @@
 	</publications>
 	<dependencies>
 		<dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="commons-collections" name="commons-collections" rev="3.2.1" force="true" conf="optional->compile(*),master(*)"/>
-		<dependency org="commons-collections" name="commons-collections-testframework" rev="3.2.1" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="commons-collections" name="commons-collections" rev="3.2.2" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="commons-collections" name="commons-collections-testframework" rev="3.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>

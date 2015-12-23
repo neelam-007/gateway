@@ -96,7 +96,7 @@
 		<m:dependency.management__org.eclipse.jetty__jetty-server__version>7.5.4.v20111024</m:dependency.management__org.eclipse.jetty__jetty-server__version>
 		<m:properties__cxf.oro.bundle.version>2.0.8_6</m:properties__cxf.oro.bundle.version>
 		<m:dependency.management__com.sun.xml.parsers__jaxp-ri__version>1.4.5</m:dependency.management__com.sun.xml.parsers__jaxp-ri__version>
-		<m:properties__cxf.commons-collections.version>3.2.1</m:properties__cxf.commons-collections.version>
+		<m:properties__cxf.commons-collections.version>3.2.2</m:properties__cxf.commons-collections.version>
 		<m:properties__cxf.servlet-api-2.5.artifact>geronimo-servlet_2.5_spec</m:properties__cxf.servlet-api-2.5.artifact>
 		<m:dependency.management__org.apache.maven__maven-project__scope>provided</m:dependency.management__org.apache.maven__maven-project__scope>
 		<m:dependency.management__org.apache.xmlbeans__xmlbeans__exclusion_0>stax__stax-api</m:dependency.management__org.apache.xmlbeans__xmlbeans__exclusion_0>
