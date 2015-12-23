@@ -611,7 +611,7 @@
     </target>
 
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
-        <modules target="publish-artifactory"/>
+        <modules target="publish"/>
     </target>
 
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
@@ -2952,7 +2952,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all">
     </target>
 
     <!--
@@ -3839,9 +3839,9 @@
         </java>
     </target>
 	
-<!--
-	Publish everything in ivy local repo to artifactory recursively
--->
+	<!--
+		Publish everything in ivy local repo to artifactory recursively
+	-->
 	<target name="publish-third-party-all">
 		<delete dir="${ivy.cache.dir}"/>
 		<foreach param="var" target="publish-third-party-helper">
@@ -3853,9 +3853,9 @@
 		</foreach>
 	</target>
 
-<!--
-	Check if the specified artifact revision in ivy file already exist on Artifactory
--->
+	<!--
+		Check if the specified artifact revision in ivy file already exist on Artifactory
+	-->
 	<target name="publish-third-party-helper">
 		<ivy:settings  id="ivy.settings" file="${src.root}/etc/build/ivysettings_artifactory.xml"/>
 		<ivy:info file="${var}" settingsRef="ivy.settings"/>
@@ -3863,27 +3863,27 @@
 		<echo message="Artifact Search: ${check.organisation} ${check.module} ${check.revision}"/>
 		<antcall target="publish-third-party"/>
 	</target>
-<!--
-	Publish a single artifact (unless artifact revision already present)
--->
+	<!--
+		Publish a single artifact (unless artifact revision already present)
+	-->
 	<target name="publish-third-party" unless="check.revision">
 		<ivy:resolve file="${var}" haltonfailure="false"/>
 		<ivy:publish resolver="artifactory-thirdparty" overwrite="false" haltonmissing="false" srcivypattern="${var}" conf="default,master"
 			artifactspattern="${ivy.local.dir}/[organisation]/[module]-[revision].[ext]"/>
 	</target>
-<!--
-	Enable antcontrib for external tasks (foreach, if)
--->
+	<!--
+		Enable antcontrib for external tasks (foreach, if)
+	-->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 		<classpath>
 			<pathelement location="lib/ant-contrib-1.0b3.jar"/>
 		</classpath>
 	</taskdef>
 
-<!--
-	Publish all RPMs in dist folder
--->
-	<target name="publish-rpms-all">
+	<!--
+		Publish all RPMs in dist folder
+	-->
+	<target name="publish-rpms-all" if="publish.enable">
 		<foreach param="var" target="publish-rpm" parallel="true" maxThreads="3">
 			<path>
 				<fileset dir="${src.root}/dist">
@@ -3893,9 +3893,9 @@
 		</foreach>
 	</target>
 	
-<!--
-	Publish an RPM
--->
+	<!--
+		Publish an RPM
+	-->
 	<target name="publish-rpm">
 		<basename property="rpm.filename" file="${var}"/>
 		<exec executable="curl">
@@ -3903,4 +3903,10 @@
 		</exec>
 	</target>
 
+	<!--
+	-->
+    <target name="enable-artifactory" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing.</echo>
+        <property name="publish.enable" value="true"/>
+    </target>
 </project>

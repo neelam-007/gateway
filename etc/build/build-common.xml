@@ -683,11 +683,12 @@
                      overwrite="true"
                 />
         <echo message="project ${ant.project.name} local published with version ${version}"/>
+		<antcall target="publish-artifactory"/>
     </target>
 
     <!--
     -->
-    <target name="publish-artifactory" depends="publish" description="Publish this project to Artifactory repository">
+    <target name="publish-artifactory" if="publish.enable" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
                      conf="default, master, master-unsigned, compile, runtime, optional, core, client"
