@@ -679,12 +679,26 @@
                      conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
                      pubrevision="${version}"
-                     status="release"
+                     status="integration"
                      overwrite="true"
                 />
-        <echo message="project ${ant.project.name} released with version ${version}"/>
+        <echo message="project ${ant.project.name} local published with version ${version}"/>
     </target>
 
+    <!--
+    -->
+    <target name="publish-artifactory" depends="publish" description="Publish this project to Artifactory repository">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
+                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+                     resolver="artifactory-snapshot"
+                     pubrevision="${version}"
+                     status="integration"
+                     overwrite="true"
+                />
+        <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
+    </target>
+	
     <!--
     -->
     <target name="publish-all" depends="info, clean, package, packagetests"
@@ -727,10 +741,6 @@
 					 overwrite="true"/>
         <echo message="project ${ant.project.name} published to artifactory"/>
     </target>
-
-
-
-
 
 
 

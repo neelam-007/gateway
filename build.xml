@@ -611,7 +611,7 @@
     </target>
 
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
-        <modules target="publish"/>
+        <modules target="publish-artifactory"/>
     </target>
 
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
