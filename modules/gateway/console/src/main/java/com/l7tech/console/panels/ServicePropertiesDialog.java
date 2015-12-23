@@ -32,7 +32,9 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import javax.persistence.MapKeyColumn;
 import org.apache.commons.lang.ObjectUtils;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -135,6 +137,7 @@ public class ServicePropertiesDialog extends JDialog {
     private PropertiesTableModel propertiesTableModel;
     private static final int MAX_TABLE_COLUMN_NUM = 2;
     private Map<String, String> propertiesMap;
+    private int maxServicePropertyNameLength = 128;
 
 
     public ServicePropertiesDialog( final Window owner,
@@ -517,8 +520,13 @@ public class ServicePropertiesDialog extends JDialog {
               doEdit();
           }
         });
+        try{
+            maxServicePropertyNameLength = PublishedService.class.getField("getProperties").getAnnotationsByType(MapKeyColumn.class).length;
+        } catch (NoSuchFieldException e) {
+          // ignore
+        }
 
-        // hide buttons
+      // hide buttons
         propertiesAddButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -626,7 +634,12 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     private void editAndSave(final String propertyName, final String propertyValue) {
-        final PropertyEditDialog dlg = new PropertyEditDialog(this, "Service Property Editor", propertyName,propertyValue);
+        final PropertyEditDialog dlg = new PropertyEditDialog(this, "Service Property Editor", propertyName,propertyValue, new Functions.Unary<Boolean, String>() {
+          @Override
+          public Boolean call(String s) {
+            return s.length() <= maxServicePropertyNameLength;
+          }
+        },null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -1091,6 +1104,10 @@ public class ServicePropertiesDialog extends JDialog {
                             "Service has been updated since this dialog was opened. Please close and try again.",
                     "Service out of date",
                     JOptionPane.ERROR_MESSAGE);
+        } catch (DataIntegrityViolationException e) {
+            String msg = "Error saving service properties, contains invalid data.";
+            logger.log(Level.INFO, msg, e);
+            JOptionPane.showMessageDialog(this, msg);
         } catch (Exception e) {
             String msg = "Error while changing service properties";
             logger.log(Level.INFO, msg, e);

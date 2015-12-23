@@ -6,6 +6,7 @@ package com.l7tech.gui.widgets;
 import com.l7tech.gui.util.RunOnChangeListener;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -34,9 +35,19 @@ public class PropertyEditDialog extends JDialog {
                                final String title,
                                final String propertyName,
                                final String propertyValue ) {
+      this(owner,title,propertyName,propertyValue,null,null);
+    }
+    public PropertyEditDialog( final Window owner,
+                             final String title,
+                             final String propertyName,
+                             final String propertyValue,
+                             final Functions.Unary<Boolean,String> verifyName,
+                             final Functions.Unary<Boolean,String> verifyValue) {
         super( owner, title, PropertyEditDialog.DEFAULT_MODALITY_TYPE );
         this.propertyName = propertyName;
         this.propertyValue = propertyValue;
+        this.verifyName = verifyName;
+        this.verifyValue = verifyValue;
 
         nameTextField.setText(propertyName);
         valueTextField.setText(propertyValue);
@@ -106,6 +117,8 @@ public class PropertyEditDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JPanel mainPanel;
+    private Functions.Unary<Boolean,String> verifyName;
+    private Functions.Unary<Boolean,String> verifyValue;
 
     private String propertyName;
     private String propertyValue;
@@ -123,6 +136,12 @@ public class PropertyEditDialog extends JDialog {
         String propName = nameTextField.getText();
         // Not allow empty name:
         boolean okEnabled = (propName != null && propName.trim().length() > 0);
+        if(verifyName!=null){
+            okEnabled = okEnabled && verifyName.call(propName);
+        }
+        if(verifyValue!=null){
+            okEnabled = okEnabled && verifyValue.call(valueTextField.getText());
+        }
         okButton.setEnabled(okEnabled);
     }
 }
