@@ -19,8 +19,8 @@
 
 			<!-- Core gateway builds snapshot upload/download -->
 			<url name="artifactory-snapshot" m2compatible="true">
-                <ivy pattern="${artifactory.maven.snapshot}/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision].xml" />
-                <artifact pattern="${artifactory.maven.snapshot}/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision].[ext]" />
+                <ivy pattern="${artifactory.maven.snapshot}/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision]-SNAPSHOT.xml" />
+                <artifact pattern="${artifactory.maven.snapshot}/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]" />
             </url>
 
 			<!-- Thirdparty upload/download -->
