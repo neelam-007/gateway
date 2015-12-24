@@ -690,6 +690,7 @@
     -->
     <target name="publish-artifactory" if="publish.enable" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="artifactory-snapshot"
 					 pubrevision="${version}"
                      overwrite="true"
