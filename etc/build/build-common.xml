@@ -681,7 +681,7 @@
 					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
                      overwrite="true"
-                />
+					 update="true"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
 		<antcall target="publish-artifactory"/>
     </target>
@@ -724,7 +724,7 @@
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      resolver="shared"
                      overwrite="true"
-                />
+					 update="true"/>
         <echo message="project ${ant.project.name} released with version ${version}"/>
     </target>
 	
