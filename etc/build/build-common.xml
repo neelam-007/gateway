@@ -674,11 +674,11 @@
     <!--
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
-		<ivy:resolve file="ivy.xml" conf="default, master, master-unsigned, compile, runtime, optional, core, client"/>
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
 		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+					 conf="default, master, compile, runtime, optional, core"
                      resolver="shared"
 					 pubrevision="${version}"
                      overwrite="true"/>
@@ -690,7 +690,7 @@
     -->
     <target name="publish-artifactory" if="publish.enable" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+					 conf="default, master, compile, runtime, optional, core"
                      resolver="artifactory-snapshot"
 					 pubrevision="${version}"
                      overwrite="true"
@@ -720,7 +720,7 @@
     -->
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
-		<ivy:resolve file="ivy.xml" conf="default, master, master-unsigned, compile, runtime, optional, core, client"/>
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
 		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
