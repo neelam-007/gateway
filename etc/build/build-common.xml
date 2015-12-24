@@ -680,8 +680,8 @@
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
-                     overwrite="true"
-					 update="true"/>
+					 pubrevision="${version}"
+                     overwrite="true"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
 		<antcall target="publish-artifactory"/>
     </target>
@@ -691,6 +691,7 @@
     <target name="publish-artifactory" if="publish.enable" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      resolver="artifactory-snapshot"
+					 pubrevision="${version}"
                      overwrite="true"
 					 publishivy="false"/>
         <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
@@ -723,8 +724,8 @@
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      resolver="shared"
-                     overwrite="true"
-					 update="true"/>
+					 pubrevision="${version}"
+                     overwrite="true"/>
         <echo message="project ${ant.project.name} released with version ${version}"/>
     </target>
 	
@@ -732,6 +733,7 @@
             description="Publish all artifacts for this project to the Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 resolver="artifactory-snapshot"
+					 pubrevision="${version}"
 					 overwrite="true"
 					 publishivy="false"/>
         <echo message="project ${ant.project.name} published to artifactory"/>
