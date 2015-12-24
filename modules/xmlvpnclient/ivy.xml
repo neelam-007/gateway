@@ -30,7 +30,7 @@
         <dependency org="com.rsa" name="cryptojcommon" rev="6.2.0.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="cryptojce" rev="6.2.0.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="6.2" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="6.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.2.1" force="true" conf="core"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/> <!-- signed BC provider jar -->
 
         <!-- The XVC needs the signed version of bouncy castle because it uses it as a provider in some places. -->

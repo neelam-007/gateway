@@ -123,7 +123,7 @@
         <dependency org="com.rsa" name="cryptojcommon" rev="6.2.0.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="cryptojce" rev="6.2.0.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="6.2" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="6.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.2.1" force="true" conf="core"/>
 
         <!-- wiseman core + server -->
         <dependency name="wiseman" org="net.java.wiseman" rev="1.0" force="true" conf="core"/>
