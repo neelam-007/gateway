@@ -675,13 +675,14 @@
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
 		<!-- <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/> -->
-		<ivy:info file="ivy.xml">
-		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
+		<ivy:info file="ivy.xml"/>
+		<!-- <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/> -->
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
 					 pubrevision="${version}"
+					 status="integration"
                      overwrite="true"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
 		<antcall target="publish-artifactory"/>
@@ -694,6 +695,7 @@
 					 conf="default, master, optional, core"
                      resolver="artifactory-snapshot"
 					 pubrevision="${version}"
+					 status="integration"
                      overwrite="true"
 					 publishivy="false"/>
         <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
