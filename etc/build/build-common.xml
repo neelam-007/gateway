@@ -674,8 +674,7 @@
     <!--
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
-		<!-- <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/> -->
-		<ivy:info file="ivy.xml"/>
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
 		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
