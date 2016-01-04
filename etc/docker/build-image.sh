@@ -14,7 +14,7 @@ removeExistingImages() {
 	echo "Existing images:"
 	docker images
 	if [ $(docker images -q | wc -l) -gt 0 ]; then
-		docker images -q | xargs docker rmi 
+		docker images -q | xargs docker rmi -f 
 		if [ $? -ne 0 ]; then
 			echo "Failed to remove the existing Docker images from the build agent"
 			exit 1
