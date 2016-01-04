@@ -3,6 +3,9 @@
 # this is the name of the image that build.sh produces
 IMAGE_NAME='teamcity/ssg'
 
+# location of the docker-squash binary
+DOCKER_SQUASH="/usr/local/bin/docker-squash"
+
 # Docker Registry settings
 REGISTRY_HOST='apim-dr.l7tech.com'
 REGISTRY_USER='tinder'
@@ -64,7 +67,7 @@ exportTheImage() {
 
 squashTheImage() {
 	echo "Squashing the image"
-	cat "$TARBALL_PATH" | gunzip - | sudo /home/hbutow/bin/docker-squash -verbose -t "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" | pigz - > "./squashed.tar.gz"
+	cat "$TARBALL_PATH" | gunzip - | sudo $DOCKER_SQUASH -verbose -t "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" | pigz - > "./squashed.tar.gz"
 	if [ $? -ne 0 ]; then
 		echo "ERROR: failed to squash the image"
 		exit 1
