@@ -40,6 +40,26 @@ public class PortalBootstrapExtensionInterfaceImpl extends AsyncAdminMethodsImpl
     }
 
     @Override
+    public JobId<Boolean> upgradePortal() throws IOException {
+        final FutureTask<Boolean> upgradeTask = new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                PortalBootstrapManager.getInstance().upgradePortal();
+                return true;
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                upgradeTask.run();
+            }
+        }, 0L);
+
+        return registerJob(upgradeTask, Boolean.class);
+    }
+
+    @Override
     public String checkOtkComponents(){
         try {
             PortalBootstrapManager.getInstance().getOtkEntities();
@@ -50,5 +70,8 @@ public class PortalBootstrapExtensionInterfaceImpl extends AsyncAdminMethodsImpl
         return null;
     }
 
-
+    @Override
+    public boolean isGatewayEnrolled() {
+        return PortalBootstrapManager.getInstance().isGatewayEnrolled();
+    }
 }

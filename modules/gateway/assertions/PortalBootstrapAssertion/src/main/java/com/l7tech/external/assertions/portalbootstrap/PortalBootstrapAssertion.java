@@ -54,7 +54,8 @@ public class PortalBootstrapAssertion extends Assertion implements UsesVariables
                 "com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapModuleLoadListener" );
 
         meta.put( AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] {
-                "com.l7tech.external.assertions.portalbootstrap.console.EnrollWithPortalAction"
+                "com.l7tech.external.assertions.portalbootstrap.console.EnrollWithPortalAction",
+                "com.l7tech.external.assertions.portalbootstrap.console.UpgradePortalAction"
         } );
 
         meta.put( AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {

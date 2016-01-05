@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.portalbootstrap.server;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -42,6 +44,7 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapManager.*;
@@ -211,5 +214,25 @@ public class PortalBootstrapManagerTest {
         }
         assertEquals(context.getVariable("restGatewayMan.action"), "POST");
         assertEquals(context.getVariable("restGatewayMan.uri"), "1.0/solutionKitManagers?id=33b16742-d62d-4095-8f8d-4db707e9ad52");
+    }
+
+    @Test
+    public void testIsGatewayEnrolledTrue() throws Exception {
+        SsgKeyEntry ssgKeyEntry = SsgKeyEntry.createDummyEntityForAuditing(Goid.DEFAULT_GOID, "testSsgEntry");
+        when(ssgKeyStoreManager.lookupKeyByKeyAlias("portalman", PersistentEntity.DEFAULT_GOID)).thenReturn(ssgKeyEntry);
+        when(clusterPropertyManager.getProperty("portal.config.node.id")).thenReturn("6d5a711f-66f5-11e5-887b-000c2971a55f");
+        when(clusterPropertyManager.getProperty("portal.config.pssg.host")).thenReturn("abc.ca.com");
+        when(clusterPropertyManager.getProperty("portal.config.name")).thenReturn("tenant1");
+        assertTrue(manager.isGatewayEnrolled());
+    }
+
+    @Test
+    public void testIsGatewayEnrolledFalse() throws Exception {
+        SsgKeyEntry ssgKeyEntry = SsgKeyEntry.createDummyEntityForAuditing(Goid.DEFAULT_GOID, "testSsgEntry");
+        when(ssgKeyStoreManager.lookupKeyByKeyAlias("portalman", PersistentEntity.DEFAULT_GOID)).thenReturn(ssgKeyEntry);
+        when(clusterPropertyManager.getProperty("portal.config.node.id")).thenReturn(null);
+        when(clusterPropertyManager.getProperty("portal.config.pssg.host")).thenReturn("abc.ca.com");
+        when(clusterPropertyManager.getProperty("portal.config.name")).thenReturn("tenant1");
+        assertTrue(!manager.isGatewayEnrolled());
     }
 }

@@ -23,8 +23,12 @@ public interface PortalBootstrapExtensionInterface extends AsyncAdminMethods {
     @Secured( stereotype = SET_PROPERTY_BY_UNIQUE_ATTRIBUTE ) // require abilty to update all users (equiv to admin power)
     AsyncAdminMethods.JobId<Boolean> enrollWithPortal( String enrollmentUrl ) throws IOException;
 
+    @Secured( stereotype = SET_PROPERTY_BY_UNIQUE_ATTRIBUTE ) // require abilty to update all users (equiv to admin power)
+    AsyncAdminMethods.JobId<Boolean> upgradePortal() throws IOException;
 
     @Secured( stereotype = SET_PROPERTY_BY_UNIQUE_ATTRIBUTE ) // require abilty to update all users (equiv to admin power)
     String checkOtkComponents();
 
+    @Secured( stereotype = SET_PROPERTY_BY_UNIQUE_ATTRIBUTE ) // require abilty to update all users (equiv to admin power)
+    boolean isGatewayEnrolled();
 }

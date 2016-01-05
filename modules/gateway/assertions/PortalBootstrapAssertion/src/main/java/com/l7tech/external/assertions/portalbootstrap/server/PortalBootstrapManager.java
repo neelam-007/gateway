@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.portalbootstrap.server;
 
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.KeyGenParams;
-import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
@@ -15,10 +12,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
@@ -65,9 +59,7 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -167,7 +159,7 @@ public class PortalBootstrapManager {
         if ( null == user )
             throw new IllegalStateException( "No administrative user authenticated" );
 
-        URL url = new URL( enrollmentUrl );
+        URL url = new URL( enrollmentUrl + "&action=enroll" );
 
         if ( !"https".equals( url.getProtocol() ) )
             throw new IOException( "Enrollment URL must begin with https" );
@@ -247,7 +239,7 @@ public class PortalBootstrapManager {
 
         // Bundle installed, post back status
         try {
-            connection = (HttpsURLConnection) new URL(enrollmentUrl + "&status=success").openConnection();
+            connection = (HttpsURLConnection) new URL(enrollmentUrl + "&action=enroll&status=success").openConnection();
             connection.setRequestMethod("POST");
             connection.setSSLSocketFactory(socketFactory);
             connection.setRequestProperty("Content-Type", "application/json");
@@ -263,6 +255,77 @@ public class PortalBootstrapManager {
             if (output != null) {
                 output.close();
             }
+        }
+    }
+
+    public void upgradePortal() throws IOException, FindException {
+        final User user = JaasUtils.getCurrentUser();
+        if ( null == user )
+            throw new IllegalStateException( "No administrative user authenticated" );
+
+        final String pssgHost = clusterPropertyManager.getProperty("portal.config.pssg.host");
+        final String tenantId = clusterPropertyManager.getProperty("portal.config.name");
+        final String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
+
+        URL url = new URL("https://" + pssgHost + ":" + ENROLL_PORT + "/enroll/" + tenantId + "?action=upgrade&nodeId=" + nodeId);
+
+        byte[] postBody = buildEnrollmentPostBody( user );
+
+        final SsgKeyEntry clientCert = prepareClientCert(user);
+        final X509TrustManager tm = new PermissiveX509TrustManager();
+        X509KeyManager km;
+
+        final SSLSocketFactory socketFactory;
+        try {
+            km = new SingleCertX509KeyManager( clientCert.getCertificateChain(), clientCert.getPrivateKey(), clientCert.getAlias() );
+
+            SSLContext sslContext = SSLContext.getInstance( "TLS" );
+            sslContext.init( new KeyManager[] { km }, new TrustManager[] { tm }, JceProvider.getInstance().getSecureRandom() );
+            socketFactory = sslContext.getSocketFactory();
+        } catch ( NoSuchAlgorithmException | KeyManagementException | UnrecoverableKeyException e ) {
+            throw new IOException( e );
+        }
+
+        InputStream input = null;
+        OutputStream output = null;
+        PolicyEnforcementContext context = null;
+        HttpsURLConnection connection;
+
+        try {
+            connection = (HttpsURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setSSLSocketFactory(socketFactory);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            output = connection.getOutputStream();
+            output.write(postBody);
+            // If the TSSG has already enrolled with a different portal pssg, it should not be allowed to upgrade
+            String new_pssg_identifier = connection.getHeaderField("portal-config-identifier");
+            String current_pssg_identifier = clusterPropertyManager.getProperty("portal.config.identifier");
+            if ((new_pssg_identifier != null) && (current_pssg_identifier != null) && (!new_pssg_identifier.equals(current_pssg_identifier))) {
+                logger.log(Level.WARNING, "Unable to upgrade: This gateway is enrolled with SaaS portal which is identified by , '" + current_pssg_identifier + "'. Upgrade has been aborted.");
+                throw new IOException("This gateway is enrolled with a different portal.");
+            }
+            ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
+            boolean isBinary = contentTypeHeader.matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
+            if (isBinary) {
+                input = new GZIPInputStream(connection.getInputStream());
+            } else {
+                input = connection.getInputStream();
+            }
+
+            // context is created here and passed into installBundle Mockito doesn't support mocking static method.
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            installBundle(input, connection.getHeaderField(SKAR_ID_HEADER_FIELD), contentTypeHeader, user, context);
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+
+            ResourceUtils.closeQuietly( context );
         }
     }
 
@@ -521,5 +584,22 @@ public class PortalBootstrapManager {
         public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
         }
+    }
+
+    public boolean isGatewayEnrolled() {
+        // Do our best guess to determine if gateway is enrolled
+        try {
+            ssgKeyStoreManager.lookupKeyByKeyAlias("portalman", PersistentEntity.DEFAULT_GOID);
+            String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
+            String pssgHost = clusterPropertyManager.getProperty("portal.config.pssg.host");
+            String tenantId = clusterPropertyManager.getProperty("portal.config.name");
+            if (nodeId == null || pssgHost == null || tenantId == null || nodeId.isEmpty() || pssgHost.isEmpty() || tenantId.isEmpty()) {
+                return false;
+            }
+        } catch (FindException | KeyStoreException e) {
+            return false;
+        }
+
+        return true;
     }
 }
