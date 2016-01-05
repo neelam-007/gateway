@@ -314,7 +314,7 @@ public class SolutionKitManagerResource {
             testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper, solutionKitsConfig);
 
             // install or upgrade
-            solutionKitProcessor.installOrUpgrade(null, null);
+            solutionKitProcessor.installOrUpgrade();
 
         } catch (AddendumBundleHandler.AddendumBundleException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -416,7 +416,7 @@ public class SolutionKitManagerResource {
 
         final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
         try {
-            solutionKitProcessor.testInstallOrUpgrade(false, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                     solutionKitReference.set(loaded.left);

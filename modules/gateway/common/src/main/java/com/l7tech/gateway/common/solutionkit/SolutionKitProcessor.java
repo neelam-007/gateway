@@ -64,6 +64,22 @@ public class SolutionKitProcessor {
     }
 
     /**
+     * Test solution kit install or upgrade without committing the work.
+     * @param doTestInstall test install callback
+     * @throws Throwable
+     */
+    public void testInstallOrUpgrade(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
+        testInstallOrUpgrade(false, doTestInstall);
+    }
+
+    /**
+     * Process solution kit install or upgrade.  Can optionally skip error and continue to the next solution kit.
+     * @throws Exception includes: SolutionKitException, FindException, UpdateException, SaveException
+     */
+    public void installOrUpgrade() throws Exception {
+        installOrUpgrade(null, null);
+    }
+    /**
      * Process solution kit install or upgrade.  Can optionally skip error and continue to the next solution kit.
      * @param errorKitList Optional list to capture processing error instead of immediately throwing exception.
      * @param doAsyncInstall Optional callback to override admin install (e.g. override with AdminGuiUtils.doAsyncAdmin() for console UI)

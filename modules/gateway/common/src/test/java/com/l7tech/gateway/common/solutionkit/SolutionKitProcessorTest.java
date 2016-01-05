@@ -101,7 +101,7 @@ public class SolutionKitProcessorTest {
         when(skarProcessor.getAsSolutionKitTriple(solutionKit1)).thenReturn(new Triple<>(solutionKit1, "doesn't matter", false));
         when(skarProcessor.getAsSolutionKitTriple(solutionKit2)).thenReturn(new Triple<>(solutionKit2, "doesn't matter", false));
         final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
-        solutionKitProcessor.installOrUpgrade(null, null);
+        solutionKitProcessor.installOrUpgrade();
 
         // make sure updateResolvedMappingsIntoBundle() called
         verify(solutionKitsConfig).updateResolvedMappingsIntoBundle(solutionKit1);
@@ -123,7 +123,7 @@ public class SolutionKitProcessorTest {
         // test solutionKitAdmin.install() throws exception
         when(solutionKitAdmin.install(any(SolutionKit.class), anyString(), anyBoolean())).thenThrow(new Exception());
         try {
-            solutionKitProcessor.installOrUpgrade(null, null);
+            solutionKitProcessor.installOrUpgrade();
             fail("Expected installOrUpgrade(...) to throw Exception.");
         } catch (Exception e) {
             // do nothing, expected
@@ -171,12 +171,12 @@ public class SolutionKitProcessorTest {
         final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
 
         // test parent not yet saved on Gateway calls solutionKitAdmin.save()
-        solutionKitProcessor.installOrUpgrade(null, null);
+        solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin).save(parentSolutionKit);
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - install code path
         when(solutionKitAdmin.find(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singleton(parentSolutionKit));
-        solutionKitProcessor.installOrUpgrade(null, null);
+        solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin).update(parentSolutionKit);
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - upgrade code path
@@ -186,7 +186,7 @@ public class SolutionKitProcessorTest {
         solutionKitsToUpgrade.add(solutionKit1);
         solutionKitsToUpgrade.add(solutionKit2);
         when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(solutionKitsToUpgrade);
-        solutionKitProcessor.installOrUpgrade(null, null);
+        solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin, times(2)).update(parentSolutionKit);
     }
 }
