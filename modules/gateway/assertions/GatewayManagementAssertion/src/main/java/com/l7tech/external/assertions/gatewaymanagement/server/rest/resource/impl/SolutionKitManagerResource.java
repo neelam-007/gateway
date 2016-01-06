@@ -482,6 +482,18 @@ public class SolutionKitManagerResource {
                     ).build(),
                     e
             );
+        } catch (final SolutionKitConflictException e) {
+            throw new SolutionKitManagerResourceException(
+                    status(CONFLICT).entity(
+                            MessageFormat.format(
+                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
+                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
+                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                            )
+                    ).build(),
+                    e
+            );
         } catch (final SolutionKitManagerResourceException e) {
             throw e;
         } catch (final Throwable e) {
