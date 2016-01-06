@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.solutionkit.install;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
@@ -17,6 +18,7 @@ import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -133,7 +135,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         try {
             settings.setSelectedSolutionKits(solutionKitsSelected);
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin, new SkarProcessor(settings));
-            solutionKitProcessor.testInstallOrUpgrade(true, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
 
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
@@ -471,7 +473,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                         try {
                             skContext.setSolutionKitMetadata(SolutionKitUtils.createDocument(selectedSolutionKit));
                             skContext.setMigrationBundle(settings.getBundleAsDocument(selectedSolutionKit));
-                        } catch (TooManyChildElementsException | MissingRequiredElementException e) {
+                            final String uninstallBundle = selectedSolutionKit.getUninstallBundle();
+                            if (StringUtils.isNotBlank(uninstallBundle)) {
+                                skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
+                            }
+                            skContext.setUpgrade(settings.isUpgrade());
+                        } catch (TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
                             final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
                             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
                             DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);

@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -35,13 +36,13 @@ public class SolutionKitsConfig {
 
     // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
     private Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
+    private Map<String, Pair<SolutionKit, Map<String, String>>> previouslyResolvedEntityIds = new HashMap<>();
 
     private List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>();
 
     // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
     private Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
 
-    private Map<String, List<String>> instanceModifiers = new HashMap<>();
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
     private Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = new HashMap<>(); // The map of guid and instance modifier of selected solution kits for headless upgrade.
 
@@ -122,11 +123,6 @@ public class SolutionKitsConfig {
     }
 
     @NotNull
-    public Map<String, Pair<SolutionKit, Map<String, String>>> getResolvedEntityIds() {
-        return resolvedEntityIds;
-    }
-
-    @NotNull
     public Pair<SolutionKit, Map<String, String>> getResolvedEntityIds(@NotNull String solutionKitGuid) {
         Pair<SolutionKit, Map<String, String>> result = resolvedEntityIds.get(solutionKitGuid);
         if (result == null) {
@@ -138,6 +134,11 @@ public class SolutionKitsConfig {
 
     public void setResolvedEntityIds(@NotNull Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds) {
         this.resolvedEntityIds = resolvedEntityIds;
+    }
+
+    @NotNull
+    public Map<String, Pair<SolutionKit, Map<String, String>>> getPreviouslyResolvedEntityIds() {
+        return previouslyResolvedEntityIds;
     }
 
     @NotNull
@@ -164,14 +165,6 @@ public class SolutionKitsConfig {
 
     public void setUpgradeInfoProvided(SolutionKit solutionKit, boolean upgradeInfo) {
         upgradeInfoProvided.put(solutionKit, upgradeInfo);
-    }
-
-    public Map<String, List<String>> getInstanceModifiers() {
-        return instanceModifiers;
-    }
-
-    public void setInstanceModifiers(Map<String, List<String>> instanceModifiers) {
-        this.instanceModifiers = instanceModifiers;
     }
 
     @NotNull
@@ -223,10 +216,11 @@ public class SolutionKitsConfig {
     }
 
     /**
-     * Utility method, to be used only during upgrade, to set previously resolved user mapping.
-     * Find and set previously installed mappings where srcId differs from targetId (e.g. user resolved).
+     * Set previously resolved IDs, based on the actual installed entity IDs (which was saved in the mappings).
+     * This implies an upgrade, so the method only selects solution kits marked for upgrade.
+     * Method then finds and sets last installed mappings where srcId differs from targetId (e.g. user resolved).
      */
-    public void onUpgradeResetPreviouslyInstalledMappings() {
+    public void setPreviouslyResolvedIds() {
         // get all kits to upgrade
         final List<SolutionKit> solutionKitsToUpgrade = getSolutionKitsToUpgrade();
 
@@ -248,7 +242,7 @@ public class SolutionKitsConfig {
                         }
                     }
                     if (!previouslyResolvedIds.isEmpty()) {
-                        getResolvedEntityIds().put(solutionKitToUpgrade.getSolutionKitGuid(), new Pair<>(solutionKitToUpgrade, previouslyResolvedIds));
+                        getPreviouslyResolvedEntityIds().put(solutionKitToUpgrade.getSolutionKitGuid(), new Pair<>(solutionKitToUpgrade, previouslyResolvedIds));
                     }
                 } catch (IOException e) {
                     throw new IllegalArgumentException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -258,22 +252,20 @@ public class SolutionKitsConfig {
     }
 
     /**
-     * Utility method for updating resolved mapping target IDs into the bundle itself, before executing dry-run or install.
-     * When to resolve an entity ID?
-     *  - User configurable entity (e.g. map JDBC connection ID in bundle to JDBC connection already in user's environment)
-     *  - On upgrade, map ID in bundle to actual installed ID (needed for instance modified entity which uses a modified ID)
+     * Set mapping targetId if mapping srcId matches resolved ID.
+     * For security, we check if the mapping is allowed to be overridden.
+     * We resolve an entity ID when processing User Configurable Entity (e.g. map JDBC connection ID in bundle to JDBC connection already in user's environment).
      *
      * @param solutionKit the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
-     * @param skipOverrideCheck skip only in specific cases (e.g. resolve target ids of previously install for test upgrade via UI)
      * @throws ForbiddenException if {@link #MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE} is not set by the SKAR author.
      */
-    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit, boolean skipOverrideCheck) throws ForbiddenException {
+    public void setMappingTargetIdsFromResolvedIds(@NotNull final SolutionKit solutionKit) throws ForbiddenException {
         final Pair<SolutionKit, Map<String, String>> resolvedEntityIds = getResolvedEntityIds(solutionKit.getSolutionKitGuid());
         final Bundle bundle = getBundle(solutionKit);
         if (bundle != null) {
             for (final Mapping mapping : bundle.getMappings()) {
                 final String resolvedId = resolvedEntityIds.right == null ? null : resolvedEntityIds.right.get(mapping.getSrcId());
-                if (resolvedId != null && !skipOverrideCheck) {
+                if (resolvedId != null) {
                     if (allowOverride(mapping)) {
                         mapping.setTargetId(resolvedId);
                     } else {
@@ -286,13 +278,23 @@ public class SolutionKitsConfig {
     }
 
     /**
-     * Utility method for updating resolved mapping target IDs into the bundle itself, before executing dry-run or install.
+     * Set mapping targetId if mapping srcId matches *previously* resolved ID.
+     * Previously resolved ID is set by {@link #setPreviouslyResolvedIds()}.  We resolve a previous entity ID when upgrading, we map the ID in bundle to an actual installed ID.
+     * We ignore if there's already an existing mapping targetId.  This is needed to preserve instance modified entity which uses a *deterministic* modified ID (see {@link com.l7tech.gateway.common.solutionkit.InstanceModifier#apply()}).
      *
-     * @param solutionKit    the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
-     * @throws ForbiddenException if {@link #MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE} is not set by the SKAR author.
+     * @param solutionKit the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
+     * @param bundle the bundle XML to install or upgrade
      */
-    public void updateResolvedMappingsIntoBundle(@NotNull final SolutionKit solutionKit) throws ForbiddenException {
-        updateResolvedMappingsIntoBundle(solutionKit, false);
+    public void setMappingTargetIdsFromPreviouslyResolvedIds(@NotNull final SolutionKit solutionKit, @NotNull final Bundle bundle) {
+        Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = getPreviouslyResolvedEntityIds().get(solutionKit.getSolutionKitGuid());
+        for (Mapping mapping : bundle.getMappings()) {
+            if (previouslyResolvedIds != null) {
+                String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
+                if (resolvedId != null && StringUtils.isBlank(mapping.getTargetId())) {
+                    mapping.setTargetId(resolvedId);
+                }
+            }
+        }
     }
 
     public static boolean allowOverride(@NotNull final Mapping mapping) {

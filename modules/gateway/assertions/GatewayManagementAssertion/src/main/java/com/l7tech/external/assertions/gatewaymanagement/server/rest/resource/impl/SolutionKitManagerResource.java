@@ -269,8 +269,8 @@ public class SolutionKitManagerResource {
                 // Update the upgrade list again after the above setSelectedGuidAndImForHeadlessUpgrade is done.
                 updateSolutionKitsToUpgradeBasedOnGivenParameters(solutionKitsConfig);
 
-                // find previously installed mappings where srcId differs from targetId (e.g. user resolved)
-                solutionKitsConfig.onUpgradeResetPreviouslyInstalledMappings();
+                // find previously installed IDs to resolve
+                solutionKitsConfig.setPreviouslyResolvedIds();
             }
 
             // verify signed skar signature and load the skar afterwards
@@ -302,7 +302,7 @@ public class SolutionKitManagerResource {
                 ).build();
             }
 
-            // remap any entity id(s)
+            // remap any entity id(s) (e.g. user configurable entity)
             remapEntityIds(solutionKitsConfig, entityIdReplaces);
 
             // pass in form fields as input parameters to customizations
@@ -917,7 +917,7 @@ public class SolutionKitManagerResource {
         solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
     }
 
-    // remap any entity id(s)
+    // remap any entity id(s) (e.g. user configurable entity)
     private void remapEntityIds(@NotNull final SolutionKitsConfig solutionKitsConfig, @Nullable final List<FormDataBodyPart> entityIdReplaces) throws UnsupportedEncodingException {
         final Map<String, String> entityIdReplaceMap = new HashMap<>(entityIdReplaces == null? 0 : entityIdReplaces.size());
 

@@ -18,15 +18,25 @@ public class SolutionKitManagerContext {
     private Document solutionKitMetadata;
 
     /**
-     * XML document representing the restman migration bundle to install the Solution Kit.
+     * XML document representing the restman migration bundle to install or upgrade the Solution Kit.
      */
     private Document migrationBundle;
+
+    /**
+     * XML document representing the restman migration bundle to uninstall the Solution Kit.
+     */
+    private Document uninstallBundle;
 
     /**
      * A string to change entities so it's possible to install multiple instances of the same Solution Kit.
      * Depending on the entity the Solution Kit Manager can use the modifier as prefix or suffix.
      */
     private String instanceModifier;
+
+    /**
+     * True if the current context is an upgrade (false if it's an install).
+     */
+    private boolean isUpgrade;
 
     /**
      * Optionally pass in key-value pairs from your GUI (or headless interface) to your callback code.
@@ -59,5 +69,21 @@ public class SolutionKitManagerContext {
 
     public void setMigrationBundle(Document migrationBundle) {
         this.migrationBundle = migrationBundle;
+    }
+
+    public Document getUninstallBundle() {
+        return uninstallBundle;
+    }
+
+    public void setUninstallBundle(Document uninstallBundle) {
+        this.uninstallBundle = uninstallBundle;
+    }
+
+    public boolean isUpgrade() {
+        return isUpgrade;
+    }
+
+    public void setUpgrade(boolean isUpgrade) {
+        this.isUpgrade = isUpgrade;
     }
 }

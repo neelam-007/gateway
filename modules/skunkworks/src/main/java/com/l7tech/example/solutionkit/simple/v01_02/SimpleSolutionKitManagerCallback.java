@@ -1,4 +1,4 @@
-package com.l7tech.example.solutionkit.simple.v01_01;
+package com.l7tech.example.solutionkit.simple.v01_02;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * Simple example of callback code to execute before sending bundle into Gateway's restman API.
  * Shows how to use Gateway utility classes in layer7-policy.jar and layer7-utility.jar (XpathUtil and CollectionUtils respectively).
  *
- * How to build sample Customization.jar: see modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_01/build.sh
+ * How to build sample Customization.jar: see modules/skunkworks/src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/build.sh
  */
 public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback {
     private static final Logger logger = Logger.getLogger(SimpleSolutionKitManagerCallback.class.getName());
@@ -63,7 +63,7 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
             }
 
             // create a new folder
-            createFolder(restmanBundle, context.getUninstallBundle(), input);
+            createFolder(restmanBundle, context.getUninstallBundle(), context.isUpgrade(), input);
 
             // modify encass description in bundle
             final List<Element> encassDescriptionItemElements = XpathUtil.findElements(restmanBundle.getDocumentElement(),
@@ -76,7 +76,7 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
         }
     }
 
-    /* The code below is more complex, it shows how to install and delete a custom folder.*/
+    /* The code below is more complex, it shows how to install, upgrade, and delete a custom folder. */
 
     private static final String MY_FOLDER_ITEM_TEMPLATE =
             "        <l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
@@ -93,21 +93,23 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
 
     private static final String MY_FOLDER_INSTALL_MAPPING =
             "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
+    private static final String MY_FOLDER_UPGRADE_MAPPING =
+            "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
     private static final String MY_FOLDER_DELETE_MAPPING =
             "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
 
-    private void createFolder(final Document restmanBundle, final Document uninstallBundle, final String input) throws CallbackException {
+    private void createFolder(final Document restmanBundle, final Document uninstallBundle, final boolean isUpgrade, final String input) throws CallbackException {
         final List<Element> referencesElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:References", getNamespaceMap());
         final List<Element> mappingsElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings", getNamespaceMap());
         if (referencesElements.size() > 0 && mappingsElements.size() > 0) {
             try {
                 // append item
-                final Element myFolderItem = XmlUtil.stringToDocument(MessageFormat.format(MY_FOLDER_ITEM_TEMPLATE, input)).getDocumentElement();
+                final Element myFolderItem = XmlUtil.stringToDocument(MessageFormat.format(MY_FOLDER_ITEM_TEMPLATE, isUpgrade ? input + " (isUpgrade was true)" : input + " (isUpgrade was false)")).getDocumentElement();
                 myFolderItem.removeAttribute("xmlns:l7");
                 referencesElements.get(0).appendChild(restmanBundle.importNode(myFolderItem, true));
 
-                // append install mapping
-                Element myFolderMapping = XmlUtil.stringToDocument(MY_FOLDER_INSTALL_MAPPING).getDocumentElement();
+                // append install or upgrade mapping
+                Element myFolderMapping = XmlUtil.stringToDocument(isUpgrade ? MY_FOLDER_UPGRADE_MAPPING : MY_FOLDER_INSTALL_MAPPING).getDocumentElement();
                 myFolderMapping.removeAttribute("xmlns:l7");
                 mappingsElements.get(0).appendChild(restmanBundle.importNode(myFolderMapping, true));
 

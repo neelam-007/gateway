@@ -6,7 +6,7 @@
     <l7:TimeStamp>2015-10-06T16:58:35.603-08:00</l7:TimeStamp>
     <l7:IsCollection>false</l7:IsCollection>
     <l7:FeatureSet>feature:FooBar</l7:FeatureSet>
-    <l7:CustomUI>com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi</l7:CustomUI>
-    <l7:CustomCallback>com.l7tech.example.solutionkit.simple.v01_01.SimpleSolutionKitManagerCallback</l7:CustomCallback>
+    <l7:CustomUI>com.l7tech.example.solutionkit.simple.v01_02.console.SimpleSolutionKitManagerUi</l7:CustomUI>
+    <l7:CustomCallback>com.l7tech.example.solutionkit.simple.v01_02.SimpleSolutionKitManagerCallback</l7:CustomCallback>
     <l7:AllowAddendum>true</l7:AllowAddendum>
 </l7:SolutionKit>

@@ -1,6 +1,9 @@
 package com.l7tech.gateway.common.solutionkit;
 
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -37,11 +40,10 @@ public class SolutionKitProcessor {
 
     /**
      * Test solution kit install or upgrade without committing the work.
-     * @param skipOverrideCheck skip only in specific cases (e.g. resolve target ids of previously install for test upgrade via UI)
      * @param doTestInstall test install callback
      * @throws Throwable
      */
-    public void testInstallOrUpgrade(boolean skipOverrideCheck, @NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
+    public void testInstallOrUpgrade(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
         final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
         final boolean isUpgrade = solutionKitsConfig.isUpgrade();
 
@@ -57,19 +59,10 @@ public class SolutionKitProcessor {
             skarProcessor.invokeCustomCallback(solutionKit);
 
             // Update resolved mapping target IDs.
-            solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit, skipOverrideCheck);
+            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
             doTestInstall.call(skarProcessor.getAsSolutionKitTriple(solutionKit));
         }
-    }
-
-    /**
-     * Test solution kit install or upgrade without committing the work.
-     * @param doTestInstall test install callback
-     * @throws Throwable
-     */
-    public void testInstallOrUpgrade(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
-        testInstallOrUpgrade(false, doTestInstall);
     }
 
     /**
@@ -102,7 +95,7 @@ public class SolutionKitProcessor {
 
             try {
                 // Update resolved mapping target IDs.
-                solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+                solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
                 Triple<SolutionKit, String, Boolean> loaded = skarProcessor.getAsSolutionKitTriple(solutionKit);
                 if (doAsyncInstall == null) {
@@ -128,33 +121,27 @@ public class SolutionKitProcessor {
                     assert solutionKitsToUpgrade.size() > 0; // should always be greater then 0 as check is done above (early fail)
                     final SolutionKit parentSKFromDB = solutionKitsToUpgrade.get(0);
 
-                    if (!parentSKFromLoad.getSolutionKitGuid().equalsIgnoreCase(parentSKFromDB.getSolutionKitGuid())) {
+                    if (isSameGuid(parentSKFromLoad, parentSKFromDB)) {
+                        // Update the parent solution kit attributes
+                        parentSKFromDB.setName(parentSKFromLoad.getName());
+                        parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
+                        parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
+
+                        parentGoid = parentSKFromDB.getGoid();
+                        solutionKitAdmin.update(parentSKFromDB);
+                    } else if (isConversionToCollection(parentSKFromLoad, parentSKFromDB)) {
+                        // parentSKFromDB is single and parent-less
+                        // it's is being changed to be a child of the new uploaded parent (parentSKFromLoad)
+                        parentGoid = saveOrUpdate(parentSKFromLoad);
+                    } else {
                         String msg = "Unexpected:  GUID (" + parentSKFromLoad.getSolutionKitGuid() + ") from the database does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
                         logger.info(msg);
                         throw new SolutionKitException(msg);
                     }
-
-                    // Update the parent solution kit attributes
-                    parentSKFromDB.setName(parentSKFromLoad.getName());
-                    parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
-                    parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
-
-                    parentGoid = parentSKFromDB.getGoid();
-                    solutionKitAdmin.update(parentSKFromDB);
                 }
                 // Case 2: Parent for install
                 else {
-                    final Collection<SolutionKit> solutionKitsExistingOnGateway = solutionKitAdmin.find(parentSKFromLoad.getSolutionKitGuid());
-                    // Case 2.1: Find the parent already installed on gateway
-                    if (solutionKitsExistingOnGateway.size() > 0) {
-                        final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.iterator().next();
-                        parentGoid = parentExistingOnGateway.getGoid();
-                        solutionKitAdmin.update(parentExistingOnGateway);
-                    }
-                    // Case 2.2: No such parent installed on gateway
-                    else {
-                        parentGoid = solutionKitAdmin.save(parentSKFromLoad);
-                    }
+                    parentGoid = saveOrUpdate(parentSKFromLoad);
                 }
             } catch (Exception e) {
                 addToErrorListOrRethrowException(e, errorKitList, parentSKFromLoad);
@@ -172,5 +159,31 @@ public class SolutionKitProcessor {
         } else {
             throw e;
         }
+    }
+
+    private boolean isSameGuid(@NotNull SolutionKit newSolutionKit, @NotNull SolutionKit existingSolutionKit) {
+        return newSolutionKit.getSolutionKitGuid().equalsIgnoreCase(existingSolutionKit.getSolutionKitGuid());
+    }
+
+    private boolean isConversionToCollection(@NotNull SolutionKit newSolutionKit, @NotNull SolutionKit existingSolutionKit) {
+        return Boolean.parseBoolean(newSolutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)) && !Boolean.parseBoolean(existingSolutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+    }
+
+    @Nullable
+    private Goid saveOrUpdate(@NotNull SolutionKit parentSolutionKit) throws FindException, SaveException, UpdateException {
+        Goid goid;
+        final Collection<SolutionKit> solutionKitsExistingOnGateway = solutionKitAdmin.find(parentSolutionKit.getSolutionKitGuid());
+        // update if already installed
+        if (solutionKitsExistingOnGateway.size() > 0) {
+            final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.iterator().next();
+            goid = parentExistingOnGateway.getGoid();
+            solutionKitAdmin.update(parentExistingOnGateway);
+        }
+        // save if new
+        else {
+            goid = solutionKitAdmin.save(parentSolutionKit);
+        }
+
+        return goid;
     }
 }

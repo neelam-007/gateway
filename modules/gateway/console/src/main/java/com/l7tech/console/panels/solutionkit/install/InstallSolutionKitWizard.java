@@ -196,6 +196,6 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         });
 
         // upgrade - find previously installed mappings where srcId differs from targetId (e.g. user resolved)
-        getWizardInput().onUpgradeResetPreviouslyInstalledMappings();
+        getWizardInput().setPreviouslyResolvedIds();
     }
 }

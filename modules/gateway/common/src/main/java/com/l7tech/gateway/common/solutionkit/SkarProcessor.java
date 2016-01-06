@@ -78,6 +78,11 @@ public class SkarProcessor {
                 // set to context
                 skContext.setSolutionKitMetadata(metadataDoc);
                 skContext.setMigrationBundle(bundleDoc);
+                final String uninstallBundle = solutionKit.getUninstallBundle();
+                if (StringUtils.isNotBlank(uninstallBundle)) {
+                    skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
+                }
+                skContext.setUpgrade(solutionKitsConfig.isUpgrade());
 
                 // execute callback
                 customCallback.preMigrationBundleImport(skContext);
@@ -85,12 +90,16 @@ public class SkarProcessor {
                 // copy back metadata from xml version
                 SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, solutionKit);
 
-                // set (possible) changes made to metadata and bundle
+                // set (possible) changes made to metadata and bundles (install/upgrade and uninstall)
+                solutionKit.setUninstallBundle(XmlUtil.nodeToString(skContext.getUninstallBundle()));
                 solutionKitsConfig.setBundle(solutionKit, bundleDoc);
             } else  {
                 customCallback.preMigrationBundleImport(null);
             }
-        } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException e) {
+
+            solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier
+            solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
+        } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
             String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException("Unexpected error during custom callback invocation.", e);
@@ -273,15 +282,7 @@ public class SkarProcessor {
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
 
             // update previously resolved mapping target IDs
-            Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = solutionKitsConfig.getResolvedEntityIds().get(solutionKitToUpgrade.getSolutionKitGuid());
-            for (Mapping mapping : upgradeBundle.getMappings()) {
-                if (previouslyResolvedIds != null) {
-                    String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
-                    if (resolvedId != null) {
-                        mapping.setTargetId(resolvedId);
-                    }
-                }
-            }
+            solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKitToUpgrade, upgradeBundle);
 
             //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
             //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings

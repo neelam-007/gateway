@@ -44,23 +44,6 @@ public class SkarProcessorTest {
     private static final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
     private static final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
 
-    private static final String SAMPLE_INSTALL_BUNDLE_XML =
-            "    <l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                    "        <l7:Mappings />\n" +
-                    "    </l7:Bundle>";
-
-    private static final String SAMPLE_UPGRADE_BUNDLE_XML  =
-            "    <l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                    "        <l7:Mappings>\n" +
-                    "            <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71a6d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d\" type=\"SECURE_PASSWORD\">\n" +
-                    "            <l7:Properties>\n" +
-                    "                <l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
-                    "                <l7:Property key=\"SK_AllowMappingOverride\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property>\n" +
-                    "            </l7:Properties>\n" +
-                    "        </l7:Mapping>\n" +
-                    "        </l7:Mappings>\n" +
-                    "    </l7:Bundle>";
-
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     @BeforeClass
@@ -119,15 +102,12 @@ public class SkarProcessorTest {
             Pair<SolutionKit, SolutionKitCustomization> customization;
             SolutionKitManagerCallback customCallback;
             SolutionKitManagerUi customUi;
-            SolutionKitCustomizationClassLoader returnedClassLoader;
 
             customization = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid());
             Assert.assertNotNull(customization);
 
-            //check the classloader is the correct one
-            returnedClassLoader = customization.right.getClassLoader();
-            Assert.assertNotNull(returnedClassLoader);
-            Assert.assertTrue(returnedClassLoader instanceof SolutionKitCustomizationClassLoader);
+            //check class loader not null
+            Assert.assertNotNull(customization.right.getClassLoader());
 
             //check that the customCallBack class that was loaded is the right one
             customCallback = customization.right.getCustomCallback();
@@ -149,14 +129,14 @@ public class SkarProcessorTest {
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
 
         // simulate remapping of IDs in the bundle (secure password and JDBC)
-        Map<String, String> entityIdReplaceMap = new HashMap<>(1);
+        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
         entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
         entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
         Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
         resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
-        solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+        solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
         skarProcessor.getAsSolutionKitTriple(solutionKit);
 
         // verify secure password and JDBC were resolved via mapping targetId in the bundle
@@ -178,7 +158,7 @@ public class SkarProcessorTest {
         }
 
         // simulate caller *trying* to remap IDs in the bundle
-        Map<String, String> entityIdReplaceMap = new HashMap<>(1);
+        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
         entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "www...www");
         entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "xxx...xxx");
         Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
@@ -186,19 +166,11 @@ public class SkarProcessorTest {
         solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
 
         try {
-            solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit);
+            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
             skarProcessor.getAsSolutionKitTriple(solutionKit);
             fail("Expected: mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
-        }
-
-        // test skip override check = true
-        try {
-            solutionKitsConfig.updateResolvedMappingsIntoBundle(solutionKit, true);
-            skarProcessor.getAsSolutionKitTriple(solutionKit);
-        } catch (SolutionKitException e) {
-            fail("Expected: skipOverrideCheck = true should allow mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
         }
     }
 

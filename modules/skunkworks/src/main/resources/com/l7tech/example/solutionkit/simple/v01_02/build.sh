@@ -22,9 +22,9 @@ BUILD_DIR="modules/skunkworks/build/example/solutionkit/simple/v01_02"
 mkdir -p $BUILD_DIR
 
 cd modules/skunkworks
-javac -sourcepath src/main/java/ -classpath "../gateway/api/build/layer7-api.jar${JAVAC_CLASSPATH_SEPARATOR}../policy/build/layer7-policy.jar${JAVAC_CLASSPATH_SEPARATOR}../utility/build/layer7-utility.jar${JAVAC_CLASSPATH_SEPARATOR}../../lib/repository/commons-lang/commons-lang-2.5.jar" src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
-cd build/example/solutionkit/simple/v01_01
-jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi\$1.class
+javac -sourcepath src/main/java/ -classpath "../gateway/api/build/layer7-api.jar${JAVAC_CLASSPATH_SEPARATOR}../policy/build/layer7-policy.jar${JAVAC_CLASSPATH_SEPARATOR}../utility/build/layer7-utility.jar${JAVAC_CLASSPATH_SEPARATOR}../common/build/layer7-common.jar${JAVAC_CLASSPATH_SEPARATOR}../../lib/repository/commons-lang/commons-lang-2.5.jar" src/main/java/com/l7tech/example/solutionkit/simple/v01_02/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_02/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_02
+cd build/example/solutionkit/simple/v01_02
+jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_02/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_02/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_02/console/SimpleSolutionKitManagerUi\$1.class
 
 # cd <l7_workspace>
 cd ../../../../../../..
@@ -39,7 +39,7 @@ zip -X SimpleServerModuleFile-1.1.skar --junk-paths ../../../../../src/main/reso
 zip -X SimpleService-1.2.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/service/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/service/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/service/DeleteBundle.xml
 
 # build child skar for all other entities
-zip -X SimpleOthers-1.2.skar ../v01_01/Customization.jar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/DeleteBundle.xml
+zip -X SimpleOthers-1.2.skar Customization.jar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/SolutionKit.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/InstallBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/UpgradeBundle.xml ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/other/DeleteBundle.xml
 
 # build parent skar (container for child skars)
 zip -X SimpleSolutionKit-1.2.skar --junk-paths ../../../../../src/main/resources/com/l7tech/example/solutionkit/simple/v01_02/SolutionKit.xml SimpleServerModuleFile-1.1.skar SimpleService-1.2.skar SimpleOthers-1.2.skar

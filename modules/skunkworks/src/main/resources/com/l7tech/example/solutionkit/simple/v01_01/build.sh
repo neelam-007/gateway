@@ -22,7 +22,7 @@ BUILD_DIR="modules/skunkworks/build/example/solutionkit/simple/v01_01"
 mkdir -p $BUILD_DIR
 
 cd modules/skunkworks
-javac -sourcepath src/main/java/ -classpath "../gateway/api/build/layer7-api.jar${JAVAC_CLASSPATH_SEPARATOR}../policy/build/layer7-policy.jar${JAVAC_CLASSPATH_SEPARATOR}../utility/build/layer7-utility.jar${JAVAC_CLASSPATH_SEPARATOR}../../lib/repository/commons-lang/commons-lang-2.5.jar" src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
+javac -sourcepath src/main/java/ -classpath "../gateway/api/build/layer7-api.jar${JAVAC_CLASSPATH_SEPARATOR}../policy/build/layer7-policy.jar${JAVAC_CLASSPATH_SEPARATOR}../utility/build/layer7-utility.jar${JAVAC_CLASSPATH_SEPARATOR}../common/build/layer7-common.jar${JAVAC_CLASSPATH_SEPARATOR}../../lib/repository/commons-lang/commons-lang-2.5.jar" src/main/java/com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.java src/main/java/com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.java -d build/example/solutionkit/simple/v01_01
 cd build/example/solutionkit/simple/v01_01
 jar cvf Customization.jar com/l7tech/example/solutionkit/simple/v01_01/SimpleSolutionKitManagerCallback.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi.class com/l7tech/example/solutionkit/simple/v01_01/console/SimpleSolutionKitManagerUi\$1.class
 

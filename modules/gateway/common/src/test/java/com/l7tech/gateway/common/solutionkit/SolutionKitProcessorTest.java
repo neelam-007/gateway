@@ -49,7 +49,7 @@ public class SolutionKitProcessorTest {
         // install or upgrade
         final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
         final AtomicBoolean doTestInstallExecuted = new AtomicBoolean(false);
-        solutionKitProcessor.testInstallOrUpgrade(true, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+        solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
             @Override
             public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                 doTestInstallExecuted.set(true);
@@ -62,13 +62,13 @@ public class SolutionKitProcessorTest {
         // make sure custom callbacks are invoked
         verify(skarProcessor, times(numberOfSolutionKits)).invokeCustomCallback(any(SolutionKit.class));
 
-        // make sure updateResolvedMappingsIntoBundle called
-        verify(solutionKitsConfig, times(numberOfSolutionKits)).updateResolvedMappingsIntoBundle(any(SolutionKit.class), anyBoolean());
+        // make sure setMappingTargetIdsFromResolvedIds called
+        verify(solutionKitsConfig, times(numberOfSolutionKits)).setMappingTargetIdsFromResolvedIds(any(SolutionKit.class));
 
         // fail with BadRequestException
         when(solutionKitsConfig.isUpgrade()).thenReturn(true);
         try {
-            solutionKitProcessor.testInstallOrUpgrade(true, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                     // do nothing
@@ -103,9 +103,9 @@ public class SolutionKitProcessorTest {
         final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
         solutionKitProcessor.installOrUpgrade();
 
-        // make sure updateResolvedMappingsIntoBundle() called
-        verify(solutionKitsConfig).updateResolvedMappingsIntoBundle(solutionKit1);
-        verify(solutionKitsConfig).updateResolvedMappingsIntoBundle(solutionKit2);
+        // make sure setMappingTargetIdsFromResolvedIds() called
+        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit1);
+        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit2);
 
         // make sure solutionKitAdmin.install() called
         verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
