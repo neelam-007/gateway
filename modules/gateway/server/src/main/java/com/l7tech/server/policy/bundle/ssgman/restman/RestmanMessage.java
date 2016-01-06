@@ -304,6 +304,21 @@ public class RestmanMessage {
         }
     }
 
+    public String getServiceUrl(@NotNull final String serviceId) {
+        final List<Element> urlPatterns = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + serviceId + "']/descendant::l7:UrlPattern", getNamespaceMap());
+
+        // There should only be one action mapping per scrId  in a restman message
+        if (urlPatterns.size() > 0) {
+            String urlStr = urlPatterns.get(0).getTextContent();
+            if (StringUtils.isBlank(urlStr))
+                return null;
+            else
+                return urlStr.trim();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Get a set of Folder mappings with "FailOnNew" property with value of "true". The set contains the entity srcUri.
      */
