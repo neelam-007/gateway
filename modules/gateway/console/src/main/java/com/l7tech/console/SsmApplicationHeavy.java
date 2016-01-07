@@ -24,7 +24,8 @@ public class SsmApplicationHeavy extends SsmApplication  {
     private static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.rsa.disableServices";
     private static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
     private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
-            new Pair<String, String>("CertificateFactory", "X.509")
+            new Pair<>( "CertificateFactory", "X.509" ),
+            new Pair<>( "KeyStore", "PKCS12" )
     ));
 
     //the property name for the current applications home directory. If not set, this is defaulted to null by code

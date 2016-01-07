@@ -441,14 +441,14 @@ public class GuiCertUtil {
                                 continue;
                             }
                             else {
+                                logger.log(Level.WARNING, "Error reading certificate data. " + ExceptionUtils.getMessage(ioe), ExceptionUtils.getDebugException( ioe ) );
                                 JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
-                                logger.log(Level.WARNING, "Error reading certificate data. " + ExceptionUtils.getMessage(ioe));
                                 continue;
                             }
                         }
                         catch(CertificateException ce) {
-                            JOptionPane.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", JOptionPane.ERROR_MESSAGE);
                             logger.log(Level.WARNING, "Error reading certificate data", ce);
+                            JOptionPane.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", JOptionPane.ERROR_MESSAGE);
                             continue;
                         }
                     }
