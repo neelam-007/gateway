@@ -12,11 +12,15 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditContextFactoryStub;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import org.junit.Before;
@@ -79,6 +83,10 @@ public class JmsRequestHandlerImplTest {
         when(applicationContext.getBean("clusterMaster", ClusterMaster.class)).thenReturn(clusterMaster);
         when(applicationContext.getBean("stashManagerFactory", StashManagerFactory.class))
                 .thenReturn(TestStashManagerFactory.getInstance());
+        when(applicationContext.getBean("auditContextFactory", AuditContextFactory.class))
+                .thenReturn(new AuditContextFactoryStub(ConfigFactory.getCachedConfig(), "testnode"));
+        when(applicationContext.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class))
+                .thenReturn(new MessageSummaryAuditFactory("testnode"));
 
         handler = spy(new JmsRequestHandlerImpl(applicationContext));
         connectionProperties = new Properties();
@@ -111,7 +119,7 @@ public class JmsRequestHandlerImplTest {
         final AtomicReference<JmsKnob> jmsKnobRef = new AtomicReference<>();
         final AtomicReference<HeadersKnob> headersKnobRef = new AtomicReference<>();
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable {
                 final PolicyEnforcementContext policyContext = (PolicyEnforcementContext) invocation.getArguments()[0];
@@ -159,7 +167,7 @@ public class JmsRequestHandlerImplTest {
         when(session.createTextMessage()).thenReturn(jmsResponse);
         when(jmsBag.getJndiContext()).thenReturn(jndiContext);
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable {
                 final PolicyEnforcementContext policyContext = (PolicyEnforcementContext) invocation.getArguments()[0];
@@ -212,7 +220,7 @@ public class JmsRequestHandlerImplTest {
         when(session.createTextMessage()).thenReturn(jmsResponse);
         when(jmsBag.getJndiContext()).thenReturn(jndiContext);
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable {
                 final PolicyEnforcementContext policyContext = (PolicyEnforcementContext) invocation.getArguments()[0];
