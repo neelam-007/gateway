@@ -9,7 +9,6 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -290,7 +289,7 @@ public class SolutionKitsConfig {
         for (Mapping mapping : bundle.getMappings()) {
             if (previouslyResolvedIds != null) {
                 String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
-                if (resolvedId != null && StringUtils.isBlank(mapping.getTargetId())) {
+                if (resolvedId != null) {
                     mapping.setTargetId(resolvedId);
                 }
             }

@@ -94,7 +94,9 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
     private static final String MY_FOLDER_INSTALL_MAPPING =
             "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
     private static final String MY_FOLDER_UPGRADE_MAPPING =
-            "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
+            "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\">\n" +
+                    "<l7:Properties><l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>\n" +
+                    "</l7:Mapping>";
     private static final String MY_FOLDER_DELETE_MAPPING =
             "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
 
