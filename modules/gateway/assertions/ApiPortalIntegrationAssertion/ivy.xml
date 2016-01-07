@@ -21,6 +21,7 @@
     </configurations>
     <publications>
         <artifact name="ApiPortalIntegrationAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="ApiPortalIntegrationAssertion" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>

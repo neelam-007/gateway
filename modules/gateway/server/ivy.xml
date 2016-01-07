@@ -22,6 +22,7 @@
     </configurations>
     <publications>
         <artifact name="layer7-gateway-server" type="jar" ext="jar" conf="master"/>
+		<artifact name="layer7-gateway-server" type="pom" ext="pom" conf="master"/>
         <artifact name="layer7-gateway-server-test" type="jar" ext="jar" conf="test"/>
     </publications>
     <dependencies>

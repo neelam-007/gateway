@@ -231,6 +231,7 @@
                         organisation="@{organisation}"
                         module="@{name}"
                         conf="@{conf}"
+						type="jar"
                         transitive="false"
                         log="quiet"/>
 
@@ -674,8 +675,9 @@
     <!--
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
+		<property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-release" target, use default value of integration -->
 		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
-		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
+		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
@@ -688,10 +690,10 @@
 
     <!--
     -->
-    <target name="publish-artifactory" if="publish.enable" description="Publish this project to Artifactory repository">
+    <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
 					 conf="default, master, optional, core"
-                     resolver="artifactory-snapshot"
+                     resolver="${publish.jar.target}"
 					 pubrevision="${version}"
                      overwrite="true"
 					 publishivy="false"/>
@@ -721,7 +723,7 @@
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
 		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
-		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="integration"/>
+		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
 		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      resolver="shared"

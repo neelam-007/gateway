@@ -7,8 +7,10 @@
 	</info>
 	<configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
-	</configurations>	<publications>
+	</configurations>
+	<publications>
 		<artifact name="XmlSecurityAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="XmlSecurityAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

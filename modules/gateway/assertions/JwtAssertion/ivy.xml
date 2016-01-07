@@ -10,6 +10,7 @@
     </configurations>
     <publications>
         <artifact name="JwtAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="JwtAssertion" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency org="org.jose4j" name="jose4j" rev="0.3.9" force="true" conf="core"/>

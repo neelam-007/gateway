@@ -18,7 +18,9 @@
               extends="runtime,compile"/>
         <conf name="optional" description="Contains all optional dependencies"/>
     </configurations>
-    <publications/>
+    <publications>
+		<artifact name="layer7-modular-assertions" type="pom" ext="pom" conf="master"/>
+    </publications>
     <dependencies>
         <dependency name="layer7-utility" rev="latest.integration" conf="optional"/>
         <dependency name="layer7-common" rev="latest.integration" conf="optional; test->default,test"/>

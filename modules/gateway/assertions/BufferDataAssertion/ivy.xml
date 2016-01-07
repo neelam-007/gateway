@@ -10,6 +10,7 @@
 	</configurations>
 	<publications>
 		<artifact name="BufferDataAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="BufferDataAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

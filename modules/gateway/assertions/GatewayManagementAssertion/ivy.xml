@@ -10,6 +10,7 @@
 	</configurations>	
 	<publications>
 		<artifact name="GatewayManagementAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="GatewayManagementAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
 

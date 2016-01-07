@@ -28,10 +28,10 @@
 
 	<!-- Add Artifactory properties -->
 	<property file="etc/build/artifactory.properties"/>
-	
+
 	<!-- Add SonarQube properties -->
 	<property file="etc/build/sonarqube.properties"/>
-	
+
     <!--
       Ivy initialization is global
     -->
@@ -602,7 +602,8 @@
                 <propertyref name="ivy.settings.filepath"/>
                 <propertyref name="module.official.build"/>
                 <propertyref prefix="idea"/>
-				<propertyref name="publish.enable"/>
+				<propertyref name="publish.jar.target"/>
+				<propertyref name="publish.status"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -623,10 +624,8 @@
         <modules target="publish-all-quick" buildpathref="module-build-all-path"/>
     </target>
 
-    <target name="publish-all-modules-artifactory" depends="prepare.base, build-module-list-all">
-		<delete dir="${ivy.shared.dir}"/>
-		<delete dir="${ivy.cache.dir}"/>
-		<modules target="publish-all-artifactory" buildpathref="module-build-all-path"/>
+    <target name="publish-main-modules-artifactory" depends="prepare.base, build-module-list-all">
+		<modules target="publish" buildpathref="module-build-all-path"/>
     </target>
 	
     <target name="clean-modules" depends="build-module-list-all">
@@ -3884,7 +3883,7 @@
 	<!--
 		Publish all RPMs in dist folder
 	-->
-	<target name="publish-rpms-all" if="publish.enable">
+	<target name="publish-rpms-all" if="publish.rpm.target">
 		<foreach param="var" target="publish-rpm" parallel="true" maxThreads="3">
 			<path>
 				<fileset dir="${src.root}/dist">
@@ -3900,14 +3899,26 @@
 	<target name="publish-rpm">
 		<basename property="rpm.filename" file="${var}"/>
 		<exec executable="curl">
-			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${artifactory.yum.snapshot}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
+			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${publish.rpm.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
 		</exec>
 	</target>
 
 	<!--
 	-->
-    <target name="enable-artifactory" description="Enable publish of jars and rpms to Artifactory">
-        <echo level="info">Enabling Artifactory publishing.</echo>
-        <property name="publish.enable" value="true"/>
+    <target name="enable-snapshot" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of integration (snapshot) repo.</echo>
+        <property name="publish.jar.target" value="artifactory-snapshot"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
+		<property name="publish.status" value="integration"/>
+    </target>
+	
+	<!--
+	-->
+    <target name="enable-release" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of release-candidate repo.</echo>
+        <property name="publish.jar.target" value="artifactory-rc"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.rc}"/>
+		<property name="publish.status" value="release"/>
+		<echo message="Publishing with status: ${publish.status}"/>
     </target>
 </project>

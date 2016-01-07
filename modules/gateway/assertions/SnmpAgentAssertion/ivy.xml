@@ -10,6 +10,7 @@
     </configurations>	
     <publications>
         <artifact name="SnmpAgentAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="SnmpAgentAssertion" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
 <!--        <dependency org="org.snmp4j" name="snmp4j" rev="1.11.2" force="true" conf="core"/> -->
