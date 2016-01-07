@@ -623,10 +623,6 @@
     <target name="publish-all-modules-quick" depends="prepare.base, build-module-list-all">
         <modules target="publish-all-quick" buildpathref="module-build-all-path"/>
     </target>
-
-    <target name="publish-main-modules-artifactory" depends="prepare.base, build-module-list-all">
-		<modules target="publish" buildpathref="module-build-all-path"/>
-    </target>
 	
     <target name="clean-modules" depends="build-module-list-all">
         <modules target="clean" buildpathref="module-build-all-path"/>
@@ -3884,7 +3880,7 @@
 		Publish all RPMs in dist folder
 	-->
 	<target name="publish-rpms-all" if="publish.rpm.target">
-		<foreach param="var" target="publish-rpm" parallel="true" maxThreads="3">
+		<foreach param="var" target="publish-rpm" inheritall="true" parallel="true" maxThreads="3">
 			<path>
 				<fileset dir="${src.root}/dist">
 					<include name="*.rpm"/>
@@ -3897,6 +3893,7 @@
 		Publish an RPM
 	-->
 	<target name="publish-rpm">
+		<echo message="Yum target: ${publish.rpm.target}"/>
 		<basename property="rpm.filename" file="${var}"/>
 		<exec executable="curl">
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${publish.rpm.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
@@ -3915,10 +3912,9 @@
 	<!--
 	-->
     <target name="enable-release" description="Enable publish of jars and rpms to Artifactory">
-        <echo level="info">Enabling Artifactory publishing of release-candidate repo.</echo>
-        <property name="publish.jar.target" value="artifactory-rc"/>
-		<property name="publish.rpm.target" value="${artifactory.yum.rc}"/>
+        <echo level="info">Enabling Artifactory publishing of release repo.</echo>
+        <property name="publish.jar.target" value="artifactory-release"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
 		<property name="publish.status" value="release"/>
-		<echo message="Publishing with status: ${publish.status}"/>
     </target>
 </project>
