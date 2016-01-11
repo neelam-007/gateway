@@ -3893,7 +3893,6 @@
 		Publish an RPM
 	-->
 	<target name="publish-rpm">
-		<echo message="Yum target: ${publish.rpm.target}"/>
 		<basename property="rpm.filename" file="${var}"/>
 		<exec executable="curl">
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${publish.rpm.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
