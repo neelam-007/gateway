@@ -26,6 +26,7 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
 
     public static final String MY_INPUT_TEXT_KEY = "MyInputTextKey";
     public static final String MY_HAS_BEEN_CUSTOMIZED_KEY = "MyHasBeenCustomizedKey";
+    public static final String MY_WAS_BUTTON_CREATED_KEY = "MyWasButtonCreatedKey";
 
     public static final Map<String, String> nsMap = CollectionUtils.MapBuilder.<String, String>builder()
             .put("l7", "http://ns.l7tech.com/2010/04/gateway-management")
@@ -41,6 +42,20 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
         final Document solutionKitMetadata = context.getSolutionKitMetadata();
         final List<Element> nameElements = XpathUtil.findElements(solutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
         final String solutionKitName = nameElements.size() > 0 ? nameElements.get(0).getTextContent() : "";
+        final List<Element> versionElements = XpathUtil.findElements(solutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Version", getNamespaceMap());
+        final String solutionKitVersion = versionElements.size() > 0 ? versionElements.get(0).getTextContent() : "";
+
+        // read *installed* metadata
+        final Document installedSolutionKitMetadata = context.getInstalledSolutionKitMetadata();
+        boolean isUpgrade = false;
+        String installedSolutionKitVersion = null;
+        if (installedSolutionKitMetadata != null ) {
+            // upgrade when installed metadata is not null
+            isUpgrade = true;
+
+            final List<Element> installedVersionElements = XpathUtil.findElements(installedSolutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Version", getNamespaceMap());
+            installedSolutionKitVersion = installedVersionElements.size() > 0 ? installedVersionElements.get(0).getTextContent() : "";
+        }
 
         // read bundle
         final Document restmanBundle = context.getMigrationBundle();
@@ -50,20 +65,28 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
         // get user input text
         final String input = context.getKeyValues().get(MY_INPUT_TEXT_KEY);
         final boolean beenCustomized = Boolean.valueOf(context.getKeyValues().get(MY_HAS_BEEN_CUSTOMIZED_KEY));
+        final boolean buttonCreated = Boolean.valueOf(context.getKeyValues().get(MY_WAS_BUTTON_CREATED_KEY));
 
         final String message = "*** CUSTOM CODE CALLED FOR " + solutionKitName + " ***  # item(s) in bundle: " + itemElements.size() + ", # mapping(s): " + mappingElements.size() + ", instance modifier: " + context.getInstanceModifier() + ". " + input;
         logger.info(message);
         System.out.println(message);
 
+        // force user to always provide input
+        if (input == null) {
+            String requireInput = "Solution kit '" + solutionKitName + "' requires additional user input. ";
+            String uiOny = "Please highlight the solution kit row and use the 'Custom UI: ...' button to enter some text.";
+            String headlessOnly = "Please provide a value with form-field named " + MY_INPUT_TEXT_KEY + ".";
+            throw new CallbackException(buttonCreated ? requireInput + uiOny : requireInput + headlessOnly);
+        }
 
-        if (input != null && !beenCustomized) {
+        if (!beenCustomized) {
             // modify name in metadata
             if (nameElements.size() > 0) {
                 nameElements.get(0).setTextContent(input + " " + solutionKitName);
             }
 
             // create a new folder
-            createFolder(restmanBundle, context.getUninstallBundle(), context.isUpgrade(), input);
+            createFolder(restmanBundle, context.getUninstallBundle(), isUpgrade, solutionKitVersion.equals(installedSolutionKitVersion), input);
 
             // modify encass description in bundle
             final List<Element> encassDescriptionItemElements = XpathUtil.findElements(restmanBundle.getDocumentElement(),
@@ -100,18 +123,18 @@ public class SimpleSolutionKitManagerCallback extends SolutionKitManagerCallback
     private static final String MY_FOLDER_DELETE_MAPPING =
             "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
 
-    private void createFolder(final Document restmanBundle, final Document uninstallBundle, final boolean isUpgrade, final String input) throws CallbackException {
+    private void createFolder(final Document restmanBundle, final Document uninstallBundle, final boolean isUpgrade, final boolean isSameVersion, final String input) throws CallbackException {
         final List<Element> referencesElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:References", getNamespaceMap());
         final List<Element> mappingsElements = XpathUtil.findElements(restmanBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings", getNamespaceMap());
         if (referencesElements.size() > 0 && mappingsElements.size() > 0) {
             try {
                 // append item
-                final Element myFolderItem = XmlUtil.stringToDocument(MessageFormat.format(MY_FOLDER_ITEM_TEMPLATE, isUpgrade ? input + " (isUpgrade was true)" : input + " (isUpgrade was false)")).getDocumentElement();
+                final Element myFolderItem = XmlUtil.stringToDocument(MessageFormat.format(MY_FOLDER_ITEM_TEMPLATE, isUpgrade ? input + " (last action: upgrade)" : input + " (last action: install)")).getDocumentElement();
                 myFolderItem.removeAttribute("xmlns:l7");
                 referencesElements.get(0).appendChild(restmanBundle.importNode(myFolderItem, true));
 
-                // append install or upgrade mapping
-                Element myFolderMapping = XmlUtil.stringToDocument(isUpgrade ? MY_FOLDER_UPGRADE_MAPPING : MY_FOLDER_INSTALL_MAPPING).getDocumentElement();
+                // append *upgrade* mapping if upgrading from the same version; otherwise append *install* mapping
+                Element myFolderMapping = XmlUtil.stringToDocument(isUpgrade && isSameVersion ? MY_FOLDER_UPGRADE_MAPPING : MY_FOLDER_INSTALL_MAPPING).getDocumentElement();
                 myFolderMapping.removeAttribute("xmlns:l7");
                 mappingsElements.get(0).appendChild(restmanBundle.importNode(myFolderMapping, true));
 

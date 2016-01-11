@@ -40,6 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_DESC_KEY;
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_FEATURE_SET_KEY;
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
+
 /**
  * Wizard panel which allows the user to select component(s) within a solution kit to install.
  */
@@ -167,7 +171,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         } catch (SolutionKitException t) {  //for expected and foreseeable errors, display to the user for correction
             errorMessage = ExceptionUtils.getMessage(t);
             logger.log(Level.WARNING, errorMessage);
-            DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, errorMessage, "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
         } catch (Throwable t) { //for unexpected, unhandled exceptions, show the standard BIG ERROR dialog
             ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", t);
             Utilities.centerOnParentWindow(errorMessageDialog);
@@ -259,7 +263,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 if (instanceModifierSet.size() > 1) {
                     errorSB.append("Selecting '").append(loadedSK.getName()).append("'").append(" for upgrade will be disabled, since there are two or more solution kit instances using it to upgrade.\n");
                 } else if (instanceModifierSet.size() == 1) {
-                    loadedSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifierSet.toArray(new String[]{})[0]);
+                    loadedSK.setProperty(SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifierSet.toArray(new String[instanceModifierSet.size()])[0]);
                 }
             }
         }
@@ -278,7 +282,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
             @Override
             public boolean isCellEditable(int row, int column) {
-                return (column == 0) ? isEditableOrEnabledAt(row) : false;
+                return (column == 0) && isEditableOrEnabledAt(row);
             }
         };
         solutionKitsTable.setModel(solutionKitsModel);
@@ -355,8 +359,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 solutionKitsSelected.contains(solutionKit)? Boolean.TRUE : Boolean.FALSE,
                 getSolutionKitDisplayName(solutionKit),
                 solutionKit.getSolutionKitVersion(),
-                solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY),
-                solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY)
+                solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY),
+                solutionKit.getProperty(SK_PROP_DESC_KEY)
             };
         }
 
@@ -364,7 +368,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private String getSolutionKitDisplayName(final SolutionKit solutionKit) {
-        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        final String featureSet = solutionKit.getProperty(SK_PROP_FEATURE_SET_KEY);
         if (StringUtils.isEmpty(featureSet) || ConsoleLicenseManager.getInstance().isFeatureEnabled(featureSet)) {
             return solutionKit.getName();
         } else {
@@ -384,7 +388,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private SolutionKit getSolutionKitAt(final int index) {
-        return index == -1? null : solutionKitsLoaded.toArray(new SolutionKit[]{})[index];
+        return index == -1? null : solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()])[index];
     }
 
     private void enableDisableInstanceModifierButton() {
@@ -392,8 +396,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         final int selectedRows[] = solutionKitsTable.getSelectedRows();
         int row;
 
-        for (int i = 0; i < selectedRows.length; i++) {
-            row = selectedRows[i];
+        for (int selectedRow : selectedRows) {
+            row = selectedRow;
             if (isEditableOrEnabledAt(row)) {
                 enabled = true;
             } else {
@@ -418,7 +422,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 if (selectedRows.length == 0) return;
 
                 final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
-                final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[]{});
+                final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()]);
                 for (int row : selectedRows) {
                     toBeModified.add(solutionKitsLoadedArray[row]);
                 }
@@ -467,17 +471,25 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 final SolutionKitManagerUi customUi = customization.right.getCustomUi();
                 if (customUi != null) {
 
-                    // make metadata and bundle read-only to the custom UI; test for null b/c implementer can optionally null the context
+                    // make context available to custom UI (as read-only); test for null b/c implementer can optionally null the context
                     SolutionKitManagerContext skContext = customUi.getContext();
                     if (skContext != null) {
                         try {
+                            // set to context: metadata, install bundle
                             skContext.setSolutionKitMetadata(SolutionKitUtils.createDocument(selectedSolutionKit));
                             skContext.setMigrationBundle(settings.getBundleAsDocument(selectedSolutionKit));
+
+                            // set to context: uninstall bundle
                             final String uninstallBundle = selectedSolutionKit.getUninstallBundle();
                             if (StringUtils.isNotBlank(uninstallBundle)) {
                                 skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
                             }
-                            skContext.setUpgrade(settings.isUpgrade());
+
+                            // set to context: already installed metadata
+                            final SolutionKit solutionKitToUpgrade = settings.getSolutionKitToUpgrade(selectedSolutionKit.getSolutionKitGuid(), selectedSolutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
+                            if (solutionKitToUpgrade != null) {
+                                skContext.setInstalledSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKitToUpgrade));
+                            }
                         } catch (TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
                             final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
                             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));

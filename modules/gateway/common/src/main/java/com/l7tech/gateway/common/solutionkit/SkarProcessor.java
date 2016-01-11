@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
+
 /**
  * SKAR file processing logic.  Must be accessible from both the console UI and in the server headless interface.
  */
@@ -75,14 +77,21 @@ public class SkarProcessor {
                 metadataDoc = SolutionKitUtils.createDocument(solutionKit);
                 bundleDoc = solutionKitsConfig.getBundleAsDocument(solutionKit);
 
-                // set to context
+                // set to context: metadata, install bundle
                 skContext.setSolutionKitMetadata(metadataDoc);
                 skContext.setMigrationBundle(bundleDoc);
+
+                // set to context: uninstall bundle
                 final String uninstallBundle = solutionKit.getUninstallBundle();
                 if (StringUtils.isNotBlank(uninstallBundle)) {
                     skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
                 }
-                skContext.setUpgrade(solutionKitsConfig.isUpgrade());
+
+                // set to context: already installed metadata
+                final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid(), solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
+                if (solutionKitToUpgrade != null) {
+                    skContext.setInstalledSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKitToUpgrade));
+                }
 
                 // execute callback
                 customCallback.preMigrationBundleImport(skContext);
@@ -99,7 +108,11 @@ public class SkarProcessor {
 
             solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier
             solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
-        } catch (SolutionKitManagerCallback.CallbackException | IOException | TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
+        } catch (SolutionKitManagerCallback.CallbackException e) {
+            String errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+            throw new BadRequestException(e.getMessage(), e);
+        }  catch (IOException | TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
             String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException("Unexpected error during custom callback invocation.", e);

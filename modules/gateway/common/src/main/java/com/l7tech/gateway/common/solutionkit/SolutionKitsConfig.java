@@ -22,6 +22,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
+
 /**
  *  POJO to store user inputs for InstallSolutionKitWizard.
  */
@@ -143,6 +145,21 @@ public class SolutionKitsConfig {
     @NotNull
     public List<SolutionKit> getSolutionKitsToUpgrade() {
         return solutionKitsToUpgrade;
+    }
+
+    @Nullable
+    public SolutionKit getSolutionKitToUpgrade(@NotNull final String solutionKitGuid, @Nullable final String instanceModifier) {
+        for (SolutionKit solutionKit : solutionKitsToUpgrade) {
+            if (solutionKitGuid.equals(solutionKit.getSolutionKitGuid())) {
+                final String instanceModifierToCompare = solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
+                if ((instanceModifierToCompare == null && instanceModifier == null) ||
+                        (instanceModifierToCompare != null && instanceModifierToCompare.equals(instanceModifier))) {
+                    return solutionKit;
+                }
+            }
+        }
+
+        return null;
     }
 
     public void setSolutionKitsToUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade) {
@@ -284,13 +301,15 @@ public class SolutionKitsConfig {
      * @param solutionKit the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
      * @param bundle the bundle XML to install or upgrade
      */
-    public void setMappingTargetIdsFromPreviouslyResolvedIds(@NotNull final SolutionKit solutionKit, @NotNull final Bundle bundle) {
-        Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = getPreviouslyResolvedEntityIds().get(solutionKit.getSolutionKitGuid());
-        for (Mapping mapping : bundle.getMappings()) {
-            if (previouslyResolvedIds != null) {
-                String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
-                if (resolvedId != null) {
-                    mapping.setTargetId(resolvedId);
+    public void setMappingTargetIdsFromPreviouslyResolvedIds(@NotNull final SolutionKit solutionKit, @Nullable final Bundle bundle) {
+        if (bundle != null) {
+            Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = getPreviouslyResolvedEntityIds().get(solutionKit.getSolutionKitGuid());
+            for (Mapping mapping : bundle.getMappings()) {
+                if (previouslyResolvedIds != null) {
+                    String resolvedId = previouslyResolvedIds.right.get(mapping.getSrcId());
+                    if (resolvedId != null) {
+                        mapping.setTargetId(resolvedId);
+                    }
                 }
             }
         }

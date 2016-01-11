@@ -311,7 +311,7 @@ public class SolutionKitManagerResource {
             // Test all selected (child) solution kit(s) before actual installation.
             // This step is to prevent partial installation/upgrade
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper, skarProcessor);
-            testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper, solutionKitsConfig);
+            testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper);
 
             // install or upgrade
             solutionKitProcessor.installOrUpgrade();
@@ -401,18 +401,17 @@ public class SolutionKitManagerResource {
      * Error Message Format during testBundleImports.
      */
     private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE = "Test install/upgrade failed for solution kit: {0} ({1}). {2}";
+    private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE_NO_NAME_GUID = "Test install/upgrade failed for solution kit: {0}";
 
     /**
      * Attempt test install or upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
      *
      * @param solutionKitProcessor class containing the test install / upgrade logic
      * @param solutionKitAdminHelper the helper class used to call validating solution kit for install or upgrade
-     * @param solutionKitsConfig the SolutionKit config object.  Required and cannot be {@code null}.
      * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
      */
     private void testInstallOrUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor,
-                                      @NotNull final SolutionKitAdminHelper solutionKitAdminHelper,
-                                      @NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
+                                      @NotNull final SolutionKitAdminHelper solutionKitAdminHelper) throws SolutionKitManagerResourceException {
 
         final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
         try {
@@ -459,54 +458,30 @@ public class SolutionKitManagerResource {
 
             });
         } catch (final ForbiddenException e) {
-            throw new SolutionKitManagerResourceException(
-                    status(FORBIDDEN).entity(
-                            MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
-                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                    ).build(),
-                    e
-            );
+            throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
         } catch (final BadRequestException e) {
-            throw new SolutionKitManagerResourceException(
-                    status(BAD_REQUEST).entity(
-                            MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
-                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                    ).build(),
-                    e
-            );
+            throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
         } catch (final SolutionKitConflictException e) {
-            throw new SolutionKitManagerResourceException(
-                    status(CONFLICT).entity(
-                            MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
-                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                    ).build(),
-                    e
-            );
+            throw new SolutionKitManagerResourceException(status(CONFLICT).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
         } catch (final SolutionKitManagerResourceException e) {
             throw e;
         } catch (final Throwable e) {
-            throw new SolutionKitManagerResourceException(
-                    status(INTERNAL_SERVER_ERROR).entity(
-                            MessageFormat.format(
-                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getName(),
-                                    solutionKitReference.get() == null ? "n/a" : solutionKitReference.get().getSolutionKitGuid(),
-                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
-                            )
-                    ).build(),
-                    e
+            throw new SolutionKitManagerResourceException(status(INTERNAL_SERVER_ERROR).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        }
+    }
+
+    private String getTestBundleImportErrorMessage(@Nullable final SolutionKit solutionKit, @NotNull Throwable t) {
+        if (solutionKit == null) {
+            return MessageFormat.format(
+                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE_NO_NAME_GUID,
+                    lineSeparator() + ExceptionUtils.getMessage(t) + lineSeparator()
+            );
+        } else {
+            return MessageFormat.format(
+                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                    solutionKit.getName(),
+                    solutionKit.getSolutionKitGuid(),
+                    lineSeparator() + ExceptionUtils.getMessage(t) + lineSeparator()
             );
         }
     }

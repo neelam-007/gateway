@@ -14,29 +14,35 @@ import java.util.Map;
 public class SolutionKitManagerContext {
     /**
      * XML document representing the solution kit metadata (e.g. id, version, name, description, etc).
+     * Read only from the UI (modifications from the UI are ignored).
      */
     private Document solutionKitMetadata;
 
     /**
+     * XML document representing the metadata (e.g. id, version, name, description, etc) of the *already installed* solution kit.
+     * Null if it's an install, *not* null if it's an upgrade.
+     * Read only (all modifications are ignored).
+     */
+    private Document installedSolutionKitMetadata;
+
+    /**
      * XML document representing the restman migration bundle to install or upgrade the Solution Kit.
+     * Read only from the UI (modifications from the UI are ignored).
      */
     private Document migrationBundle;
 
     /**
      * XML document representing the restman migration bundle to uninstall the Solution Kit.
+     * Read only from the UI (modifications from the UI are ignored).
      */
     private Document uninstallBundle;
 
     /**
      * A string to change entities so it's possible to install multiple instances of the same Solution Kit.
      * Depending on the entity the Solution Kit Manager can use the modifier as prefix or suffix.
+     * Read only (all modifications are ignored).
      */
     private String instanceModifier;
-
-    /**
-     * True if the current context is an upgrade (false if it's an install).
-     */
-    private boolean isUpgrade;
 
     /**
      * Optionally pass in key-value pairs from your GUI (or headless interface) to your callback code.
@@ -79,11 +85,11 @@ public class SolutionKitManagerContext {
         this.uninstallBundle = uninstallBundle;
     }
 
-    public boolean isUpgrade() {
-        return isUpgrade;
+    public Document getInstalledSolutionKitMetadata() {
+        return installedSolutionKitMetadata;
     }
 
-    public void setUpgrade(boolean isUpgrade) {
-        this.isUpgrade = isUpgrade;
+    public void setInstalledSolutionKitMetadata(Document installedSolutionKitMetadata) {
+        this.installedSolutionKitMetadata = installedSolutionKitMetadata;
     }
 }

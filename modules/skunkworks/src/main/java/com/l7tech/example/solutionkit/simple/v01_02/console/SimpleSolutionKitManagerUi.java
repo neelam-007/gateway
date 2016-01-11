@@ -50,6 +50,9 @@ public class SimpleSolutionKitManagerUi extends SolutionKitManagerUi {
             }
         });
 
+        // pass flag to callback indicating if button was created
+        getContext().getKeyValues().put(SimpleSolutionKitManagerCallback.MY_WAS_BUTTON_CREATED_KEY, Boolean.TRUE.toString());
+
         return button;
     }
 }
