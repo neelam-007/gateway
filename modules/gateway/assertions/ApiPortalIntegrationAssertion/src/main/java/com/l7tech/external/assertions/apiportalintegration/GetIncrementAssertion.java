@@ -26,6 +26,7 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
 
     public static final String SUFFIX_JDBC_CONNECTION = "jdbc";
     public static final String SUFFIX_SINCE = "since";
+    public static final String SUFFIX_NODE_ID = "nodeId";
     public static final String SUFFIX_TYPE = "type";
     public static final String SUFFIX_JSON = "json";
 
@@ -36,14 +37,15 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
-                new VariableMetadata(variablePrefix+"."+SUFFIX_JSON, false, false, null, true, DataType.STRING)
+        return new VariableMetadata[]{
+                new VariableMetadata(variablePrefix + "." + SUFFIX_JSON, false, false, null, true, DataType.STRING)
         };
     }
 
     @Override
     public String[] getVariablesUsed() {
         return VariableUseSupport.variables(variablePrefix +"."+ SUFFIX_SINCE,
+                                            variablePrefix +"."+ SUFFIX_NODE_ID,
                                             variablePrefix +"."+ SUFFIX_JDBC_CONNECTION,
                                             variablePrefix +"."+ SUFFIX_TYPE).asArray();
     }
@@ -62,7 +64,7 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.apiportalintegration.server.ModuleLoadListener");
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT
