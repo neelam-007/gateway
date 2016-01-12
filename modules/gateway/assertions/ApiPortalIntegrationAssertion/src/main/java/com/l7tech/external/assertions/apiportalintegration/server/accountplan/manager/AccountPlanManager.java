@@ -15,18 +15,26 @@ import org.springframework.context.ApplicationContext;
 import java.util.concurrent.ConcurrentMap;
 
 public class AccountPlanManager extends AbstractPortalGenericEntityManager<AccountPlan> {
+
+    private final GenericEntityManager genericEntityManager;
+
     public AccountPlanManager(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
-        final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         genericEntityManager.registerClass(AccountPlan.class, PORTAL_GENERIC_ENTITY_METADATA);
         entityManager = genericEntityManager.getEntityManager(AccountPlan.class);
     }
 
-    public static AccountPlanManager getInstance(final ApplicationContext context) {
+    public static synchronized AccountPlanManager getInstance(final ApplicationContext context) {
         if (instance == null) {
             instance = new AccountPlanManager(context);
         }
         return instance;
+    }
+
+    @Override
+    public void unRegister() {
+        genericEntityManager.unRegisterClass(AccountPlan.class.getName());
     }
 
     @Override
@@ -43,6 +51,8 @@ public class AccountPlanManager extends AbstractPortalGenericEntityManager<Accou
     public Object[] getUpdateLocks() {
         return updateLocks;
     }
+
+
 
     @Override
     public AccountPlan find(final String name) throws FindException {

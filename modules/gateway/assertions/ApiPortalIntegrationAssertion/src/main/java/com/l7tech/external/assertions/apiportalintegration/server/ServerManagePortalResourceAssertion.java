@@ -30,6 +30,9 @@ import static com.l7tech.external.assertions.apiportalintegration.ManagePortalRe
  * Server side implementation of ManagePortalResourceAssertion.
  */
 public class ServerManagePortalResourceAssertion extends AbstractServerAssertion<ManagePortalResourceAssertion> {
+
+
+
     public ServerManagePortalResourceAssertion(@NotNull final ManagePortalResourceAssertion assertion, @NotNull final ApplicationContext context) throws JAXBException {
         this(assertion, DefaultJAXBResourceMarshaller.getInstance(),
                 DefaultJAXBResourceUnmarshaller.getInstance(),
@@ -42,6 +45,20 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 new PolicyHelper(context),
                 PolicyValidationMarshaller.getInstance());
     }
+
+    /**
+     * Override to cleanup any resources allocated in the ServerAssertion.
+     * Caller is responsible for ensuring that no requests are currently using -- or will ever
+     * again use -- this ServerAssertion after close() is called.
+     */
+    @Override
+    public void close() {
+        accountPlanResourceHandler.close();
+        keyResourceHandler.close();
+        apiResourceHandler.close();
+
+    }
+
 
     /**
      * Assertion will only fail if an unexpected error occurs. It will not fail if the PolicyEnforcementContext has invalid or missing mandatory context variables.

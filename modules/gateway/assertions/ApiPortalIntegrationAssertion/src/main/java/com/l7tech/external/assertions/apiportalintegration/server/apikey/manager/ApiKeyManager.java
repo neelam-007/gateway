@@ -19,7 +19,10 @@ import java.util.concurrent.ConcurrentMap;
  * No caching of failed lookups (negative caching) is currently performed.
  */
 public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
-    public static ApiKeyManager getInstance(final ApplicationContext context) {
+
+    private final GenericEntityManager genericEntityManager;
+
+    public static synchronized ApiKeyManager getInstance(final ApplicationContext context) {
         if (instance == null) {
             instance = new ApiKeyManager(context);
         }
@@ -43,9 +46,14 @@ public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
 
     ApiKeyManager(final ApplicationContext context) {
         super(context);
-        GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
-        gem.registerClass(ApiKey.class, PORTAL_GENERIC_ENTITY_METADATA);
-        entityManager = gem.getEntityManager(ApiKey.class);
+        genericEntityManager = context.getBean("genericEntityManager", GenericEntityManager.class);
+        genericEntityManager.registerClass(ApiKey.class, PORTAL_GENERIC_ENTITY_METADATA);
+        entityManager = genericEntityManager.getEntityManager(ApiKey.class);
+    }
+
+    @Override
+    public void unRegister() {
+        genericEntityManager.unRegisterClass(ApiKey.class.getName());
     }
 
     /**

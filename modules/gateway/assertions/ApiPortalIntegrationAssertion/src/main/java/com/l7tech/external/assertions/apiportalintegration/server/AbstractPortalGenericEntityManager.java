@@ -52,6 +52,8 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
    */
   public abstract Object[] getUpdateLocks();
 
+  public abstract void unRegister();
+
   /**
    * @return the name of the config property that stores the cache wipe interval in milliseconds.
    */

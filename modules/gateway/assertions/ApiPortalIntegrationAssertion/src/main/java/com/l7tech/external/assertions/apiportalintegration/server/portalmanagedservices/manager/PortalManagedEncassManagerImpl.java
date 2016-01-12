@@ -61,9 +61,11 @@ public class PortalManagedEncassManagerImpl extends AbstractPortalGenericEntityM
         }
     }
 
+    private final GenericEntityManager genericEntityManager;
+
     public PortalManagedEncassManagerImpl(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
-        final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         genericEntityManager.registerClass(PortalManagedEncass.class);
         entityManager = genericEntityManager.getEntityManager(PortalManagedEncass.class);
         encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
@@ -71,7 +73,12 @@ public class PortalManagedEncassManagerImpl extends AbstractPortalGenericEntityM
         applicationEventProxy.addApplicationListener(this);
     }
 
-    public static PortalManagedEncassManager getInstance(@NotNull final ApplicationContext context) {
+    @Override
+    public void unRegister() {
+        genericEntityManager.unRegisterClass(PortalManagedEncass.class.getName());
+    }
+
+    public static synchronized PortalManagedEncassManager getInstance(@NotNull final ApplicationContext context) {
         if (instance == null) {
             instance = new PortalManagedEncassManagerImpl(context);
         }
@@ -192,6 +199,8 @@ public class PortalManagedEncassManagerImpl extends AbstractPortalGenericEntityM
     public Object[] getUpdateLocks() {
         return updateLocks;
     }
+
+
 
     /**
      * Provide restricted access to the name cache for unit tests.

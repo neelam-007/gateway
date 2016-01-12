@@ -27,4 +27,6 @@ public interface PortalGenericEntityManager<T extends AbstractPortalGenericEntit
     List<T> findAll() throws FindException;
 
     int getCacheItem();
+
+    public void unRegister();
 }

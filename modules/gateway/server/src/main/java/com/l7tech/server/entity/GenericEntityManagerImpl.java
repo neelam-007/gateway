@@ -97,13 +97,13 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     @Override
     public <ET extends GenericEntity> void registerClass(@NotNull Class<ET> entityClass, @Nullable GenericEntityMetadata metadata) throws IllegalArgumentException {
         if (!GenericEntity.class.isAssignableFrom(entityClass))
-            throw new IllegalArgumentException("Specified entity class is not assignable to GenericEntity");
+            throw new IllegalArgumentException("Specified entity class is not assignable to GenericEntity, entity class: "+entityClass.getName());
         if (entityClass == GenericEntity.class)
-            throw new IllegalArgumentException("Specified entity class is GenericEntity itself; concrete entity class should be a subclass of GenericEntity");
+            throw new IllegalArgumentException("Specified entity class is GenericEntity itself; concrete entity class should be a subclass of GenericEntity, entity class: "+entityClass.getName());
         String name = entityClass.getName();
         final ClassInfo prev = registeredClasses.putIfAbsent(name, new ClassInfo<>(entityClass, metadata));
         if (null != prev)
-            throw new IllegalArgumentException("Specified entity classname is already registered");
+            throw new IllegalArgumentException("Specified entity classname is already registered, entity class: "+entityClass.getName());
     }
 
     @Override

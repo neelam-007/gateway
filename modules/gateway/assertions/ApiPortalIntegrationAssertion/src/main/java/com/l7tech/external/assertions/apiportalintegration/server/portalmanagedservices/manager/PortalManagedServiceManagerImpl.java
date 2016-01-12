@@ -39,9 +39,12 @@ import java.util.logging.Logger;
  * If a PortalManagedService is updated anywhere on the cluster it will be removed from the cache.
  */
 public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntityManager<PortalManagedService> implements PortalManagedServiceManager {
+
+    private final GenericEntityManager genericEntityManager;
+
     public PortalManagedServiceManagerImpl(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
-        final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         genericEntityManager.registerClass(PortalManagedService.class);
         entityManager = genericEntityManager.getEntityManager(PortalManagedService.class);
         serviceManager = applicationContext.getBean("serviceManager", ServiceManager.class);
@@ -50,7 +53,11 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
         policyManager = applicationContext.getBean("policyManager", PolicyManager.class);
     }
 
-    public static PortalManagedServiceManager getInstance(@NotNull final ApplicationContext context) {
+    @Override
+    public void unRegister() {
+        genericEntityManager.unRegisterClass(PortalManagedService.class.getName());
+    }
+    public static synchronized PortalManagedServiceManager getInstance(@NotNull final ApplicationContext context) {
         if (instance == null) {
             instance = new PortalManagedServiceManagerImpl(context);
         }

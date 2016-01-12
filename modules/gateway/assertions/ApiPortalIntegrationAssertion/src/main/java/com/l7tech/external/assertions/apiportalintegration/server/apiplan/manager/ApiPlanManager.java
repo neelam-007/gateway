@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.entity.GenericEntityMetadata;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -16,14 +15,23 @@ import org.springframework.context.ApplicationContext;
 import java.util.concurrent.ConcurrentMap;
 
 public class ApiPlanManager extends AbstractPortalGenericEntityManager<ApiPlan> {
+
+    private final GenericEntityManager genericEntityManager;
+
     public ApiPlanManager(@NotNull final ApplicationContext applicationContext) {
         super(applicationContext);
-        final GenericEntityManager genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        genericEntityManager = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         genericEntityManager.registerClass(ApiPlan.class, PORTAL_GENERIC_ENTITY_METADATA);
         entityManager = genericEntityManager.getEntityManager(ApiPlan.class);
     }
 
-    public static ApiPlanManager getInstance(final ApplicationContext context) {
+
+    @Override
+    public void unRegister() {
+        genericEntityManager.unRegisterClass(ApiPlan.class.getName());
+    }
+
+    public static synchronized ApiPlanManager getInstance(final ApplicationContext context) {
         if (instance == null) {
             instance = new ApiPlanManager(context);
         }

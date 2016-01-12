@@ -55,6 +55,15 @@ public class ServerLookupApiKeyAssertion extends AbstractServerAssertion<LookupA
     }
 
     /**
+     * Override to cleanup any resources allocated in the ServerAssertion.
+     * Caller is responsible for ensuring that no requests are currently using -- or will ever
+     * again use -- this ServerAssertion after close() is called.
+     */
+    @Override
+    public void close() {
+        this.apiKeyManager.unRegister();
+    }
+    /**
      * Looks up the api key set on the LookupApiKeyAssertion in a cluster property and sets the lookup result in
      * context variables.
      *

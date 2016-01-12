@@ -499,6 +499,9 @@ public class ModuleLoadListener implements ApplicationListener {
         applicationEventProxy.removeApplicationListener(this);
         serviceTemplateManager.unregister(apiKeyManagementServiceTemplate);
         serviceTemplateManager.unregister(apiPortalIntegrationServiceTemplate);
+        apiKeysManager.unRegister();
+        portalManagedServiceManager.unRegister();
+        portalManagedEncassManager.unRegister();
     }
 
     private void refreshAllPortalManagedEncasses() {
