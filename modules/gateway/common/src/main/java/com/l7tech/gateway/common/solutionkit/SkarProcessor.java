@@ -190,7 +190,7 @@ public class SkarProcessor {
             }
 
             // Validate the SKAR structure
-            final boolean isCollection = Boolean.parseBoolean(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+            final boolean isCollection = SolutionKitUtils.isCollectionOfSkars(solutionKit);
             validate(isCollection, hasRequiredSolutionKitFile, hasRequiredInstallBundleFile, foundChildSkar);
 
             // If the SKAR is a collection of SKARs, then the rest task (e.g., merge bundle, record upgrade info, etc.)

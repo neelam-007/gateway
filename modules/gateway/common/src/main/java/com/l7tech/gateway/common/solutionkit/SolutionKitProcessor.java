@@ -166,7 +166,7 @@ public class SolutionKitProcessor {
     }
 
     private boolean isConversionToCollection(@NotNull SolutionKit newSolutionKit, @NotNull SolutionKit existingSolutionKit) {
-        return Boolean.parseBoolean(newSolutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)) && !Boolean.parseBoolean(existingSolutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+        return SolutionKitUtils.isCollectionOfSkars(newSolutionKit) && !SolutionKitUtils.isCollectionOfSkars(existingSolutionKit);
     }
 
     @Nullable

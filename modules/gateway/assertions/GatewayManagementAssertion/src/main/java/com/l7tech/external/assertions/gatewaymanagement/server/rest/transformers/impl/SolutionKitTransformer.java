@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.bundling.EntityContainer;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 /**
+ * Transformers from {@link SolutionKit} to {@link SolutionKitMO} and wise versa.
  */
 @Component
 public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitMO, SolutionKit> {
@@ -106,7 +108,7 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
         }
         solutionKit.setSolutionKitVersion(solutionKitVersion);
 
-        // set properties (optional so only if present and non null values)
+        // set properties
         setProperties(
                 solutionKitMO.getProperties(),
                 SolutionKit.getPropertyKeys(),
@@ -115,7 +117,15 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                     public void call(@NotNull final String name, @NotNull final String value) {
                         solutionKit.setProperty(name, value);
                     }
-                });
+                }
+        );
+
+        // check for mandatory properties
+        // based on wiki (https://wiki.l7tech.com/mediawiki/index.php/Solution_Kit_Manager) currently
+        // Description, TimeStamp and IsCollection are mandatory
+        // TODO: update this code if SolutionKit mandatory properties changes
+        throwIfPropertyIsMissing(solutionKit, SolutionKit.SK_PROP_DESC_KEY, SolutionKit.SK_PROP_TIMESTAMP_KEY, SolutionKit.SK_PROP_IS_COLLECTION_KEY);
+        final boolean isCollectionOfSkars = SolutionKitUtils.isCollectionOfSkars(solutionKit);
 
         // TODO : do we have install properties at all ?
         // set install properties (optional so only if present and non null values)
@@ -136,9 +146,9 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
             solutionKit.setUninstallBundle(uninstallBundle);
         }
 
-        // set Mappings (mandatory so throw if missing)
+        // set Mappings (mandatory if not collection of skars so throw if missing)
         final String mappings = trimValue(solutionKitMO.getMappings());
-        if (StringUtils.isEmpty(mappings)) {
+        if (!isCollectionOfSkars && StringUtils.isEmpty(mappings)) {
             throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "SolutionKit Mappings must be set");
         }
         solutionKit.setMappings(mappings);
@@ -222,6 +232,25 @@ public class SolutionKitTransformer implements EntityAPITransformer<SolutionKitM
                 if (value != null) {
                     propSetterCallback.call(key, value);
                 }
+            }
+        }
+    }
+
+    /**
+     * Throws {@link ResourceFactory.InvalidResourceException} if the specified {@code solutionKit} doesn't contain
+     * the mandatory {@code propertyKeys}.
+     *
+     * @param solutionKit     the {@link SolutionKit} to test.  Required and cannot be {@code null}.
+     * @param propertyKeys    array of mandatory property keys. Required and cannot be {@code null}.
+     * @throws ResourceFactory.InvalidResourceException if any of the mandatory properties is {@code null} or missing.
+     */
+    private static void throwIfPropertyIsMissing(
+            @NotNull final SolutionKit solutionKit,
+            @NotNull final String ... propertyKeys
+    ) throws ResourceFactory.InvalidResourceException {
+        for (final String prop : propertyKeys) {
+            if (StringUtils.isEmpty(solutionKit.getProperty(prop))) {
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "SolutionKit property '" + prop + "' must be set");
             }
         }
     }

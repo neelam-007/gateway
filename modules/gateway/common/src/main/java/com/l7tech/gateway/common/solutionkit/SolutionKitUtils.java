@@ -433,7 +433,11 @@ public final class SolutionKitUtils {
     }
 
     public static boolean isParentSolutionKit(@NotNull final SolutionKit candidate) {
-        return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)) && StringUtils.isBlank(candidate.getMappings());
+        return isCollectionOfSkars(candidate) && StringUtils.isBlank(candidate.getMappings());
+    }
+
+    public static boolean isCollectionOfSkars(@NotNull final SolutionKit candidate) {
+        return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
     }
 
     private SolutionKitUtils() {}
