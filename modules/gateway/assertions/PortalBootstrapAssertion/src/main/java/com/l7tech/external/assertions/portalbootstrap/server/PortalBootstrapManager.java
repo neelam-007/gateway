@@ -266,8 +266,9 @@ public class PortalBootstrapManager {
         final String pssgHost = clusterPropertyManager.getProperty("portal.config.pssg.host");
         final String tenantId = clusterPropertyManager.getProperty("portal.config.name");
         final String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
+        final String bundleVersion = clusterPropertyManager.getProperty("portal.bundle.version");
 
-        URL url = new URL("https://" + pssgHost + ":" + ENROLL_PORT + "/enroll/" + tenantId + "?action=upgrade&nodeId=" + nodeId);
+        URL url = new URL("https://" + pssgHost + ":" + ENROLL_PORT + "/enroll/" + tenantId + "?action=upgrade&nodeId=" + nodeId + "&bundleVersion=" + bundleVersion);
 
         byte[] postBody = buildEnrollmentPostBody( user );
 
@@ -306,6 +307,11 @@ public class PortalBootstrapManager {
                 logger.log(Level.WARNING, "Unable to upgrade: This gateway is enrolled with SaaS portal which is identified by , '" + current_pssg_identifier + "'. Upgrade has been aborted.");
                 throw new IOException("This gateway is enrolled with a different portal.");
             }
+
+            if (connection.getResponseCode() == 204) {
+                throw new IOException("This gateway is already on the latest portal bundle version");
+            }
+
             ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
             boolean isBinary = contentTypeHeader.matches(ContentTypeHeader.OCTET_STREAM_DEFAULT);
             if (isBinary) {
@@ -593,7 +599,9 @@ public class PortalBootstrapManager {
             String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
             String pssgHost = clusterPropertyManager.getProperty("portal.config.pssg.host");
             String tenantId = clusterPropertyManager.getProperty("portal.config.name");
-            if (nodeId == null || pssgHost == null || tenantId == null || nodeId.isEmpty() || pssgHost.isEmpty() || tenantId.isEmpty()) {
+            String bundleVersion = clusterPropertyManager.getProperty("portal.bundle.version");
+            if (nodeId == null || pssgHost == null || tenantId == null || bundleVersion == null ||
+                    nodeId.isEmpty() || pssgHost.isEmpty() || tenantId.isEmpty() || bundleVersion.isEmpty()) {
                 return false;
             }
         } catch (FindException | KeyStoreException e) {

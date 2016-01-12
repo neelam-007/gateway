@@ -223,6 +223,7 @@ public class PortalBootstrapManagerTest {
         when(clusterPropertyManager.getProperty("portal.config.node.id")).thenReturn("6d5a711f-66f5-11e5-887b-000c2971a55f");
         when(clusterPropertyManager.getProperty("portal.config.pssg.host")).thenReturn("abc.ca.com");
         when(clusterPropertyManager.getProperty("portal.config.name")).thenReturn("tenant1");
+        when(clusterPropertyManager.getProperty("portal.bundle.version")).thenReturn("12345");
         assertTrue(manager.isGatewayEnrolled());
     }
 
@@ -233,6 +234,7 @@ public class PortalBootstrapManagerTest {
         when(clusterPropertyManager.getProperty("portal.config.node.id")).thenReturn(null);
         when(clusterPropertyManager.getProperty("portal.config.pssg.host")).thenReturn("abc.ca.com");
         when(clusterPropertyManager.getProperty("portal.config.name")).thenReturn("tenant1");
+        when(clusterPropertyManager.getProperty("portal.bundle.version")).thenReturn("12345");
         assertTrue(!manager.isGatewayEnrolled());
     }
 }
