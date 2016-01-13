@@ -309,7 +309,7 @@ public class PortalBootstrapManager {
             }
 
             if (connection.getResponseCode() == 204) {
-                throw new IOException("This gateway is already on the latest portal bundle version");
+                throw new IOException("This gateway is already on the latest integrated portal version");
             }
 
             ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(connection.getContentType());
