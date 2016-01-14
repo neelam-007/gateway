@@ -66,49 +66,49 @@ function doWaitForProcessControllerStartUp() {
 	doWaitForServiceStartUp "process controller" 'netstat -tnap | grep 8765 | grep LISTEN'
 }
 
+# set environment variables using Consul or etcd if configured to do so
 function collectConfig() {
-	# collect config from Consul if it's available
 	if [ "$SKIP_CONFIG_SERVER_CHECK" == "true" ]; then
 		logInfo "skipping check for Consul or etcd server"
+		return
+	fi
+	
+	logInfo "checking if a Consul server has been set in the SSG_CONSUL_IP environment variable"
+	if [ "$SSG_CONSUL_IP" == "" ]; then
+		logInfo "no Consul server set via the SSG_CONSUL_IP environment variable"
 	else
-		logInfo "checking for a Consul server"
-		CONSUL_IP=`dig consul.service.consul +short | head -n 1`
-		if [ "$CONSUL_IP" == "" ]; then
-			logInfo "no Consul server found"
+		logInfo "Consul server is \"$SSG_CONSUL_IP\". Running envconsul"
+		# we do a recursive call of this script using the exported environment from Consul
+		# to prevent infinite recursion, we test if we've checked for Consul before
+		export SKIP_CONFIG_SERVER_CHECK="true"
+		# note that we assume that the Consul API is available on the standard port (8500)
+		envconsul -consul "$SSG_CONSUL_IP:8500" -prefix com/ca/apim -sanitize -upcase -log-level info -once "$0"
+		if [ $? -ne 0 ]; then
+			logErrorAndExit "failed to retrieve config from Consul or a different error has occurred"
 		else
-			logInfo "found Consul server at \"$CONSUL_IP\". Running envconsul"
-			# we do a recursive call of this script using the exported environment from Consul
-			# to prevent infinite recursion, we test if we've checked for Consul before
-			export SKIP_CONFIG_SERVER_CHECK="true"
-			# note that we assume that the Consul API is available on the standard port (8500)
-			envconsul -consul "$CONSUL_IP:8500" -prefix com/ca/apim -sanitize -upcase -log-level info -once "$0"
-			if [ $? -ne 0 ]; then
-				logErrorAndExit "failed to retrieve config from Consul or a different error has occurred"
-			else
-				logInfo "Gateway has shutdown"
-				exit 0
-			fi
+			logInfo "Gateway has shutdown"
+			exit 0
 		fi
-		
-		logInfo "checking for an etcd server"
-		# if etcd is available, use it to set environment variables
-		# for more details, see the Endpoint and DNS Discovery sections of https://github.com/coreos/etcd/tree/release-2.2/etcdctl
-		if [ "$ETCDCTL_ENDPOINT" == "" ] && [ "$ETCDCTL_DISCOVERY_SRV" == "" ]; then
-			logInfo "no etcd server available (neither ETCDCTL_ENDPOINT nor ETCDCTL_DISCOVERY_SRV were set in the environment"
-		else
-			logInfo "trying to use etcd server (ETCDCTL_ENDPOINT=\"$ETCDCTL_ENDPOINT\" and ETCDCTL_DISCOVERY_SRV=\"$ETCDCTL_DISCOVERY_SRV\")"
-			ETCD_KEYS=`etcdctl ls /com/ca/apim/` || logErrorAndExit "failed to retrieve keys from etcd server"
-			for ETCD_KEY in `echo "$ETCD_KEYS"`; do
-				ETCD_VALUE=`etcdctl get "$ETCD_KEY"` || logErrorAndExit "failed to retrieve value for key \"$ETCD_KEY\" from etcd server"
-				NEW_VAR_NAME=`basename "$ETCD_KEY" | tr '[:lower:]' '[:upper:]'`
-				declare "$NEW_VAR_NAME=$ETCD_VALUE"
-				export "$NEW_VAR_NAME"
-			done
+	fi
+	
+	logInfo "checking for an etcd server"
+	# if etcd is available, use it to set environment variables
+	# for more details, see the Endpoint and DNS Discovery sections of https://github.com/coreos/etcd/tree/release-2.2/etcdctl
+	if [ "$ETCDCTL_ENDPOINT" == "" ] && [ "$ETCDCTL_DISCOVERY_SRV" == "" ]; then
+		logInfo "no etcd server available (neither ETCDCTL_ENDPOINT nor ETCDCTL_DISCOVERY_SRV were set in the environment"
+	else
+		logInfo "trying to use etcd server (ETCDCTL_ENDPOINT=\"$ETCDCTL_ENDPOINT\" and ETCDCTL_DISCOVERY_SRV=\"$ETCDCTL_DISCOVERY_SRV\")"
+		ETCD_KEYS=`etcdctl ls /com/ca/apim/` || logErrorAndExit "failed to retrieve keys from etcd server"
+		for ETCD_KEY in `echo "$ETCD_KEYS"`; do
+			ETCD_VALUE=`etcdctl get "$ETCD_KEY"` || logErrorAndExit "failed to retrieve value for key \"$ETCD_KEY\" from etcd server"
+			NEW_VAR_NAME=`basename "$ETCD_KEY" | tr '[:lower:]' '[:upper:]'`
+			declare "$NEW_VAR_NAME=$ETCD_VALUE"
+			export "$NEW_VAR_NAME"
+		done
 
-			# recusively call this script so that the settings from etcd are available in the environment
-			export SKIP_CONFIG_SERVER_CHECK="true"
-			"$0"
-		fi
+		# recusively call this script so that the settings from etcd are available in the environment
+		export SKIP_CONFIG_SERVER_CHECK="true"
+		"$0"
 	fi
 }
 
