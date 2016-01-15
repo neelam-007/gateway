@@ -20,6 +20,7 @@ reportenv()
 cygwin=false;
 case "`uname`" in
   CYGWIN*) cygwin=true ;;
+  MSYS*) cygwin=true ;;
 esac 
 
 # For Cygwin, switch paths to Unix .
@@ -29,7 +30,7 @@ if $cygwin; then
   JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
 fi
 
-if [ ! -e $JAVA_HOME/bin/java ]; then
+if [ ! -e "$JAVA_HOME/bin/java" ]; then
     echo ""
     echo "The JDK wasn't found in directory ${JAVA_HOME}."
     echo "Please set your environment so that the JAVA_HOME variable "
@@ -41,7 +42,7 @@ fi
 PATH="$JAVA_HOME/bin:$PATH"; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
 
-if [ ! -e $SRC_ROOT/build.sh ]; then
+if [ ! -e "$SRC_ROOT/build.sh" ]; then
     echo ""
     echo "The source root wasn't found in directory ${SRC_ROOT}."
     echo "Please set your environment so that the SRC_ROOT variable "
