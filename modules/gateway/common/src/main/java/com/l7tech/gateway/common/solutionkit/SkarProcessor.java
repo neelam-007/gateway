@@ -26,8 +26,6 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
-
 /**
  * SKAR file processing logic.  Must be accessible from both the console UI and in the server headless interface.
  */
@@ -54,7 +52,6 @@ public class SkarProcessor {
      */
     public void invokeCustomCallback(final SolutionKit solutionKit) throws SolutionKitException {
         try {
-            Document metadataDoc, bundleDoc;
             SolutionKitManagerContext skContext;
 
             Pair<SolutionKit, SolutionKitCustomization> customization;
@@ -73,41 +70,23 @@ public class SkarProcessor {
             // if implementer provides a context
             skContext = customUi != null ? customUi.getContext() : null;
             if (skContext != null) {
-                // get from selected
-                metadataDoc = SolutionKitUtils.createDocument(solutionKit);
-                bundleDoc = solutionKitsConfig.getBundleAsDocument(solutionKit);
-
-                // set to context: metadata, install bundle
-                skContext.setSolutionKitMetadata(metadataDoc);
-                skContext.setMigrationBundle(bundleDoc);
-
-                // set to context: uninstall bundle
-                final String uninstallBundle = solutionKit.getUninstallBundle();
-                if (StringUtils.isNotBlank(uninstallBundle)) {
-                    skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
-                }
-
-                // set to context: already installed metadata
-                final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid(), solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
-                if (solutionKitToUpgrade != null) {
-                    skContext.setInstalledSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKitToUpgrade));
-                }
+                SolutionKitCustomization.populateSolutionKitManagerContext(solutionKitsConfig, skContext, solutionKit);
 
                 // execute callback
                 customCallback.preMigrationBundleImport(skContext);
 
                 // copy back metadata from xml version
-                SolutionKitUtils.copyDocumentToSolutionKit(metadataDoc, solutionKit);
+                SolutionKitUtils.copyDocumentToSolutionKit(skContext.getSolutionKitMetadata(), solutionKit);
 
                 // set (possible) changes made to metadata and bundles (install/upgrade and uninstall)
                 solutionKit.setUninstallBundle(XmlUtil.nodeToString(skContext.getUninstallBundle()));
-                solutionKitsConfig.setBundle(solutionKit, bundleDoc);
-            } else  {
+                solutionKitsConfig.setBundle(solutionKit, skContext.getMigrationBundle());
+
+                solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier
+                solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
+            } else {
                 customCallback.preMigrationBundleImport(null);
             }
-
-            solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier
-            solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
         } catch (SolutionKitManagerCallback.CallbackException e) {
             String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
@@ -371,7 +350,7 @@ public class SkarProcessor {
         return classLoader;
     }
 
-    void setCustomizationInstances(final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
+    void setCustomizationInstances(@NotNull final SolutionKit solutionKit, @Nullable final SolutionKitCustomizationClassLoader classLoader) throws SolutionKitException {
         if (classLoader != null) {
             try {
                 SolutionKitManagerUi customUi = null;

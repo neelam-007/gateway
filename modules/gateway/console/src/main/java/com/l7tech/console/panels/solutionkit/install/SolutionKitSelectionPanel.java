@@ -1,6 +1,5 @@
 package com.l7tech.console.panels.solutionkit.install;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.AdminGuiUtils;
@@ -14,8 +13,6 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
-import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
@@ -40,9 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_DESC_KEY;
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_FEATURE_SET_KEY;
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 
 /**
  * Wizard panel which allows the user to select component(s) within a solution kit to install.
@@ -459,48 +454,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void addCustomUis(final JPanel customizableButtonPanel, final SolutionKitsConfig settings, final SolutionKit selectedSolutionKit) {
-        // Initially remove any button from customizableButtonPanel
-        customizableButtonPanel.removeAll();
-
-        // If the selected solution kit has customization with a custom UI, then create a button via the custom UI.
-        // Otherwise, there is not any button created.
-        if (selectedSolutionKit != null) {
-            final Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = settings.getCustomizations();
-            final Pair<SolutionKit, SolutionKitCustomization> customization = customizations.get(selectedSolutionKit.getSolutionKitGuid());
-            if (customization != null && customization.right != null) {
-                final SolutionKitManagerUi customUi = customization.right.getCustomUi();
-                if (customUi != null) {
-
-                    // make context available to custom UI (as read-only); test for null b/c implementer can optionally null the context
-                    SolutionKitManagerContext skContext = customUi.getContext();
-                    if (skContext != null) {
-                        try {
-                            // set to context: metadata, install bundle
-                            skContext.setSolutionKitMetadata(SolutionKitUtils.createDocument(selectedSolutionKit));
-                            skContext.setMigrationBundle(settings.getBundleAsDocument(selectedSolutionKit));
-
-                            // set to context: uninstall bundle
-                            final String uninstallBundle = selectedSolutionKit.getUninstallBundle();
-                            if (StringUtils.isNotBlank(uninstallBundle)) {
-                                skContext.setUninstallBundle(XmlUtil.stringToDocument(uninstallBundle));
-                            }
-
-                            // set to context: already installed metadata
-                            final SolutionKit solutionKitToUpgrade = settings.getSolutionKitToUpgrade(selectedSolutionKit.getSolutionKitGuid(), selectedSolutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
-                            if (solutionKitToUpgrade != null) {
-                                skContext.setInstalledSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKitToUpgrade));
-                            }
-                        } catch (TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
-                            final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
-                            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
-                            DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);
-                        }
-                    }
-
-                    // call button create logic
-                    customizableButtonPanel.add(customUi.createButton(customizableButtonPanel));
-                }
-            }
+        try {
+            SolutionKitCustomization.addCustomUis(customizableButtonPanel, settings, selectedSolutionKit);
+        } catch (TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
+            final String errorMessage = "Solution kit metadata and/or bundle not available to custom UI class due to an unexpected error.";
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+            DialogDisplayer.showMessageDialog(this, errorMessage + ".", "Custom UI Error", JOptionPane.ERROR_MESSAGE, null);
         }
     }
 
