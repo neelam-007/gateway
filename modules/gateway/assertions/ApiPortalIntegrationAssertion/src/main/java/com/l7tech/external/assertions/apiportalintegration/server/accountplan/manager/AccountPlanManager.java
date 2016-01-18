@@ -34,6 +34,7 @@ public class AccountPlanManager extends AbstractPortalGenericEntityManager<Accou
 
     @Override
     public void unRegister() {
+
         genericEntityManager.unRegisterClass(AccountPlan.class.getName());
     }
 

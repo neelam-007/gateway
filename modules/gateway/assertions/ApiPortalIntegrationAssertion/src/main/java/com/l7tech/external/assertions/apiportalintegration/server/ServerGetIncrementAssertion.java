@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -30,13 +31,11 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     private final String[] variablesUsed;
 
-
     // todo make configurable? cluster prop? use default jdbc?
     private int queryTimeout = 300;
     private int maxRecords = 1000000;
 
     public final String ENTITY_TYPE_APPLICATION = "APPLICATION";
-
 
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -80,13 +79,10 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
               throw new PolicyAssertionException(assertion, "Assertion must supply a node id");
             }
 
-
-            // TODO: bulk sync would not have a since timestamp?
-            if (sinceStr == null || !(sinceStr instanceof String)) {
-                throw new PolicyAssertionException(assertion, "Assertion must supply a since timestamp of type string");
+            Long since = null;
+            if (sinceStr != null && sinceStr instanceof String && !((String) sinceStr).isEmpty()) {
+                since = Long.parseLong((String) sinceStr);
             }
-
-            long since = Long.parseLong((String) sinceStr);
 
             if (jdbcConnectionName == null) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
@@ -112,34 +108,56 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         } catch (Exception ex) {
             final String errorMsg = "Error Retrieving Application Increment";
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[]{errorMsg, ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex));
+                    new String[]{errorMsg + ": " + ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex));
             return AssertionStatus.FAILED;
         }
         return AssertionStatus.NONE;
     }
 
-    private String getJsonMessage(String connName, final Object since, final String nodeId) throws IOException {
+    String getJsonMessage(final String connName, final Object since, final String nodeId) throws IOException {
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
         appJsonObj.setEntityType("application");
 
-        // get deleted IDs
-        Map<String, List> results = (Map<String, List>) queryJdbc(connName, "SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS < ?", CollectionUtils.list(since, incrementStart));
-        List<String> deletedIds = results.get("entity_uuid");
-        appJsonObj.setDeletedIds(deletedIds);
+        Map<String, List> results;
 
-        // get new or updated or last sync error apps
-        results  = (Map<String, List>) queryJdbc(connName,
-                "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
-                        "FROM APPLICATION a  \n" +
-                        "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                        "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
-                        "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
-                        "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.CREATE_TS > ? or a.MODIFY_TS > ?) AND (a.CREATE_TS < ? or a.MODIFY_TS < ?) or (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since ,since,incrementStart, incrementStart,nodeId));
-        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList( results));
+        if (since != null) {
+            // get deleted IDs
+            results = (Map<String, List>) queryJdbc(connName, "SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?", CollectionUtils.list(since, incrementStart));
+            List<String> deletedIds = results.get("entity_uuid");
+            if (deletedIds == null || deletedIds.isEmpty()) {
+                // do not include deleted list in json response
+                appJsonObj.setDeletedIds(null);
+            } else {
+                appJsonObj.setDeletedIds(deletedIds);
+            }
+
+            // get new or updated or last sync error apps
+            results  = (Map<String, List>) queryJdbc(connName,
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
+                            "FROM APPLICATION a  \n" +
+                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
+                            "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
+                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.CREATE_TS > ? or a.MODIFY_TS > ?) AND (a.CREATE_TS <= ? or a.MODIFY_TS <= ?) or (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since ,since,incrementStart, incrementStart,nodeId));
+        } else {
+            // bulk, get everything
+            results  = (Map<String, List>) queryJdbc(connName,
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
+                            "FROM APPLICATION a  \n" +
+                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
+                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED')", Collections.EMPTY_LIST);
+
+            // do not include deleted list in json response
+            appJsonObj.setDeletedIds(null);
+        }
+
+        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results));
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
         String jsonInString;
         try {
             jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(appJsonObj);
@@ -183,7 +201,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return CollectionUtils.toListFromCollection(appMap.values());
     }
 
-    private Object queryJdbc(String connName, String queryString,@NotNull List<Object> preparedStmtParams){
+    Object queryJdbc(String connName, String queryString,@NotNull List<Object> preparedStmtParams){
         final Object result = jdbcQueryingManager.performJdbcQuery(connName, queryString, null, maxRecords, queryTimeout, preparedStmtParams);
         return result;
     }
@@ -205,7 +223,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         }
     }
 
-    private class ApplicationEntity {
+    class ApplicationEntity {
         private String id;
         private String key;
         private String secret;
