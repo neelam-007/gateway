@@ -91,6 +91,10 @@ public class SkarProcessor {
             String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException(e.getMessage(), e);
+        } catch (IncompatibleClassChangeError e) {
+            String errorMessage = solutionKit.getName() + " was created using an incompatible version of the customization library.";
+            logger.log(Level.WARNING, errorMessage, e);
+            throw new BadRequestException(errorMessage, e);
         }  catch (IOException | TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
             String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
