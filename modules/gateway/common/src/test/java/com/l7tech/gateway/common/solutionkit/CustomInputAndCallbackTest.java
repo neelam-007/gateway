@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -28,6 +29,7 @@ import java.util.Map;
 
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -111,15 +113,6 @@ public class CustomInputAndCallbackTest {
         }
     }
 
-    @Test
-    public void invokeCallbackVerifyContext() throws Throwable {
-        // test target ID set properly
-        //    verify called solutionKitsConfig.setPreviouslyResolvedIds()
-        //    verify called solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit))
-
-        // make changes in callback and verify changes
-    }
-
     private final String someGuidString = "someGuidString";
     private final String someVersionString = "someVersionString";
     private final String someNameString = "someNameString";
@@ -145,11 +138,13 @@ public class CustomInputAndCallbackTest {
     private static Map<String, String> getNamespaceMap() {
         return nsMap;
     }
+    private static final String READ_ONLY_STR = "SHOULD BE READ ONLY!";
+    private static final String MODIFIED_STR = "SHOULD BE MODIFIED!";
 
     @Test
-    public void addUiVerifyContext() throws Exception {
+    public void accessToContext() throws Exception {
         SolutionKit solutionKit = new SolutionKit();
-        setupUiAccess(solutionKit);
+        setupInitialContext(solutionKit);
 
         // mock class loading
         Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
@@ -174,13 +169,13 @@ public class CustomInputAndCallbackTest {
             @Override
             public void call(SolutionKitManagerContext skmContext) throws RuntimeException {
                 try {
-                    verifyUiAccess(skmContext);
+                    verifyInitialContext(skmContext);
 
                     // set a key-value pair
                     skmContext.getKeyValues().put(someKey, someValue);
 
                     // attempt to make read-only changes; which will be ignored and not passed to the callback
-                    attemptToModifyReadOnly(skmContext);
+                    attemptToModify(skmContext, READ_ONLY_STR);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -204,11 +199,18 @@ public class CustomInputAndCallbackTest {
             @Override
             public void call(SolutionKitManagerContext skmContext) throws RuntimeException {
                 try {
+                    // verify context same as initial context
+                    // this also verifies changes in the ui don't affect the callback (e.g. read only and was correctly ignored)
+                    verifyInitialContext(skmContext);
+
+                    // verify instance modifier read only
+                    assertNotEquals(READ_ONLY_STR , skmContext.getInstanceModifier());
+
                     // verify key-value pair was set in ui is available in callback
                     assertEquals(someValue, skmContext.getKeyValues().get(someKey));
 
-                    // verify ui read only changes do not affect callback (e.g. was correctly ignored)
-                    verifyAttemptToModifyReadOnlyFailed(skmContext);
+                    // attempt to modify context
+                    attemptToModify(skmContext, MODIFIED_STR);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -224,9 +226,23 @@ public class CustomInputAndCallbackTest {
 
         // verify method was called
         assertTrue("Expected SolutionKitManagerCallback.preMigrationBundleImportCalled(...) to be called, but was not.", callback.isPreMigrationBundleImportCalled());
+
+        // verify changes from callback - metadata, install bundle, installed metadata, uninstall bundle, instance modifier
+        verifyModified(solutionKit);
+
+        // verify logic to set target ID called
+        verify(solutionKitsConfig).setPreviouslyResolvedIds();
+        verify(solutionKitsConfig).setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
     }
 
-    private void setupUiAccess(final SolutionKit solutionKit) throws Exception {
+    private Document getBundleAsDocument() throws Exception {
+        InputStream inputStream = new ByteArrayInputStream(installBundleStr.getBytes(StandardCharsets.UTF_8));
+        final Document installBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
+        inputStream.reset();
+        return installBundleDoc;
+    }
+
+    private void setupInitialContext(final SolutionKit solutionKit) throws Exception {
         // set metadata: some random values
         solutionKit.setSolutionKitGuid(someGuidString);
         solutionKit.setSolutionKitVersion(someVersionString);
@@ -248,15 +264,8 @@ public class CustomInputAndCallbackTest {
         when(solutionKitsConfig.getSolutionKitToUpgrade(someGuidString, null)).thenReturn(installedSolutionKit);
     }
 
-    private Document getBundleAsDocument() throws Exception {
-        InputStream inputStream = new ByteArrayInputStream(installBundleStr.getBytes(StandardCharsets.UTF_8));
-        final Document installBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
-        inputStream.reset();
-        return installBundleDoc;
-    }
-
-    private void verifyUiAccess(final SolutionKitManagerContext skmContext) throws Exception {
-        // verify ui can access metadata
+    private void verifyInitialContext(final SolutionKitManagerContext skmContext) throws Exception {
+        // verify access to metadata (random sample)
         final Element metadata = skmContext.getSolutionKitMetadata().getDocumentElement();
         assertEquals(someGuidString, getTextValue(findExactlyOneChildElementByName(metadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_ID)));
         assertEquals(someVersionString, getTextValue(findExactlyOneChildElementByName(metadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_VERSION)));
@@ -265,48 +274,46 @@ public class CustomInputAndCallbackTest {
         assertEquals(callbackClassName, getTextValue(findExactlyOneChildElementByName(metadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_CUSTOM_CALLBACK)));
         assertEquals(uiClassName, getTextValue(findExactlyOneChildElementByName(metadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_CUSTOM_UI)));
 
-        // verify ui can access install bundle
+        // verify access to install bundle
         assertEquals(installBundleStr, XmlUtil.nodeToFormattedString(skmContext.getMigrationBundle()));
 
-        // verify ui can access uninstall bundle
+        // verify access to uninstall bundle
         assertEquals(uninstallBundleStr, XmlUtil.nodeToFormattedString(skmContext.getUninstallBundle()));
 
-        // verify ui can access already installed metadata
+        // verify access to already installed metadata (random sample)
         Element installedMetadata = skmContext.getInstalledSolutionKitMetadata().getDocumentElement();
         assertEquals(someGuidString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_ID)));
         assertEquals(someInstalledVersionString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_VERSION)));
         assertEquals(someInstalledDescriptionString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_DESC)));
     }
 
-    final String readOnlyStr = "SHOULD BE READ ONLY!";
-
-    private void attemptToModifyReadOnly(final SolutionKitManagerContext skmContext) throws SAXException, SolutionKitManagerCallback.CallbackException {
-        // modify name in metadata
+    private void attemptToModify(final SolutionKitManagerContext skmContext, final String modifyStr) throws SAXException, SolutionKitManagerCallback.CallbackException {
+        // modify name in metadata - ui read only
         {
             final Document solutionKitMetadata = skmContext.getSolutionKitMetadata();
             final List<Element> nameElements = XpathUtil.findElements(solutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
             if (nameElements.size() > 0) {
-                nameElements.get(0).setTextContent(readOnlyStr);
+                nameElements.get(0).setTextContent(modifyStr);
             }
         }
 
-        // modify install bundle
+        // modify install bundle - ui read only
         modifyInstallBundle(skmContext.getMigrationBundle());
 
-        // modify uninstall bundle
+        // modify uninstall bundle - ui read only
         modifyUninstallBundle(skmContext.getUninstallBundle());
 
-        // modify already installed metadata
+        // modify already installed metadata - read only
         {
             final Document installedSolutionKitMetadata = skmContext.getInstalledSolutionKitMetadata();
             final List<Element> nameElements = XpathUtil.findElements(installedSolutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
             if (nameElements.size() > 0) {
-                nameElements.get(0).setTextContent(readOnlyStr);
+                nameElements.get(0).setTextContent(modifyStr);
             }
         }
 
-        // modify instance modifier
-        skmContext.setInstanceModifier(readOnlyStr);
+        // modify instance modifier - read only
+        skmContext.setInstanceModifier(READ_ONLY_STR);
     }
 
     private void modifyInstallBundle(final Document installBundle) throws SAXException, SolutionKitManagerCallback.CallbackException {
@@ -334,9 +341,10 @@ public class CustomInputAndCallbackTest {
         mappingsElements.get(0).appendChild(installBundle.importNode(myFolderMapping, true));
     }
 
+    private static final String MY_FOLDER_DELETE_ACTION_SRC_ID = "action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\"";
     private void modifyUninstallBundle(final Document uninstallBundle) throws SolutionKitManagerCallback.CallbackException, SAXException {
         final String MY_FOLDER_DELETE_MAPPING =
-                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
+                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + MY_FOLDER_DELETE_ACTION_SRC_ID + " srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
 
         final List<Element> uninstallMappingsElements = XpathUtil.findElements(uninstallBundle.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
         Element myFolderMapping = XmlUtil.stringToDocument(MY_FOLDER_DELETE_MAPPING).getDocumentElement();
@@ -344,40 +352,22 @@ public class CustomInputAndCallbackTest {
         uninstallMappingsElements.get(0).appendChild(uninstallBundle.importNode(myFolderMapping, true));
     }
 
-    private void verifyAttemptToModifyReadOnlyFailed(final SolutionKitManagerContext skmContext) {
-        // verify metadata name
-        {
-            final Document solutionKitMetadata = skmContext.getSolutionKitMetadata();
-            final List<Element> nameElements = XpathUtil.findElements(solutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
-            final String solutionKitName = nameElements.size() > 0 ? nameElements.get(0).getTextContent() : "";
-            assertNotEquals(readOnlyStr , solutionKitName);
-        }
+    // verify changes from callback - metadata, install bundle, installed metadata, uninstall bundle, instance modifier
+    private void verifyModified(final SolutionKit solutionKit) throws IOException {
+        // verify metadata modified
+        assertEquals(MODIFIED_STR, solutionKit.getName());
 
-        // verify install bundle
-        {
-            final Document installBundle = skmContext.getMigrationBundle();
-            final List<Element> itemElements = XpathUtil.findElements(installBundle.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item", getNamespaceMap());
-            assertEquals(0, itemElements.size());
-            final List<Element> mappingElements = XpathUtil.findElements(installBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());
-            assertEquals(0, mappingElements.size());
-        }
+        // verify install bundle modified (i.e. bundle changes was set back into config)
+        // for some reason set bundle is called twice instead of just once, shouldn't cause a problem, ignore for now
+        verify(solutionKitsConfig, times(2)).setBundle(solutionKit, solutionKitsConfig.getBundleAsDocument(solutionKit));
 
-        // verify uninstall bundle
-        {
-            final Document uninstallBundle = skmContext.getUninstallBundle();
-            final List<Element> uninstallMappingElements = XpathUtil.findElements(uninstallBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());
-            assertEquals(0, uninstallMappingElements.size());
-        }
+        // verify already installed metadata read only (i.e. changes *not* set back to config)
+        verify(solutionKitsConfig, times(0)).setSolutionKitsToUpgrade(anyListOf(SolutionKit.class));
 
-        // verify already installed metadata
-        {
-            final Document installedSolutionKitMetadata = skmContext.getInstalledSolutionKitMetadata();
-            final List<Element> nameElements = XpathUtil.findElements(installedSolutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
-            final String solutionKitName = nameElements.size() > 0 ? nameElements.get(0).getTextContent() : "";
-            assertNotEquals(readOnlyStr, solutionKitName);
-        }
+        // verify uninstall bundle modified
+        assertThat(solutionKit.getUninstallBundle(), containsString(MY_FOLDER_DELETE_ACTION_SRC_ID));
 
-        // verify instance modifier
-        assertNotEquals(readOnlyStr , skmContext.getInstanceModifier());
+        // verify instance modifier read only
+        assertNotEquals(READ_ONLY_STR, solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
     }
 }
