@@ -43,6 +43,7 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.fed.FederatedIdentityProvider;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -123,6 +124,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     private DependencyProcessorStore processorStore;
     @Inject
     private PolicyManager policyManager;
+    @Inject
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
     /**
      * {@inheritDoc}
@@ -170,7 +173,17 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             headerLists = loadAllGatewayEntities(searchOptions);
         } else {
             headerLists = new ArrayList<>();
-            headerLists.add(entityHeaders);
+
+            // SSG-11963: RESTMan Bundle export does not include all necessary encapsulated assertions
+            // Solution: Use a method findEncapsulatedAssertionReferencesFromPolicies to check each entity in the EntityHeader
+            // list "entityHeaders" and see if it is a policy associated with encapsulated assertion.  If it is a folder,
+            // loop thru each child and see if there are any policies associated with encapsulated assertion.  So all found
+            // encapsulated assertions among other entities originally included in entityHeaders will be processed.
+            final List<EntityHeader> allEntityHeaders = new ArrayList<>(entityHeaders);
+            final List<EntityHeader> encapsulatedAssertionEHs = findEncapsulatedAssertionReferencesFromPolicies(entityHeaders);
+            allEntityHeaders.addAll(encapsulatedAssertionEHs);
+
+            headerLists.add(allEntityHeaders);
         }
 
         //create a new dependency finder to perform the search
@@ -357,6 +370,60 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             }
         }
         return headerLists;
+    }
+
+    /**
+     * Find encapsulated assertion entity headers referenced by some policies directly from entityHeaders or indirectly
+     * included in some folders from entityHeaders.
+     *
+     * @param entityHeaders, a list of policy or folder candidates, used to find encapsulated assertions
+     * @return a list of encapsulated assertion entity headers associated with some policies.
+     * @throws FindException thrown when folder manager encounters error to find child elements in a folder.
+     */
+    private List<EntityHeader> findEncapsulatedAssertionReferencesFromPolicies(final List<EntityHeader> entityHeaders) throws FindException {
+        final List<EntityHeader> encapsulatedAssertionEntityHeaderList = new ArrayList<>();
+
+        for (final EntityHeader entityHeader: entityHeaders) {
+            if (entityHeader.getType() == EntityType.FOLDER) {
+                encapsulatedAssertionEntityHeaderList.addAll(getEncapsulatedAssertionEntityHeadersFromFolder(entityHeader.getGoid()));
+            } else if (entityHeader.getType() == EntityType.POLICY) {
+                encapsulatedAssertionEntityHeaderList.addAll(getEncapsulatedAssertionEntityHeadersFromPolicy(entityHeader.getGoid()));
+            }
+        }
+
+        return encapsulatedAssertionEntityHeaderList;
+    }
+
+    /**
+     * If a folder has some descendant policies associated with some encapsulated assertions, find these encapsulated assertion and return them.
+     */
+    private List<EntityHeader> getEncapsulatedAssertionEntityHeadersFromFolder(@NotNull final Goid folderId) throws FindException {
+        final List<EntityHeader> encapsulatedAssertionEntityHeaderList = new ArrayList<>();
+
+        for (final Entity policyEntity: policyManager.findByFolder(folderId)) {
+            encapsulatedAssertionEntityHeaderList.addAll(getEncapsulatedAssertionEntityHeadersFromPolicy(((Policy) policyEntity).getGoid()));
+        }
+
+        for (final Entity folderEntity: folderManager.findByFolder(folderId)) {
+            encapsulatedAssertionEntityHeaderList.addAll(getEncapsulatedAssertionEntityHeadersFromFolder(((Folder) folderEntity).getGoid()));
+        }
+
+        return encapsulatedAssertionEntityHeaderList;
+    }
+
+    /**
+     * If a policy is associated with some encapsulated assertions, find these encapsulated assertion and return them.
+     */
+    private List<EntityHeader> getEncapsulatedAssertionEntityHeadersFromPolicy(@NotNull final Goid policyId) throws FindException {
+        final List<EntityHeader> encapsulatedAssertionEntityHeaderList = new ArrayList<>();
+        final List<EncapsulatedAssertionConfig> encapsulatedAssertionConfigs = (List<EncapsulatedAssertionConfig>)
+            encapsulatedAssertionConfigManager.findByPolicyGoid(policyId);
+
+        for (final EncapsulatedAssertionConfig encapsulatedAssertionConfig: encapsulatedAssertionConfigs) {
+            encapsulatedAssertionEntityHeaderList.add(EntityHeaderUtils.fromEntity(encapsulatedAssertionConfig));
+        }
+
+        return encapsulatedAssertionEntityHeaderList;
     }
 
     /**
