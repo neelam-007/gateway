@@ -127,10 +127,6 @@ public abstract class AbstractResourceHandler<R extends Resource, E extends Abst
         this.transformer = transformer;
     }
 
-    public void close() {
-        this.manager.unRegister();
-    }
-
     final PortalGenericEntityManager<E> manager;
     final ResourceTransformer<R, E> transformer;
 

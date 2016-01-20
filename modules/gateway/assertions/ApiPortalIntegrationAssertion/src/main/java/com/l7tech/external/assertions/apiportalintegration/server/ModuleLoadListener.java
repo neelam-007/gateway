@@ -1,8 +1,11 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import com.l7tech.external.assertions.apiportalintegration.ApiPortalIntegrationAssertion;
+import com.l7tech.external.assertions.apiportalintegration.server.accountplan.manager.AccountPlanManager;
+import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManager;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManagerFactory;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManagerImpl;
+import com.l7tech.external.assertions.apiportalintegration.server.apiplan.manager.ApiPlanManager;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedEncassManager;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedEncassManagerImpl;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedServiceManager;
@@ -51,11 +54,22 @@ import java.util.logging.Logger;
  * Listener that ensures the Api portal integration module gets initialized.
  */
 public class ModuleLoadListener implements ApplicationListener {
-    public ModuleLoadListener(final ApplicationContext context) {
-        this(context, ApiKeyManagerFactory.getInstance() == null ? new ApiKeyManagerImpl(context) : ApiKeyManagerFactory.getInstance(),
-                PortalManagedServiceManagerImpl.getInstance(context), PortalManagedEncassManagerImpl.getInstance(context), API_KEY_MANAGEMENT_SERVICE_POLICY_XML, API_PORTAL_INTEGRATION_POLICY_XML);
+
+
+  public ModuleLoadListener(final ApplicationContext context) {
+        this(
+                context,
+                AccountPlanManager.getInstance(context),
+                ApiKeyManager.getInstance(context),
+                ApiKeyManagerFactory.getInstance() == null ? new ApiKeyManagerImpl(context) : ApiKeyManagerFactory.getInstance(),
+                ApiPlanManager.getInstance(context),
+                PortalManagedServiceManagerImpl.getInstance(context),
+                PortalManagedEncassManagerImpl.getInstance(context),
+                API_KEY_MANAGEMENT_SERVICE_POLICY_XML,
+                API_PORTAL_INTEGRATION_POLICY_XML
+        );
         if (ApiKeyManagerFactory.getInstance() == null) {
-            ApiKeyManagerFactory.setInstance(apiKeysManager);
+            ApiKeyManagerFactory.setInstance(legacyApiKeyManager);
         }
     }
 
@@ -102,8 +116,17 @@ public class ModuleLoadListener implements ApplicationListener {
     /**
      * Constructor for mocked unit tests.
      */
-    ModuleLoadListener(final ApplicationContext context, final PortalGenericEntityManager<ApiKeyData> apiKeyManager,
-                       final PortalManagedServiceManager portalManagedServiceManager, final PortalManagedEncassManager portalManagedEncassManager, final String apiKeyManagementPolicyXmlFile, final String apiPortalIntegrationPolicyXmlFile) {
+    ModuleLoadListener(
+            final ApplicationContext context,
+            final AccountPlanManager accountPlanManager,
+            final ApiKeyManager apiKeyManager,
+            final PortalGenericEntityManager<ApiKeyData> legacyApiKeyManager,
+            final ApiPlanManager apiPlanManager,
+            final PortalManagedServiceManager portalManagedServiceManager,
+            final PortalManagedEncassManager portalManagedEncassManager,
+            final String apiKeyManagementPolicyXmlFile,
+            final String apiPortalIntegrationPolicyXmlFile
+    ) {
         serviceTemplateManager = getBean(context, "serviceTemplateManager", ServiceTemplateManager.class);
         licenseManager = getBean(context, "licenseManager", LicenseManager.class);
         serverConfig = getBean(context, "serverConfig", ServerConfig.class);
@@ -118,7 +141,10 @@ public class ModuleLoadListener implements ApplicationListener {
         applicationEventProxy.addApplicationListener(this);
         apiKeyManagementServiceTemplate = createServiceTemplate(apiKeyManagementPolicyXmlFile, API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME, API_KEY_MANAGEMENT_INTERNAL_SERVICE_URI_PREFIX);
         apiPortalIntegrationServiceTemplate = createServiceTemplate(apiPortalIntegrationPolicyXmlFile, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_URI_PREFIX);
-        this.apiKeysManager = apiKeyManager;
+        this.legacyApiKeyManager = legacyApiKeyManager;
+        this.apiPlanManager = apiPlanManager;
+        this.accountPlanManager = accountPlanManager;
+        this.apiKeyManager = apiKeyManager;
         this.portalManagedServiceManager = portalManagedServiceManager;
         this.portalManagedEncassManager = portalManagedEncassManager;
     }
@@ -138,14 +164,19 @@ public class ModuleLoadListener implements ApplicationListener {
     static final String API_DELETED_FOLDER_NAME = "APIs Deleted from Portal";
     private final ApplicationEventProxy applicationEventProxy;
     private final ServiceTemplateManager serviceTemplateManager;
-    private final PortalGenericEntityManager<ApiKeyData> apiKeysManager;
+    private final PortalGenericEntityManager<ApiKeyData> legacyApiKeyManager;
+    private final ApiPlanManager apiPlanManager;
     private final ServerConfig serverConfig;
     private final ServiceManager serviceManager;
     private final PlatformTransactionManager transactionManager;
     private final PolicyManager policyManager;
     private final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private final PolicyVersionManager policyVersionManager;
-    private static ModuleLoadListener instance = null;
+    private final AccountPlanManager accountPlanManager;
+    private final ApiKeyManager apiKeyManager;
+
+
+  private static ModuleLoadListener instance = null;
     private static PortalManagedServiceManager portalManagedServiceManager;
     private static PortalManagedEncassManager portalManagedEncassManager;
     private static LicenseManager licenseManager;
@@ -499,7 +530,10 @@ public class ModuleLoadListener implements ApplicationListener {
         applicationEventProxy.removeApplicationListener(this);
         serviceTemplateManager.unregister(apiKeyManagementServiceTemplate);
         serviceTemplateManager.unregister(apiPortalIntegrationServiceTemplate);
-        apiKeysManager.unRegister();
+        legacyApiKeyManager.unRegister();
+        apiPlanManager.unRegister();
+        apiKeyManager.unRegister();
+        accountPlanManager.unRegister();
         portalManagedServiceManager.unRegister();
         portalManagedEncassManager.unRegister();
     }

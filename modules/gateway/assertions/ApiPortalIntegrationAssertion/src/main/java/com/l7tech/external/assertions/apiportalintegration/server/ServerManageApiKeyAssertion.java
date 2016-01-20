@@ -44,11 +44,7 @@ public class ServerManageApiKeyAssertion extends AbstractServerAssertion<ManageA
     public ServerManageApiKeyAssertion(ManageApiKeyAssertion assertion, ApplicationContext context) throws PolicyAssertionException, JAXBException {
         this(assertion, context, null, ApiKeyResourceHandler.getInstance(context), ApiKeyDataResourceHandler.getInstance(context));
     }
-    @Override
-    public void close() {
-        this.apiKeyManager.unRegister();
-        this.keyResourceHandler.close();
-    }
+
     /*
      * For tests.
      */

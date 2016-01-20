@@ -1,7 +1,9 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import com.l7tech.external.assertions.apiportalintegration.ApiPortalIntegrationAssertion;
-
+import com.l7tech.external.assertions.apiportalintegration.server.accountplan.manager.AccountPlanManager;
+import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManager;
+import com.l7tech.external.assertions.apiportalintegration.server.apiplan.manager.ApiPlanManager;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedEncassManager;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedServiceManager;
 import com.l7tech.gateway.common.Component;
@@ -11,7 +13,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfig;
@@ -40,7 +41,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +65,13 @@ public class ModuleLoadListenerTest {
     @Mock
     private ApplicationEventProxy applicationEventProxy;
     @Mock
-    private PortalGenericEntityManager<ApiKeyData> apiKeyManager;
+    private PortalGenericEntityManager<ApiKeyData> legacyApiKeyManager;
+    @Mock
+    private ApiPlanManager apiPlanManager;
+    @Mock
+    private AccountPlanManager accoutPlanManager;
+    @Mock
+    private ApiKeyManager apiKeyManager;
     @Mock
     PortalManagedServiceManager portalManagedServiceManager;
     @Mock
@@ -104,7 +110,7 @@ when(applicationContext.getBean("encapsulatedAssertionConfigManager", Encapsulat
         when(applicationContext.getBean("serviceManager", ServiceManager.class)).thenReturn(serviceManager);
         when(applicationContext.getBean("folderManager", FolderManager.class)).thenReturn(folderManager);
         when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).thenReturn(clusterPropertyManager);
-        listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager, portalManagedEncassManager,
+        listener = new ModuleLoadListener(applicationContext, accoutPlanManager,apiKeyManager,legacyApiKeyManager, apiPlanManager, portalManagedServiceManager, portalManagedEncassManager,
                 ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         portalManagedServices = new ArrayList<PortalManagedService>();
         portalManagedEncasses = new ArrayList<>();
@@ -366,7 +372,7 @@ final List<PortalManagedService> inDatabaseServices = new ArrayList<PortalManage
      */
     @Test
     public void onApplicationEventLicenseEventExceptionReadingKeyPolicyFile() {
-        listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager, portalManagedEncassManager,
+        listener = new ModuleLoadListener(applicationContext, accoutPlanManager,apiKeyManager,legacyApiKeyManager, apiPlanManager, portalManagedServiceManager, portalManagedEncassManager,
                 "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
@@ -381,7 +387,7 @@ final List<PortalManagedService> inDatabaseServices = new ArrayList<PortalManage
 
     @Test
     public void onApplicationEventLicenseEventExceptionReadingPlansPolicyFile() {
-        listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager, portalManagedEncassManager,
+        listener = new ModuleLoadListener(applicationContext, accoutPlanManager,apiKeyManager,legacyApiKeyManager, apiPlanManager, portalManagedServiceManager, portalManagedEncassManager,
                 ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, "doesnotexist");
         event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
@@ -396,7 +402,7 @@ final List<PortalManagedService> inDatabaseServices = new ArrayList<PortalManage
 
     @Test
     public void onApplicationEventLicenseEventExceptionReadingApiIntegrationPolicyFile() {
-        listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager, portalManagedEncassManager,
+        listener = new ModuleLoadListener(applicationContext, accoutPlanManager,apiKeyManager,legacyApiKeyManager, apiPlanManager, portalManagedServiceManager, portalManagedEncassManager,
                 "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();

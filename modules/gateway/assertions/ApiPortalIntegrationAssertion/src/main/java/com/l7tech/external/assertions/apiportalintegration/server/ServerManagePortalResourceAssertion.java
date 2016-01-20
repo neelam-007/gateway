@@ -46,19 +46,6 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 PolicyValidationMarshaller.getInstance());
     }
 
-    /**
-     * Override to cleanup any resources allocated in the ServerAssertion.
-     * Caller is responsible for ensuring that no requests are currently using -- or will ever
-     * again use -- this ServerAssertion after close() is called.
-     */
-    @Override
-    public void close() {
-        accountPlanResourceHandler.close();
-        keyResourceHandler.close();
-        apiResourceHandler.close();
-
-    }
-
 
     /**
      * Assertion will only fail if an unexpected error occurs. It will not fail if the PolicyEnforcementContext has invalid or missing mandatory context variables.
