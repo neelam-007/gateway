@@ -37,8 +37,10 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final String url = ExpandVariables.process(getAssertion().getEnrollmentUrl(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
-        final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+      final String url = getAssertion().getEnrollmentUrl()==null? null:ExpandVariables.process(getAssertion().getEnrollmentUrl(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+      final boolean isDoUpgrade = getAssertion().isDoUpgrade();
+
+      final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         if (null == user) {
             logAndAudit(AssertionMessages.PORTAL_BOOTSTRAP_ERROR, new String[]{"An authenticated user is required but not present"});
             return AssertionStatus.FAILED;
@@ -78,12 +80,18 @@ public class ServerPortalBootstrapAssertion extends AbstractServerAssertion<Port
             Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
-                    PortalBootstrapManager.getInstance().enrollWithPortal(url);
-                    return null;
+                    if(isDoUpgrade){
+                      PortalBootstrapManager.getInstance().upgradePortal();
+                      return null;
+                    } else{
+                      PortalBootstrapManager.getInstance().enrollWithPortal(url);
+                      return null;
+                    }
                 }
             });
         } catch (PrivilegedActionException e) {
             logAndAudit(AssertionMessages.PORTAL_BOOTSTRAP_ERROR, new String[]{ExceptionUtils.getMessage(e.getException())}, ExceptionUtils.getDebugException(e));
+            context.setVariable("portal.bootstrap.error",ExceptionUtils.getMessage(e.getException()));
             return AssertionStatus.FAILED;
         }
 

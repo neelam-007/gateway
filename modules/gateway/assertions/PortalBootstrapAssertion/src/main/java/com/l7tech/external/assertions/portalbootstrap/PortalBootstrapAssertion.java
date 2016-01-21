@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
@@ -17,9 +18,19 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 /**
  * Invisible support assertion for Portal bootstrap.
  */
-public class PortalBootstrapAssertion extends Assertion implements UsesVariables {
+public class PortalBootstrapAssertion extends Assertion implements UsesVariables, SetsVariables
+{
 
     private String enrollmentUrl;
+    private boolean doUpgrade = false;
+
+    public boolean isDoUpgrade() {
+        return doUpgrade;
+    }
+
+    public void setDoUpgrade(boolean doUpgrade) {
+        this.doUpgrade = doUpgrade;
+    }
 
     public String getEnrollmentUrl() {
         return enrollmentUrl;
@@ -29,6 +40,10 @@ public class PortalBootstrapAssertion extends Assertion implements UsesVariables
         this.enrollmentUrl = enrollmentUrl;
     }
 
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+      return new VariableMetadata[]{new VariableMetadata("portal.bootstrap.error")};
+    }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
