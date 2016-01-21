@@ -57,6 +57,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         String resource = SiteMinderAssertionUtil.extractContextVarValue(assertion.getProtectedResource(), variableMap, getAudit());
         String action = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAction(), variableMap, getAudit());
         String userIpAddress = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSourceIpAddress(), variableMap, getAudit());
+        String serverName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getServerName(), variableMap, getAudit());
         SiteMinderContext smContext = null;
         try {
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
@@ -79,9 +80,12 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
             smContext.setSourceIpAddress(userIpAddress);
         }
 
+        smContext.setConfig(getSmConfig(assertion.getAgentGoid()));
+
         try {
             //check if protected and return AssertionStatus.NONE if it is
-            if(hla.checkProtected(getClientIp(message, smContext), smAgentName, resource, action, smContext)) {
+            //the server name can be eith
+            if(hla.checkProtected(getClientIp(message, smContext), smAgentName, serverName, resource, action, smContext)) {
                 logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
                 status = AssertionStatus.NONE;
             }

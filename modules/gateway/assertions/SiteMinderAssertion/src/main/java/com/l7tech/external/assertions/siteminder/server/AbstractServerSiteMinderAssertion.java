@@ -5,6 +5,7 @@ import com.ca.siteminder.SiteMinderContext;
 import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.objectmodel.FindException;
@@ -13,6 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
@@ -21,6 +23,8 @@ import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
+
+import static com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil.*;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -38,11 +42,14 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
 
     protected SiteMinderConfigurationManager manager;
 
+    protected ServerConfig serverConfig;
+
     public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, final ApplicationContext applicationContext) throws  PolicyAssertionException{
         super(assertion);
         checkSiteMinderEnabled();//check if SiteMinder SDK is installed
         this.hla = applicationContext.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class);
         this.manager = applicationContext.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class);
+        this.serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     protected boolean initSmAgentFromContext(Goid agentGoid, SiteMinderContext context) throws PolicyAssertionException {
@@ -61,6 +68,15 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
             return false;
         }
         return true;
+    }
+
+    protected SiteMinderConfiguration getSmConfig(Goid agentGoid) throws PolicyAssertionException {
+        try {
+            return manager.findByPrimaryKey(agentGoid);
+        } catch (FindException e) {
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agent Goid=" + agentGoid);
+            throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
+        }
     }
 
     protected void populateContextVariables(PolicyEnforcementContext pac, String prefix, SiteMinderContext context) {

@@ -3,6 +3,7 @@ package com.ca.siteminder;
 import com.ca.siteminder.util.SiteMinderUtil;
 import netegrity.siteminder.javaagent.UserCredentials;
 
+import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -55,10 +56,20 @@ public final class SiteMinderCredentials {
     }
 
     /**
+     * SiteMinderCredentials constructor for JWT
+     * @param jwt the JWT
+     * @throws UnsupportedEncodingException
+     */
+    public SiteMinderCredentials(final String jwt) throws UnsupportedEncodingException {
+        credentials = new UserCredentials();
+        addJWT(jwt);
+    }
+
+    /**
      * the reason it is not public because we don't want to expose internal UserCredentials object to  non-siteminder api classes
      * @return
      */
-    UserCredentials getUserCredentials() {
+    public UserCredentials getUserCredentials() {
         return credentials;
     }
 
@@ -76,6 +87,19 @@ public final class SiteMinderCredentials {
 
         credentials.name = username;
         credentials.password = password;
+    }
+
+    /**
+     * Add JWT to credential
+     *
+     * @param jwt the JWT
+     * @throws UnsupportedEncodingException
+     */
+    public void addJWT(String jwt) throws UnsupportedEncodingException {
+        if (jwt != null) {
+            // SiteMinder retrieves the JWT from cert binary
+            credentials.certBinary = jwt.getBytes("UTF-8");
+        }
     }
 
     @Override

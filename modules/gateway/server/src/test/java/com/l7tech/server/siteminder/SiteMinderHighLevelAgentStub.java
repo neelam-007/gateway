@@ -1,13 +1,15 @@
 package com.l7tech.server.siteminder;
 
-import com.ca.siteminder.SiteMinderApiClassException;
-import com.ca.siteminder.SiteMinderContext;
-import com.ca.siteminder.SiteMinderCredentials;
-import com.ca.siteminder.SiteMinderHighLevelAgent;
+import com.ca.siteminder.*;
 
 public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
+
+    public SiteMinderHighLevelAgentStub() {
+        super(new SiteMinderAgentContextCacheManager());
+    }
+
     @Override
-    public boolean checkProtected(String userIp, String smAgentName, String resource, String action, SiteMinderContext context) throws SiteMinderApiClassException {
+    public boolean checkProtected(String userIp, String smAgentName, String server, String resource, String action, SiteMinderContext context) throws SiteMinderApiClassException {
         return true;
     }
 

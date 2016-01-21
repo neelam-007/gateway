@@ -30,6 +30,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     private String protectedResource;
     private String action;
     private String smAgentName;
+    private String serverName = "";//Default value is set to empty string
     private String prefix;
     private String sourceIpAddress;
     protected final MessageTargetableSupport messageTargetableSupport;
@@ -84,6 +85,14 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         this.action = action;
     }
 
+    public String getServerName() {
+        return serverName;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
     public String getPrefix() {
         return prefix;
     }
@@ -103,7 +112,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress);
+        return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress, serverName);
     }
 
     //

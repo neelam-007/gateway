@@ -45,6 +45,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     public static final String USER_PASSWORD = "password";
     public static final byte[] certBytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
     public static final String SOURCE_IP = "10.7.22.22";
+    public static final String JWT_HMAC = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ2YWx1ZSIsICJ1c2VyIjoic2FzY2hhLnByZWliaXNjaCIsImRvbWFpbiI6InRhbnQveHl6IiwgIm5vbmNlIjoxMjM0NTYsICJleHBpcmVzX2F0IjoxNDMwMjYzNDQ4fQ.JfwSj51O2wvT0YK5Kh4EbNL9j2s9dQBSlDMUkEOB_Wo";
 
     @Mock
     SiteMinderContext mockContext;
@@ -540,4 +541,127 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), eq(SOURCE_IP), isNull(String.class), eq(mockContext));
     }
 
+    @Test
+    public void shouldNotAuthenticateUserWhenSetLastCredentialAndOnlyJWT() throws Exception {
+        smAuthenticateAssertion.setLastCredential(true);
+        smAuthenticateAssertion.setUseSMCookie(false);
+
+        // Set which credentials to send
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(false);
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
+        smAuthenticateAssertion.setSendJWT(true);
+
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        when(mockContext.getAttrList()).thenReturn(attrList);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);    
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+
+        // when both x509 and jwt is set, SiteMinderCredentials should be empty
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+    }
+
+    @Test
+    public void shouldNotAuthenticateWhenX509CertificateAndJWTSpecified() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+        smAuthenticateAssertion.setLastCredential(false);
+        smAuthenticateAssertion.setUseSMCookie(false);
+
+        // Set which credentials to send
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(false);
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
+        smAuthenticateAssertion.setNamedCertificate("CN=user,OU=unit,O=CA Technologies,C=CA");
+        smAuthenticateAssertion.setSendJWT(true);
+        smAuthenticateAssertion.setNamedJsonWebToken(JWT_HMAC);
+
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        X500Principal mockSubjectDn = new X500Principal("CN=user,OU=unit,O=CA Technologies,C=CA");
+        when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
+        AuthenticationContext ac = pec.getDefaultAuthenticationContext();
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new TlsClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+
+        // when both x509 and jwt is set, SiteMinderCredentials should be empty
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+    }
+
+    @Test
+    public void shouldNotAuthenticateWhenNoCredentialsSpecified() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+        smAuthenticateAssertion.setLastCredential(false);
+        smAuthenticateAssertion.setUseSMCookie(false);
+
+        // Set which credentials to send
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(false);
+        smAuthenticateAssertion.setSendX509CertificateCredential(false);
+        smAuthenticateAssertion.setSendJWT(false);
+
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+
+    }
+
+    @Test
+    public void shouldAuthenticateWhenJWTSpecified() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+        smAuthenticateAssertion.setLastCredential(false);
+        smAuthenticateAssertion.setUseSMCookie(false);
+
+        // Set which credentials to send
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(false);
+        smAuthenticateAssertion.setSendX509CertificateCredential(false);
+        smAuthenticateAssertion.setSendJWT(true);
+        smAuthenticateAssertion.setNamedJsonWebToken(JWT_HMAC);
+
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(JWT_HMAC)), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(JWT_HMAC)), isNull(String.class), isNull(String.class), eq(mockContext));
+    }
 }

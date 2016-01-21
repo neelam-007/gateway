@@ -1,15 +1,18 @@
 package com.l7tech.external.assertions.siteminder.console;
 
+import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
+import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,6 +21,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -36,6 +41,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private TargetVariablePanel prefixTargetVariablePanel;
     private JTextField smAgentTextField;
     private JTextField sourceIpAddressTextField;
+    private JTextField serverNameTextField;
     private InputValidator inputValidator;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
@@ -84,6 +90,19 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
                     return "CA Single Sign-On Variable Prefix must have valid name";
                 }
 
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(StringUtils.isNotBlank(serverNameTextField.getText())) {
+                    if(!Syntax.isAnyVariableReferenced(serverNameTextField.getText())) {
+                        if(!SiteMinderAssertionUtil.validateHostname(serverNameTextField.getText()))
+                            return "CA Single Sign-On Server Name contains invalid hostname";
+                    }
+                }
                 return null;
             }
         });
@@ -147,6 +166,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         smAgentTextField.setText(assertion.getSmAgentName());
         resourceTextField.setText(assertion.getProtectedResource());
         actionComboBox.getModel().setSelectedItem(assertion.getAction());
+        serverNameTextField.setText(assertion.getServerName());
         sourceIpAddressTextField.setText(assertion.getSourceIpAddress());
 
         if (assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
@@ -180,6 +200,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         assertion.setProtectedResource(resourceTextField.getText().trim());
         assertion.setSmAgentName(smAgentTextField.getText().trim());
         assertion.setAction(getSelectedAction());
+        assertion.setServerName(serverNameTextField.getText().trim());
         assertion.setSourceIpAddress(sourceIpAddressTextField.getText().trim());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
 

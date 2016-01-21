@@ -1,5 +1,7 @@
 package com.ca.siteminder;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,9 +38,39 @@ public class SiteMinderContext {
     private String ssoToken;
     private SiteMinderLowLevelAgent agent;
     private String sourceIpAddress;
+    private SiteMinderConfiguration config;
 
     public SiteMinderContext() {
 
+    }
+
+    // To ensure that the SiteMinder Context can be cached as an immutable object
+    // we need to obtain new instance objects (perform a private copy of all objects/members except the SiteMinderLowLevel Agent Instance).
+    // NOTE: The SiteMinder Agent is the hook into the underlying SiteMinder AgentAPI
+    protected SiteMinderContext( SiteMinderContext context,
+                                 SiteMinderContext.SessionDef sessionDef, SiteMinderContext.RealmDef realmDef, SiteMinderContext.ResourceContextDef resContextDef ) {
+
+        this.agent = context.getAgent();
+        this.attrList = new ArrayList<>( context.getAttrList() );
+        this.authSchemes = new ArrayList<>( context.getAuthSchemes() );
+        //Strings are immutable, thus calling 'new' is not required
+        this.sourceIpAddress = context.getSourceIpAddress();
+        this.transactionId = context.getTransactionId();
+        this.ssoToken = context.getSsoToken();
+
+        this.sessionDef = new SessionDef( sessionDef.getReason(), sessionDef.getIdleTimeout() ,
+                sessionDef.getMaxTimeout(), sessionDef.getCurrentServerTime(), sessionDef.getSessionStartTime(),
+                sessionDef.getSessionLastTime(), sessionDef.getId(), sessionDef.getSpec() );
+
+        this.realmDef = new RealmDef( realmDef.getName(), realmDef.getOid(), realmDef.getDomOid(),
+                realmDef.getCredentials(), realmDef.getFormLocation() );
+
+        this.resContextDef = new ResourceContextDef( resContextDef.getAgent(), resContextDef.getServer(),
+                resContextDef.getResource(), resContextDef.getAction() );
+    }
+
+    protected SiteMinderContext ( SiteMinderContext siteMinderContext ) {
+        this( siteMinderContext, siteMinderContext.sessionDef, siteMinderContext.realmDef, siteMinderContext.resContextDef );
     }
 
     public SiteMinderLowLevelAgent getAgent() {
@@ -111,6 +143,14 @@ public class SiteMinderContext {
 
     public void setSourceIpAddress(@Nullable String sourceIpAddress) {
         this.sourceIpAddress = sourceIpAddress;
+    }
+
+    public SiteMinderConfiguration getConfig() {
+        return config;
+    }
+
+    public void setConfig(SiteMinderConfiguration config) {
+        this.config = config;
     }
 
     public static class SessionDef  {

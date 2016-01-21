@@ -1,20 +1,29 @@
 package com.ca.siteminder.util;
 
+import com.ca.siteminder.SiteMinderCredentials;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.UserCredentials;
 import netegrity.siteminder.javaagent.Attribute;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -214,6 +223,19 @@ public abstract class SiteMinderUtil {
         return attrVal;
     }
 
+    public static int safeByteArrToInt( byte[] bytes ) {
+        int number = 0;
+        try {
+            number = ByteBuffer.wrap(bytes).getInt();
+        } catch (IllegalArgumentException iae ) {
+            logger.log( Level.FINE, "Unable to convert byte[] into int value: " + new String( bytes ) );
+        } catch ( BufferUnderflowException bufe ){
+            logger.log( Level.FINE, "BufferOverFlow encountered when converting byte[] into int value: " + new String( bytes ) );
+
+        }
+        return number;
+    }
+
     public static String chopNull(String sVal) {
         Matcher m = NULL_CHAR.matcher(sVal);
         if(m.find()){
@@ -338,5 +360,67 @@ public abstract class SiteMinderUtil {
             s = creds.certUserDN;
         }
         return s;
+    }
+
+    /**
+     * Converts SiteMinderCredentials to String format
+     * @param credentials  UserCredentials
+     * @return  String representation of UserCredentials object
+     */
+    public static String getCredentialsAsString(final SiteMinderCredentials credentials) {
+       return getCredentialsAsString(credentials.getUserCredentials());
+    }
+
+    /**
+     * returns null if not found or the value as an Object
+     * The caller will have to handle any required data type conversion
+     */
+    public static Object getAttribute(List<Pair<String, Object>> attributes, String id) {
+        for(Pair<String, Object> attr: attributes) {
+            if( attr.left.equals(id) ){
+                return attr.getValue();
+            }
+        }
+        return  null;
+    }
+
+    public static List<Pair<String, Object>> removeDuplicateAttributes ( List<Pair<String, Object>> attrList ) {
+        Set<Pair<String, Object>> attributes = new HashSet<>();
+        attributes.addAll(attrList);
+        attrList.clear();
+        attrList.addAll(attributes);
+        return attrList;
+    }
+
+    public static int safeLongToInt(long l) {
+        if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                    (l + " cannot be cast to int without changing its value.");
+        }
+        return (int) l;
+    }
+
+    public static byte[] safeIntToByteArr( int num ) {
+        byte[] bytes = new byte[]{};
+        try {
+            bytes = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE).putInt( num ).array();
+        } catch (IllegalArgumentException iae ) {
+            logger.log( Level.FINE, "Unable to allocate buffer for int value: " + num );
+        } catch ( BufferOverflowException bof ){
+            logger.log( Level.FINE, "BufferOverFlow encountered when converting int value: " + num + "byte[]" );
+
+        }
+        return bytes;
+    }
+
+    public static byte[] getAttrValueByName( List<Pair<String, Object>> attrList, String name ) {
+        Iterator<Pair<String, Object>> values = attrList.iterator();
+        while( values.hasNext() ){
+            Pair<String, Object> attr = values.next();
+            if( name.equals( attr.getKey() )) {
+                return ( (String) attr.getValue() ).getBytes();
+            }
+        }
+        return null;
     }
 }
