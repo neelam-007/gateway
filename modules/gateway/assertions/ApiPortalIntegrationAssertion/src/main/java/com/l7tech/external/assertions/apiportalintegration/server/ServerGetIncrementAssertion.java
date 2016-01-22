@@ -134,13 +134,14 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // get new or updated or last sync error apps
-            results  = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
-                            "FROM APPLICATION a  \n" +
-                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
-                            "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
-                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.CREATE_TS > ? or a.MODIFY_TS > ?) AND (a.CREATE_TS <= ? or a.MODIFY_TS <= ?) or (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since ,since,incrementStart, incrementStart,nodeId));
+          results  = (Map<String, List>) queryJdbc(connName,
+                  "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
+                          "FROM APPLICATION a  \n" +
+                          "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+                          "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
+                          "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
+                          "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFIED_TS > ? and a.MODIFIED_TS <=  ? ) OR (a.MODIFIED_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since , incrementStart, since, incrementStart,nodeId));
+
         } else {
             // bulk, get everything
             results  = (Map<String, List>) queryJdbc(connName,
