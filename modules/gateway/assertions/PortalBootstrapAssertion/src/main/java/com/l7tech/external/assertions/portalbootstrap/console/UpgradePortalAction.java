@@ -24,7 +24,7 @@ public class UpgradePortalAction extends SecureAction {
     private static final Logger logger = Logger.getLogger(UpgradePortalAction.class.getName());
 
     public UpgradePortalAction() {
-        super(new AttemptedUpdateAny(EntityType.USER), "Upgrade Portal Integration", "Upgrade Portal Integration on Gateway",
+        super(new AttemptedUpdateAny(EntityType.USER), "Update Portal Integration", "Update Portal Integration on Gateway",
                 "com/l7tech/console/resources/ManageUserAccounts16.png");
     }
 
@@ -35,8 +35,8 @@ public class UpgradePortalAction extends SecureAction {
 
         if (portalboot.isGatewayEnrolled()) {
             DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                    new JLabel("<html>Portal upgrade cannot be reversed. Please do not cancel or exit this process.<br/>Allow API Portal to upgrade portal-specific software on this Gateway?</html>"),
-                    "Confirm Upgrade",
+                    new JLabel("<html>Update the Portal integration on this Gateway? This cannot be reversed.</html>"),
+                    "Confirm Update",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE,
                     new DialogDisplayer.OptionListener() {
@@ -50,16 +50,23 @@ public class UpgradePortalAction extends SecureAction {
                                 try {
                                     AsyncAdminMethods.JobId<Boolean> upgradeJobId = portalboot.upgradePortal();
                                     Either<String, Boolean> result =
-                                            AdminGuiUtils.doAsyncAdmin(portalboot, parent, "Upgrade SaaS Portal", "Upgrading...", upgradeJobId, false);
+                                            AdminGuiUtils.doAsyncAdmin(portalboot, parent, "Update Portal integration", "Updating... (do not interrupt)", upgradeJobId, false);
 
                                     if (result.isLeft()) {
-                                        String msg = "Unable to upgrade: " + result.left();
-                                        logger.log(Level.WARNING, msg);
-                                        showError(msg);
+                                        if(result.left().contains("latest Portal"))
+                                        {
+                                            String msg = "Update not necessary. " + result.left();
+                                            logger.log(Level.INFO, msg);
+                                            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), msg, "Information", JOptionPane.INFORMATION_MESSAGE, null);
+                                        } else {
+                                            String msg = "Unable to update: " + result.left();
+                                            logger.log(Level.WARNING, msg);
+                                            showError(msg);
+                                        }
                                     } else {
                                         DialogDisplayer.showMessageDialog(parent,
-                                                "Gateway Upgraded Successfully",
-                                                "Gateway Upgraded Successfully",
+                                                "Gateway Updated Successfully",
+                                                "Gateway Updated Successfully",
                                                 JOptionPane.INFORMATION_MESSAGE,
                                                 new Runnable() {
                                                     @Override
@@ -69,7 +76,7 @@ public class UpgradePortalAction extends SecureAction {
                                         TopComponents.getInstance().refreshPoliciesFolderNode();
                                     }
                                 } catch (Exception e) {
-                                    String msg = "Unable to upgrade: " + ExceptionUtils.getMessage(e);
+                                    String msg = "Unable to update: " + ExceptionUtils.getMessage(e);
                                     logger.log(Level.WARNING, msg, e);
                                     showError(msg);
                                 }
@@ -77,9 +84,7 @@ public class UpgradePortalAction extends SecureAction {
                         }
                     });
         } else {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "Upgrade failed. Gateway must be enrolled to upgrade.",
-                    "Error", JOptionPane.PLAIN_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot update a Gateway that is not enrolled for use with a Portal.", "Error", JOptionPane.PLAIN_MESSAGE, null);
         }
 
     }
