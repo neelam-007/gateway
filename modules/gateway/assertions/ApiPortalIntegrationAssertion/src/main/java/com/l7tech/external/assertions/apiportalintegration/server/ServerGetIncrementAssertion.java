@@ -140,7 +140,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                           "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
                           "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
                           "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
-                          "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFIED_TS > ? and a.MODIFIED_TS <=  ? ) OR (a.MODIFIED_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since , incrementStart, since, incrementStart,nodeId));
+                          "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since , incrementStart, since, incrementStart,nodeId));
 
         } else {
             // bulk, get everything
