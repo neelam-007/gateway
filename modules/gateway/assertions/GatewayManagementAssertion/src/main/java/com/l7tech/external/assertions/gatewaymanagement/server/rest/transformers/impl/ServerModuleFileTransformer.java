@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
-import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServerModuleFileAPIResourceFactory;
@@ -12,10 +11,12 @@ import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +25,10 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.Collections;
@@ -51,13 +55,12 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
     @Named("serverConfig")
     private Config config;
 
-    private SignatureVerifierServer signatureVerifier;
-
     @Inject
-    @Named("signatureVerifier")
-    public void setSignatureVerifier(final SignatureVerifierServer signatureVerifier) {
-        this.signatureVerifier = signatureVerifier;
+    @Named("trustedSignerCertsManager")
+    public void setTrustedSignerCertsManager(final TrustedSignerCertsManager trustedSignerCertsManager) {
+        this.trustedSignerCertsManager = trustedSignerCertsManager;
     }
+    private TrustedSignerCertsManager trustedSignerCertsManager;
 
     private final static long DEFAULT_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = 20971520L;
 
@@ -490,8 +493,12 @@ public class ServerModuleFileTransformer implements EntityAPITransformer<ServerM
 
                 final String signatureProperties = writer.toString();
 
-                // verify signature
-                signatureVerifier.verify(calculatedDigest, signatureProperties);
+                // verify signature and issuer
+                SignerUtils.verifySignatureAndIssuer(
+                        new ByteArrayInputStream(moduleDataBytes),
+                        signatureProperties,
+                        TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager)
+                );
 
                 // finally set the ServerModuleFile data
                 serverModuleFile.createData(moduleDataBytes, moduleSha256, signatureProperties);

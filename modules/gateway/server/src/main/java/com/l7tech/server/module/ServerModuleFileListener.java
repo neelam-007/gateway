@@ -2,6 +2,9 @@ package com.l7tech.server.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -11,7 +14,6 @@ import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.apache.commons.lang.ObjectUtils;
@@ -59,7 +61,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
     @NotNull protected final Config config;
     @NotNull protected final ServerAssertionRegistry modularAssertionRegistrar;
     @NotNull protected final CustomAssertionsRegistrar customAssertionRegistrar;
-    @NotNull protected final SignatureVerifierServer signatureVerifier;
+    @NotNull protected final TrustedSignerCertsManager trustedSignerCertsManager;
     private ApplicationContext applicationContext;
 
     /**
@@ -155,6 +157,7 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
      * @param config                     Server Config.  Required and cannot be {@code null}.
      * @param modularAssertionRegistrar  Modular Assertions Registrar.  Required and cannot be {@code null}.
      * @param customAssertionRegistrar   Custom Assertions Registrar.  Required and cannot be {@code null}.
+     * @param trustedSignerCertsManager         Trusted signer certs getter.  Required and cannot be {@code null}.
      */
     public ServerModuleFileListener(
             @NotNull final ServerModuleFileManager serverModuleFileManager,
@@ -162,14 +165,14 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             @NotNull final Config config,
             @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
             @NotNull final CustomAssertionsRegistrar customAssertionRegistrar,
-            @NotNull final SignatureVerifierServer signatureVerifier
+            @NotNull final TrustedSignerCertsManager trustedSignerCertsManager
     ) {
         this.serverModuleFileManager = serverModuleFileManager;
         this.transactionManager = transactionManager;
         this.config = config;
         this.modularAssertionRegistrar = modularAssertionRegistrar;
         this.customAssertionRegistrar = customAssertionRegistrar;
-        this.signatureVerifier = signatureVerifier;
+        this.trustedSignerCertsManager = trustedSignerCertsManager;
         // create a single worker to guarantee that there will be no racing conditions
         this.eventHandlerExecutor = Executors.newSingleThreadExecutor();
     }
@@ -898,7 +901,11 @@ public class ServerModuleFileListener implements ApplicationContextAware, PostSt
             // get staged file InputStream
             is = new BufferedInputStream(new FileInputStream(module.getStagingFile()));
             // verify staged file signature
-            signatureVerifier.verify(is, signatureProperties);
+            try {
+                SignerUtils.verifySignatureAndIssuer(is, signatureProperties, TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager));
+            } catch (final IOException e) {
+                throw new SignatureException("Error while verifying module signature: " + ExceptionUtils.getMessage(e), e);
+            }
 
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {

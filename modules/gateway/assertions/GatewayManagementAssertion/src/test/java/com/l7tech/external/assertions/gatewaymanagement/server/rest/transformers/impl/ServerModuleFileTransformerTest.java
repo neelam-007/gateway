@@ -10,12 +10,12 @@ import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
@@ -67,8 +67,8 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
     @Before
     public void setUp() throws Exception {
         // set module signer
-        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
-        transformer.setSignatureVerifier(SIGNATURE_VERIFIER);
+        Assert.assertThat("modules signer is created", TRUSTED_SIGNER_CERTS, Matchers.notNullValue());
+        transformer.setTrustedSignerCertsManager(TRUSTED_SIGNER_CERTS);
 
         // set upload size limit
         Mockito.doReturn(10*1024*1024L /* 10MB */).when(config).getLongProperty(Mockito.eq(ServerConfigParams.PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE), Mockito.anyLong());
@@ -521,7 +521,7 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
         // test not trusted signer cert
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // create another signer with same DN's
-        SignatureVerifierServer newSigVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        TrustedSignerCertsManager newSignerManager = SignatureTestUtils.createSignerManager(SIGNER_CERT_DNS);
         moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
         moduleFileMO.setId(new Goid(++idInc, 101).toString());
         moduleFileMO.setName("test custom server module file");
@@ -531,7 +531,7 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
         bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
         moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
-        signatureProperties = SignatureTestUtils.signAndGetSignature(newSigVerifier, bytes, SIGNER_CERT_DNS[0]);
+        signatureProperties = SignatureTestUtils.signAndGetSignature(newSignerManager, bytes, SIGNER_CERT_DNS[0]);
         moduleFileMO.setSignatureProperties(
                 ServerModuleFileTransformer.gatherSignatureProperties(
                         signatureProperties,
@@ -552,7 +552,7 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
         // test not trusted signer cert
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // create another signer with new DN
-        newSigVerifier = SignatureTestUtils.createSignatureVerifier("cn=new.cert.ca.com");
+        newSignerManager = SignatureTestUtils.createSignerManager("cn=new.cert.ca.com");
         moduleFileMO = ManagedObjectFactory.createServerModuleFileMO();
         moduleFileMO.setId(new Goid(++idInc, 101).toString());
         moduleFileMO.setName("test custom server module file");
@@ -562,7 +562,7 @@ public class ServerModuleFileTransformerTest extends ServerModuleFileTestBase {
         bytes = String.valueOf("new data " + idInc).getBytes(Charsets.UTF8);
         moduleFileMO.setModuleSha256(ModuleDigest.hexEncodedDigest(bytes));
         moduleFileMO.setModuleData(bytes);
-        signatureProperties = SignatureTestUtils.signAndGetSignature(newSigVerifier, bytes, "cn=new.cert.ca.com");
+        signatureProperties = SignatureTestUtils.signAndGetSignature(newSignerManager, bytes, "cn=new.cert.ca.com");
         moduleFileMO.setSignatureProperties(
                 ServerModuleFileTransformer.gatherSignatureProperties(
                         signatureProperties,

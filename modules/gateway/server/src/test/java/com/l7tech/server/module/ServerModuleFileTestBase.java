@@ -4,10 +4,10 @@ import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.policy.module.ModulesScannerTestBase;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.util.Either;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
@@ -34,7 +34,7 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     // our signer utils object
-    protected static SignatureVerifierServer SIGNATURE_VERIFIER;
+    protected static TrustedSignerCertsManager TRUSTED_SIGNER_CERTS;
     protected static final String[] SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",
@@ -44,8 +44,8 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
 
     protected static void beforeClass() throws Exception {
         SignatureTestUtils.beforeClass();
-        SIGNATURE_VERIFIER = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
-        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
+        TRUSTED_SIGNER_CERTS = SignatureTestUtils.createSignerManager(SIGNER_CERT_DNS);
+        Assert.assertThat("modules signer is created", TRUSTED_SIGNER_CERTS, Matchers.notNullValue());
     }
 
     protected static void afterClass() throws Exception {
@@ -58,7 +58,7 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
     protected static String signAndGetSignature(final File content, final String signerCertDn) throws Exception {
         Assert.assertThat(content, Matchers.notNullValue());
         Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
-        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+        return SignatureTestUtils.signAndGetSignature(TRUSTED_SIGNER_CERTS, content, signerCertDn);
     }
 
     /**
@@ -67,7 +67,7 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
     protected static String signAndGetSignature(final InputStream content, final String signerCertDn) throws Exception {
         Assert.assertThat(content, Matchers.notNullValue());
         Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
-        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+        return SignatureTestUtils.signAndGetSignature(TRUSTED_SIGNER_CERTS, content, signerCertDn);
     }
 
     /**
@@ -76,7 +76,7 @@ public abstract class ServerModuleFileTestBase extends ModulesScannerTestBase {
     protected static String signAndGetSignature(final byte[] content, final String signerCertDn) throws Exception {
         Assert.assertThat(content, Matchers.notNullValue());
         Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
-        return SignatureTestUtils.signAndGetSignature(SIGNATURE_VERIFIER, content, signerCertDn);
+        return SignatureTestUtils.signAndGetSignature(TRUSTED_SIGNER_CERTS, content, signerCertDn);
     }
 
     /**

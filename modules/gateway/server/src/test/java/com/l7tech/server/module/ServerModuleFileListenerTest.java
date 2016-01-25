@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -17,7 +18,6 @@ import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.module.*;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
@@ -102,7 +102,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     private String currentNodeId = "currentClusterNode";
 
     // untrusted signer and signer cert DN's
-    private static SignatureVerifierServer untrustedModuleSigner;
+    private static TrustedSignerCertsManager untrustedCerts;
     private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
 
     @BeforeClass
@@ -126,7 +126,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
 
         // combination of already trusted and untrusted DN's
         // everything signed with this signer will not be trusted
-        untrustedModuleSigner = SignatureTestUtils.createSignatureVerifier(
+        untrustedCerts = SignatureTestUtils.createSignerManager(
                 ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns)
         );
     }
@@ -191,7 +191,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         modularAssertionsScanner = Mockito.spy(new ModularAssertionsScanner(modulesConfig, modularAssertionCallbacks));
         mockServerModuleFileLoader(modularAssertionRegistrar, modularAssertionsScanner);
 
-        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
+        Assert.assertThat("modules signer is created", TRUSTED_SIGNER_CERTS, Matchers.notNullValue());
         // create modules listener spy
         modulesListener = Mockito.spy(
                 new ServerModuleFileListener(
@@ -200,7 +200,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         config,
                         modularAssertionRegistrar,
                         customAssertionRegistrar,
-                        SIGNATURE_VERIFIER
+                        TRUSTED_SIGNER_CERTS
                 )
         );
 
@@ -669,7 +669,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     }
 
     /**
-     * Use the {@link #untrustedModuleSigner} to sign this module
+     * Use the {@link #untrustedCerts} to sign this module
      */
     private MyServerModuleFile sign_with_untrusted_signer(
             final long ordinal,
@@ -677,7 +677,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
             final File moduleBytes,
             final String signatureDn
     ) throws Exception {
-        final String signatureProps = SignatureTestUtils.signAndGetSignature(untrustedModuleSigner, moduleBytes, signatureDn);
+        final String signatureProps = SignatureTestUtils.signAndGetSignature(untrustedCerts, moduleBytes, signatureDn);
         return create_test_module_without_states(
                 ordinal,
                 moduleType,
@@ -807,7 +807,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
      *-----------------------------------------------------------------
      * module_10: Goid(GOID_HI_START, 10); test data 10; MODULAR_ASSERTION
      * file: com.l7tech.WorkingTest4.aar
-     * SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+     * SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts
      *-----------------------------------------------------------------
      *      (empty)
      *-----------------------------------------------------------------
@@ -815,7 +815,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
      *-----------------------------------------------------------------
      * module_11: Goid(GOID_HI_START, 11); test data 11; CUSTOM_ASSERTION
      * file: com.l7tech.DynamicCustomAssertionsTest2.jar
-     * SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+     * SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts
      *-----------------------------------------------------------------
      *      (empty)
      *-----------------------------------------------------------------
@@ -995,7 +995,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // ----------------------------------------------------------------
                         // module_10: Goid(GOID_HI_START, 10); test data 10; MODULAR_ASSERTION
                         // file: com.l7tech.WorkingTest4.aar
-                        // SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
+                        // SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts
                         // ----------------------------------------------------------------
                         // (empty)
                         // ----------------------------------------------------------------
@@ -1011,7 +1011,7 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         // ----------------------------------------------------------------
                         // module_11: Goid(GOID_HI_START, 11); test data 11; CUSTOM_ASSERTION
                         // file: com.l7tech.DynamicCustomAssertionsTest2.jar
-                        // SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+                        // SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts
                         // ----------------------------------------------------------------
                         // (empty)
                         // ----------------------------------------------------------------
@@ -1054,8 +1054,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         // module_7  => <NONE> => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)        => SIGNED with SIGNER_CERT_DNS[3]
         // module_8  => <NONE> => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)   => SIGNED with SIGNER_CERT_DNS[3]
         // module_9  => <NONE> => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)            => SIGNED with SIGNER_CERT_DNS[3]
-        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
-        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts
+        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts
         // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
         initialStates = new ModuleState[]{
                 ModuleState.UPLOADED,
@@ -1084,8 +1084,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
     final Collection<Goid> signedRejectedModules = Collections.unmodifiableCollection(Arrays.asList(
             new Goid(GOID_HI_START, 5),   // module_5  => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest3.aar                    => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
             new Goid(GOID_HI_START, 6),   // module_6  => <NONE> => CUSTOM_ASSERTION    com.l7tech.NonDynamicCustomAssertionTest2.jar  => UNSIGNED
-            new Goid(GOID_HI_START, 10),  // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                    => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
-            new Goid(GOID_HI_START, 11),  // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar    => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+            new Goid(GOID_HI_START, 10),  // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                    => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts
+            new Goid(GOID_HI_START, 11),  // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar    => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts
             new Goid(GOID_HI_START, 12)   // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar    => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
     ));
 
@@ -3696,8 +3696,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
         // module_7  => <NONE> => CUSTOM_ASSERTION    com.l7tech.BrokenDescriptorTest1.jar (fail)        => SIGNED with SIGNER_CERT_DNS[3]
         // module_8  => <NONE> => MODULAR_ASSERTION   com.l7tech.InvalidAssertionClassTest1.aar (fail)   => SIGNED with SIGNER_CERT_DNS[3]
         // module_9  => <NONE> => MODULAR_ASSERTION   com.l7tech.NoAssertionsTest1.aar (fail)            => SIGNED with SIGNER_CERT_DNS[3]
-        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner
-        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner
+        // module_10 => <NONE> => MODULAR_ASSERTION   com.l7tech.WorkingTest4.aar                        => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts
+        // module_11 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts
         // module_12 => <NONE> => CUSTOM_ASSERTION    com.l7tech.DynamicCustomAssertionsTest3.jar        => SIGNATURE ERROR: DATA BYTES TAMPERED WITH
 
         // calculate expected loaded based on rejectedModules and signatureErrorModules
@@ -3766,12 +3766,12 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                                 ? ModuleState.REJECTED
                                 : (failedModules.contains(new Goid(GOID_HI_START, 10)) || unlicensedModules.contains(new Goid(GOID_HI_START, 10)))
                                 ? ModuleState.ERROR
-                                : ModuleState.LOADED,  // module_10 => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                       => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner    => REJECTED/ERROR/LOADED
+                                : ModuleState.LOADED,  // module_10 => <NONE> => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                       => SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts    => REJECTED/ERROR/LOADED
                         signedRejectedModules.contains(new Goid(GOID_HI_START, 11))
                                 ? ModuleState.REJECTED
                                 : (failedModules.contains(new Goid(GOID_HI_START, 11)) || unlicensedModules.contains(new Goid(GOID_HI_START, 11)))
                                 ? ModuleState.ERROR
-                                : ModuleState.LOADED,  // module_11 => <NONE> => CUSTOM_ASSERTION; com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner    => REJECTED/ERROR/LOADED
+                                : ModuleState.LOADED,  // module_11 => <NONE> => CUSTOM_ASSERTION; com.l7tech.DynamicCustomAssertionsTest2.jar        => SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts    => REJECTED/ERROR/LOADED
                         signedRejectedModules.contains(new Goid(GOID_HI_START, 12))
                                 ? ModuleState.REJECTED
                                 : (failedModules.contains(new Goid(GOID_HI_START, 12)) || unlicensedModules.contains(new Goid(GOID_HI_START, 12)))
@@ -3794,8 +3794,8 @@ public class ServerModuleFileListenerTest extends ServerModuleFileTestBase {
                         ModuleState.ERROR,    // module_7  => CUSTOM_ASSERTION;  com.l7tech.BrokenDescriptorTest1.jar (fail)      SIGNED with SIGNER_CERT_DNS[3]            => ERROR
                         ModuleState.ERROR,    // module_8  => MODULAR_ASSERTION; com.l7tech.InvalidAssertionClassTest1.aar (fail) SIGNED with SIGNER_CERT_DNS[3]            => ERROR
                         ModuleState.ERROR,    // module_9  => MODULAR_ASSERTION; com.l7tech.NoAssertionsTest1.aar (fail)          SIGNED with SIGNER_CERT_DNS[3]            => ERROR
-                        ModuleState.REJECTED, // module_10 => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                      SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedModuleSigner          => REJECTED
-                        ModuleState.REJECTED, // module_11 => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest2.aar      SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedModuleSigner   => REJECTED
+                        ModuleState.REJECTED, // module_10 => MODULAR_ASSERTION; com.l7tech.WorkingTest4.aar                      SIGNATURE ERROR: UNTRUSTED SIGNER: SIGNER_CERT_DNS[1] from untrustedCerts          => REJECTED
+                        ModuleState.REJECTED, // module_11 => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest2.aar      SIGNATURE ERROR: UNTRUSTED SIGNER: untrustedSignerCertDns[0] from untrustedCerts   => REJECTED
                         ModuleState.REJECTED  // module_12 => CUSTOM_ASSERTION;  com.l7tech.DynamicCustomAssertionsTest3.aar      SIGNATURE ERROR: DATA BYTES TAMPERED WITH => REJECTED
                 }
         );

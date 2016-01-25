@@ -29,7 +29,7 @@ public class SignerUtils {
     /**
      * The ZIP entry name (lower case) containing the signed data bytes.
      */
-    static final String SIGNED_DATA_ZIP_ENTRY = "signed.dat";
+    private static final String SIGNED_DATA_ZIP_ENTRY = "signed.dat";
 
     /**
      * The ZIP entry name (lower case) containing the signature information:
@@ -45,7 +45,7 @@ public class SignerUtils {
      * </tr>
      * </table>
      */
-    static final String SIGNATURE_PROPS_ZIP_ENTRY = "signature.properties";
+    private static final String SIGNATURE_PROPS_ZIP_ENTRY = "signature.properties";
 
     /**
      * ASN.1 encoded X.509 certificate as Base64 string.
@@ -299,155 +299,249 @@ public class SignerUtils {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // VERIFYING
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // 1 MB
-    private static final int INITIAL_OUTPUT_STREAM_SIZE = 1024*1024;
-
-    /**
-     * Contains signed zip content i.e. Signed Data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.<br/>
-     * Call {@link #close()} after you are done with buffer, to properly cleanup buffers.
-     */
     @SuppressWarnings("UnusedDeclaration")
-    public static final class SignedZipContent implements Closeable {
-        @NotNull private final byte[] data;
-        private final int dataSize;
-        @NotNull private final byte[] dataDigest;
-        @NotNull private final byte[] signatureProps;
-        private final int signaturePropsSize;
+    public static final class SignedZip {
+        /**
+         * Trusted issuer certificates.  Read-only collection.
+         */
+        final Collection<X509Certificate> trustedSigningCerts;
 
-        // private constructor
-        private SignedZipContent(
-                @NotNull final PoolByteArrayOutputStream dataStream,
-                @NotNull final byte[] dataDigest,
-                @NotNull final PoolByteArrayOutputStream signaturePropsStream
-        ) {
-            this.dataSize = dataStream.size();
-            this.data = dataStream.detachPooledByteArray();
-            this.dataDigest = dataDigest;
-            this.signaturePropsSize = signaturePropsStream.size();
-            this.signatureProps = signaturePropsStream.detachPooledByteArray();
+        /**
+         * Create with an array of trusted signer certificates.
+         */
+        public SignedZip(@NotNull final X509Certificate[] trustedSigningCerts) {
+            this.trustedSigningCerts = Collections.unmodifiableCollection(Arrays.asList(trustedSigningCerts));
         }
 
         /**
-         * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signed data.
-         *
-         * @return a new {@code ByteArrayInputStream} with {@link #data} and {@link #dataSize} ready to be read, never {@code null}.
+         * Create with a collection of trusted signer certificates.
          */
-        @NotNull
-        public InputStream getDataStream() {
-            assert dataSize >= 0;
-            return new ByteArrayInputStream(data, 0, dataSize);
+        public SignedZip(@NotNull final Collection<X509Certificate> trustedSigningCerts) {
+            this.trustedSigningCerts = Collections.unmodifiableCollection(new ArrayList<>(trustedSigningCerts)); // read-only shallow copy
         }
 
         /**
-         * Get a copy of signed data buffer.
-         *
-         * @return a copy of signed data buffer {@link #data}, never {@code null}.
+         * Contains generic signed zip inner payload i.e. Signed Data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.<br/>
+         * Call {@link #close()} after you are done with buffer, to properly cleanup buffers.
          */
-        @NotNull
-        public byte[] getDataBytes() {
-            assert dataSize >= 0;
-            final byte [] returnBuf = new byte[dataSize];
-            System.arraycopy(data, 0, returnBuf, 0, dataSize);
-            return returnBuf;
-        }
+        public static class InnerPayload implements Closeable {
+            /**
+             * Our default {@link InnerPayloadFactory}.
+             */
+            @NotNull
+            public static final InnerPayloadFactory<InnerPayload> FACTORY = new InnerPayloadFactory<InnerPayload>() {
+                @NotNull
+                @Override
+                public InnerPayload create(
+                        @NotNull final PoolByteArrayOutputStream dataStream,
+                        @NotNull final byte[] dataDigest,
+                        @NotNull final PoolByteArrayOutputStream signaturePropsStream
+                ) throws IOException {
+                    return new InnerPayload(dataStream, dataDigest, signaturePropsStream);
+                }
+            };
 
-        /**
-         * Retrieve signed data buffer size in bytes.
-         */
-        public int getDataSize() {
-            return dataSize;
-        }
+            @NotNull
+            private final byte[] data;
+            private final int dataSize;
+            @NotNull
+            private final byte[] dataDigest;
+            @NotNull
+            private final byte[] signatureProps;
+            private final int signaturePropsSize;
 
-        /**
-         * Retrieve signed data digest.
-         */
-        @NotNull
-        public byte[] getDataDigest() {
-            return dataDigest;
-        }
-
-        /**
-         * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signature properties.
-         *
-         * @return a new {@code ByteArrayInputStream} with {@link #signatureProps} and {@link #signaturePropsSize} ready to be read.
-         */
-        @NotNull
-        public InputStream getSignaturePropertiesStream() {
-            assert signaturePropsSize >= 0;
-            return new ByteArrayInputStream(signatureProps, 0, signaturePropsSize);
-        }
-
-        /**
-         * Get a copy of signature properties buffer.
-         *
-         * @return a copy of signature properties buffer {@link #signatureProps}, never {@code null}.
-         */
-        @NotNull
-        public byte[] getSignaturePropertiesBytes() {
-            assert signaturePropsSize >= 0;
-            final byte [] returnBuf = new byte[signaturePropsSize];
-            System.arraycopy(signatureProps, 0, returnBuf, 0, signaturePropsSize);
-            return returnBuf;
-        }
-
-        /**
-         * Get Signature Properties as String.
-         *
-         * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
-         */
-        @NotNull
-        public String getSignaturePropertiesString() throws IOException {
-            final StringWriter writer = new StringWriter();
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(getSignaturePropertiesStream(), StandardCharsets.ISO_8859_1))) {
-                IOUtils.copyStream(reader, writer);
-                writer.flush();
+            // typically called by the SignedZip framework through the dedicated factory instance
+            protected InnerPayload(
+                    @NotNull final PoolByteArrayOutputStream dataStream,
+                    @NotNull final byte[] dataDigest,
+                    @NotNull final PoolByteArrayOutputStream signaturePropsStream
+            ) {
+                this.dataSize = dataStream.size();
+                this.data = dataStream.detachPooledByteArray();
+                this.dataDigest = dataDigest;
+                this.signaturePropsSize = signaturePropsStream.size();
+                this.signatureProps = signaturePropsStream.detachPooledByteArray();
             }
-            return writer.toString();
+
+            /**
+             * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signed data.
+             *
+             * @return a new {@code ByteArrayInputStream} with {@link #data} and {@link #dataSize} ready to be read, never {@code null}.
+             */
+            @NotNull
+            public InputStream getDataStream() {
+                assert dataSize >= 0;
+                return new ByteArrayInputStream(data, 0, dataSize);
+            }
+
+            /**
+             * Get a copy of signed data buffer.
+             *
+             * @return a copy of signed data buffer {@link #data}, never {@code null}.
+             */
+            @NotNull
+            public byte[] getDataBytes() {
+                assert dataSize >= 0;
+                final byte[] returnBuf = new byte[dataSize];
+                System.arraycopy(data, 0, returnBuf, 0, dataSize);
+                return returnBuf;
+            }
+
+            /**
+             * Retrieve signed data buffer size in bytes.
+             */
+            public int getDataSize() {
+                return dataSize;
+            }
+
+            /**
+             * Retrieve signed data digest.
+             */
+            @NotNull
+            public byte[] getDataDigest() {
+                return dataDigest;
+            }
+
+            /**
+             * Always returns a new {@code ByteArrayInputStream} ready to be read, containing the signature properties.
+             *
+             * @return a new {@code ByteArrayInputStream} with {@link #signatureProps} and {@link #signaturePropsSize} ready to be read.
+             */
+            @NotNull
+            public InputStream getSignaturePropertiesStream() {
+                assert signaturePropsSize >= 0;
+                return new ByteArrayInputStream(signatureProps, 0, signaturePropsSize);
+            }
+
+            /**
+             * Get a copy of signature properties buffer.
+             *
+             * @return a copy of signature properties buffer {@link #signatureProps}, never {@code null}.
+             */
+            @NotNull
+            public byte[] getSignaturePropertiesBytes() {
+                assert signaturePropsSize >= 0;
+                final byte[] returnBuf = new byte[signaturePropsSize];
+                System.arraycopy(signatureProps, 0, returnBuf, 0, signaturePropsSize);
+                return returnBuf;
+            }
+
+            /**
+             * Get Signature Properties as String.
+             *
+             * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
+             */
+            @NotNull
+            public String getSignaturePropertiesString() throws IOException {
+                final StringWriter writer = new StringWriter();
+                try (final BufferedReader reader = new BufferedReader(new InputStreamReader(getSignaturePropertiesStream(), StandardCharsets.ISO_8859_1))) {
+                    IOUtils.copyStream(reader, writer);
+                    writer.flush();
+                }
+                return writer.toString();
+            }
+
+            /**
+             * Get Signature {@link java.util.Properties}.
+             *
+             * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
+             */
+            @NotNull
+            public Properties getSignatureProperties() throws IOException {
+                final Properties signatureProperties = new Properties();
+                signatureProperties.load(getSignaturePropertiesStream());
+                return signatureProperties;
+            }
+
+            /**
+             * Retrieve signature properties buffer size in bytes.
+             */
+            public int getSignaturePropertiesSize() {
+                return signaturePropsSize;
+            }
+
+            /**
+             * Cleanup resources i.e. return signed data and signature properties buffers to the pool.
+             */
+            @Override
+            public void close() throws IOException {
+                BufferPool.returnBuffer(data);
+                BufferPool.returnBuffer(signatureProps);
+            }
         }
 
         /**
-         * Get Signature {@link java.util.Properties}.
+         * Convenient method for loading a signed zip file.
          *
-         * @throws java.io.IOException if an error happens while reading the signature properties {@code InputStream} i.e. {@link #getSignaturePropertiesStream()}.
+         * @param zipFile           .ZIP file as produced by signZip.  Required and cannot be {@code null}.
+         * @param payloadFactory    payload factory.  Required and cannot be {@code null}.
+         * @see #load(java.io.InputStream, InnerPayloadFactory)
          */
         @NotNull
-        public Properties getSignatureProperties() throws IOException {
-            final Properties signatureProperties = new Properties();
-            signatureProperties.load(getSignaturePropertiesStream());
-            return signatureProperties;
+        public <T extends InnerPayload> T load(
+                @NotNull final File zipFile,
+                @NotNull final InnerPayloadFactory<T> payloadFactory
+        ) throws IOException, SignatureException {
+            try (final InputStream bis = new BufferedInputStream(new FileInputStream(zipFile))) {
+                return load(bis, payloadFactory);
+            }
         }
 
         /**
-         * Retrieve signature properties buffer size in bytes.
+         * Loads the specified {@code signedZip} stream, verify its signature and return the signed zip
+         * {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload}, only if signature is validated and its signer is trusted.
+         * <p/>
+         * The caller must close {@code InnerPayload} after done using, in order to properly release data and signature buffers.
+         *
+         * @param signedZip         input stream containing .ZIP file as produced by signZip.  Required and cannot be {@code null}.
+         * @param payloadFactory    payload factory.  Required and cannot be {@code null}.
+         * @param <T>               payload class type.
+         * @return a {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload} object containing signed data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.  Never {@code null}.
+         * @throws IOException  if an error happens while reading {@code signedZip} or calculating digest.
+         * @throws SignatureException if signature cannot be verified
          */
-        public int getSignaturePropertiesSize() {
-            return signaturePropsSize;
-        }
+        @NotNull
+        public <T extends InnerPayload> T load(
+                @NotNull final InputStream signedZip,
+                @NotNull final InnerPayloadFactory<T> payloadFactory
+        ) throws IOException, SignatureException {
+            T payload = null;
+            try {
+                payload = readSignedZip(signedZip, payloadFactory);
+                final X509Certificate signerCert = verifySignatureWithDigest(payload.getDataDigest(), payload.getSignatureProperties());
+                verifySignerCertIsTrusted(trustedSigningCerts, signerCert);
+            } catch (final IOException | SignatureException e) {
+                ResourceUtils.closeQuietly(payload);
+                throw e;
+            } catch (final Exception e) {
+                ResourceUtils.closeQuietly(payload);
+                throw new SignatureException("Signature could not be verified: " + ExceptionUtils.getMessage(e), e);
+            }
 
-        /**
-         * Cleanup resources i.e. return signed data and signature properties buffers to the pool.
-         */
-        @Override
-        public void close() throws IOException {
-            BufferPool.returnBuffer(data);
-            BufferPool.returnBuffer(signatureProps);
+            // if signature is validated and signing cert is trusted, then return the payload
+            return payload;
         }
     }
 
+    // 1 MB
+    private static final int INITIAL_OUTPUT_STREAM_SIZE = 1024 * 1024;
+
     /**
      * Unwraps signed data and signature properties from the specified {@code signedZip}.<br/>
-     * Use this method for reading the content of a signed zip file.  It'll provide a consistent way of processing signed zip file.
+     * Use this method for reading the contents of a signed zip file.  It'll provide a consistent way of processing signed zip file.
      * <p/>
-     * The caller must close {@code SignedZipContent} after done using, in order to properly release data and signature buffers.
+     * The caller must close {@code InnerPayload} after done using, in order to properly release data and signature buffers.
      *
      * @param signedZip    input stream containing .ZIP file as produced by signZip.  Required and cannot be {@code null}.
-     * @return a {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZipContent} object containing
+     * @return a {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload} object containing
      * signed data {@code InputStream}, calculated signed data digest and signature {@code InputStream}.  Never {@code null}.
      * @throws IOException if an error happens while reading {@code signedZip} or calculating digest.
      */
     @NotNull
-    public static SignedZipContent readSignedZip(@NotNull final InputStream signedZip) throws IOException, NoSuchAlgorithmException {
+    private static <T extends SignedZip.InnerPayload> T readSignedZip(
+            @NotNull final InputStream signedZip,
+            @NotNull final InnerPayloadFactory<T> payloadFactory
+    ) throws IOException, NoSuchAlgorithmException {
         // get message digest (SHA-256)
         final MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -483,9 +577,9 @@ public class SignerUtils {
             tis = new TeeInputStream(zis, sigPropOut);
             IOUtils.copyStream(tis, new NullOutputStream());
 
-            // finally return SignedZipInfo containing signed data InputStream, calculated signed data digest and signature InputStream
-            // note that SignedZipContent will detach both signedDataOut and sigPropOut buffers and will be responsible for properly releasing them
-            return new SignedZipContent(signedDataOut, computedDigest, sigPropOut);
+            // finally return SignedZip.InnerPayload containing signed data InputStream, calculated signed data digest and signature InputStream
+            // note that SignedZip.InnerPayload will detach both signedDataOut and sigPropOut buffers and will be responsible for properly releasing them
+            return payloadFactory.create(signedDataOut, computedDigest, sigPropOut);
         }
     }
 
@@ -498,13 +592,84 @@ public class SignerUtils {
      *
      * @param zipToVerify    input stream containing .ZIP file as produced by signZip.  Required and cannot be {@code null}.
      * @return the signer certificate, which has NOT YET BEEN VERIFIED AS TRUSTED.
-     * @throws Exception if a problem occurs or if signature cannot be verified
+     * @throws java.security.SignatureException if an error happens while verifying zip signature.
+     * @throws java.io.IOException if an error happens while reading zip
      */
-    public static X509Certificate verifyZip(@NotNull final InputStream zipToVerify) throws Exception {
+    public static X509Certificate verifyZip(@NotNull final InputStream zipToVerify) throws IOException, SignatureException {
         // read signed zip
-        try (final SignedZipContent zipContent = readSignedZip(zipToVerify)) {
+        try (final SignedZip.InnerPayload payload = readSignedZip(zipToVerify, SignedZip.InnerPayload.FACTORY)) {
             // verify signature
-            return verifySignatureWithDigest(zipContent.getDataDigest(), zipContent.getSignatureProperties());
+            return verifySignatureWithDigest(payload.getDataDigest(), payload.getSignatureProperties());
+        } catch (final CertificateException | NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new SignatureException("Signature could not be verified: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /**
+     * Verifies {@code content} signature, specified with {@code signatureProperties}).
+     *
+     * @param content               {@code InputStream} of the file content to check signature.  Required and cannot be {@code null}.
+     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool,
+     *                              holding ASN.1 encoded X.509 certificate as Base64 string and ASN.1 encoded signature value as Base64 string.
+     *                              Optional and can be {@code null} if module is not signed.
+     * @return the signer certificate, which has NOT YET BEEN VERIFIED AS TRUSTED.
+     * @throws java.security.SignatureException if an error happens while verifying {@code content} signature.
+     * @throws java.io.IOException if an error happens while reading {@code content}
+     */
+    public static X509Certificate verifySignature(
+            @NotNull final InputStream content,
+            @Nullable final String signatureProperties
+    ) throws IOException, SignatureException {
+        // if no signature provided throw
+        if (StringUtils.isBlank(signatureProperties)) {
+            throw new SignatureException("Content is not signed");
+        }
+
+        try {
+            // freshly calculate content digest
+            final DigestInputStream dis = new DigestInputStream(content, MessageDigest.getInstance("SHA-256"));
+            IOUtils.copyStream(dis, new NullOutputStream());
+            final byte[] computedDigest = dis.getMessageDigest().digest();
+
+            // extract content signer cert
+            final X509Certificate issuerCert;
+            assert signatureProperties != null;
+            try (final StringReader reader = new StringReader(signatureProperties)) {
+                final Properties sigProps = new Properties();
+                sigProps.load(reader);
+                issuerCert = SignerUtils.verifySignatureWithDigest(computedDigest, sigProps);
+            }
+
+            // finally return issuer certificate
+            return issuerCert;
+        } catch (final CertificateException | NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new SignatureException("Signature could not be verified: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /**
+     * Verifies {@code content} signature, specified with {@code signatureProperties}), and verifies if issuer is trusted.
+     *
+     * @param content               {@code InputStream} of the file content to check signature.  Required and cannot be {@code null}.
+     * @param signatureProperties   A {@code String} with the signature properties, as produced by the signer tool,
+     *                              holding ASN.1 encoded X.509 certificate as Base64 string and ASN.1 encoded signature value as Base64 string.
+     *                              Optional and can be {@code null} if module is not signed.
+     * @param trustedSignerCerts    collection of trusted trusted issuer certs.  Required and cannot be {@code null}.
+     * @throws java.security.SignatureException if an error happens while verifying both signature and issuer.
+     * @throws java.io.IOException if an error happens while reading {@code content}
+     */
+    public static void verifySignatureAndIssuer(
+            @NotNull final InputStream content,
+            @Nullable final String signatureProperties,
+            @NotNull final Collection<X509Certificate> trustedSignerCerts
+    ) throws IOException, SignatureException {
+        try {
+            final X509Certificate issuerCert = verifySignature(content, signatureProperties);
+            verifySignerCertIsTrusted(trustedSignerCerts, issuerCert);
+        } catch (final IOException | SignatureException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new SignatureException("Signature could not be verified: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -524,7 +689,7 @@ public class SignerUtils {
      * @throws java.security.SignatureException
      */
     @NotNull
-    public static X509Certificate verifySignatureWithDigest(
+    private static X509Certificate verifySignatureWithDigest(
             @NotNull final byte[] digest,
             @NotNull final Properties props
     ) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
@@ -578,21 +743,39 @@ public class SignerUtils {
      * @param trustStoreFile       trust store containing trusted issuer certs.  Required and cannot be {@code null}.
      * @param trustStoreType       trust store type.  Required and cannot be {@code null}.
      * @param trustStorePassword   trust store password to use for decrypting or unlocking the key store.  Generally required by software (file-based) key stores.
-     * @param signerCert     a signer cert that may or may not be trusted.  Required and cannot be {@code null}.
+     * @param signerCert           a signer cert that may or may not be trusted.  Required and cannot be {@code null}.
      * @throws Exception if the signer cert should not be trusted or if an error occurs
      */
+    @SuppressWarnings("UnusedDeclaration")
     public static void verifySignerCertIsTrusted(
             @NotNull final File trustStoreFile,
             @NotNull final String trustStoreType,
             @Nullable final char[] trustStorePassword,
             @NotNull final X509Certificate signerCert
     ) throws Exception {
+        // Load trusted certs
+        final Collection<X509Certificate> trustedCerts = loadTrustedCertsFromTrustStore(trustStoreFile, trustStoreType, trustStorePassword);
+        verifySignerCertIsTrusted(trustedCerts, signerCert);
+    }
+
+    /**
+     * Verify that the specified signer certificate was duly issued by (or is identical to) one of the trust anchor
+     * certificates in the specified trust certs collection.
+     * <p/>
+     * If this method returns without throwing an exception, the signer cert is trusted.
+     *
+     * @param trustedCerts    collection of trusted trusted issuer certs.  Required and cannot be {@code null}.
+     * @param signerCert      a signer cert that may or may not be trusted.  Required and cannot be {@code null}.
+     * @throws Exception
+     */
+    public static void verifySignerCertIsTrusted(
+            @NotNull final Collection<X509Certificate> trustedCerts,
+            @NotNull final X509Certificate signerCert
+    ) throws Exception {
         // TODO this is very very sketchy and may not be complete or secure, even though it appears to work in my test driver
         // Needs testing to ensure can't be fooled by cert not issued by trust anchor,
         // spoofed intermediate certs (e.g. use your real code signing cert to sign some other code signing cert)
 
-        // Load trusted certs
-        final Collection<X509Certificate> trustedCerts = loadTrustedCertsFromTrustStore(trustStoreFile, trustStoreType, trustStorePassword);
         final Set<TrustAnchor> trustAnchors = new HashSet<>();
         for (final X509Certificate trustedCert : trustedCerts) {
             trustAnchors.add(new TrustAnchor(trustedCert, null));

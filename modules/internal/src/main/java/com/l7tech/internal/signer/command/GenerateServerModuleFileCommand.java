@@ -5,21 +5,26 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.module.*;
-import com.l7tech.gateway.common.security.signer.SignatureVerifier;
+import com.l7tech.gateway.common.security.signer.InnerPayloadFactory;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.internal.signer.LazyFileOutputStream;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.transform.dom.DOMResult;
 import java.io.*;
-import java.security.SignatureException;
-import java.util.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
 
 import static com.l7tech.internal.signer.SignerErrorCodes.*;
 
@@ -64,9 +69,6 @@ public class GenerateServerModuleFileCommand extends Command {
     private File smfFile;
     private String moduleName;
     private File outFile;
-
-    // server module file utils
-    private ServerModuleFileUtils serverModuleFileUtils;
     
     @Override
     protected Options getOptions() {
@@ -165,58 +167,55 @@ public class GenerateServerModuleFileCommand extends Command {
     }
 
     /**
-     * Lazy create {@code ServerModuleFileUtils} instance.
+     * This is a very very hacky way of reading a signed zip file, however I rather have this hack than making
+     * {@link SignerUtils.SignedZip#readSignedZip(java.io.InputStream, com.l7tech.gateway.common.security.signer.InnerPayloadFactory)}
+     * with public access.
+     *
+     * @param signedZipStream    signed zip {@code InputStream}.  Required and cannot be {@code null}.
+     * @param fileName           module filename.  Required and cannot be {@code null}.
+     * @return {@link ServerModuleFile} contained within the signed zip payload.
      */
     @NotNull
-    protected ServerModuleFileUtils getServerModuleFileUtils() {
-        if (serverModuleFileUtils == null) {
-            serverModuleFileUtils = new ServerModuleFileUtils(
-                    new CustomAssertionsScannerHelper("custom_assertions.properties"),
-                    new ModularAssertionsScannerHelper("ModularAssertion-List"),
-                    // we can only verify signature but cannot check if the signer is trusted.
-                    new SignatureVerifier() {
-                        @Override
-                        public void verify(@NotNull byte[] digest, @Nullable String signatureProperties) throws SignatureException {
-                            // if no signature provided throw
-                            if (StringUtils.isBlank(signatureProperties)) {
-                                throw new SignatureException("Module is not signed");
-                            }
-
-                            // extract content signer cert
-                            assert signatureProperties != null;
-                            try (final StringReader reader = new StringReader(signatureProperties)) {
-                                final Properties sigProps = new Properties();
-                                sigProps.load(reader);
-                                SignerUtils.verifySignatureWithDigest(digest, sigProps);
-                            } catch (final SignatureException e) {
-                                throw e;
-                            } catch (final Exception e) {
-                                throw new SignatureException("Failed to verify and extract signer certificate", e);
-                            }
-                        }
-
-                        @Override
-                        public void verify(@NotNull byte[] digest, @Nullable byte[] signatureProperties) throws SignatureException {
-                            // if no signature provided throw
-                            if (ArrayUtils.isEmpty(signatureProperties)) {
-                                throw new SignatureException("Module is not signed");
-                            }
-
-                            // extract content signer cert
-                            try {
-                                final Properties sigProps = new Properties();
-                                sigProps.load(new ByteArrayInputStream(signatureProperties));
-                                SignerUtils.verifySignatureWithDigest(digest, sigProps);
-                            } catch (final SignatureException e) {
-                                throw e;
-                            } catch (final Exception e) {
-                                throw new SignatureException("Failed to verify and extract signer certificate", e);
-                            }
-                        }
-                    }
+    static ServerModuleFile loadServerModuleFileFromSignedZip(
+            @NotNull final InputStream signedZipStream,
+            @NotNull final String fileName
+    ) throws IOException {
+        try {
+            final Method method = SignerUtils.class.getDeclaredMethod("readSignedZip", InputStream.class, InnerPayloadFactory.class);
+            if (method == null) {
+                throw new RuntimeException("method readSignedZip either missing from class SignerUtils or its deceleration has been modified");
+            }
+            method.setAccessible(true);
+            final Object ret = method.invoke(
+                    null,
+                    signedZipStream,
+                    new ServerModuleFilePayloadFactory(
+                            new CustomAssertionsScannerHelper("custom_assertions.properties"),
+                            new ModularAssertionsScannerHelper("ModularAssertion-List"),
+                            fileName
+                    )
             );
+            if (!(ret instanceof ServerModuleFilePayload)) {
+                throw new RuntimeException("method readSignedZip return unexpected payload");
+            }
+            try (final ServerModuleFilePayload payload = (ServerModuleFilePayload)ret) {
+                // we cannot check whether issuer is trusted, but we can validate signature here
+                SignerUtils.verifySignature(payload.getDataStream(), payload.getSignaturePropertiesString());
+                return payload.create();
+            } catch (final IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IOException(MessageFormat.format("Failed to verify signature for file: '{0}'.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+            }
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(MessageFormat.format("Failed to read signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+        } catch (InvocationTargetException e) {
+            final Throwable cause = e.getCause();
+            if (cause instanceof IOException) {
+                throw (IOException)cause;
+            }
+            throw new RuntimeException(MessageFormat.format("Failed to process signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
         }
-        return serverModuleFileUtils;
     }
 
     /**
@@ -232,7 +231,7 @@ public class GenerateServerModuleFileCommand extends Command {
             @NotNull final OutputStream outputStream
     ) throws Exception {
         // create a ServerModuleFile from the stream.
-        final ServerModuleFile moduleFile = getServerModuleFileUtils().createFromStream(smfStream, smfFile.getName());
+        final ServerModuleFile moduleFile = loadServerModuleFileFromSignedZip(smfStream, smfFile.getName());
         moduleFile.setName(moduleName);
 
         // create ServerModuleFile managed object

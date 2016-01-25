@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
@@ -9,7 +10,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.util.*;
@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class SolutionKitManagerResourceTest {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResourceTest.class.getName());
 
-    private static SignatureVerifierServer TRUSTED_SIGNATURE_VERIFIER;
+    private static TrustedSignerCertsManager TRUSTED_SIGNER_MANAGER;
     private static final String[] TRUSTED_SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com"
@@ -183,8 +183,8 @@ public class SolutionKitManagerResourceTest {
     public static void beforeClass() throws Exception {
         SignatureTestUtils.beforeClass();
 
-        TRUSTED_SIGNATURE_VERIFIER = SignatureTestUtils.createSignatureVerifier(TRUSTED_SIGNER_CERT_DNS);
-        Assert.assertNotNull("signature verifier is created", TRUSTED_SIGNATURE_VERIFIER);
+        TRUSTED_SIGNER_MANAGER = SignatureTestUtils.createSignerManager(TRUSTED_SIGNER_CERT_DNS);
+        Assert.assertNotNull("signature verifier is created", TRUSTED_SIGNER_MANAGER);
     }
 
     @AfterClass
@@ -217,7 +217,7 @@ public class SolutionKitManagerResourceTest {
         solutionKitResource = new SolutionKitManagerResource();
         solutionKitResource.setSolutionKitManager(solutionKitManager);
         solutionKitResource.setLicenseManager(licenseManager);
-        solutionKitResource.setSignatureVerifier(TRUSTED_SIGNATURE_VERIFIER);
+        solutionKitResource.setTrustedSignerCertsManager(TRUSTED_SIGNER_MANAGER);
         solutionKitResource.setIdentityProviderConfigManager(identityProviderConfigManager);
     }
 
@@ -313,7 +313,7 @@ public class SolutionKitManagerResourceTest {
             byte[] sampleSkarBytes = buildSampleSkar(SAMPLE_SOLUTION_KIT_META_XML, SAMPLE_INSTALL_BUNDLE_XML, null);
             Assert.assertNotNull(sampleSkarBytes);
             // sign
-            byte[] signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNATURE_VERIFIER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
+            byte[] signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNER_MANAGER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
             Assert.assertNotNull(signedSampleSkarBytes);
             // try to install our signed skar
             Response response = solutionKitResource.installOrUpgrade(
@@ -353,7 +353,7 @@ public class SolutionKitManagerResourceTest {
             );
             Assert.assertNotNull(sampleSkarBytes);
             // sign
-            signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNATURE_VERIFIER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
+            signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNER_MANAGER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
             Assert.assertNotNull(signedSampleSkarBytes);
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
@@ -377,7 +377,7 @@ public class SolutionKitManagerResourceTest {
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // create sample child signed child skars
-            childSkarsStream = creteSignedSampleChildScars(2, TRUSTED_SIGNATURE_VERIFIER, signerDN);
+            childSkarsStream = creteSignedSampleChildScars(2, TRUSTED_SIGNER_MANAGER, signerDN);
             // crate sample parent skar
             sampleSkarBytes = buildSampleSkar(
                     MessageFormat.format(SAMPLE_SOLUTION_KIT_META_TEMPLATE,
@@ -393,7 +393,7 @@ public class SolutionKitManagerResourceTest {
             );
             Assert.assertNotNull(sampleSkarBytes);
             // sign
-            signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNATURE_VERIFIER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
+            signedSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNER_MANAGER, new ByteArrayInputStream(sampleSkarBytes), signerDN);
             Assert.assertNotNull(signedSampleSkarBytes);
             // try to install our signed skar
             response = solutionKitResource.installOrUpgrade(
@@ -423,7 +423,7 @@ public class SolutionKitManagerResourceTest {
                         "cn=signer.untrusted.apim.ca.com"
                 }
         );
-        final SignatureVerifierServer untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
+        final TrustedSignerCertsManager untrustedSigner = SignatureTestUtils.createSignerManager(untrustedDNs);
 
         // test using untrusted signer with all signing cert DNs
         for (final String signerDN : untrustedDNs) {
@@ -448,7 +448,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat((String) response.getEntity(), Matchers.containsString("Signature could not be verified"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children unsigned)
@@ -488,7 +488,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat((String) response.getEntity(), Matchers.containsString("Signature could not be verified"));
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // test skar-of-skars (children signed)
@@ -528,7 +528,7 @@ public class SolutionKitManagerResourceTest {
             logger.log(Level.INFO, "installOrUpgrade:" + System.lineSeparator() + "response: " + response + System.lineSeparator() + "entity: " + response.getEntity());
             assertThat(response.getStatus(), Matchers.is(Response.Status.BAD_REQUEST.getStatusCode()));
             assertThat(response.getEntity(), Matchers.instanceOf(String.class));
-            assertThat((String) response.getEntity(), Matchers.containsString("Failed to verify signer certificate"));
+            assertThat((String) response.getEntity(), Matchers.containsString("Signature could not be verified"));
         }
     }
 
@@ -541,7 +541,7 @@ public class SolutionKitManagerResourceTest {
                         "cn=signer.untrusted.apim.ca.com"
                 }
         );
-        final SignatureVerifierServer untrustedSigner = SignatureTestUtils.createSignatureVerifier(untrustedDNs);
+        final TrustedSignerCertsManager untrustedSigner = SignatureTestUtils.createSignerManager(untrustedDNs);
 
         // create sample skar of skars
         final InputStream[] childSkarsStream = creteUnsignedSampleChildScars(2);
@@ -564,7 +564,7 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         byte[] tamperedSignedSkarBytes = SignatureTestUtils.signAndTamperWithContent(
                 new ByteArrayInputStream(sampleSkarBytes),
-                TRUSTED_SIGNATURE_VERIFIER,
+                TRUSTED_SIGNER_MANAGER,
                 TRUSTED_SIGNER_CERT_DNS[0],
                 new Functions.BinaryThrows<Pair<byte[], Properties>, byte[], Properties, Exception>() {
                     @Override
@@ -599,7 +599,7 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         tamperedSignedSkarBytes = SignatureTestUtils.signAndTamperWithContent(
                 new ByteArrayInputStream(sampleSkarBytes),
-                TRUSTED_SIGNATURE_VERIFIER,
+                TRUSTED_SIGNER_MANAGER,
                 TRUSTED_SIGNER_CERT_DNS[0],
                 new Functions.BinaryThrows<Pair<byte[], Properties>, byte[], Properties, Exception>() {
                     @Override
@@ -644,7 +644,7 @@ public class SolutionKitManagerResourceTest {
         // tamper with signer cert after signing (flipping random byte)
         tamperedSignedSkarBytes = SignatureTestUtils.signAndTamperWithContent(
                 new ByteArrayInputStream(sampleSkarBytes),
-                TRUSTED_SIGNATURE_VERIFIER,
+                TRUSTED_SIGNER_MANAGER,
                 TRUSTED_SIGNER_CERT_DNS[0],
                 new Functions.BinaryThrows<Pair<byte[], Properties>, byte[], Properties, Exception>() {
                     @Override
@@ -685,9 +685,8 @@ public class SolutionKitManagerResourceTest {
         assertThat(
                 (String) response.getEntity(),
                 Matchers.anyOf(
-                        Matchers.containsString("Failed to verify signer certificate"),
-                        Matchers.containsString("Signature not verified"),
-                        Matchers.containsString("Failed to verify and extract signer certificate")
+                        Matchers.containsString("Signature could not be verified"),
+                        Matchers.containsString("Signature not verified")
                 )
         );
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -709,7 +708,7 @@ public class SolutionKitManagerResourceTest {
         );
         Assert.assertNotNull(sampleSkarBytes);
         // sign with trusted signer
-        final byte[] signedTrustedAnotherSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNATURE_VERIFIER, new ByteArrayInputStream(anotherSampleSkarBytes), TRUSTED_SIGNER_CERT_DNS[0]);
+        final byte[] signedTrustedAnotherSampleSkarBytes = SignatureTestUtils.sign(TRUSTED_SIGNER_MANAGER, new ByteArrayInputStream(anotherSampleSkarBytes), TRUSTED_SIGNER_CERT_DNS[0]);
         // make sure this is trusted
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(signedTrustedAnotherSampleSkarBytes),
@@ -1475,7 +1474,7 @@ public class SolutionKitManagerResourceTest {
 
     private static InputStream[] creteSignedSampleChildScars(
             final int numChildren,
-            final SignatureVerifierServer signer,
+            final TrustedSignerCertsManager signer,
             final String signerDn
     ) throws Exception {
         return creteSampleChildScars(numChildren, true, signer, signerDn);
@@ -1493,7 +1492,7 @@ public class SolutionKitManagerResourceTest {
     private static InputStream[] creteSampleChildScars(
             final int numChildren,
             final boolean sign,
-            @Nullable final SignatureVerifierServer signer,
+            @Nullable final TrustedSignerCertsManager signer,
             @Nullable final String signerDn
     ) throws Exception {
         assertThat(numChildren, Matchers.greaterThanOrEqualTo(1));

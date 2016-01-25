@@ -11,7 +11,9 @@ import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -32,6 +34,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.security.SignatureException;
@@ -83,7 +86,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private ClusterStatusAdmin clusterStatusAdmin;
     private SecurityProvider securityProvider;
     private ClusterNodeInfo currentClusterNode;
-    private SignatureVerifierAdmin signatureVerifierAdmin;
+    private TrustedSignerCertsAdmin trustedSignerCertsAdmin;
 
     private final boolean canCreate;
     private final boolean canUpload;
@@ -410,17 +413,24 @@ public class ServerModuleFileManagerWindow extends JDialog {
                         public ServerModuleFile call() throws SaveException {
                             ServerModuleFile entity = moduleFile;
                             try {
+                                // some sanity check
+                                // todo: perhaps not needed as ServerModuleFileChooser.choose() is already validating signature
+                                // todo: in addition getClusterStatusAdmin().saveServerModuleFile is doing the same thing
                                 final byte[] bytes = entity.getData() != null ? entity.getData().getDataBytes() : null;
                                 if (bytes != null) {
                                     final byte[] digest = ModuleDigest.digest(bytes);
                                     if (!HexUtils.hexDump(digest).equals(entity.getModuleSha256())) {
                                         throw new SaveException("Digest mismatch");
                                     }
-                                    getSignatureVerifierAdmin().verify(digest, entity.getData().getSignatureProperties());
+                                    SignerUtils.verifySignatureAndIssuer(
+                                            new ByteArrayInputStream(bytes),
+                                            entity.getData().getSignatureProperties(),
+                                            TrustedSignerCertsHelper.getTrustedCertificates(getTrustedSignerCertsAdmin())
+                                    );
                                 }
                                 final Goid id = getClusterStatusAdmin().saveServerModuleFile(entity);
                                 entity.setGoid(id);
-                            } catch (FindException | UpdateException | SignatureException e) {
+                            } catch (FindException | UpdateException | IOException | SignatureException e) {
                                 throw new SaveException(e);
                             }
 
@@ -696,14 +706,19 @@ public class ServerModuleFileManagerWindow extends JDialog {
     }
 
     /**
-     * Get our cached {@link SignatureVerifierAdmin}
+     * Get our cached {@link com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin}
      */
     @NotNull
-    private SignatureVerifierAdmin getSignatureVerifierAdmin() {
-        if (signatureVerifierAdmin == null) {
-            signatureVerifierAdmin = Registry.getDefault().getSignatureVerifierAdmin();
+    private TrustedSignerCertsAdmin getTrustedSignerCertsAdmin() {
+        if (trustedSignerCertsAdmin == null) {
+            final Option<TrustedSignerCertsAdmin> option = Registry.getDefault().getAdminInterface(TrustedSignerCertsAdmin.class);
+            if (option.isSome()) {
+                this.trustedSignerCertsAdmin = option.some();
+            } else {
+                throw new RuntimeException("TrustedSignerCertsAdmin interface not found.");
+            }
         }
-        return signatureVerifierAdmin;
+        return trustedSignerCertsAdmin;
     }
 
     /**

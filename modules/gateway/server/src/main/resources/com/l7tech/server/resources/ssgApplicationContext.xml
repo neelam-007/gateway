@@ -2145,7 +2145,7 @@
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3" ref="assertionRegistry"/>
         <constructor-arg index="4" ref="customAssertionRegistrar"/>
-        <constructor-arg index="5" ref="signatureVerifier"/>
+        <constructor-arg index="5" ref="trustedSignerCertsManager"/>
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
@@ -2753,7 +2753,7 @@
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
-    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierServerImpl" depends-on="systemProperties">
+    <bean id="trustedSignerCertsManager" class="com.l7tech.server.security.signer.TrustedSignerCertsManagerImpl" depends-on="systemProperties">
         <constructor-arg index="0" type="java.io.File" value="file:${com.l7tech.server.configDirectory}${file.separator}trusted_signers"/>
         <constructor-arg index="1" type="java.lang.String" value="jks"/>
         <!--

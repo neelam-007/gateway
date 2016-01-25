@@ -1,7 +1,8 @@
 package com.l7tech.server.security.signer;
 
-import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.SignerUtilsTest;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.util.*;
 import org.hamcrest.Matchers;
 import org.junit.*;
@@ -17,10 +18,10 @@ import java.util.zip.ZipOutputStream;
 /**
  * Testing modules signature verifier as well as signer.
  */
-public class SignatureVerifierServerTest extends SignatureTestUtils {
+public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
 
     // we are going to treat this verifier (and holder of the signer certs) as trustworthy
-    private static SignatureVerifierServer TRUSTED_VERIFIER;
+    private static TrustedSignerCertsManager TRUSTED_VERIFIER;
     private static final String[] TRUSTED_SIGNER_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",
@@ -29,7 +30,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
     };
 
     // we are going to treat this verifier (and holder of the signer certs) as untrustworthy
-    private static SignatureVerifierServer UNTRUSTED_VERIFIER;
+    private static TrustedSignerCertsManager UNTRUSTED_VERIFIER;
     // the first 4 are the same DN's as trusted ones
     private static final String[] UNTRUSTED_SIGNER_DNS =
             ArrayUtils.concat(
@@ -45,8 +46,8 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         SignatureTestUtils.beforeClass();
 
         // create two, trusted and untrusted, signature verifiers and signer cert holders
-        TRUSTED_VERIFIER = createSignatureVerifier(TRUSTED_SIGNER_DNS);
-        UNTRUSTED_VERIFIER = createSignatureVerifier(UNTRUSTED_SIGNER_DNS);
+        TRUSTED_VERIFIER = createSignerManager(TRUSTED_SIGNER_DNS);
+        UNTRUSTED_VERIFIER = createSignerManager(UNTRUSTED_SIGNER_DNS);
     }
 
     @AfterClass
@@ -73,49 +74,50 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         Assert.assertNotNull(modifyCallback);
 
         // process input sip file
-        final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(signedZip);
-        Assert.assertNotNull(zipContent);
+        try (final SignerUtils.SignedZip.InnerPayload payload = SignerUtilsTest.execReadSignedZip(signedZip)) {
+            Assert.assertNotNull(payload);
 
-        // get signed data and signature properties bytes
-        final byte[] dataBytes = zipContent.getDataBytes();
-        final byte[] signatureBytes = zipContent.getSignaturePropertiesBytes();
-        // make sure both are read correctly
-        //noinspection ConstantConditions
-        if (dataBytes == null || signatureBytes == null) {
-            throw new IOException("Invalid signed Zip file. Either 'Signed Data' or 'Signature Properties' or both are missing from signed Zip");
-        }
+            // get signed data and signature properties bytes
+            final byte[] dataBytes = payload.getDataBytes();
+            final byte[] signatureBytes = payload.getSignaturePropertiesBytes();
+            // make sure both are read correctly
+            //noinspection ConstantConditions
+            if (dataBytes == null || signatureBytes == null) {
+                throw new IOException("Invalid signed Zip file. Either 'Signed Data' or 'Signature Properties' or both are missing from signed Zip");
+            }
 
-        // do the modification
-        final Pair<byte[], byte[]> dataAndSignatureBytes = modifyCallback.call(dataBytes, signatureBytes);
-        Assert.assertNotNull(dataAndSignatureBytes);
-        Assert.assertNotNull(dataAndSignatureBytes.left);
-        Assert.assertThat(dataAndSignatureBytes.left.length, Matchers.greaterThan(0));
-        Assert.assertNotNull(dataAndSignatureBytes.right);
-        Assert.assertThat(dataAndSignatureBytes.right.length, Matchers.greaterThan(0));
+            // do the modification
+            final Pair<byte[], byte[]> dataAndSignatureBytes = modifyCallback.call(dataBytes, signatureBytes);
+            Assert.assertNotNull(dataAndSignatureBytes);
+            Assert.assertNotNull(dataAndSignatureBytes.left);
+            Assert.assertThat(dataAndSignatureBytes.left.length, Matchers.greaterThan(0));
+            Assert.assertNotNull(dataAndSignatureBytes.right);
+            Assert.assertThat(dataAndSignatureBytes.right.length, Matchers.greaterThan(0));
 
-        // now repack the zip with modified bytes
-        final ByteArrayOutputStream outputZip = new ByteArrayOutputStream(1024);
-        try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
-            // first zip entry should be the signed data bytes
-            zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
-            // write the modified bytes into the first zip entry
-            IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.left), zos);
+            // now repack the zip with modified bytes
+            final ByteArrayOutputStream outputZip = new ByteArrayOutputStream(1024);
+            try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
+                // first zip entry should be the signed data bytes
+                zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
+                // write the modified bytes into the first zip entry
+                IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.left), zos);
 
-            // next zip entry is the signature information
-            zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
-            // write the modified bytes into the first zip entry
-            IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.right), zos);
-        }
+                // next zip entry is the signature information
+                zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
+                // write the modified bytes into the first zip entry
+                IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.right), zos);
+            }
 
-        // get the modified zip bytes
-        final byte[] modifiedSignedZipBytes = outputZip.toByteArray();
+            // get the modified zip bytes
+            final byte[] modifiedSignedZipBytes = outputZip.toByteArray();
 
-        // finally verify the tampered zip
-        try {
-            TRUSTED_VERIFIER.verify(new ByteArrayInputStream(modifiedSignedZipBytes));
-            Assert.fail("verify should have failed with tampered file!!!");
-        } catch (SignatureException ignore) {
-            // this is expected
+            // finally verify the tampered zip
+            try {
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(modifiedSignedZipBytes));
+                Assert.fail("verify should have failed with tampered file!!!");
+            } catch (SignatureException ignore) {
+                // this is expected
+            }
         }
     }
 
@@ -265,7 +267,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             // do the actual signing
             try (final InputStream signedZip = new ByteArrayInputStream(SignatureTestUtils.sign(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), dn))) {
                 // verify signature
-                TRUSTED_VERIFIER.verify(signedZip);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, signedZip);
             }
         }
 
@@ -276,7 +278,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             try (final InputStream signedZip = new ByteArrayInputStream(SignatureTestUtils.sign(UNTRUSTED_VERIFIER, new ByteArrayInputStream(bytes), dn))) {
                 // verify signature
                 try {
-                    TRUSTED_VERIFIER.verify(signedZip);
+                    SignatureTestUtils.verify(TRUSTED_VERIFIER, signedZip);
                     Assert.fail("verify should have failed with untrusted signer!!!");
                 } catch (SignatureException ignore) {
                     // this is expected
@@ -288,7 +290,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         final byte[] trustedSignedZipBytes = SignatureTestUtils.sign(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), TRUSTED_SIGNER_DNS[0]);
         // verify signature can be verified
         try (final InputStream signedZip = new ByteArrayInputStream(trustedSignedZipBytes)) {
-            TRUSTED_VERIFIER.verify(signedZip);
+            SignatureTestUtils.verify(TRUSTED_VERIFIER, signedZip);
         }
         doTamperWithZip(trustedSignedZipBytes);
 
@@ -296,7 +298,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         final byte[] untrustedSignedZipBytes = SignatureTestUtils.sign(UNTRUSTED_VERIFIER, new ByteArrayInputStream(bytes), UNTRUSTED_SIGNER_DNS[3]);
         // verify signature cannot be verified
         try (final InputStream signedZip = new ByteArrayInputStream(untrustedSignedZipBytes)) {
-            TRUSTED_VERIFIER.verify(signedZip);
+            SignatureTestUtils.verify(TRUSTED_VERIFIER, signedZip);
             Assert.fail("verify should have failed with untrusted signer!!!");
         } catch (SignatureException ignore) {
             // this is expected
@@ -343,7 +345,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         final byte[] anotherTrustedSignedZipBytes = SignatureTestUtils.sign(TRUSTED_VERIFIER, new ByteArrayInputStream(anotherBytes), TRUSTED_SIGNER_DNS[0]);
         // verify signature can be verified
         try (final InputStream signedZip = new ByteArrayInputStream(anotherTrustedSignedZipBytes)) {
-            TRUSTED_VERIFIER.verify(signedZip);
+            SignatureTestUtils.verify(TRUSTED_VERIFIER, signedZip);
         }
         doTestModifyZipAndVerify(
                 new ByteArrayInputStream(untrustedSignedZipBytes),
@@ -395,19 +397,12 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             // do the actual signing
             final String trustedSigProps = SignatureTestUtils.signAndGetSignature(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), dn);
             // verify signature using both digest and input stream
-            TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), trustedSigProps);
-            TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), trustedSigProps);
+            SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), trustedSigProps);
             // randomly flip a data byte
             final byte[] modBytes = flipRandomByte(Arrays.copyOf(bytes, bytes.length));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(modBytes), trustedSigProps);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(modBytes), trustedSigProps);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(modBytes), trustedSigProps);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -416,13 +411,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final String modSignature = flipRandomSignatureOrSignerCertByte(Either.<String, String>left(trustedSigProps));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), modSignature);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), modSignature);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), modSignature);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -431,13 +420,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final String modSignerCert = flipRandomSignatureOrSignerCertByte(Either.<String, String>left(trustedSigProps));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), modSignerCert);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), modSignerCert);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), modSignerCert);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -451,13 +434,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final String untrustedSigProps = SignatureTestUtils.signAndGetSignature(UNTRUSTED_VERIFIER, new ByteArrayInputStream(bytes), dn);
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), untrustedSigProps);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), untrustedSigProps);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), untrustedSigProps);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -466,13 +443,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final byte[] modBytes = flipRandomByte(Arrays.copyOf(bytes, bytes.length));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(modBytes), untrustedSigProps);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(modBytes), untrustedSigProps);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(modBytes), untrustedSigProps);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -481,13 +452,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final String modSignature = flipRandomSignatureOrSignerCertByte(Either.<String, String>left(untrustedSigProps));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), modSignature);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), modSignature);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), modSignature);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -496,13 +461,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             final String modSignerCert = flipRandomSignatureOrSignerCertByte(Either.<String, String>left(untrustedSigProps));
             // verify signature using both digest and input stream
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), modSignerCert);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), modSignerCert);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), modSignerCert);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected
@@ -514,13 +473,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
         final String untrustedSigProps = SignatureTestUtils.signAndGetSignature(UNTRUSTED_VERIFIER, new ByteArrayInputStream(bytes), UNTRUSTED_SIGNER_DNS[3]);
         // verify signature will fail for both
         try {
-            TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), untrustedSigProps);
-            Assert.fail("verify should have failed with untrusted signer!!!");
-        } catch (SignatureException ignore) {
-            // this is expected
-        }
-        try {
-            TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), untrustedSigProps);
+            SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), untrustedSigProps);
             Assert.fail("verify should have failed with untrusted signer!!!");
         } catch (SignatureException ignore) {
             // this is expected
@@ -545,13 +498,7 @@ public class SignatureVerifierServerTest extends SignatureTestUtils {
             Assert.assertThat(modUntrustedSigProps, Matchers.not(Matchers.equalTo(untrustedSigProps)));
             // verify signature will fail for both
             try {
-                TRUSTED_VERIFIER.verify(ModuleDigest.digest(bytes), modUntrustedSigProps);
-                Assert.fail("verify should have failed with untrusted signer!!!");
-            } catch (SignatureException ignore) {
-                // this is expected
-            }
-            try {
-                TRUSTED_VERIFIER.verify(new ByteArrayInputStream(bytes), modUntrustedSigProps);
+                SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), modUntrustedSigProps);
                 Assert.fail("verify should have failed with untrusted signer!!!");
             } catch (SignatureException ignore) {
                 // this is expected

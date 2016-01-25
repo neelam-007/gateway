@@ -15,7 +15,6 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -100,7 +99,6 @@ public final class RegistryImpl extends Registry
     private EntityNameResolver entityNameResolver;
     private WorkQueueManagerAdmin workQueueManagerAdmin;
     private SolutionKitAdmin solutionKitAdmin;
-    private SignatureVerifierAdmin signatureVerifierAdmin;
     // When you add an admin interface don't forget to
     // add it to the reset method
 
@@ -467,16 +465,6 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
-    public SignatureVerifierAdmin getSignatureVerifierAdmin() {
-        checkAdminContext();
-        if (signatureVerifierAdmin != null) {
-            return signatureVerifierAdmin;
-        }
-        signatureVerifierAdmin = adminContext.getAdminInterface(SignatureVerifierAdmin.class);
-        return signatureVerifierAdmin;
-    }
-
-    @Override
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
@@ -592,7 +580,6 @@ public final class RegistryImpl extends Registry
         workQueueManagerAdmin = null;
         scheduledTaskAdmin = null;
         solutionKitAdmin = null;
-        signatureVerifierAdmin = null;
     }
 
 

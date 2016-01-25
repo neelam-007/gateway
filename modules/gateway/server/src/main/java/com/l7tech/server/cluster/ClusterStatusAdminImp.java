@@ -14,12 +14,18 @@ import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.gateway.common.module.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
-import com.l7tech.server.*;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.TrustedEsmManager;
+import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.AdminInfo;
@@ -36,7 +42,6 @@ import com.l7tech.server.policy.module.ModularAssertionModulesConfig;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
 import com.l7tech.server.security.keystore.luna.LunaProber;
 import com.l7tech.server.security.rbac.RbacServices;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
@@ -54,7 +59,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 import java.security.KeyStoreException;
 import java.security.SignatureException;
 import java.util.*;
@@ -651,31 +659,41 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     }
 
     /**
-     * Method for verifying module signature, as well as making sure the module signer cert is trusted,
-     * and conveniently throwing {@code SaveException} if verification failed.
+     * Verify both module signature and issuer cert, as well as conveniently throw {@code SaveException} if verification failed.
      *
-     * @param digest                 module calculated digest.  Required and cannot be {@code null}.
+     * @param dataBytes              module raw bytes.  Required and cannot be {@code null}.
      * @param signatureProperties    signature properties or {@code null} if module is not signed.
      * @throws SaveException if the signature is missing or signature verification fails or module signer is not trusted.
      */
     private void verifyModuleSignature(
-            @NotNull final byte[] digest,
+            @NotNull final byte[] dataBytes,
             @Nullable final String signatureProperties
     ) throws SaveException {
         if (StringUtils.isBlank(signatureProperties)) {
             throw new SaveException("module file must be signed when uploading");
         }
 
+        // todo: refactor as per SSG-12708
         try {
             // verify module signature
-            signatureVerifier.verify(digest, signatureProperties);
+            SignerUtils.verifySignatureAndIssuer(
+                    new ByteArrayInputStream(dataBytes),
+                    signatureProperties,
+                    TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager)
+            );
         } catch (final SignatureException e) {
             throw new SaveException("module file is rejected as signature cannot be verified", e);
+        } catch (final IOException e) {
+            throw new SaveException("Error while verifying module signature: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
+    /**
+     * @deprecated Refactor as per SSG-12708
+     */
     @NotNull
     @Override
+    @Deprecated
     public Goid saveServerModuleFile(@NotNull ServerModuleFile moduleFile) throws FindException, SaveException, UpdateException {
         Goid id = moduleFile.getGoid();
         final byte[] dataBytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
@@ -690,7 +708,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
                 throw new SaveException( "module type must be provided when uploading a new module file" );
             }
             // make sure the signature is verified and signer is trusted
-            verifyModuleSignature(digest, signatureProperties);
+            verifyModuleSignature(dataBytes, signatureProperties);
 
             // Save new module
             moduleFile.setModuleSha256(HexUtils.hexDump(digest));
@@ -712,7 +730,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
                 oldMod.copyFrom(moduleFile, false, false, false);
             } else {
                 // make sure the signature is verified and signer is trusted
-                verifyModuleSignature(digest, signatureProperties);
+                verifyModuleSignature(dataBytes, signatureProperties);
 
                 // New data-bytes included, ensure size and hash are up to date
                 final String byteSha256 = HexUtils.hexDump(digest);
@@ -805,11 +823,11 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     private ServerModuleFileManager serverModuleFileManager;
 
     @Inject
-    @Named("signatureVerifier")
-    final void setSignatureVerifier(final SignatureVerifierServer signatureVerifier) {
-        this.signatureVerifier = signatureVerifier;
+    @Named("trustedSignerCertsManager")
+    final void setTrustedSignerCertsManager(final TrustedSignerCertsManager trustedSignerCertsManager) {
+        this.trustedSignerCertsManager = trustedSignerCertsManager;
     }
-    private SignatureVerifierServer signatureVerifier;
+    private TrustedSignerCertsManager trustedSignerCertsManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

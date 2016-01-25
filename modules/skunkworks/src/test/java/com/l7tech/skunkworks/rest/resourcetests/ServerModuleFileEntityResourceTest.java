@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -20,8 +21,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
-import com.l7tech.server.security.signer.SignatureVerifierServerStub;
+import com.l7tech.server.security.signer.TrustedSignerCertsManagerStub;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -58,7 +58,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     private Set<String> moduleShas;
 
     // our signer utils object
-    private static SignatureVerifierServer trustedSignatureVerifier;
+    private static TrustedSignerCertsManager trustedSignerManager;
     private static final String[] SIGNER_CERT_DNS = {
             "cn=signer.team1.apim.ca.com",
             "cn=signer.team2.apim.ca.com",
@@ -66,7 +66,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
             "cn=signer.team4.apim.ca.com"
     };
     // untrusted signers
-    private static SignatureVerifierServer untrustedSignatureVerifier;
+    private static TrustedSignerCertsManager untrustedSignerManager;
     private static final String[] untrustedSignerCertDns = new String[] {"cn=untrusted.signer1.ca.com", "cn=untrusted.signer1.ca.com"};
 
     @BeforeClass
@@ -74,8 +74,8 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         RestEntityTests.beforeClass();
 
         SignatureTestUtils.beforeClass();
-        trustedSignatureVerifier = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
-        untrustedSignatureVerifier = SignatureTestUtils.createSignatureVerifier(ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns));
+        trustedSignerManager = SignatureTestUtils.createSignerManager(SIGNER_CERT_DNS);
+        untrustedSignerManager = SignatureTestUtils.createSignerManager(ArrayUtils.concat(SIGNER_CERT_DNS, untrustedSignerCertDns));
 
         // to make this test valid modules upload should be enabled by default
         SyspropUtil.setProperty(UPLOAD_ENABLED_SYS_PROP, String.valueOf(true));
@@ -91,9 +91,9 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
         uploadEnabledOverride = null;
 
         // change the default (stub) signature verifier with our own
-        final SignatureVerifierServerStub signatureVerifierStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("signatureVerifier", SignatureVerifierServerStub.class);
-        Assert.assertNotNull(signatureVerifierStub);
-        signatureVerifierStub.setProxyVerifier(trustedSignatureVerifier);
+        final TrustedSignerCertsManagerStub trustedCertsStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedSignerCertsManager", TrustedSignerCertsManagerStub.class);
+        Assert.assertNotNull(trustedCertsStub);
+        trustedCertsStub.setProxyManager(trustedSignerManager);
 
         serverModuleFileManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serverModuleFileManager", ServerModuleFileManager.class);
         Assert.assertThat(serverModuleFileManager, Matchers.notNullValue());
@@ -232,7 +232,7 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     /**
      * Utility method for signing the specified content byte array and getting the signature in one step.
      */
-    private static String signAndGetSignature(final SignatureVerifierServer verifier, final byte[] content, final String signerCertDn) {
+    private static String signAndGetSignature(final TrustedSignerCertsManager verifier, final byte[] content, final String signerCertDn) {
         Assert.assertThat(content, Matchers.notNullValue());
         Assert.assertThat(signerCertDn, Matchers.not(Matchers.isEmptyOrNullString()));
         try {
@@ -243,11 +243,11 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     }
 
     private static String trustedSignAndGetSignature(final byte[] content, final String signerCertDn) {
-        return signAndGetSignature(trustedSignatureVerifier, content, signerCertDn);
+        return signAndGetSignature(trustedSignerManager, content, signerCertDn);
     }
 
     private static String untrustedSignAndGetSignature(final byte[] content, final String signerCertDn) {
-        return signAndGetSignature(untrustedSignatureVerifier, content, signerCertDn);
+        return signAndGetSignature(untrustedSignerManager, content, signerCertDn);
     }
 
     /**

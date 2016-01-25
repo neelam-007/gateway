@@ -2,6 +2,7 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
@@ -15,7 +16,6 @@ import com.l7tech.server.module.ServerModuleFileTestBase;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.util.*;
@@ -77,7 +77,7 @@ public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
 
     @Before
     public void setUp() throws Exception {
-        Assert.assertThat("modules signer is created", SIGNATURE_VERIFIER, Matchers.notNullValue());
+        Assert.assertThat("modules signer is created", TRUSTED_SIGNER_CERTS, Matchers.notNullValue());
         final ClusterInfoManager clusterInfoManager = new ClusterInfoManagerStub() {
             @Override
             public String thisNodeId() {
@@ -104,7 +104,7 @@ public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
         this.admin = admin;
         // set module signer
         Assert.assertThat(this.admin, Matchers.instanceOf(ClusterStatusAdminImp.class));
-        ((ClusterStatusAdminImp) this.admin).setSignatureVerifier(SIGNATURE_VERIFIER);
+        ((ClusterStatusAdminImp) this.admin).setTrustedSignerCertsManager(TRUSTED_SIGNER_CERTS);
     }
 
     /**
@@ -1700,7 +1700,7 @@ public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
 
         // save test; not trusted signer cert
         // create another signer with same DN's
-        SignatureVerifierServer newSigner = SignatureTestUtils.createSignatureVerifier(SIGNER_CERT_DNS);
+        TrustedSignerCertsManager newSigner = SignatureTestUtils.createSignerManager(SIGNER_CERT_DNS);
         modulesSize = admin.findAllServerModuleFiles().size();
         moduleFile = new ServerModuleFile();
         moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -1721,7 +1721,7 @@ public class ClusterStatusAdminImpTest extends ServerModuleFileTestBase {
 
         // save test; not trusted signer cert
         // create another signer with new DN
-        newSigner = SignatureTestUtils.createSignatureVerifier("cn=new.cert.ca.com");
+        newSigner = SignatureTestUtils.createSignerManager("cn=new.cert.ca.com");
         modulesSize = admin.findAllServerModuleFiles().size();
         moduleFile = new ServerModuleFile();
         moduleFile.setModuleType(ModuleType.CUSTOM_ASSERTION);

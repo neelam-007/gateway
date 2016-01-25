@@ -2,7 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.module.*;
+import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,8 +17,13 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.ResourceBundle;
 
 /**
  * Utility class for choosing a Modular or Custom Assertion Module from the local File System.
@@ -26,7 +36,6 @@ public class ServerModuleFileChooser {
      * We only need one instance per Policy Manager (if config does change, a Policy Manager restart is required).
      */
     @Nullable private static ServerModuleConfig SERVER_MODULE_CONFIG;
-    @NotNull private final ServerModuleFileUtils moduleFileUtils;
 
     private final FileFilter customAssertionFileFilter;
     private final FileFilter modularAssertionFileFilter;
@@ -44,18 +53,8 @@ public class ServerModuleFileChooser {
      */
     public ServerModuleFileChooser(@Nullable final Component parent) {
         this.parent = parent;
-
-        if (SERVER_MODULE_CONFIG == null) {
-            SERVER_MODULE_CONFIG = Registry.getDefault().getClusterStatusAdmin().getServerModuleConfig();
-        }
-
-        this.moduleFileUtils = new ServerModuleFileUtils(
-                new CustomAssertionsScannerHelper(SERVER_MODULE_CONFIG.getCustomAssertionPropertyFileName()),
-                new ModularAssertionsScannerHelper(SERVER_MODULE_CONFIG.getModularAssertionManifestAssertionListKey()),
-                Registry.getDefault().getSignatureVerifierAdmin()
-        );
-        this.customAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getCustomAssertionModulesExt(), resources.getString("custom.assertion.file.filter.desc"));
-        this.modularAssertionFileFilter = buildFileFilter(SERVER_MODULE_CONFIG.getModularAssertionModulesExt(), resources.getString("modular.assertion.file.filter.desc"));
+        this.customAssertionFileFilter = buildFileFilter(getServerModuleConfig().getCustomAssertionModulesExt(), resources.getString("custom.assertion.file.filter.desc"));
+        this.modularAssertionFileFilter = buildFileFilter(getServerModuleConfig().getModularAssertionModulesExt(), resources.getString("modular.assertion.file.filter.desc"));
         this.signedFilesFilter = buildFileFilter(Arrays.asList(".saar", ".sjar"), resources.getString("signed.files.filter.desc"));
     }
 
@@ -129,12 +128,12 @@ public class ServerModuleFileChooser {
     private ServerModuleFile createFromFile(@NotNull final File file) throws IOException {
         // sanity check the file
         if (file.isDirectory() || !file.isFile()) {
-            throw new IOException(MessageFormat.format(resources.getString("error.invalid.file"), ServerModuleFileUtils.trimFileName(file.getName())));
+            throw new IOException(MessageFormat.format(resources.getString("error.invalid.file"), ServerModuleFilePayload.trimFileName(file.getName())));
         }
         // get the .signed file size
         long fileLength = file.length();
         if (fileLength == 0L) {
-            throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), ServerModuleFileUtils.trimFileName(file.getName())));
+            throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.file.size"), ServerModuleFilePayload.trimFileName(file.getName())));
         }
         // the max-size check is done against the .signed file size, instead of the raw bytes.
         // the reason is that this way we can early fail if the input file is huge
@@ -144,7 +143,23 @@ public class ServerModuleFileChooser {
             throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFile.humanReadableBytes(maxModuleFileSize)));
         }
 
-        return moduleFileUtils.createFromFile(file);
+        // load the signed zip content and get the ServerModuleFile payload.
+        final String fileName = file.getName();
+        final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(getTrustedCertificates());
+        try (
+                final ServerModuleFilePayload payload = signedZip.load(
+                        file,
+                        new ServerModuleFilePayloadFactory(
+                                new CustomAssertionsScannerHelper(getServerModuleConfig().getCustomAssertionPropertyFileName()),
+                                new ModularAssertionsScannerHelper(getServerModuleConfig().getModularAssertionManifestAssertionListKey()),
+                                fileName
+                        )
+                )
+        ) {
+            return payload.create();
+        } catch (final SignatureException e) {
+            throw new IOException(MessageFormat.format(resources.getString("error.signature.verification"), ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+        }
     }
 
     /**
@@ -212,5 +227,34 @@ public class ServerModuleFileChooser {
                 return StringUtils.EMPTY;
             }
         };
+    }
+
+    /**
+     * Helper method for gathering trusted signer certs.
+     * Throws {@code RuntimeException} if an error occurs while gathering the trusted certs from the keystore.
+     *
+     * @return read-only list of trusted signer certs, never {@code null}.
+     */
+    @NotNull
+    private static Collection<X509Certificate> getTrustedCertificates() {
+        final Option<TrustedSignerCertsAdmin> option = Registry.getDefault().getAdminInterface(TrustedSignerCertsAdmin.class);
+        if (option.isSome()) {
+            return TrustedSignerCertsHelper.getTrustedCertificates(option.some());
+        } else {
+            throw new RuntimeException("TrustedSignerCertsAdmin interface not found.");
+        }
+    }
+
+    /**
+     * Helper method for returning {@link ServerModuleConfig} singleton.
+     *
+     * @return our {@link ServerModuleConfig} singleton, never {@code null}.
+     */
+    @NotNull
+    public static ServerModuleConfig getServerModuleConfig() {
+        if (SERVER_MODULE_CONFIG == null) {
+            SERVER_MODULE_CONFIG = Registry.getDefault().getClusterStatusAdmin().getServerModuleConfig();
+        }
+        return SERVER_MODULE_CONFIG;
     }
 }

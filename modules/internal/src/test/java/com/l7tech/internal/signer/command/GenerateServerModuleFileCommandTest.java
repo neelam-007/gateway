@@ -3,7 +3,6 @@ package com.l7tech.internal.signer.command;
 import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileUtils;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
 import com.l7tech.util.SyspropUtil;
 import org.hamcrest.Matchers;
@@ -12,7 +11,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
@@ -199,13 +200,57 @@ public class GenerateServerModuleFileCommandTest {
         Assert.assertNull(props);
     }
 
+    private static final String CUSTOM_ASSERTION_SJAR = "com/l7tech/internal/signer/com.l7tech.DynamicCustomAssertion.sjar";
+    private static final String MODULAR_ASSERTION_SAAR = "com/l7tech/internal/signer/com.l7tech.XmlSecurityModularAssertion.saar";
+
     @Test
-    public void testGetServerModuleFileUtils() throws Exception {
-        final ServerModuleFileUtils utils = command.getServerModuleFileUtils();
-        Assert.assertNotNull(utils);
-        Assert.assertThat(command.getServerModuleFileUtils(), Matchers.sameInstance(utils));
-        Assert.assertThat(command.getServerModuleFileUtils(), Matchers.sameInstance(utils));
-        Assert.assertThat(command.getServerModuleFileUtils(), Matchers.sameInstance(utils));
+    public void testLoadServerModuleFileFromSignedZip() throws Exception {
+        // test custom assertion
+        try (final InputStream is = getResourceStream(CUSTOM_ASSERTION_SJAR)) {
+            final ServerModuleFile module = GenerateServerModuleFileCommand.loadServerModuleFileFromSignedZip(is, "com.l7tech.DynamicCustomAssertion.sjar");
+            Assert.assertNotNull(module);
+            Assert.assertThat(module.getModuleType(), Matchers.is(ModuleType.CUSTOM_ASSERTION));
+            Assert.assertNotNull(module.getData());
+            Assert.assertNotNull(module.getData().getDataBytes());
+            Assert.assertThat(module.getData().getDataBytes().length, Matchers.is(3437));
+            Assert.assertNotNull(module.getData().getSignatureProperties());
+            Assert.assertThat(module.getData().getSignatureProperties(), Matchers.equalToIgnoringWhiteSpace("#Signature\n" +
+                    "#Wed Sep 16 17:00:07 PDT 2015\n" +
+                    "signature=MEYCIQDLDtcM3ChY60l2nuhB7aJYIcGozGrT4/Wj5YPI86Xt4AIhAPkB6+gn+EPVLDxKysknuOuP4/+1zSoy4YGIJzmL1Dx4\n" +
+                    "cert=MIIBdjCCAR6gAwIBAgIJAOC+DREEgh+1MAkGByqGSM49BAEwGzEZMBcGA1UEAxMQcm9vdC5hcGltLmNhLmNvbTAeFw0xNTA4MDYyMzM5MTVaFw0zNTA4MDYyMzM5MTVaMCUxIzAhBgNVBAMTGnNpZ25lci5nYXRld2F5LmFwaW0uY2EuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWR6rsgeDYY4nCkqjy12QBZW/U/dkWbM0NSEJnWwwDeKMD8rKgPygMKfZ3Gwbr134cYoqRtuE8rnYo4Oyxnm+NKNCMEAwHQYDVR0OBBYEFA/F83obUYIYLHnnXI5fObo/EMDIMB8GA1UdIwQYMBaAFOv2T4eG9aq4dDj8dGqF6Vj340LwMAkGByqGSM49BAEDRwAwRAIgIQrtZLIEZ6IXxPleal0AnnGE0wgq2MHzaWHAOm72KIgCIAWbYPKedEjKKcxv5vHuvbjAdUp1JhrnvnTCEWM7Zus7"));
+            Assert.assertThat(module.getModuleSha256(), Matchers.is("c0316c6dcb60f61bd9dc511d36d72963c9fb15a246c4e050e322ce8098f38609"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_FILE_NAME), Matchers.is("com.l7tech.DynamicCustomAssertion.sjar"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_ASSERTIONS), Matchers.is("DynamicCustomAssertionCustomAssertion"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_SIZE), Matchers.is("3437"));
+        }
+
+        // test modular assertion
+        try (final InputStream is = getResourceStream(MODULAR_ASSERTION_SAAR)) {
+            final ServerModuleFile module = GenerateServerModuleFileCommand.loadServerModuleFileFromSignedZip(is, "com.l7tech.XmlSecurityModularAssertion.saar");
+            Assert.assertNotNull(module);
+            Assert.assertThat(module.getModuleType(), Matchers.is(ModuleType.MODULAR_ASSERTION));
+            Assert.assertNotNull(module.getData());
+            Assert.assertNotNull(module.getData().getDataBytes());
+            Assert.assertThat(module.getData().getDataBytes().length, Matchers.is(130096));
+            Assert.assertNotNull(module.getData().getSignatureProperties());
+            Assert.assertThat(module.getData().getSignatureProperties(), Matchers.equalToIgnoringWhiteSpace("#Signature\n" +
+                    "#Mon Oct 19 15:59:12 PDT 2015\n" +
+                    "signature=MEUCIDNAu8OxG1/io/GWslmlr8aKzc2ZN3+FHGfJD6yAqWFHAiEA657jFu3LWmmy+0YfwEX01odchoBu7XbutwMA58TBUL0\\=\n" +
+                    "cert=MIIBdjCCAR6gAwIBAgIJAOC+DREEgh+1MAkGByqGSM49BAEwGzEZMBcGA1UEAxMQcm9vdC5hcGltLmNhLmNvbTAeFw0xNTA4MDYyMzM5MTVaFw0zNTA4MDYyMzM5MTVaMCUxIzAhBgNVBAMTGnNpZ25lci5nYXRld2F5LmFwaW0uY2EuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWR6rsgeDYY4nCkqjy12QBZW/U/dkWbM0NSEJnWwwDeKMD8rKgPygMKfZ3Gwbr134cYoqRtuE8rnYo4Oyxnm+NKNCMEAwHQYDVR0OBBYEFA/F83obUYIYLHnnXI5fObo/EMDIMB8GA1UdIwQYMBaAFOv2T4eG9aq4dDj8dGqF6Vj340LwMAkGByqGSM49BAEDRwAwRAIgIQrtZLIEZ6IXxPleal0AnnGE0wgq2MHzaWHAOm72KIgCIAWbYPKedEjKKcxv5vHuvbjAdUp1JhrnvnTCEWM7Zus7"));
+            Assert.assertThat(module.getModuleSha256(), Matchers.is("7ad42f77e4527e7dafa99410d7c403e421c63fd8b9f03adb8fb06128690162b9"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_FILE_NAME), Matchers.is("com.l7tech.XmlSecurityModularAssertion.saar"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_ASSERTIONS), Matchers.equalToIgnoringWhiteSpace("IndexLookupByItemAssertion,ItemLookupByIndexAssertion,NonSoapCheckVerifyResultsAssertion,NonSoapDecryptElementAssertion,NonSoapEncryptElementAssertion,NonSoapSignElementAssertion,NonSoapVerifyElementAssertion,SelectElementAssertion,VariableCredentialSourceAssertion"));
+            Assert.assertThat(module.getProperty(ServerModuleFile.PROP_SIZE), Matchers.is("130096"));
+        }
+    }
+
+    private InputStream getResourceStream(final String filePath) throws Exception {
+        Assert.assertThat(filePath, Matchers.not(Matchers.isEmptyOrNullString()));
+        final URL url = GenerateServerModuleFileCommandTest.class.getClassLoader().getResource(filePath);
+        Assert.assertNotNull(url);
+        final InputStream is = url.openStream();
+        Assert.assertNotNull(is);
+        return is;
     }
 
     @Test

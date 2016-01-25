@@ -344,5 +344,5 @@
 
     <bean id="modularAssertionModuleFinder" class="com.l7tech.server.module.ModularAssertionModuleFinderStub" />
 
-    <bean id="signatureVerifier" class="com.l7tech.server.security.signer.SignatureVerifierServerStub" />
+    <bean id="trustedSignerCertsManager" class="com.l7tech.server.security.signer.TrustedSignerCertsManagerStub" />
 </beans>

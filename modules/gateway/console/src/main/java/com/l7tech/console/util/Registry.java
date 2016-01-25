@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -306,14 +305,6 @@ public abstract class Registry {
     public abstract SolutionKitAdmin getSolutionKitAdmin();
 
     /**
-     * Get the {@link SignatureVerifierAdmin} interface implementation.
-     *
-     * @return the signature verifier admin interface implementation. Never {@code null}.
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-     */
-    public abstract SignatureVerifierAdmin getSignatureVerifierAdmin();
-
-    /**
      * Get an EntityNameResolver which can be used to determine display names for entities and/or headers.
      *
      * @return an EntityNameResolver which can be used to determine display names for entities and/or headers.
@@ -539,11 +530,6 @@ public abstract class Registry {
 
         @Override
         public SolutionKitAdmin getSolutionKitAdmin() {
-            throw new IllegalStateException(ILLEGAL_STATE_MSG);
-        }
-
-        @Override
-        public SignatureVerifierAdmin getSignatureVerifierAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

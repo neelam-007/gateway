@@ -5,12 +5,13 @@ import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierHelper;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,11 +45,17 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private JButton fileButton;
 
     private SolutionKitsConfig solutionKitsConfig;
-    private final SignatureVerifierAdmin signatureVerifierAdmin;
+    @NotNull
+    private final TrustedSignerCertsAdmin trustedSignerCertsAdmin;
 
     public SolutionKitLoadPanel() {
         super(null);
-        signatureVerifierAdmin = Registry.getDefault().getSignatureVerifierAdmin();
+        final Option<TrustedSignerCertsAdmin> option = Registry.getDefault().getAdminInterface(TrustedSignerCertsAdmin.class);
+        if (option.isSome()) {
+            this.trustedSignerCertsAdmin = option.some();
+        } else {
+            throw new RuntimeException("TrustedSignerCertsAdmin interface not found.");
+        }
         initialize();
     }
 
@@ -91,8 +98,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             return false;
         }
 
-        try (final SignerUtils.SignedZipContent zipContent = new SignatureVerifierHelper(signatureVerifierAdmin).verifyZip(file)) {
-            new SkarProcessor(solutionKitsConfig).load(zipContent.getDataStream());
+        final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsAdmin));
+        try (final SkarPayload payload = signedZip.load(file, new SkarPayloadFactory(solutionKitsConfig))) {
+            payload.load();
         } catch (IOException | SignatureException | SolutionKitException e) {
             solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);

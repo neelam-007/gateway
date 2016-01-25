@@ -6,8 +6,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGateway
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierHelper;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
+import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.ForbiddenException;
 import com.l7tech.gateway.common.solutionkit.*;
@@ -16,7 +17,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
-import com.l7tech.server.security.signer.SignatureVerifierServer;
 import com.l7tech.server.solutionkit.AddendumBundleHandler;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
@@ -40,6 +40,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -82,11 +83,11 @@ public class SolutionKitManagerResource {
         this.licenseManager = licenseManager;
     }
 
-    private SignatureVerifierServer signatureVerifier;
+    private TrustedSignerCertsManager trustedSignerCertsManager;
     @SpringBean
-    @Named("signatureVerifier")
-    public void setSignatureVerifier(final SignatureVerifierServer signatureVerifier) {
-        this.signatureVerifier = signatureVerifier;
+    @Named("trustedSignerCertsManager")
+    public void setTrustedSignerCertsManager(final TrustedSignerCertsManager trustedSignerCertsManager) {
+        this.trustedSignerCertsManager = trustedSignerCertsManager;
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager;
@@ -273,11 +274,13 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.setPreviouslyResolvedIds();
             }
 
-            // verify signed skar signature and load the skar afterwards
+            // verify skar signature and create our SkarProcessor
             final SkarProcessor skarProcessor;
-            try (final SignerUtils.SignedZipContent zipContent = new SignatureVerifierHelper(signatureVerifier).verifyZip(fileInputStream)) {
-                skarProcessor = new SkarProcessor(solutionKitsConfig);
-                skarProcessor.load(zipContent.getDataStream());
+            final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager));
+            try (final SkarPayload payload = signedZip.load(fileInputStream, new SkarPayloadFactory(solutionKitsConfig))) {
+                skarProcessor = payload.load();
+            } catch (final IOException e) {
+                throw new SignatureException("Invalid signed Zip: " + ExceptionUtils.getMessage(e), e);
             }
 
             // handle any user selection(s) - child solution kits
@@ -323,7 +326,7 @@ public class SolutionKitManagerResource {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return e.getResponse();
         } catch (SignatureException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
             return status(BAD_REQUEST).entity(e.getMessage() + lineSeparator()).build();
         } catch (ForbiddenException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

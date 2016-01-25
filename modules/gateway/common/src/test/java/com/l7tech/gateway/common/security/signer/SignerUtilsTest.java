@@ -18,8 +18,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -28,6 +28,12 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class SignerUtilsTest {
+    /**
+     * IMPORTANT: Revisit this code if renaming fields {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNED_DATA_ZIP_ENTRY}
+     * and {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNATURE_PROPS_ZIP_ENTRY}.
+     */
+    public static final String SIGNED_DATA_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY");
+    public static final String SIGNATURE_PROPS_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY");
 
     @Before
     public void setUp() throws Exception {
@@ -47,6 +53,43 @@ public class SignerUtilsTest {
     }
 
     /**
+     * Execute private method {@link SignerUtils#readSignedZip(java.io.InputStream, InnerPayloadFactory)}
+     * with default {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload} factory.
+     *
+     * @param is    signed zip input stream
+     * @return {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload}
+     * @throws Exception if an error happens while executing the method or the method throws an exception.
+     */
+    public static SignerUtils.SignedZip.InnerPayload execReadSignedZip(final InputStream is) throws Exception {
+        Assert.assertNotNull(is);
+        final Method method = SignerUtils.class.getDeclaredMethod("readSignedZip", InputStream.class, InnerPayloadFactory.class);
+        if (method == null) {
+            throw new RuntimeException("method readSignedZip either missing from class SignerUtils or its deceleration has been modified");
+        }
+        method.setAccessible(true);
+        final Object ret = method.invoke(null, is, SignerUtils.SignedZip.InnerPayload.FACTORY);
+        Assert.assertThat(ret, Matchers.allOf(Matchers.notNullValue(), Matchers.instanceOf(SignerUtils.SignedZip.InnerPayload.class)));
+        return (SignerUtils.SignedZip.InnerPayload)ret;
+    }
+
+    private static String extractProperty(final Class aClass, final String propName) {
+        Assert.assertNotNull(aClass);
+        Assert.assertThat(propName, Matchers.not(Matchers.isEmptyOrNullString()));
+        try {
+            final Field field = aClass.getDeclaredField(propName);
+            if (field == null) {
+                throw new RuntimeException("field '" + propName + "' is missing from class '" + aClass + "'");
+            }
+            field.setAccessible(true);
+            final Object ret = field.get(null);
+            Assert.assertThat(ret, Matchers.allOf(Matchers.notNullValue(), Matchers.instanceOf(String.class)));
+            return (String)ret;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Extracts signed.dat and signature.properties bytes from the given signed Zip {@code InputStream}.
      *
      * @param signedZipStream    signed Zip {@code InputStream}.
@@ -56,11 +99,11 @@ public class SignerUtilsTest {
         Assert.assertNotNull("Signed Zip InputStream is null", signedZipStream);
 
         // read signed zip file
-        final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(signedZipStream);
+        final SignerUtils.SignedZip.InnerPayload payload = execReadSignedZip(signedZipStream);
         final Pair<
                 byte[],  // signed.dat bytes
                 byte[]   // signature.properties bytes
-                > dataAndSignatureBytes = Pair.pair(zipContent.getDataBytes(), zipContent.getSignaturePropertiesBytes());
+                > dataAndSignatureBytes = Pair.pair(payload.getDataBytes(), payload.getSignaturePropertiesBytes());
 
         // make sure both signed.dat and signature.properties bytes are read.
         Assert.assertNotNull("signed.dat bytes are not null", dataAndSignatureBytes.left);
@@ -85,32 +128,25 @@ public class SignerUtilsTest {
         );
 
         // verify signed zip file
-        final Pair<
-                byte[],  // signed.dat bytes
-                byte[]   // signature.properties bytes
-        > dataAndSignatureBytes = extractSignedZipDataAndSignature(new ByteArrayInputStream(baos.toByteArray()));
+        try (final SignerUtils.SignedZip.InnerPayload payload = execReadSignedZip(new ByteArrayInputStream(baos.toByteArray()))) {
+            // make sure both signed.dat and signature.properties bytes are read.
+            Assert.assertNotNull("zipContent is not null", payload);
+            Assert.assertNotNull("signed.dat bytes are not null", payload.getDataBytes());
+            Assert.assertThat("signed.dat bytes are not empty", payload.getDataBytes().length, Matchers.greaterThan(0));
+            Assert.assertThat("signed.dat bytes are what expected", payload.getDataBytes(), Matchers.equalTo(testData));
+            Assert.assertNotNull("signature.properties bytes are not null", payload.getSignaturePropertiesBytes());
+            Assert.assertThat("signature.properties bytes are not empty", payload.getSignaturePropertiesBytes().length, Matchers.greaterThan(0));
+            Assert.assertNotNull("signature.properties are not null", payload.getSignatureProperties());
+            final String signerCertB64 = (String) payload.getSignatureProperties().get("cert");
+            Assert.assertThat(HexUtils.decodeBase64(signerCertB64), Matchers.equalTo(keyPair.left.getEncoded()));
 
-        // make sure both signed.dat and signature.properties bytes are read.
-        Assert.assertNotNull("dataAndSignatureBytes is not null", dataAndSignatureBytes);
-        Assert.assertNotNull("signed.dat bytes are not null", dataAndSignatureBytes.getKey());
-        Assert.assertThat("signed.dat bytes are not empty", dataAndSignatureBytes.getKey().length, Matchers.greaterThan(0));
-        Assert.assertThat("signed.dat bytes are what expected", dataAndSignatureBytes.getKey(), Matchers.equalTo(testData));
-        Assert.assertNotNull("signature.properties bytes are not null", dataAndSignatureBytes.getValue());
-        Assert.assertThat("signature.properties bytes are not empty", dataAndSignatureBytes.getValue().length, Matchers.greaterThan(0));
-        final Properties sigProps = new Properties();
-        sigProps.load(new ByteArrayInputStream(dataAndSignatureBytes.getValue()));
-        final String signerCertB64 = (String)sigProps.get("cert");
-        Assert.assertThat(HexUtils.decodeBase64(signerCertB64), Matchers.equalTo(keyPair.left.getEncoded()));
-
-        // finally verify content signature
-
-        // first calculate digest
-        final DigestInputStream dis = new DigestInputStream(new ByteArrayInputStream(testData), MessageDigest.getInstance("SHA-256"));
-        IOUtils.copyStream(dis, new com.l7tech.common.io.NullOutputStream());
-        final X509Certificate sawCert = SignerUtils.verifySignatureWithDigest(dis.getMessageDigest().digest(), sigProps);
-        Assert.assertNotNull("sawCert cannot be null", sawCert);
-        Assert.assertNotNull("sawCert.getEncoded() cannot be null", sawCert.getEncoded());
-        Assert.assertThat(sawCert.getEncoded(), Matchers.equalTo(keyPair.left.getEncoded()));
+            // finally verify content signature
+            Assert.assertThat("signature.properties are not null or empty", payload.getSignaturePropertiesString(), Matchers.not(Matchers.isEmptyOrNullString()));
+            final X509Certificate sawCert = SignerUtils.verifySignature(new ByteArrayInputStream(testData), payload.getSignaturePropertiesString());
+            Assert.assertNotNull("sawCert cannot be null", sawCert);
+            Assert.assertNotNull("sawCert.getEncoded() cannot be null", sawCert.getEncoded());
+            Assert.assertThat(sawCert.getEncoded(), Matchers.equalTo(keyPair.left.getEncoded()));
+        }
     }
 
     /**
@@ -156,10 +192,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -173,10 +209,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                         // next zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                     }
                 },
@@ -190,7 +226,7 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // only zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -204,7 +240,7 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // only zip entry is the signed.dat
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                     }
                 },
@@ -246,10 +282,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                         // add some test file
                         zos.putNextEntry(new ZipEntry("test1.dat"));
@@ -269,7 +305,7 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // add some test file
                         zos.putNextEntry(new ZipEntry("test1.dat"));
@@ -278,7 +314,7 @@ public class SignerUtilsTest {
                         zos.putNextEntry(new ZipEntry("test2.dat"));
                         IOUtils.copyStream(new ByteArrayInputStream("test2.dat data".getBytes(Charsets.UTF8)), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -292,10 +328,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry("folder1/"));
@@ -311,12 +347,12 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry("folder1/"));
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -330,10 +366,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry("folder1/"));
@@ -355,7 +391,7 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry("folder1/"));
@@ -366,7 +402,7 @@ public class SignerUtilsTest {
                         zos.putNextEntry(new ZipEntry("folder1/test2.dat"));
                         IOUtils.copyStream(new ByteArrayInputStream("test2.dat data".getBytes(Charsets.UTF8)), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -380,10 +416,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry(""));
@@ -399,12 +435,12 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // add some dir
                         zos.putNextEntry(new ZipEntry(""));
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry(SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -418,10 +454,10 @@ public class SignerUtilsTest {
                     public void call(final ZipOutputStream zos) throws Exception {
                         Assert.assertNotNull(zos);
                         // first zip entry should be the signed data bytes
-                        zos.putNextEntry(new ZipEntry("dir1/" + SignerUtils.SIGNED_DATA_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry("dir1/" + SIGNED_DATA_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getKey()), zos);
                         // next zip entry is the signature information
-                        zos.putNextEntry(new ZipEntry("dir1/" + SignerUtils.SIGNATURE_PROPS_ZIP_ENTRY));
+                        zos.putNextEntry(new ZipEntry("dir1/" + SIGNATURE_PROPS_ZIP_ENTRY));
                         IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.getValue()), zos);
                     }
                 },
@@ -644,9 +680,9 @@ public class SignerUtilsTest {
         Assert.assertNotNull(signedContent);
         try (final InputStream is = new ByteArrayInputStream(signedContent)) {
             // read the signed zip file
-            final SignerUtils.SignedZipContent zipContent = SignerUtils.readSignedZip(is);
-            Assert.assertNotNull(zipContent);
-            return zipContent.getSignatureProperties();
+            final SignerUtils.SignedZip.InnerPayload payload = execReadSignedZip(is);
+            Assert.assertNotNull(payload);
+            return payload.getSignatureProperties();
         }
     }
 

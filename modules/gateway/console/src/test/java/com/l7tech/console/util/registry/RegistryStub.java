@@ -20,7 +20,6 @@ import com.l7tech.gateway.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.security.signer.SignatureVerifierAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
@@ -622,11 +621,6 @@ public class RegistryStub extends Registry {
 
     @Override
     public SolutionKitAdmin getSolutionKitAdmin() {
-        return null;
-    }
-
-    @Override
-    public SignatureVerifierAdmin getSignatureVerifierAdmin() {
         return null;
     }
 
