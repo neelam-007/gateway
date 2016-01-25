@@ -90,7 +90,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                             solutionKitAdmin,
                             InstallSolutionKitWizard.this.getOwner(),
                             "Install Solution Kit",
-                            "The gateway is installing the selected solution kit, \"" + loaded.left.getName() + "\".",
+                            "The Gateway is installing solution kit: " + loaded.left.getName() + ".",
                             solutionKitAdmin.installAsync(loaded.left, loaded.middle, loaded.right),
                             false);
 

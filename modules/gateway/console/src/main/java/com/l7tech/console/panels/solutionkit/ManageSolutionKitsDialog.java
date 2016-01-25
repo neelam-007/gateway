@@ -267,7 +267,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             solutionKitAdmin,
             ManageSolutionKitsDialog.this,
             "Uninstall Solution Kit",
-            "The gateway is uninstalling the solution kit, " + skName,
+            "The Gateway is uninstalling solution kit: " + skName + ".",
             solutionKitAdmin.uninstallAsync(skGoid),
             false);
 

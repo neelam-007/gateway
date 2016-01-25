@@ -34,7 +34,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(SolutionKitLoadPanel.class.getName());
 
     private static final String STEP_LABEL = "Choose Solution Kit File";
-    private static final String STEP_DESC = "Specify the location of solution kit file (skar) to install.";
+    private static final String STEP_DESC = "Specify the location of the solution kit file.";
 
     private static final FileFilter SK_FILE_FILTER = FileChooserUtil.buildFilter(".skar", "Skar (*.skar)");
     private static final FileFilter SIGNED_SK_FILE_FILTER = FileChooserUtil.buildFilter(".sskar", "Signed Skar (*.sskar)");

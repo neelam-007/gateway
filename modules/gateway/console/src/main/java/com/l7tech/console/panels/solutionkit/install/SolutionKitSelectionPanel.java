@@ -142,7 +142,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                             solutionKitAdmin,
                             SolutionKitSelectionPanel.this.getOwner(),
                             "Testing Solution Kit",
-                            "The gateway is testing selected solution kit(s)",
+                            "The Gateway is testing solution kit: " + loaded.left.getName() + ".",
                             solutionKitAdmin.testInstallAsync(loaded.left, loaded.middle, loaded.right),
                             false);
 

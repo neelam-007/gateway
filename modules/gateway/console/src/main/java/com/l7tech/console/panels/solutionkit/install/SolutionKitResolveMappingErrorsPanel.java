@@ -29,7 +29,7 @@ import static com.l7tech.gateway.api.Mapping.ErrorType.TargetNotFound;
  * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
  */
 public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<SolutionKitsConfig> {
-    private static final String STEP_LABEL = "Resolve entity conflicts";
+    private static final String STEP_LABEL = "Resolve Entity Conflict";
     private static final String STEP_DESC = "Resolve entity conflicts (or click Finish if none exist).";
 
     private JPanel mainPanel;
