@@ -186,8 +186,8 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
               appEntity.setKey((String) results.get("api_key").get(i));
               appEntity.setSecret((String) results.get("key_secret").get(i));
               appEntity.setStatus((String) results.get("status").get(i));
-              appEntity.setAccountPlanMappingId((String) results.get("organization_uuid").get(i));
-              appEntity.setAccountPlanMappingName((String) results.get("organization_name").get(i));
+              appEntity.setOrganizationId((String) results.get("organization_uuid").get(i));
+              appEntity.setOrganizationName((String) results.get("organization_name").get(i));
               appEntity.setLabel((String) results.get("name").get(i));
               appEntity.setOauthCallbackUrl((String) results.get("oauth_callback_url").get(i));
               appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
@@ -209,7 +209,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     private class ApplicationApi {
         private String id;
-        private final String planId = "not-used";
 
         public String getId() {
             return id;
@@ -218,10 +217,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         public void setId(String id) {
             this.id = id;
         }
-
-        public String getPlanId() {
-            return planId;
-        }
     }
 
     class ApplicationEntity {
@@ -229,8 +224,8 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         private String key;
         private String secret;
         private String status;
-        private String accountPlanMappingId;
-        private String accountPlanMappingName;
+        private String organizationId;
+        private String organizationName;
         private String label;
         private String oauthCallbackUrl;
         private String oauthScope;
@@ -269,20 +264,20 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             this.status = status;
         }
 
-        public String getAccountPlanMappingId() {
-            return accountPlanMappingId;
+        public String getOrganizationId() {
+            return organizationId;
         }
 
-        public void setAccountPlanMappingId(String accountPlanMappingId) {
-            this.accountPlanMappingId = accountPlanMappingId;
+        public void setOrganizationId(String organizationId) {
+            this.organizationId = organizationId;
         }
 
-        public String getAccountPlanMappingName() {
-            return accountPlanMappingName;
+        public String getOrganizationName() {
+            return organizationName;
         }
 
-        public void setAccountPlanMappingName(String accountPlanMappingName) {
-            this.accountPlanMappingName = accountPlanMappingName;
+        public void setOrganizationName(String organizationName) {
+            this.organizationName = organizationName;
         }
 
         public String getLabel() {

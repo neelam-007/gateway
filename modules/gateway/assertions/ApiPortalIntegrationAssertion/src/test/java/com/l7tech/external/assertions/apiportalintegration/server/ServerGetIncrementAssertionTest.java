@@ -41,13 +41,12 @@ public class ServerGetIncrementAssertionTest {
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
                 "    \"secret\" : \"6106dceac26844f0b1d9688bb565acf6\",\n" +
                 "    \"status\" : \"ENABLED\",\n" +
-                "    \"accountPlanMappingId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
-                "    \"accountPlanMappingName\" : \"Sample Org\",\n" +
+                "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
+                "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +
                 "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
                 "    \"apis\" : [ {\r\n" +
-                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\",\n" +
-                "      \"planId\" : \"not-used\"\n" +
+                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    } ]\n" +
                 "  } ]\n" +
                 "}";
@@ -91,16 +90,14 @@ public class ServerGetIncrementAssertionTest {
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
                 "    \"secret\" : \"6106dceac26844f0b1d9688bb565acf6\",\n" +
                 "    \"status\" : \"ENABLED\",\n" +
-                "    \"accountPlanMappingId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
-                "    \"accountPlanMappingName\" : \"Sample Org\",\n" +
+                "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
+                "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +
                 "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
                 "    \"apis\" : [ {\r\n" +
-                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\",\n" +
-                "      \"planId\" : \"not-used\"\n" +
+                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    }, {\n" +
-                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\",\n" +
-                "      \"planId\" : \"not-used\"\n" +
+                "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    } ]\n" +
                 "  } ]\n" +
                 "}";
