@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.SiteMinderAgentContextCache;
 import com.ca.siteminder.SiteMinderAgentContextCacheManager;
+import com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl;
 import com.l7tech.external.assertions.siteminder.SiteMinderExternalReferenceFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.ca.siteminder.SiteMinderAgentContextCacheManager.*;
+import static com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl.*;
 import static com.l7tech.server.ServerConfig.PropertyRegistrationInfo.prInfo;
 import static com.l7tech.util.CollectionUtils.list;
 
@@ -60,7 +60,7 @@ public class SiteMinderModuleLoadListener {
 
     private static void updateDefaultCacheSettings(final ApplicationContext context) {
         final ServerConfig serverConfig = context.getBean("serverConfig", ServerConfig.class);
-        final SiteMinderAgentContextCacheManager siteMinderAgentContextCacheManager = context.getBean("siteMinderAgentContextCacheManager", SiteMinderAgentContextCacheManager.class);
+        final SiteMinderAgentContextCacheManager siteMinderAgentContextCacheManager = context.getBean("siteMinderAgentContextCacheManager", SiteMinderAgentContextCacheManagerImpl.class);
 
         int resourceCacheSize = serverConfig.getIntProperty(SM_RESOURCE_CACHE_SIZE_PROP, SM_RESOURCE_CACHE_SIZE_DEFAULT);
         long resourceCacheMaxAgeMillis = serverConfig.getLongProperty(SM_RESOURCE_CACHE_MAX_AGE_PROP, SM_RESOURCE_CACHE_MAX_AGE_DEFAULT);

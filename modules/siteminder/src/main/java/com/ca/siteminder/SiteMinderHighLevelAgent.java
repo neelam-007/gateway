@@ -11,7 +11,7 @@ import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import static com.ca.siteminder.SiteMinderAgentContextCacheManager.*;
+import static com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl.*;
 
 /**
  * Copyright: Layer 7 Technologies, 2013

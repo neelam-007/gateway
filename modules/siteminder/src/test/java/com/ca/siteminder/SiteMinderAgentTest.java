@@ -90,7 +90,7 @@ public class SiteMinderAgentTest {
            }
        };
        agent = new SiteMinderLowLevelAgent(config);
-       fixture = new SiteMinderHighLevelAgent(new SiteMinderAgentContextCacheManager());
+       fixture = new SiteMinderHighLevelAgent(new SiteMinderAgentContextCacheManagerImpl());
     }
 
     @After

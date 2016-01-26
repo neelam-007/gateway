@@ -5,7 +5,7 @@ import com.ca.siteminder.*;
 public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
 
     public SiteMinderHighLevelAgentStub() {
-        super(new SiteMinderAgentContextCacheManager());
+        super(new SiteMinderAgentContextCacheManagerImpl());
     }
 
     @Override

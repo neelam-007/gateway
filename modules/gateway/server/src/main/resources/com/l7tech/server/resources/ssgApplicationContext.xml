@@ -2731,7 +2731,7 @@
 
     <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerImpl" parent="hibernateBean"/>
 
-    <bean id="siteMinderAgentContextCacheManager" class="com.ca.siteminder.SiteMinderAgentContextCacheManager"/>
+    <bean id="siteMinderAgentContextCacheManager" class="com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl"/>
 
     <bean id="siteMinderHighLevelAgent" class="com.ca.siteminder.SiteMinderHighLevelAgent">
         <constructor-arg ref="siteMinderAgentContextCacheManager"/>
