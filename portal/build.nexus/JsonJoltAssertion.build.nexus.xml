@@ -10,7 +10,7 @@
 
     <import file="./common.build.nexus.xml" />
 
-    <macrodef name="nexus-prepare">
+    <macrodef name="repo-prepare">
         <attribute name="build-version" default="${build.version}" />
         <sequential>
             <!-- convert ivy.xml to pom.xml type -->
