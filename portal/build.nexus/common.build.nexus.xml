@@ -169,14 +169,14 @@
     <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="checkVariables,ivy.generate.deploy.ivyfile,ivy.resolve">         
         <repo-prepare build-version="${build.version}-SNAPSHOT"/>
         <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
-        <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT" repo-type="artifactory"/>
+	<!--        <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT" repo-type="artifactory"/> -->
         <update-nexus-metadata stage="snapshots"/>
     </target>
 
     <target name="release" description="Upload releases artifacts to Nexus server" depends="checkVariables,ivy.generate.release.ivyfile,ivy.resolve">
         <repo-prepare build-version="${build.version}"/>
         <repo-publish stage="releases" build-version="${build.version}"/>
-        <repo-publish stage="releases" build-version="${build.version}" repo-type="artifactory"/>
+	<!-- 	   <repo-publish stage="releases" build-version="${build.version}" repo-type="artifactory"/> -->
         <update-nexus-metadata stage="releases"/>
     </target>
 
