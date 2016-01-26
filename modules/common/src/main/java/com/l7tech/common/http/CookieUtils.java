@@ -7,7 +7,6 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.text.resources.ko.CollationData_ko;
 
 import java.io.IOException;
 import java.util.*;
@@ -532,7 +531,7 @@ public class CookieUtils {
             // error -- non valid format, cookie must start with <CookieName> =
             // pre-existed parser returned value regardless, we'll do the same.
         }
-        String current = tok.getValue().trim();
+        String current = (tok.getType() == CookieTokenType.EOL) ? "" : (tok.getValue().trim());
         tok = ct.nextToken();
         boolean done = false;
         while ( ! done ) {
@@ -770,14 +769,16 @@ public class CookieUtils {
     static enum CookieTokenType { UNQUOTED_STRING, QUOTED_STRING, EQUALS, SEMICOLON, EOL };
 
     static class CookieToken {
+        @NotNull
         CookieTokenType type;
         String value;
 
-        public CookieToken(CookieTokenType t, String v) {
+        public CookieToken(@NotNull CookieTokenType t, @Nullable String v) {
             type = t;
             value = v;
         }
 
+        @NotNull
         public CookieTokenType getType() { return type; }
 
         public String getValue() { return value;}
