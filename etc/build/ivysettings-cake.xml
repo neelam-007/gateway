@@ -1,18 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <ivysettings>
-  <settings defaultResolver="nexus"/>
-  <credentials host="blackforest.l7tech.com"
-                      realm="Sonatype Nexus Repository Manager"
-                      username="deployment" passwd="7layer"/>
-  <publications>
-  </publications>
-  <property name="nexus-public"
-                   value="http://blackforest.l7tech.com:8080/nexus/content/groups/public"/>
-  <property name="nexus-releases" value="http://blackforest.l7tech.com:8080/nexus/content/repositories/releases"/>
-  <property name="nexus-snapshots" value="http://blackforest.l7tech.com:8080/nexus/content/repositories/snapshots"/>
-  <resolvers>
-    <ibiblio name="nexus" m2compatible="true" root="${nexus-public}"/>
-    <ibiblio name="nexus-releases" m2compatible="true" root="${nexus-releases}"/>
-    <ibiblio name="nexus-snapshots" m2compatible="true" root="${nexus-snapshots}" checkmodified="true" 
-changingPattern="*-SNAPSHOT"/>
-  </resolvers>
+   <settings defaultResolver="local.file" />
+
+   <credentials host="${nexus.host}" realm="Sonatype Nexus Repository Manager" username="deployment" passwd="7layer" />
+   <credentials host="${artifactory.host}" realm="Artifactory Realm" username="${artifactory.username}" passwd="${artifactory.passwd}"/>
+
+
+   <property name="publish-pattern" value="[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]" />
+   <property name="local-publish-pattern" value="[organisation]/[module]/[artifact]-[revision](-[classifier]).[ext]" />
+   <property name="local-ivy-publish-pattern" value="[organisation]/[module]/[module]-ivy-[revision](-[classifier]).xml" />
+
+   <resolvers>
+      <!-- nexus resolvers -->
+      <ibiblio name="nexus" m2compatible="true" root="${nexus.repo.public}" useMavenMetadata="true" pattern="${publish-pattern}"/>
+      <ibiblio name="nexus-releases" m2compatible="true" root="${nexus.repo.releases}" useMavenMetadata="true" pattern="${publish-pattern}"/>
+      <ibiblio name="nexus-snapshots" m2compatible="true" root="${nexus.repo.snapshots}" useMavenMetadata="true" changingPattern=".*-SNAPSHOT" pattern="${publish-pattern}"/>
+
+      <ibiblio name="artifactory-releases" m2compatible="true" root="${artifactory.repo.releases}" useMavenMetadata="true" pattern="${publish-pattern}"/>
+      <ibiblio name="artifactory-snapshots" m2compatible="true" root="${artifactory.repo.snapshots}" useMavenMetadata="true" changingPattern=".*-SNAPSHOT" pattern="${publish-pattern}"/>
+
+      <!-- local filesystem resolver -->
+      <chain name="local.file">
+         <filesystem name="local.repository" checksums="sha1">
+            <!-- local repo is the user's HOME_DIR/.ivy2/local -->
+            <artifact pattern="${ivy.default.ivy.user.dir}/local/${local-publish-pattern}" />
+            <ivy pattern="${ivy.default.ivy.user.dir}/local/${local-ivy-publish-pattern}" />
+         </filesystem>
+         <resolver ref="nexus-releases"/>
+         <resolver ref="nexus-snapshots"/>
+         <resolver ref="artifactory-releases"/>
+         <resolver ref="artifactory-snapshots"/>
+      </chain>
+   </resolvers>
+   <caches defaultCacheDir="${src.root}/target/install.cache" />
 </ivysettings>
+

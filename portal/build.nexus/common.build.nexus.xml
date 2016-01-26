@@ -20,6 +20,9 @@
     <!-- Set src.root to ${basedir} if not already set -->
     <property name="src.root" location="${basedir}/../../"/>
 
+    <!-- artifactory and nexus settings -->
+    <property file="${src.root}/portal/ivy.settings/publish.settings.properties" />
+
     <!-- get the version -->
 
     <property name="version.filename" value="build.portal.aar.version"/>
@@ -33,8 +36,6 @@
     <property name="ivy.template.file" value="${src.root}/portal/ivy.templates/${ivy.file.name}"/>
     <property name="ivy.build.file" value="${src.root}/portal/${ivy.file.name}"/>
     <property name="ivy.settings.file" value="${src.root}/etc/build/ivysettings-cake.xml"/>
-
-    <property name="nexus.server.url" value="http://blackforest.l7tech.com:8080/nexus"/>
 
     <!--
       Ivy initialization is global
@@ -95,17 +96,18 @@
     <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="antcontrib.classpath"/>
 
 
-    <macrodef name="nexus-publish">
+    <macrodef name="repo-publish">
         <attribute name="stage" default="snapshots" />
         <attribute name="build-version" default="${build.version}" />
+        <attribute name="repo-type" default="nexus" />
         <sequential>
-            <ivy:publish organisation="${build.org}" module="${build.name}" revision="@{build-version}" resolver="nexus-@{stage}" pubrevision="@{build-version}" overwrite="true" publishivy="true" update="true" >
+		<ivy:publish organisation="${build.org}" module="${build.name}" revision="@{build-version}" resolver="@{repo-type}-@{stage}" pubrevision="@{build-version}" overwrite="true" publishivy="true" update="true" >
                 <artifacts pattern="${src.root}/target/[organisation]-[module]-[revision]-[type].[ext]"/>
             </ivy:publish>
         </sequential>
     </macrodef>
 
-    <macrodef name="nexus-prepare">
+    <macrodef name="repo-prepare">
         <attribute name="build-version" default="${build.version}" />
         <sequential>
             <!-- convert ivy.xml to pom.xml type -->
@@ -165,14 +167,16 @@
     </target>
     
     <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="checkVariables,ivy.generate.deploy.ivyfile,ivy.resolve">         
-        <nexus-prepare build-version="${build.version}-SNAPSHOT"/>
-        <nexus-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
+        <repo-prepare build-version="${build.version}-SNAPSHOT"/>
+        <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
+        <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT" repo-type="artifactory"/>
         <update-nexus-metadata stage="snapshots"/>
     </target>
 
     <target name="release" description="Upload releases artifacts to Nexus server" depends="checkVariables,ivy.generate.release.ivyfile,ivy.resolve">
-        <nexus-prepare build-version="${build.version}"/>
-        <nexus-publish stage="releases" build-version="${build.version}"/>
+        <repo-prepare build-version="${build.version}"/>
+        <repo-publish stage="releases" build-version="${build.version}"/>
+        <repo-publish stage="releases" build-version="${build.version}" repo-type="artifactory"/>
         <update-nexus-metadata stage="releases"/>
     </target>
 
