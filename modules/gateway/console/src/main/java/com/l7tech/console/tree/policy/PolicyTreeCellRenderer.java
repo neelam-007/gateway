@@ -2,7 +2,6 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.gui.util.ImageCache;
 
@@ -20,7 +19,7 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
-    private final WeakHashMap<AssertionTreeNode, Boolean> includedCache = new WeakHashMap<AssertionTreeNode, Boolean>();
+    private final WeakHashMap<AssertionTreeNode, Boolean> includedCache = new WeakHashMap<>();
 
     private final Font boldFont;
     private final Font plainFont;
@@ -93,24 +92,11 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
     }
 
     /**
-     * Get the node name, which contains assertion comments depending on a property of showing comments or not.
-     * If policyVersion is defined, then the property will be retrieved by the policy version.  Otherwise, the
-     * property will be retrieved by a policy editor panel, which has a policy version information.
-     *
      * @param node: the tree node whose name will be generated.
      * @return the node name
      */
     private String getNodeName(AssertionTreeNode node) {
-        if (policyVersion != null) {
-            // Get node name. Pass in decorate = false, so that it won't be decorated and comments won't be added.
-            String name = node.getName(false);
-            // Decorate without adding comments.
-            name = AssertionUtils.decorateName(node.asAssertion(), name);
-            // Add comment based on policy version.
-            return DefaultAssertionPolicyNode.addCommentToDisplayTextByPolicyVersion(node.asAssertion(), name, policyVersion);
-        } else {
-            return node.getName();
-        }
+        return node.getName();
     }
 
     private boolean isIncluded(AssertionTreeNode node) {
