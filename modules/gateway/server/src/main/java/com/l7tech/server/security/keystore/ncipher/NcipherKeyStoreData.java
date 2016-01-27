@@ -1,6 +1,7 @@
 package com.l7tech.server.security.keystore.ncipher;
 
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.security.KeyStoreException;
@@ -28,6 +29,7 @@ class NcipherKeyStoreData implements Serializable {
     String keystoreMetadata;
     Map<String, byte[]> fileset = new HashMap<String,byte[]>();
     Set<String> deletedFilenames;
+    // TODO: update the whitelist classes below (methid createClassFilter) if any of the above field types changes or adding new fields
 
     private NcipherKeyStoreData(String keystoreMetadata, Set<String> deletedFilenames) {
         this.keystoreMetadata = keystoreMetadata;
@@ -122,7 +124,7 @@ class NcipherKeyStoreData implements Serializable {
     static NcipherKeyStoreData createFromBytes(byte[] bytes) throws IOException {
         if (bytes == null) throw new NullPointerException("nCipher keystore bytes is null");
         if (bytes.length < 1) throw new IOException("nCipher keystore bytes is empty");
-        final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+        final ObjectInputStream ois = new ClassFilterObjectInputStream(new ByteArrayInputStream(bytes), CLASS_FILTER);
         try {
             Object obj = ois.readObject();
             if (obj == null)
@@ -373,5 +375,31 @@ class NcipherKeyStoreData implements Serializable {
             if (newFile.exists() && !newFile.delete())
                 logger.warning("Failed to delete file on rollback: " + newFile);
         }
+    }
+
+    @NotNull
+    private static final ClassFilter CLASS_FILTER = createClassFilter();
+
+    /**
+     * IMPORTANT: update the whitelist classes below, if class fields type changes
+     *
+     * @return a new instance of {@link ClassFilter} whitelisting:
+     * NcipherKeyStoreData, String, LinkedHashSet, HashSet, HashMap and byte array.
+     */
+    @NotNull
+    private static ClassFilter createClassFilter() {
+        // allow only:
+        // keystoreMetadata => String
+        // fileset => HashMap, String and byte array ("[B")
+        // deletedFilenames => LinkedHashSet and String
+        return new ClassFilterBuilder().addClasses(
+                false,
+                NcipherKeyStoreData.class.getName(),
+                String.class.getName(),
+                LinkedHashSet.class.getName(),
+                HashSet.class.getName(),
+                HashMap.class.getName(),
+                "[B"
+        ).build();
     }
 }
