@@ -8,6 +8,7 @@ import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.util.Pair;
 
+import com.whirlycott.cache.Cache;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,13 +51,15 @@ public class SiteMinderHighLevelAgent {
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
-        final SiteMinderContextCache cache = getCache(context.getConfig(), smAgentName).getResourceCache();
-        final String cacheKey = smAgentName + resource + action;
+        final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
+        final Cache cache = agentCache.getResourceCache();
+
+        final String resourceCacheKey = smAgentName + resource + action;
         SiteMinderContext cachedContext = null;
 
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
         SiteMinderContextCache.Entry entry;
-        if ( ( entry = cache.lookup( cacheKey ) ) != null ) {
+        if ((entry = (SiteMinderContextCache.Entry) cache.retrieve(resourceCacheKey)) != null) {
 
             final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
             cachedContext = entry.getSmContext();
@@ -103,12 +106,10 @@ public class SiteMinderHighLevelAgent {
             cachedContext.setResContextDef(context.getResContextDef());
             cachedContext.setConfig(context.getConfig());
 
-            cache.store( cacheKey, cachedContext );
+            cache.store( resourceCacheKey, cachedContext );
         }
         return true;
     }
-
-
 
     public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
@@ -120,7 +121,9 @@ public class SiteMinderHighLevelAgent {
         final String reqResource = context.getResContextDef().getResource();
         final String action = context.getResContextDef().getAction();
         final int currentAgentTimeSeconds = SiteMinderUtil.safeLongToInt(System.currentTimeMillis() / 1000);
-        final SiteMinderContextCache cache = getCache(context.getConfig(), smAgentName).getAuthorizationCache();
+        final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
+        final Cache cache = agentCache.getSessionCache();
+
         SiteMinderContext cachedContext;
         //Obtain the AttributeList encase isAuthN was called before
         List<Pair<String, Object>> attrList = context.getAttrList();
@@ -166,7 +169,7 @@ public class SiteMinderHighLevelAgent {
         //        context.getSessionDef().getIdleTimeout(),
         //        currentAgentTimeSeconds );
         updateSsoToken = true;
-        SiteMinderContextCache.Entry cachedSMEntry = cache.lookup( cacheKey );
+        SiteMinderContextCache.Entry cachedSMEntry = (SiteMinderContextCache.Entry) cache.retrieve(cacheKey);
 
         //lookup in cache
         if ( cachedSMEntry == null ){
@@ -255,7 +258,8 @@ public class SiteMinderHighLevelAgent {
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
-        final SiteMinderContextCache cache = getCache(context.getConfig(), context.getResContextDef().getAgent()).getAuthenticationCache();
+        final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), context.getResContextDef().getAgent());
+        final Cache cache = agentCache.getSessionCache();
 
        //Obtain the AttributeList encase isAuthN was called before
         List<Pair<String, Object>> attrList = context.getAttrList();
@@ -302,7 +306,7 @@ public class SiteMinderHighLevelAgent {
             updateSsoToken = true;
 
             SiteMinderContext.SessionDef sessionDef;
-            SiteMinderContextCache.Entry cachedSMEntry = cache.lookup( cacheKey );
+            SiteMinderContextCache.Entry cachedSMEntry = (SiteMinderContextCache.Entry) cache.retrieve(cacheKey);
 
             if ( cachedSMEntry == null ) {
                 logger.log(Level.FINE, "SiteMinder Authentication - cache missed");
@@ -508,62 +512,21 @@ public class SiteMinderHighLevelAgent {
         //   agent.<agent_name>.<cache_setting_name>
         String prefix = AGENT_CACHE_PREFIX + agentName;
 
-        // Determine if the global cache should be used
-        if (cacheManager.isUseGlobalCache()) {
-            boolean useAgentCache = false;
-
-            // Check whether the agent is configured to override the global cache
-            String useAgentCacheStr = smConfig.getProperties().get(prefix + AGENT_USE_AGENT_CACHE_SUFFIX);
-            if (StringUtils.isNotEmpty(useAgentCacheStr)) {
-                useAgentCache = Boolean.parseBoolean(useAgentCacheStr);
-            }
-
-            // Return global cache if not overridden by the per agent configuration
-            if (!useAgentCache) {
-                return cacheManager.getGlobalCache();
-            }
-        }
-
-        // Retrieve per agent cache
+        // Retrieve agent cache
         SiteMinderAgentContextCache cache = cacheManager.getCache(smConfig.getGoid(), agentName);
 
         if (cache != null) {
             return cache;
         }
 
-        Integer resourceSize = null, authnSize = null, authzSize = null;
-        Long resourceAge = null, authnAge = null, authzAge = null;
+        int resourceSize = 0;
 
         String resourceSizeStr = smConfig.getProperties().get(prefix + AGENT_RESOURCE_CACHE_SIZE_SUFFIX);
+
         if (StringUtils.isNotEmpty(resourceSizeStr)) {
             resourceSize = new Integer(resourceSizeStr);
         }
 
-        String resourceAgeStr = smConfig.getProperties().get(prefix + AGENT_RESOURCE_CACHE_MAX_AGE_SUFFIX);
-        if (StringUtils.isNotEmpty(resourceAgeStr)) {
-            resourceAge = new Long(resourceAgeStr);
-        }
-
-        String authnSizeStr = smConfig.getProperties().get(prefix + AGENT_AUTHENTICATION_CACHE_SIZE_SUFFIX);
-        if (StringUtils.isNotEmpty(authnSizeStr)) {
-            authnSize = new Integer(authnSizeStr);
-        }
-
-        String authnAgeStr = smConfig.getProperties().get(prefix + AGENT_AUTHENTICATION_CACHE_MAX_AGE_SUFFIX);
-        if (StringUtils.isNotEmpty(authnAgeStr)) {
-            authnAge = new Long(authnAgeStr);
-        }
-
-        String authzSizeStr = smConfig.getProperties().get(prefix + AGENT_AUTHORIZATION_CACHE_SIZE_SUFFIX);
-        if (StringUtils.isNotEmpty(authzSizeStr)) {
-            authzSize = new Integer(authzSizeStr);
-        }
-
-        String authzAgeStr = smConfig.getProperties().get(prefix + AGENT_AUTHORIZATION_CACHE_MAX_AGE_SUFFIX);
-        if (StringUtils.isNotEmpty(authzAgeStr)) {
-            authzAge = new Long(authzAgeStr);
-        }
-
-        return cacheManager.getCache(smConfig.getGoid(), agentName, resourceSize, resourceAge, authnSize, authnAge, authzSize, authzAge);
+        return cacheManager.createCache(smConfig.getGoid(), agentName, resourceSize, resourceSize);
     }
 }

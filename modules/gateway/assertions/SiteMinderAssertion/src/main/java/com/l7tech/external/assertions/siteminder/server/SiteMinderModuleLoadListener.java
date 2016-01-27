@@ -73,13 +73,6 @@ public class SiteMinderModuleLoadListener {
 
         boolean useGlobalCache = serverConfig.getBooleanProperty(SM_USE_GLOBAL_CACHE_PROP, SM_USE_GLOBAL_CACHE_DEFAULT);
 
-
-
-        siteMinderAgentContextCacheManager.setDefaultCacheSettings(
-                resourceCacheSize, resourceCacheMaxAgeMillis,
-                authenticationCacheSize, authenticationCacheMaxAgeMillis,
-                authorizationCacheSize, authorizationCacheMaxAgeMillis,
-                useGlobalCache);
     }
 
     private static void initializeModuleClusterProperties(final ApplicationContext context) {
