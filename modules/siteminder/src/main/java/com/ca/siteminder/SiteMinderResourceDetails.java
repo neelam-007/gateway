@@ -14,12 +14,16 @@ public class SiteMinderResourceDetails {
     private final ResourceContextDef resContextDef;
     private final RealmDef realmDef;
     private final List<AuthenticationScheme> authSchemes;
+    private final boolean resourceProtected;
+    private final long createdTimeStamp;
 
-    public SiteMinderResourceDetails(ResourceContextDef resContextDef, RealmDef realmDef,
+    public SiteMinderResourceDetails(boolean resourceProtected, ResourceContextDef resContextDef, RealmDef realmDef,
                                      List<AuthenticationScheme> authSchemes) {
+        this.resourceProtected = resourceProtected;
         this.resContextDef = resContextDef;
         this.realmDef = realmDef;
         this.authSchemes = authSchemes;
+        this.createdTimeStamp = System.currentTimeMillis();
     }
 
     public ResourceContextDef getResContextDef() {
@@ -33,4 +37,14 @@ public class SiteMinderResourceDetails {
     public List<AuthenticationScheme> getAuthSchemes() {
         return authSchemes;
     }
+
+    public boolean isResourceProtected() {
+        return resourceProtected;
+    }
+
+    public long getTimeStamp() {
+        return createdTimeStamp;
+    }
+
+
 }

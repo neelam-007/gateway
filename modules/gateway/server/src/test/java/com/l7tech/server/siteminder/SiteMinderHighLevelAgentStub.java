@@ -1,11 +1,14 @@
 package com.l7tech.server.siteminder;
 
 import com.ca.siteminder.*;
+import com.l7tech.util.MockConfig;
+
+import java.util.HashMap;
 
 public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
 
     public SiteMinderHighLevelAgentStub() {
-        super(new SiteMinderAgentContextCacheManagerImpl());
+        super(new MockConfig(new HashMap<String, String>()), new SiteMinderAgentContextCacheManagerImpl());
     }
 
     @Override

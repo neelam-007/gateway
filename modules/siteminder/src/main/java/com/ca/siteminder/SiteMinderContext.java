@@ -39,6 +39,7 @@ public class SiteMinderContext {
     private SiteMinderLowLevelAgent agent;
     private String sourceIpAddress;
     private SiteMinderConfiguration config;
+    private boolean resourceProtected;
 
     public SiteMinderContext() {
 
@@ -152,6 +153,15 @@ public class SiteMinderContext {
     public void setConfig(SiteMinderConfiguration config) {
         this.config = config;
     }
+
+    public boolean isResourceProtected() {
+        return resourceProtected;
+    }
+
+    public void setResourceProtected(boolean resourceProtected) {
+        this.resourceProtected = resourceProtected;
+    }
+
 
     public static class SessionDef  {
         private int reason;

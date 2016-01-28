@@ -6,14 +6,19 @@ import java.util.List;
 
 public interface SiteMinderConfig {
 
-    public static final String SERVER_ADDRESS_PROPNAME = "address";
-    public static final String SERVER_AUTHN_PORT_PROPNAME = "authentication.port";
-    public static final String SERVER_AUTHZ_PORT_PROPNAME = "authorization.port";
-    public static final String SERVER_ACCT_PORT_PROPNAME = "accounting.port";
-    public static final String SERVER_CONN_MIN_PROPNAME = "connection.min";
-    public static final String SERVER_CONN_MAX_PROPNAME = "connection.max";
-    public static final String SERVER_CONN_STEP_PROPNAME = "connection.step";
-    public static final String SERVER_TIMEOUT = "timeout";
+    String SERVER_ADDRESS_PROPNAME = "address";
+    String SERVER_AUTHN_PORT_PROPNAME = "authentication.port";
+    String SERVER_AUTHZ_PORT_PROPNAME = "authorization.port";
+    String SERVER_ACCT_PORT_PROPNAME = "accounting.port";
+    String SERVER_CONN_MIN_PROPNAME = "connection.min";
+    String SERVER_CONN_MAX_PROPNAME = "connection.max";
+    String SERVER_CONN_STEP_PROPNAME = "connection.step";
+    String SERVER_TIMEOUT = "timeout";
+    String SYSTEM_PROP_PREFIX = "siteminder.cache.";
+    String AGENT_RESOURCE_CACHE_SIZE_PROPNAME = "resourceCache.size";
+    String AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME = "resourceCache.maxAge";
+    String AGENT_SESSION_CACHE_SIZE_PROPNAME = "sessionCache.size";
+    String AGENT_SESSION_CACHE_MAX_AGE_PROPNAME = "sessionCache.maxAge";
 
     static final int DEFAULT_CONNECTION_MIN = 1;
     static final int DEFAULT_CONNECTION_MAX = 10;

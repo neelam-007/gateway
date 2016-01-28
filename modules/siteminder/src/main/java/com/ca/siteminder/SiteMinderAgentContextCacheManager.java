@@ -7,7 +7,6 @@ import com.sun.istack.NotNull;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public interface SiteMinderAgentContextCacheManager {
-
     /**
      * Get cache associated with the Goid and smAgentName
      * @param smConfigGoid siteminder config goid

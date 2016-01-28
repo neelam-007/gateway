@@ -2734,6 +2734,7 @@
     <bean id="siteMinderAgentContextCacheManager" class="com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl"/>
 
     <bean id="siteMinderHighLevelAgent" class="com.ca.siteminder.SiteMinderHighLevelAgent">
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="siteMinderAgentContextCacheManager"/>
     </bean>
 

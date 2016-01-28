@@ -6,13 +6,15 @@ import java.util.logging.Logger;
 
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
 import com.whirlycott.cache.Cache;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import static com.ca.siteminder.SiteMinderAgentContextCacheManagerImpl.*;
+import static com.ca.siteminder.SiteMinderConfig.*;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -27,12 +29,15 @@ public class SiteMinderHighLevelAgent {
     public static final int CHALLENGE = 3;
 
     private static final Logger logger = Logger.getLogger(SiteMinderHighLevelAgent.class.getName());
+
     //TODO: token reuse value needs to be moved into the configuration gui.
     private int tokenReuseFactor = 25;
 
     private final SiteMinderAgentContextCacheManager cacheManager;
+    private final Config config;
 
-    public SiteMinderHighLevelAgent(final SiteMinderAgentContextCacheManager cacheManager) {
+    public SiteMinderHighLevelAgent(final Config config, final SiteMinderAgentContextCacheManager cacheManager) {
+        this.config = config;
         this.cacheManager = cacheManager;
     }
 
@@ -51,62 +56,50 @@ public class SiteMinderHighLevelAgent {
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
+        boolean isProtected = false;
+
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
         final String resourceCacheKey = userIp + serverName + smAgentName + resource + action;
-
+        long maxResourceCacheAge = getAgentPropertyLong(context.getConfig(), SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000);
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
         SiteMinderResourceDetails resourceDetails;
         if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
-
-            final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
-
-//            cachedContext = entry.getSmContext();
-//            context.setAgent(cachedContext.getAgent());
-
-            //generate a new SiteMinder TransactionID as this is a per-request value
-            context.setTransactionId( transactionId );
-            //TODO: Is the AuthScheme required?
-            context.setAuthSchemes(resourceDetails.getAuthSchemes());
-            context.setRealmDef(resourceDetails.getRealmDef());
-            context.setResContextDef(resourceDetails.getResContextDef());
-
-        } else {
-            /*// In order to preserve previous behavior of setting an empty string when the serverName is undefined
-            final String server = serverName != null ? serverName : "";
-            // The resCtxDef holds the agent, server, resource and action
-            ResourceContextDef resCtxDef = new ResourceContextDef(smAgentName, server, resource, action);
-            // The realmDef object will contain the realm handle for the resource if the resource is protected.
-            RealmDef realmDef = new RealmDef();
-
-            // check the requested resource/action is actually protected by SiteMinder
-            boolean isProtected = agent.isProtected(userIp, resCtxDef, realmDef, context);
-
-            //now set the context
-            context.setResContextDef(new SiteMinderContext.ResourceContextDef(resCtxDef.agent, resCtxDef.server, resCtxDef.resource, resCtxDef.action));
-            context.setRealmDef(new SiteMinderContext.RealmDef(realmDef.name, realmDef.oid, realmDef.domOid, realmDef.credentials, realmDef.formLocation));
-            //determine which authentication scheme to use
-
-            buildAuthenticationSchemes(context, realmDef.credentials);
-*/
-            // check the requested resource/action is actually protected by SiteMinder
-            boolean isProtected = agent.isProtected(userIp, smAgentName, serverName, resource, action, context);
-
-            // TODO jwilliams: cache unprotected resources also?
-            if (!isProtected) {
-                logger.log(Level.INFO,"The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
-                return false;
+            //now check if the cached entry exceeded the max cached time then remove from cache
+            logger.log(Level.FINE, "Found resource cache entry: " + resourceCacheKey);
+            if(System.currentTimeMillis() - resourceDetails.getTimeStamp() <= maxResourceCacheAge) {
+                final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
+                //generate a new SiteMinder TransactionID as this is a per-request value
+                context.setTransactionId(transactionId);
+                context.setAuthSchemes(resourceDetails.getAuthSchemes());
+                context.setRealmDef(resourceDetails.getRealmDef());
+                context.setResContextDef(resourceDetails.getResContextDef());
+                isProtected = resourceDetails.isResourceProtected();
+                context.setResourceProtected(isProtected);
             }
+            else {
+                //remove from cache if the entry exceeded the cache maxAge
+                cache.remove(resourceCacheKey);
+                logger.log(Level.FINE, "Maximum resource cache age exceeded. Removed resource cache entry: " + resourceCacheKey + " from resource cache");
+            }
+        }
 
-            //Populate the isProtected Cache as the resource is protected
-            resourceDetails = new SiteMinderResourceDetails(context.getResContextDef(),
+        if(resourceDetails == null){
+            // check the requested resource/action is actually protected by SiteMinder
+            isProtected = agent.isProtected(userIp, smAgentName, serverName, resource, action, context);
+            //Populate the isProtected Cache
+            resourceDetails = new SiteMinderResourceDetails(isProtected, context.getResContextDef(),
                     context.getRealmDef(), context.getAuthSchemes());
 
             cache.store(resourceCacheKey, resourceDetails);
+
+            if (!isProtected) {
+                logger.log(Level.INFO,"The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
+            }
         }
 
-        return true;
+        return isProtected;
     }
 
     public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
@@ -456,25 +449,51 @@ public class SiteMinderHighLevelAgent {
      * @return the cache
      */
     private SiteMinderAgentContextCache getCache(SiteMinderConfiguration smConfig, String agentName) {
-        // format of properties agent cache settings:
-        //   agent.<agent_name>.<cache_setting_name>
-        String prefix = AGENT_CACHE_PREFIX + agentName;
 
         // Retrieve agent cache
         SiteMinderAgentContextCache cache = cacheManager.getCache(smConfig.getGoid(), agentName);
+        //create cache if the entry is not found
+        if (cache == null) {
+            cache = cacheManager.createCache(smConfig.getGoid(), agentName,
+                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_SESSION_CACHE_SIZE_PROPNAME, 10)
+            );
+        }
+        return  cache;
+    }
 
-        if (cache != null) {
-            return cache;
+
+    private int getAgentPropertyInt(SiteMinderConfiguration smConfig, String propName, int defaultValue) {
+        Integer valueInt = null;
+        String valueStr = smConfig.getProperties().get(propName);
+        if (StringUtils.isNotEmpty(valueStr)) {
+            try {
+                valueInt = new Integer(valueStr);
+            } catch (NumberFormatException ne) {
+                logger.log(Level.WARNING, "Value of " + propName + " is not Integer: " + valueStr, ExceptionUtils.getDebugException(ne));
+            }
         }
 
-        int resourceSize = 0;
+        if(valueInt == null) {
+            valueInt = config.getIntProperty(SYSTEM_PROP_PREFIX + propName, defaultValue);
+        }
+        return valueInt;
+    }
 
-        String resourceSizeStr = smConfig.getProperties().get(prefix + AGENT_RESOURCE_CACHE_SIZE_SUFFIX);
-
-        if (StringUtils.isNotEmpty(resourceSizeStr)) {
-            resourceSize = new Integer(resourceSizeStr);
+    private long getAgentPropertyLong(SiteMinderConfiguration smConfig, String propName, long defaultValue) {
+        Long valueLong = null;
+        String valueStr = smConfig.getProperties().get(propName);
+        if (StringUtils.isNotEmpty(valueStr)) {
+            try {
+                valueLong = new Long(valueStr);
+            } catch (NumberFormatException ne) {
+                logger.log(Level.WARNING, "Value of " + propName + " is not Long: " + valueStr, ExceptionUtils.getDebugException(ne));
+            }
         }
 
-        return cacheManager.createCache(smConfig.getGoid(), agentName, resourceSize, resourceSize);
+        if(valueLong == null) {
+            valueLong = config.getLongProperty(SYSTEM_PROP_PREFIX + propName, defaultValue);
+        }
+        return valueLong;
     }
 }

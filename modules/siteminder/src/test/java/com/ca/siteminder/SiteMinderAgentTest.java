@@ -1,5 +1,7 @@
 package com.ca.siteminder;
 
+import com.l7tech.util.Config;
+import com.l7tech.util.MockConfig;
 import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.ServerDef;
 import org.junit.After;
@@ -8,7 +10,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -90,7 +94,7 @@ public class SiteMinderAgentTest {
            }
        };
        agent = new SiteMinderLowLevelAgent(config);
-       fixture = new SiteMinderHighLevelAgent(new SiteMinderAgentContextCacheManagerImpl());
+       fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), new SiteMinderAgentContextCacheManagerImpl());
     }
 
     @After
