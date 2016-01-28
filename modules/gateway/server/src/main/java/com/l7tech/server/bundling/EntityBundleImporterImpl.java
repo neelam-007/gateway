@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -1073,6 +1074,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws ObjectModelException
      */
     private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @Nullable final String targetId, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
+        final Entity entity = entityContainer.getEntity();
+
         if (entityContainer instanceof JmsContainer) {
             final JmsContainer jmsContainer = ((JmsContainer) entityContainer);
             //need to replace jms connection dependencies
@@ -1107,19 +1110,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     throw new IllegalStateException("PublishedServiceContainer was mapped to an entity that is not a PublishedService: " + existingEntity.getClass());
                 }
             }
-        } else if (entityContainer.getEntity() instanceof EncapsulatedAssertionConfig) {
+        } else if (entity instanceof EncapsulatedAssertionConfig) {
             //need to find the real policy to attach to the encass so that it can be properly updated. The policy id here should be correct. It will already have been properly mapped.
-            final EncapsulatedAssertionConfig encassConfig = ((EncapsulatedAssertionConfig) entityContainer.getEntity());
-            final Policy encassPolicy = ((EncapsulatedAssertionConfig) entityContainer.getEntity()).getPolicy();
+            final EncapsulatedAssertionConfig encassConfig = ((EncapsulatedAssertionConfig) entity);
+            final Policy encassPolicy = ((EncapsulatedAssertionConfig) entity).getPolicy();
             if (encassPolicy != null) {
                 final Policy policyFound = policyManager.findByPrimaryKey(encassPolicy.getGoid());
                 encassConfig.setPolicy(policyFound);
             }
-        } else if (entityContainer.getEntity() instanceof Role && !((Role) entityContainer.getEntity()).isUserCreated()) {
+        } else if (entity instanceof Role && !((Role) entity).isUserCreated()) {
             //if this is not a user created role copy the permissions for the target to updating role
             if(existingEntity != null){
                 //set the role permissions to those of the target role
-                final Set<Permission> permissions = ((Role)entityContainer.getEntity()).getPermissions();
+                final Set<Permission> permissions = ((Role)entity).getPermissions();
                 permissions.clear();
                 for(final Permission permission : ((Role)existingEntity).getPermissions()){
                     permissions.add(permission);
@@ -1127,47 +1130,47 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
                 //if this is the admin role we need to add the admin tag
                 if(Role.Tag.ADMIN.equals(((Role) existingEntity).getTag())){
-                    ((Role) entityContainer.getEntity()).setTag(Role.Tag.ADMIN);
+                    ((Role) entity).setTag(Role.Tag.ADMIN);
                 }
             } else {
                 // TODO somehow reuse logic in RbacRoleResourceFactory
                 // this is a new role, must be 'userCreated'
-                ((Role) entityContainer.getEntity()).setUserCreated(true);
+                ((Role) entity).setUserCreated(true);
             }
-        } else if (entityContainer.getEntity() instanceof Alias) {
+        } else if (entity instanceof Alias) {
             //need to check that the alias will not be created in the same folder as the policy or service it is aliasing. Or that is it is created in a folder that already has an alias for that policy or service.
             //this checks if it is to be created in a folder with the aliased service or policy
-            final EntityHeader serviceOrPolicyHeader = entityCrud.findHeader(entityContainer.getEntity() instanceof PublishedServiceAlias ? EntityType.SERVICE : EntityType.POLICY, ((Alias) entityContainer.getEntity()).getEntityGoid());
+            final EntityHeader serviceOrPolicyHeader = entityCrud.findHeader(entity instanceof PublishedServiceAlias ? EntityType.SERVICE : EntityType.POLICY, ((Alias) entity).getEntityGoid());
             if (serviceOrPolicyHeader instanceof OrganizationHeader) {
-                if (Goid.equals(((OrganizationHeader) serviceOrPolicyHeader).getFolderId(), ((Alias) entityContainer.getEntity()).getFolder().getGoid())) {
+                if (Goid.equals(((OrganizationHeader) serviceOrPolicyHeader).getFolderId(), ((Alias) entity).getFolder().getGoid())) {
                     throw new DuplicateObjectException("Cannot create alias in the same folder as the aliased policy or service");
                 }
             } else if (serviceOrPolicyHeader == null) {
-                final String serviceOrPolicy = entityContainer.getEntity() instanceof PublishedServiceAlias ? "service" : "policy";
+                final String serviceOrPolicy = entity instanceof PublishedServiceAlias ? "service" : "policy";
                 //note this needs to be a ConstraintViolationException and not a FindException so the the proper mapping is returned. If it is a FindException the mapping error type for the alias is TargetNotFound but we actually want InvalidResource
-                throw new ConstraintViolationException("Could not find the " + serviceOrPolicy + " for alias. " + serviceOrPolicy + " id: " + ((Alias) entityContainer.getEntity()).getEntityGoid());
+                throw new ConstraintViolationException("Could not find the " + serviceOrPolicy + " for alias. " + serviceOrPolicy + " id: " + ((Alias) entity).getEntityGoid());
             } else {
                 throw new IllegalStateException("A policy or service header is expected to be an OrganizationHeader but it was not. Header: " + serviceOrPolicyHeader);
             }
 
             // This checks if it is to be created in a folder with another alias for the same service or policy
-            final AliasManager aliasManager = entityContainer.getEntity() instanceof PublishedServiceAlias ? serviceAliasManager : policyAliasManager;
-            final Alias checkAlias = aliasManager.findAliasByEntityAndFolder(((Alias) entityContainer.getEntity()).getEntityGoid(), ((Alias) entityContainer.getEntity()).getFolder().getGoid());
+            final AliasManager aliasManager = entity instanceof PublishedServiceAlias ? serviceAliasManager : policyAliasManager;
+            final Alias checkAlias = aliasManager.findAliasByEntityAndFolder(((Alias) entity).getEntityGoid(), ((Alias) entity).getFolder().getGoid());
             if (checkAlias != null && (existingEntity == null || !StringUtils.equals(existingEntity.getId(), checkAlias.getId()))) {
                 throw new DuplicateObjectException("Cannot create alias in the same folder as an alias for the same aliased policy or service");
             }
-        } else if (entityContainer.getEntity() instanceof SsgKeyEntry && targetId != null) {
+        } else if (entity instanceof SsgKeyEntry && targetId != null) {
             //need to replace the alias and keystore id if a target id is specified
-            final SsgKeyEntry ssgKeyEntry = ((SsgKeyEntry) entityContainer.getEntity());
+            final SsgKeyEntry ssgKeyEntry = ((SsgKeyEntry) entity);
             final String[] keyParts = targetId.split(":");
             if(keyParts.length != 2 || keyParts[1] == null || keyParts[1].isEmpty() || keyParts[0] == null) {
                 throw new IllegalStateException("An id for a private key is not valid: " + targetId);
             }
             ssgKeyEntry.setAlias(keyParts[1]);
             ssgKeyEntry.setKeystoreId(Goid.parseGoid(keyParts[0]));
-        } else if (entityContainer.getEntity() instanceof PolicyBackedService && existingEntity != null) {
+        } else if (entity instanceof PolicyBackedService && existingEntity != null) {
             //TODO: This logic is duplicated in com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyBackedServiceAPIResourceFactory.beforeUpdateEntity()
-            final PolicyBackedService newPolicyBackedService = (PolicyBackedService) entityContainer.getEntity();
+            final PolicyBackedService newPolicyBackedService = (PolicyBackedService) entity;
             final PolicyBackedService oldPolicyBackedService = (PolicyBackedService) existingEntity;
             //This is needed in order to avoid hibernate issues related to updating operations to a PolicyBackedService
             //update to existing operations to match the updated ones.
@@ -1185,7 +1188,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 });
                 if(newOperation != null) {
                     //updated the existing operation policy id to match the new one
-                    operation.setPolicyGoid(newOperation.getPolicyGoid());
+                    // But if the new one is a stale id, then just ignore it.
+                    final Goid newPolicyGoid = newOperation.getPolicyGoid();
+                    if (policyManager.findByPrimaryKey(newPolicyGoid) != null) {
+                        operation.setPolicyGoid(newPolicyGoid);
+                    }
                 } else {
                     //remove the existing operation since it is not available in the new PBS.
                     operationsIterator.remove();
@@ -1206,46 +1213,52 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
             }
             newPolicyBackedService.setOperations(operations);
+        } else if (entity instanceof ScheduledTask && existingEntity != null) {
+            // If the new policy goid a stale id, then just use the existing policy goid.
+            final Goid newPolicyGoid = ((ScheduledTask) entity).getPolicyGoid();
+            if (policyManager.findByPrimaryKey(newPolicyGoid) == null) {
+                ((ScheduledTask)entity).setPolicyGoid(((ScheduledTask) existingEntity).getPolicyGoid());
+            }
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
-        if(entityContainer.getEntity() instanceof HasFolder && existingEntity != null) {
+        if(entity instanceof HasFolder && existingEntity != null) {
             if(existingEntity instanceof HasFolder){
-                ((HasFolder)entityContainer.getEntity()).setFolder(((HasFolder)existingEntity).getFolder());
+                ((HasFolder)entity).setFolder(((HasFolder)existingEntity).getFolder());
             } else {
                 //this should never happen
                 throw new IllegalStateException("A folderable entity was mapped to an entity that is not folderable: " + existingEntity.getClass());
             }
         }
         //if this is an entity that get referenced by name by others and  the existing entity exists then preserve the existing entity name
-        if((entityContainer.getEntity() instanceof JdbcConnection ||
-            entityContainer.getEntity() instanceof ClusterProperty ||
-            entityContainer.getEntity() instanceof SecurePassword ||
-            entityContainer.getEntity() instanceof InterfaceTag ||
-            (entityContainer.getEntity() instanceof Role &&  !((Role)entityContainer.getEntity()).isUserCreated())) &&
+        if((entity instanceof JdbcConnection ||
+            entity instanceof ClusterProperty ||
+            entity instanceof SecurePassword ||
+            entity instanceof InterfaceTag ||
+            (entity instanceof Role &&  !((Role)entity).isUserCreated())) &&
                 existingEntity != null ) {
             if(existingEntity instanceof NameableEntity){
-                ((NameableEntity) entityContainer.getEntity()).setName(((NameableEntity) existingEntity).getName());
+                ((NameableEntity) entity).setName(((NameableEntity) existingEntity).getName());
             } else {
                 //this should never happen
                 throw new IllegalStateException("A NameableEntity entity was mapped to an entity that is not NameableEntity: " + existingEntity.getClass());
             }
         }
         //if this is a GuidEntity and the existing entity exists then preserve the existing entity guid
-        if(entityContainer.getEntity() instanceof GuidEntity && existingEntity != null ) {
+        if(entity instanceof GuidEntity && existingEntity != null ) {
             if(existingEntity instanceof GuidEntity){
-                ((GuidEntity) entityContainer.getEntity()).setGuid(((GuidEntity) existingEntity).getGuid());
+                ((GuidEntity) entity).setGuid(((GuidEntity) existingEntity).getGuid());
             } else {
                 //this should never happen
                 throw new IllegalStateException("A GuidEntity entity was mapped to an entity that is not GuidEntity: " + existingEntity.getClass());
             }
         }
         //if this is a user and the existing entity exists then preserve the existing entity login
-        if(entityContainer.getEntity() instanceof UserBean && existingEntity != null ) {
+        if(entity instanceof UserBean && existingEntity != null ) {
             if(existingEntity instanceof User){
-                ((UserBean) entityContainer.getEntity()).setLogin(((User) existingEntity).getLogin());
+                ((UserBean) entity).setLogin(((User) existingEntity).getLogin());
                 if(existingEntity instanceof InternalUser) {
                     //for internal users the name and login should match
-                    ((UserBean) entityContainer.getEntity()).setName(((User) existingEntity).getName());
+                    ((UserBean) entity).setName(((User) existingEntity).getName());
                 }
             } else {
                 //this should never happen
