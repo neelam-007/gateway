@@ -54,22 +54,23 @@ public class SiteMinderHighLevelAgent {
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
-        final String resourceCacheKey = smAgentName + resource + action;
-        SiteMinderContext cachedContext = null;
+        final String resourceCacheKey = userIp + serverName + smAgentName + resource + action;
 
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
-        SiteMinderContextCache.Entry entry;
-        if ((entry = (SiteMinderContextCache.Entry) cache.retrieve(resourceCacheKey)) != null) {
+        SiteMinderResourceDetails resourceDetails;
+        if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
 
             final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
-            cachedContext = entry.getSmContext();
-            context.setAgent(cachedContext.getAgent());
+
+//            cachedContext = entry.getSmContext();
+//            context.setAgent(cachedContext.getAgent());
+
             //generate a new SiteMinder TransactionID as this is a per-request value
             context.setTransactionId( transactionId );
             //TODO: Is the AuthScheme required?
-            context.setAuthSchemes(cachedContext.getAuthSchemes());
-            context.setRealmDef(cachedContext.getRealmDef());
-            context.setResContextDef(cachedContext.getResContextDef());
+            context.setAuthSchemes(resourceDetails.getAuthSchemes());
+            context.setRealmDef(resourceDetails.getRealmDef());
+            context.setResContextDef(resourceDetails.getResContextDef());
 
         } else {
             /*// In order to preserve previous behavior of setting an empty string when the serverName is undefined
@@ -91,23 +92,20 @@ public class SiteMinderHighLevelAgent {
 */
             // check the requested resource/action is actually protected by SiteMinder
             boolean isProtected = agent.isProtected(userIp, smAgentName, serverName, resource, action, context);
+
+            // TODO jwilliams: cache unprotected resources also?
             if (!isProtected) {
                 logger.log(Level.INFO,"The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
                 return false;
             }
 
             //Populate the isProtected Cache as the resource is protected
-            cachedContext = new SiteMinderContext();
-            cachedContext.setAgent( context.getAgent() );
-            cachedContext.setTransactionId( context.getTransactionId() );
-            //TODO: Is the AuthScheme required?
-            cachedContext.setAuthSchemes(context.getAuthSchemes());
-            cachedContext.setRealmDef(context.getRealmDef());
-            cachedContext.setResContextDef(context.getResContextDef());
-            cachedContext.setConfig(context.getConfig());
+            resourceDetails = new SiteMinderResourceDetails(context.getResContextDef(),
+                    context.getRealmDef(), context.getAuthSchemes());
 
-            cache.store( resourceCacheKey, cachedContext );
+            cache.store(resourceCacheKey, resourceDetails);
         }
+
         return true;
     }
 
@@ -169,10 +167,10 @@ public class SiteMinderHighLevelAgent {
         //        context.getSessionDef().getIdleTimeout(),
         //        currentAgentTimeSeconds );
         updateSsoToken = true;
-        SiteMinderContextCache.Entry cachedSMEntry = (SiteMinderContextCache.Entry) cache.retrieve(cacheKey);
+        SiteMinderAuthResponseDetails authResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
 
         //lookup in cache
-        if ( cachedSMEntry == null ){
+        if (authResponseDetails == null) {
             logger.log(Level.FINE, "SiteMinder Authorization - cache missed");
             // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
             // Note: Only the ClientIP (dotted-quad notation) is needed, by the authorize API call.
@@ -223,17 +221,18 @@ public class SiteMinderHighLevelAgent {
         }
 
         //In both cases the attribute list should contain the UserDn, UserName, ClientIP
-        if ( cachedSMEntry != null ) {
+        if ( authResponseDetails != null ) {
             // Ensure the cached SMContext Attributes are available, if a cache hit occurs
             // Don't clear the attributeList as it will contain the decoded
             // UserDn, UserName, ClientIP
-            attrList.addAll( cachedSMEntry.getSmContext().getAttrList() );
+            attrList.addAll(authResponseDetails.getAttrList());
             context.getAttrList().addAll( new ArrayList<>( attrList ));
-        } else if ( context != null ) {
+        } else {
             context.getAttrList().addAll( attrList );
         }
+
         //Remove possible duplicate attributes
-        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes(context.getAttrList()));
+        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes(context.getAttrList()));  // TODO jwilliams: is this working right?
         return result;
     }
 
@@ -414,7 +413,6 @@ public class SiteMinderHighLevelAgent {
                 //store the smContext to the isAuth Cache
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
                 cache.store( cacheKey, new SiteMinderContext( context ) );
-
             }
         }
         context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList() ));
@@ -449,56 +447,6 @@ public class SiteMinderHighLevelAgent {
 
         return validSession;
     }
-
-    private boolean tokenReuseThresholdExceeded ( final int lastSessionTime, final int idleTimeOut, final int serverTimeSeconds ) {
-        boolean usageExceeded = false;
-
-        if ( serverTimeSeconds - lastSessionTime >= ( tokenReuseFactor * idleTimeOut )/100 ) {
-            usageExceeded = true;
-        }
-        return usageExceeded;
-    }
-
-    private List<Pair<String, Object>> addSessionAttributes(SiteMinderContext context, SiteMinderContext.SessionDef sd) {
-
-        //remove any duplicate session Attributes that may exist.
-        List<Pair<String, Object>> attributes = context.getAttrList();
-        for (Iterator<Pair<String, Object>> iter = attributes.iterator(); iter.hasNext(); ) {
-            String attr = iter.next().left;
-            switch( attr ) {
-                case SiteMinderAgentConstants.ATTR_SESSIONID:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_SESSIONSPEC:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_STARTSESSIONTIME:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_LASTSESSIONTIME:
-                    iter.remove();
-                    break;
-            }
-        }
-
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONID, sd.getId()));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONSPEC, sd.getSpec()));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, sd.getSessionStartTime()));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, sd.getSessionLastTime()));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_CURRENTSERVERTIME, sd.getCurrentServerTime())); //added
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, sd.getIdleTimeout()));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, sd.getMaxTimeout()));
-
-        return attributes;
-    }
-
-
 
     /**
      * Get the SiteMinderAgentContextCache

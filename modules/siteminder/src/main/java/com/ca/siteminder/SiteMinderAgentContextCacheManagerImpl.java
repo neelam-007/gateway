@@ -77,15 +77,18 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
                                                 int resourceMaxEntries, int sessionMaxEntries) {
         Key key = new Key(smConfigGoid, smAgentName);
 
-        Cache resourceCache = createWhirlycache(key.toString() + ".realm", resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
-        Cache sessionCache = createWhirlycache(key.toString() + ".session", sessionMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+        Cache resourceCache = createWhirlycache(key.toString() + ".resource",
+                resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+
+        Cache sessionCache = createWhirlycache(key.toString() + ".session",
+                sessionMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
 
         SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, sessionCache);
 
         agentCacheMap.put(key, newCache);
 
         LOGGER.log(Level.FINE,
-                "Initialized new cache: {0}, resourceCache: size {1} , sessionCache: size {3}",
+                "Initialized new cache: {0}, resourceCache: size {1} , sessionCache: size {2}",
                 new Object[] {key, resourceMaxEntries, sessionMaxEntries});
 
         return newCache;
