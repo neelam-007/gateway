@@ -14,6 +14,7 @@ import com.whirlycott.cache.Cache;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+import static com.ca.siteminder.SiteMinderAgentContextCache.SessionCacheKey.AuthType;
 import static com.ca.siteminder.SiteMinderConfig.*;
 import static com.ca.siteminder.SiteMinderAgentContextCache.*;
 
@@ -62,7 +63,7 @@ public class SiteMinderHighLevelAgent {
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
-        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, userIp, serverName);
+        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, userIp, serverName!=null?serverName:"");
         long maxResourceCacheAge = getAgentPropertyLong(context.getConfig(), SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000);
         
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
@@ -146,7 +147,8 @@ public class SiteMinderHighLevelAgent {
         }
 
         sessionId = sessionDef.getId();
-        cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(), reqResource, action);
+        cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(),
+                reqResource, action, AuthType.AUTHORIZATION);
 
         //Perform Session Validation
         if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
@@ -179,7 +181,8 @@ public class SiteMinderHighLevelAgent {
             cachedContext = context;
             sessionId = cachedContext.getSessionDef().getId();
 
-            cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(), reqResource, action);  // recreate key because session ID should be different
+            cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(),
+                    reqResource, action, AuthType.AUTHORIZATION);  // recreate key because session ID should be different
 
             SiteMinderAuthResponseDetails authResponseDetails =
                     new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
@@ -288,7 +291,8 @@ public class SiteMinderHighLevelAgent {
 
             final SessionCacheKey cacheKey =
                     new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
-                            context.getResContextDef().getResource(), context.getResContextDef().getAction());
+                            context.getResContextDef().getResource(), context.getResContextDef().getAction(),
+                            AuthType.AUTHENTICATION);
 
             if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
                 cache.remove( cacheKey );
@@ -404,7 +408,8 @@ public class SiteMinderHighLevelAgent {
 
                 final SessionCacheKey cacheKey =
                         new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
-                                context.getResContextDef().getResource(), context.getResContextDef().getAction());
+                                context.getResContextDef().getResource(), context.getResContextDef().getAction(),
+                                AuthType.AUTHENTICATION);
 
                 //store the smContext to the isAuth Cache
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );

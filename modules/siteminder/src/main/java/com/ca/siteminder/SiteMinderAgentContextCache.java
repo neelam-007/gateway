@@ -98,17 +98,22 @@ public class SiteMinderAgentContextCache {
     }
 
     public static class SessionCacheKey {
+
+        public enum AuthType { AUTHENTICATION, AUTHORIZATION }
+
         private final String sessionId;
         private final String realmOid;
         private final String resource;
         private final String action;
+        private final AuthType authType;
 
         public SessionCacheKey(@NotNull String sessionId, @NotNull String realmOid,
-                               @NotNull String resource, @NotNull String action) {
+                               @NotNull String resource, @NotNull String action, @NotNull AuthType authType) {
             this.sessionId = sessionId;
             this.realmOid = realmOid;
             this.resource = resource;
             this.action = action;
+            this.authType = authType;
         }
 
         public String getSessionId() {
@@ -127,6 +132,10 @@ public class SiteMinderAgentContextCache {
             return action;
         }
 
+        public AuthType getAuthType() {
+            return authType;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -138,6 +147,7 @@ public class SiteMinderAgentContextCache {
             if (!realmOid.equals(that.realmOid)) return false;
             if (!resource.equals(that.resource)) return false;
             if (!sessionId.equals(that.sessionId)) return false;
+            if (!authType.equals(that.authType)) return false;
 
             return true;
         }
@@ -148,6 +158,7 @@ public class SiteMinderAgentContextCache {
             result = 31 * result + (realmOid.hashCode());
             result = 31 * result + (resource.hashCode());
             result = 31 * result + (action.hashCode());
+            result = 31 * result + (authType.hashCode());
             return result;
         }
 
@@ -158,6 +169,7 @@ public class SiteMinderAgentContextCache {
                     ", realmOid='" + realmOid + '\'' +
                     ", resource='" + resource + '\'' +
                     ", action='" + action + '\'' +
+                    ", authType=" + authType +
                     '}';
         }
     }
