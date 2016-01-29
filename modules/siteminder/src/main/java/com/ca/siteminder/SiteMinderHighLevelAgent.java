@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import static com.ca.siteminder.SiteMinderConfig.*;
+import static com.ca.siteminder.SiteMinderAgentContextCache.*;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -61,8 +62,9 @@ public class SiteMinderHighLevelAgent {
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
-        final String resourceCacheKey = userIp + serverName + smAgentName + resource + action;
+        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, userIp, serverName);
         long maxResourceCacheAge = getAgentPropertyLong(context.getConfig(), SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000);
+        
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
         SiteMinderResourceDetails resourceDetails;
         if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
@@ -123,7 +125,7 @@ public class SiteMinderHighLevelAgent {
         context.setAttrList(new ArrayList<Pair<String, Object>>());
         SiteMinderContext.SessionDef sessionDef = null != context.getSessionDef() ? context.getSessionDef() : null;
         String sessionId;
-        String cacheKey;
+        SessionCacheKey cacheKey;
 
         boolean updateSsoToken;
         int result;
@@ -144,7 +146,7 @@ public class SiteMinderHighLevelAgent {
         }
 
         sessionId = sessionDef.getId();
-        cacheKey = smAgentName + reqResource + action + sessionId;
+        cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(), reqResource, action);
 
         //Perform Session Validation
         if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
@@ -160,10 +162,10 @@ public class SiteMinderHighLevelAgent {
         //        context.getSessionDef().getIdleTimeout(),
         //        currentAgentTimeSeconds );
         updateSsoToken = true;
-        SiteMinderAuthResponseDetails authResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
+        SiteMinderAuthResponseDetails cachedAuthResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
 
         //lookup in cache
-        if (authResponseDetails == null) {
+        if (cachedAuthResponseDetails == null) {
             logger.log(Level.FINE, "SiteMinder Authorization - cache missed");
             // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
             // Note: Only the ClientIP (dotted-quad notation) is needed, by the authorize API call.
@@ -176,9 +178,13 @@ public class SiteMinderHighLevelAgent {
 
             cachedContext = context;
             sessionId = cachedContext.getSessionDef().getId();
-            cacheKey = smAgentName + reqResource + action + sessionId;
-            SiteMinderContext smContext = new SiteMinderContext( context );
-            cache.store( cacheKey, smContext );
+
+            cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(), reqResource, action);  // recreate key because session ID should be different
+
+            SiteMinderAuthResponseDetails authResponseDetails =
+                    new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
+
+            cache.store(cacheKey, authResponseDetails);
         }
 
         if ( ( agent.getUpdateCookieStatus() && updateSsoToken ) && null == context.getSsoToken() ){ // create a new ssoToken
@@ -214,11 +220,11 @@ public class SiteMinderHighLevelAgent {
         }
 
         //In both cases the attribute list should contain the UserDn, UserName, ClientIP
-        if ( authResponseDetails != null ) {
+        if ( cachedAuthResponseDetails != null ) {
             // Ensure the cached SMContext Attributes are available, if a cache hit occurs
             // Don't clear the attributeList as it will contain the decoded
             // UserDn, UserName, ClientIP
-            attrList.addAll(authResponseDetails.getAttrList());
+            attrList.addAll(cachedAuthResponseDetails.getAttrList());
             context.getAttrList().addAll( new ArrayList<>( attrList ));
         } else {
             context.getAttrList().addAll( attrList );
@@ -280,9 +286,9 @@ public class SiteMinderHighLevelAgent {
                     return result;
             }
 
-            String sessionId = context.getSessionDef().getId();
-            String realmOid = context.getRealmDef().getOid();
-            String cacheKey = sessionId + realmOid;
+            final SessionCacheKey cacheKey =
+                    new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
+                            context.getResContextDef().getResource(), context.getResContextDef().getAction());
 
             if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
                 cache.remove( cacheKey );
@@ -298,9 +304,9 @@ public class SiteMinderHighLevelAgent {
             updateSsoToken = true;
 
             SiteMinderContext.SessionDef sessionDef;
-            SiteMinderContextCache.Entry cachedSMEntry = (SiteMinderContextCache.Entry) cache.retrieve(cacheKey);
+            SiteMinderAuthResponseDetails authResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
 
-            if ( cachedSMEntry == null ) {
+            if (authResponseDetails == null) {
                 logger.log(Level.FINE, "SiteMinder Authentication - cache missed");
 
                 // Cache miss occurred we need to Validate the decoded ssoToken/session
@@ -312,13 +318,10 @@ public class SiteMinderHighLevelAgent {
                     return FAILURE;
                 }
 
-                sessionId = context.getSessionDef().getId();
-                realmOid = context.getRealmDef().getOid();
-
-                cacheKey = sessionId + realmOid;
                 //Duplicate UserDN value will occur as the decode and login API's both return these values
                 context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList() ));
-                cache.store( cacheKey, new SiteMinderContext( context ) );
+
+                cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
 
                 updateSsoToken = true; //We do not have any insight into who created the token.
             }
@@ -359,8 +362,8 @@ public class SiteMinderHighLevelAgent {
                         context.getSessionDef().getSpec() ));
 
                 //ensure the cached AttributeList is available in policy
-                if( cachedSMEntry != null ){
-                    context.getAttrList().addAll( new ArrayList<>( cachedSMEntry.getSmContext().getAttrList() ));
+                if( authResponseDetails != null ){
+                    context.getAttrList().addAll( new ArrayList<>( authResponseDetails.getAttrList() ));
                 }
                 //TODO: check if attributes from the previous authentication are indeed required.
                 if( !attrList.isEmpty() ){
@@ -368,17 +371,17 @@ public class SiteMinderHighLevelAgent {
                 }
                 logger.log(Level.FINE, "Authentication user using cookie:" + ssoCookie);
             } else {
-                if (! "".equals( ssoCookie ) && ssoCookie != null ){
-                    context.setSsoToken( ssoCookie );
+                if (!"".equals(ssoCookie)) {
+                    context.setSsoToken(ssoCookie);
                 }
                 //ensure the sessionDef is updated in the context
                 //set currentServerTime
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
 
-                if ( cachedSMEntry != null ) {
+                if ( authResponseDetails != null ) {
                     //ensure the cached SMContext Attributes are available, if a cache hit occurs
-                    attrList.addAll( cachedSMEntry.getSmContext().getAttrList() );
-                    context.setAttrList( attrList );
+                    attrList.addAll( authResponseDetails.getAttrList() );
+                    context.setAttrList(attrList);
                 } else if ( !attrList.isEmpty() ) {
                     //Ensure that if any Attributes from an isAuthZ call are available in policy
                     context.getAttrList().addAll( attrList );
@@ -399,13 +402,17 @@ public class SiteMinderHighLevelAgent {
             } else {
                 logger.log(Level.FINE, "Authenticated user via user credentials: " + SiteMinderUtil.getCredentialsAsString(credentials));
 
-                final String sessionId = context.getSessionDef().getId();
-                final String realmOid = context.getRealmDef().getOid();
-                final String cacheKey = sessionId + realmOid;
+                final SessionCacheKey cacheKey =
+                        new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
+                                context.getResContextDef().getResource(), context.getResContextDef().getAction());
 
                 //store the smContext to the isAuth Cache
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
-                cache.store( cacheKey, new SiteMinderContext( context ) );
+
+                SiteMinderAuthResponseDetails authResponseDetails =
+                        new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
+
+                cache.store(cacheKey, authResponseDetails);
             }
         }
         context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList() ));

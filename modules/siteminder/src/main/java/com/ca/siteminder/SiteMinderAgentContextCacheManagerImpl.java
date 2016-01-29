@@ -4,8 +4,8 @@ package com.ca.siteminder;
 import com.l7tech.common.io.WhirlycacheFactory;
 
 import com.l7tech.objectmodel.Goid;
-import com.sun.istack.NotNull;
 import com.whirlycott.cache.Cache;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
@@ -94,15 +94,14 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
 
             Key key = (Key) o;
 
-            if (configGoid != null ? !configGoid.equals(key.configGoid) : key.configGoid != null) return false;
-            return !(agentName != null ? !agentName.equals(key.agentName) : key.agentName != null);
+            return configGoid.equals(key.configGoid) && agentName.equals(key.agentName);
 
         }
 
         @Override
         public int hashCode() {
-            int result = configGoid != null ? configGoid.hashCode() : 0;
-            result = 31 * result + (agentName != null ? agentName.hashCode() : 0);
+            int result = configGoid.hashCode();
+            result = 31 * result + (agentName.hashCode());
             return result;
         }
 
