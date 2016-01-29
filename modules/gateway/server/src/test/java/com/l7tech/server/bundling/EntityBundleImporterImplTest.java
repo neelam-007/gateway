@@ -19,6 +19,7 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
@@ -83,6 +84,8 @@ public class EntityBundleImporterImplTest {
     private PolicyCache policyCache;
     @Mock
     private ServerModuleFileManager serverModuleFileManager;
+    @Mock
+    private ProtectedEntityTracker protectedEntityTracker;
     @Spy
     private PasswordHasher passwordHasher = new TestPasswordHasher();
 
@@ -108,6 +111,7 @@ public class EntityBundleImporterImplTest {
                 .put("passwordHasher", passwordHasher)
                 .put("policyCache", policyCache)
                 .put("serverModuleFileManager", serverModuleFileManager)
+                .put("protectedEntityTracker", protectedEntityTracker)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }

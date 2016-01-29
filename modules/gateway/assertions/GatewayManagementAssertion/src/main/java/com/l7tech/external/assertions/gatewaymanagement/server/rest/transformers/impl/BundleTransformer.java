@@ -19,6 +19,7 @@ import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
+import com.l7tech.server.bundling.exceptions.TargetReadOnlyException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
@@ -411,6 +412,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             return Mapping.ErrorType.TargetNotFound;
         } else if (exception instanceof TargetExistsException) {
             return Mapping.ErrorType.TargetExists;
+        }  else if (exception instanceof TargetReadOnlyException) {
+            return Mapping.ErrorType.TargetReadOnly;
         } else if (exception instanceof IncorrectMappingInstructionsException) {
             return Mapping.ErrorType.ImproperMapping;
         } else if (exception instanceof DuplicateObjectException) {

@@ -37,10 +37,7 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.AuditsCollector;
-import com.l7tech.server.bundling.exceptions.BundleImportException;
-import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
-import com.l7tech.server.bundling.exceptions.TargetExistsException;
-import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
+import com.l7tech.server.bundling.exceptions.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.module.ServerModuleFileManager;
@@ -54,6 +51,7 @@ import com.l7tech.server.search.processors.DependencyProcessorUtils;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.AliasManager;
 import com.l7tech.server.service.ServiceAliasManager;
@@ -128,6 +126,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private PolicyCache policyCache;
     @Inject
     private ServerModuleFileManager serverModuleFileManager;
+    @Inject
+    private ProtectedEntityTracker protectedEntityTracker;
 
 
     /**
@@ -231,9 +231,22 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         break;
                                     }
                                     case NewOrUpdate: {
-                                        //update the existing entity
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
+                                        // check if entity is read-only
+                                        if (isReadOnly(existingEntity)) {
+                                            // don't update a read-only entity
+                                            if (logger.isLoggable(Level.FINE)) {
+                                                logger.log(
+                                                        Level.FINE,
+                                                        "Denying NewOrUpdate to Read-Only Entity: " + existingEntity.getId() + " of Type: " + EntityType.findTypeByEntity(existingEntity.getClass()).name()
+                                                );
+                                            }
+                                            mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to update"));
+                                            transactionStatus.setRollbackOnly();
+                                        } else {
+                                            //update the existing entity
+                                            final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
+                                            mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
+                                        }
                                         break;
                                     }
                                     case AlwaysCreateNew: {
@@ -247,8 +260,21 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     case Delete:
-                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
+                                        // check if entity is read-only
+                                        if (isReadOnly(existingEntity)) {
+                                            // don't update a read-only entity
+                                            if (logger.isLoggable(Level.FINE)) {
+                                                logger.log(
+                                                        Level.FINE,
+                                                        "Denying Delete to Read-Only Entity: " + existingEntity.getId() + " of Type: " + EntityType.findTypeByEntity(existingEntity.getClass()).name()
+                                                );
+                                            }
+                                            mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to delete"));
+                                            transactionStatus.setRollbackOnly();
+                                        } else {
+                                            final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
+                                            mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
+                                        }
                                         break;
                                     default:
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, "Unknown mapping action " + mapping.getMappingAction()));
@@ -359,6 +385,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return mappingsRtn;
             }
         });
+    }
+
+    /**
+     * Determine if the specified {@code entity} is read-only.
+     *
+     * @param entity    entity to check.  Required and cannot be {@code null}.
+     * @return {@code true} if {@link #protectedEntityTracker} is not {@code null}, entity protection is enabled and
+     * the specified {@code entity} is marked as read-only.
+     */
+    private boolean isReadOnly(@NotNull final Entity entity) {
+        return protectedEntityTracker != null &&
+                protectedEntityTracker.isEntityProtectionEnabled() &&
+                protectedEntityTracker.isReadOnlyEntity(entity);
     }
 
     /**

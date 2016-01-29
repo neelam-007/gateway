@@ -170,6 +170,7 @@
                 <table class="properties-table" cellpadding="0" cellspacing="0">
                     <tr><td>TargetExists</td><td>A new entity was supposed to be created but an entity already exists on the target Gateway. See the <a href="#failonexisting">FailOnExisting</a> property.</td></tr>
                     <tr><td>TargetNotFound</td><td>An existing entity should exist on the target Gateway but it cannot be found. See the <a href="#failonnew">FailOnNew</a> property.</td></tr>
+                    <tr><td>TargetReadOnly</td><td>Target entity is read-only: Not possible to perform action.</td></tr>
                     <tr><td>UniqueKeyConflict</td><td>There is an entity on the target Gateway with a conflicting unique key (usually name) as the one that is being created or updated.</td></tr>
                     <tr><td>CannotReplaceDependency</td><td>An error occurred when replacing an entity's dependencies.</td></tr>
                     <tr><td>InvalidResource</td><td>A problem occurred when updating an entity.</td></tr>
@@ -288,6 +289,23 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <p>A read-only entity with the same ID exist on the target Gateway:</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;POLICY&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot;
+    errorType=&quot;TargetReadOnly&quot; &gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key="ErrorMessage"&gt;
+                &lt;l7:StringValue&gt;Target entity is read-only: Not possible to update...&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+&lt;/l7:Mapping&gt;
+        </pre>
+    </div>
     <h5>AlwaysCreateNew</h5>
     <p>This will create a new entity:</p>
     <div class="code">
@@ -377,6 +395,23 @@
     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;Delete&quot;
     actionTaken=&quot;Ignored&quot; /&gt;
+        </pre>
+    </div>
+    <p>A read-only entity with the same ID exist on the target Gateway:</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;POLICY&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot;
+    errorType=&quot;TargetReadOnly&quot; &gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key="ErrorMessage"&gt;
+                &lt;l7:StringValue&gt;Target entity is read-only: Not possible to delete...&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+&lt;/l7:Mapping&gt;
         </pre>
     </div>
     <h5>Ignore</h5>
