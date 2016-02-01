@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationApi;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationEntity;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
@@ -12,10 +15,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +40,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     private int queryTimeout = 300;
     private int maxRecords = 1000000;
 
-    public final String ENTITY_TYPE_APPLICATION = "APPLICATION";
+    private static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
 
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -66,17 +71,17 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             Object sinceStr = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_SINCE);
             Object nodeId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_NODE_ID);
 
-            //validate inputs
+            // validate inputs
             if (entityType == null) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply an entity type");
             }
-            if(!entityType.equals(ENTITY_TYPE_APPLICATION)){
-                throw new PolicyAssertionException(assertion, "Not supported entity type: "+ entityType);
+            if (!entityType.equals(ENTITY_TYPE_APPLICATION)) {
+                throw new PolicyAssertionException(assertion, "Not supported entity type: " + entityType);
             }
 
-            //validate inputs
+            // validate inputs
             if (nodeId == null) {
-              throw new PolicyAssertionException(assertion, "Assertion must supply a node id");
+                throw new PolicyAssertionException(assertion, "Assertion must supply a node id");
             }
 
             Long since = null;
@@ -102,7 +107,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString());
 
             // save result
-            context.setVariable(assertion.getVariablePrefix()+'.'+GetIncrementAssertion.SUFFIX_JSON,jsonStr);
+            context.setVariable(assertion.getVariablePrefix() + '.' + GetIncrementAssertion.SUFFIX_JSON, jsonStr);
 
 
         } catch (Exception ex) {
@@ -118,7 +123,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
-        appJsonObj.setEntityType("application");
+        appJsonObj.setEntityType(ENTITY_TYPE_APPLICATION);
 
         Map<String, List> results;
 
@@ -134,21 +139,21 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // get new or updated or last sync error apps
-          results  = (Map<String, List>) queryJdbc(connName,
-                  "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
-                          "FROM APPLICATION a  \n" +
-                          "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                          "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
-                          "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
-                          "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since , incrementStart, since, incrementStart,nodeId));
-
-        } else {
-            // bulk, get everything
-            results  = (Map<String, List>) queryJdbc(connName,
+            results = (Map<String, List>) queryJdbc(connName,
                     "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
                             "FROM APPLICATION a  \n" +
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n"+
+                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
+                            "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
+                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since, incrementStart, since, incrementStart, nodeId));
+
+        } else {
+            // bulk, get everything
+            results = (Map<String, List>) queryJdbc(connName,
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
+                            "FROM APPLICATION a  \n" +
+                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
                             "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED')", Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
@@ -163,7 +168,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         try {
             jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(appJsonObj);
         } catch (IOException ioe) {
-            throw new IOException( "Unable to write json string: " + ExceptionUtils.getMessage(ioe), ioe);
+            throw new IOException("Unable to write json string: " + ExceptionUtils.getMessage(ioe), ioe);
         }
 
         return jsonInString;
@@ -171,28 +176,28 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     private List buildApplicationEntityList(Map<String, List> results) {
 
-        if(results.isEmpty()){
+        if (results.isEmpty()) {
             return CollectionUtils.list();
         }
 
-        Map<String,ApplicationEntity> appMap = new HashMap<>();
+        Map<String, ApplicationEntity> appMap = new HashMap<>();
         int elements = results.get("uuid").size();
         for (int i = 0; i < elements; i++) {
-            String appId = (String)results.get("uuid").get(i);
+            String appId = (String) results.get("uuid").get(i);
             ApplicationEntity appEntity = appMap.get(appId);
-            if(appEntity == null){
-              appEntity = new ApplicationEntity();
-              appEntity.setId(appId);
-              appEntity.setKey((String) results.get("api_key").get(i));
-              appEntity.setSecret((String) results.get("key_secret").get(i));
-              appEntity.setStatus((String) results.get("status").get(i));
-              appEntity.setOrganizationId((String) results.get("organization_uuid").get(i));
-              appEntity.setOrganizationName((String) results.get("organization_name").get(i));
-              appEntity.setLabel((String) results.get("name").get(i));
-              appEntity.setOauthCallbackUrl((String) results.get("oauth_callback_url").get(i));
-              appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
-              appEntity.setOauthType((String) results.get("oauth_type").get(i));
-              appMap.put(appId,appEntity);
+            if (appEntity == null) {
+                appEntity = new ApplicationEntity();
+                appEntity.setId(appId);
+                appEntity.setKey((String) results.get("api_key").get(i));
+                appEntity.setSecret((String) results.get("key_secret").get(i));
+                appEntity.setStatus((String) results.get("status").get(i));
+                appEntity.setOrganizationId((String) results.get("organization_uuid").get(i));
+                appEntity.setOrganizationName((String) results.get("organization_name").get(i));
+                appEntity.setLabel((String) results.get("name").get(i));
+                appEntity.setOauthCallbackUrl((String) results.get("oauth_callback_url").get(i));
+                appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
+                appEntity.setOauthType((String) results.get("oauth_type").get(i));
+                appMap.put(appId, appEntity);
             }
 
             ApplicationApi api = new ApplicationApi();
@@ -202,162 +207,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return CollectionUtils.toListFromCollection(appMap.values());
     }
 
-    Object queryJdbc(String connName, String queryString,@NotNull List<Object> preparedStmtParams){
-        final Object result = jdbcQueryingManager.performJdbcQuery(connName, queryString, null, maxRecords, queryTimeout, preparedStmtParams);
-        return result;
+    Object queryJdbc(String connName, String queryString, @NotNull List<Object> preparedStmtParams) {
+        return jdbcQueryingManager.performJdbcQuery(connName, queryString, null, maxRecords, queryTimeout, preparedStmtParams);
     }
-
-    private class ApplicationApi {
-        private String id;
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-    }
-
-    class ApplicationEntity {
-        private String id;
-        private String key;
-        private String secret;
-        private String status;
-        private String organizationId;
-        private String organizationName;
-        private String label;
-        private String oauthCallbackUrl;
-        private String oauthScope;
-        private String oauthType;
-        private List<ApplicationApi> apis = new ArrayList<>();
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getKey() {
-            return key;
-        }
-
-        public void setKey(String key) {
-            this.key = key;
-        }
-
-        public String getSecret() {
-            return secret;
-        }
-
-        public void setSecret(String secret) {
-            this.secret = secret;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public String getOrganizationId() {
-            return organizationId;
-        }
-
-        public void setOrganizationId(String organizationId) {
-            this.organizationId = organizationId;
-        }
-
-        public String getOrganizationName() {
-            return organizationName;
-        }
-
-        public void setOrganizationName(String organizationName) {
-            this.organizationName = organizationName;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public void setLabel(String label) {
-            this.label = label;
-        }
-
-        public String getOauthCallbackUrl() {
-            return oauthCallbackUrl;
-        }
-
-        public void setOauthCallbackUrl(String oauthCallbackUrl) {
-            this.oauthCallbackUrl = oauthCallbackUrl;
-        }
-
-        public String getOauthScope() {
-            return oauthScope;
-        }
-
-        public void setOauthScope(String oauthScope) {
-            this.oauthScope = oauthScope;
-        }
-
-        public String getOauthType() {
-            return oauthType;
-        }
-
-        public void setOauthType(String oauthType) {
-            this.oauthType = oauthType;
-        }
-
-        public List<ApplicationApi> getApis() {
-            return apis;
-        }
-
-        public void setApis(List<ApplicationApi> apis) {
-            this.apis = apis;
-        }
-    }
-
-    private class ApplicationJson {
-        private long incrementStart;
-        private String entityType;
-        private List<String> deletedIds = new ArrayList<>();
-        private List<ApplicationEntity> newOrUpdatedEntities = new ArrayList<>();
-
-        public long getIncrementStart() {
-            return incrementStart;
-        }
-
-        public void setIncrementStart(long incrementStart) {
-            this.incrementStart = incrementStart;
-        }
-
-        public String getEntityType() {
-            return entityType;
-        }
-
-        public void setEntityType(String entityType) {
-            this.entityType = entityType;
-        }
-
-        public List<String> getDeletedIds() {
-            return deletedIds;
-        }
-
-        public void setDeletedIds(List<String> deletedIds) {
-            this.deletedIds = deletedIds;
-        }
-
-        public List<ApplicationEntity> getNewOrUpdatedEntities() {
-            return newOrUpdatedEntities;
-        }
-
-        public void setNewOrUpdatedEntities(List<ApplicationEntity> newOrUpdatedEntities) {
-            this.newOrUpdatedEntities = newOrUpdatedEntities;
-        }
-    }
-
 }

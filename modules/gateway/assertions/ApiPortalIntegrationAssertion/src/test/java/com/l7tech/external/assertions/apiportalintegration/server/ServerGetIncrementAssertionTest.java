@@ -35,7 +35,7 @@ public class ServerGetIncrementAssertionTest {
     public void testGetJsonMessage() throws Exception {
         final String ref = "{\n" +
                 "  \"incrementStart\" : ,\n" +
-                "  \"entityType\" : \"application\",\n" +
+                "  \"entityType\" : \"APPLICATION\",\n" +
                 "  \"newOrUpdatedEntities\" : [ {\n" +
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
@@ -84,7 +84,7 @@ public class ServerGetIncrementAssertionTest {
     public void testGetJsonMessageWithMultipleApis() throws Exception {
         final String ref = "{\n" +
                 "  \"incrementStart\" : ,\n" +
-                "  \"entityType\" : \"application\",\n" +
+                "  \"entityType\" : \"APPLICATION\",\n" +
                 "  \"newOrUpdatedEntities\" : [ {\n" +
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
