@@ -425,7 +425,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                                     SignerUtils.verifySignatureAndIssuer(
                                             new ByteArrayInputStream(bytes),
                                             entity.getData().getSignatureProperties(),
-                                            TrustedSignerCertsHelper.getTrustedCertificates(getTrustedSignerCertsAdmin())
+                                            TrustedSignerCertsHelper.getTrustedCertificatesForServerModuleFiles(getTrustedSignerCertsAdmin())
                                     );
                                 }
                                 final Goid id = getClusterStatusAdmin().saveServerModuleFile(entity);

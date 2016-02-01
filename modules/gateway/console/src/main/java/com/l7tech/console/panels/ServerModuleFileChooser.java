@@ -239,7 +239,7 @@ public class ServerModuleFileChooser {
     private static Collection<X509Certificate> getTrustedCertificates() {
         final Option<TrustedSignerCertsAdmin> option = Registry.getDefault().getAdminInterface(TrustedSignerCertsAdmin.class);
         if (option.isSome()) {
-            return TrustedSignerCertsHelper.getTrustedCertificates(option.some());
+            return TrustedSignerCertsHelper.getTrustedCertificatesForServerModuleFiles(option.some());
         } else {
             throw new RuntimeException("TrustedSignerCertsAdmin interface not found.");
         }

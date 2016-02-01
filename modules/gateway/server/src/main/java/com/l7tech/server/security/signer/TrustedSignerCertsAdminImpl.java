@@ -24,7 +24,17 @@ public class TrustedSignerCertsAdminImpl implements TrustedSignerCertsAdmin {
 
     @NotNull
     @Override
-    public Collection<X509Certificate> lookUpTrustedSigningCerts() throws FindException {
+    public Collection<X509Certificate> lookUpTrustedSigningCertsForServerModuleFiles() throws FindException {
+        return internalLookUpTrustedSigningCerts();
+    }
+
+    @NotNull
+    @Override
+    public Collection<X509Certificate> lookUpTrustedSigningCertsForSolutionKits() throws FindException {
+        return internalLookUpTrustedSigningCerts();
+    }
+
+    private Collection<X509Certificate> internalLookUpTrustedSigningCerts() throws FindException {
         return trustedSignerCertsManager.lookUpTrustedSigningCerts();
     }
 

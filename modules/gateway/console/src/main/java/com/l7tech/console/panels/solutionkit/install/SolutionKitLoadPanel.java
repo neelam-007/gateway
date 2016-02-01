@@ -98,7 +98,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             return false;
         }
 
-        final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsAdmin));
+        final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificatesForSolutionKits(trustedSignerCertsAdmin));
         try (final SkarPayload payload = signedZip.load(file, new SkarPayloadFactory(solutionKitsConfig))) {
             payload.load();
         } catch (IOException | SignatureException | SolutionKitException e) {
