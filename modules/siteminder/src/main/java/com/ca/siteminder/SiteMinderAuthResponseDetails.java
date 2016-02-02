@@ -12,9 +12,9 @@ import static com.ca.siteminder.SiteMinderContext.SessionDef;
 public class SiteMinderAuthResponseDetails {
 
     private final SessionDef sessionDef;
-    private final List<Pair<String, Object>> attrList;
+    private final List<SiteMinderContext.Attribute> attrList;
 
-    public SiteMinderAuthResponseDetails(SessionDef sessionDef, List<Pair<String, Object>> attrList) {
+    public SiteMinderAuthResponseDetails(SessionDef sessionDef, List<SiteMinderContext.Attribute> attrList) {
         this.sessionDef = sessionDef;
         this.attrList = attrList;
     }
@@ -23,7 +23,7 @@ public class SiteMinderAuthResponseDetails {
         return sessionDef;
     }
 
-    public List<Pair<String, Object>> getAttrList() {
+    public List<SiteMinderContext.Attribute> getAttrList() {
         return attrList;
     }
 }

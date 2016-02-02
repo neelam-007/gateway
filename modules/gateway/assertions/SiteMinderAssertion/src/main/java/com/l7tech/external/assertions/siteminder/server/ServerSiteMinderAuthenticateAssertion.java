@@ -104,15 +104,15 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
         User user = null;
         //first look for the username attribute if present
-        Pair<String, Object> attr = findAttributeByName(smContext, SiteMinderAgentConstants.ATTR_USERNAME);
-        if(attr != null && StringUtils.isNotBlank(attr.right.toString())) {
-            user = new UserBean(attr.right.toString());
+        SiteMinderContext.Attribute attr = findAttributeByName(smContext, SiteMinderAgentConstants.ATTR_USERNAME);
+        if(attr != null && StringUtils.isNotBlank(attr.getValue().toString())) {
+            user = new UserBean(attr.getValue().toString());
         }
         else {
             //check if userdn is found in LDAP form
             attr = findAttributeByName(smContext, SiteMinderAgentConstants.ATTR_USERDN);
-            if(attr != null && StringUtils.isNotBlank(attr.right.toString())) {
-                user = new LdapUser(PersistentEntity.DEFAULT_GOID, attr.right.toString(), SiteMinderAssertionUtil.getCn(attr.right.toString()));
+            if(attr != null && StringUtils.isNotBlank(attr.getValue().toString())) {
+                user = new LdapUser(PersistentEntity.DEFAULT_GOID, attr.getValue().toString(), SiteMinderAssertionUtil.getCn(attr.getValue().toString()));
             }
         }
         //we don't have a user so create anonymous one
@@ -120,9 +120,9 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         authContext.addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), smContext.getSsoToken().toCharArray())));
     }
 
-    private Pair<String, Object> findAttributeByName(SiteMinderContext siteMinderContext, String attrName) {
-        for (Pair<String, Object> attr : siteMinderContext.getAttrList()){
-            if(attr.left.equalsIgnoreCase(attrName)) {
+    private SiteMinderContext.Attribute findAttributeByName(SiteMinderContext siteMinderContext, String attrName) {
+        for (SiteMinderContext.Attribute attr : siteMinderContext.getAttrList()){
+            if(attr.getName().equalsIgnoreCase(attrName)) {
                 return attr;
             }
         }

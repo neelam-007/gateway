@@ -1,5 +1,6 @@
 package com.ca.siteminder.util;
 
+import com.ca.siteminder.SiteMinderContext;
 import com.ca.siteminder.SiteMinderCredentials;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
@@ -384,8 +385,8 @@ public abstract class SiteMinderUtil {
         return  null;
     }
 
-    public static List<Pair<String, Object>> removeDuplicateAttributes ( List<Pair<String, Object>> attrList ) {
-        Set<Pair<String, Object>> attributes = new HashSet<>();
+    public static List<SiteMinderContext.Attribute> removeDuplicateAttributes ( List<SiteMinderContext.Attribute> attrList ) {
+        Set<SiteMinderContext.Attribute> attributes = new HashSet<>();
         attributes.addAll(attrList);
         attrList.clear();
         attrList.addAll(attributes);
@@ -413,11 +414,11 @@ public abstract class SiteMinderUtil {
         return bytes;
     }
 
-    public static byte[] getAttrValueByName( List<Pair<String, Object>> attrList, String name ) {
-        Iterator<Pair<String, Object>> values = attrList.iterator();
+    public static byte[] getAttrValueByName( List<SiteMinderContext.Attribute> attrList, String name ) {
+        Iterator<SiteMinderContext.Attribute> values = attrList.iterator();
         while( values.hasNext() ){
-            Pair<String, Object> attr = values.next();
-            if( name.equals( attr.getKey() )) {
+            SiteMinderContext.Attribute attr = values.next();
+            if( name.equals( attr.getName() )) {
                 return ( (String) attr.getValue() ).getBytes();
             }
         }

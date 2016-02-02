@@ -157,7 +157,7 @@ public class SiteMinderLowLevelAgent {
             throws SiteMinderApiClassException {
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
-        List<Pair<String, Object>> attributes = context.getAttrList();
+        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
         RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
 
@@ -188,7 +188,7 @@ public class SiteMinderLowLevelAgent {
 
         if (retCode != AgentAPI.YES) {
             logger.log(Level.FINE, "CA Single Sign-On authorization attempt: User: '" + userCreds.name + "' Resource: '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "' Access Mode: '" + SiteMinderUtil.safeNull(resCtxDef.action) + "'");
-            attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
 
         }
         else {
@@ -241,7 +241,7 @@ public class SiteMinderLowLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result;
 
-        List<Pair<String, Object>> attributes = context.getAttrList();
+        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext( context );
         RealmDef realmDef = getSiteMinderRealmDefFromContext( context );
         SessionDef sessionDef = getSiteMinderSessionDefFromContext( context );// get SessionDef object from the context
@@ -271,7 +271,7 @@ public class SiteMinderLowLevelAgent {
 
         if (result == AgentAPI.YES) {
             if(!isAttributePresent(attributes, SiteMinderAgentConstants.ATTR_DEVICENAME)){
-                attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_DEVICENAME, agentConfig.getHostname()));
+                attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_DEVICENAME, agentConfig.getHostname()));
             }
             sessionDef.sessionLastTime = sessionLastTime; //correctly set the sessionLastTime on a successful authZ
             //addSessionAttributes(attributes, sessionDef);
@@ -291,7 +291,7 @@ public class SiteMinderLowLevelAgent {
             logger.log(Level.FINE, "CA Single Sign-On authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
         }
         // add sessionDef reason code
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString( sessionDef )));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString( sessionDef )));
 
         return result;
     }
@@ -300,7 +300,7 @@ public class SiteMinderLowLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result = AgentAPI.FAILURE;
 
-        List<Pair<String, Object>> attributes = context.getAttrList();
+        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         if(ssoToken != null) {
             AttributeList attrList = new AttributeList();
 
@@ -365,9 +365,9 @@ public class SiteMinderLowLevelAgent {
         attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, sd.maxTimeout));
     }
 
-    private boolean isAttributePresent(List<Pair<String, Object>> attributes, String id) {
-        for(Pair<String, Object> attr: attributes) {
-            if(attr.left.equals(id)){
+    private boolean isAttributePresent(List<SiteMinderContext.Attribute> attributes, String id) {
+        for(SiteMinderContext.Attribute attr: attributes) {
+            if(attr.getName().equals(id)){
                 return true;
             }
         }
@@ -486,7 +486,7 @@ public class SiteMinderLowLevelAgent {
             throws SiteMinderApiClassException {
         //check if the context is null and throw exception
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
-        List<Pair<String, Object>> attributes = context.getAttrList();
+        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
         RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
 
@@ -539,7 +539,7 @@ public class SiteMinderLowLevelAgent {
 
         if (result != AgentAPI.YES) {
             logger.log(Level.FINE, "CA Single Sign-On authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
-            attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
             if (result == AgentAPI.NO) {//should we also check the reason code as well?
                 logger.log(Level.WARNING,"Session Cookie expired!");
                 //TODO: logout session?
@@ -561,38 +561,38 @@ public class SiteMinderLowLevelAgent {
     /**
      * Stores only responseAttributes sessionDef attributes are used to update the sessionDef object only
      */
-    private void storeDecodedAttributes(List<Pair<String, Object>> attributes, AttributeList attrList) {
+    private void storeDecodedAttributes(List<SiteMinderContext.Attribute> attributes, AttributeList attrList) {
         for(int i=0;i <attrList.getAttributeCount(); i++) {
             Attribute attr = attrList.getAttributeAt(i);
             //Cannot assume that all attribute values are character data
             logger.log(Level.FINE, "Attribute OID: " + attr.oid + " ID: " + attr.id + " Value: " + new String( attr.value ));
             switch(attr.id) {
                 case AgentAPI.ATTR_USERDN:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERDN, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERDN, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_USERNAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_USERMSG:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERMSG, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERMSG, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_CLIENTIP:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_CLIENTIP, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CLIENTIP, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_DEVICENAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_DEVICENAME, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_DEVICENAME, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_IDENTITYSPEC:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDENTITYSPEC, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDENTITYSPEC, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_USERUNIVERSALID:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERUNIVERSALID, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERUNIVERSALID, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case SiteMinderAgentConstants.ATTR_SESSIONAGENTDRIFT:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONDRIFT, SiteMinderUtil.safeByteArrToInt( attr.value )));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONDRIFT, SiteMinderUtil.safeByteArrToInt( attr.value ), attr.ttl));
                     break;
                 case AgentAPI.ATTR_SERVICE_DATA:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SERVICE_DATA, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SERVICE_DATA, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_SESSIONID:
                 case AgentAPI.ATTR_SESSIONSPEC:
@@ -602,22 +602,22 @@ public class SiteMinderLowLevelAgent {
                 case AgentAPI.ATTR_MAXSESSIONTIMEOUT:
                     break;
                 case AgentAPI.ATTR_STATUS_MESSAGE:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STATUS_MESSAGE, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STATUS_MESSAGE, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_NAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAME, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAME, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_NAMESPACE:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAMESPACE, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAMESPACE, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_OID:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_OID, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_OID, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_SERVER:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER, SiteMinderUtil.chopNull(new String( attr.value))));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER, SiteMinderUtil.chopNull(new String( attr.value)), attr.ttl));
                     break;
                 default:
-                    attributes.add(new Pair<String, Object>("ATTR_" + Integer.toString(attr.id), attr.value ));
+                    attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.ttl));
             }
         }
     }
@@ -683,7 +683,7 @@ public class SiteMinderLowLevelAgent {
     }
 
 
-    protected void storeAttributes(List<Pair<String, Object>> attributes, AttributeList attrs) throws SiteMinderApiClassException {
+    protected void storeAttributes(List<SiteMinderContext.Attribute> attributes, AttributeList attrs) throws SiteMinderApiClassException {
         int attrCount = attrs.getAttributeCount();
 
         for (int i = 0; i < attrCount; i++) {
@@ -696,46 +696,46 @@ public class SiteMinderLowLevelAgent {
                     String[] info = new String( attr.value ).split("=", 2);
                     if(info[1].contains("^")) {
                         logger.log(Level.FINE, "Attribute OID: " + attr.oid + " ID: " + attr.id + " Values: " + SiteMinderUtil.hexDump(attr.value, 0, attr.value.length));
-                        attributes.add(new Pair<String, Object>(info[0], info[1].split("\\^")));
+                        attributes.add(new SiteMinderContext.Attribute(info[0], info[1].split("\\^"), attr.ttl));
                     } else {
-                        attributes.add(new Pair<String, Object>(info[0], info[1]));
+                        attributes.add(new SiteMinderContext.Attribute(info[0], info[1], attr.ttl));
                     }
                     break;
                 case AgentAPI.ATTR_USERDN:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERDN,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERDN,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_USERNAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_USERMSG:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERMSG,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERMSG,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_CLIENTIP:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_CLIENTIP,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CLIENTIP,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_DEVICENAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_DEVICENAME,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_DEVICENAME,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_IDENTITYSPEC:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDENTITYSPEC,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDENTITYSPEC,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_USERUNIVERSALID:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERUNIVERSALID,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERUNIVERSALID,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case SiteMinderAgentConstants.ATTR_SESSIONAGENTDRIFT:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONDRIFT,
-                            SiteMinderUtil.safeByteArrToInt(attr.value)));
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONDRIFT,
+                            SiteMinderUtil.safeByteArrToInt(attr.value), attr.ttl));
                     break;
                 case AgentAPI.ATTR_SERVICE_DATA:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SERVICE_DATA,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SERVICE_DATA,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 // Accessed via the SessionDef Object
                 case AgentAPI.ATTR_SESSIONID:
@@ -746,27 +746,27 @@ public class SiteMinderLowLevelAgent {
                 case AgentAPI.ATTR_MAXSESSIONTIMEOUT:
                     break;
                 case AgentAPI.ATTR_STATUS_MESSAGE:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STATUS_MESSAGE,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STATUS_MESSAGE,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_NAME:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAME,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAME,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_NAMESPACE:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAMESPACE,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAMESPACE,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_OID:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_OID,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_OID,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 case AgentAPI.ATTR_AUTH_DIR_SERVER:
-                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER,
-                            SiteMinderUtil.chopNull( new String( attr.value) )) );
+                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER,
+                            SiteMinderUtil.chopNull( new String( attr.value) ), attr.ttl) );
                     break;
                 default:
-                    attributes.add(new Pair<String, Object>("ATTR_" + Integer.toString(attr.id), attr.value));
+                    attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.ttl));
 
             }
 

@@ -64,7 +64,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     private Message requestMsg;
     private PolicyEnforcementContext pec;
     private TestAudit auditor;
-    private List<Pair<String,Object>> attrList;
+    private List<SiteMinderContext.Attribute> attrList;
 
 
     @BeforeClass
@@ -88,7 +88,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
 
         attrList = new ArrayList<>();
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERDN, "CN=user,OU=QA Test Users,DC=domain,DC=local"));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERDN, "CN=user,OU=QA Test Users,DC=domain,DC=local"));
     }
 
     @After
@@ -120,7 +120,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
 
@@ -153,7 +153,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
 
@@ -179,7 +179,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
 
@@ -529,7 +529,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockContext.getSourceIpAddress()).thenReturn(SOURCE_IP);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), eq(SOURCE_IP), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
@@ -559,7 +559,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);    

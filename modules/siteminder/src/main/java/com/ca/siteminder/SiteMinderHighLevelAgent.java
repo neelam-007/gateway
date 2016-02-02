@@ -98,7 +98,7 @@ public class SiteMinderHighLevelAgent {
             cache.store(resourceCacheKey, resourceDetails);
 
             if (!isProtected) {
-                logger.log(Level.INFO,"The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
+                logger.log(Level.INFO, "The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
             }
         }
 
@@ -120,10 +120,10 @@ public class SiteMinderHighLevelAgent {
 
         SiteMinderContext cachedContext;
         //Obtain the AttributeList encase isAuthN was called before
-        List<Pair<String, Object>> attrList = context.getAttrList();
+        List<SiteMinderContext.Attribute> attrList = context.getAttrList();
         // Ensure that the Attribute List is empty, as the
         // context could contain cached attributes from an isAuthN call
-        context.setAttrList(new ArrayList<Pair<String, Object>>());
+        context.setAttrList(new ArrayList<SiteMinderContext.Attribute>());
         SiteMinderContext.SessionDef sessionDef = null != context.getSessionDef() ? context.getSessionDef() : null;
         String sessionId;
         SessionCacheKey cacheKey;
@@ -263,10 +263,10 @@ public class SiteMinderHighLevelAgent {
         final Cache cache = agentCache.getSessionCache();
 
        //Obtain the AttributeList encase isAuthN was called before
-        List<Pair<String, Object>> attrList = context.getAttrList();
+        List<SiteMinderContext.Attribute> attrList = context.getAttrList();
         // Ensure that the Attribute List is empty, as the
         // context could contain cached attributes from an isAuthN call
-        context.setAttrList(new ArrayList<Pair<String, Object>>());
+        context.setAttrList(new ArrayList<SiteMinderContext.Attribute>());
 
         boolean updateSsoToken;
         // check for some kind of credential

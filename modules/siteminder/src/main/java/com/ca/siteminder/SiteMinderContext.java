@@ -33,7 +33,7 @@ public class SiteMinderContext {
     private RealmDef realmDef;
     private SessionDef sessionDef;
     private String transactionId = null;
-    private List<Pair<String, Object>> attrList = new ArrayList<>();
+    private List<Attribute> attrList = new ArrayList<>();
     private List<AuthenticationScheme> authSchemes = new ArrayList<>();
     private String ssoToken;
     private SiteMinderLowLevelAgent agent;
@@ -122,11 +122,11 @@ public class SiteMinderContext {
         this.transactionId = transactionId;
     }
 
-    public List<Pair<String, Object>> getAttrList() {
+    public List<SiteMinderContext.Attribute> getAttrList() {
         return attrList;
     }
 
-    public void setAttrList(List<Pair<String, Object>> attrMap) {
+    public void setAttrList(List<Attribute> attrMap) {
         this.attrList = attrMap;
     }
 
@@ -366,6 +366,63 @@ public class SiteMinderContext {
 
         public void setAction(String action) {
             this.action = action;
+        }
+    }
+
+    public static class Attribute {
+
+        private String name;
+        private Object value;
+        private int ttl;//time to live in seconds
+
+        public Attribute(String name, Object value) {
+            this(name, value, 0);
+        }
+
+        public Attribute(String name, Object value, int ttl) {
+            this.name = name;
+            this.value = value;
+            this.ttl = ttl;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+        public int getTtl() {
+            return ttl;
+        }
+
+        public void setTtl(int ttl) {
+            this.ttl = ttl;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Attribute attribute = (Attribute) o;
+
+            return name.equals(attribute.name);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
         }
     }
 }

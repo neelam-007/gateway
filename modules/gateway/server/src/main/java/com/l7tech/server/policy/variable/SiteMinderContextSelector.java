@@ -38,13 +38,13 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
             if(m.find()){
                 if(StringUtils.isNotEmpty(m.group(1))){
                     if(StringUtils.isNotEmpty(m.group(3))){
-                        Pair<String, Object> attribute = getElement(ctx.getAttrList(), m, handler);
+                        SiteMinderContext.Attribute attribute = getElement(ctx.getAttrList(), m, handler);
                         String remaining = m.group(3).substring(1);
                         if(remaining.equals("name")) {
-                            return new Selection(attribute.left);
+                            return new Selection(attribute.getName());
                         }
                         else if(remaining.equals("value")) {
-                            return new Selection(attribute.right);
+                            return new Selection(attribute.getValue());
                         }
                         else{
                             return null;
@@ -62,9 +62,9 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                 else {
                     if(lname.length() > "attributes".length() + 1){
                         String remaining = lname.substring("attributes".length() + 1);
-                        for(Pair<String, Object> attribute : ctx.getAttrList()) {
-                            if(remaining.equalsIgnoreCase(attribute.left)){
-                                return new Selection(attribute.right);
+                        for(SiteMinderContext.Attribute attribute : ctx.getAttrList()) {
+                            if(remaining.equalsIgnoreCase(attribute.getName())){
+                                return new Selection(attribute.getValue());
                             }
                         }
                     }

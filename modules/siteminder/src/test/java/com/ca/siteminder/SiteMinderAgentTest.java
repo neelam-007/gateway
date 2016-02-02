@@ -119,8 +119,8 @@ public class SiteMinderAgentTest {
 
         SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
         assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context));
-        for(Pair<String, Object> attr : context.getAttrList()) {
-            System.out.println(attr.getKey() + ": " + attr.getValue());
+        for(SiteMinderContext.Attribute attr : context.getAttrList()) {
+            System.out.println(attr.getName() + ": " + attr.getValue());
         }
         String smsession = context.getSsoToken();
         assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context));
