@@ -23,7 +23,8 @@ public interface SiteMinderAgentContextCacheManager {
      * @return existing cache or new cache
      */
     SiteMinderAgentContextCache createCache(@NotNull Goid smConfigGoid, @NotNull String smAgentName,
-                                         int resourceMaxEntries, int sessionMaxEntries);
+                                         int resourceMaxEntries, int authenticationMaxEntries,
+                                         int authorizationMaxEntries);
 
     /**
      * Remove the caches associated with the specified Goid.

@@ -17,8 +17,10 @@ public interface SiteMinderConfig {
     String SYSTEM_PROP_PREFIX = "siteminder.cache.";
     String AGENT_RESOURCE_CACHE_SIZE_PROPNAME = "resourceCache.size";
     String AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME = "resourceCache.maxAge";
-    String AGENT_SESSION_CACHE_SIZE_PROPNAME = "sessionCache.size";
-    String AGENT_SESSION_CACHE_MAX_AGE_PROPNAME = "sessionCache.maxAge";
+    String AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME = "authenticationCache.size";
+    String AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME = "authenticationCache.maxAge";
+    String AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME = "authorizationCache.size";
+    String AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME = "authorizationCache.maxAge";
 
     static final int DEFAULT_CONNECTION_MIN = 1;
     static final int DEFAULT_CONNECTION_MAX = 10;

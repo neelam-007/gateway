@@ -8,13 +8,11 @@ import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
 
 import com.whirlycott.cache.Cache;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import static com.ca.siteminder.SiteMinderAgentContextCache.SessionCacheKey.AuthType;
 import static com.ca.siteminder.SiteMinderConfig.*;
 import static com.ca.siteminder.SiteMinderAgentContextCache.*;
 
@@ -63,7 +61,7 @@ public class SiteMinderHighLevelAgent {
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
-        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, userIp, serverName!=null?serverName:"");
+        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action);
         long maxResourceCacheAge = getAgentPropertyLong(context.getConfig(), SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000);
         
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
@@ -88,7 +86,7 @@ public class SiteMinderHighLevelAgent {
             }
         }
 
-        if(resourceDetails == null){
+        if (resourceDetails == null) {
             // check the requested resource/action is actually protected by SiteMinder
             isProtected = agent.isProtected(userIp, smAgentName, serverName, resource, action, context);
             //Populate the isProtected Cache
@@ -116,7 +114,7 @@ public class SiteMinderHighLevelAgent {
         final String action = context.getResContextDef().getAction();
         final int currentAgentTimeSeconds = SiteMinderUtil.safeLongToInt(System.currentTimeMillis() / 1000);
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
-        final Cache cache = agentCache.getSessionCache();
+        final Cache cache = agentCache.getAuthorizationCache();
 
         SiteMinderContext cachedContext;
         //Obtain the AttributeList encase isAuthN was called before
@@ -126,7 +124,7 @@ public class SiteMinderHighLevelAgent {
         context.setAttrList(new ArrayList<SiteMinderContext.Attribute>());
         SiteMinderContext.SessionDef sessionDef = null != context.getSessionDef() ? context.getSessionDef() : null;
         String sessionId;
-        SessionCacheKey cacheKey;
+        AuthorizationCacheKey cacheKey;
 
         boolean updateSsoToken;
         int result;
@@ -147,8 +145,7 @@ public class SiteMinderHighLevelAgent {
         }
 
         sessionId = sessionDef.getId();
-        cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(),
-                reqResource, action, AuthType.AUTHORIZATION);
+        cacheKey = new AuthorizationCacheKey(sessionId, reqResource, action);
 
         //Perform Session Validation
         if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
@@ -181,8 +178,7 @@ public class SiteMinderHighLevelAgent {
             cachedContext = context;
             sessionId = cachedContext.getSessionDef().getId();
 
-            cacheKey = new SessionCacheKey(sessionId, context.getRealmDef().getOid(),
-                    reqResource, action, AuthType.AUTHORIZATION);  // recreate key because session ID should be different
+            cacheKey = new AuthorizationCacheKey(sessionId, reqResource, action);  // recreate key because session ID should be different
 
             SiteMinderAuthResponseDetails authResponseDetails =
                     new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
@@ -260,7 +256,7 @@ public class SiteMinderHighLevelAgent {
         if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), context.getResContextDef().getAgent());
-        final Cache cache = agentCache.getSessionCache();
+        final Cache cache = agentCache.getAuthenticationCache();
 
        //Obtain the AttributeList encase isAuthN was called before
         List<SiteMinderContext.Attribute> attrList = context.getAttrList();
@@ -289,10 +285,8 @@ public class SiteMinderHighLevelAgent {
                     return result;
             }
 
-            final SessionCacheKey cacheKey =
-                    new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
-                            context.getResContextDef().getResource(), context.getResContextDef().getAction(),
-                            AuthType.AUTHENTICATION);
+            final AuthenticationCacheKey cacheKey =
+                    new AuthenticationCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid());
 
             if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
                 cache.remove( cacheKey );
@@ -406,10 +400,8 @@ public class SiteMinderHighLevelAgent {
             } else {
                 logger.log(Level.FINE, "Authenticated user via user credentials: " + SiteMinderUtil.getCredentialsAsString(credentials));
 
-                final SessionCacheKey cacheKey =
-                        new SessionCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid(),
-                                context.getResContextDef().getResource(), context.getResContextDef().getAction(),
-                                AuthType.AUTHENTICATION);
+                final AuthenticationCacheKey cacheKey =
+                        new AuthenticationCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid());
 
                 //store the smContext to the isAuth Cache
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
@@ -468,10 +460,12 @@ public class SiteMinderHighLevelAgent {
         if (cache == null) {
             cache = cacheManager.createCache(smConfig.getGoid(), agentName,
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_SESSION_CACHE_SIZE_PROPNAME, 10)
+                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10)
             );
         }
-        return  cache;
+
+        return cache;
     }
 
 

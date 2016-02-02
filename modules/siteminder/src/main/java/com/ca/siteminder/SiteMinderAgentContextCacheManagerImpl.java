@@ -31,20 +31,25 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
 
     @Override
     public SiteMinderAgentContextCache createCache(@NotNull Goid smConfigGoid, @NotNull String smAgentName,
-                                                int resourceMaxEntries, int sessionMaxEntries) {
+                                                int resourceMaxEntries, int authenticationMaxEntries,
+                                                int authorizationMaxEntries) {
         Key key = new Key(smConfigGoid, smAgentName);
         Cache resourceCache = createWhirlycache(key.toString() + ".resource",
                 resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
-        Cache sessionCache = createWhirlycache(key.toString() + ".session",
-                sessionMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+        Cache authenticationCache = createWhirlycache(key.toString() + ".authentication",
+                authenticationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+        Cache authorizationCache = createWhirlycache(key.toString() + ".authorization",
+                authorizationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
 
-        SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, sessionCache);
+
+        SiteMinderAgentContextCache newCache =
+                new SiteMinderAgentContextCache(resourceCache, authenticationCache, authorizationCache);
 
         agentCacheMap.put(key, newCache);
 
-        LOGGER.log(Level.FINE,
-                "Initialized new cache: {0}, resourceCache: size {1} , sessionCache: size {2}",
-                new Object[] {key, resourceMaxEntries, sessionMaxEntries});
+        LOGGER.log(Level.FINE, "Initialized new cache: {0}, resourceCache: size {1} , " +
+                        "authenticationCache: size {2}, authorizationMaxEntries: size {3}",
+                new Object[] {key, resourceMaxEntries, authenticationMaxEntries, authorizationMaxEntries});
         return newCache;
     }
 

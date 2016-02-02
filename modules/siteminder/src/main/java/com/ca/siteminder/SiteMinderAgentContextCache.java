@@ -9,11 +9,14 @@ import org.jetbrains.annotations.NotNull;
 public class SiteMinderAgentContextCache {
 
     private final Cache resourceCache;
-    private final Cache sessionCache;
+    private final Cache authenticationCache;
+    private final Cache authorizationCache;
 
-    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, @NotNull Cache sessionCache) {
+    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, @NotNull Cache authenticationCache,
+                                       @NotNull Cache authorizationCache) {
         this.resourceCache = resourceCache;
-        this.sessionCache = sessionCache;
+        this.authenticationCache = authenticationCache;
+        this.authorizationCache = authorizationCache;
     }
 
     /**
@@ -25,25 +28,28 @@ public class SiteMinderAgentContextCache {
     }
 
     /**
-     * Get the session cache
-     * @return the session cache
+     * Get the authentication cache
+     * @return the authentication cache
      */
-    public Cache getSessionCache() {
-        return sessionCache;
+    public Cache getAuthenticationCache() {
+        return authenticationCache;
+    }
+
+    /**
+     * Get the authorization cache
+     * @return the authorization cache
+     */
+    public Cache getAuthorizationCache() {
+        return authorizationCache;
     }
 
     public static class ResourceCacheKey {
         private final String resource;
         private final String action;
-        private final String userIp;
-        private final String serverName;
 
-        public ResourceCacheKey(@NotNull String resource, @NotNull String action,
-                                @NotNull String userIp, @NotNull String serverName) {
+        public ResourceCacheKey(@NotNull String resource, @NotNull String action) {
             this.resource = resource;
             this.action = action;
-            this.userIp = userIp;
-            this.serverName = serverName;
         }
 
         public String getResource() {
@@ -52,14 +58,6 @@ public class SiteMinderAgentContextCache {
 
         public String getAction() {
             return action;
-        }
-
-        public String getUserIp() {
-            return userIp;
-        }
-
-        public String getServerName() {
-            return serverName;
         }
 
         @Override
@@ -71,8 +69,6 @@ public class SiteMinderAgentContextCache {
 
             if (!action.equals(that.action)) return false;
             if (!resource.equals(that.resource)) return false;
-            if (!serverName.equals(that.serverName)) return false;
-            if (!userIp.equals(that.userIp)) return false;
 
             return true;
         }
@@ -81,8 +77,6 @@ public class SiteMinderAgentContextCache {
         public int hashCode() {
             int result = resource.hashCode();
             result = 31 * result + action.hashCode();
-            result = 31 * result + userIp.hashCode();
-            result = 31 * result + serverName.hashCode();
             return result;
         }
 
@@ -91,29 +85,18 @@ public class SiteMinderAgentContextCache {
             return "ResourceCacheKey{" +
                     "resource='" + resource + '\'' +
                     ", action='" + action + '\'' +
-                    ", userIp='" + userIp + '\'' +
-                    ", serverName='" + serverName + '\'' +
                     '}';
         }
     }
 
-    public static class SessionCacheKey {
-
-        public enum AuthType { AUTHENTICATION, AUTHORIZATION }
+    public static class AuthenticationCacheKey {
 
         private final String sessionId;
         private final String realmOid;
-        private final String resource;
-        private final String action;
-        private final AuthType authType;
 
-        public SessionCacheKey(@NotNull String sessionId, @NotNull String realmOid,
-                               @NotNull String resource, @NotNull String action, @NotNull AuthType authType) {
+        public AuthenticationCacheKey(@NotNull String sessionId, @NotNull String realmOid) {
             this.sessionId = sessionId;
             this.realmOid = realmOid;
-            this.resource = resource;
-            this.action = action;
-            this.authType = authType;
         }
 
         public String getSessionId() {
@@ -124,30 +107,15 @@ public class SiteMinderAgentContextCache {
             return realmOid;
         }
 
-        public String getResource() {
-            return resource;
-        }
-
-        public String getAction() {
-            return action;
-        }
-
-        public AuthType getAuthType() {
-            return authType;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            SessionCacheKey that = (SessionCacheKey) o;
+            AuthenticationCacheKey that = (AuthenticationCacheKey) o;
 
-            if (!action.equals(that.action)) return false;
-            if (!realmOid.equals(that.realmOid)) return false;
-            if (!resource.equals(that.resource)) return false;
             if (!sessionId.equals(that.sessionId)) return false;
-            if (!authType.equals(that.authType)) return false;
+            if (!realmOid.equals(that.realmOid)) return false;
 
             return true;
         }
@@ -156,20 +124,70 @@ public class SiteMinderAgentContextCache {
         public int hashCode() {
             int result = sessionId.hashCode();
             result = 31 * result + (realmOid.hashCode());
-            result = 31 * result + (resource.hashCode());
-            result = 31 * result + (action.hashCode());
-            result = 31 * result + (authType.hashCode());
             return result;
         }
 
         @Override
         public String toString() {
-            return "SessionCacheKey{" +
+            return "AuthenticationCacheKey{" +
                     "sessionId='" + sessionId + '\'' +
                     ", realmOid='" + realmOid + '\'' +
+                    '}';
+        }
+    }
+
+    public static class AuthorizationCacheKey {
+
+        private final String sessionId;
+        private final String resource;
+        private final String action;
+
+        public AuthorizationCacheKey(@NotNull String sessionId, @NotNull String resource, @NotNull String action) {
+            this.sessionId = sessionId;
+            this.resource = resource;
+            this.action = action;
+        }
+
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        public String getResource() {
+            return resource;
+        }
+
+        public String getAction() {
+            return action;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AuthorizationCacheKey that = (AuthorizationCacheKey) o;
+
+            if (!action.equals(that.action)) return false;
+            if (!resource.equals(that.resource)) return false;
+            if (!sessionId.equals(that.sessionId)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = sessionId.hashCode();
+            result = 31 * result + (resource.hashCode());
+            result = 31 * result + (action.hashCode());
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "AuthorizationCacheKey{" +
+                    "sessionId='" + sessionId + '\'' +
                     ", resource='" + resource + '\'' +
                     ", action='" + action + '\'' +
-                    ", authType=" + authType +
                     '}';
         }
     }
