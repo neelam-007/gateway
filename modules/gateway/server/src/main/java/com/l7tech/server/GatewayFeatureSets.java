@@ -1339,6 +1339,7 @@ public class GatewayFeatureSets {
                 "Everything everywhere, including extension packs and experimental features.",
                 fs(profileGateway),
                 fs(profileFederal),
+                fs(profileGatewayEnterprise),
                 fs(profileUs),
                 fs(experimental),
                 fs(flagPermaFips),
