@@ -91,6 +91,9 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                 throw new IOException("Invalid JSON input");
             }
             final ApplicationJson applicationJson = mapper.readValue(jsonParser, ApplicationJson.class);
+            if (applicationJson.getBulkSync() == null || applicationJson.getBulkSync().isEmpty()) {
+                throw new IOException("Invalid JSON input, missing bulk sync field");
+            }
             final String incrementStartStr = clusterPropertyManager.getProperty(APP_INCREMENT_START_PROP);
             if (incrementStartStr == null) {
                 throw new IOException(APP_INCREMENT_START_PROP + " cluster property not found");
@@ -98,7 +101,6 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
             final long incrementStart = Long.parseLong(incrementStartStr);
 
             // apply changes to db
-
             List<Map<String, String>> results = (List<Map<String, String>>) applyChanges(applicationJson);
 
             // save result
@@ -139,26 +141,38 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                             existingEntities.put(existingEntity.getApplicationId(), existingEntity);
                             existingNames.add(existingEntity.getName());
                         }
-                        // insert
-                        final Collection<String> toAdd = CollectionUtils.subtract(newOrUpdatedEntities.keySet(), existingNames);
-                        for (final String add : toAdd) {
-                            portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
-                        }
-                        // update
-                        final Collection<String> toUpdate = CollectionUtils.intersection(newOrUpdatedEntities.keySet(), existingNames);
-                        for (final String update : toUpdate) {
-                            portalGenericEntityManager.update(newOrUpdatedEntities.get(update));
-                        }
-                        // delete
-                        for (final String id : deletedAppIds) {
-                            if (existingEntities.get(id) != null) {
-                                LOGGER.log(Level.FINE, "Deleting portal application: " + existingEntities.get(id).getName());
-                                portalGenericEntityManager.delete(existingEntities.get(id).getName());
+
+                        if (applicationJson.getBulkSync().equalsIgnoreCase("true")) {
+                            // delete all
+                            for (String name : existingNames) {
+                                portalGenericEntityManager.delete(name);
+                            }
+                            // insert all
+                            for (final String add : newOrUpdatedEntities.keySet()) {
+                                portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
+                            }
+                        } else {
+                            // insert
+                            final Collection<String> toAdd = CollectionUtils.subtract(newOrUpdatedEntities.keySet(), existingNames);
+                            for (final String add : toAdd) {
+                                portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
+                            }
+                            // update
+                            final Collection<String> toUpdate = CollectionUtils.intersection(newOrUpdatedEntities.keySet(), existingNames);
+                            for (final String update : toUpdate) {
+                                portalGenericEntityManager.update(newOrUpdatedEntities.get(update));
+                            }
+                            // delete
+                            for (final String id : deletedAppIds) {
+                                if (existingEntities.get(id) != null) {
+                                    LOGGER.log(Level.FINE, "Deleting portal application: " + existingEntities.get(id).getName());
+                                    portalGenericEntityManager.delete(existingEntities.get(id).getName());
+                                }
                             }
                         }
+
                         // set end time in cluster property
                         clusterPropertyManager.putProperty(APP_INCREMENT_START_PROP, String.valueOf(applicationJson.getIncrementStart()));
-
                         return null;
                     } catch (ObjectModelException e) {
                         transactionStatus.setRollbackOnly();
@@ -199,7 +213,8 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
         postback.setIncrementStart(incrementStart);
         postback.setIncrementEnd(applicationJson.getIncrementStart());
         postback.setEntityType(applicationJson.getEntityType());
-        postback.setEntityErrors(null);
+        postback.setBulkSync(applicationJson.getBulkSync());
+        postback.setEntityErrors(null); // only use if status is "partial"
         if (results != null && !results.isEmpty()) {
             postback.setErrorMessage(ERROR_MSG);
         }

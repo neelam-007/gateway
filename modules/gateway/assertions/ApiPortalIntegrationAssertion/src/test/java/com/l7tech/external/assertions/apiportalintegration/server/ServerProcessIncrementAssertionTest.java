@@ -81,6 +81,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setNewOrUpdatedEntities(Arrays.asList(
                 createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
                 createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));
@@ -90,6 +91,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         verify(portalGenericEntityManager, times(2)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
     }
@@ -99,6 +101,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1")));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).add(any(ApiKey.class));
@@ -108,6 +111,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         assertTrue(json.contains("\"errorMessage\":"));
         verify(portalGenericEntityManager, times(1)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
@@ -120,6 +124,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("066f33d1-7e45-4434-be69-5aa7d20934e1", "test", "secret1")));
         List<Map<String, String>> results = (List<Map<String, String>>) serverAssertion.applyChanges(aj);
         String json = serverAssertion.buildJsonPostBack(incrementStart, aj, results).replaceAll("\\s*", "");
@@ -127,6 +132,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         verify(portalGenericEntityManager, times(0)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(1)).update(any(ApiKey.class));
     }
@@ -136,6 +142,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("066f33d1-7e45-4434-be69-5aa7d20934e1", "test", "secret1")));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).update(any(ApiKey.class));
@@ -145,6 +152,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         assertTrue(json.contains("\"errorMessage\":"));
         verify(portalGenericEntityManager, times(0)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(1)).update(any(ApiKey.class));
@@ -155,6 +163,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setDeletedIds(Arrays.asList("066f33d1-7e45-4434-be69-5aa7d20934e1"));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doNothing().when(portalGenericEntityManager).delete(any(String.class));
@@ -164,6 +173,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         verify(portalGenericEntityManager, times(1)).delete(any(String.class));
         verify(portalGenericEntityManager, times(0)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
@@ -174,6 +184,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("false");
         aj.setDeletedIds(Arrays.asList("51432edf-db67-46c8-8a7b-4af57fbf8bd4"));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).delete(any(String.class));
@@ -183,9 +194,58 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementStart\":1446503181273,"));
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"false\""));
         assertTrue(json.contains("\"errorMessage\":"));
         verify(portalGenericEntityManager, times(1)).delete(any(String.class));
         verify(portalGenericEntityManager, times(0)).add(any(ApiKey.class));
+        verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
+    }
+
+    @Test
+    public void testApplicationBulk() throws Exception {
+        ApplicationJson aj = new ApplicationJson();
+        aj.setEntityType("APPLICATION");
+        aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("true");
+        aj.setNewOrUpdatedEntities(Arrays.asList(
+                createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
+                createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));
+        Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
+        Mockito.doReturn(null).when(portalGenericEntityManager).add(any(ApiKey.class));
+        Mockito.doNothing().when(portalGenericEntityManager).delete(any(String.class));
+        List<Map<String, String>> results = (List<Map<String, String>>) serverAssertion.applyChanges(aj);
+        String json = serverAssertion.buildJsonPostBack(incrementStart, aj, results).replaceAll("\\s*", "");
+        assertTrue(json.contains("\"incrementStatus\":\"ok\","));
+        assertTrue(json.contains("\"incrementStart\":1446503181273,"));
+        assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
+        assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"true\""));
+        verify(portalGenericEntityManager, times(2)).delete(any(String.class));
+        verify(portalGenericEntityManager, times(2)).add(any(ApiKey.class));
+        verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
+    }
+
+    @Test
+    public void testApplicationBulkFail() throws Exception {
+        ApplicationJson aj = new ApplicationJson();
+        aj.setEntityType("APPLICATION");
+        aj.setIncrementStart(incrementEnd);
+        aj.setBulkSync("true");
+        aj.setNewOrUpdatedEntities(Arrays.asList(
+                createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
+                createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));
+        Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
+        Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).add(any(ApiKey.class));
+        Mockito.doNothing().when(portalGenericEntityManager).delete(any(String.class));
+        List<Map<String, String>> results = (List<Map<String, String>>) serverAssertion.applyChanges(aj);
+        String json = serverAssertion.buildJsonPostBack(incrementStart, aj, results).replaceAll("\\s*", "");
+        assertTrue(json.contains("\"incrementStatus\":\"error\","));
+        assertTrue(json.contains("\"incrementStart\":1446503181273,"));
+        assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
+        assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
+        assertTrue(json.contains("\"bulkSync\":\"true\""));
+        verify(portalGenericEntityManager, times(2)).delete(any(String.class));
+        verify(portalGenericEntityManager, times(1)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
     }
 

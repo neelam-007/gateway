@@ -12,6 +12,7 @@ public class PortalSyncPostbackJson {
     private long incrementStart;
     private long incrementEnd;
     private String entityType;
+    private String bulkSync;
     private String errorMessage;
     //keys: "id", "msg"
     private List<Map<String, String>> entityErrors = new ArrayList<>();
@@ -49,6 +50,14 @@ public class PortalSyncPostbackJson {
 
     public void setEntityType(String entityType) {
         this.entityType = entityType;
+    }
+
+    public String getBulkSync() {
+        return bulkSync;
+    }
+
+    public void setBulkSync(String bulkSync) {
+        this.bulkSync = bulkSync;
     }
 
     public String getErrorMessage() {
