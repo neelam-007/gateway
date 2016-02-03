@@ -9,6 +9,7 @@ import java.util.List;
 public class ApplicationJson {
     private long incrementStart;
     private String entityType;
+    private String bulkSync;
     private List<String> deletedIds = new ArrayList<>();
     private List<ApplicationEntity> newOrUpdatedEntities = new ArrayList<>();
 
@@ -25,6 +26,14 @@ public class ApplicationJson {
 
     public String getEntityType() {
         return entityType;
+    }
+
+    public String getBulkSync() {
+        return bulkSync;
+    }
+
+    public void setBulkSync(String bulkSync) {
+        this.bulkSync = bulkSync;
     }
 
     public void setEntityType(String entityType) {

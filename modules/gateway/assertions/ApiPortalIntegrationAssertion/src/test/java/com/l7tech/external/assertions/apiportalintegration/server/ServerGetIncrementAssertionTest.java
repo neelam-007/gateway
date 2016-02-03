@@ -36,6 +36,8 @@ public class ServerGetIncrementAssertionTest {
         final String ref = "{\n" +
                 "  \"incrementStart\" : ,\n" +
                 "  \"entityType\" : \"APPLICATION\",\n" +
+                "  \"bulkSync\" : \"false\",\n" +
+                "  \"deletedIds\" : [ \"3c2acfb5-8803-4c0c-8de3-a9224cad2595\", \"066f33d1-7e45-4434-be69-5aa7d20934e1\" ],\n" +
                 "  \"newOrUpdatedEntities\" : [ {\n" +
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
@@ -54,7 +56,7 @@ public class ServerGetIncrementAssertionTest {
         Map<String, List> results = buildResultsMap();
         JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) applicationContext.getBean("jdbcQueryingManager");
         jdbcQueryingManager.setMockResults(results);
-        String json = serverAssertion.getJsonMessage("conn", null, "");
+        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
@@ -77,6 +79,7 @@ public class ServerGetIncrementAssertionTest {
         results.put("oauth_scope", Arrays.asList("\\\\\\\\\\\\%^&*()"));
         results.put("oauth_type", typeList);
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc"));
+        results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
         return results;
     }
 
@@ -85,6 +88,7 @@ public class ServerGetIncrementAssertionTest {
         final String ref = "{\n" +
                 "  \"incrementStart\" : ,\n" +
                 "  \"entityType\" : \"APPLICATION\",\n" +
+                "  \"bulkSync\" : \"true\",\n" +
                 "  \"newOrUpdatedEntities\" : [ {\n" +
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +

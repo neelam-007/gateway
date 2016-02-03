@@ -54,8 +54,13 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         transactionManager = context.getBean("transactionManager", PlatformTransactionManager.class);
-        portalGenericEntityManager = ApiKeyManager.getInstance(context);
+        setPortalGenericEntityManager(ApiKeyManager.getInstance(context));
         clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+    }
+
+    // for testing
+    void setPortalGenericEntityManager(PortalGenericEntityManager<ApiKey> portalGeenricEntityManager) {
+        this.portalGenericEntityManager = portalGeenricEntityManager;
     }
 
     @Override
@@ -184,7 +189,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
     }
 
     String buildJsonPostBack(final long incrementStart, final ApplicationJson applicationJson, final List<Map<String, String>> results) throws IOException {
-        ApplicationPostbackJson postback = new ApplicationPostbackJson();
+        PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         // currently updates are done in one db txn, therefore either "ok" or "error" status, "partial" isn't used
         if (results == null) {
             postback.setIncrementStatus("ok");

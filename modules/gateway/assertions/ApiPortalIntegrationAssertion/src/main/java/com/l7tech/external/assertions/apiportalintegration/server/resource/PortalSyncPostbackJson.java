@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * @author chean22, 1/26/2016
  */
-public class ApplicationPostbackJson {
+public class PortalSyncPostbackJson {
     private String incrementStatus;
     private long incrementStart;
     private long incrementEnd;
@@ -16,7 +16,7 @@ public class ApplicationPostbackJson {
     //keys: "id", "msg"
     private List<Map<String, String>> entityErrors = new ArrayList<>();
 
-    public ApplicationPostbackJson() {
+    public PortalSyncPostbackJson() {
     }
 
     public String getIncrementStatus() {

@@ -128,6 +128,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         Map<String, List> results;
 
         if (since != null) {
+            appJsonObj.setBulkSync("false");
             // get deleted IDs
             results = (Map<String, List>) queryJdbc(connName, "SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?", CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
@@ -148,6 +149,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                             "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR ( o.MODIFY_TS > ? and  o.MODIFY_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
 
         } else {
+            appJsonObj.setBulkSync("true");
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
                     "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
