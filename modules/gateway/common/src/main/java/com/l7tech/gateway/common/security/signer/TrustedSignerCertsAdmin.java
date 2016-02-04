@@ -33,7 +33,7 @@ public interface TrustedSignerCertsAdmin {
      */
     @NotNull
     @Administrative(background = true)
-    @Secured(types = EntityType.SERVER_MODULE_FILE, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types = EntityType.SERVER_MODULE_FILE, stereotype = MethodStereotype.SAVE)
     public Collection<X509Certificate> lookUpTrustedSigningCertsForServerModuleFiles() throws FindException;
 
     /**
