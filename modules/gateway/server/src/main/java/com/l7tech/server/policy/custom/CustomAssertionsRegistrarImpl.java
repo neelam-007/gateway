@@ -26,6 +26,8 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.util.*;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
@@ -33,19 +35,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.core.io.ContextResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
+import java.io.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * The server side CustomAssertionsRegistrar implementation.
@@ -104,6 +102,41 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     @Override
+    public byte[] getAssertionResourceDataAsBytes(Collection<String> names) {
+        long start = System.currentTimeMillis();
+        ByteArrayOutputStream baos = null;
+        try {
+            Collection<Pair<String,AssertionResourceData>> result = new ArrayList<>(names.size());
+            for (String name : names) {
+                result.add(new Pair<>(name, getAssertionResourceData(name)));
+            }
+            baos = new ByteArrayOutputStream();
+            GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
+            ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut);
+            objectOut.writeObject(result);
+            objectOut.flush();
+            objectOut.close();
+            byte[] bytes = baos.toByteArray();
+
+            if (logger.isLoggable( Level.FINE )) {
+                logger.log( Level.FINE, "Assertion resource data byte length: " + bytes.length);
+            }
+            return bytes;
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error streaming assertion resource as bytes: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            ResourceUtils.closeQuietly(baos);
+            if (logger.isLoggable( Level.FINE )) {
+                long end = System.currentTimeMillis();
+                double total = ((double)end - (double)start) / 1000;
+                logger.log(Level.FINE,String.format("%6.2f sec for: %s\n", total, "get assertion resource data as bytes."));
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public AssertionResourceData getAssertionResourceData( final String resourcePath ) {
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Serving custom assertion resource data: " + resourcePath);
@@ -116,7 +149,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             return new AssertionResourceData(resourcePath, false, data);
         }
 
-        return zip( resourcePath );
+        return gzipTar( resourcePath );
     }
 
     private byte[] getCustomAssertionResourceBytes( final String path ) {
@@ -138,75 +171,99 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return null;
     }
 
-    private AssertionResourceData zip( final String resourcePath ) {
+    private AssertionResourceData gzipTar( @NotNull final String resourcePath ) {
         AssertionResourceData data = null;
 
         final long startTime = System.currentTimeMillis();
 
         Set<ModularAssertionModule> modules = assertionRegistry.getLoadedModules();
-        if ( modules != null ) {
 
-            PoolByteArrayOutputStream baos = null;
+        PoolByteArrayOutputStream baos = null;
+        try {
+            baos= new PoolByteArrayOutputStream(64*1024);
+            TarArchiveOutputStream tarOut = null;
             try {
-                baos= new PoolByteArrayOutputStream(64*1024);
-                ZipOutputStream zipOut = null;
-                try {
-                    for ( ModularAssertionModule module : modules ) {
-                        byte[] resourceData = module.getResourceBytes( resourcePath, true );
-                        if ( resourceData != null ) {
-                            String[] paths = module.getClientResources();
-                            if ( paths != null ) {
-                                for ( String path : paths ) {
-                                    if ( samePackage( resourcePath, path ) ) {
-                                        byte[] resourceBytes = module.getResourceBytes( path, true );
-                                        if ( resourceBytes == null ) {
-                                            logger.warning( "Missing resource '"+path+"'." );
-                                            continue;
-                                        }
-                                        if ( zipOut == null ) { // zip must have an entry, so creation is lazy
-                                            zipOut = new ZipOutputStream( new NonCloseableOutputStream(baos) );
+                for ( ModularAssertionModule module : modules ) {
+                    byte[] resourceData = module.getResourceBytes( resourcePath, true );
+                    if ( resourceData != null ) {
+                        HashSet<String> paths = getPaths(resourcePath, module.getClientResources(), module);
 
-                                        }
-                                        zipOut.putNextEntry( new ZipEntry( path ) );
-                                        zipOut.write( resourceBytes );
-                                        zipOut.closeEntry();
-                                    }
-                                }
-                            }
-
-                            if ( zipOut == null ) {
-                                // Resource not indexed, so return single item
-                                data = new AssertionResourceData( resourcePath, false, resourceData);
-                            }
-                            break;
+                        if (logger.isLoggable( Level.FINE )) {
+                            logger.log( Level.FINE, "Path size: " + paths.size());
                         }
-                    }
-                } catch (IOException e) {
-                    logger.log( Level.WARNING, "Error creating resource ZIP.", e );
-                } finally {
-                    ResourceUtils.closeQuietly( zipOut );
-                }
 
-                if ( zipOut != null ) {
-                    data = new AssertionResourceData( getPackagePath(resourcePath), true, baos.toByteArray());
+                        for (String path : paths) {
+                            if ( isSameOrSubPackage(resourcePath, path) ) {
+                                byte[] resourceBytes = module.getResourceBytes( path, true );
+                                if ( resourceBytes == null ) {
+                                    logger.warning( "Missing resource '"+path+"'." );
+                                    continue;
+                                }
+                                if ( tarOut == null ) { // assume tar must have an entry, so creation is lazy
+                                    tarOut = new TarArchiveOutputStream( new GZIPOutputStream(new NonCloseableOutputStream(baos)) );
+                                    tarOut.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+                                }
+                                TarArchiveEntry entry = new TarArchiveEntry( path );
+                                entry.setSize(resourceBytes.length);
+                                tarOut.putArchiveEntry( entry );
+                                tarOut.write( resourceBytes );
+                                tarOut.closeArchiveEntry();
+                            }
+                        }
+
+                        if ( tarOut == null ) {
+                            // Resource not indexed, so return single item
+                            data = new AssertionResourceData( resourcePath, false, resourceData);
+                        }
+                        break;
+                    }
                 }
+            } catch (IOException e) {
+                logger.log( Level.WARNING, "Error creating resource GZIP TAR.", e );
             } finally {
-                ResourceUtils.closeQuietly( baos );
+                ResourceUtils.closeQuietly( tarOut );
             }
+
+            if ( tarOut != null ) {
+                data = new AssertionResourceData( getPackagePath(resourcePath), true, baos.toByteArray());
+            }
+        } finally {
+            ResourceUtils.closeQuietly( baos );
         }
 
         if ( data != null && logger.isLoggable( Level.FINE )) {
-            logger.log( Level.FINE, "Creating " + data.getData().length + " byte assertion zip took " +(System.currentTimeMillis()-startTime)+ "ms." );
+            logger.log( Level.FINE, "Creating " + data.getData().length + " byte assertion gzip tar for " + data.getResourceName() + " took " +(System.currentTimeMillis()-startTime)+ "ms." );
         }
-        
+
         return data;
     }
 
-    private boolean samePackage( final String path1, final String path2 ) {
-        return getPackagePath( path1 ).equals( getPackagePath( path2 ) );
+    @NotNull
+    private HashSet<String> getPaths(@NotNull final String resourcePath, @Nullable final String[] paths, @NotNull final ModularAssertionModule module) throws IOException {
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(module.getModuleClassLoader());
+        Resource[] resources = resolver.getResources("/" + getPackagePath(resourcePath) + "/**/*.class");
+
+        HashSet<String> pathSet = new HashSet<>((paths == null ? 0 : paths.length) + (resources == null ? 0 : resources.length));
+
+        if (paths != null) {
+            Collections.addAll(pathSet, paths);
+        }
+
+        if (resources != null) {
+            for (Resource resource : resources) {
+                pathSet.add(((ContextResource) resource).getPathWithinContext());
+            }
+        }
+
+        return pathSet;
     }
 
-    private String getPackagePath( final String path ) {
+    private boolean isSameOrSubPackage(@NotNull final String path1, @NotNull final String path2) {
+        return getPackagePath( path2 ).startsWith(getPackagePath( path1 ));
+    }
+
+    @NotNull
+    private String getPackagePath( @NotNull final String path ) {
         String packagePath = path;
 
         if ( packagePath.startsWith("/") ) {

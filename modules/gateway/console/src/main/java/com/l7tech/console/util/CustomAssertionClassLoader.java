@@ -4,11 +4,15 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -16,15 +20,11 @@ import java.net.URLStreamHandler;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.GZIPInputStream;
 
 /**
  * ClassLoader for loading CustomAssertion classes from the connected SSG.
@@ -66,6 +66,40 @@ public class CustomAssertionClassLoader extends ClassLoader {
 
     protected static final Logger logger = Logger.getLogger(CustomAssertionClassLoader.class.getName());
 
+    public void preCacheResourceBytes( final Collection<String> rawPaths ) {
+        Registry registry = Registry.getDefault();
+        CustomAssertionsRegistrar car = null;
+        try {
+            car = registry.isAdminContextPresent() ?
+                    registry.getCustomAssertionsRegistrar() :
+                    null;
+        } catch (IllegalStateException e) {
+            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+        }
+        if (car == null) {
+            logger.warning("Unable to load custom/modular assertion class or resource: No CustomAssertionRegistrar available");
+            return;
+        }
+
+        ByteArrayInputStream bais = null;
+        try {
+            byte[] dataPairsAsBytes = car.getAssertionResourceDataAsBytes(rawPaths);
+            bais = new ByteArrayInputStream(dataPairsAsBytes);
+            GZIPInputStream gzipIn = new GZIPInputStream(bais);
+            ObjectInputStream objectIn = new ObjectInputStream(gzipIn);
+            Collection<Pair<String, CustomAssertionsRegistrar.AssertionResourceData>> dataPairs = (Collection<Pair<String, CustomAssertionsRegistrar.AssertionResourceData>>) objectIn.readObject();
+            objectIn.close();
+
+            for (Pair<String,CustomAssertionsRegistrar.AssertionResourceData> dataPair : dataPairs) {
+                processResourceData(dataPair.left, dataPair.right);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            ResourceUtils.closeQuietly(bais);
+        }
+    }
+
     protected byte[] findResourceBytes( final String rawPath ) {
         Registry registry = Registry.getDefault();
         if (registry == null) {
@@ -89,6 +123,9 @@ public class CustomAssertionClassLoader extends ClassLoader {
         String path = cleanPath( rawPath );
         byte[] cachedData = getCachedResourceBytes( path );
         if ( cachedData != null ) {
+            if ( logger.isLoggable( Level.FINE )) {
+                logger.log( Level.FINE, "Cache hit, loading custom/modular assertion resource ''{0}''.", path );
+            }
             return cachedData;
         }
 
@@ -100,7 +137,7 @@ public class CustomAssertionClassLoader extends ClassLoader {
 
         try {
             if ( logger.isLoggable( Level.FINE )) {
-                logger.log( Level.FINE, "Loading custom/modular assertion resource ''{0}''.", path );
+                logger.log( Level.FINE, "Cache miss, loading custom/modular assertion resource ''{0}''.", path );
             }
             return processResourceData( path, car.getAssertionResourceData(path) );
         } catch (RuntimeException e) {
@@ -198,26 +235,8 @@ public class CustomAssertionClassLoader extends ClassLoader {
         byte[] data = null;
 
         if ( resourceData != null ) {
-            if ( resourceData.isZip() ) {
-                ZipInputStream zipIn = null;
-                try {
-                    zipIn = new ZipInputStream( new ByteArrayInputStream( resourceData.getData() ) );
-                    ZipEntry entry;
-                    while ( (entry = zipIn.getNextEntry()) != null ) {
-                        String path = entry.getName();
-                        byte[] entryData = IOUtils.slurpStream( zipIn );
-                        if ( logger.isLoggable( Level.FINE )) {
-                            logger.log( Level.FINE, "Caching custom/modular assertion resource ''{0}''.", path );
-                        }
-                        resourceMap.put( path, entryData );
-                    }
-                    resourcePackages.add( resourceData.getResourceName() );
-                } catch (IOException e) {
-                    logger.log( Level.WARNING, "Error processing assertion class data.", e );
-                } finally {
-                    ResourceUtils.closeQuietly( zipIn );
-                }
-
+            if ( resourceData.isGzipTar() ) {
+                unGzipTar(resourceData);
                 data = getCachedResourceBytes( resourcePath );
             } else {
                 data = resourceData.getData();
@@ -243,4 +262,24 @@ public class CustomAssertionClassLoader extends ClassLoader {
             });
     }
 
+    private void unGzipTar(final CustomAssertionsRegistrar.AssertionResourceData resourceData) {
+        TarArchiveInputStream tarIn = null;
+        try {
+            tarIn = new TarArchiveInputStream(new GZIPInputStream( new ByteArrayInputStream( resourceData.getData() )));
+            TarArchiveEntry entry;
+            while ( (entry = tarIn.getNextTarEntry()) != null ) {
+                String path = entry.getName();
+                byte[] entryData = IOUtils.slurpStream( tarIn );
+                if ( logger.isLoggable( Level.FINE )) {
+                    logger.log( Level.FINE, "Caching custom/modular assertion resource ''{0}''.", path );
+                }
+                resourceMap.put( path, entryData );
+                resourcePackages.add( getPackagePath(path) );
+            }
+        } catch (IOException e) {
+            logger.log( Level.WARNING, "Error processing assertion class data.", e );
+        } finally {
+            ResourceUtils.closeQuietly( tarIn );
+        }
+    }
 }

@@ -10,6 +10,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
+import com.l7tech.console.util.CustomAssertionClassLoader;
 import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -145,8 +146,15 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         try {
             final ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
             final Collection<AssertionModuleInfo> modules = cluster.getAssertionModuleInfo();
-            for (final AssertionModuleInfo module : modules) {
-                registerAssertionsFromModule(module);
+
+            ClassLoader assloader = null;
+            if (!TopComponents.getInstance().isApplet())  {
+                assloader = ClassLoaderUtil.getClassLoader();
+                preregisterAssertionsFromModule(modules, assloader);
+            }
+
+            for (final AssertionModuleInfo module : modules) {                
+                registerAssertionsFromModule(module, assloader);
             }
         } catch (RuntimeException e) {
             if (ExceptionUtils.causedBy(e, NoSuchMethodException.class)) {
@@ -185,9 +193,30 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         }
     }
 
+    private void preregisterAssertionsFromModule(@NotNull final Collection<AssertionModuleInfo> modules, @NotNull final ClassLoader assloader) {
+        final Collection<String> firstAssertionClassNames = new ArrayList<>(modules.size());
+        for (AssertionModuleInfo module : modules) {
+            final Iterator<String> iterator = module.getAssertionClasses().iterator();
+            if (iterator.hasNext()) {
+                String className = module.getAssertionClasses().iterator().next();
+                String classPath = className.replace('.','/') + ".class";
+                firstAssertionClassNames.add(classPath);
+            }
+        }
 
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                if (assloader instanceof CustomAssertionClassLoader) {
+                    CustomAssertionClassLoader cassloader = (CustomAssertionClassLoader) assloader;
+                    cassloader.preCacheResourceBytes(firstAssertionClassNames);
+                }
+                return null;
+            }
+        });
+    }
 
-    private void registerAssertionsFromModule(final AssertionModuleInfo module) {
+    private void registerAssertionsFromModule(final AssertionModuleInfo module, final ClassLoader preRegAssLoader) {
         final Collection<String> assertionClassnames = module.getAssertionClasses();
 
         final String moduleFilename = module.getModuleFileName();
@@ -196,10 +225,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             @Override
             public Object run() {
                 ClassLoader assloader = TopComponents.getInstance().isApplet()
-                                        ? getAppletModularAssertionClassLoader(getRootPackage(assertionClassnames))
-                                        : null;
-                if (assloader == null)
-                    assloader = ClassLoaderUtil.getClassLoader();
+                        ? getAppletModularAssertionClassLoader(getRootPackage(assertionClassnames))
+                        : preRegAssLoader;
                 if (assloader == null)
                     throw new IllegalStateException("Not running as applet but no WSP class loader set");
                 for (String assertionClassname : assertionClassnames) {

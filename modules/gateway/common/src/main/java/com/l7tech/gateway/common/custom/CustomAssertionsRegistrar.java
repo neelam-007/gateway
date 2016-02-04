@@ -47,6 +47,14 @@ public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
     AssertionResourceData getAssertionResourceData( final String name );
 
     /**
+     * Get resource data for custom / modular resources as bytes.
+     *
+     * @return multiple resource data, or null
+     */
+    @Administrative(licensed=false)
+    byte[] getAssertionResourceDataAsBytes( final Collection<String> names );
+
+    /**
      * Get the known registered assertion for a given class name.
      * @param customAssertionClassName the custom assertion class name
      * @return the custom assertion holder
@@ -144,14 +152,14 @@ public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
      */
     static final class AssertionResourceData implements Serializable {
         private final String resourceName;
-        private final boolean zip;
+        private final boolean gzipTar;
         private final byte[] data;
 
         public AssertionResourceData( final String resourceName,
-                                      final boolean zip,
+                                      final boolean gzipTar,
                                       final byte[] data ) {
             this.resourceName = resourceName;
-            this.zip = zip;
+            this.gzipTar = gzipTar;
             this.data = data;
         }
 
@@ -159,7 +167,7 @@ public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
          * Get the resource name.
          *
          * <p>This will be the class/resource name for a single resource or the
-         * package name for a ZIP.</p>
+         * package name for a GZIP TAR.</p>
          *
          * @return The resource name.
          */
@@ -168,12 +176,12 @@ public interface CustomAssertionsRegistrar extends ServerModuleFileLoader {
         }
 
         /**
-         * Is the data a ZIP or single resource.
+         * Is the data a GZIP TAR or single resource.
          *
-         * @return True if a ZIP
+         * @return True if a GZIP TAR
          */
-        public boolean isZip() {
-            return zip;
+        public boolean isGzipTar() {
+            return gzipTar;
         }
 
         /**

@@ -58,6 +58,11 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         return null;
     }
 
+    @Override
+    public byte[] getAssertionResourceDataAsBytes(Collection<String> names) {
+        return new byte[0];
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      */
