@@ -45,10 +45,6 @@ RUN wget -O - https://github.com/hashicorp/envconsul/releases/download/v0.5.0/en
 # include etcdctl in the build to support setting environment variables from etcd
 RUN wget -O - https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.2-linux-amd64.tar.gz | tar xzf - -O etcd-v2.2.2-linux-amd64/etcdctl > /usr/local/bin/etcdctl && chmod 755 /usr/local/bin/etcdctl
 
-# set the timezone
-RUN echo "ZONE=\"America/Vancouver\"" > /etc/sysconfig/clock
-RUN ln -sf /usr/share/zoneinfo/America/Vancouver /etc/localtime
-
 # add the provisioning script
 ADD gateway-provision-and-run.sh /root/
 RUN chmod 700 /root/gateway-provision-and-run.sh
