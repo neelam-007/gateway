@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -369,7 +370,7 @@ public final class RootNode extends FolderNode {
 
             for(FolderHeader folder : allFolderHeaders) {
                 if(folder.getParentFolderGoid() != null && Goid.equals(folder.getParentFolderGoid(), root.getGoid())) {
-                    FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, allFolderHeaders);
+                    FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, allFolderHeaders, new ArrayList<Folder>());
                     insert(childNode, getInsertPosition(childNode, RootNode.getComparator()));
                 }
             }
@@ -413,11 +414,21 @@ public final class RootNode extends FolderNode {
         return "com/l7tech/console/resources/ServerRegistry.gif";
     }
 
-    private FolderNode getFolderNodeFromHeaders(FolderHeader root,
+    private FolderNode getFolderNodeFromHeaders(final FolderHeader root,
                                                 List<OrganizationHeader> organizationHeaders,
-                                                Collection<FolderHeader> foldersHeaders)
+                                                Collection<FolderHeader> foldersHeaders,
+                                                Collection<Folder> folders)
     {
-        FolderNode node = new FolderNode(root, null);
+        Folder parentNode = Functions.grepFirst(folders,new Functions.Unary<Boolean, Folder>() {
+            @Override
+            public Boolean call(Folder folder) {
+                if(folder.getGoid().equals(root.getParentFolderGoid()))
+                    return true;
+                return false;
+            }
+        });
+        FolderNode node = new FolderNode(root, parentNode);
+        folders.add(node.getFolder());
         for(Iterator<OrganizationHeader> it = organizationHeaders.iterator();it.hasNext();) {
             OrganizationHeader header = it.next();
             if(header.getFolderId() != null && Goid.equals(header.getFolderId(), root.getGoid())) {
@@ -435,7 +446,7 @@ public final class RootNode extends FolderNode {
 
         for(FolderHeader folder : foldersHeaders) {
             if(folder.getParentFolderGoid() != null && Goid.equals(folder.getParentFolderGoid(), root.getGoid()) ) {
-                FolderNode childNode = getFolderNodeFromHeaders(folder, organizationHeaders, foldersHeaders);
+                FolderNode childNode = getFolderNodeFromHeaders(folder, organizationHeaders, foldersHeaders,folders);
                 node.addChild(childNode);
             }
         }
