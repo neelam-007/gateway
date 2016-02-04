@@ -5,13 +5,16 @@ import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationApi;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
+import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.PlatformTransactionManagerStub;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.entity.GenericEntityManager;
+import com.l7tech.server.task.ScheduledTaskManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +57,8 @@ public class ServerProcessIncrementAssertionTest {
     private EntityManager<ApiKey, GenericEntityHeader> entityManager;
     @Mock
     private PortalGenericEntityManager<ApiKey> portalGenericEntityManager;
+    @Mock
+    private ScheduledTaskManager scheduledTaskManager;
 
     @Before
     public void setup() throws Exception {
@@ -61,6 +66,7 @@ public class ServerProcessIncrementAssertionTest {
         when(applicationContext.getBean("genericEntityManager", GenericEntityManager.class)).thenReturn(genericEntityManager);
         when(applicationContext.getBean("transactionManager", PlatformTransactionManager.class)).thenReturn(transactionManager);
         when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).thenReturn(clusterPropertyManager);
+        when(applicationContext.getBean("scheduledTaskManager", ScheduledTaskManager.class)).thenReturn(scheduledTaskManager);
         assertion = new ProcessIncrementAssertion();
         serverAssertion = new ServerProcessIncrementAssertion(assertion, applicationContext);
         serverAssertion.setPortalGenericEntityManager(portalGenericEntityManager);
@@ -72,6 +78,12 @@ public class ServerProcessIncrementAssertionTest {
         apiDelete.setApplicationId("51432edf-db67-46c8-8a7b-4af57fbf8bd4");
         apiDelete.setName("deleteFail");
         apiList = Arrays.asList(api, apiDelete);
+
+        ScheduledTask scheduledTask = new ScheduledTask();
+        scheduledTask.setName("test");
+        scheduledTask.setGoid(Goid.DEFAULT_GOID);
+        scheduledTask.setCronExpression("*/20 * * * * ?");
+        when(scheduledTaskManager.findByUniqueName(any(String.class))).thenReturn(scheduledTask);
     }
 
     @Test
@@ -92,6 +104,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
         assertTrue(json.contains("\"bulkSync\":\"false\""));
+        assertTrue(json.contains("{\\\"count\\\":\\\"2\\\",\\\"cron\\\":\\\"*/20****?\\\"}"));
         verify(portalGenericEntityManager, times(2)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
     }

@@ -16,6 +16,7 @@ public class PortalSyncPostbackJson {
     private String errorMessage;
     //keys: "id", "msg"
     private List<Map<String, String>> entityErrors = new ArrayList<>();
+    private String syncLog;
 
     public PortalSyncPostbackJson() {
     }
@@ -74,5 +75,13 @@ public class PortalSyncPostbackJson {
 
     public void setEntityErrors(List<Map<String, String>> entityErrors) {
         this.entityErrors = entityErrors;
+    }
+
+    public String getSyncLog() {
+        return syncLog;
+    }
+
+    public void setSyncLog(String syncLog) {
+        this.syncLog = syncLog;
     }
 }

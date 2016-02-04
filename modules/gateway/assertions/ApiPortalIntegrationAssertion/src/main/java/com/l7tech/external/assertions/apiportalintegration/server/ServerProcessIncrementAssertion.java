@@ -5,12 +5,14 @@ import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManager;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.task.ScheduledTaskManager;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.codehaus.jackson.JsonFactory;
@@ -42,6 +44,9 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
 
     private static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
     private static final String APP_INCREMENT_START_PROP = "portal.application.increment.start";
+    private static final String STATUS_OK = "ok";
+    private static final String STATUS_ERROR = "error";
+    private static final String APP_SCHEDULED_TASK_NAME = "Portal Sync Application";
     private static final String ERROR_MSG = "Database transaction failed";
 
     private final String[] variablesUsed;
@@ -49,6 +54,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
     private final ApiKeyResourceTransformer appTransformer = ApiKeyResourceTransformer.getInstance();
     private PortalGenericEntityManager<ApiKey> portalGenericEntityManager;
     private ClusterPropertyManager clusterPropertyManager;
+    private ScheduledTaskManager scheduledTaskManager;
 
     public ServerProcessIncrementAssertion(ProcessIncrementAssertion assertion, ApplicationContext context) throws PolicyAssertionException, JAXBException {
         super(assertion);
@@ -56,6 +62,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
         transactionManager = context.getBean("transactionManager", PlatformTransactionManager.class);
         setPortalGenericEntityManager(ApiKeyManager.getInstance(context));
         clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        scheduledTaskManager = context.getBean("scheduledTaskManager", ScheduledTaskManager.class);
     }
 
     // for testing
@@ -202,22 +209,28 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
         }
     }
 
-    String buildJsonPostBack(final long incrementStart, final ApplicationJson applicationJson, final List<Map<String, String>> results) throws IOException {
+    String buildJsonPostBack(final long incrementStart, final ApplicationJson applicationJson, final List<Map<String, String>> results) throws Exception {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         // currently updates are done in one db txn, therefore either "ok" or "error" status, "partial" isn't used
         if (results == null) {
-            postback.setIncrementStatus("ok");
+            postback.setIncrementStatus(STATUS_OK);
         } else {
-            postback.setIncrementStatus("error");
+            postback.setIncrementStatus(STATUS_ERROR);
         }
         postback.setIncrementStart(incrementStart);
         postback.setIncrementEnd(applicationJson.getIncrementStart());
         postback.setEntityType(applicationJson.getEntityType());
         postback.setBulkSync(applicationJson.getBulkSync());
-        postback.setEntityErrors(null); // only use if status is "partial"
         if (results != null && !results.isEmpty()) {
             postback.setErrorMessage(ERROR_MSG);
         }
+        postback.setEntityErrors(null); // only use if status is "partial"
+        int entityCount = portalGenericEntityManager.findAll().size();
+        ScheduledTask scheduledTask = scheduledTaskManager.findByUniqueName(APP_SCHEDULED_TASK_NAME);
+        if (scheduledTask == null) {
+            throw new IOException("Unable to find " + APP_SCHEDULED_TASK_NAME + " scheduled task");
+        }
+        postback.setSyncLog("{\"count\" : \"" + entityCount + "\", \"cron\" : \"" + scheduledTask.getCronExpression() + "\"}");
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
