@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this is the name of the image that build.sh produces
-IMAGE_NAME='teamcity/ssg'
+IMAGE_NAME="$(whoami)/ssg"
 
 # location of the docker-squash binary
 DOCKER_SQUASH="/usr/local/bin/docker-squash"
@@ -26,6 +26,16 @@ removeExistingImages() {
 		exit 1
 	fi
 	echo "Done removing existing Docker images from the build agent"
+}
+
+loginToTheRegistry() {
+	echo "Logging into the Docker Registry"
+	docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" -e "$REGISTRY_EMAIL" "$REGISTRY_HOST"
+	if [ $? -ne 0 ]; then
+		echo "ERROR: could not login to Docker Registry"
+		exit 1
+	fi
+	echo "Done logging into the Docker Registry"
 }
 
 buildTheImage() {
@@ -97,11 +107,6 @@ squashTheImage() {
 
 pushTheImage() {
 	echo "Pushing the image to the Docker Registry"
-	docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" -e "$REGISTRY_EMAIL" "$REGISTRY_HOST"
-	if [ $? -ne 0 ]; then
-		echo "ERROR: could not login to Docker Registry"
-		exit 1
-	fi
 	docker push "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
 	if [ $? -ne 0 ]; then
 		echo "ERROR: push to private registry failed"
@@ -112,6 +117,7 @@ pushTheImage() {
 
 
 removeExistingImages
+loginToTheRegistry
 buildTheImage
 exportTheImage
 squashTheImage
