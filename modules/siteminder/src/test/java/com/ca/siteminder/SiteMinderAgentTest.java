@@ -1,8 +1,7 @@
 package com.ca.siteminder;
 
-import com.l7tech.util.Config;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.util.MockConfig;
-import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.ServerDef;
 import org.junit.After;
 import org.junit.Before;
@@ -12,8 +11,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 
+import static com.ca.siteminder.SiteMinderContext.Attribute;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
@@ -25,76 +24,21 @@ import static junit.framework.Assert.assertTrue;
 @Ignore("Requires connection to the SiteMinder Policy Server")
 public class SiteMinderAgentTest {
 
+    private static final String AGENT_NAME = "agent1";
+
+    SiteMinderConfig config = getSiteMinderConfig();
     SiteMinderLowLevelAgent agent;
     SiteMinderHighLevelAgent fixture;
+    SiteMinderConfiguration smConfig;
+    SiteMinderAgentContextCacheManager cacheManager;
 
     @Before
     public void setUp() throws Exception {
-       SiteMinderConfig config = new SiteMinderConfig() {
-
-           @Override
-           public String getAddress() {
-               return "127.0.0.1";
-           }
-
-           @Override
-           public String getSecret() {
-               return "{RC2}AWKd1Ha8fZSLj6fMiOWQqX1d8AN5QGeeWKYpuaSFfKJRD6pg9nqUXP/lVuYI1Pm6rqYxpwHaeja24zrd60Zj4pCJmpTTItGtRFhzvxciEhunW9P8YjA/3Fu5XYg++Kagf7FHThTV5MdRrKx/QIV7i6y5gDp0YwAbQoibCw43SUGwXsPNC+zh5zM76kmVsmr/";
-           }
-
-           @Override
-           public boolean isIpCheck() {
-               return false;
-           }
-
-           @Override
-           public String getHostname() {
-               return "yuri-sm12sp3-native";
-           }
-
-           @Override
-           public int getFipsMode() {
-               return 1;//COMPACT
-           }
-
-           @Override
-           public boolean isNonClusterFailover() {
-               return false;
-           }
-
-           @Override
-           public int getClusterThreshold() {
-               return 50;
-           }
-
-           @Override
-           public boolean isUpdateSSOToken() {
-               return false;
-           }
-
-           @Override
-           public List<ServerDef> getServers() {
-               List<ServerDef> serverDefs = new ArrayList<>();
-               ServerDef serverDef = new ServerDef();
-               serverDef.serverIpAddress = "10.7.34.32";
-               serverDef.authenticationPort = 44442;
-               serverDef.authorizationPort = 44443;
-               serverDef.accountingPort = 44441;
-               serverDef.connectionMin = 1;
-               serverDef.connectionMax = 3;
-               serverDef.connectionStep = 1;
-               serverDef.timeout = 75;
-               serverDefs.add(serverDef);
-               return serverDefs;
-           }
-
-           @Override
-           public boolean isCluster() {
-               return false;
-           }
-       };
-       agent = new SiteMinderLowLevelAgent(config);
-       fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), new SiteMinderAgentContextCacheManagerImpl());
+        agent = new SiteMinderLowLevelAgent(config);
+        cacheManager = new SiteMinderAgentContextCacheManagerImpl();
+        fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), cacheManager);
+        smConfig = new SiteMinderConfiguration();
+        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME, 10, 10, 10);
     }
 
     @After
@@ -104,7 +48,7 @@ public class SiteMinderAgentTest {
 
     @Ignore("Requires connection to the SiteMinder Policy Server")
     @Test
-    public void testSiteMinderLowLeveAgent() throws Exception {
+    public void testSiteMinderLowLevelAgent() throws Exception {
         assertTrue(agent.isInitialized());
     }
 
@@ -119,12 +63,76 @@ public class SiteMinderAgentTest {
 
         SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
         assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context));
-        for(SiteMinderContext.Attribute attr : context.getAttrList()) {
+        for(Attribute attr : context.getAttrList()) {
             System.out.println(attr.getName() + ": " + attr.getValue());
         }
-        String smsession = context.getSsoToken();
         assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context));
         System.out.println("SMSESSION=" + context.getSsoToken());
     }
 
+    private static SiteMinderConfig getSiteMinderConfig() {
+        return new SiteMinderConfig() {
+
+            @Override
+            public String getAddress() {
+                return "127.0.0.1";
+            }
+
+            @Override
+            public String getSecret() {
+                return "{RC2}AWKd1Ha8fZSLj6fMiOWQqX1d8AN5QGeeWKYpuaSFfKJRD6pg9nqUXP/lVuYI1Pm6rqYxpwHaeja24zrd60Zj4pCJmpTTItGtRFhzvxciEhunW9P8YjA/3Fu5XYg++Kagf7FHThTV5MdRrKx/QIV7i6y5gDp0YwAbQoibCw43SUGwXsPNC+zh5zM76kmVsmr/";
+            }
+
+            @Override
+            public boolean isIpCheck() {
+                return false;
+            }
+
+            @Override
+            public String getHostname() {
+                return "yuri-sm12sp3-native";
+            }
+
+            @Override
+            public int getFipsMode() {
+                return 1;//COMPACT
+            }
+
+            @Override
+            public boolean isNonClusterFailover() {
+                return false;
+            }
+
+            @Override
+            public int getClusterThreshold() {
+                return 50;
+            }
+
+            @Override
+            public boolean isUpdateSSOToken() {
+                return false;
+            }
+
+            @Override
+            public List<ServerDef> getServers() {
+                List<ServerDef> serverDefs = new ArrayList<>();
+                ServerDef serverDef = new ServerDef();
+                serverDef.serverIpAddress = "10.7.34.32";
+                serverDef.authenticationPort = 44442;
+                serverDef.authorizationPort = 44443;
+                serverDef.accountingPort = 44441;
+                serverDef.connectionMin = 1;
+                serverDef.connectionMax = 3;
+                serverDef.connectionStep = 1;
+                serverDef.timeout = 75;
+                serverDefs.add(serverDef);
+                return serverDefs;
+            }
+
+            @Override
+            public boolean isCluster() {
+                return false;
+            }
+        };
+    }
 }

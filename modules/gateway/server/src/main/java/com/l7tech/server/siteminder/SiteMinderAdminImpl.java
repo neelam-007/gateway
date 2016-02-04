@@ -1,5 +1,6 @@
 package com.l7tech.server.siteminder;
 
+import com.ca.siteminder.SiteMinderAgentContextCacheManager;
 import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
@@ -36,12 +37,15 @@ import static com.l7tech.server.event.AdminInfo.find;
 public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMinderAdmin {
 
     private SiteMinderConfigurationManager siteMinderConfigurationManager;
+    private SiteMinderAgentContextCacheManager siteMinderAgentContextCacheManager;
 
     @Inject
     SecurePasswordManager securePasswordManager;
 
-    public SiteMinderAdminImpl (SiteMinderConfigurationManager siteMinderConfigurationManager) {
+    public SiteMinderAdminImpl (SiteMinderConfigurationManager siteMinderConfigurationManager,
+                                SiteMinderAgentContextCacheManager siteMinderAgentContextCacheManager) {
         this.siteMinderConfigurationManager = siteMinderConfigurationManager;
+        this.siteMinderAgentContextCacheManager = siteMinderAgentContextCacheManager;
     }
 
     /**
@@ -78,13 +82,16 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
      * @throws UpdateException: thrown when errors saving the SiteMinder configuration entity.
      */
     public Goid saveSiteMinderConfiguration(SiteMinderConfiguration configuration) throws UpdateException, SaveException {
-        Goid goid = null;
+        Goid goid;
         if (configuration.getGoid().equals(Goid.DEFAULT_GOID)) {
             goid =  siteMinderConfigurationManager.save(configuration);
         } else {
             siteMinderConfigurationManager.update(configuration);
             goid = configuration.getGoid();
         }
+
+        siteMinderAgentContextCacheManager.removeCaches(goid);
+
         return goid;
     }
 
@@ -95,6 +102,8 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
      */
     public void deleteSiteMinderConfiguration(SiteMinderConfiguration configuration) throws DeleteException {
         siteMinderConfigurationManager.delete(configuration);
+
+        siteMinderAgentContextCacheManager.removeCaches(configuration.getGoid());
     }
 
 

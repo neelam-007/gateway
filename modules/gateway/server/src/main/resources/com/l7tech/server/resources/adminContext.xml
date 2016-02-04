@@ -507,6 +507,7 @@
     <!-- jdbc admin servant -->
     <bean id="siteMinderAdmin" class="com.l7tech.server.siteminder.SiteMinderAdminImpl">
         <constructor-arg ref="siteMinderConfigurationManager"/>
+        <constructor-arg ref="siteMinderAgentContextCacheManager"/>
     </bean>
 
     <!-- Custom key value store admin impl -->
