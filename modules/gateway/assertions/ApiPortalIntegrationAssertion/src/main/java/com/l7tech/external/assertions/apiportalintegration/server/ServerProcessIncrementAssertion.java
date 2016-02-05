@@ -72,6 +72,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        List<Map<String, String>> results = null;
         try {
             Map<String, Object> vars = context.getVariableMap(this.variablesUsed, getAudit());
 
@@ -108,7 +109,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
             final long incrementStart = Long.parseLong(incrementStartStr);
 
             // apply changes to db
-            List<Map<String, String>> results = (List<Map<String, String>>) applyChanges(applicationJson);
+            results = (List<Map<String, String>>) applyChanges(applicationJson);
 
             // save result
             context.setVariable(assertion.getVariablePrefix() + "." + ProcessIncrementAssertion.SUFFIX_POSTBACK, buildJsonPostBack(incrementStart, applicationJson, results));
@@ -119,7 +120,12 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                     new String[]{errorMsg + ": " + ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex));
             return AssertionStatus.FAILED;
         }
-        return AssertionStatus.NONE;
+
+        if (results != null) {
+            return AssertionStatus.FAILED;
+        } else {
+            return AssertionStatus.NONE;
+        }
     }
 
     Object applyChanges(final ApplicationJson applicationJson) throws IOException {
@@ -149,27 +155,24 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                             existingNames.add(existingEntity.getName());
                         }
 
+                        // insert
+                        final Collection<String> toAdd = CollectionUtils.subtract(newOrUpdatedEntities.keySet(), existingNames);
+                        for (final String add : toAdd) {
+                            portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
+                        }
+                        // update
+                        final Collection<String> toUpdate = CollectionUtils.intersection(newOrUpdatedEntities.keySet(), existingNames);
+                        for (final String update : toUpdate) {
+                            portalGenericEntityManager.update(newOrUpdatedEntities.get(update));
+                        }
+                        // delete
                         if (applicationJson.getBulkSync().equalsIgnoreCase("true")) {
-                            // delete all
-                            for (String name : existingNames) {
-                                portalGenericEntityManager.delete(name);
-                            }
-                            // insert all
-                            for (final String add : newOrUpdatedEntities.keySet()) {
-                                portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
+                            final Collection<String> toDelete = CollectionUtils.subtract(existingNames, newOrUpdatedEntities.keySet());
+                            for (final String delete : toDelete) {
+                                LOGGER.log(Level.FINE, "Deleting portal application: " + delete);
+                                portalGenericEntityManager.delete(delete);
                             }
                         } else {
-                            // insert
-                            final Collection<String> toAdd = CollectionUtils.subtract(newOrUpdatedEntities.keySet(), existingNames);
-                            for (final String add : toAdd) {
-                                portalGenericEntityManager.add(newOrUpdatedEntities.get(add));
-                            }
-                            // update
-                            final Collection<String> toUpdate = CollectionUtils.intersection(newOrUpdatedEntities.keySet(), existingNames);
-                            for (final String update : toUpdate) {
-                                portalGenericEntityManager.update(newOrUpdatedEntities.get(update));
-                            }
-                            // delete
                             for (final String id : deletedAppIds) {
                                 if (existingEntities.get(id) != null) {
                                     LOGGER.log(Level.FINE, "Deleting portal application: " + existingEntities.get(id).getName());
@@ -183,8 +186,9 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                         return null;
                     } catch (ObjectModelException e) {
                         transactionStatus.setRollbackOnly();
-
-                        LOGGER.log(Level.WARNING, "Database error, rolling back transaction.");
+                        final String errorMsg = "Transaction rolled back.  Database error";
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                new String[]{errorMsg + ": " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
 
                         // return error IDs, one txn so all IDs or nothing
                         List<Map<String, String>> results = new ArrayList<>();

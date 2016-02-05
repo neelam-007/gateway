@@ -257,7 +257,7 @@ public class ServerProcessIncrementAssertionTest {
         assertTrue(json.contains("\"incrementEnd\":1446503181299,"));
         assertTrue(json.contains("\"entityType\":\"APPLICATION\""));
         assertTrue(json.contains("\"bulkSync\":\"true\""));
-        verify(portalGenericEntityManager, times(2)).delete(any(String.class));
+        verify(portalGenericEntityManager, times(0)).delete(any(String.class));
         verify(portalGenericEntityManager, times(1)).add(any(ApiKey.class));
         verify(portalGenericEntityManager, times(0)).update(any(ApiKey.class));
     }
