@@ -220,17 +220,71 @@ public class SiteMinderHighLevelAgent {
 
         //In both cases the attribute list should contain the UserDn, UserName, ClientIP
         if ( cachedAuthResponseDetails != null ) {
+            List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
+            //Ensure all attributes are updated
+            int status = updateCachedAttributes(userIp, context, cachedAuthResponseDetails.getCreatedTimeStamp(), cachedAuthResponseDetails.getAttrList(), updatedAttributes);
+            if(status == YES) {
+                //recreate the cache entry with the new attribute list
+                logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
+                SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
+                cache.store( cacheKey, cacheEntry );
+            }
+            else if(status != SUCCESS) {
+                logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
+                //remove from the cache
+                cache.remove( cacheKey );
+                return status;//no need to continue
+            }
             // Ensure the cached SMContext Attributes are available, if a cache hit occurs
             // Don't clear the attributeList as it will contain the decoded
             // UserDn, UserName, ClientIP
-            attrList.addAll(cachedAuthResponseDetails.getAttrList());
+            //check all
+            attrList.addAll(updatedAttributes);
             context.getAttrList().addAll( new ArrayList<>( attrList ));
         } else {
-            context.getAttrList().addAll( attrList );
+            context.getAttrList().addAll(attrList);
         }
 
         //Remove possible duplicate attributes
-        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes(context.getAttrList()));  // TODO jwilliams: is this working right?
+        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes(context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
+            @Override
+            public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                    if(o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID ) {
+                        return o1.getName().compareTo(o2.getName());
+                    }
+                    else {
+                        return 1;
+                    }
+            }
+        }));
+        return result;
+    }
+
+    protected int updateCachedAttributes(String userIp, SiteMinderContext context, long cacheCreatedTimeStamp, List<SiteMinderContext.Attribute> cachedAttributes, List<SiteMinderContext.Attribute> updatedAttributes) throws SiteMinderApiClassException {
+        List<SiteMinderContext.Attribute> attributesToUpdate = new ArrayList<>();
+        long elapsedTime = (System.currentTimeMillis() - cacheCreatedTimeStamp)/1000;
+
+        for(SiteMinderContext.Attribute attr : cachedAttributes) {
+            if(attr.getTtl() > 0 && elapsedTime > attr.getTtl()) {
+                attributesToUpdate.add(attr);
+            }
+            else {
+                updatedAttributes.add(attr);
+            }
+        }
+
+        int result = SUCCESS;
+
+        if(attributesToUpdate.size() > 0) {
+            SiteMinderLowLevelAgent agent = context.getAgent();
+            //TODO: figure out what to do with the request attributes
+            result = agent.updateAttributes(userIp, context.getTransactionId(), context, new ArrayList<SiteMinderContext.Attribute>(), attributesToUpdate);
+            if ( result == YES ) {
+                logger.log(Level.FINE, "SiteMinder authorization - successfully updated cached attributes");
+                updatedAttributes.addAll(attributesToUpdate);
+            }
+        }
+
         return result;
     }
 
@@ -318,7 +372,17 @@ public class SiteMinderHighLevelAgent {
                 }
 
                 //Duplicate UserDN value will occur as the decode and login API's both return these values
-                context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList() ));
+                context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
+                    @Override
+                    public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                        if(o1.getId() != 224 ) {
+                            return o1.getName().compareTo(o2.getName());
+                        }
+                        else {
+                            return 1;
+                        }
+                    }
+                }));
 
                 cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
 
@@ -361,13 +425,13 @@ public class SiteMinderHighLevelAgent {
                         context.getSessionDef().getSpec() ));
 
                 //ensure the cached AttributeList is available in policy
-                if( authResponseDetails != null ){
-                    context.getAttrList().addAll( new ArrayList<>( authResponseDetails.getAttrList() ));
-                }
-                //TODO: check if attributes from the previous authentication are indeed required.
-                if( !attrList.isEmpty() ){
-                    context.getAttrList().addAll( attrList );
-                }
+//                if( authResponseDetails != null ){
+//                    context.getAttrList().addAll( new ArrayList<>( authResponseDetails.getAttrList() ));
+//                }
+//                //TODO: check if attributes from the previous authentication are indeed required.
+//                if( !attrList.isEmpty() ){
+//                    context.getAttrList().addAll( attrList );
+//                }
                 logger.log(Level.FINE, "Authentication user using cookie:" + ssoCookie);
             } else {
                 if (!"".equals(ssoCookie)) {
@@ -376,15 +440,43 @@ public class SiteMinderHighLevelAgent {
                 //ensure the sessionDef is updated in the context
                 //set currentServerTime
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
+                //TODO: review if this logic is indeed correct
+//                if ( authResponseDetails != null ) {
+//                    //ensure the cached SMContext Attributes are available, if a cache hit occurs
+//                    attrList.addAll( authResponseDetails.getAttrList() );
+//                    context.setAttrList(attrList);
+//                } else if ( !attrList.isEmpty() ) {
+//                    //Ensure that if any Attributes from an isAuthZ call are available in policy
+//                    context.getAttrList().addAll( attrList );
+//                }
 
-                if ( authResponseDetails != null ) {
-                    //ensure the cached SMContext Attributes are available, if a cache hit occurs
-                    attrList.addAll( authResponseDetails.getAttrList() );
-                    context.setAttrList(attrList);
-                } else if ( !attrList.isEmpty() ) {
-                    //Ensure that if any Attributes from an isAuthZ call are available in policy
-                    context.getAttrList().addAll( attrList );
+            }
+
+            //In both cases the attribute list should contain the UserDn, UserName, ClientIP
+            if ( authResponseDetails != null ) {
+                List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
+                //Ensure all attributes are updated
+                int status = updateCachedAttributes(userIp, context, authResponseDetails.getCreatedTimeStamp(), authResponseDetails.getAttrList(), updatedAttributes);
+                if(status == YES) {
+                    //recreate the cache entry with the new attribute list
+                    logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
+                    SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
+                    cache.store( cacheKey, cacheEntry );
                 }
+                else if(status != SUCCESS) {
+                    logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
+                    //remove from the cache
+                    cache.remove( cacheKey );
+                    return status;//no need to continue
+                }
+                // Ensure the cached SMContext Attributes are available, if a cache hit occurs
+                // Don't clear the attributeList as it will contain the decoded
+                // UserDn, UserName, ClientIP
+                //check all
+                attrList.addAll(updatedAttributes);
+                context.getAttrList().addAll(new ArrayList<>(attrList));
+            } else {
+                context.getAttrList().addAll(attrList);//TODO:???
             }
 
             //Currently the sessionDef and sessionAttributes associated with the token obtained from the request message
@@ -413,7 +505,17 @@ public class SiteMinderHighLevelAgent {
                 cache.store(cacheKey, authResponseDetails);
             }
         }
-        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList() ));
+        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
+            @Override
+            public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                if(o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID ) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+                else {
+                    return 1;
+                }
+            }
+        } ));
         return result;
     }
 

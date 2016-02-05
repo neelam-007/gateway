@@ -53,8 +53,8 @@ public class SiteMinderContextSelectorTest {
     public void setUp() throws Exception {
         context = new SiteMinderContext();
         List<SiteMinderContext.Attribute> attrs = new ArrayList<>();
-        attrs.add(new SiteMinderContext.Attribute("ATTR_USERDN", "cn=user,dc=l7tech,dc=com", 0));
-        attrs.add(new SiteMinderContext.Attribute("ATTR_USERNAME", "User Name", 0));
+        attrs.add(new SiteMinderContext.Attribute("ATTR_USERDN", "cn=user,dc=l7tech,dc=com"));
+        attrs.add(new SiteMinderContext.Attribute("ATTR_USERNAME", "User Name"));
         context.setAttrList(attrs);
         context.setSsoToken(SSO_TOKEN);
         context.setTransactionId(TRANSACTION_ID);

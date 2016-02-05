@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
+import netegrity.siteminder.javaagent.AttributeList;
 import netegrity.siteminder.javaagent.UserCredentials;
 import netegrity.siteminder.javaagent.Attribute;
 
@@ -21,10 +22,7 @@ import java.nio.ByteBuffer;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -385,8 +383,8 @@ public abstract class SiteMinderUtil {
         return  null;
     }
 
-    public static List<SiteMinderContext.Attribute> removeDuplicateAttributes ( List<SiteMinderContext.Attribute> attrList ) {
-        Set<SiteMinderContext.Attribute> attributes = new HashSet<>();
+    public static List<SiteMinderContext.Attribute> removeDuplicateAttributes ( List<SiteMinderContext.Attribute> attrList, Comparator<SiteMinderContext.Attribute> comparator) {
+        Set<SiteMinderContext.Attribute> attributes = new TreeSet<>(comparator);
         attributes.addAll(attrList);
         attrList.clear();
         attrList.addAll(attributes);
@@ -414,6 +412,20 @@ public abstract class SiteMinderUtil {
         return bytes;
     }
 
+    public static byte[] safeByteArrayCopy( byte[] src) {
+        byte[] bytes = new byte[]{};
+        try {
+            if(src != null) {
+                bytes = ByteBuffer.allocate(src.length).put(src).array();
+            }
+        } catch (IllegalArgumentException iae ) {
+            logger.log( Level.FINE, "Unable to allocate buffer!");
+        } catch ( BufferOverflowException bof ){
+            logger.log( Level.FINE, "BufferOverFlow encountered when allocating the buffer" );
+        }
+        return bytes;
+    }
+
     public static byte[] getAttrValueByName( List<SiteMinderContext.Attribute> attrList, String name ) {
         Iterator<SiteMinderContext.Attribute> values = attrList.iterator();
         while( values.hasNext() ){
@@ -423,5 +435,29 @@ public abstract class SiteMinderUtil {
             }
         }
         return null;
+    }
+
+    public static AttributeList convertToAttributeList(final List<SiteMinderContext.Attribute> attributes) {
+        List<SiteMinderContext.Attribute> attrs = new ArrayList<>(attributes);
+        SiteMinderUtil.removeDuplicateAttributes(attrs, new Comparator<SiteMinderContext.Attribute>() {
+            @Override
+            public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                if(o1.getId() != o2.getId())
+                    return o1.getId() - o2.getId();
+                else if(o1.getOid().compareTo(o2.getOid()) != 0)
+                    return o1.getOid().compareTo(o2.getOid());
+                else if(o1.getFlags() != o2.getFlags())
+                    return o1.getFlags() - o2.getFlags();
+                else
+                    return 0;
+            }
+        });
+        AttributeList attributeList = new AttributeList();
+        for(SiteMinderContext.Attribute attribute : attrs) {
+            //TODO: need to filter existing attributes with the same value?
+
+            attributeList.addAttribute(new Attribute(attribute.getId(), attribute.getTtl(), attribute.getFlags(), attribute.getOid(), attribute.getRawValue()));
+        }
+        return attributeList;
     }
 }

@@ -373,16 +373,24 @@ public class SiteMinderContext {
 
         private String name;
         private Object value;
-        private int ttl;//time to live in seconds
+        private final int ttl;//time to live in seconds
+        private final int id; //raw attribute id
+        private final String oid; //raw attribute oid
+        private final byte[] rawValue;// raw value
+        private final int flags;///raw flags
 
         public Attribute(String name, Object value) {
-            this(name, value, 0);
+            this(name, value, 0, 0, "", 0, new byte[0]);
         }
 
-        public Attribute(String name, Object value, int ttl) {
+        public Attribute(String name, Object value, int flags, int id, String oid, int ttl, byte[] rawValue) {
             this.name = name;
             this.value = value;
             this.ttl = ttl;
+            this.id = id;
+            this.oid = oid;
+            this.flags = flags;
+            this.rawValue = rawValue;
         }
 
         public String getName() {
@@ -405,9 +413,22 @@ public class SiteMinderContext {
             return ttl;
         }
 
-        public void setTtl(int ttl) {
-            this.ttl = ttl;
+        public int getId() {
+            return id;
         }
+
+        public String getOid() {
+            return oid;
+        }
+
+        public byte[] getRawValue() {
+            return rawValue;
+        }
+
+        public int getFlags() {
+            return flags;
+        }
+
 
         @Override
         public boolean equals(Object o) {
@@ -416,13 +437,20 @@ public class SiteMinderContext {
 
             Attribute attribute = (Attribute) o;
 
-            return name.equals(attribute.name);
+            if (id != attribute.id) return false;
+            if (flags != attribute.flags) return false;
+            if (!name.equals(attribute.name)) return false;
+            return !(oid != null ? !oid.equals(attribute.oid) : attribute.oid != null);
 
         }
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            int result = name.hashCode();
+            result = 31 * result + id;
+            result = 31 * result + (oid != null ? oid.hashCode() : 0);
+            result = 31 * result + flags;
+            return result;
         }
     }
 }

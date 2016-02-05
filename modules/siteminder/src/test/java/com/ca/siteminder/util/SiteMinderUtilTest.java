@@ -1,6 +1,7 @@
 package com.ca.siteminder.util;
 
 
+import com.ca.siteminder.SiteMinderContext;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.test.BugId;
@@ -20,8 +21,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
-import static junit.framework.Assert.*;
+
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +95,7 @@ public class SiteMinderUtilTest {
 
         Attribute attr = new Attribute(id, 0,0,"", attrVal);
 
-        assertEquals(1376326385,SiteMinderUtil.convertAttributeValueToInt(attr));
+        assertEquals(1376326385, SiteMinderUtil.convertAttributeValueToInt(attr));
     }
 
     @Test
@@ -133,5 +138,66 @@ public class SiteMinderUtilTest {
     @BugId("SSG-7530")
     public void testHandleCertificate_userCredentialsIsNull() throws Exception {
         assertFalse(SiteMinderUtil.handleCertificate(mock(X509Certificate.class), null));
+    }
+
+    @Test
+    public void testRemoveDuplicatesFromAttributeList_compareByName() throws Exception {
+        List<SiteMinderContext.Attribute> initial = new ArrayList<>();
+        initial.add(new SiteMinderContext.Attribute("one", "value1", 0, 218, "UNO", 0, "value1".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("one", "value2", 0, 218, "UNO", 1, "value2".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("two", "value1", 0, 215, "UNO", 0, "value1".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("custom", "value1", 0, 224, "CUST", 0, "custom=value1,custom=value2".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("custom", "value2", 0, 224, "CUST", 0, "value3".getBytes()));
+
+        SiteMinderContext.Attribute[] expected = { new SiteMinderContext.Attribute("one", "value1", 0, 218, "UNO", 0, "value1".getBytes()),
+                new SiteMinderContext.Attribute("two", "value1", 0, 215, "UNO", 0, "value1".getBytes()),
+                new SiteMinderContext.Attribute("custom", "value1", 0, 224, "CUST", 0, "custom=value1,custom=value2".getBytes()),
+                new SiteMinderContext.Attribute("custom", "value2", 0, 224, "CUST", 0, "value3".getBytes())
+        };
+
+        List<SiteMinderContext.Attribute> actual = SiteMinderUtil.removeDuplicateAttributes(initial, new Comparator<SiteMinderContext.Attribute>() {
+            @Override
+            public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                if(o1.getId() != 224 ) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+                else {
+                    return 1;
+                }
+            }
+        });
+
+        assertArrayEquals(expected, actual.toArray());
+    }
+
+    @Test
+    public void testRemoveDuplicateSiteMinderAttributes() throws Exception {
+        List<SiteMinderContext.Attribute> initial = new ArrayList<>();
+        initial.add(new SiteMinderContext.Attribute("one", "value1", 0, 218, "UNO", 0, "value1".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("one", "value1", 0, 218, "UNO", 0, "value1".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("one", "value1", 0, 220, "UNO", 0, "value1".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("custom", "value1", 0, 224, "HTTP_RESPONSE", 0, "custom=value1,custom=value2".getBytes()));
+        initial.add(new SiteMinderContext.Attribute("custom2", "value2", 0, 224, "HTTP_RESPONSE", 0, "custom=value1,custom=value2".getBytes()));
+
+        SiteMinderContext.Attribute[] expected = { new SiteMinderContext.Attribute("one", "value1", 0, 218, "UNO", 0, "value1".getBytes()),
+                new SiteMinderContext.Attribute("one", "value1", 0, 220, "UNO", 0, "value1".getBytes()),
+                new SiteMinderContext.Attribute("custom", "value1", 0, 224, "HTTP_RESPONSE", 0, "custom=value1,custom=value2".getBytes()),
+        };
+
+        List<SiteMinderContext.Attribute> actual = SiteMinderUtil.removeDuplicateAttributes(initial, new Comparator<SiteMinderContext.Attribute>() {
+            @Override
+            public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
+                if(o1.getId() != o2.getId())
+                    return o1.getId() - o2.getId();
+                else if(o1.getOid().compareTo(o2.getOid()) != 0)
+                    return o1.getOid().compareTo(o2.getOid());
+                else if(o1.getFlags() != o2.getFlags())
+                    return o1.getFlags() - o2.getFlags();
+                else
+                    return 0;
+            }
+        });
+
+        assertArrayEquals(expected, actual.toArray());
     }
 }
