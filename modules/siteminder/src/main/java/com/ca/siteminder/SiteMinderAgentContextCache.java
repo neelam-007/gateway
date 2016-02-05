@@ -12,11 +12,18 @@ public class SiteMinderAgentContextCache {
     private final Cache authenticationCache;
     private final Cache authorizationCache;
 
-    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, @NotNull Cache authenticationCache,
-                                       @NotNull Cache authorizationCache) {
+    private final long resourceCacheMaxAge;
+    private final long authorizationCacheMaxAge;
+    private final long authenticationCacheMaxAge;
+
+    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, long resourceCacheMaxAge, @NotNull Cache authenticationCache,
+                                       long authenticationCacheMaxAge, @NotNull Cache authorizationCache, long authorizationCacheMaxAge) {
         this.resourceCache = resourceCache;
+        this.resourceCacheMaxAge = resourceCacheMaxAge;
         this.authenticationCache = authenticationCache;
+        this.authenticationCacheMaxAge = authenticationCacheMaxAge;
         this.authorizationCache = authorizationCache;
+        this.authorizationCacheMaxAge = authorizationCacheMaxAge;
     }
 
     /**
@@ -41,6 +48,18 @@ public class SiteMinderAgentContextCache {
      */
     public Cache getAuthorizationCache() {
         return authorizationCache;
+    }
+
+    public long getResourceCacheMaxAge() {
+        return resourceCacheMaxAge;
+    }
+
+    public long getAuthorizationCacheMaxAge() {
+        return authorizationCacheMaxAge;
+    }
+
+    public long getAuthenticationCacheMaxAge() {
+        return authenticationCacheMaxAge;
     }
 
     public static class ResourceCacheKey {

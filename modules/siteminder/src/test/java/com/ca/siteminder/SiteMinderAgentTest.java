@@ -38,7 +38,7 @@ public class SiteMinderAgentTest {
         cacheManager = new SiteMinderAgentContextCacheManagerImpl();
         fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), cacheManager);
         smConfig = new SiteMinderConfiguration();
-        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME, 10, 10, 10);
+        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME, 10, 300000, 10, 300000, 10, 300000);
     }
 
     @After

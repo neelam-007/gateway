@@ -62,14 +62,13 @@ public class SiteMinderHighLevelAgent {
         final Cache cache = agentCache.getResourceCache();
 
         final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action);
-        long maxResourceCacheAge = getAgentPropertyLong(context.getConfig(), SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000);
-        
+
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
         SiteMinderResourceDetails resourceDetails;
         if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
             //now check if the cached entry exceeded the max cached time then remove from cache
             logger.log(Level.FINE, "Found resource cache entry: " + resourceCacheKey);
-            if(System.currentTimeMillis() - resourceDetails.getTimeStamp() <= maxResourceCacheAge) {
+            if (System.currentTimeMillis() - resourceDetails.getTimeStamp() <= agentCache.getResourceCacheMaxAge()) {
                 final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
                 //generate a new SiteMinder TransactionID as this is a per-request value
                 context.setTransactionId(transactionId);
@@ -96,7 +95,7 @@ public class SiteMinderHighLevelAgent {
             cache.store(resourceCacheKey, resourceDetails);
 
             if (!isProtected) {
-                logger.log(Level.INFO, "The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On.  Access cannot be authorized.");
+                logger.log(Level.INFO, "The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On. Access cannot be authorized.");
             }
         }
 
@@ -135,7 +134,7 @@ public class SiteMinderHighLevelAgent {
                 result = agent.decodeSessionToken( context, ssoCookie, false );
 
                 if (result != SUCCESS) {
-                    logger.log(Level.FINE, "CA Single Sign-On  Authorization attempt - CA Single Sign-On  is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
+                    logger.log(Level.FINE, "CA Single Sign-On Authorization attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
                     return result;
                 }
                 sessionDef = context.getSessionDef();
@@ -161,11 +160,12 @@ public class SiteMinderHighLevelAgent {
         //        context.getSessionDef().getIdleTimeout(),
         //        currentAgentTimeSeconds );
         updateSsoToken = true;
-        SiteMinderAuthResponseDetails cachedAuthResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
 
         //lookup in cache
+        SiteMinderAuthResponseDetails cachedAuthResponseDetails =
+                getAuthorizationCacheEntry(cache, cacheKey, agentCache.getAuthorizationCacheMaxAge());
+
         if (cachedAuthResponseDetails == null) {
-            logger.log(Level.FINE, "SiteMinder Authorization - cache missed");
             // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
             // Note: Only the ClientIP (dotted-quad notation) is needed, by the authorize API call.
             result = agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
@@ -281,7 +281,7 @@ public class SiteMinderHighLevelAgent {
             result = agent.decodeSessionToken(context, ssoCookie, false);
 
             if ( result != SUCCESS ) {
-                    logger.log(Level.FINE, "CA Single Sign-On  Authentication attempt - CA Single Sign-On  is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
+                    logger.log(Level.FINE, "CA Single Sign-On Authentication attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
                     return result;
             }
 
@@ -302,11 +302,12 @@ public class SiteMinderHighLevelAgent {
             updateSsoToken = true;
 
             SiteMinderContext.SessionDef sessionDef;
-            SiteMinderAuthResponseDetails authResponseDetails = (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
+
+            //lookup in cache
+            SiteMinderAuthResponseDetails authResponseDetails =
+                    getAuthenticationCacheEntry(cache, cacheKey, agentCache.getAuthenticationCacheMaxAge());
 
             if (authResponseDetails == null) {
-                logger.log(Level.FINE, "SiteMinder Authentication - cache missed");
-
                 // Cache miss occurred we need to Validate the decoded ssoToken/session
                 // ValidateSession calls AgentApi.login, thus we can cache this token.
                 result = agent.validateSession( credentials, userIp, ssoCookie,  context.getTransactionId(), context );
@@ -445,6 +446,48 @@ public class SiteMinderHighLevelAgent {
         return validSession;
     }
 
+    private SiteMinderAuthResponseDetails getAuthorizationCacheEntry(Cache cache, Object cacheKey, long entryMaxAge) {
+        SiteMinderAuthResponseDetails cachedAuthResponseDetails =
+                (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
+
+        if (null != cachedAuthResponseDetails) {
+            logger.log(Level.FINE, "Found SiteMinder Authorization cache entry: " + cacheKey);
+
+            //now check if the cached entry exceeded the max cached time then remove from cache
+            if (System.currentTimeMillis() - cachedAuthResponseDetails.getCreatedTimeStamp() > entryMaxAge) {
+                cache.remove(cacheKey);
+                logger.log(Level.FINE, "Maximum authorization cache age exceeded. Removed expired entry: " +
+                        cacheKey + " from authorization cache");
+                return null;
+            }
+        } else {
+            logger.log(Level.FINE, "SiteMinder Authorization - cache missed");
+        }
+
+        return cachedAuthResponseDetails;
+    }
+
+    private SiteMinderAuthResponseDetails getAuthenticationCacheEntry(Cache cache, Object cacheKey, long entryMaxAge) {
+        SiteMinderAuthResponseDetails cachedAuthResponseDetails =
+                (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);
+
+        if (null != cachedAuthResponseDetails) {
+            logger.log(Level.FINE, "Found SiteMinder Authentication cache entry: " + cacheKey);
+
+            //now check if the cached entry exceeded the max cached time then remove from cache
+            if (System.currentTimeMillis() - cachedAuthResponseDetails.getCreatedTimeStamp() > entryMaxAge) {
+                cache.remove(cacheKey);
+                logger.log(Level.FINE, "Maximum authentication cache age exceeded. Removed expired entry: " +
+                        cacheKey + " from authentication cache");
+                return null;
+            }
+        } else {
+            logger.log(Level.FINE, "SiteMinder Authentication - cache missed");
+        }
+
+        return cachedAuthResponseDetails;
+    }
+
     /**
      * Get the SiteMinderAgentContextCache
      *
@@ -460,14 +503,16 @@ public class SiteMinderHighLevelAgent {
         if (cache == null) {
             cache = cacheManager.createCache(smConfig.getGoid(), agentName,
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000),
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10)
+                    getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000),
+                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)
             );
         }
 
         return cache;
     }
-
 
     private int getAgentPropertyInt(SiteMinderConfiguration smConfig, String propName, int defaultValue) {
         Integer valueInt = null;

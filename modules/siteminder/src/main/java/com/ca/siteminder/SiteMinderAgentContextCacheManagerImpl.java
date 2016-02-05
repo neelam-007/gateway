@@ -31,8 +31,8 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
 
     @Override
     public SiteMinderAgentContextCache createCache(@NotNull Goid smConfigGoid, @NotNull String smAgentName,
-                                                int resourceMaxEntries, int authenticationMaxEntries,
-                                                int authorizationMaxEntries) {
+                                                   int resourceMaxEntries, long resourceMaxAge, int authenticationMaxEntries,
+                                                   long authenticationMaxAge, int authorizationMaxEntries, long authorizationMaxAge) {
         Key key = new Key(smConfigGoid, smAgentName);
         Cache resourceCache = createWhirlycache(key.toString() + ".resource",
                 resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
@@ -41,9 +41,8 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
         Cache authorizationCache = createWhirlycache(key.toString() + ".authorization",
                 authorizationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
 
-
-        SiteMinderAgentContextCache newCache =
-                new SiteMinderAgentContextCache(resourceCache, authenticationCache, authorizationCache);
+        SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, resourceMaxAge,
+                authenticationCache, authenticationMaxAge, authorizationCache, authorizationMaxAge);
 
         agentCacheMap.put(key, newCache);
 

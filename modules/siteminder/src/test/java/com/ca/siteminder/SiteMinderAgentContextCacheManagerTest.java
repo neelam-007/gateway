@@ -20,7 +20,7 @@ public class SiteMinderAgentContextCacheManagerTest {
 
     @Test
     public void testCreateCache() {
-        manager.createCache(Goid.DEFAULT_GOID, "sm1", 10, 10, 10);
+        manager.createCache(Goid.DEFAULT_GOID, "sm1", 10, 300000, 10, 300000, 10, 300000);
 
         SiteMinderAgentContextCache cache = manager.getCache(Goid.DEFAULT_GOID, "sm1");
 
