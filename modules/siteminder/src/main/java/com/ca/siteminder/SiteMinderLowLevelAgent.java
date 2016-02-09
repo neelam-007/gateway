@@ -174,14 +174,9 @@ public class SiteMinderLowLevelAgent {
         }
 
         int retCode = agentApi.loginEx(clientIP, resCtxDef, realmDef, userCreds, sessionDef, attrList, transactionId);
-
-        if (userCreds.name != null) {
-            attrList.addAttribute(AgentAPI.ATTR_USERNAME, 0, 0, null, userCreds.name.getBytes());
-        }
-
-        if (clientIP != null) {
-            attrList.addAttribute(AgentAPI.ATTR_CLIENTIP, 0,  0, null, clientIP.getBytes());
-        }
+        //Add ATTR_USERNAME and ATTR_CLIENTIP even if they contain no value
+        attrList.addAttribute(AgentAPI.ATTR_USERNAME, 0, 0, null, userCreds.name != null? userCreds.name.getBytes() : new byte[0]);
+        attrList.addAttribute(AgentAPI.ATTR_CLIENTIP, 0,  0, null, clientIP != null? clientIP.getBytes() : new byte[0]);
 
         storeAttributes(attributes, attrList);
 

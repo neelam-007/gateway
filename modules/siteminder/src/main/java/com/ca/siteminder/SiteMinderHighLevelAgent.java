@@ -81,6 +81,7 @@ public class SiteMinderHighLevelAgent {
             else {
                 //remove from cache if the entry exceeded the cache maxAge
                 cache.remove(resourceCacheKey);
+                resourceDetails = null;//remove reference
                 logger.log(Level.FINE, "Maximum resource cache age exceeded. Removed resource cache entry: " + resourceCacheKey + " from resource cache");
             }
         }
@@ -184,6 +185,31 @@ public class SiteMinderHighLevelAgent {
                     new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
 
             cache.store(cacheKey, authResponseDetails);
+            //set stored attribute list to avoid loosing the attributes
+            context.getAttrList().addAll(attrList);
+        }
+        else {
+            List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();
+            //Ensure all attributes are up to date i.e. ttl value is checked and those expired attributes are updated.
+            int status = updateCachedAttributes(userIp, context, cachedAuthResponseDetails.getCreatedTimeStamp(), cachedAuthResponseDetails.getAttrList(), updatedAttributes);
+            if(status == YES) {
+                //recreate the cache entry with the new attribute list
+                logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
+                SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
+                cache.store( cacheKey, cacheEntry );
+            }
+            else if(status != SUCCESS) {
+                logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
+                //remove from the cache if attribute update was unsuccessful
+                cache.remove( cacheKey );
+                return status;//no need to continue
+            }
+            // Ensure the cached SMContext Attributes are available, if a cache hit occurs
+            // Don't clear the attributeList as it will contain the decoded
+            // UserDn, UserName, ClientIP
+            //check all
+            attrList.addAll(updatedAttributes);
+            context.getAttrList().addAll( new ArrayList<>( attrList ));
         }
 
         if ( ( agent.getUpdateCookieStatus() && updateSsoToken ) && null == context.getSsoToken() ){ // create a new ssoToken
@@ -209,40 +235,15 @@ public class SiteMinderHighLevelAgent {
                 if (null == context.getSsoToken() ) {
                     context.setSsoToken( ssoCookie );
                 }
+                logger.log(Level.FINE, "Authorized user using cookie: " + ssoCookie);
+            }
+            else {
+                logger.log(Level.FINE, "Authorized user via SessionDef object from the context");
             }
             //ensure the sessionDef values are used to update the Attribute list contained within the context
             //set currentServerTime
-            context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
-
-            logger.log(Level.FINE, "Authorized user using cookie: " + ssoCookie);
+            context.getSessionDef().setCurrentServerTime(currentAgentTimeSeconds);
             result = YES;
-        }
-
-        //In both cases the attribute list should contain the UserDn, UserName, ClientIP
-        if ( cachedAuthResponseDetails != null ) {
-            List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
-            //Ensure all attributes are updated
-            int status = updateCachedAttributes(userIp, context, cachedAuthResponseDetails.getCreatedTimeStamp(), cachedAuthResponseDetails.getAttrList(), updatedAttributes);
-            if(status == YES) {
-                //recreate the cache entry with the new attribute list
-                logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
-                SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
-                cache.store( cacheKey, cacheEntry );
-            }
-            else if(status != SUCCESS) {
-                logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
-                //remove from the cache
-                cache.remove( cacheKey );
-                return status;//no need to continue
-            }
-            // Ensure the cached SMContext Attributes are available, if a cache hit occurs
-            // Don't clear the attributeList as it will contain the decoded
-            // UserDn, UserName, ClientIP
-            //check all
-            attrList.addAll(updatedAttributes);
-            context.getAttrList().addAll( new ArrayList<>( attrList ));
-        } else {
-            context.getAttrList().addAll(attrList);
         }
 
         //Remove possible duplicate attributes
@@ -371,23 +372,33 @@ public class SiteMinderHighLevelAgent {
                     return FAILURE;
                 }
 
-                //Duplicate UserDN value will occur as the decode and login API's both return these values
-                context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
-                    @Override
-                    public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
-                        if(o1.getId() != 224 ) {
-                            return o1.getName().compareTo(o2.getName());
-                        }
-                        else {
-                            return 1;
-                        }
-                    }
-                }));
-
+                context.getAttrList().addAll(attrList);//we might have some attributes from the contexts needs to be preserved
                 cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
-
                 updateSsoToken = true; //We do not have any insight into who created the token.
+            } else {
+                List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
+                //Ensure all attributes are updated
+                int status = updateCachedAttributes(userIp, context, authResponseDetails.getCreatedTimeStamp(), authResponseDetails.getAttrList(), updatedAttributes);
+                if(status == YES) {
+                    //recreate the cache entry with the new attribute list
+                    logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
+                    SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
+                    cache.store( cacheKey, cacheEntry );
+                }
+                else if(status != SUCCESS) {
+                    logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
+                    //remove from the cache
+                    cache.remove( cacheKey );
+                    return status;//no need to continue
+                }
+                // Ensure the cached SMContext Attributes are available, if a cache hit occurs
+                // Don't clear the attributeList as it will contain the decoded
+                // UserDn, UserName, ClientIP
+                //check all
+                attrList.addAll(updatedAttributes);
+                context.getAttrList().addAll(new ArrayList<>(attrList));
             }
+
 
             logger.log(Level.FINE, "SiteMinder Authentication - Agent update cookie status: " + agent.getUpdateCookieStatus());
             logger.log(Level.FINE, "SiteMinder Authentication - Context SSO Token: " + context.getSsoToken());
@@ -424,14 +435,6 @@ public class SiteMinderHighLevelAgent {
                         context.getSessionDef().getId(),
                         context.getSessionDef().getSpec() ));
 
-                //ensure the cached AttributeList is available in policy
-//                if( authResponseDetails != null ){
-//                    context.getAttrList().addAll( new ArrayList<>( authResponseDetails.getAttrList() ));
-//                }
-//                //TODO: check if attributes from the previous authentication are indeed required.
-//                if( !attrList.isEmpty() ){
-//                    context.getAttrList().addAll( attrList );
-//                }
                 logger.log(Level.FINE, "Authentication user using cookie:" + ssoCookie);
             } else {
                 if (!"".equals(ssoCookie)) {
@@ -440,43 +443,6 @@ public class SiteMinderHighLevelAgent {
                 //ensure the sessionDef is updated in the context
                 //set currentServerTime
                 context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
-                //TODO: review if this logic is indeed correct
-//                if ( authResponseDetails != null ) {
-//                    //ensure the cached SMContext Attributes are available, if a cache hit occurs
-//                    attrList.addAll( authResponseDetails.getAttrList() );
-//                    context.setAttrList(attrList);
-//                } else if ( !attrList.isEmpty() ) {
-//                    //Ensure that if any Attributes from an isAuthZ call are available in policy
-//                    context.getAttrList().addAll( attrList );
-//                }
-
-            }
-
-            //In both cases the attribute list should contain the UserDn, UserName, ClientIP
-            if ( authResponseDetails != null ) {
-                List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
-                //Ensure all attributes are updated
-                int status = updateCachedAttributes(userIp, context, authResponseDetails.getCreatedTimeStamp(), authResponseDetails.getAttrList(), updatedAttributes);
-                if(status == YES) {
-                    //recreate the cache entry with the new attribute list
-                    logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
-                    SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
-                    cache.store( cacheKey, cacheEntry );
-                }
-                else if(status != SUCCESS) {
-                    logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
-                    //remove from the cache
-                    cache.remove( cacheKey );
-                    return status;//no need to continue
-                }
-                // Ensure the cached SMContext Attributes are available, if a cache hit occurs
-                // Don't clear the attributeList as it will contain the decoded
-                // UserDn, UserName, ClientIP
-                //check all
-                attrList.addAll(updatedAttributes);
-                context.getAttrList().addAll(new ArrayList<>(attrList));
-            } else {
-                context.getAttrList().addAll(attrList);//TODO:???
             }
 
             //Currently the sessionDef and sessionAttributes associated with the token obtained from the request message
@@ -505,6 +471,7 @@ public class SiteMinderHighLevelAgent {
                 cache.store(cacheKey, authResponseDetails);
             }
         }
+        //remove any duplicate attributes accumulated in the context
         context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
             @Override
             public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
@@ -607,9 +574,9 @@ public class SiteMinderHighLevelAgent {
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
                     getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000),
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000),
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000),
                     getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)
             );
         }
 
