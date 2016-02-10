@@ -20,6 +20,7 @@ import javax.persistence.*;
 @Proxy(lazy=false)
 @Table(name="solution_kit_meta")
 public class EntityOwnershipDescriptor extends PersistentEntityImp {
+    private static final long serialVersionUID = -9208416680418516749L;
 
     /**
      * A {@code version_stamp} indicating that this entity descriptor is "owning" entity {@code read_only} flag.
