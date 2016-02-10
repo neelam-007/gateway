@@ -132,7 +132,7 @@ public class SiteMinderHighLevelAgent {
         if (null != ssoCookie && ssoCookie.trim().length() > 0) {
             if ( null == sessionDef ){
                 //decode the ssoToken
-                result = agent.decodeSessionToken( context, ssoCookie, false );
+                result = agent.decodeSessionToken( context, ssoCookie);
 
                 if (result != SUCCESS) {
                     logger.log(Level.FINE, "CA Single Sign-On Authorization attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
@@ -333,7 +333,7 @@ public class SiteMinderHighLevelAgent {
             // Decode the SSO token and ensure the session has not expired by
             // checking for idle timeout and max timeout based on the last session/access time.
 
-            result = agent.decodeSessionToken(context, ssoCookie, false);
+            result = agent.decodeSessionToken(context, ssoCookie);
 
             if ( result != SUCCESS ) {
                     logger.log(Level.FINE, "CA Single Sign-On Authentication attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
@@ -374,7 +374,6 @@ public class SiteMinderHighLevelAgent {
 
                 context.getAttrList().addAll(attrList);//we might have some attributes from the contexts needs to be preserved
                 cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
-                updateSsoToken = true; //We do not have any insight into who created the token.
             } else {
                 List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
                 //Ensure all attributes are updated

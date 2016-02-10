@@ -2,7 +2,6 @@ package com.ca.siteminder;
 
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.*;
 
 import java.util.*;
@@ -237,16 +236,16 @@ public class SiteMinderLowLevelAgent {
         int result;
 
         List<SiteMinderContext.Attribute> attributes = context.getAttrList();
-        ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext( context );
-        RealmDef realmDef = getSiteMinderRealmDefFromContext( context );
-        SessionDef sessionDef = getSiteMinderSessionDefFromContext( context );// get SessionDef object from the context
+        ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
+        RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
+        SessionDef sessionDef = getSiteMinderSessionDefFromContext(context);// get SessionDef object from the context
 
         if( null != ssoToken && null == sessionDef ){
             AttributeList attrList = new AttributeList();
 
-            result = decodeSsoToken(ssoToken, context, attrList, false);
+            result = decodeSsoToken(ssoToken, attrList);
 
-            storeDecodedAttributes(attributes, attrList);
+            storeAttributes(attributes, attrList);
 
             if (result != AgentAPI.SUCCESS) {
                 logger.log(Level.FINE, "CA Single Sign-On authorization attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
@@ -313,7 +312,7 @@ public class SiteMinderLowLevelAgent {
         return result;
     }
 
-    int decodeSessionToken( SiteMinderContext context, String ssoToken, boolean updateCookie ) throws SiteMinderApiClassException {
+    int decodeSessionToken(SiteMinderContext context, String ssoToken) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result = AgentAPI.FAILURE;
 
@@ -321,9 +320,9 @@ public class SiteMinderLowLevelAgent {
         if(ssoToken != null) {
             AttributeList attrList = new AttributeList();
 
-            result = decodeSsoToken(ssoToken, context, attrList, updateCookie);
+            result = decodeSsoToken(ssoToken, attrList);
 
-            storeDecodedAttributes(attributes, attrList);
+            storeAttributes(attributes, attrList);
 
             if (result != AgentAPI.SUCCESS) {
                 logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
@@ -345,41 +344,6 @@ public class SiteMinderLowLevelAgent {
         }
 
         return result;
-    }
-
-    private void addSessionAttributes(List<Pair<String, Object>> attributes, SessionDef sd) {
-
-        //remove any duplicate session Attributes that may exist.
-        for (Iterator<Pair<String, Object>> iter = attributes.iterator(); iter.hasNext(); ) {
-            String attr = iter.next().left;
-            switch( attr ) {
-                case SiteMinderAgentConstants.ATTR_SESSIONID:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_SESSIONSPEC:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_STARTSESSIONTIME:
-                    iter.remove();
-                    break;
-                case SiteMinderAgentConstants.ATTR_LASTSESSIONTIME:
-                    iter.remove();
-                    break;
-            }
-        }
-
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONID, sd.id));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONSPEC, sd.spec));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, sd.sessionStartTime));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, sd.sessionLastTime));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, sd.idleTimeout));
-        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, sd.maxTimeout));
     }
 
     private boolean isAttributePresent(List<SiteMinderContext.Attribute> attributes, String id) {
@@ -424,23 +388,19 @@ public class SiteMinderLowLevelAgent {
         return attrList;
     }
 
-    private int decodeSsoToken( String ssoToken, SiteMinderContext context, AttributeList attrList, boolean updateCookie ) {
+    private int decodeSsoToken(String ssoToken, AttributeList attrList) {
         //TODO: why version is set to 1?
         //since this is a non-3rd party cookie last parameter is set to false
         TokenDescriptor td = new TokenDescriptor(1, false);
         StringBuffer sb = new StringBuffer();
 
-        int result = agentApi.decodeSSOToken(ssoToken, td, attrList, updateCookie, sb);
+        int result = agentApi.decodeSSOToken(ssoToken, td, attrList, false, sb);//do not update SSO token at this point
 
         if (result ==  AgentAPI.SUCCESS) {
             logger.log(Level.FINE, "Third party token? '" + td.bThirdParty + "'; Version '" + td.ver + "'.");
-            //TODO: when caching is on ssoTokens are no longer updated
-            /*if(updateCookie) {//ssoTokens are no longer updated
-                context.setSsoToken(sb.toString());//set only if the token is successfully decoded
-            }
-            else {
-                context.setSsoToken(ssoToken);
-            }*/
+        }
+        else {
+            logger.log(Level.FINE, "Unable to decode ssotoken + " + ssoToken);
         }
 
         return result;
@@ -521,9 +481,9 @@ public class SiteMinderLowLevelAgent {
 
         //Only Decode the ssoToken if it has not been done.
         if ( null == context.getSessionDef() ){
-            result = decodeSsoToken(ssoToken, context, attrList, false);
+            result = decodeSsoToken(ssoToken, attrList);
 
-            storeDecodedAttributes(attributes, attrList);
+            storeAttributes(attributes, attrList);
 
             if (result != AgentAPI.SUCCESS) {
                 if (result == AgentAPI.FAILURE) {
@@ -573,70 +533,6 @@ public class SiteMinderLowLevelAgent {
                 sessionDef.spec));
 
         return result;
-    }
-
-    /**
-     * Stores only responseAttributes sessionDef attributes are used to update the sessionDef object only
-     */
-    private void storeDecodedAttributes(List<SiteMinderContext.Attribute> attributes, AttributeList attrList) {
-        for(int i=0;i <attrList.getAttributeCount(); i++) {
-            Attribute attr = attrList.getAttributeAt(i);
-            //Cannot assume that all attribute values are character data
-            logger.log(Level.FINE, "Attribute OID: " + attr.oid + " ID: " + attr.id + " Value: " + new String( attr.value ));
-            switch(attr.id) {
-                case AgentAPI.ATTR_USERDN:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERDN, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_USERNAME:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, SiteMinderUtil.chopNull(new String( attr.value)),attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_USERMSG:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERMSG, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_CLIENTIP:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CLIENTIP, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_DEVICENAME:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_DEVICENAME, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_IDENTITYSPEC:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDENTITYSPEC, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_USERUNIVERSALID:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERUNIVERSALID, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case SiteMinderAgentConstants.ATTR_SESSIONAGENTDRIFT:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONDRIFT, SiteMinderUtil.safeByteArrToInt( attr.value ), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_SERVICE_DATA:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SERVICE_DATA, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_SESSIONID:
-                case AgentAPI.ATTR_SESSIONSPEC:
-                case AgentAPI.ATTR_LASTSESSIONTIME:
-                case AgentAPI.ATTR_STARTSESSIONTIME:
-                case AgentAPI.ATTR_IDLESESSIONTIMEOUT:
-                case AgentAPI.ATTR_MAXSESSIONTIMEOUT:
-                    break;
-                case AgentAPI.ATTR_STATUS_MESSAGE:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STATUS_MESSAGE, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_AUTH_DIR_NAME:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAME, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_AUTH_DIR_NAMESPACE:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_NAMESPACE, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_AUTH_DIR_OID:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_OID, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                case AgentAPI.ATTR_AUTH_DIR_SERVER:
-                    attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER, SiteMinderUtil.chopNull(new String( attr.value)), attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-                    break;
-                default:
-                    attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-            }
-        }
     }
 
     /**
