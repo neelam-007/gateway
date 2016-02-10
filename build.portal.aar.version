@@ -1,10 +1,10 @@
-#Wed, 27 Jan 2016 16:07:46 -0800
+#Wed, 10 Feb 2016 14:10:48 -0800
 # Stores the major and minor version of the software in this branch of this source tree.
 # Must be edited by hand whenever a new branch is created:
 #   - tag the branch
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
 build.version.major=4
 build.version.minor=0
-build.version.micro=4
+build.version.micro=5
 build.version.revision=0
 
