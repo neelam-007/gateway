@@ -14,6 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.ServerConfigStub;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
@@ -310,4 +311,56 @@ public class ProtectedEntityTrackerTest {
             }
         });
     }
+
+    /**
+     * <p>
+     *     This issue was first detected from the Policy Manager when attempting to create a user from the Internal
+     *     Identity Provider.
+     * </p>
+     *
+     * <p>
+     *     This test directly targets the method that was causing the issue.
+     *     We also attempted to target the business case from the top of the call stack.
+     *     This presented it with the following options, neither of which ended up working:
+     * <ol>
+     *   <li>
+     *       From the {@link com.l7tech.server.identity.IdentityAdminImpl Admin Interface}: the
+     *       {@link com.l7tech.server.security.rbac.ProtectedEntityTracker ProtectedEntityTracker} targeted by this test
+     *       is called by interceptors that only engage when the Spring context is loaded.
+     *       Because we don't have a test infrastructure that loads the Spring context, calling
+     *       {@link com.l7tech.gateway.common.admin.IdentityAdmin#saveUser(com.l7tech.objectmodel.Goid,
+     *       com.l7tech.identity.User, java.util.Set, String) IdentityAdmin#saveUser()} would not activate the
+     *       interceptor chain and thus not trigger the error when the code was faulty.
+     *   </li>
+     *   <li>
+     *       From the RESTMAN (<code>UserResource</code>): The UserResource calls the interceptor chain directly, but it
+     *       does things in a slightly different order.
+     *       The Entity object it creates and passes to the ProtectedEntityTracker returns a non-null value on
+     *       <code>getId()</code>, and there is no control of it from the top of the call stack at the RESTMAN level.
+     *       So this is not feasible either.
+     *   </li>
+     * </ol>
+     * </p>
+     *
+     * <p>
+     *     Therefore, this test case, which targets the problem method directly, seems at present like the best way
+     *     to prevent this problem from happening again in the future.
+     * </p>
+     */
+    @BugId("SSG-11541")
+    @Test
+    public void isReadOnlyEntityShouldNotThrowExceptionWhenGivenEntityWithNoId() {
+        Entity entity = new Entity() {
+            @Override
+            public String getId() {
+                return null;
+            }
+        };
+        try {
+            protectedEntityTracker.isReadOnlyEntity(entity);
+        } catch (Exception thrown) {
+            Assert.assertNull("Entity with null id should not make isReadOnlyEntity() throw an exception", thrown);
+        }
+    }
+
 }

@@ -1505,6 +1505,7 @@
             <bean class="com.l7tech.server.security.rbac.RbacServicesImpl">
                 <property name="roleManager" ref="roleManager"/>
                 <property name="entityFinder" ref="entityFinder"/>
+                <property name="protectedEntityTracker" ref="protectedEntityTracker"/>
             </bean>
         </constructor-arg>
     </bean>
