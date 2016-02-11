@@ -1565,12 +1565,13 @@ public class WssDecoratorImpl implements WssDecorator {
         if ( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(algorithm)) {
             // TODO allow decoration requirements to specify OAEP digest method and perhaps OAEP params as well
             byte[] params = new byte[0];
+            SupportedDigestMethods oaepDigestMethod = XmlElementEncryptor.defaultOaepDigestMethod();
 
             encryptionMethod.setAttributeNS(null, "Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
                                               recipientCertificate,
                                               recipientCertificate.getPublicKey(),
-                                              null, // TODO ((SupportedDigestMethods)c.dreq.getOaepDigestMethod()).getCanonicalName()
+                                              oaepDigestMethod, // TODO ((SupportedDigestMethods)c.dreq.getOaepDigestMethod()).getCanonicalName()
                                               params);
 
             if (params.length > 0) {
@@ -1579,7 +1580,14 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element digestMethodEle = DomUtils.createAndAppendElementNS(encryptionMethod, "DigestMethod", SoapConstants.DIGSIG_URI, "ds");
-            digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha1");
+            if ( SupportedDigestMethods.SHA1.getCanonicalName().equals(oaepDigestMethod.getCanonicalName()) ) {
+                digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha1");
+            } else if ( SupportedDigestMethods.SHA256.getCanonicalName().equals(oaepDigestMethod.getCanonicalName()) ) {
+                digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha256");
+            } else {
+                throw new DecoratorException("DigestMethod Algorithm not supported " + oaepDigestMethod.getIdentifier() +
+                    " with EncryptionMethod Algorithm " + algorithm);
+            }
         } else {
             encryptionMethod.setAttributeNS(null, "Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
