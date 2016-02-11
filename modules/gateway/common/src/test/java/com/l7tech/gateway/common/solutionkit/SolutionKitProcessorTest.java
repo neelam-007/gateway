@@ -1,15 +1,24 @@
 package com.l7tech.gateway.common.solutionkit;
 
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.EncapsulatedAssertionMO;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import org.hamcrest.CoreMatchers;
-import org.junit.BeforeClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,15 +30,17 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SolutionKitProcessorTest {
-    private static SolutionKitsConfig solutionKitsConfig;
-    private static SolutionKitAdmin solutionKitAdmin;
-    private static SkarProcessor skarProcessor;
+    private SolutionKitsConfig solutionKitsConfig;
+    private SolutionKitAdmin solutionKitAdmin;
+    private SolutionKitProcessor solutionKitProcessor;
 
-    @BeforeClass
-    public static void load() throws Exception {
+    @Before
+    public void before() {
         solutionKitsConfig = mock(SolutionKitsConfig.class);
         solutionKitAdmin = mock(SolutionKitAdmin.class);
-        skarProcessor = mock(SkarProcessor.class);
+        solutionKitProcessor = spy(new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin));
+
+        when(solutionKitsConfig.getBundleAsString(any(SolutionKit.class))).thenReturn("");
     }
 
     @Test
@@ -47,7 +58,6 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
         // install or upgrade
-        final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
         final AtomicBoolean doTestInstallExecuted = new AtomicBoolean(false);
         solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
             @Override
@@ -60,7 +70,7 @@ public class SolutionKitProcessorTest {
         assertTrue("Expected testInstallOrUpgrade() to have executed the doTestInstall code.", doTestInstallExecuted.get());
 
         // make sure custom callbacks are invoked
-        verify(skarProcessor, times(numberOfSolutionKits)).invokeCustomCallback(any(SolutionKit.class));
+        verify(solutionKitProcessor, times(numberOfSolutionKits)).invokeCustomCallback(any(SolutionKit.class));
 
         // make sure setMappingTargetIdsFromResolvedIds called
         verify(solutionKitsConfig, times(numberOfSolutionKits)).setMappingTargetIdsFromResolvedIds(any(SolutionKit.class));
@@ -82,11 +92,6 @@ public class SolutionKitProcessorTest {
 
     @Test
     public void installOrUpgrade() throws Exception {
-
-        // need local mock to avoid state contamination from other tests
-        SolutionKitsConfig solutionKitsConfig = mock(SolutionKitsConfig.class);
-        SolutionKitAdmin solutionKitAdmin = mock(SolutionKitAdmin.class);
-
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
@@ -98,9 +103,7 @@ public class SolutionKitProcessorTest {
         selectedSolutionKits.add(solutionKit2);
 
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
-        when(skarProcessor.getAsSolutionKitTriple(solutionKit1)).thenReturn(new Triple<>(solutionKit1, "doesn't matter", false));
-        when(skarProcessor.getAsSolutionKitTriple(solutionKit2)).thenReturn(new Triple<>(solutionKit2, "doesn't matter", false));
-        final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
+
         solutionKitProcessor.installOrUpgrade();
 
         // make sure setMappingTargetIdsFromResolvedIds() called
@@ -141,11 +144,6 @@ public class SolutionKitProcessorTest {
 
     @Test
     public void installOrUpgradeWithParent() throws Exception {
-
-        // need local mock to avoid state contamination from other tests
-        SolutionKitsConfig solutionKitsConfig = mock(SolutionKitsConfig.class);
-        SolutionKitAdmin solutionKitAdmin = mock(SolutionKitAdmin.class);
-
         // parent skar for the test
         SolutionKit parentSolutionKit = new SolutionKit();
         parentSolutionKit.setName("ParentSK");
@@ -165,10 +163,6 @@ public class SolutionKitProcessorTest {
         solutionKit2.setParentGoid(parentSolutionKit.getGoid());
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
-        when(skarProcessor.getAsSolutionKitTriple(solutionKit1)).thenReturn(new Triple<>(solutionKit1, "doesn't matter", false));
-        when(skarProcessor.getAsSolutionKitTriple(solutionKit2)).thenReturn(new Triple<>(solutionKit2, "doesn't matter", false));
-
-        final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin, skarProcessor);
 
         // test parent not yet saved on Gateway calls solutionKitAdmin.save()
         solutionKitProcessor.installOrUpgrade();
@@ -188,5 +182,102 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(solutionKitsToUpgrade);
         solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin, times(2)).update(parentSolutionKit);
+    }
+
+    @Test
+    public void invokeCustomCallback() throws Exception {
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        initializeSkarPayload(solutionKitsConfig);
+
+        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom ui, SimpleSolutionKitManagerUi
+        final SolutionKitManagerUi ui = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid()).right.getCustomUi();
+        assertNotNull(ui);
+
+        // set input value (e.g. like passing in a value from the custom ui)
+        final String inputValue = "CUSTOMIZED!";
+        ui.getContext().getKeyValues().put("MyInputTextKey", "CUSTOMIZED!");
+
+        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom callback, SimpleSolutionKitManagerCallback
+        solutionKitProcessor.invokeCustomCallback(solutionKit);
+
+        // this callback is expected to prefix solution kit name with the input value
+        assertThat(solutionKit.getName(), CoreMatchers.startsWith(inputValue));
+
+        // this callback is expected to prefix encapsulated assertion description with the input value
+        final Bundle restmanBundle = solutionKitsConfig.getBundle(solutionKit);
+        assertNotNull(restmanBundle);
+        for (Item item : restmanBundle.getReferences()) {
+            if (EntityType.ENCAPSULATED_ASSERTION == EntityType.valueOf(item.getType())) {
+                assertThat(((EncapsulatedAssertionMO) item.getContent()).getProperties().get(EncapsulatedAssertionConfig.PROP_DESCRIPTION), CoreMatchers.startsWith(inputValue));
+            }
+        }
+    }
+
+    @Test
+    public void entityIdReplace() throws Exception {
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        initializeSkarPayload(solutionKitsConfig);
+        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        // simulate remapping of IDs in the bundle (secure password and JDBC)
+        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
+        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+        entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
+        Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
+        resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
+        solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
+
+        solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
+        solutionKitProcessor.getAsSolutionKitTriple(solutionKit);
+
+        // verify secure password and JDBC were resolved via mapping targetId in the bundle
+        final String bundleStr = solutionKitsConfig.getBundleAsString(solutionKit);
+        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"));
+        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));
+    }
+
+    @Test
+    public void entityIdReplaceNotAllowed() throws Exception {
+        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        initializeSkarPayload(solutionKitsConfig);
+        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
+
+        // set <l7:Property key="SkmEntityIdReplaceable"> to false
+        // simulating mapping not explicitly allowed as replaceable
+        Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
+        assertNotNull(bundle);
+        for (Mapping mapping : bundle.getMappings()) {
+            mapping.addProperty(SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE, false);
+        }
+
+        // simulate caller *trying* to remap IDs in the bundle
+        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
+        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "www...www");
+        entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "xxx...xxx");
+        Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
+        resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
+        solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
+
+        try {
+            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
+            solutionKitProcessor.getAsSolutionKitTriple(solutionKit);
+            fail("Expected: mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
+        } catch (SolutionKitException e) {
+            assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
+        }
+    }
+
+    private void initializeSkarPayload(final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+        // get the input stream of a signed solution kit
+        final InputStream inputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1.skar");
+        Assert.assertNotNull(inputStream);
+        final SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, inputStream);
+
+        // load the skar file
+        skarPayload.process();
+
+        solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
     }
 }

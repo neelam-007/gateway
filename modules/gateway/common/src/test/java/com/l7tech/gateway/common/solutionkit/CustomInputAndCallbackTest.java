@@ -4,14 +4,13 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -38,11 +37,14 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CustomInputAndCallbackTest {
-    private static SolutionKitsConfig solutionKitsConfig;
+    @Mock
+    private SolutionKitsConfig solutionKitsConfig;
+    private SolutionKitProcessor solutionKitProcessor;
 
-    @BeforeClass
-    public static void load() throws Exception {
-        solutionKitsConfig = mock(SolutionKitsConfig.class);
+    @Before
+    public void load() throws Exception {
+        SolutionKitAdmin solutionKitAdmin = mock(SolutionKitAdmin.class);
+        solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
     }
 
     @Test
@@ -61,7 +63,7 @@ public class CustomInputAndCallbackTest {
 
         // invoke callback, null context should not fail
         try {
-            new SkarProcessor(solutionKitsConfig).invokeCustomCallback(solutionKit);
+            solutionKitProcessor.invokeCustomCallback(solutionKit);
             verify(solutionKitsConfig, times(0)).getBundleAsDocument(solutionKit);
         } catch (Throwable t) {
             fail("Expected custom callback to invoke without error when context is null.");
@@ -88,7 +90,7 @@ public class CustomInputAndCallbackTest {
 
         // invoke with CallbackException
         try {
-            new SkarProcessor(solutionKitsConfig).invokeCustomCallback(solutionKit);
+            solutionKitProcessor.invokeCustomCallback(solutionKit);
             fail("Expected custom callback to throw an exception.");
         } catch (BadRequestException e) {
             assertEquals(errorMessage, e.getMessage());
@@ -106,7 +108,7 @@ public class CustomInputAndCallbackTest {
 
         // invoke with IncompatibleClassChangeError
         try {
-            new SkarProcessor(solutionKitsConfig).invokeCustomCallback(solutionKit);
+            solutionKitProcessor.invokeCustomCallback(solutionKit);
             fail("Expected custom callback to throw an exception.");
         } catch (BadRequestException e) {
             // do nothing, exception expected
@@ -158,8 +160,8 @@ public class CustomInputAndCallbackTest {
         when(mockClassLoader.loadClass(callbackClassName)).thenReturn(callbackClass);
 
         // instantiate and initialize ui
-        SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
-        skarProcessor.setCustomizationInstances(solutionKit, mockClassLoader);
+        SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
+        skarPayload.setCustomizationInstances(solutionKit, mockClassLoader);
 
         // setup test hook to run in the ui
         SolutionKitCustomization customization = customizations.get(solutionKit.getSolutionKitGuid()).right;
@@ -222,7 +224,7 @@ public class CustomInputAndCallbackTest {
         when(solutionKitsConfig.getBundleAsDocument(solutionKit)).thenReturn(getBundleAsDocument());
 
         // invoke callback
-        skarProcessor.invokeCustomCallback(solutionKit);
+        solutionKitProcessor.invokeCustomCallback(solutionKit);
 
         // verify method was called
         assertTrue("Expected SolutionKitManagerCallback.preMigrationBundleImportCalled(...) to be called, but was not.", callback.isPreMigrationBundleImportCalled());

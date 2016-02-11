@@ -81,7 +81,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         // install or upgrade
         try {
-            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(wizardInput, solutionKitAdmin, new SkarProcessor(wizardInput));
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(wizardInput, solutionKitAdmin);
             solutionKitProcessor.installOrUpgrade(errorKitList, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
 
                 @Override

@@ -133,7 +133,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         String errorMessage;
         try {
             settings.setSelectedSolutionKits(solutionKitsSelected);
-            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin, new SkarProcessor(settings));
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin);
             solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
 
                 @Override

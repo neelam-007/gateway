@@ -1,16 +1,19 @@
 package com.l7tech.gateway.common.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
+import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -18,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * Solution Kit processing logic that's common and accessible from both the console UI and in the server headless interface.
- * SolutionKitProcessor is an abstraction above SkarProcessor, working with solution kits *after* conversion from a .sskar (SkarProcessor responsible for the actual conversion from .sskar).
+ * SolutionKitProcessor is working with solution kits *after* conversion from a .sskar (SkarPayload responsible for the actual conversion from .sskar).
  * Goal is to reuse common code, at the same time, allow for slight differences using callbacks.
  */
 public class SolutionKitProcessor {
@@ -26,12 +29,10 @@ public class SolutionKitProcessor {
 
     final SolutionKitsConfig solutionKitsConfig;
     final SolutionKitAdmin solutionKitAdmin;
-    final SkarProcessor skarProcessor;
 
-    public SolutionKitProcessor(@NotNull final SolutionKitsConfig solutionKitsConfig, @NotNull final SolutionKitAdmin solutionKitAdmin, @NotNull final SkarProcessor skarProcessor) {
+    public SolutionKitProcessor(@NotNull final SolutionKitsConfig solutionKitsConfig, @NotNull final SolutionKitAdmin solutionKitAdmin) {
         this.solutionKitsConfig = solutionKitsConfig;
         this.solutionKitAdmin = solutionKitAdmin;
-        this.skarProcessor = skarProcessor;
     }
 
     // TODO (TL refactor) license check?
@@ -56,12 +57,12 @@ public class SolutionKitProcessor {
             }
 
             // invoke custom callbacks
-            skarProcessor.invokeCustomCallback(solutionKit);
+            invokeCustomCallback(solutionKit);
 
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
-            doTestInstall.call(skarProcessor.getAsSolutionKitTriple(solutionKit));
+            doTestInstall.call(getAsSolutionKitTriple(solutionKit));
         }
     }
 
@@ -97,7 +98,7 @@ public class SolutionKitProcessor {
                 // Update resolved mapping target IDs.
                 solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
-                Triple<SolutionKit, String, Boolean> loaded = skarProcessor.getAsSolutionKitTriple(solutionKit);
+                Triple<SolutionKit, String, Boolean> loaded = getAsSolutionKitTriple(solutionKit);
                 if (doAsyncInstall == null) {
                     solutionKitAdmin.install(loaded.left, loaded.middle, loaded.right);
                 } else {
@@ -185,5 +186,72 @@ public class SolutionKitProcessor {
         }
 
         return goid;
+    }
+
+    /**
+     * Invoke custom callback code support read and write of Solution Kit metadata and bundle.
+     */
+    void invokeCustomCallback(final SolutionKit solutionKit) throws SolutionKitException {
+        try {
+            SolutionKitManagerContext skContext;
+
+            Pair<SolutionKit, SolutionKitCustomization> customization;
+            SolutionKitManagerCallback customCallback;
+            SolutionKitManagerUi customUi;
+
+            customization = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid());
+            if (customization == null || customization.right == null) return;
+
+            // implementer provides a callback
+            customCallback = customization.right.getCustomCallback();
+            if (customCallback == null) return;
+
+            customUi = customization.right.getCustomUi();
+
+            // if implementer provides a context
+            skContext = customUi != null ? customUi.getContext() : null;
+            if (skContext != null) {
+                SolutionKitCustomization.populateSolutionKitManagerContext(solutionKitsConfig, skContext, solutionKit);
+
+                // execute callback
+                customCallback.preMigrationBundleImport(skContext);
+
+                // copy back metadata from xml version
+                SolutionKitUtils.copyDocumentToSolutionKit(skContext.getSolutionKitMetadata(), solutionKit);
+
+                // set (possible) changes made to metadata and bundles (install/upgrade and uninstall)
+                solutionKit.setUninstallBundle(XmlUtil.nodeToString(skContext.getUninstallBundle()));
+                solutionKitsConfig.setBundle(solutionKit, skContext.getMigrationBundle());
+
+                solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier
+                solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
+            } else {
+                customCallback.preMigrationBundleImport(null);
+            }
+        } catch (SolutionKitManagerCallback.CallbackException e) {
+            String errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+            throw new BadRequestException(e.getMessage(), e);
+        } catch (IncompatibleClassChangeError e) {
+            String errorMessage = solutionKit.getName() + " was created using an incompatible version of the customization library.";
+            logger.log(Level.WARNING, errorMessage, e);
+            throw new BadRequestException(errorMessage, e);
+        }  catch (IOException | TooManyChildElementsException | MissingRequiredElementException | SAXException e) {
+            String errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+            throw new BadRequestException("Unexpected error during custom callback invocation.", e);
+        }
+    }
+
+    /**
+     * Get solution kit from the SKAR for install or upgrade.
+     */
+    Triple<SolutionKit, String, Boolean> getAsSolutionKitTriple(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
+        String bundleXml = solutionKitsConfig.getBundleAsString(solutionKit);
+        if (bundleXml == null) {
+            throw new BadRequestException("Unexpected error: unable to get Solution Kit bundle.");
+        }
+
+        return new Triple<>(solutionKit, bundleXml, solutionKitsConfig.isUpgrade());
     }
 }

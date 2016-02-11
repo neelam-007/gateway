@@ -264,7 +264,7 @@ public class SolutionKitManagerResource {
                 // Get the upgrade list.  However, this list has not applied user selection on solution kits based on parameters such id and solutionKitSelect.
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(solutionKitForUpgrade));
 
-                // This help info must be done before skarProcessor runs.
+                // This help info must be done before skarPayload runs loading.
                 setSelectedGuidAndImForHeadlessUpgrade(isParent, upgradeGuid, solutionKitsConfig, instanceModifierParameter, solutionKitSelects);
 
                 // Update the upgrade list again after the above setSelectedGuidAndImForHeadlessUpgrade is done.
@@ -274,11 +274,10 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.setPreviouslyResolvedIds();
             }
 
-            // verify skar signature and create our SkarProcessor
-            final SkarProcessor skarProcessor;
+            // verify skar signature and create a SkarPayload to load the skar
             final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager));
             try (final SkarPayload payload = signedZip.load(fileInputStream, new SkarPayloadFactory(solutionKitsConfig))) {
-                skarProcessor = payload.load();
+                payload.process();
             } catch (final IOException e) {
                 throw new SignatureException("Invalid signed Zip: " + ExceptionUtils.getMessage(e), e);
             }
@@ -313,7 +312,7 @@ public class SolutionKitManagerResource {
 
             // Test all selected (child) solution kit(s) before actual installation.
             // This step is to prevent partial installation/upgrade
-            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper, skarProcessor);
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper);
             testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper);
 
             // install or upgrade

@@ -72,7 +72,7 @@ public class SignerUtilsTest {
         return (SignerUtils.SignedZip.InnerPayload)ret;
     }
 
-    private static String extractProperty(final Class aClass, final String propName) {
+    public static String extractProperty(final Class aClass, final String propName) {
         Assert.assertNotNull(aClass);
         Assert.assertThat(propName, Matchers.not(Matchers.isEmptyOrNullString()));
         try {

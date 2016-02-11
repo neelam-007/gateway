@@ -100,7 +100,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
         final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificatesForSolutionKits(trustedSignerCertsAdmin));
         try (final SkarPayload payload = signedZip.load(file, new SkarPayloadFactory(solutionKitsConfig))) {
-            payload.load();
+            payload.process();
         } catch (IOException | SignatureException | SolutionKitException e) {
             solutionKitsConfig.clear(false);
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);

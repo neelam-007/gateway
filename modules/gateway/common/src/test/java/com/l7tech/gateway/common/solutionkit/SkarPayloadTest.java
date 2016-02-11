@@ -2,13 +2,9 @@ package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.IOUtils;
@@ -29,30 +25,33 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.UUID;
 
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static org.junit.Assert.*;
 
 /**
- * Skar Processor Tests
+ * Skar Payload Tests (previous called as Skar Processor Tests)
  * .skar file reading i/o might make this test run relatively slow; if so use this annotation so tests only run for full build
  * // @ConditionalIgnore(condition = IgnoreOnDaily.class) //
  */
 @RunWith(MockitoJUnitRunner.class)
-public class SkarProcessorTest {
+public class SkarPayloadTest {
     private static final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-    private static final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+    private static SkarPayload skarPayload;
 
     protected static final long GOID_HI_START = Long.MAX_VALUE - 1;
 
     @BeforeClass
     public static void load() throws Exception {
         // get the input stream of a signed solution kit
-        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1.skar");
+        final InputStream inputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleServiceAndOthers-1.1.skar");
         Assert.assertNotNull(inputStream);
         // load the skar file
-        skarProcessor.load(inputStream);
+        skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, inputStream);
+        skarPayload.process();
     }
 
     @Test
@@ -75,11 +74,11 @@ public class SkarProcessorTest {
     public void setCustomizationInstances()  throws Exception {
 
         // get the input stream of the Customization jar
-        final InputStream inputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.Customization.jar");
+        final InputStream inputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.Customization.jar");
         Assert.assertNotNull(inputStream);
         try {
             //create a class loader with the jar
-            SolutionKitCustomizationClassLoader classLoader = skarProcessor.getCustomizationClassLoader(inputStream);
+            SolutionKitCustomizationClassLoader classLoader = skarPayload.getCustomizationClassLoader(inputStream);
             Assert.assertNotNull(classLoader);
 
             //Create a solution kit to test with
@@ -96,7 +95,7 @@ public class SkarProcessorTest {
             solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "com.l7tech.example.solutionkit.simple.v01_01.console.SimpleSolutionKitManagerUi");
 
             //call the method we're testing to set the customization classes
-            skarProcessor.setCustomizationInstances(solutionKit, classLoader);
+            skarPayload.setCustomizationInstances(solutionKit, classLoader);
 
             //check to see whether the SolutionKitManagerCallback and SolutionKitManagerUi were set
             Pair<SolutionKit, SolutionKitCustomization> customization;
@@ -125,92 +124,14 @@ public class SkarProcessorTest {
     }
 
     @Test
-    public void entityIdReplace() throws Exception {
-        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
-
-        // simulate remapping of IDs in the bundle (secure password and JDBC)
-        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
-        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
-        entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
-        Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
-        resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
-        solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
-
-        solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
-        skarProcessor.getAsSolutionKitTriple(solutionKit);
-
-        // verify secure password and JDBC were resolved via mapping targetId in the bundle
-        final String bundleStr = solutionKitsConfig.getBundleAsString(solutionKit);
-        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"));
-        assertThat(bundleStr, CoreMatchers.containsString("targetId=\"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));
-    }
-
-    @Test
-    public void entityIdReplaceNotAllowed() throws Exception {
-        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
-
-        // set <l7:Property key="SkmEntityIdReplaceable"> to false
-        // simulating mapping not explicitly allowed as replaceable
-        Bundle bundle = solutionKitsConfig.getBundle(solutionKit);
-        assertNotNull(bundle);
-        for (Mapping mapping : bundle.getMappings()) {
-            mapping.addProperty(SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE, false);
-        }
-
-        // simulate caller *trying* to remap IDs in the bundle
-        Map<String, String> entityIdReplaceMap = new HashMap<>(2);
-        entityIdReplaceMap.put("f1649a0664f1ebb6235ac238a6f71a6d", "www...www");
-        entityIdReplaceMap.put("0567c6a8f0c4cc2c9fb331cb03b4de6f", "xxx...xxx");
-        Map<String, Pair<SolutionKit, Map<String, String>>> resolvedEntityIds = new HashMap<>();
-        resolvedEntityIds.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, entityIdReplaceMap));
-        solutionKitsConfig.setResolvedEntityIds(resolvedEntityIds);
-
-        try {
-            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
-            skarProcessor.getAsSolutionKitTriple(solutionKit);
-            fail("Expected: mappings with property " + SolutionKitsConfig.MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE + " set to false.");
-        } catch (SolutionKitException e) {
-            assertThat(e.getMessage(), CoreMatchers.startsWith("Unable to process entity ID replace for mapping with scrId="));
-        }
-    }
-
-    @Test
-    public void invokeCustomCallback() throws Exception {
-        final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
-
-        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom ui, SimpleSolutionKitManagerUi
-        final SolutionKitManagerUi ui = solutionKitsConfig.getCustomizations().get(solutionKit.getSolutionKitGuid()).right.getCustomUi();
-        assertNotNull(ui);
-
-        // set input value (e.g. like passing in a value from the custom ui)
-        final StringBuilder inputValue = new StringBuilder().append("CUSTOMIZED!");
-        ui.getContext().getKeyValues().put("MyInputTextKey", "CUSTOMIZED!");
-
-        // expecting SimpleSolutionKit-1.1.skar to contain Customization.jar which has a custom callback, SimpleSolutionKitManagerCallback
-        skarProcessor.invokeCustomCallback(solutionKit);
-
-        // this callback is expected to prefix solution kit name with the input value
-        assertThat(solutionKit.getName(), CoreMatchers.startsWith(inputValue.toString()));
-
-        // this callback is expected to prefix encapsulated assertion description with the input value
-        final Bundle restmanBundle = solutionKitsConfig.getBundle(solutionKit);
-        assertNotNull(restmanBundle);
-        for (Item item : restmanBundle.getReferences()) {
-            if (EntityType.ENCAPSULATED_ASSERTION == EntityType.valueOf(item.getType())) {
-                assertThat(((EncapsulatedAssertionMO) item.getContent()).getProperties().get(EncapsulatedAssertionConfig.PROP_DESCRIPTION), CoreMatchers.startsWith(inputValue.toString()));
-            }
-        }
-    }
-
-    @Test
     public void invalidLoads() throws Exception {
         // expect error message "... value cannot be empty."
         SolutionKitsConfig invalidSolutionKitsConfig = new SolutionKitsConfig();
-        SkarProcessor invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        InputStream invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements.skar");
+        InputStream invalidInputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-EmptyMetadataElements.skar");
         Assert.assertNotNull(invalidInputStream);
+        SkarPayload invalidSkarPayload = new UnsignedSkarPayloadStub(invalidSolutionKitsConfig, invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarPayload.process();
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("value cannot be empty."));
@@ -218,11 +139,11 @@ public class SkarProcessorTest {
 
         // expect error message "Required element ... not found"
         invalidSolutionKitsConfig = new SolutionKitsConfig();
-        invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements.skar");
+        invalidInputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingMetadataElements.skar");
         Assert.assertNotNull(invalidInputStream);
+        invalidSkarPayload = new UnsignedSkarPayloadStub(invalidSolutionKitsConfig, invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarPayload.process();
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Required element"));
@@ -230,11 +151,11 @@ public class SkarProcessorTest {
 
         // expect error message "Missing required file ..."
         invalidSolutionKitsConfig = new SolutionKitsConfig();
-        invalidSkarProcessor = new SkarProcessor(invalidSolutionKitsConfig);
-        invalidInputStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle.skar");
+        invalidInputStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.0-MissingInstallBundle.skar");
         Assert.assertNotNull(invalidInputStream);
+        invalidSkarPayload = new UnsignedSkarPayloadStub(invalidSolutionKitsConfig, invalidInputStream);
         try {
-            invalidSkarProcessor.load(invalidInputStream);
+            invalidSkarPayload.process();
             fail("Expected: an invalid .skar file.");
         } catch (SolutionKitException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("Missing required file"));
@@ -244,14 +165,14 @@ public class SkarProcessorTest {
     @Test
     public void signedSkarOfSkars() throws Exception {
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SkarProcessor skarProcessor = Mockito.spy(new SkarProcessor(solutionKitsConfig));
-        final InputStream signedSkarOfSkarStream = SkarProcessorTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars.skar");
+        final InputStream signedSkarOfSkarStream = SkarPayloadTest.class.getResourceAsStream("com.l7tech.SimpleSolutionKit-1.1-skar-of-skars.skar");
         Assert.assertNotNull(signedSkarOfSkarStream);
+        final SkarPayload skarPayload = Mockito.spy(new UnsignedSkarPayloadStub(solutionKitsConfig, signedSkarOfSkarStream));
 
         // load the skar-of-skars
-        skarProcessor.load(signedSkarOfSkarStream);
+        skarPayload.process();
         // 3 times; once for the parent and twice for two children
-        Mockito.verify(skarProcessor, Mockito.times(3)).load(Mockito.<InputStream>any());
+        Mockito.verify(skarPayload, Mockito.times(3)).load(Mockito.<InputStream>any());
     }
 
     @Test
@@ -260,7 +181,7 @@ public class SkarProcessorTest {
         solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+        final SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
 
         // setup install bundle
         final Bundle installBundle = createBundle(
@@ -282,7 +203,7 @@ public class SkarProcessorTest {
                 "    <l7:Mappings/>\n" +   // empty mappings
                 "</l7:Bundle>");
 
-        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
 
         // expect a merged original bundle (i.e. same as merged bundle)
         assertEquals(installBundle, mergedBundle);
@@ -303,7 +224,7 @@ public class SkarProcessorTest {
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         solutionKitsConfig.setSolutionKitsToUpgrade(Collections.singletonList(solutionKitToUpgrade));
-        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+        final SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
 
         // setup install bundle
         final Bundle installBundle = createBundle(
@@ -328,7 +249,7 @@ public class SkarProcessorTest {
                 "    </l7:Mappings>\n" +
                 "</l7:Bundle>");
 
-        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
 
         // expect a merged original bundle (i.e. same as merged bundle)
         assertEquals(installBundle, mergedBundle);
@@ -358,7 +279,7 @@ public class SkarProcessorTest {
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         solutionKitsConfig.setSolutionKitsToUpgrade(Collections.singletonList(solutionKitToUpgrade));
-        final SkarProcessor skarProcessor = new SkarProcessor(solutionKitsConfig);
+        final SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
 
         // setup install bundle
         final Bundle installBundle = createBundle(
@@ -383,7 +304,7 @@ public class SkarProcessorTest {
                         "    </l7:Mappings>\n" +
                         "</l7:Bundle>");
 
-        final Bundle mergedBundle = skarProcessor.mergeBundle(solutionKit, installBundle, upgradeBundle);
+        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
 
         // expect the install and merged bundle to be different
         assertEquals(installBundle, mergedBundle);
