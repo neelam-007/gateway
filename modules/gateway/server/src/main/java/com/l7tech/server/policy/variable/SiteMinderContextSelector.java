@@ -1,10 +1,12 @@
 package com.l7tech.server.policy.variable;
 
+import com.ca.siteminder.SiteMinderAgentConstants;
 import com.ca.siteminder.SiteMinderContext;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +38,11 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
         if(lname.startsWith("attributes")) {
             Matcher m = ATTRUBUTES_PATTERN.matcher(lname);
             if(m.find()){
+                final List<SiteMinderContext.Attribute> attributes = getSiteMinderAttributes(ctx);
+
                 if(StringUtils.isNotEmpty(m.group(1))){
                     if(StringUtils.isNotEmpty(m.group(3))){
-                        SiteMinderContext.Attribute attribute = getElement(ctx.getAttrList(), m, handler);
+                        SiteMinderContext.Attribute attribute = getElement(attributes, m, handler);
                         String remaining = m.group(3).substring(1);
                         if(remaining.equals("name")) {
                             return new Selection(attribute.getName());
@@ -52,17 +56,17 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                     }
                 }
                 else if (lname.equals("attributes.length")){
-                    if(ctx.getAttrList() != null) {
-                        return new Selection(Integer.toString(ctx.getAttrList().size()));
+                    if(attributes != null) {
+                        return new Selection(Integer.toString(attributes.size()));
                     }
                 }
                 else if(lname.equals("attributes")) {
-                    return new Selection(ctx.getAttrList(), name.substring("attributes".length()));
+                    return new Selection(attributes, name.substring("attributes".length()));
                 }
                 else {
                     if(lname.length() > "attributes".length() + 1){
                         String remaining = lname.substring("attributes".length() + 1);
-                        for(SiteMinderContext.Attribute attribute : ctx.getAttrList()) {
+                        for(SiteMinderContext.Attribute attribute : attributes) {
                             if(remaining.equalsIgnoreCase(attribute.getName())){
                                 return new Selection(attribute.getValue());
                             }
@@ -183,6 +187,20 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
 
 
         return null;
+    }
+
+    @NotNull
+    private List<SiteMinderContext.Attribute> getSiteMinderAttributes(SiteMinderContext ctx) {
+        final List<SiteMinderContext.Attribute> attributes = new ArrayList<>(ctx.getAttrList());
+        //add session attributes to the list of attributes
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONID, ctx.getSessionDef().getId()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONSPEC, ctx.getSessionDef().getSpec()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, ctx.getSessionDef().getSessionStartTime()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, ctx.getSessionDef().getSessionLastTime()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, ctx.getSessionDef().getMaxTimeout()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, ctx.getSessionDef().getIdleTimeout()));
+        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CURRENTSERVERTIME, ctx.getSessionDef().getCurrentServerTime()));
+        return attributes;
     }
 
     private Selection matchPattern(Pattern pattern, String str, Functions.Unary<Selection, String> func) {

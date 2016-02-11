@@ -91,7 +91,7 @@ public class SiteMinderContextSelectorTest {
     @Test
     public void shouldReturnAttributeLength() throws Exception {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.length", mockSyntaxErrorHandler, false);
-        assertEquals("2", actual.getSelectedValue());
+        assertEquals("9", actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
 
@@ -260,6 +260,35 @@ public class SiteMinderContextSelectorTest {
     public void shouldReturnSourceIpAddress() throws Exception {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "sourceIpAddress", mockSyntaxErrorHandler, false);
         assertEquals(USER_IP, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnSessionAttributes() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_SESSIONID", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_ID, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+        actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_SESSIONSPEC", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_SPEC, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+        actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_LASTSESSIONTIME", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_LASTTIME, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+        actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_STARTSESSIONTIME", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_STARTTIME, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+        actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_MAXSESSIONTIMEOUT", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_MAXTIMEOUT, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+        actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_IDLESESSIONTIMEOUT", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_IDLETIMEOUT, actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnSessionAttributesValue() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.2.value", mockSyntaxErrorHandler, false);
+        assertEquals(SESSDEF_ID, actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
 }
