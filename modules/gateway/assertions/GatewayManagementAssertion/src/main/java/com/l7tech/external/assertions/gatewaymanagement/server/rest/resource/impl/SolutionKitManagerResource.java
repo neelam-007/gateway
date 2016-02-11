@@ -110,7 +110,7 @@ public class SolutionKitManagerResource {
      * 	    Add other form-field name and value as needed.
      * 	    <ul>
      * 	        <li>
-     * 	            <code>entityIdReplace</code>. Optional. To map one entity ID to another. Format [find_id]::[replace_with_id]</>.
+     * 	            <code>entityIdReplace</code>. Optional. To map one entity ID (from the SKAR) to an existing gateway entity ID to resolve entity conflict. Format [find_id]::[replace_with_id]</>.
      * 	            <ul>
      *                  <li>The Solution Kit Manager will replace the entity ID to the left of the double colon (::) with the entity ID to the right. E.g. set <code>entityIdReplace</code> to <code>f1649a0664f1ebb6235ac238a6f71a6d::66461b24787941053fc65a626546e4bd</code>.</li>
      * 	                <li>Multiple values accepted (values from multiple fields with the same form-field name are treated as a list of values).</li>
@@ -204,7 +204,7 @@ public class SolutionKitManagerResource {
      * @param fileInputStream Input stream of the upload SKAR file.
      * @param instanceModifierParameter Global instance modifiers of to-be-upgraded/installed solution kit(s).
      * @param solutionKitSelects Which Solution Kit(s) (found by ID and Instance Modifier) in the uploaded SKAR to install/upgrade. If not provided, all Solution Kit(s) in the upload SKAR will be installed/upgraded.
-     * @param entityIdReplaces Optional. To map one entity ID to another. Format [find_id]::[replace_with_id].
+     * @param entityIdReplaces Optional. To map one entity ID (from the SKAR) to an existing gateway entity ID to resolve entity conflict.  Format [find_id]::[replace_with_id].
      * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
      * @param formDataMultiPart See above.
      * @return Output from the Solution Kit Manager.
