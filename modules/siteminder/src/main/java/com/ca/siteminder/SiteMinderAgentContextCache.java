@@ -65,10 +65,12 @@ public class SiteMinderAgentContextCache {
     public static class ResourceCacheKey {
         private final String resource;
         private final String action;
+        private final String serverName;
 
-        public ResourceCacheKey(@NotNull String resource, @NotNull String action) {
+        public ResourceCacheKey(@NotNull String resource, @NotNull String action, @NotNull String serverName) {
             this.resource = resource;
             this.action = action;
+            this.serverName = serverName;
         }
 
         public String getResource() {
@@ -77,6 +79,10 @@ public class SiteMinderAgentContextCache {
 
         public String getAction() {
             return action;
+        }
+
+        public String getServerName() {
+            return serverName;
         }
 
         @Override
@@ -88,6 +94,7 @@ public class SiteMinderAgentContextCache {
 
             if (!action.equals(that.action)) return false;
             if (!resource.equals(that.resource)) return false;
+            if (!serverName.equals(that.serverName)) return false;
 
             return true;
         }

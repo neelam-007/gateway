@@ -61,8 +61,7 @@ public class SiteMinderHighLevelAgent {
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
-        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action);
-
+        final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, serverName != null ? serverName : "");
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
         SiteMinderResourceDetails resourceDetails;
         if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
