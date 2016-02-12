@@ -65,6 +65,8 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         System.setProperty(AbstractServerSiteMinderAssertion.SYSTEM_PROPERTY_SITEMINDER_ENABLED, "true");
         when(mockAppCtx.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class)).thenReturn(mockHla);
         when(mockAppCtx.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class)).thenReturn(mockSiteMinderConfigurationManager);
+        when(mockSiteMinderConfigurationManager.getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID)).thenReturn(mockLla);
+        when(mockLla.isInitialized()).thenReturn(true);
         when(mockHla.checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), isNull(String.class), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
         when(mockHla.checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), isNull(String.class), eq("/unprotected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(false);
         assertion = new SiteMinderCheckProtectedAssertion();
@@ -130,12 +132,10 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         assertion.setSmAgentName("agent");
 
         pec.setVariable("siteminder.smcontext", mockContext);
-        when(mockSiteMinderConfigurationManager.getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID)).thenReturn(mockLla);
+        when(mockContext.getAgent()).thenReturn(mockLla);
         fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-        verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
         verify(mockHla, times(1)).checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), isNull(String.class), eq(assertion.getProtectedResource()), eq(assertion.getAction()), eq(mockContext));
-        verify(mockContext,times(1)).setAgent(mockLla);
         verify(mockContext, times(1)).setSourceIpAddress(eq(REQUEST_IP_ADDRESS));
     }
 
@@ -185,13 +185,11 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         pec.setVariable("siteminder.smcontext", mockContext);
-        when(mockSiteMinderConfigurationManager.getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID)).thenReturn(mockLla);
+        when(mockContext.getAgent()).thenReturn(mockLla);
         when(mockHla.checkProtected((String)isNull(), eq("agent"), isNull(String.class), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
         fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-        verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
-        verify(mockHla, times(1)).checkProtected((String)isNull(), eq("agent"), isNull(String.class), eq(assertion.getProtectedResource()), eq(assertion.getAction()), eq(mockContext));
-        verify(mockContext,times(1)).setAgent(mockLla);
+        verify(mockHla, times(1)).checkProtected((String) isNull(), eq("agent"), isNull(String.class), eq(assertion.getProtectedResource()), eq(assertion.getAction()), eq(mockContext));
         verify(mockContext, never()).setSourceIpAddress(eq(REQUEST_IP_ADDRESS));
     }
 
@@ -205,7 +203,6 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         assertion.setSmAgentName("agent");
         assertion.setServerName(SERVER_NAME);
         when(mockHla.checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), eq(SERVER_NAME), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
-
         fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
@@ -228,6 +225,18 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
         verify(mockHla, times(1)).checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), eq(SERVER_NAME), eq(assertion.getProtectedResource()), eq(assertion.getAction()), any(SiteMinderContext.class));
+    }
+
+    @Test
+    public void shouldFalsifyAssertionWhenLowLevelAgentNotInitialized() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setProtectedResource("/protected");
+        assertion.setAgentId("agent");
+        assertion.setAgentGoid(Goid.DEFAULT_GOID);
+        assertion.setAction("POST");
+        when(mockLla.isInitialized()).thenReturn(false);
+        fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
 
 }

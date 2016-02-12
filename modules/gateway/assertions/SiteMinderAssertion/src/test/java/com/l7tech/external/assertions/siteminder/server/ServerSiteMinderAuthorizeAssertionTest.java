@@ -72,6 +72,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         when(mockAppCtx.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class)).thenReturn(mockHla);
         when(mockAppCtx.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class)).thenReturn(new SiteMinderConfigurationManagerStub());
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        when(mockLla.isInitialized()).thenReturn(true);
         //Setup Policy Enforcement Context
         Message requestMsg = new Message();
         Message responseMsg = new Message();
@@ -167,7 +168,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertTrue(fixture.setSessionCookie(pec, mockContext, map));
         verify(mockContext, times(1)).getSsoToken();
         String[] cookies = pec.getResponse().getHeadersKnob().getHeaderValues("Set-Cookie", HeadersKnob.HEADER_TYPE_HTTP);
-        assertTrue("Only one cookie header is set",cookies.length == 1);
+        assertTrue("Only one cookie header is set", cookies.length == 1);
         assertEquals("SMSESSION=\"" + SSO_TOKEN+ "\"", cookies[0]);
     }
 
@@ -244,5 +245,17 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertTrue(pec.getResponse().getHttpResponseKnob() != null);
         assertTrue(pec.getResponse().getHttpCookiesKnob().getCookies().isEmpty());
 
+    }
+
+    @Test
+    public void shouldFalsifyAssertionWhenLowLevelAgentNotInitialized() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setUseVarAsCookieSource(false);
+        assertion.setSetSMCookie(false);
+        pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        when(mockLla.isInitialized()).thenReturn(false);
+        fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
 }

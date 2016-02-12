@@ -53,10 +53,12 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
     }
 
     protected boolean initSmAgentFromContext(Goid agentGoid, SiteMinderContext context) throws PolicyAssertionException {
+        boolean result = false;
         try {
             if (context.getAgent() == null) {
                 context.setAgent(manager.getSiteMinderLowLevelAgent(agentGoid));
             }
+            result = context.getAgent().isInitialized();
         } catch (SiteMinderApiClassException e) {
             logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "CA Single Sign-On agent API exception occurred, agent Goid=" + agentGoid);
             throw new PolicyAssertionException(assertion, "CA Single Sign-On agent API exception", ExceptionUtils.getDebugException(e));
@@ -65,9 +67,8 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
             throw new PolicyAssertionException(assertion, "No CA Single Sign-On agent configuration", ExceptionUtils.getDebugException(e));
         } catch (IllegalStateException e) {
             logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
-            return false;
         }
-        return true;
+        return result;
     }
 
     protected SiteMinderConfiguration getSmConfig(Goid agentGoid) throws PolicyAssertionException {

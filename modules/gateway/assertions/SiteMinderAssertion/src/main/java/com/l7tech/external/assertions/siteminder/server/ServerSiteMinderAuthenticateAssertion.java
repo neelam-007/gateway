@@ -73,8 +73,8 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 return AssertionStatus.FALSIFIED;
             }
 
-            if(smContext.getAgent() == null) {
-                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
+            if(smContext.getAgent() == null || !smContext.getAgent().isInitialized()) {
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null or not initialized!");
                 return AssertionStatus.FALSIFIED;
             }
 

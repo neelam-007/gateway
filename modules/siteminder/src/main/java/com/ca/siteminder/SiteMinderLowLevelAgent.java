@@ -32,7 +32,7 @@ public class SiteMinderLowLevelAgent {
 
     public SiteMinderLowLevelAgent(SiteMinderConfig config) throws SiteMinderApiClassException {
         agentConfig = config;
-        if(!initialize()) throw new SiteMinderApiClassException("Unable to initialize CA Single Sign-On Agent API");
+        initialize();
     }
 
 

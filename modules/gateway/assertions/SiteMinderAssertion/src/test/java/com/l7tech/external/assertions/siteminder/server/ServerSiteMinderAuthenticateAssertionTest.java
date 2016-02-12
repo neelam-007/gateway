@@ -82,6 +82,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         when(mockAppCtx.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class)).thenReturn(mockHla);
         when(mockAppCtx.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class)).thenReturn(new SiteMinderConfigurationManagerStub());
+        when(mockLla.isInitialized()).thenReturn(true);
         //Setup Context
         requestMsg = new Message();
         responseMsg = new Message();
@@ -663,5 +664,17 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(JWT_HMAC)), isNull(String.class), isNull(String.class), eq(mockContext));
+    }
+
+    @Test
+    public void shouldFalsifyAssertionWhenLowLevelAgentNotInitialized() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+        smAuthenticateAssertion.setLastCredential(false);
+        smAuthenticateAssertion.setUseSMCookie(false);
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        when(mockLla.isInitialized()).thenReturn(false);
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
 }
