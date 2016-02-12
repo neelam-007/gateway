@@ -26,9 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import javax.sql.DataSource;
 import javax.xml.bind.JAXBException;
@@ -39,6 +39,8 @@ import java.util.logging.Logger;
 
 /**
  * Server side implementation of the IncrementPostBackAssertion.
+ * This assertion should be included in PSSG policy to handle postback message
+ * from TSSG.
  *
  * @see com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion
  */
@@ -47,15 +49,10 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
 
     private final String[] variablesUsed;
 
-    // todo make configurable? cluster prop? use default jdbc?
-    private final int queryTimeout = 300;
-    private final int maxRecords = 1000000;
-
-    protected final String ENTITY_TYPE_APPLICATION = "APPLICATION";
-    protected final static String SYNC_STATUS_PARTIAL = "partial";
-    protected final static String SYNC_STATUS_ERROR = "error";
-    protected final static String ERROR_ENTITY_ID_LABEL = "id";
-    protected final static String ERROR_ENTITY_MSG_LABEL = "msg";
+    protected final static String SYNC_STATUS_PARTIAL = PortalSyncPostbackJson.SYNC_STATUS_PARTIAL;
+    protected final static String SYNC_STATUS_ERROR = PortalSyncPostbackJson.SYNC_STATUS_ERROR;
+    protected final static String ERROR_ENTITY_ID_LABEL = PortalSyncPostbackJson.ERROR_ENTITY_ID_LABEL;
+    protected final static String ERROR_ENTITY_MSG_LABEL = PortalSyncPostbackJson.ERROR_ENTITY_MSG_LABEL;
 
 
     private final JdbcQueryingManager jdbcQueryingManager;
@@ -70,38 +67,23 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         jdbcConnectionPoolManager = context.getBean("jdbcConnectionPoolManager", JdbcConnectionPoolManager.class);
     }
 
-    /*
-     * For tests.
-     */
-    ServerIncrementPostBackAssertion(IncrementPostBackAssertion assertion, JdbcQueryingManager jdbcQueryingManager, PlatformTransactionManager transactionManager, JdbcConnectionPoolManager jdbcConnectionPoolManager) throws PolicyAssertionException {
-        super(assertion);
-        this.variablesUsed = assertion.getVariablesUsed();
-        this.jdbcQueryingManager = jdbcQueryingManager;
-        this.transactionManager = transactionManager;
-        this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
-    }
-
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Map<String, Object> vars = context.getVariableMap(this.variablesUsed, getAudit());
             Object jsonPayload = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON);
             final Object jdbcConnectionName = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JDBC_CONNECTION);
             final Object nodeId = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_NODE_ID);
-
             //validate inputs
             if (jsonPayload == null || !(jsonPayload instanceof String) || ((String) jsonPayload).isEmpty()) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a sync postback message");
             }
-
             //validate inputs
-            if (nodeId == null) {
+            if (!(nodeId instanceof String) || Strings.isNullOrEmpty((String) nodeId)) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a node id");
             }
-
-            if (jdbcConnectionName == null) {
+            if (!(jdbcConnectionName instanceof String) || Strings.isNullOrEmpty((String) jdbcConnectionName)) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
             }
-
             try {
                 dataSource = jdbcConnectionPoolManager.getDataSource(jdbcConnectionName.toString());
                 if (dataSource == null) throw new FindException();
@@ -119,35 +101,24 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             if (current != JsonToken.START_OBJECT) {
                 throw new IOException("Invalid JSON input");
             }
-            final PortalSyncPostbackJson postback = mapper.readValue(jsonParser, PortalSyncPostbackJson.class);
-            validatePostback(postback);
-            TransactionCallback<PolicyAssertionException> transactionCallback;
-            if (postback.getEntityType().equalsIgnoreCase(ENTITY_TYPE_APPLICATION)) {
-                transactionCallback = new TransactionCallback<PolicyAssertionException>() {
-                    @Override
-                    public PolicyAssertionException doInTransaction(TransactionStatus transactionStatus) {
-                        try {
-                            handleApplicationSyncPostback(jdbcConnectionName.toString(), postback, nodeId.toString());
-                            return null;
-                        } catch (PolicyAssertionException e) {
-                            transactionManager.rollback(transactionStatus);
-                            return e;
-                        }
-                    }
-                };
+            PortalSyncPostbackJson postback = mapper.readValue(jsonParser, PortalSyncPostbackJson.class);
+            postback.validate();
+            DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+            def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+            TransactionStatus status = transactionManager.getTransaction(def);
+            if (postback.getEntityType().equalsIgnoreCase(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION)) {
+                try {
+                    handleApplicationSyncPostback(jdbcConnectionName.toString(), postback, nodeId.toString());
+                    transactionManager.commit(status);
+                } catch (PolicyAssertionException e) {
+                    transactionManager.rollback(status);
+                    throw e;
+                }
             } else {
                 throw new PolicyAssertionException(assertion, "Not supported entity type:" + postback.getEntityType());
             }
-
-            final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-            tt.setReadOnly(false);
-            PolicyAssertionException exception = tt.execute(transactionCallback);
-            if (exception != null) {
-                throw exception;
-            }
-
         } catch (Exception ex) {
-            final String errorMsg = "Error Retrieving Sync PostBack Message";
+            final String errorMsg = "Error handling sync postBack message";
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[]{errorMsg + ": " + ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex));
             return AssertionStatus.FAILED;
@@ -155,28 +126,6 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         return AssertionStatus.NONE;
     }
 
-    /**
-     * validate the postback message.
-     * If incrementStatus is "partial", the entityErrors cannot be null or empty.
-     * If the incrementStatus is "error", the errorMessage cannot be null or empty.
-     */
-    void validatePostback(PortalSyncPostbackJson postback) throws IOException, PolicyAssertionException {
-
-        if (postback.getIncrementStatus().equalsIgnoreCase(SYNC_STATUS_PARTIAL) && CollectionUtils.isEmpty(postback.getEntityErrors())) {
-            throw new PolicyAssertionException(assertion, "When the incremental status is '" + SYNC_STATUS_PARTIAL + "', the message must contain a list of entity sync errors");
-        } else if (postback.getIncrementStatus().equalsIgnoreCase(SYNC_STATUS_ERROR) && StringUtils.isEmpty(postback.getErrorMessage())) {
-            throw new PolicyAssertionException(assertion, "When the incremental status is '" + SYNC_STATUS_ERROR + "', the message must contain an error message");
-        }
-        if (Strings.isNullOrEmpty(postback.getEntityType())) {
-            throw new IOException("Invalid JSON input, missing entity type field");
-        }
-        if (Strings.isNullOrEmpty(postback.getBulkSync())) {
-            throw new IOException("Invalid JSON input, missing bulk sync field");
-        }
-        if (Strings.isNullOrEmpty(postback.getSyncLog())) {
-            throw new IOException("Invalid JSON input, missing sync log field");
-        }
-    }
 
     /**
      * handle application sync postback message
@@ -196,7 +145,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             errorEntityIds = Lists.transform(postback.getEntityErrors(), new Function<Map<String, String>, String>() {
                 @Override
                 public String apply(Map<String, String> stringMap) {
-                    return stringMap.get("id");
+                    return stringMap.get(PortalSyncPostbackJson.ERROR_ENTITY_ID_LABEL);
                 }
             });
             // if we have partial status, update the error sync entities
@@ -204,10 +153,18 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         } else {
             errorEntityIds = Collections.emptyList();
         }
+        updateSyncSuccessEntities(jdbcConnectionName, postback, nodeId, errorEntityIds);
+    }
+    /*
+     * update postback status for successfully sync entities
+     */
+    private void updateSyncSuccessEntities(String jdbcConnectionName, PortalSyncPostbackJson postback, String nodeId, List<String> errorEntityIds) throws PolicyAssertionException {
         //get entities that are sync and are not in the errorEntityIds list
         EntityIds entityIds = new EntityIds(getApplicationSyncEntitiesIds(jdbcConnectionName, nodeId, errorEntityIds, postback.getIncrementStart(), postback.getIncrementEnd()));
+        if (entityIds.getEntityIds().size() == 0) {  //if no sync status of entity needs to be updated, exit
+            return;
+        }
         String log = (postback.getIncrementStatus().equalsIgnoreCase(SYNC_STATUS_ERROR)) ? postback.getErrorMessage() : null;
-
 
         //get entities that need to be updated in APPLICATION_TENANT_GATEWAY
         String columnName = "application_uuid";
@@ -216,39 +173,43 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         List<Object> params = Lists.<Object>newArrayList(nodeId);
         params.addAll(entityIds.getEntityIds());
         EntityIds entitiesToUpdate = new EntityIds(queryEntityInfo(jdbcConnectionName, applicationSyncQuery, params, columnName));
-        params = Lists.<Object>newArrayList(log, BigInteger.valueOf(postback.getIncrementEnd()), nodeId);
-        params.addAll(entitiesToUpdate.getEntityIds());
-        queryJdbc(jdbcConnectionName,
-                String.format(
-                        "UPDATE APPLICATION_TENANT_GATEWAY SET SYNC_LOG=? , SYNC_TIME=? WHERE TENANT_GATEWAY_UUID=? AND APPLICATION_UUID  IN (%s)", entitiesToUpdate.getSqlString()), params
-        );
+        if (entitiesToUpdate.getEntityIds().size() > 0) {
+            params = Lists.<Object>newArrayList(log, BigInteger.valueOf(postback.getIncrementEnd()), nodeId);
+            params.addAll(entitiesToUpdate.getEntityIds());
+            queryJdbc(jdbcConnectionName,
+                    String.format(
+                            "UPDATE APPLICATION_TENANT_GATEWAY SET SYNC_LOG=? , SYNC_TIME=? WHERE TENANT_GATEWAY_UUID=? AND APPLICATION_UUID IN (%s)", entitiesToUpdate.getSqlString()), params
+            );
+        }
         //get entities that need to be inserted to APPLICATION_TENANT_GATEWAY
         Collection<String> entitiesToAdd = CollectionUtils.subtract(entityIds.getEntityIds(), entitiesToUpdate.getEntityIds());
         for (String addEntityId : entitiesToAdd) {
             appEntityInsert(jdbcConnectionName, nodeId, addEntityId, postback.getIncrementEnd(), log);
         }
     }
-
+    /*
+     * insert sync status to APPLICATION_TENANT_GATEWAY
+     */
     private void appEntityInsert(String jdbcConnectionName, String nodeId, String addEntityId, long syncTime, String log) throws PolicyAssertionException {
         List<Object> params = Lists.<Object>newArrayList(nodeId, addEntityId, BigInteger.valueOf(syncTime), log);
         Object result = queryJdbc(jdbcConnectionName, "INSERT INTO APPLICATION_TENANT_GATEWAY (UUID, TENANT_GATEWAY_UUID , APPLICATION_UUID , SYNC_TIME, SYNC_LOG ) VALUES  ( UUID() , ?, ? , ?, ?)", params);
-        if (! (result instanceof Integer) || ((Integer) result).intValue() != 1) {
-            throw new PolicyAssertionException(assertion,String.format("Failed to insert sync status of entity (%s) of node(%s) to  APPLICATION_TENANT_GATEWAY.  ",addEntityId, nodeId));
+        if (!(result instanceof Integer) || ((Integer) result).intValue() != 1) {
+            throw new PolicyAssertionException(assertion, String.format("Failed to insert sync status of entity (%s) of node(%s) to  APPLICATION_TENANT_GATEWAY.  ", addEntityId, nodeId));
         }
     }
 
-    /**
-     * update TENANT-GATEWAY sync status
+    /*
+     * update sync status of the tssg that is identitied by the input nodeId
      */
     private void updateTenantSyncStatus(String jdbcConnectionName, String nodeId, PortalSyncPostbackJson postback, String syncTimeColumn, String syncLogColumn) throws PolicyAssertionException {
         String query = String.format("UPDATE TENANT_GATEWAY SET %s=? , %s=? WHERE UUID=?", syncTimeColumn, syncLogColumn);
         Object result = queryJdbc(jdbcConnectionName, query, Lists.<Object>newArrayList(BigInteger.valueOf(postback.getIncrementEnd()), postback.getSyncLog(), nodeId));
-        if (! (result instanceof Integer) || ((Integer) result).intValue() != 1) {
-            throw new PolicyAssertionException(assertion,String.format("Failed to update the sync status of the node with nodeId, '%s', in TENANT_GATEWAY.  ", nodeId));
+        if (!(result instanceof Integer) || ((Integer) result).intValue() != 1) {
+            throw new PolicyAssertionException(assertion, String.format("Failed to update the sync status of the node with nodeId, '%s', in TENANT_GATEWAY.  ", nodeId));
         }
     }
 
-    /**
+    /*
      * get entities that are modified within the sync time range,  deleted within the sync time range or sync-ed with errors before
      */
     List<String> getApplicationSyncEntitiesIds(String jdbcConnectionName, String nodeId, List<String> errorEntityIds, long incrementStart, long incrementEnd)
@@ -256,30 +217,19 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         Set<String> entityIds = Sets.newHashSet();
         //get deleted entities
         String columeName = "entity_uuid";
-        String sqlQuery = String.format("SELECT %s FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?",
-                columeName.toUpperCase());
+        String sqlQuery = ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery, Lists.<Object>newArrayList(BigInteger.valueOf(incrementStart), BigInteger.valueOf(incrementEnd)), columeName));
-        //get previous error sync records
-        columeName = "application_uuid";
-        sqlQuery = String.format("SELECT %s FROM APPLICATION_TENANT_GATEWAY WHERE (SYNC_LOG IS NOT NULL AND SYNC_LOG != '')  " +
-                        "AND TENANT_GATEWAY_UUID = ?",
-                columeName.toUpperCase()
-        );
-        entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery, Lists.<Object>newArrayList(nodeId), columeName));
-        //get application entities within the time range
+        // get new or updated or last sync error apps
         columeName = "uuid";
-        sqlQuery = String.format("SELECT %s FROM APPLICATION WHERE ((MODIFY_TS > ? and MODIFY_TS <= ? ) OR (MODIFY_TS =0 and CREATE_TS > ? and  CREATE_TS <= ?))",
-                columeName.toUpperCase()
-        );
+        sqlQuery = ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a." + columeName.toUpperCase()));
         entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery,
-                Lists.<Object>newArrayList(BigInteger.valueOf(incrementStart), BigInteger.valueOf(incrementEnd), BigInteger.valueOf(incrementStart), BigInteger.valueOf(incrementEnd)),
-                columeName));
+                Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId), columeName));
         //subtract the new error sync entities
         return Lists.newArrayList(CollectionUtils.subtract(entityIds, errorEntityIds));
     }
 
-    /**
-     * run the input query and get the columne
+    /*
+     *run the input query and get the value that is identified by input columneName
      */
     private List<String> queryEntityInfo(String jdbcConnectionName, String sqlQuery, List<Object> params, String columnName) throws PolicyAssertionException {
         Map<String, List> mapResult = (Map<String, List>) queryJdbc(jdbcConnectionName, sqlQuery, params);
@@ -315,7 +265,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             results = queryJdbc(jdbcConnectionName, updateSql, Lists.<Object>newArrayList(end, msg, nodeId, id));
             errorEntityIds.add(id);
             if (results instanceof Integer && ((Integer) results).intValue() == 0) {
-                queryJdbc(jdbcConnectionName, insertSql, Lists.<Object>newArrayList(nodeId, msg, end,  id));
+                queryJdbc(jdbcConnectionName, insertSql, Lists.<Object>newArrayList(nodeId, msg, end, id));
             }
         }
         return errorEntityIds;
@@ -323,7 +273,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
 
 
     Object queryJdbc(String connName, String queryString, @NotNull List<Object> preparedStmtParams) throws PolicyAssertionException {
-        final Object result = jdbcQueryingManager.performJdbcQuery(connName, dataSource, queryString, null, maxRecords, queryTimeout, preparedStmtParams);
+        final Object result = jdbcQueryingManager.performJdbcQuery(connName, dataSource, queryString, null, ServerIncrementalSyncCommon.getMaxRecords(), ServerIncrementalSyncCommon.getQueryTimeout(), preparedStmtParams);
         //if the results type is String, according to JdbcQueryingManager javadoc, it should be an error message
         if (result instanceof String) {
             throw new PolicyAssertionException(assertion,

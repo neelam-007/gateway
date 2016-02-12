@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
+import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationApi;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationEntity;
@@ -36,12 +37,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     private final String[] variablesUsed;
 
-    // todo make configurable? cluster prop? use default jdbc?
-    private int queryTimeout = 300;
-    private int maxRecords = 1000000;
-
-    private static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
-
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
 
@@ -75,7 +70,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             if (entityType == null) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply an entity type");
             }
-            if (!entityType.equals(ENTITY_TYPE_APPLICATION)) {
+            if (!entityType.equals(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION)) {
                 throw new PolicyAssertionException(assertion, "Not supported entity type: " + entityType);
             }
 
@@ -123,14 +118,14 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
-        appJsonObj.setEntityType(ENTITY_TYPE_APPLICATION);
+        appJsonObj.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
 
         Map<String, List> results;
 
         if (since != null) {
             appJsonObj.setBulkSync("false");
             // get deleted IDs
-            results = (Map<String, List>) queryJdbc(connName, "SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?", CollectionUtils.list(since, incrementStart));
+            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
             if (deletedIds == null || deletedIds.isEmpty()) {
                 // do not include deleted list in json response
@@ -141,13 +136,8 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
-                            "FROM APPLICATION a  \n" +
-                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
-                            "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
-                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR ( o.MODIFY_TS > ? and  o.MODIFY_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))", CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
-
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "ax.API_UUID")),
+                        CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync("true");
             // bulk, get everything
@@ -210,6 +200,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     }
 
     Object queryJdbc(String connName, String queryString, @NotNull List<Object> preparedStmtParams) {
-        return jdbcQueryingManager.performJdbcQuery(connName, queryString, null, maxRecords, queryTimeout, preparedStmtParams);
+        return jdbcQueryingManager.performJdbcQuery(connName, queryString, null, ServerIncrementalSyncCommon.getMaxRecords(), ServerIncrementalSyncCommon.getQueryTimeout(), preparedStmtParams);
     }
 }

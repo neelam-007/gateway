@@ -3,7 +3,10 @@ package com.l7tech.external.assertions.apiportalintegration.server;
 import com.l7tech.external.assertions.apiportalintegration.ProcessIncrementAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKey;
 import com.l7tech.external.assertions.apiportalintegration.server.apikey.manager.ApiKeyManager;
-import com.l7tech.external.assertions.apiportalintegration.server.resource.*;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApiKeyResourceTransformer;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationEntity;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -42,10 +45,10 @@ import java.util.logging.Logger;
 public class ServerProcessIncrementAssertion extends AbstractServerAssertion<ProcessIncrementAssertion> {
     private static final Logger LOGGER = Logger.getLogger(ServerProcessIncrementAssertion.class.getName());
 
-    private static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
+    private static final String ENTITY_TYPE_APPLICATION = ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION;
     private static final String APP_INCREMENT_START_PROP = "portal.application.increment.start";
-    private static final String STATUS_OK = "ok";
-    private static final String STATUS_ERROR = "error";
+    private static final String STATUS_OK = PortalSyncPostbackJson.SYNC_STATUS_OK;
+    private static final String STATUS_ERROR = PortalSyncPostbackJson.SYNC_STATUS_ERROR;
     private static final String APP_SCHEDULED_TASK_NAME = "Portal Sync Application";
     private static final String ERROR_MSG = "Database transaction failed";
 
@@ -194,14 +197,14 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                         List<Map<String, String>> results = new ArrayList<>();
                         for (final ApiKey api : newOrUpdatedEntities.values()) {
                             Map<String, String> error = new HashMap();
-                            error.put("id", api.getApplicationId());
-                            error.put("msg", ERROR_MSG);
+                            error.put(PortalSyncPostbackJson.ERROR_ENTITY_ID_LABEL, api.getApplicationId());
+                            error.put(PortalSyncPostbackJson.ERROR_ENTITY_MSG_LABEL, ERROR_MSG);
                             results.add(error);
                         }
                         for (final String id : deletedAppIds) {
                             Map<String, String> error = new HashMap();
-                            error.put("id", id);
-                            error.put("msg", ERROR_MSG);
+                            error.put(PortalSyncPostbackJson.ERROR_ENTITY_ID_LABEL, id);
+                            error.put(PortalSyncPostbackJson.ERROR_ENTITY_MSG_LABEL, ERROR_MSG);
                             results.add(error);
                         }
                         return results;
