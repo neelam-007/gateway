@@ -21,7 +21,7 @@ import java.util.jar.JarInputStream;
 /**
  * {@link ServerModuleFile} payload.
  */
-public final class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload {
+public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload {
     /**
      * Override {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload#FACTORY} to avoid accidental usage from base.
      */
@@ -41,7 +41,7 @@ public final class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPa
     /**
      * Package access constructor, used by {@link com.l7tech.gateway.common.module.ServerModuleFilePayloadFactory}.
      */
-    ServerModuleFilePayload(
+    protected ServerModuleFilePayload(
             @NotNull final PoolByteArrayOutputStream dataStream,
             @NotNull final byte[] dataDigest,
             @NotNull final PoolByteArrayOutputStream signaturePropsStream,
@@ -133,7 +133,8 @@ public final class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPa
     /**
      * Utility method to convert a collection of assertion class names into a comma separated string with assertion names.
      */
-    private static String assertionsCollectionToCommaSeparatedString(@NotNull final Collection<String> assertionClassNames) {
+    @NotNull
+    public static String assertionsCollectionToCommaSeparatedString(@NotNull final Collection<String> assertionClassNames) {
         final StringBuilder result = new StringBuilder();
         for (final String str : assertionClassNames) {
             result.append(str.substring(str.lastIndexOf(".") + 1)); // strip the package name
