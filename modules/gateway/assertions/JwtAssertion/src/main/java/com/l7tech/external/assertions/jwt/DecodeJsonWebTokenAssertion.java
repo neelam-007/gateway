@@ -21,6 +21,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private String sourcePayload;
     private String validationType;
     private boolean privateKeyFromList;
+    private boolean isBase64Encoded;
 
     private String signatureSecret;
 
@@ -54,6 +55,14 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setSignatureSecret(String signatureSecret) {
         this.signatureSecret = signatureSecret;
+    }
+
+    public boolean isBase64Encoded() {
+        return isBase64Encoded;
+    }
+
+    public void setBase64Encoded(boolean isBase64Encoded) {
+        this.isBase64Encoded = isBase64Encoded;
     }
 
     public boolean isPrivateKeyFromList() {

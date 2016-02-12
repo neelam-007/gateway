@@ -31,8 +31,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JLabel secretWarningLabel;
 
     private JComboBox validationType;
-
-
+    private JCheckBox isBase64EncodedCheckBox;
 
     public DecodeJsonWebTokenPropertiesDialog(final Frame parent, final DecodeJsonWebTokenAssertion assertion) {
         super(DecodeJsonWebTokenAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
@@ -99,6 +98,8 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
         targetVariable.setVariable(assertion.getTargetVariablePrefix());
         targetVariable.setAssertion(assertion, getPreviousAssertion());
+
+        isBase64EncodedCheckBox.setSelected(assertion.isBase64Encoded());
     }
 
     @Override
@@ -128,6 +129,8 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             }
         }
         assertion.setTargetVariablePrefix(targetVariable.getVariable());
+        assertion.setBase64Encoded(isBase64EncodedCheckBox.isSelected());
+
         return assertion;
     }
 
@@ -143,6 +146,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
             secretPasswordField.setEnabled(!JsonWebTokenConstants.VALIDATION_NONE.equals(sel) && JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(sel));
             showPasswordCheckBox.setEnabled(!JsonWebTokenConstants.VALIDATION_NONE.equals(sel) && JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(sel));
+            isBase64EncodedCheckBox.setEnabled(!JsonWebTokenConstants.VALIDATION_NONE.equals(sel) && JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(sel));
 
             privateKeysComboBox.setEnabled(!JsonWebTokenConstants.VALIDATION_NONE.equals(sel) && JsonWebTokenConstants.VALIDATION_USING_PK.equals(sel));
 

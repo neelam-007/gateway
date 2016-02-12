@@ -8,9 +8,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Assert;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.util.HexUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 
 public class ServerDecodeJsonWebTokenAssertionTest {
 
@@ -394,5 +397,97 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         Assert.assertEquals("dir", context.getVariable("result.header.alg"));
         Assert.assertEquals(Lists.newArrayList("typ", "alg", "enc"), context.getVariable("result.header.names"));
         Assert.assertEquals("tegasdf", context.getVariable("result.plaintext"));
+    }
+
+    @Test
+    public void testValidateWithSecretFromByteArrayVariable_Base64Encoded() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+        assertion.setSignatureSecret("${test}");
+        assertion.setBase64Encoded(true);
+        byte[] secret = HexUtils.encodeBase64("ffffffffffffffffffffffffffffffff".getBytes()).getBytes(); // encode secret, get byte array
+        context.setVariable("test", secret);
+
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals("JWE", context.getVariable("result.type"));
+        assertEquals("{\"typ\":\"JWT\",\"alg\":\"dir\",\"enc\":\"A128CBC-HS256\"}", context.getVariable("result.header"));
+        assertEquals("dir", context.getVariable("result.header.alg"));
+        assertEquals(Lists.newArrayList("typ", "alg", "enc"), context.getVariable("result.header.names"));
+        assertEquals("tegasdf", context.getVariable("result.plaintext"));
+    }
+
+    @Test
+    public void testValidateWithSecretFromStringVariable_Base64Encoded() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+        assertion.setSignatureSecret("${test}");
+        assertion.setBase64Encoded(true);
+        String secret = HexUtils.encodeBase64("ffffffffffffffffffffffffffffffff".getBytes()); // encode secret
+        context.setVariable("test", secret);
+
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals("JWE", context.getVariable("result.type"));
+        assertEquals("{\"typ\":\"JWT\",\"alg\":\"dir\",\"enc\":\"A128CBC-HS256\"}", context.getVariable("result.header"));
+        assertEquals("dir", context.getVariable("result.header.alg"));
+        assertEquals(Lists.newArrayList("typ", "alg", "enc"), context.getVariable("result.header.names"));
+        assertEquals("tegasdf", context.getVariable("result.plaintext"));
+    }
+
+    @Test
+    public void testValidateWithSecretFromMultipleStringVariables() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+
+        assertion.setSignatureSecret("${var1}${var2}");
+        context.setVariable("var1", "ffffffffffffffff");
+        context.setVariable("var2", "ffffffffffffffff");
+
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals("JWE", context.getVariable("result.type"));
+        assertEquals("{\"typ\":\"JWT\",\"alg\":\"dir\",\"enc\":\"A128CBC-HS256\"}", context.getVariable("result.header"));
+        assertEquals("dir", context.getVariable("result.header.alg"));
+        assertEquals(Lists.newArrayList("typ", "alg", "enc"), context.getVariable("result.header.names"));
+        assertEquals("tegasdf", context.getVariable("result.plaintext"));
+    }
+
+    @Test
+    public void testValidateWithSecretFromMultipleVariablesSpecified_VariablesReferencedNotFound_AssertionFails() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+
+        assertion.setSignatureSecret("${var1}${var2}");    // variables referenced, but not defined in the PEC
+
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+
+        try {
+            sass.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            assertEquals("Key variable not set", e.getMessage());
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.jwt.server;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwtUtils;
@@ -10,13 +11,19 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -38,7 +45,6 @@ import org.jose4j.lang.JoseException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
@@ -52,8 +58,12 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
     @Inject
     private DefaultKey defaultKey;
 
+    private final boolean singleVarKeyExpr;
+
     public ServerDecodeJsonWebTokenAssertion(@NotNull DecodeJsonWebTokenAssertion assertion) {
         super(assertion);
+        singleVarKeyExpr = assertion.getSignatureSecret() != null 
+                && Syntax.isOnlyASingleVariableReferenced(assertion.getSignatureSecret());
     }
 
     @Override
@@ -240,29 +250,71 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
             logAndAudit(AssertionMessages.JWT_INVALID_ALGORITHM, "A secret cannot be used validate/decrypt JWT with 'alg' of type " + structure.getHeader(HeaderParameterNames.ALGORITHM));
             return AssertionStatus.FAILED;
         }
+        
         //we good?
-        final String secret = ExpandVariables.process(assertion.getSignatureSecret(), variables, getAudit(), false);
-        if (secret == null || secret.trim().isEmpty()) {
+        final Object secretObj;
+        
+        if (singleVarKeyExpr) {
+            secretObj = ExpandVariables.processSingleVariableAsObject(assertion.getSignatureSecret(), variables, getAudit(), true);
+        } else {
+            if (assertion.getSignatureSecret() == null ||
+                    ExpandVariables.isVariableReferencedNotFound(assertion.getSignatureSecret(), variables, getAudit())) {
+                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Key");
+                throw new AssertionStatusException("Key variable not set");
+            }
+
+            secretObj = ExpandVariables.process(assertion.getSignatureSecret(), variables, getAudit(), true);
+        }
+        
+        byte[] secret;
+        
+        try {
+            secret = toByteArray(secretObj, "<Key>");
+        } catch (ContextVariableUtils.NoBinaryRepresentationException e) {
+            // Fall back to legacy behavior and treat input as string expression then encode in UTF-8
+            secret = ExpandVariables.process(assertion.getSignatureSecret(), variables, getAudit(), true).getBytes(Charsets.UTF8);
+        }
+        
+        if (secret == null || secret.length < 1) {
             logAndAudit(AssertionMessages.JWT_DECODE_MISSING_SECRET);
             return AssertionStatus.FAILED;
         }
+
+        if (assertion.isBase64Encoded()) {
+            secret = HexUtils.decodeBase64(new String(secret));
+        }
+        
         try {
-            if(structure instanceof JsonWebSignature){
-                structure.setKey(new HmacKey(secret.getBytes("UTF-8")));
+            if (structure instanceof JsonWebSignature) {
+                structure.setKey(new HmacKey(secret));
                 context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(((JsonWebSignature) structure).verifySignature()));
             }
-            if(structure instanceof JsonWebEncryption){
-                structure.setKey(new SecretKeySpec(secret.getBytes(), AesKey.ALGORITHM));
+            if (structure instanceof JsonWebEncryption) {
+                structure.setKey(new SecretKeySpec(secret, AesKey.ALGORITHM));
                 context.setVariable(assertion.getTargetVariablePrefix() + ".plaintext", String.valueOf(((JsonWebEncryption)structure).getPlaintextString()));
                 context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(true));
             }
         } catch (JoseException e) {
             logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Could not validate JWS: " + e.getMessage());
             return AssertionStatus.FAILED;
-        } catch (UnsupportedEncodingException e) {
-            logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Invalid encoding: " + e.getCause());
-            return AssertionStatus.FAILED;
         }
+        
         return AssertionStatus.NONE;
+    }
+
+    private byte[] toByteArray(Object obj, String what) throws ContextVariableUtils.NoBinaryRepresentationException {
+        try {
+            // Preserve old behavior of using UTF-8 for string values
+            return ContextVariableUtils.convertContextVariableValueToByteArray(obj, -1, Charsets.UTF8);
+        } catch (NoSuchPartException e) {
+            getAudit().logAndAudit(AssertionMessages.NO_SUCH_PART, new String[] {what, e.getWhatWasMissing()},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to read " + what + ":" + ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] {"Unable to read source object: " + ExceptionUtils.getMessage(e)},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to read " + what + ":" + ExceptionUtils.getMessage(e), e);
+        }
     }
 }
