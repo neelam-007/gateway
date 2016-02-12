@@ -102,7 +102,7 @@ public class SiteMinderAgentContextCache {
         @Override
         public int hashCode() {
             int result = resource.hashCode();
-            result = 31 * result + action.hashCode();
+            result = 31 * result + action.hashCode() + serverName.hashCode();
             return result;
         }
 
@@ -111,6 +111,7 @@ public class SiteMinderAgentContextCache {
             return "ResourceCacheKey{" +
                     "resource='" + resource + '\'' +
                     ", action='" + action + '\'' +
+                    ", serverName=" + serverName + '\'' +
                     '}';
         }
     }
