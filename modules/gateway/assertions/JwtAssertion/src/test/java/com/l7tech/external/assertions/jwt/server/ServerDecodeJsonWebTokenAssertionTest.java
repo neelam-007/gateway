@@ -3,9 +3,15 @@ package com.l7tech.external.assertions.jwt.server;
 import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
+import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -13,7 +19,11 @@ import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.HashMap;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ServerDecodeJsonWebTokenAssertionTest {
 
@@ -489,5 +499,36 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         } catch (AssertionStatusException e) {
             assertEquals("Key variable not set", e.getMessage());
         }
+    }
+
+    @Test
+    public void testValidateWithSecretFromVariableSpecified_VariableOfTypeLong_VariableProcessedButAssertionFailsOnKeyTooShort() throws Exception {
+        PolicyEnforcementContext context = getContext();
+
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+        assertion.setSignatureSecret("${test}");
+        assertion.setBase64Encoded(false);
+        context.setVariable("test", 0xffffffffffffffffL);
+
+        assertion.setTargetVariablePrefix("result");
+
+        final DefaultKey defaultKey = new TestDefaultKey();
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+
+        TestAudit testAudit = new TestAudit();
+
+        HashMap<String, Object> beanMap = new HashMap<>();
+        beanMap.put("defaultKey", defaultKey);
+        beanMap.put("auditFactory", testAudit.factory());
+
+        ApplicationContexts.inject(sass, beanMap);
+
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.FAILED, status);
+
+        assertTrue(testAudit.isAuditPresentContaining("Error decoding: Could not validate JWS: Invalid key for dir with A128CBC-HS256, expected a 256 bit key but a 16 bit key was provided."));
     }
 }

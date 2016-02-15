@@ -26,10 +26,10 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private static final Logger logger = Logger.getLogger(EncodeJsonWebTokenPropertiesDialog.class.getName());
 
     private JPanel contentPane;
-    private JComboBox signatureAlgorithmComboBox;
+    private JComboBox<String> signatureAlgorithmComboBox;
 
-    private JComboBox keyManagementAlgorithmComboBox;
-    private JComboBox contentEncryptionAlgorithmComboBox;
+    private JComboBox<String> keyManagementAlgorithmComboBox;
+    private JComboBox<String> contentEncryptionAlgorithmComboBox;
     private JTextField headersTextField;
     private JCheckBox showSignatureCheckbox;
     private JLabel signatureWarningLabel;
@@ -44,16 +44,15 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private TargetVariablePanel targetVariable;
 
 
-    private JComboBox keyTypeComboBox;
-    private JComboBox encryptionKeyType;
+    private JComboBox<String> keyTypeComboBox;
+    private JComboBox<String> encryptionKeyType;
     private JTextField encryptionKeyId;
     private JRadioButton fromListRadioButton;
     private JRadioButton fromVariableRadioButton;
     private PrivateKeysComboBox privateKeysComboBox;
     private JLabel encryptionKeyWarningLabel;
     private JLabel signatureAlgorithmWarningLabel;
-    private JComboBox headerActionComboBox;
-    private JTabbedPane tabbedPane1;
+    private JComboBox<String> headerActionComboBox;
     private JCheckBox signPayloadCheckBox;
     private JCheckBox encryptPayloadCheckBox;
     private JRadioButton secretRadioButton;
@@ -62,6 +61,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JLabel jweSecretWarningLabel;
     private JRadioButton jweUseSecret;
     private JRadioButton jweUseVariable;
+    private JCheckBox isSignatureSecretBase64EncodedCheckBox;
+    private JCheckBox isEncryptionSecretBase64EncodedCheckBox;
 
     public EncodeJsonWebTokenPropertiesDialog(final Frame parent, final EncodeJsonWebTokenAssertion assertion) {
         super(EncodeJsonWebTokenAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
@@ -86,7 +87,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             }
         }
         //headers
-        headerActionComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.HEADER_ACTION.toArray(new String[JsonWebTokenConstants.HEADER_ACTION.size()])));
+        headerActionComboBox.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.HEADER_ACTION.toArray(new String[JsonWebTokenConstants.HEADER_ACTION.size()])));
 
         headerActionComboBox.addActionListener(headerActionListener);
 
@@ -95,13 +96,13 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         signPayloadCheckBox.addActionListener(signingActionListener);
 
         if(showAll){
-            signatureAlgorithmComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.SIGNATURE_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.SIGNATURE_ALGORITHMS.size()])));
-            keyManagementAlgorithmComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.size()])));
-            contentEncryptionAlgorithmComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.size()])));
+            signatureAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.SIGNATURE_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.SIGNATURE_ALGORITHMS.size()])));
+            keyManagementAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.size()])));
+            contentEncryptionAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.values().toArray(new String[JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.size()])));
         } else {
-            signatureAlgorithmComboBox.setModel(new DefaultComboBoxModel(getFilteredList(JsonWebTokenConstants.SIGNATURE_ALGORITHMS)));
-            keyManagementAlgorithmComboBox.setModel(new DefaultComboBoxModel(getFilteredList(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS)));
-            contentEncryptionAlgorithmComboBox.setModel(new DefaultComboBoxModel(getFilteredList(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS)));
+            signatureAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(getFilteredList(JsonWebTokenConstants.SIGNATURE_ALGORITHMS)));
+            keyManagementAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(getFilteredList(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS)));
+            contentEncryptionAlgorithmComboBox.setModel(new DefaultComboBoxModel<>(getFilteredList(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS)));
         }
 
 
@@ -112,7 +113,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         fromListRadioButton.addActionListener(privateKeyActionListener);
 
         PasswordGuiUtils.configureOptionalSecurePasswordField(signaturePasswordField, showSignatureCheckbox, signatureWarningLabel);
-        keyTypeComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.SIGNATURE_KEY_TYPES.toArray(new String[JsonWebTokenConstants.SIGNATURE_KEY_TYPES.size()])));
+        keyTypeComboBox.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.SIGNATURE_KEY_TYPES.toArray(new String[JsonWebTokenConstants.SIGNATURE_KEY_TYPES.size()])));
         keyTypeComboBox.addActionListener(keyTypeActionListener);
 
         signatureAlgorithmWarningLabel.setVisible(false);
@@ -126,7 +127,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         //cek
         contentEncryptionAlgorithmComboBox.addActionListener(encryptionActionListener);
 
-        encryptionKeyType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.toArray(new String[JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.size()])));
+        encryptionKeyType.setModel(new DefaultComboBoxModel<>(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.toArray(new String[JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.size()])));
         encryptionKeyType.addActionListener(encryptionKeyTypeActionListener);
 
         encryptionKeyWarningLabel.setVisible(false);
@@ -182,6 +183,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
                 secretRadioButton.setSelected(true);
                 fromVariableRadioButton.setEnabled(true);
+                isSignatureSecretBase64EncodedCheckBox.setEnabled(true);
+                isSignatureSecretBase64EncodedCheckBox.setSelected(assertion.isSignatureSecretBase64Encoded());
                 signaturePasswordField.setText(assertion.getSignatureSecretKey());
             }
             else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK){
@@ -233,6 +236,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 if (assertion.getContentEncryptionAlgorithm() != null) {
                     contentEncryptionAlgorithmComboBox.setSelectedItem(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.get(assertion.getContentEncryptionAlgorithm()));
                 }
+                isEncryptionSecretBase64EncodedCheckBox.setEnabled(true);
+                isEncryptionSecretBase64EncodedCheckBox.setSelected(assertion.isEncryptionSecretBase64Encoded());
             }
         }
     }
@@ -256,6 +261,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             if(secretRadioButton.isSelected()){
                 assertion.setSignatureSourceType(JsonWebTokenConstants.SOURCE_SECRET);
                 assertion.setSignatureSecretKey(String.valueOf(signaturePasswordField.getPassword()));
+                assertion.setSignatureSecretBase64Encoded(isSignatureSecretBase64EncodedCheckBox.isSelected());
                 //clear other fields
                 assertion.setSignatureSourceVariable(null);
                 assertion.setSignatureKeyType(null);
@@ -268,6 +274,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 assertion.setKeyGoid(privateKeysComboBox.getSelectedKeystoreId());
                 assertion.setKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
                 //clear other fields
+                assertion.setSignatureSecretBase64Encoded(false);
                 assertion.setSignatureSecretKey(null);
                 assertion.setSignatureSourceVariable(null);
                 assertion.setSignatureKeyType(null);
@@ -282,12 +289,14 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 }
                 assertion.setSignatureSourceVariable(signatureSourceVariable.getText().trim());
                 //clear the other fields
+                assertion.setSignatureSecretBase64Encoded(false);
                 assertion.setSignatureSecretKey(null);
                 assertion.setKeyAlias(null);
                 assertion.setKeyGoid(null);
             }
         } else {
             assertion.setSignPayload(false);
+            assertion.setSignatureSecretBase64Encoded(false);
             assertion.setSignatureAlgorithm(null);
             assertion.setSignatureSecretKey(null);
             assertion.setSignatureSourceVariable(null);
@@ -304,6 +313,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             if(jweUseSecret.isSelected()){
                 assertion.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_SECRET);
                 assertion.setEncryptionSecret(String.valueOf(jweSharedSecret.getPassword()));
+                assertion.setEncryptionSecretBase64Encoded(isEncryptionSecretBase64EncodedCheckBox.isSelected());
                 //clear other fields
                 assertion.setEncryptionKey(null);
                 assertion.setEncryptionKeyType(null);
@@ -311,6 +321,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             } else if(jweUseVariable.isSelected()){
                 assertion.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
                 //clear secret field
+                assertion.setEncryptionSecretBase64Encoded(false);
                 assertion.setEncryptionSecret(null);
 
                 if (encryptionKeyTextField.isEnabled()) {
@@ -326,7 +337,9 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
         } else {
             //clear fields
+            assertion.setEncryptionSecretBase64Encoded(false);
             assertion.setEncryptPayload(false);
+            assertion.setEncryptionSecretBase64Encoded(false);
             assertion.setKeyManagementAlgorithm(null);
             assertion.setContentEncryptionAlgorithm(null);
             assertion.setEncryptionKey(null);
@@ -360,14 +373,16 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 signatureSourceVariable.setEnabled(false);
                 keyTypeComboBox.setEnabled(false);
                 signatureAlgorithmKeyIdTextField.setEnabled(false);
+                isSignatureSecretBase64EncodedCheckBox.setEnabled(false);
             }
             //hmac type where a use of secret is allowed
             else if(sa.toString().startsWith("HMAC")){
                 //select secret to fall back as we have from list selected
-                secretRadioButton.setSelected(true && fromListRadioButton.isSelected());
+                secretRadioButton.setSelected(fromListRadioButton.isSelected());
                 secretRadioButton.setEnabled(true);
                 signaturePasswordField.setEnabled(secretRadioButton.isSelected());
                 showSignatureCheckbox.setEnabled(secretRadioButton.isSelected());
+                isSignatureSecretBase64EncodedCheckBox.setEnabled(secretRadioButton.isSelected());
                 signatureWarningLabel.setVisible(true);
                 //disable the private key fields
                 fromListRadioButton.setEnabled(false);
@@ -379,11 +394,12 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             else {
                 //disable secrets
                 secretRadioButton.setEnabled(false);
+                isSignatureSecretBase64EncodedCheckBox.setEnabled(false);
                 signaturePasswordField.setEnabled(false);
                 showSignatureCheckbox.setEnabled(false);
 
                 //if secret was selected previous, default to the list
-                fromListRadioButton.setSelected(true && secretRadioButton.isSelected());
+                fromListRadioButton.setSelected(secretRadioButton.isSelected());
                 fromListRadioButton.setEnabled(true);
                 privateKeysComboBox.setEnabled(fromListRadioButton.isSelected());
 
@@ -439,7 +455,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             if(km.toString().startsWith("Direct use")){
                 values.remove("Certificate");
             }
-            encryptionKeyType.setModel(new DefaultComboBoxModel(values.toArray(new String[values.size()])));
+            encryptionKeyType.setModel(new DefaultComboBoxModel<>(values.toArray(new String[values.size()])));
 
             if(!encryptionKeyId.getText().isEmpty()){
                 encryptionKeyType.setSelectedItem(JsonWebTokenConstants.KEY_TYPE_JWKS);
@@ -471,8 +487,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
             jweSharedSecret.setEnabled(encryptPayloadCheckBox.isSelected() && jweUseSecret.isSelected());
             jweShowSecret.setEnabled(encryptPayloadCheckBox.isSelected() && jweUseSecret.isSelected());
+            isEncryptionSecretBase64EncodedCheckBox.setEnabled(encryptPayloadCheckBox.isSelected() && jweUseSecret.isSelected());
             jweSecretWarningLabel.setVisible(encryptPayloadCheckBox.isSelected() && jweUseSecret.isSelected());
-
 
             keyManagementAlgorithmComboBox.setEnabled(encryptPayloadCheckBox.isSelected());
 
@@ -517,6 +533,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             //secret
             signaturePasswordField.setEnabled(secretRadioButton.isSelected());
             showSignatureCheckbox.setEnabled(secretRadioButton.isSelected());
+            isSignatureSecretBase64EncodedCheckBox.setEnabled(showSignatureCheckbox.isEnabled());
             //pk from list
             privateKeysComboBox.setEnabled(fromListRadioButton.isSelected());
             //from context var
@@ -540,6 +557,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
             signaturePasswordField.setEnabled(signPayloadCheckBox.isSelected() && secretRadioButton.isSelected());
             showSignatureCheckbox.setEnabled(signPayloadCheckBox.isSelected() && secretRadioButton.isSelected());
+            isSignatureSecretBase64EncodedCheckBox.setEnabled(signPayloadCheckBox.isSelected() && secretRadioButton.isSelected());
 
             //private keys combobox
             fromListRadioButton.setEnabled(signPayloadCheckBox.isSelected() && !sa.startsWith("HMAC"));
@@ -597,7 +615,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             getOkButton().setEnabled(false);
             return;
         }
-        getOkButton().setEnabled(!isReadOnly() && true);
+        getOkButton().setEnabled(!isReadOnly());
     }
 
     private final DocumentListener documentListener = new DocumentListener() {

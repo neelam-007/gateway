@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jwt.server;
 
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.jwt.EncodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwtUtils;
@@ -8,12 +9,18 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -44,8 +51,15 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     @Inject
     private DefaultKey defaultKey;
 
+    private final boolean singleSignatureSecretVarKeyExpr;
+    private final boolean singleEncryptionSecretVarKeyExpr;
+
     public ServerEncodeJsonWebTokenAssertion(@NotNull EncodeJsonWebTokenAssertion assertion) {
         super(assertion);
+        singleSignatureSecretVarKeyExpr = assertion.getSignatureSecretKey() != null
+                && Syntax.isOnlyASingleVariableReferenced(assertion.getSignatureSecretKey());
+        singleEncryptionSecretVarKeyExpr = assertion.getEncryptionSecret() != null
+                && Syntax.isOnlyASingleVariableReferenced(assertion.getEncryptionSecret());
     }
 
     @Override
@@ -165,12 +179,39 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     private Key getSigningKey(final JsonWebSignature jws, final PolicyEnforcementContext context) throws InvalidAlgorithmException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
         if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET) {
-            final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), false);
-            if (secretKey == null || secretKey.trim().isEmpty()) {
+            final Object secretObj;
+
+            if (singleSignatureSecretVarKeyExpr) {
+                secretObj = ExpandVariables.processSingleVariableAsObject(assertion.getSignatureSecretKey(), variables, getAudit(), true);
+            } else {
+                if (assertion.getSignatureSecretKey() == null ||
+                        ExpandVariables.isVariableReferencedNotFound(assertion.getSignatureSecretKey(), variables, getAudit())) {
+                    logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
+                    return null;
+                }
+
+                secretObj = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), true);
+            }
+
+            byte[] secret;
+
+            try {
+                secret = toByteArray(secretObj, "<Key>");
+            } catch (ContextVariableUtils.NoBinaryRepresentationException e) {
+                // Fall back to legacy behavior and treat input as string expression then encode in UTF-8
+                secret = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), true).getBytes(Charsets.UTF8);
+            }
+
+            if (secret == null || secret.length < 1) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
                 return null;
             }
-            return new HmacKey(secretKey.getBytes());
+
+            if (assertion.isSignatureSecretBase64Encoded()) {
+                secret = HexUtils.decodeBase64(new String(secret));
+            }
+
+            return new HmacKey(secret);
         } else if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK) {
             try {
                 final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getKeyGoid(), assertion.getKeyAlias());
@@ -205,12 +246,39 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
         if (assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_SECRET) {
-            String secret = ExpandVariables.process(assertion.getEncryptionSecret(), variables, getAudit(), false);
-            if (secret == null || secret.trim().isEmpty()) {
+            final Object secretObj;
+
+            if (singleEncryptionSecretVarKeyExpr) {
+                secretObj = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionSecret(), variables, getAudit(), true);
+            } else {
+                if (assertion.getEncryptionSecret() == null ||
+                        ExpandVariables.isVariableReferencedNotFound(assertion.getEncryptionSecret(), variables, getAudit())) {
+                    logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
+                    return null;
+                }
+
+                secretObj = ExpandVariables.process(assertion.getEncryptionSecret(), variables, getAudit(), true);
+            }
+
+            byte[] secret;
+
+            try {
+                secret = toByteArray(secretObj, "<Key>");
+            } catch (ContextVariableUtils.NoBinaryRepresentationException e) {
+                // Fall back to legacy behavior and treat input as string expression then encode in UTF-8
+                secret = ExpandVariables.process(assertion.getEncryptionSecret(), variables, getAudit(), true).getBytes(Charsets.UTF8);
+            }
+
+            if (secret == null || secret.length < 1) {
                 logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
                 return null;
             }
-            return new SecretKeySpec(secret.getBytes(), AesKey.ALGORITHM);
+
+            if (assertion.isEncryptionSecretBase64Encoded()) {
+                secret = HexUtils.decodeBase64(new String(secret));
+            }
+
+            return new SecretKeySpec(secret, AesKey.ALGORITHM);
         } else if (assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_CV) {
             Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
             if (key == null) {
@@ -251,6 +319,22 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             }
         }
         return null;
+    }
+
+    private byte[]toByteArray(Object obj, String what) throws ContextVariableUtils.NoBinaryRepresentationException {
+        try {
+            // Preserve old behavior of using UTF-8 for string values
+            return ContextVariableUtils.convertContextVariableValueToByteArray(obj, -1, Charsets.UTF8);
+        } catch (NoSuchPartException e) {
+            getAudit().logAndAudit(AssertionMessages.NO_SUCH_PART, new String[] {what, e.getWhatWasMissing()},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to read " + what + ":" + ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] {"Unable to read source object: " + ExceptionUtils.getMessage(e)},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to read " + what + ":" + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private AssertionStatus handleHeaders(final JsonWebStructure jws, final String sourceHeaders) {

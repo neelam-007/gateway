@@ -27,6 +27,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private boolean signPayload;
     private String signatureAlgorithm = "None";
     private String signatureSecretKey;
+    private boolean isSignatureSecretBase64Encoded = false;
 
     private String signatureSourceVariable;
     private String signatureKeyType;
@@ -39,6 +40,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private String encryptionSecret;
     private String encryptionKeyType;
     private String encryptionKeyId;
+    private boolean isEncryptionSecretBase64Encoded = false;
 
     private String targetVariable;
 
@@ -137,6 +139,14 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         this.signatureJwksKeyId = signatureJwksKeyId;
     }
 
+    public boolean isSignatureSecretBase64Encoded() {
+        return isSignatureSecretBase64Encoded;
+    }
+
+    public void setSignatureSecretBase64Encoded(boolean isSignatureSecretBase64Encoded) {
+        this.isSignatureSecretBase64Encoded = isSignatureSecretBase64Encoded;
+    }
+
     public String getKeyManagementAlgorithm() {
         return keyManagementAlgorithm;
     }
@@ -199,6 +209,14 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setEncryptionSourceType(int encryptionSourceType) {
         this.encryptionSourceType = encryptionSourceType;
+    }
+
+    public boolean isEncryptionSecretBase64Encoded() {
+        return isEncryptionSecretBase64Encoded;
+    }
+
+    public void setEncryptionSecretBase64Encoded(boolean isEncryptionSecretBase64Encoded) {
+        this.isEncryptionSecretBase64Encoded = isEncryptionSecretBase64Encoded;
     }
 
     //
@@ -301,7 +319,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setSignatureAlgorithm(signatureAlgorithm);
         clone.setSignatureSecretKey(signatureSecretKey);
         clone.setSignatureSourceVariable(signatureSourceVariable);
-
+        clone.setSignatureSecretBase64Encoded(isSignatureSecretBase64Encoded);
         clone.setSignatureKeyType(signatureKeyType);
         clone.setSignatureJwksKeyId(signatureJwksKeyId);
 
@@ -319,7 +337,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         clone.setEncryptionSourceType(encryptionSourceType);
         clone.setEncryptionSecret(encryptionSecret);
-
+        clone.setEncryptionSecretBase64Encoded(isEncryptionSecretBase64Encoded);
         clone.setKeyAlias(keyAlias);
         clone.setKeyGoid(keyGoid);
         return clone;

@@ -259,7 +259,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         } else {
             if (assertion.getSignatureSecret() == null ||
                     ExpandVariables.isVariableReferencedNotFound(assertion.getSignatureSecret(), variables, getAudit())) {
-                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Key");
+                logAndAudit(AssertionMessages.JWT_DECODE_MISSING_SECRET);
                 throw new AssertionStatusException("Key variable not set");
             }
 
