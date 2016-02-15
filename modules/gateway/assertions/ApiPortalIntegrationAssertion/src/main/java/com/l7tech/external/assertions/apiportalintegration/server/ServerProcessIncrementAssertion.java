@@ -102,9 +102,8 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                 throw new IOException("Invalid JSON input");
             }
             final ApplicationJson applicationJson = mapper.readValue(jsonParser, ApplicationJson.class);
-            if (applicationJson.getBulkSync() == null || applicationJson.getBulkSync().isEmpty()) {
-                throw new IOException("Invalid JSON input, missing bulk sync field");
-            }
+            applicationJson.validate();
+
             final String incrementStartStr = clusterPropertyManager.getProperty(APP_INCREMENT_START_PROP);
             if (incrementStartStr == null) {
                 throw new IOException(APP_INCREMENT_START_PROP + " cluster property not found");
@@ -169,7 +168,8 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                             portalGenericEntityManager.update(newOrUpdatedEntities.get(update));
                         }
                         // delete
-                        if (applicationJson.getBulkSync().equalsIgnoreCase("true")) {
+
+                        if (applicationJson.getBulkSync().equalsIgnoreCase(ApplicationJson.BULK_SYNC_TRUE)) {
                             final Collection<String> toDelete = CollectionUtils.subtract(existingNames, newOrUpdatedEntities.keySet());
                             for (final String delete : toDelete) {
                                 LOGGER.log(Level.FINE, "Deleting portal application: " + delete);

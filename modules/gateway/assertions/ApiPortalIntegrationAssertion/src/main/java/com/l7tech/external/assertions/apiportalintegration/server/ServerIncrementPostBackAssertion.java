@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.objectmodel.FindException;
@@ -136,7 +137,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
 
         final String TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME = "APP_SYNC_TIME";
         final String TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME = "APP_SYNC_LOG";
-        postback.setIncrementStart(postback.getBulkSync().equalsIgnoreCase("true") ? 0 : postback.getIncrementStart());
+        postback.setIncrementStart(postback.getBulkSync().equalsIgnoreCase(ApplicationJson.BULK_SYNC_TRUE) ? 0 : postback.getIncrementStart());
 
         //update last sync time column of TENANT_GATEWAY
         updateTenantSyncStatus(jdbcConnectionName, nodeId, postback, TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME, TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME);

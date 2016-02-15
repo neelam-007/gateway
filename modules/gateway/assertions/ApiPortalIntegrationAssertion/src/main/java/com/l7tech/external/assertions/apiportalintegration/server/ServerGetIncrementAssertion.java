@@ -123,7 +123,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         Map<String, List> results;
 
         if (since != null) {
-            appJsonObj.setBulkSync("false");
+            appJsonObj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
             // get deleted IDs
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
@@ -139,7 +139,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                     ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "ax.API_UUID")),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
-            appJsonObj.setBulkSync("true");
+            appJsonObj.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
                     "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +

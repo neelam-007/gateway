@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.apiportalintegration.server;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
@@ -16,7 +17,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
-import org.springframework.test.annotation.ExpectedException;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -108,7 +108,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest01() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync("true");
+        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setErrorMessage("errorMessage");
@@ -126,7 +126,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest02() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync("true");
+        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setSyncLog("{cron * * *");
@@ -145,7 +145,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest03() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync("true");
+        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setErrorMessage("errorMessage");
@@ -175,7 +175,7 @@ public class ServerIncrementPostBackAssertionTest {
 
         final PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync("true");
+        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setSyncLog("{cron * * *");
