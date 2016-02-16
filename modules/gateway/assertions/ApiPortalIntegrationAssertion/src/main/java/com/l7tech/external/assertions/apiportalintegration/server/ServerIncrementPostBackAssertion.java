@@ -192,8 +192,8 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
      * insert sync status to APPLICATION_TENANT_GATEWAY
      */
     private void appEntityInsert(String jdbcConnectionName, String nodeId, String addEntityId, long syncTime, String log) throws PolicyAssertionException {
-        List<Object> params = Lists.<Object>newArrayList(nodeId, addEntityId, BigInteger.valueOf(syncTime), log);
-        Object result = queryJdbc(jdbcConnectionName, "INSERT INTO APPLICATION_TENANT_GATEWAY (UUID, TENANT_GATEWAY_UUID , APPLICATION_UUID , SYNC_TIME, SYNC_LOG ) VALUES  ( UUID() , ?, ? , ?, ?)", params);
+        List<Object> params = Lists.<Object>newArrayList(nodeId, BigInteger.valueOf(syncTime), log, addEntityId);
+        Object result = queryJdbc(jdbcConnectionName, "INSERT INTO APPLICATION_TENANT_GATEWAY (UUID, TENANT_GATEWAY_UUID , SYNC_TIME, SYNC_LOG , APPLICATION_UUID ) VALUES  ( UUID() , ?, ? , ?, ?)", params);
         if (!(result instanceof Integer) || ((Integer) result).intValue() != 1) {
             throw new PolicyAssertionException(assertion, String.format("Failed to insert sync status of entity (%s) of node(%s) to  APPLICATION_TENANT_GATEWAY.  ", addEntityId, nodeId));
         }
