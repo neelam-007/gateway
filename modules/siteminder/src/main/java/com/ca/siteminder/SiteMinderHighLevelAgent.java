@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 
+import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -57,13 +58,13 @@ public class SiteMinderHighLevelAgent {
         if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         boolean isProtected = false;
-
+        SiteMinderResourceDetails resourceDetails;
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final Cache cache = agentCache.getResourceCache();
 
         final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, serverName != null ? serverName : "");
         //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
-        SiteMinderResourceDetails resourceDetails;
+
         if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
             //now check if the cached entry exceeded the max cached time then remove from cache
             logger.log(Level.FINE, "Found resource cache entry: " + resourceCacheKey);
@@ -569,11 +570,11 @@ public class SiteMinderHighLevelAgent {
         //create cache if the entry is not found
         if (cache == null) {
             cache = cacheManager.createCache(smConfig.getGoid(), agentName,
-                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
                     getAgentPropertyLong(smConfig,SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000),
-                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
                     getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000),
-                    getAgentPropertyInt(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10),
                     getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)
             );
         }
@@ -581,37 +582,52 @@ public class SiteMinderHighLevelAgent {
         return cache;
     }
 
-    private int getAgentPropertyInt(SiteMinderConfiguration smConfig, String propName, int defaultValue) {
-        Integer valueInt = null;
-        String valueStr = smConfig.getProperties().get(propName);
-        if (StringUtils.isNotEmpty(valueStr)) {
-            try {
-                valueInt = new Integer(valueStr);
-            } catch (NumberFormatException ne) {
-                logger.log(Level.WARNING, "Value of " + propName + " is not Integer: " + valueStr, ExceptionUtils.getDebugException(ne));
+    private <T> T getAgentProperty(final SiteMinderConfiguration smConfig, final String propName, T defaultValue, Functions.Unary<T, String> transform) {
+        T value = null;
+        String str = smConfig.getProperties().get(propName);
+        if (StringUtils.isNotEmpty(str)) {
+            value = transform.call(str);
+        }
+        if(value == null) {
+            str = config.getProperty(SYSTEM_PROP_PREFIX + propName);
+            if (StringUtils.isNotEmpty(str)) {
+                value = transform.call(str);
+            }
+            else {
+                value = defaultValue;
             }
         }
-
-        if(valueInt == null) {
-            valueInt = config.getIntProperty(SYSTEM_PROP_PREFIX + propName, defaultValue);
-        }
-        return valueInt;
+        return value;
     }
 
-    private long getAgentPropertyLong(SiteMinderConfiguration smConfig, String propName, long defaultValue) {
-        Long valueLong = null;
-        String valueStr = smConfig.getProperties().get(propName);
-        if (StringUtils.isNotEmpty(valueStr)) {
-            try {
-                valueLong = new Long(valueStr);
-            } catch (NumberFormatException ne) {
-                logger.log(Level.WARNING, "Value of " + propName + " is not Long: " + valueStr, ExceptionUtils.getDebugException(ne));
+    private  Integer getAgentPropertyInteger(final SiteMinderConfiguration smConfig, final String propName, int defaultValue) {
+        return getAgentProperty(smConfig, propName, new Integer(defaultValue), new Functions.Unary<Integer, String>() {
+            @Override
+            public Integer call(String str) {
+                Integer valueInt = null;
+                try{
+                    valueInt = new Integer(str);
+                } catch(NumberFormatException ne) {
+                    logger.log(Level.WARNING, "Value of " + propName + " is not Integer: " + str, ExceptionUtils.getDebugException(ne));
+                }
+                return valueInt;
             }
-        }
-
-        if(valueLong == null) {
-            valueLong = config.getLongProperty(SYSTEM_PROP_PREFIX + propName, defaultValue);
-        }
-        return valueLong;
+        });
     }
+
+    private Long getAgentPropertyLong(final SiteMinderConfiguration smConfig, final String propName, long defaultValue) {
+        return  getAgentProperty(smConfig, propName, new Long(defaultValue), new Functions.Unary<Long, String>() {
+            @Override
+            public Long call(String s) {
+                try {
+                    return new Long(s);
+                } catch (NumberFormatException ne) {
+                    logger.log(Level.WARNING, "Value of " + propName + " is not Long: " + s, ExceptionUtils.getDebugException(ne));
+                }
+                return null;
+            }
+        });
+    }
+
+
 }
