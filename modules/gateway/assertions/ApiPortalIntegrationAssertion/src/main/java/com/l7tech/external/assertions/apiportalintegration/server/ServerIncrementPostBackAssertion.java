@@ -137,7 +137,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
 
         final String TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME = "APP_SYNC_TIME";
         final String TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME = "APP_SYNC_LOG";
-        postback.setIncrementStart(postback.getBulkSync().equalsIgnoreCase(ApplicationJson.BULK_SYNC_TRUE) ? 0 : postback.getIncrementStart());
+        postback.setIncrementStart(postback.getBulkSync().equalsIgnoreCase(ServerIncrementalSyncCommon.BULK_SYNC_TRUE) ? 0 : postback.getIncrementStart());
 
         //update last sync time column of TENANT_GATEWAY
         updateTenantSyncStatus(jdbcConnectionName, nodeId, postback, TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME, TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME);

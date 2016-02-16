@@ -10,9 +10,12 @@ import java.util.List;
  */
 public class ServerIncrementalSyncCommon {
     // todo make configurable? cluster prop? use default jdbc?
-    private final static int queryTimeout = 300;
-    private final static int maxRecords = 1000000;
-    final static String ENTITY_TYPE_APPLICATION = "APPLICATION";
+    private static final int queryTimeout = 300;
+    private static final int maxRecords = 1000000;
+
+    static final String BULK_SYNC_TRUE = "true";
+    static final String BULK_SYNC_FALSE = "false";
+    static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
 
     public ServerIncrementalSyncCommon() {
     }

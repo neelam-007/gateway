@@ -108,7 +108,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest01() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        postback.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setErrorMessage("errorMessage");
@@ -126,7 +126,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest02() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        postback.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setSyncLog("{cron * * *");
@@ -145,7 +145,7 @@ public class ServerIncrementPostBackAssertionTest {
     public void validatePostbackTest03() throws IOException {
         PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        postback.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setErrorMessage("errorMessage");
@@ -175,7 +175,7 @@ public class ServerIncrementPostBackAssertionTest {
 
         final PortalSyncPostbackJson postback = new PortalSyncPostbackJson();
         postback.setIncrementStart(12L);
-        postback.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        postback.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         postback.setIncrementEnd(235324L);
         postback.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
         postback.setSyncLog("{cron * * *");

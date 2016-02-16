@@ -10,9 +10,6 @@ import java.util.List;
  * @author chean22, 1/22/2016
  */
 public class ApplicationJson {
-    public static final String BULK_SYNC_TRUE = "true";
-    public static final String BULK_SYNC_FALSE = "false";
-
     private long incrementStart;
     private String entityType;
     private String bulkSync;

@@ -93,7 +93,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setNewOrUpdatedEntities(Arrays.asList(
                 createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
                 createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));
@@ -114,7 +114,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1")));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).add(any(ApiKey.class));
@@ -137,7 +137,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("066f33d1-7e45-4434-be69-5aa7d20934e1", "test", "secret1")));
         List<Map<String, String>> results = (List<Map<String, String>>) serverAssertion.applyChanges(aj);
         String json = serverAssertion.buildJsonPostBack(incrementStart, aj, results).replaceAll("\\s*", "");
@@ -155,7 +155,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setNewOrUpdatedEntities(Arrays.asList(createApplicationEntity("066f33d1-7e45-4434-be69-5aa7d20934e1", "test", "secret1")));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).update(any(ApiKey.class));
@@ -176,7 +176,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setDeletedIds(Arrays.asList("066f33d1-7e45-4434-be69-5aa7d20934e1"));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doNothing().when(portalGenericEntityManager).delete(any(String.class));
@@ -197,7 +197,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_FALSE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
         aj.setDeletedIds(Arrays.asList("51432edf-db67-46c8-8a7b-4af57fbf8bd4"));
         Mockito.doReturn(apiList).when(portalGenericEntityManager).findAll();
         Mockito.doThrow(ObjectModelException.class).when(portalGenericEntityManager).delete(any(String.class));
@@ -219,7 +219,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         aj.setNewOrUpdatedEntities(Arrays.asList(
                 createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
                 createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));
@@ -243,7 +243,7 @@ public class ServerProcessIncrementAssertionTest {
         ApplicationJson aj = new ApplicationJson();
         aj.setEntityType("APPLICATION");
         aj.setIncrementStart(incrementEnd);
-        aj.setBulkSync(ApplicationJson.BULK_SYNC_TRUE);
+        aj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
         aj.setNewOrUpdatedEntities(Arrays.asList(
                 createApplicationEntity("9ecd3853-c9bb-417b-8a69-d75c53aeeb5f", "new1", "secret1"),
                 createApplicationEntity("f40f9473-6867-4a16-9e3e-ddebb25bbf06", "new2", "secret2")));

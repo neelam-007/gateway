@@ -131,7 +131,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
     }
 
     Object applyChanges(final ApplicationJson applicationJson) throws IOException {
-        List<String> deletedAppList = applicationJson.getDeletedIds();
+        final List<String> deletedAppList = applicationJson.getDeletedIds();
         List<ApplicationEntity> appListFromJson = applicationJson.getNewOrUpdatedEntities();
         Map<String, ApiKey> entitiesMap = new HashMap<>();
 
@@ -140,7 +140,6 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
             entitiesMap.put(apiKey.getName(), apiKey);
         }
         final Map<String, ApiKey> newOrUpdatedEntities = Collections.unmodifiableMap(entitiesMap);
-        final List<String> deletedAppIds = Collections.unmodifiableList(deletedAppList);
 
         // update generic entities
         try {
@@ -148,6 +147,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
             return tt.execute(new TransactionCallback() {
                 @Override
                 public Object doInTransaction(final TransactionStatus transactionStatus) {
+                    Collection<String> toDelete = deletedAppList;
                     try {
                         final List<ApiKey> all = portalGenericEntityManager.findAll();
                         final Set<String> existingNames = new HashSet<>();
@@ -169,14 +169,14 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                         }
                         // delete
 
-                        if (applicationJson.getBulkSync().equalsIgnoreCase(ApplicationJson.BULK_SYNC_TRUE)) {
-                            final Collection<String> toDelete = CollectionUtils.subtract(existingNames, newOrUpdatedEntities.keySet());
+                        if (applicationJson.getBulkSync().equalsIgnoreCase(ServerIncrementalSyncCommon.BULK_SYNC_TRUE)) {
+                            toDelete = CollectionUtils.subtract(existingNames, newOrUpdatedEntities.keySet());
                             for (final String delete : toDelete) {
                                 LOGGER.log(Level.FINE, "Deleting portal application: " + delete);
                                 portalGenericEntityManager.delete(delete);
                             }
                         } else {
-                            for (final String id : deletedAppIds) {
+                            for (final String id : toDelete) {
                                 if (existingEntities.get(id) != null) {
                                     LOGGER.log(Level.FINE, "Deleting portal application: " + existingEntities.get(id).getName());
                                     portalGenericEntityManager.delete(existingEntities.get(id).getName());
@@ -201,7 +201,7 @@ public class ServerProcessIncrementAssertion extends AbstractServerAssertion<Pro
                             error.put(PortalSyncPostbackJson.ERROR_ENTITY_MSG_LABEL, ERROR_MSG);
                             results.add(error);
                         }
-                        for (final String id : deletedAppIds) {
+                        for (final String id : toDelete) {
                             Map<String, String> error = new HashMap();
                             error.put(PortalSyncPostbackJson.ERROR_ENTITY_ID_LABEL, id);
                             error.put(PortalSyncPostbackJson.ERROR_ENTITY_MSG_LABEL, ERROR_MSG);
