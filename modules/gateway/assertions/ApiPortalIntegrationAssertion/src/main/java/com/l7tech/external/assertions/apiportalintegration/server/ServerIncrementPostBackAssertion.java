@@ -6,7 +6,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion;
-import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.objectmodel.FindException;
@@ -68,6 +67,15 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         jdbcConnectionPoolManager = context.getBean("jdbcConnectionPoolManager", JdbcConnectionPoolManager.class);
     }
 
+    //for unit tests
+    ServerIncrementPostBackAssertion(IncrementPostBackAssertion assertion, ApplicationContext context, PlatformTransactionManager transactionManager) throws PolicyAssertionException, JAXBException {
+        super(assertion);
+        this.variablesUsed = assertion.getVariablesUsed();
+        jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
+        jdbcConnectionPoolManager = context.getBean("jdbcConnectionPoolManager", JdbcConnectionPoolManager.class);
+        this.transactionManager = transactionManager;
+    }
+
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Map<String, Object> vars = context.getVariableMap(this.variablesUsed, getAudit());
@@ -85,16 +93,13 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             if (!(jdbcConnectionName instanceof String) || Strings.isNullOrEmpty((String) jdbcConnectionName)) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
             }
-            try {
-                dataSource = jdbcConnectionPoolManager.getDataSource(jdbcConnectionName.toString());
-                if (dataSource == null) throw new FindException();
-                // This update/insert is not using HibernateTransactionManager.  Instead using the transactionManager bean,
-                // use DataSourceTransactionManager to create transaction for the following sql statements.
-                transactionManager = transactionManager == null ? new DataSourceTransactionManager(dataSource) : transactionManager;
-            } catch (FindException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING, "Could not find JDBC connection: " + jdbcConnectionName);
-                return AssertionStatus.FAILED;
-            }
+
+            dataSource = jdbcConnectionPoolManager.getDataSource(jdbcConnectionName.toString());
+            if (dataSource == null) throw new FindException("Could not find JDBC connection: " + jdbcConnectionName);
+            // This update/insert is not using HibernateTransactionManager.  Instead using the transactionManager bean,
+            // use DataSourceTransactionManager to create transaction for the following sql statements.
+            transactionManager = transactionManager == null ? new DataSourceTransactionManager(dataSource) : transactionManager;
+
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser jsonParser = jsonFactory.createJsonParser((String) jsonPayload);
             ObjectMapper mapper = new ObjectMapper();
@@ -156,6 +161,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         }
         updateSyncSuccessEntities(jdbcConnectionName, postback, nodeId, errorEntityIds);
     }
+
     /*
      * update postback status for successfully sync entities
      */
@@ -188,6 +194,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             appEntityInsert(jdbcConnectionName, nodeId, addEntityId, postback.getIncrementEnd(), log);
         }
     }
+
     /*
      * insert sync status to APPLICATION_TENANT_GATEWAY
      */
@@ -206,7 +213,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         String query = String.format("UPDATE TENANT_GATEWAY SET %s=? , %s=? WHERE UUID=?", syncTimeColumn, syncLogColumn);
         Object result = queryJdbc(jdbcConnectionName, query, Lists.<Object>newArrayList(BigInteger.valueOf(postback.getIncrementEnd()), postback.getSyncLog(), nodeId));
         if (!(result instanceof Integer) || ((Integer) result).intValue() != 1) {
-            throw new PolicyAssertionException(assertion, String.format("Failed to update the sync status of the node with nodeId, '%s', in TENANT_GATEWAY.  ", nodeId));
+            throw new PolicyAssertionException(assertion, String.format("Failed to update the sync status of the node with nodeId, '%s', in TENANT_GATEWAY", nodeId));
         }
     }
 
@@ -234,7 +241,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
      */
     private List<String> queryEntityInfo(String jdbcConnectionName, String sqlQuery, List<Object> params, String columnName) throws PolicyAssertionException {
         Map<String, List> mapResult = (Map<String, List>) queryJdbc(jdbcConnectionName, sqlQuery, params);
-        if (mapResult.size() > 0) {
+        if (mapResult != null && mapResult.size() > 0) {
             return Lists.newArrayList(Iterables.transform(mapResult.get(columnName), new Function() {
                 @Override
                 public String apply(Object o) {
