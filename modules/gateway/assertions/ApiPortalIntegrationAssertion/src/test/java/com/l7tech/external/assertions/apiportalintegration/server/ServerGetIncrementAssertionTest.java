@@ -42,7 +42,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
                 "    \"secret\" : \"6106dceac26844f0b1d9688bb565acf6\",\n" +
-                "    \"status\" : \"ENABLED\",\n" +
+                "    \"status\" : \"active\",\n" +
                 "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
                 "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +
@@ -93,7 +93,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
                 "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
                 "    \"secret\" : \"6106dceac26844f0b1d9688bb565acf6\",\n" +
-                "    \"status\" : \"ENABLED\",\n" +
+                "    \"status\" : \"active\",\n" +
                 "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
                 "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +

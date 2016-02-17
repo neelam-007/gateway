@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationApi;
@@ -14,10 +15,13 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
@@ -35,8 +39,11 @@ import org.springframework.context.ApplicationContext;
 public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncrementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
-    private final String[] variablesUsed;
+    private static final String STATUS_ENABLED = "ENABLED";
+    private static final String STATUS_ACTIVE = "active";
+    private static final String STATUS_SUSPEND = "suspend";
 
+    private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
 
@@ -166,7 +173,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return jsonInString;
     }
 
-    private List buildApplicationEntityList(Map<String, List> results) {
+    private List buildApplicationEntityList(Map<String, List> results) throws UnsupportedEncodingException {
 
         if (results.isEmpty()) {
             return CollectionUtils.list();
@@ -182,11 +189,18 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 appEntity.setId(appId);
                 appEntity.setKey((String) results.get("api_key").get(i));
                 appEntity.setSecret((String) results.get("key_secret").get(i));
-                appEntity.setStatus((String) results.get("status").get(i));
+                // Mapping the status, "ENABLED" -> "active", "DISABLED" -> "suspend"
+                final String status = (String) results.get("status").get(i);
+                appEntity.setStatus(status.equalsIgnoreCase(STATUS_ENABLED) ? STATUS_ACTIVE : STATUS_SUSPEND);
                 appEntity.setOrganizationId((String) results.get("organization_uuid").get(i));
                 appEntity.setOrganizationName((String) results.get("organization_name").get(i));
                 appEntity.setLabel((String) results.get("name").get(i));
-                appEntity.setOauthCallbackUrl((String) results.get("oauth_callback_url").get(i));
+                final String url = (String) results.get("oauth_callback_url").get(i);
+                if (Strings.isNullOrEmpty(url)) {
+                    appEntity.setOauthCallbackUrl(url);
+                } else {
+                    appEntity.setOauthCallbackUrl(URLEncoder.encode(url, "UTF-8"));
+                }
                 appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
                 appEntity.setOauthType((String) results.get("oauth_type").get(i));
                 appMap.put(appId, appEntity);
