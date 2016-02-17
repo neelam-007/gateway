@@ -12,17 +12,24 @@ public class SiteMinderAgentContextCache {
     private final Cache authenticationCache;
     private final Cache authorizationCache;
 
+    private final int resourceCacheSize;
     private final long resourceCacheMaxAge;
+    private final int authorizationCacheSize;
     private final long authorizationCacheMaxAge;
+    private final int authenticationCacheSize;
     private final long authenticationCacheMaxAge;
 
-    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, long resourceCacheMaxAge, @NotNull Cache authenticationCache,
-                                       long authenticationCacheMaxAge, @NotNull Cache authorizationCache, long authorizationCacheMaxAge) {
+    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, int resourceCacheSize, long resourceCacheMaxAge,
+                                       @NotNull Cache authenticationCache, int authenticationCacheSize, long authenticationCacheMaxAge,
+                                       @NotNull Cache authorizationCache, int authorizationCacheSize, long authorizationCacheMaxAge) {
         this.resourceCache = resourceCache;
+        this.resourceCacheSize = resourceCacheSize;
         this.resourceCacheMaxAge = resourceCacheMaxAge;
         this.authenticationCache = authenticationCache;
+        this.authenticationCacheSize = authenticationCacheSize;
         this.authenticationCacheMaxAge = authenticationCacheMaxAge;
         this.authorizationCache = authorizationCache;
+        this.authorizationCacheSize = authorizationCacheSize;
         this.authorizationCacheMaxAge = authorizationCacheMaxAge;
     }
 
@@ -50,12 +57,24 @@ public class SiteMinderAgentContextCache {
         return authorizationCache;
     }
 
+    public int getResourceCacheSize() {
+        return resourceCacheSize;
+    }
+
     public long getResourceCacheMaxAge() {
         return resourceCacheMaxAge;
     }
 
+    public int getAuthorizationCacheSize() {
+        return authorizationCacheSize;
+    }
+
     public long getAuthorizationCacheMaxAge() {
         return authorizationCacheMaxAge;
+    }
+
+    public int getAuthenticationCacheSize() {
+        return authenticationCacheSize;
     }
 
     public long getAuthenticationCacheMaxAge() {

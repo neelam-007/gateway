@@ -41,8 +41,8 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
         Cache authorizationCache = createWhirlycache(key.toString() + ".authorization",
                 authorizationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
 
-        SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, resourceMaxAge,
-                authenticationCache, authenticationMaxAge, authorizationCache, authorizationMaxAge);
+        SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, resourceMaxEntries, resourceMaxAge,
+                authenticationCache, authenticationMaxEntries, authenticationMaxAge, authorizationCache, authorizationMaxEntries, authorizationMaxAge);
 
         agentCacheMap.put(key, newCache);
 
