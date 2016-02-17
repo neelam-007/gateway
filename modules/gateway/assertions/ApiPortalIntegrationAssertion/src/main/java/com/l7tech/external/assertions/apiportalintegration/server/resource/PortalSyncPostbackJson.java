@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.apiportalintegration.server.resource;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -17,6 +20,7 @@ public class PortalSyncPostbackJson {
     public final static String SYNC_STATUS_OK = "ok";
     public final static String SYNC_STATUS_ERROR = "error";
     public final static String SYNC_STATUS_PARTIAL = "partial";
+    public final static List<String> SUPPORTED_SYNC_STATUS= Lists.newArrayList(SYNC_STATUS_ERROR, SYNC_STATUS_OK, SYNC_STATUS_PARTIAL);
     public final static String ERROR_ENTITY_ID_LABEL = "id";
     public final static String ERROR_ENTITY_MSG_LABEL = "msg";
 
@@ -109,6 +113,15 @@ public class PortalSyncPostbackJson {
         }
         if (Strings.isNullOrEmpty(getEntityType())) {
             throw new IOException("Invalid JSON input, missing entity type field");
+        }
+        boolean supportedSyncStatus = Iterators.any(SUPPORTED_SYNC_STATUS.iterator(), new Predicate<String>() {
+                @Override
+                public boolean apply(String s) {
+                    return getIncrementStatus().equalsIgnoreCase(s);
+                }
+            });
+        if (!supportedSyncStatus){
+            throw new IOException(String.format("Invalid JSON input, unsupported sync status: %s", getIncrementStatus()));
         }
         if (Strings.isNullOrEmpty(getBulkSync())) {
             throw new IOException("Invalid JSON input, missing bulk sync field");
