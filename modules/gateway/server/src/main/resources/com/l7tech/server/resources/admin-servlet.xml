@@ -17,6 +17,12 @@
     <bean name="/AdminLogin" parent="httpInvokerParent">
         <property name="service" ref="adminLogin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.AdminLogin"/>
+        <!--
+            WARNING:
+            You must ensure that permitted classes ARE NOT from untrusted sources and they CANNOT be used to execute
+            arbitrary Java code e.g. java.lang.System and java.lang.Runtime MUST NOT be permitted.
+            In addition Apache InvokerTransformer is known to have remote code execution vulnerability, and MUST NOT be permitted.
+        -->
         <property name="permittedClassNames">
             <set>
                 <value>[B</value>

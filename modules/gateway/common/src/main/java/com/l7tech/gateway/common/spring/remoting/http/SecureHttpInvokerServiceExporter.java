@@ -62,6 +62,9 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         } catch ( SecurityIOException ioe ) {
             final RemoteInvocationResult fakeResult = new RemoteInvocationResult( ioe.getCause() );
             this.writeRemoteInvocationResult( request, response, fakeResult );
+        } catch (ClassNotPermittedException ex) {
+            final RemoteInvocationResult fakeResult = new RemoteInvocationResult( ex );
+            this.writeRemoteInvocationResult( request, response, fakeResult );
         }
     }
 
@@ -126,6 +129,15 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         }
     }
 
+    /**
+     * Dedicated exception to stop further stream deserialization when a non-whitelisted class is found.
+     */
+    public static class ClassNotPermittedException extends SecurityException {
+        public ClassNotPermittedException(final String msg) {
+            super(msg);
+        }
+    }
+
     private static class RestrictedCodebaseAwareObjectInputStream extends CodebaseAwareObjectInputStream {
         private final Set<String> permittedClassNames;
 
@@ -140,7 +152,7 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         protected Class resolveClass( final ObjectStreamClass classDesc ) throws IOException, ClassNotFoundException {
             if ( !permittedClassNames.contains( classDesc.getName() ) ) {
                 logger.warning( "Attempt to load restricted class '"+classDesc.getName()+"'." );
-                throw new ClassNotFoundException( classDesc.getName() );
+                throw new ClassNotPermittedException("Attempt to deserialize non-whitelisted class '" + classDesc.getName() + "'");
             }
             return super.resolveClass(classDesc);
         }

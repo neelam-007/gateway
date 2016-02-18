@@ -16,6 +16,9 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * WARNING If you change this API you MUST update "cluster-servlet.xml" to
  * WARNING permit the classes used in the parameters (node to node whitelist)
  * WARNING
+ * WARNING You must ensure that permitted classes ARE NOT from untrusted sources
+ * WARNING and CANNOT be used to execute arbitrary Java code e.g. java.lang.System and java.lang.Runtime MUSTN'T be permitted.
+ * WARNING In addition Apache InvokerTransformer is known to have remote code execution vulnerability and MUST NOT be permitted.
  * WARNING
  */
 @Transactional(propagation=REQUIRED)
