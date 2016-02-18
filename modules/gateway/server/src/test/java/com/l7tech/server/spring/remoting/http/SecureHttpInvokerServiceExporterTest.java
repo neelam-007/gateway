@@ -1,5 +1,6 @@
-package com.l7tech.gateway.common.spring.remoting.http;
+package com.l7tech.server.spring.remoting.http;
 
+import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter;
 import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
