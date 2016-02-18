@@ -10,6 +10,7 @@
 	</configurations>	
 	<publications>
 		<artifact name="SamlpAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="SamlpAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency org="com.l7tech.lib" name="samlp_v1_jaxb" rev="1.0" force="true" conf="core"/>

@@ -13,7 +13,7 @@
     <property name="module.idea.dependencies.scope" value="PROVIDED"/>
     <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
-    <property name="src.root" value="../../../../"/>
+    <property name="src.root" value="${basedir}/../../../../"/>
 
     <import file="../../../etc/build/build-common.xml"/>
 

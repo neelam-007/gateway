@@ -9,6 +9,7 @@
     </configurations>
     <publications>
         <artifact name="layer7-gateway-config" type="jar" ext="jar" conf="master"/>
+		<artifact name="layer7-gateway-config" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency name="layer7-config" rev="latest.integration" conf="core"/>

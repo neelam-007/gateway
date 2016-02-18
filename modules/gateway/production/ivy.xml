@@ -24,7 +24,9 @@
         <conf name="module-optional" description="Optional modular assertion dependencies"/>
         <conf name="module-client" description="XML VPN Client modular assertion dependencies"/>
     </configurations>
-    <publications/>
+    <publications>
+		<artifact name="layer7-gateway-production" type="pom" ext="pom" conf="master"/>
+	</publications>
     <dependencies>
         <!-- Product Leaf Modules -->
         <dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>

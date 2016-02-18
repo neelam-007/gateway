@@ -10,6 +10,7 @@
     </configurations>
     <publications>
         <artifact name="layer7-gateway-console" type="jar" ext="jar" conf="master"/>
+		<artifact name="layer7-gateway-console" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency name="layer7-gateway-common" rev="latest.integration" conf="core; test->default,test"/>

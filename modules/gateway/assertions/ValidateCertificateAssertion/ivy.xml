@@ -10,6 +10,7 @@
 	</configurations>
 	<publications>
 		<artifact name="ValidateCertificateAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="ValidateCertificateAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

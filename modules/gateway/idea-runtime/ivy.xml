@@ -22,7 +22,9 @@
         <conf name="optional" description="Contains all optional dependencies"/>
         <conf name="module" description="Packaged modular assertion dependencies"/>
     </configurations>
-    <publications/>
+    <publications>
+		<artifact name="layer7-gateway-idea-runtime" type="pom" ext="pom" conf="master"/>
+    </publications>
     <dependencies>
         <!-- Product Leaf Modules -->
         <dependency name="layer7-gateway-server" rev="latest.integration" conf="core"/>

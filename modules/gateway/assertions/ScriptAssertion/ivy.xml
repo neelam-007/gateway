@@ -10,6 +10,7 @@
     </configurations>	
     <publications>
         <artifact name="ScriptAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="ScriptAssertion" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency org="bsf" name="bsf" rev="2.4.0-l7p1" force="true" conf="core"/>

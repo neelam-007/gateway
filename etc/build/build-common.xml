@@ -231,6 +231,7 @@
                         organisation="@{organisation}"
                         module="@{name}"
                         conf="@{conf}"
+						type="jar"
                         transitive="false"
                         log="quiet"/>
 
@@ -672,28 +673,47 @@
     </target>
 
     <!--
+		Run package, then publish locally, then try to publish to artifactory
     -->
-    <target name="publish" depends="info, clean, package" description="Publish this project in the Ivy repository">
+    <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
+		<property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
+		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
+		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
+		<!-- specify conf to publish and skip the test conf -->
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
-                     pubrevision="${version}"
-                     status="release"
-                     overwrite="true"
-                />
-        <echo message="project ${ant.project.name} released with version ${version}"/>
+					 pubrevision="${version}"
+                     overwrite="true"/>
+        <echo message="project ${ant.project.name} local published with version ${version}"/>
+		<antcall target="publish-artifactory"/>
     </target>
 
+    <!--
+		Publish to artifactory if publish.jar.target is set to an artifactory resolver
+    -->
+    <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+					 conf="default, master, optional, core"
+                     resolver="${publish.jar.target}"
+					 pubrevision="${version}"
+                     overwrite="true"
+					 publishivy="false"/>
+        <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
+    </target>
+	
     <!--
     -->
     <target name="publish-all" depends="info, clean, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository">
+		<property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
+		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
+		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     module="${ant.project.name}"
                      resolver="shared"
                      pubrevision="${version}"
-                     status="release"
                      overwrite="true"
                 />
         <echo message="project ${ant.project.name} released with version ${version}"/>
@@ -707,13 +727,14 @@
     -->
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
+		<property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
+		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core"/>
+		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
+		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     module="${ant.project.name}"
                      resolver="shared"
-                     pubrevision="${version}"
-                     status="release"
-                     overwrite="true"
-                />
+					 pubrevision="${version}"
+                     overwrite="true"/>
         <echo message="project ${ant.project.name} released with version ${version}"/>
     </target>
 

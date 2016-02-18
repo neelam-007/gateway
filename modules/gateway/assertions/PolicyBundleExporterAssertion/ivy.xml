@@ -10,6 +10,7 @@
 	</configurations>
 	<publications>
 		<artifact name="PolicyBundleExporterAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="PolicyBundleExporterAssertion" type="pom" ext="pom" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency org="asm" name="asm" rev="5.0.3" force="true" conf="core"/>

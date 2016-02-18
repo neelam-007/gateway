@@ -10,6 +10,7 @@
     </configurations>	
     <publications>
         <artifact name="IpmAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="IpmAssertion" type="pom" ext="pom" conf="master"/>
     </publications>
     <dependencies>
         <dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="core">

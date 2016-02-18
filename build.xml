@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="UneasyRooster" default="dev" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="UneasyRooster" default="dev" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:sonar="antlib:org.sonar.ant">
     <description>
         Ant build file for UneasyRooster
     </description>
@@ -24,9 +24,13 @@
       Mainly DB info, compiler settings, etc.
     -->
     <property file="etc/build/default_build.properties"/>
-
-
     <property file="etc/build/install.properties"/>
+
+	<!-- Add Artifactory properties -->
+	<property file="etc/build/artifactory.properties"/>
+
+	<!-- Add SonarQube properties -->
+	<property file="etc/build/sonarqube.properties"/>
 
     <!--
       Ivy initialization is global
@@ -598,6 +602,8 @@
                 <propertyref name="ivy.settings.filepath"/>
                 <propertyref name="module.official.build"/>
                 <propertyref prefix="idea"/>
+				<propertyref name="publish.jar.target"/>
+				<propertyref name="publish.status"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -607,7 +613,7 @@
     </target>
 
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
-        <modules target="publish"/>
+		<modules target="publish"/>
     </target>
 
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
@@ -617,7 +623,7 @@
     <target name="publish-all-modules-quick" depends="prepare.base, build-module-list-all">
         <modules target="publish-all-quick" buildpathref="module-build-all-path"/>
     </target>
-
+	
     <target name="clean-modules" depends="build-module-list-all">
         <modules target="clean" buildpathref="module-build-all-path"/>
     </target>
@@ -2942,7 +2948,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all">
     </target>
 
     <!--
@@ -3841,5 +3847,87 @@
             <arg line="-f &quot;${src.root}/${saar-input}&quot;"/>
             <arg line="-o &quot;${src.root}/${xml-output}&quot;"/>
         </java>
+    </target>
+	
+	<!--
+		Publish everything in ivy local repo to artifactory recursively
+	-->
+	<target name="publish-third-party-all">
+		<delete dir="${ivy.cache.dir}"/>
+		<foreach param="var" target="publish-third-party-helper">
+			<path>
+				<fileset dir="${ivy.local.dir}">
+					<include name="**/*.xml"/>
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<!--
+		Check if the specified artifact revision in ivy file already exist on Artifactory
+	-->
+	<target name="publish-third-party-helper">
+		<ivy:settings  id="ivy.settings" file="${src.root}/etc/build/ivysettings_artifactory.xml"/>
+		<ivy:info file="${var}" settingsRef="ivy.settings"/>
+		<ivy:info organisation="${ivy.organisation}" module="${ivy.module}" revision="${ivy.revision}" property="check" settingsRef="ivy.settings"/>
+		<echo message="Artifact Search: ${check.organisation} ${check.module} ${check.revision}"/>
+		<antcall target="publish-third-party"/>
+	</target>
+	<!--
+		Publish a single artifact (unless artifact revision already present)
+	-->
+	<target name="publish-third-party" unless="check.revision">
+		<ivy:resolve file="${var}" haltonfailure="false"/>
+		<ivy:publish resolver="artifactory-thirdparty" overwrite="false" haltonmissing="false" srcivypattern="${var}" conf="default,master"
+			artifactspattern="${ivy.local.dir}/[organisation]/[module]-[revision].[ext]"/>
+	</target>
+	<!--
+		Enable antcontrib for external tasks (foreach, if)
+	-->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="lib/ant-contrib-1.0b3.jar"/>
+		</classpath>
+	</taskdef>
+
+	<!--
+		Publish all RPMs in dist folder
+	-->
+	<target name="publish-rpms-all" if="publish.rpm.target">
+		<foreach param="var" target="publish-rpm" inheritall="true" parallel="true" maxThreads="3">
+			<path>
+				<fileset dir="${src.root}/dist">
+					<include name="*.rpm"/>
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	
+	<!--
+		Publish an RPM
+	-->
+	<target name="publish-rpm">
+		<basename property="rpm.filename" file="${var}"/>
+		<exec executable="curl">
+			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${publish.rpm.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
+		</exec>
+	</target>
+
+	<!--
+	-->
+    <target name="enable-snapshot" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of integration (snapshot) repo.</echo>
+        <property name="publish.jar.target" value="artifactory-snapshot"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
+		<property name="publish.status" value="integration"/>
+    </target>
+	
+	<!--
+	-->
+    <target name="enable-release" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of release repo.</echo>
+        <property name="publish.jar.target" value="artifactory-release"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
+		<property name="publish.status" value="release"/>
     </target>
 </project>
