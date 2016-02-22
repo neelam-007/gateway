@@ -9,7 +9,6 @@ import com.l7tech.console.action.CustomAssertionPropertiesAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 
@@ -46,6 +45,10 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
     }
 
+    @Override
+    public String getName(final boolean decorate, final boolean withComments) {
+        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, withComments);
+    }
     /**
      * Gets the default action for this node.
      *

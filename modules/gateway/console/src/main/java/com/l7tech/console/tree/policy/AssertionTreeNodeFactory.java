@@ -4,17 +4,10 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.Functions;
 
@@ -31,7 +24,7 @@ import java.util.logging.Logger;
 public class AssertionTreeNodeFactory {
     protected static final Logger logger = Logger.getLogger(AssertionTreeNodeFactory.class.getName());
 
-    private static Map<Class<? extends Assertion>, Class<? extends AssertionTreeNode>> assertionMap = new HashMap<Class<? extends Assertion>, Class<? extends AssertionTreeNode>>();
+    private static Map<Class<? extends Assertion>, Class<? extends AssertionTreeNode>> assertionMap = new HashMap<>();
 
     // mapping assertions to assertion tree nodes
     static {
@@ -143,6 +136,11 @@ public class AssertionTreeNodeFactory {
 
         @Override
         public String getName(final boolean decorate) {
+            return name;
+        }
+
+        @Override
+        public String getName(final boolean decorate, final boolean withComments) {
             return name;
         }
     }

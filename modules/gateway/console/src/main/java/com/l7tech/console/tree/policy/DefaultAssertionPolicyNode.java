@@ -37,6 +37,11 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         return getNameFromMeta(asAssertion(), decorate, true);
     }
 
+    @Override
+    public String getName(final boolean decorate, final boolean withComments) {
+        return getNameFromMeta(asAssertion(), decorate, withComments);
+    }
+
     public static <AT extends Assertion> String getNameFromMeta(final AT assertion, final boolean decorate, final boolean withComments) {
         //noinspection unchecked
         AssertionMetadata meta = assertion.meta();

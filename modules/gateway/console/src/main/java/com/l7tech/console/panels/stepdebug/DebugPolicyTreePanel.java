@@ -311,6 +311,10 @@ public class DebugPolicyTreePanel extends JPanel {
                 return message;
             }
 
+            public String getName(final boolean decorate, final boolean withComments) {
+                return message;
+            }
+
             protected String iconResource(boolean open) {
                 return null;
             }

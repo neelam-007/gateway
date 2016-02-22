@@ -71,7 +71,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private final PolicyTreeCellRenderer policyTreeCellRenderer = new PolicyTreeCellRenderer();
 
     private SimpleTableModel<PolicyVersion> tableModel;
-    private Map<Goid,String> identityProviderNameMap = new HashMap<Goid,String>();
+    private Map<Goid,String> identityProviderNameMap = new HashMap<>();
 
     /** Predicate that matches any PolicyVersion whose 'active' flag is true. */
     private static final Functions.Unary<Boolean, PolicyVersion> IS_ACTIVE = new Functions.Unary<Boolean, PolicyVersion>() {
@@ -365,7 +365,7 @@ public class PolicyRevisionsDialog extends JDialog {
         if (row < COLUMN_IDX_ACTIVE) return null;
         PolicyVersion v = tableModel.getRowObject(row);
         if (v == null) return null;
-        return new Pair<Integer, PolicyVersion>(row, v);
+        return new Pair<>(row, v);
     }
 
     private void enableOrDisableButtons() {
@@ -408,6 +408,10 @@ public class PolicyRevisionsDialog extends JDialog {
         return new LeafAssertionTreeNode<CommentAssertion>(new CommentAssertion(message)) {
 
             public String getName(final boolean decorate) {
+                return message;
+            }
+
+            public String getName(final boolean decorate, final boolean withComments) {
                 return message;
             }
 
