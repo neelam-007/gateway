@@ -1,7 +1,9 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.gateway.common.admin.security.DeserializeClassFilter;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter;
 import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
 import org.springframework.remoting.support.RemoteInvocation;
@@ -42,6 +44,14 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
 
     public void setSecurityCallback( final SecurityCallback securityCallback ) {
         this.securityCallback = securityCallback;
+    }
+
+    public void setBypassDeserializationClassFilter(@Nullable final Boolean bypassDeserializationClassFilter) {
+        this.bypassDeserializationClassFilter = bypassDeserializationClassFilter;
+    }
+
+    public boolean isDeserializationClassFilterDisabled() {
+        return bypassDeserializationClassFilter != null && bypassDeserializationClassFilter;
     }
 
     public interface SecurityCallback {
@@ -94,12 +104,22 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
                 throw new SecurityIOException( ioe );
             }
 
-            return super.createObjectInputStream( is );
+            if (isDeserializationClassFilterDisabled()) {
+                return super.createObjectInputStream( is );
+            }
+            return new ClassFilterCodebaseAwareObjectInputStream(is, getBeanClassLoader(), getDeserializationClassFilter());
         } else if ( restrictClasses ) {
             return new RestrictedCodebaseAwareObjectInputStream(is, getBeanClassLoader(), permittedClassNames);
         } else {
             return super.createObjectInputStream( is );
         }
+    }
+
+    //- PACKAGE
+
+    @NotNull
+    ClassFilter getDeserializationClassFilter() {
+        return DeserializeClassFilter.getInstance();
     }
 
     //- PRIVATE
@@ -112,6 +132,8 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
     private Set<String> permittedClassNames;
     private SecurityCallback securityCallback;
     private ClassLoader moduleClassLoader;
+    @Nullable
+    private Boolean bypassDeserializationClassFilter;
 
     private void validate( final RemoteInvocation remoteInvocation ) throws IOException {
         if ( remoteInvocation != null && restrictMethods ) {
@@ -129,12 +151,48 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         }
     }
 
-    /**
-     * Dedicated exception to stop further stream deserialization when a non-whitelisted class is found.
-     */
-    public static class ClassNotPermittedException extends SecurityException {
-        public ClassNotPermittedException(final String msg) {
-            super(msg);
+    static private class ClassFilterCodebaseAwareObjectInputStream extends CodebaseAwareObjectInputStream {
+        @NotNull
+        private final ClassFilter classFilter;
+
+        private ClassFilterCodebaseAwareObjectInputStream(
+                final InputStream inputStream,
+                final ClassLoader classLoader,
+                @NotNull final ClassFilter classFilter
+        ) throws IOException {
+            super(inputStream, classLoader, null);
+            this.classFilter = classFilter;
+        }
+
+        @Override
+        protected Class resolveClass(final ObjectStreamClass classDesc) throws IOException, ClassNotFoundException {
+            final String clsName = classDesc.getName();
+            if (classFilter.permitClass(clsName)) {
+                return super.resolveClass(classDesc);
+            }
+
+            logger.warning("Attempt to deserialize non-whitelisted class '" + clsName + "'.");
+            // log developers note only if debug state is set and log level is set to FINE
+            if (JdkLoggerConfigurator.debugState()) {
+                final String devNote = "NOTE TO DEVELOPERS:" + System.lineSeparator() +
+                        "All serialized classes must be whitelisted before they can be deserialized by the Gateway." + System.lineSeparator() +
+                        "Class '" + clsName + "' is not whitelisted." + System.lineSeparator() +
+                        "If this is refactored or newly added class for one of the admin interfaces, than make sure the class is " +
+                        "properly whitelisted, by either annotating it with @DeserializeSafe (preferred) or adding the class name inside " +
+                        "DeserializeClassFilter#ALLOWED_CLASSES collection." + System.lineSeparator() +
+                        "Optionally, when developing a new admin interface, deserialization ClassFilter can be temporary " +
+                        "disabled by setting 'bypassDeserializationClassFilter' property to 'true' inside admin-servlet.xml." + System.lineSeparator() +
+                        "Once the admin interface is complete, remove bypassDeserializationClassFilter property and " +
+                        "properly whitelist used classes." + System.lineSeparator() +
+                        "WARNING:" + System.lineSeparator() +
+                        "Developer must ensure that whitelisted classes ARE NOT from untrusted sources and they CANNOT be used to execute" +
+                        "arbitrary Java code e.g. java.lang.System and java.lang.Runtime MUST NOT be permitted." + System.lineSeparator() +
+                        "In addition Apache InvokerTransformer is known to have remote code execution vulnerability, and MUST NOT be permitted." + System.lineSeparator() +
+                        "For more details refer to https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter." + System.lineSeparator();
+                logger.info(devNote);
+            }
+
+            throw new ClassNotPermittedException("Attempt to deserialize non-whitelisted class '" + clsName + "'", clsName);
         }
     }
 
@@ -150,9 +208,10 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
 
         @Override
         protected Class resolveClass( final ObjectStreamClass classDesc ) throws IOException, ClassNotFoundException {
-            if ( !permittedClassNames.contains( classDesc.getName() ) ) {
-                logger.warning( "Attempt to load restricted class '"+classDesc.getName()+"'." );
-                throw new ClassNotPermittedException("Attempt to deserialize non-whitelisted class '" + classDesc.getName() + "'");
+            final String clsName = classDesc.getName();
+            if ( !permittedClassNames.contains( clsName ) ) {
+                logger.warning( "Attempt to load restricted class '" + clsName + "'." );
+                throw new ClassNotPermittedException("Attempt to deserialize non-whitelisted class '" + clsName + "'", clsName);
             }
             return super.resolveClass(classDesc);
         }

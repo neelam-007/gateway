@@ -34,7 +34,7 @@ public class ClassFilterObjectInputStream extends ObjectInputStream {
             return super.resolveClass(classDesc);
         }
 
-        logger.warning("Attempt to load restricted class '" + classDesc.getName() + "'.");
-        throw new ClassNotFoundException(classDesc.getName());
+        logger.warning("Attempt to deserialize non-whitelisted class '" + classDesc.getName() + "'.");
+        throw new ClassNotPermittedException(classDesc.getName());
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.solutionkit;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.util.DeserializeSafe;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,6 +17,7 @@ import javax.persistence.*;
  *
  * @author Jamie Williams - jamie.williams2@ca.com
  */
+@DeserializeSafe
 @Entity
 @Proxy(lazy=false)
 @Table(name="solution_kit_meta")

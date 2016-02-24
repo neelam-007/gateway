@@ -16,6 +16,11 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Remote admin interface for managing {@link com.l7tech.gateway.common.solutionkit.SolutionKit}.
+ * <p/>
+ * When modifying these methods, specifically when adding arguments, make sure newly added args are safe to be deserialized
+ * and whitelist their classes properly, either by using annotation {@link com.l7tech.util.DeserializeSafe} or adding them
+ * inside {@link com.l7tech.gateway.common.admin.security.DeserializeClassFilter DeserializeClassFilter}.
+ * In addition make sure method changes are covered in the unit testing {@code SecureHttpInvokerServiceExporterTest#testSolutionKitAdminWhitelist()}
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=EntityType.SOLUTION_KIT)

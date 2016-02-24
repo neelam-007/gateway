@@ -2,18 +2,18 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.security.signer.SignerUtilsTest;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.gateway.common.solutionkit.SkarPayload;
-import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
+import com.l7tech.test.util.TestUtils;
 import com.l7tech.util.*;
 import org.apache.commons.lang.CharEncoding;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -64,8 +64,8 @@ public class SolutionKitManagerResourceTest {
             "cn=signer.team2.apim.ca.com"
     };
 
-    private static final String SK_FILENAME = SignerUtilsTest.extractProperty(SkarPayload.class, "SK_FILENAME");
-    private static final String SK_INSTALL_BUNDLE_FILENAME = SignerUtilsTest.extractProperty(SkarPayload.class, "SK_INSTALL_BUNDLE_FILENAME");
+    private static final String SK_FILENAME = TestUtils.getFieldValue(SkarPayload.class, "SK_FILENAME", String.class);
+    private static final String SK_INSTALL_BUNDLE_FILENAME = TestUtils.getFieldValue(SkarPayload.class, "SK_INSTALL_BUNDLE_FILENAME", String.class);
 
 
     private static final String SAMPLE_SOLUTION_KIT_META_TEMPLATE = "<l7:SolutionKit xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +

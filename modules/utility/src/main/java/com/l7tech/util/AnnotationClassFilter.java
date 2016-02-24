@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.List;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +28,7 @@ public class AnnotationClassFilter implements ClassFilter {
      * @param classLoader class loader to use for loading classes to check for annotations given a class name, or null to use the context class loader at the time.
      * @param classPrefixes prefixes of classes to load and check annotations on.  Required.
      */
-    public AnnotationClassFilter(@Nullable ClassLoader classLoader, @NotNull List<String> classPrefixes) {
+    public AnnotationClassFilter(@Nullable ClassLoader classLoader, @NotNull Collection<String> classPrefixes) {
         prefixMatcher = TextUtils.matchesAnyPrefix(classPrefixes);
         this.classLoader = classLoader;
     }

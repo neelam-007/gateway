@@ -8,6 +8,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.SafeXMLDecoder;
 import com.l7tech.util.SafeXMLDecoderBuilder;
+import com.l7tech.util.DeserializeSafe;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
@@ -24,6 +25,7 @@ import java.util.*;
 /**
  * A persistent entity that holds information about an installed solution kit.
  */
+@DeserializeSafe
 @Entity
 @Proxy(lazy=false)
 @Table(name="solution_kit")

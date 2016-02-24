@@ -1,5 +1,6 @@
 package com.l7tech.server.security.keystore.ncipher;
 
+import com.l7tech.util.ClassNotPermittedException;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.collections.functors.ChainedTransformer;
 import org.apache.commons.collections.functors.ConstantTransformer;
@@ -119,10 +120,10 @@ public class NcipherKeyStoreDataTest {
             try {
                 //noinspection UnusedAssignment
                 serialized = NcipherKeyStoreData.createFromBytes(bytes);
-                Assert.fail("NcipherKeyStoreData.createFromBytes should have failed with IOException (cause ClassNotFoundException)");
+                Assert.fail("NcipherKeyStoreData.createFromBytes should have failed with IOException (cause ClassNotPermittedException)");
             } catch (IOException e) {
                 // ok
-                Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotFoundException.class));
+                Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotPermittedException.class));
                 serialized = null;
             }
             //noinspection ConstantConditions
@@ -143,7 +144,7 @@ public class NcipherKeyStoreDataTest {
         // String, LinkedHashSet, HashSet, HashMap, "[B"
         // no need to test NcipherKeyStoreData, as its cover by other unit tests
         //
-        // createFromBytes will still fail with IOException, but the cause will not be ClassNotFoundException (in case if the class is not permitted)
+        // createFromBytes will still fail with IOException, but the cause will not be ClassNotPermittedException (in case if the class is not permitted)
         ////////////////////////////////////////////////////////////////////////////////////////
         doTestPayload(serializeArbitraryObject("test-string"), 0);
         Set<String> set = new LinkedHashSet<>();
@@ -233,7 +234,7 @@ public class NcipherKeyStoreDataTest {
                     Assert.assertThat(e.getMessage(), Matchers.containsString("Ncipher keystore data deserialized to unexpected type:"));
                     break;
                 case 1: // not whitelisted
-                    Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotFoundException.class));
+                    Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotPermittedException.class));
                     break;
                 case 2: // not serialized object
                     Assert.assertNull(e.getCause());

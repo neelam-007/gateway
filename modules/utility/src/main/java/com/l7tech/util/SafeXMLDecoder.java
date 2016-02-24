@@ -73,30 +73,14 @@ public class SafeXMLDecoder implements Closeable {
 
     private static final String SYSTEM_ID_XMLOBJ = "http://layer7tech.com/ns/xmlobj";
 
+    private static final String CLS_NOT_PERMITTED_ERROR_MESSAGE = "Class not permitted for XML decoding: ";
+
     private static boolean isDisableAllFiltering() {
         return SyspropUtil.getBoolean(PROP_DISABLE_FILTER, false);
     }
 
-    public static class ClassFilterException extends SecurityException {
-        public ClassFilterException(String s) {
-            super(s);
-        }
-    }
-
-    public static class ClassNotPermittedException extends ClassFilterException {
-        private final String className;
-
-        public ClassNotPermittedException(String className) {
-            super("Class not permitted for XML decoding: " + className);
-            this.className = className;
-        }
-
-        /**
-         * @return the name of the class that was not whitelisted
-         */
-        public String getClassName() {
-            return className;
-        }
+    static String classNotPermittedErrorMessage(final String className) {
+        return CLS_NOT_PERMITTED_ERROR_MESSAGE + className;
     }
 
     public static class MethodNotPermittedException extends ClassFilterException {
@@ -213,7 +197,7 @@ public class SafeXMLDecoder implements Closeable {
             String className = attributes.getValue("class");
             if (className != null) {
                 if (!classFilter.permitClass(className))
-                    throw new ClassNotPermittedException(className);
+                    throw new ClassNotPermittedException(classNotPermittedErrorMessage(className), className);
                 try {
                     elem.target = classForName(className);
                 } catch (ClassNotFoundException e) {
@@ -285,7 +269,7 @@ public class SafeXMLDecoder implements Closeable {
                     return Short.TYPE;
                 default:
                     if (!classFilter.permitClass(className))
-                        throw new ClassNotPermittedException(className);
+                        throw new ClassNotPermittedException(classNotPermittedErrorMessage(className), className);
                     return Class.forName(className, true,
                         defaultClassLoader == null ? Thread.currentThread()
                             .getContextClassLoader() : defaultClassLoader);
@@ -1111,7 +1095,7 @@ class SafeStatement {
                         // special handling of Class.forName(String)
                         final String className = (String) theArguments[0];
                         if (!classFilter.permitClass(className))
-                            throw new SafeXMLDecoder.ClassNotPermittedException(className);
+                            throw new ClassNotPermittedException(SafeXMLDecoder.classNotPermittedErrorMessage(className), className);
                         try {
                             result = Class.forName(className);
                         } catch (ClassNotFoundException e2) {

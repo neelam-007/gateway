@@ -12,6 +12,14 @@ import java.util.Collection;
 
 /**
  * Admin interface for getting a list of all trusted signer certs configured in the Gateway.
+ * <p/>
+ * Safe deserialization note:
+ * both methods ({@link #lookUpTrustedSigningCertsForServerModuleFiles()} and {@link #lookUpTrustedSigningCertsForSolutionKits()})
+ * doesn't require any arguments, therefore they are safe, as no serialized data is sent.<br/>
+ * When modifying these methods, specifically when adding arguments, make sure newly added args are safe to be deserialized
+ * and whitelist their classes properly, either by using annotation {@link com.l7tech.util.DeserializeSafe} or adding them
+ * inside {@link com.l7tech.gateway.common.admin.security.DeserializeClassFilter DeserializeClassFilter}.
+ * In addition make sure method changes are covered in the unit testing {@code SecureHttpInvokerServiceExporterTest#testTrustedSignerCertsAdminWhitelist()}
  */
 @Secured
 @Administrative
