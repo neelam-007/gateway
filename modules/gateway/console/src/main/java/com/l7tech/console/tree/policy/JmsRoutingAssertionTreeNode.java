@@ -3,20 +3,16 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -37,20 +33,31 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      */
     @Override
     public String getName( final boolean decorate ) {
+        return this.getName(decorate, decorate);
+    }
+
+    @Override
+    public String getName( final boolean decorate, final boolean withComments ) {
         final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
         final String assertionName = ass.meta().get(AssertionMetadata.SHORT_NAME).toString();
         if(!decorate) return assertionName;
 
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
 
+        String displayText;
         if (ass.getEndpointOid() == null) {
-            return addCommentToDisplayText(assertion, assertionName + " (Not Yet Specified)" + actor);
+            displayText = assertionName + " (Not Yet Specified)" + actor;
+        } else {
+            final String endpointDescription = endpointDescription();
+            displayText = assertionName + " " + (endpointDescription == null ? "Destination (unnamed)" : endpointDescription) + actor;
         }
 
-        final String endpointDescription = endpointDescription();
- 	 	return addCommentToDisplayText(assertion,assertionName + " " + (endpointDescription == null ? "Destination (unnamed)" : endpointDescription) + actor);
-    }
+        if (!withComments) {
+            return displayText;
+        }
 
+        return addCommentToDisplayText(assertion, displayText);
+    }
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
@@ -59,7 +66,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      */
     @Override
     public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>(Arrays.asList(super.getActions()));
+        java.util.List<Action> list = new ArrayList<>(Arrays.asList(super.getActions()));
 
         boolean found = false;
         for (Action action: list) {

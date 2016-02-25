@@ -30,6 +30,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.xpath.XPathExpressionException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -573,7 +574,10 @@ public class DomCompiledXpath extends CompiledXpath {
         } else if (value instanceof Double) {
             xdm = new XdmAtomicValue((Double) value);
         } else if (value instanceof BigDecimal) {
-            xdm = new XdmAtomicValue((BigDecimal) value);
+            xdm = new XdmAtomicValue( (BigDecimal) value );
+        } else if ( value instanceof BigInteger ) {
+            BigInteger bigInteger = (BigInteger) value;
+            xdm = new XdmAtomicValue( new BigDecimal( bigInteger ) );
         } else if (value instanceof Float) {
             xdm = new XdmAtomicValue((Float) value);
         } else if (value instanceof URI) {

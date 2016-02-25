@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.signer.SignerUtilsTest;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.test.util.TestUtils;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
@@ -14,7 +15,6 @@ import sun.security.x509.X500Name;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -32,8 +32,8 @@ public class SignatureTestUtils {
      * IMPORTANT: Revisit this code if renaming fields {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNED_DATA_ZIP_ENTRY}
      * and {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNATURE_PROPS_ZIP_ENTRY}.
      */
-    public static final String SIGNED_DATA_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY");
-    public static final String SIGNATURE_PROPS_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY");
+    public static final String SIGNED_DATA_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY", String.class);
+    public static final String SIGNATURE_PROPS_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY", String.class);
 
     private static final String KEYSTORES_TMP_DIR = "l7tech-keyStores-Tmp";
     private static final String TRUST_STORE_TYPE = "jks";
@@ -59,23 +59,6 @@ public class SignatureTestUtils {
     // variable holding all temporary folder which are created by the unit-test,
     // so that they can be gracefully deleted @AfterClass
     private static final Map<String, File> tmpFiles = new HashMap<>();
-
-    private static String extractProperty(final Class aClass, final String propName) {
-        Assert.assertNotNull(aClass);
-        Assert.assertThat(propName, Matchers.not(Matchers.isEmptyOrNullString()));
-        try {
-            final Field field = aClass.getDeclaredField(propName);
-            if (field == null) {
-                throw new RuntimeException("field '" + propName + "' is missing from class '" + aClass + "'");
-            }
-            field.setAccessible(true);
-            final Object ret = field.get(null);
-            Assert.assertThat(ret, Matchers.allOf(Matchers.notNullValue(), Matchers.instanceOf(String.class)));
-            return (String)ret;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * Our stub {@link com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager TrustedSignerCertsManager}

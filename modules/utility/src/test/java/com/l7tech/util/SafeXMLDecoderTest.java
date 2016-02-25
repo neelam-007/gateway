@@ -302,7 +302,7 @@ public class SafeXMLDecoderTest {
             try {
                 d.readObject();
                 fail("expected ClassNotPermittedException");
-            } catch (SafeXMLDecoder.ClassNotPermittedException e) {
+            } catch (ClassNotPermittedException e) {
                 // Ok
             }
         }

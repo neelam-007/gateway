@@ -51,7 +51,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
     private static final OneOrMoreAssertion ONEORMORE_PROTOTYPE = new OneOrMoreAssertion();
 
-    private List<PolicyValidatorResult.Message> validatorMessages = new ArrayList<PolicyValidatorResult.Message>();
+    private List<PolicyValidatorResult.Message> validatorMessages = new ArrayList<>();
     private List<PolicyValidatorResult.Message> viewValidatorMessages = null;
 
     protected AT assertion;
@@ -126,7 +126,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             final StringBuilder sb = new StringBuilder(WspWriter.getPolicyXml(assertion));
             sb.append(AssertionUtils.getBase64EncodedPropsDecoded(assertion));
             props = sb.toString();
-            assertionPropsAsString = new SoftReference<String>(props);
+            assertionPropsAsString = new SoftReference<>(props);
             return props;
         }
         //todo post pandora it should be possible to search comments on 'folder' assertions
@@ -163,7 +163,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * @return The list of integers (empty for root)
      */
     public final List<Integer> asAssertionIndexPath() {
-        List<Integer> ordinals = new ArrayList<Integer>();
+        List<Integer> ordinals = new ArrayList<>();
 
         TreeNode node = this;
         while ( node != null ) {
@@ -211,6 +211,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      */
     abstract public String getName(boolean decorate);
 
+    abstract public String getName(boolean decorate, boolean withComments);
+
     /**
      * @return the node name that is displayed
      */
@@ -225,7 +227,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * @param messages the messages
      */
     public void setValidatorMessages(Collection<PolicyValidatorResult.Message> messages) {
-        this.validatorMessages = new ArrayList<PolicyValidatorResult.Message>();
+        this.validatorMessages = new ArrayList<>();
         if (messages != null) {
             validatorMessages.addAll(messages);
         }
@@ -436,7 +438,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      */
     @Override
     public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>();
+        java.util.List<Action> list = new ArrayList<>();
         list.addAll(Arrays.asList(super.getActions()));
 
         // Add Expand/Collapse assertion action
@@ -690,7 +692,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
     public static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
         AbstractTreeNode parent = (AbstractTreeNode) treeNode.getParent();
-        List<Integer> ordinalList = new ArrayList<Integer>();
+        List<Integer> ordinalList = new ArrayList<>();
         ordinalList.add(treeNode.asAssertion().getOrdinal());
         while (parent != null) {
             if (parent.asAssertion() instanceof Include){
@@ -799,7 +801,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             try {
                 Policy thisPolicy = getPolicyNodeCookie().getPolicy();
                 if ( thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && !Goid.isDefault(thisPolicy.getGoid()) ) {
-                    Set<String> policyGuids = new HashSet<String>();
+                    Set<String> policyGuids = new HashSet<>();
                     policyGuids.add(thisPolicy.getGuid());
                     try {
                         Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyGuids, true );

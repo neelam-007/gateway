@@ -124,8 +124,7 @@ class NcipherKeyStoreData implements Serializable {
     static NcipherKeyStoreData createFromBytes(byte[] bytes) throws IOException {
         if (bytes == null) throw new NullPointerException("nCipher keystore bytes is null");
         if (bytes.length < 1) throw new IOException("nCipher keystore bytes is empty");
-        final ObjectInputStream ois = new ClassFilterObjectInputStream(new ByteArrayInputStream(bytes), CLASS_FILTER);
-        try {
+        try (final ObjectInputStream ois = new ClassFilterObjectInputStream(new ByteArrayInputStream(bytes), CLASS_FILTER)) {
             Object obj = ois.readObject();
             if (obj == null)
                 throw new IOException("Ncipher keystore data deserialized to null");
@@ -133,7 +132,7 @@ class NcipherKeyStoreData implements Serializable {
                 throw new IOException("Ncipher keystore data deserialized to unexpected type: " + obj.getClass());
             return (NcipherKeyStoreData) obj;
 
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | ClassNotPermittedException e) {
             throw new IOException(e);
         }
     }

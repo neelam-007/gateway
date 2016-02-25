@@ -10,6 +10,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.xpath.XPathExpressionException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +37,10 @@ public class DomCompiledXpathTest {
                     return 42d;
                 if ("booleanvar".equals(variableName))
                     return true;
+                if ("bigintegervar".equals(variableName))
+                    return new BigInteger("12348765876587658765");
+                if ("bigdecimalvar".equals(variableName))
+                    return new BigDecimal("29384723984723984234");
             }
             throw new NoSuchXpathVariableException();
         }
@@ -134,6 +140,24 @@ public class DomCompiledXpathTest {
         assertTrue(xr.matches());
         assertEquals(XpathResult.TYPE_NUMBER, xr.getType());
         assertEquals(142, xr.getNumber(), 1);
+    }
+
+    @Test
+    public void testExpressionWithVariablesBigIntegerXP20() throws Exception {
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$bigintegervar + 100", XPATH_2_0, (Map<String,String>)null));
+        XpathResult xr = cursor.getXpathResult(dxp, varFinder, true);
+        assertTrue(xr.matches());
+        assertEquals(XpathResult.TYPE_NUMBER, xr.getType());
+        assertEquals("12348765876587658865", xr.getString());
+    }
+
+    @Test
+    public void testExpressionWithVariablesBigDecimalXP20() throws Exception {
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$bigdecimalvar + 100", XPATH_2_0, (Map<String,String>)null));
+        XpathResult xr = cursor.getXpathResult(dxp, varFinder, true);
+        assertTrue(xr.matches());
+        assertEquals(XpathResult.TYPE_NUMBER, xr.getType());
+        assertEquals("29384723984723984334", xr.getString());
     }
 
     private void checkBStarResult(DomCompiledXpath dxp) throws XPathExpressionException {

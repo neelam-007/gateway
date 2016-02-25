@@ -23,12 +23,17 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
 
     @Override
     public String getName(final boolean decorate) {
+        return this.getName(decorate, decorate);
+    }
+
+    @Override
+    public String getName(final boolean decorate, final boolean withComments) {
         Object o = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         if(! (o instanceof AssertionNodeNameFactory)) throw new IllegalStateException("Invalid value for meta data found");
         AssertionNodeNameFactory factory = (AssertionNodeNameFactory)o;
 
         final String displayText = factory.getAssertionName(assertion, decorate);
-        return (decorate) ? DefaultAssertionPolicyNode.addCommentToDisplayText(assertion, displayText) : displayText;
+        return (withComments) ? DefaultAssertionPolicyNode.addCommentToDisplayText(assertion, displayText) : displayText;
     }
 
     /**
@@ -40,7 +45,7 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
     @SuppressWarnings({"unchecked"})
     @Override
     public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>();
+        java.util.List<Action> list = new ArrayList<>();
         List<Action> superList = Arrays.asList(super.getActions());
         if ( !superList.isEmpty() ) {
             list.add(superList.get(0));

@@ -1,5 +1,6 @@
 package com.l7tech.server.security.keystore.ncipher;
 
+import com.l7tech.util.ClassNotPermittedException;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.collections.functors.ChainedTransformer;
 import org.apache.commons.collections.functors.ConstantTransformer;
@@ -12,9 +13,6 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.lang.annotation.Target;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -122,10 +120,10 @@ public class NcipherKeyStoreDataTest {
             try {
                 //noinspection UnusedAssignment
                 serialized = NcipherKeyStoreData.createFromBytes(bytes);
-                Assert.fail("NcipherKeyStoreData.createFromBytes should have failed with IOException (cause ClassNotFoundException)");
+                Assert.fail("NcipherKeyStoreData.createFromBytes should have failed with IOException (cause ClassNotPermittedException)");
             } catch (IOException e) {
                 // ok
-                Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotFoundException.class));
+                Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotPermittedException.class));
                 serialized = null;
             }
             //noinspection ConstantConditions
@@ -146,7 +144,7 @@ public class NcipherKeyStoreDataTest {
         // String, LinkedHashSet, HashSet, HashMap, "[B"
         // no need to test NcipherKeyStoreData, as its cover by other unit tests
         //
-        // createFromBytes will still fail with IOException, but the cause will not be ClassNotFoundException (in case if the class is not permitted)
+        // createFromBytes will still fail with IOException, but the cause will not be ClassNotPermittedException (in case if the class is not permitted)
         ////////////////////////////////////////////////////////////////////////////////////////
         doTestPayload(serializeArbitraryObject("test-string"), 0);
         Set<String> set = new LinkedHashSet<>();
@@ -236,7 +234,7 @@ public class NcipherKeyStoreDataTest {
                     Assert.assertThat(e.getMessage(), Matchers.containsString("Ncipher keystore data deserialized to unexpected type:"));
                     break;
                 case 1: // not whitelisted
-                    Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotFoundException.class));
+                    Assert.assertThat(e.getCause(), Matchers.instanceOf(ClassNotPermittedException.class));
                     break;
                 case 2: // not serialized object
                     Assert.assertNull(e.getCause());
@@ -304,21 +302,29 @@ public class NcipherKeyStoreDataTest {
     }
 
     public static final class MyProxyMap extends AbstractMapDecorator implements Serializable {
-        private InvocationHandler ih;
+        private Map<Object, Object> payload;
 
-        public MyProxyMap(Map map, InvocationHandler ih) {
+        public MyProxyMap(Map map, Map<Object, Object> payload) {
             super(map);
-            this.ih = ih;
+            this.payload = payload;
         }
 
         private void writeObject(ObjectOutputStream stream) throws IOException {
-            stream.writeObject(this.ih);
+            stream.writeObject(this.payload);
             stream.writeObject(super.map);
         }
 
         private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-            this.ih = (InvocationHandler) stream.readObject();
+            this.payload = (Map) stream.readObject();
             super.map = (Map) stream.readObject();
+
+            Assert.assertNotNull(map);
+            Assert.assertNotNull(payload);
+
+            for (Map.Entry<Object, Object> memberValue : payload.entrySet()) {
+                // force decorator to be executed
+                memberValue.setValue("some arbitrary value");
+            }
         }
     }
 
@@ -361,17 +367,10 @@ public class NcipherKeyStoreDataTest {
         final Map<String, String> map = new HashMap<>();
         map.put("value", "value");
         final Map outerMap = TransformedMap.decorate(map, null, transformerChain);
-        // create our instance of InvocationHandler
-        // we use AnnotationInvocationHandler to exploit its readObject,
-        // which calls Map.Entry#setValue() (for each outerMap), which cases to invoke the decorator (i.e. our chained transformer)
-        final Class<?> clazz = Class.forName("sun.reflect.annotation.AnnotationInvocationHandler");
-        final Constructor<?> ctor = clazz.getDeclaredConstructor(Class.class, Map.class);
-        ctor.setAccessible(true);
-        final Object instance = ctor.newInstance(Target.class, outerMap);
 
         // create our proxy map holding our innerMap and our InvocationHandler instance
         //noinspection unchecked
-        return new MyProxyMap(innerMap, (InvocationHandler)instance);
+        return new MyProxyMap(innerMap, outerMap);
     }
 
     /**

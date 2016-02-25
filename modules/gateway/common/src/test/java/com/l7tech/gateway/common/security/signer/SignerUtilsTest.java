@@ -4,6 +4,7 @@ import com.l7tech.common.io.NonCloseableInputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.test.util.TestUtils;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
@@ -18,7 +19,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -32,8 +32,8 @@ public class SignerUtilsTest {
      * IMPORTANT: Revisit this code if renaming fields {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNED_DATA_ZIP_ENTRY}
      * and {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNATURE_PROPS_ZIP_ENTRY}.
      */
-    public static final String SIGNED_DATA_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY");
-    public static final String SIGNATURE_PROPS_ZIP_ENTRY = extractProperty(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY");
+    public static final String SIGNED_DATA_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY", String.class);
+    public static final String SIGNATURE_PROPS_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY", String.class);
 
     @Before
     public void setUp() throws Exception {
@@ -70,23 +70,6 @@ public class SignerUtilsTest {
         final Object ret = method.invoke(null, is, SignerUtils.SignedZip.InnerPayload.FACTORY);
         Assert.assertThat(ret, Matchers.allOf(Matchers.notNullValue(), Matchers.instanceOf(SignerUtils.SignedZip.InnerPayload.class)));
         return (SignerUtils.SignedZip.InnerPayload)ret;
-    }
-
-    public static String extractProperty(final Class aClass, final String propName) {
-        Assert.assertNotNull(aClass);
-        Assert.assertThat(propName, Matchers.not(Matchers.isEmptyOrNullString()));
-        try {
-            final Field field = aClass.getDeclaredField(propName);
-            if (field == null) {
-                throw new RuntimeException("field '" + propName + "' is missing from class '" + aClass + "'");
-            }
-            field.setAccessible(true);
-            final Object ret = field.get(null);
-            Assert.assertThat(ret, Matchers.allOf(Matchers.notNullValue(), Matchers.instanceOf(String.class)));
-            return (String)ret;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

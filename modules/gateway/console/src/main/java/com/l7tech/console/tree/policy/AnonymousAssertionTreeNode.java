@@ -18,6 +18,10 @@ class AnonymousAssertionTreeNode extends LeafAssertionTreeNode<TrueAssertion> {
         return "Anonymous access";
     }
 
+    public String getName(final boolean decorate, final boolean withComments) {
+        return "Anonymous access";
+    }
+
     /**
      * subclasses override this method specifying the resource name
      *

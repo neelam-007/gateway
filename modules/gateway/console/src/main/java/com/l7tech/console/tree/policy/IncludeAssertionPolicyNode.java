@@ -64,6 +64,11 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
 
     @Override
     public String getName(final boolean decorate) {
+        return this.getName(decorate, decorate);
+    }
+
+    @Override
+    public String getName(final boolean decorate, final boolean withComments) {
         if(!decorate) return assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString();
 
         Policy policy = getPolicy();
@@ -82,6 +87,10 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
             if (name != null) sb.append(" (").append(name).append(")");
         } else {
             sb.append(policy.getName());
+        }
+
+        if (!withComments) {
+            return sb.toString();
         }
         return DefaultAssertionPolicyNode.addCommentToDisplayText(assertion, sb.toString());
     }
@@ -159,7 +168,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
 
     @Override
     public Action[] getActions() {
-        final List<Action> actions = new ArrayList<Action>();
+        final List<Action> actions = new ArrayList<>();
         final Policy policy = getPolicy();
         if (policy != null && !Goid.isDefault(policy.getGoid())) {
             final RootNode rootNode = TopComponents.getInstance().getRootNode();

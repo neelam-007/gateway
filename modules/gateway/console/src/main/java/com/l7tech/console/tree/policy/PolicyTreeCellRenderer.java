@@ -92,11 +92,26 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
     }
 
     /**
+     * Get the node name, which contains assertion comments depending on a property of showing comments or not.
+     * If policyVersion is defined, then the property will be retrieved by the policy version.  Otherwise, the
+     * property will be retrieved by a policy editor panel, which has a policy version information.
      * @param node: the tree node whose name will be generated.
      * @return the node name
      */
     private String getNodeName(AssertionTreeNode node) {
-        return node.getName();
+        if (policyVersion != null) {
+            // 1. Decorate without adding comments.
+            //
+            final boolean decorate = true;
+            final boolean withComment = false;
+            final String nameWithDecoration = node.getName(decorate, withComment);
+
+            // 2. Add comments based on policy version.
+            //
+            return DefaultAssertionPolicyNode.addCommentToDisplayTextByPolicyVersion(node.asAssertion(), nameWithDecoration, policyVersion);
+        } else {
+            return node.getName();
+        }
     }
 
     private boolean isIncluded(AssertionTreeNode node) {

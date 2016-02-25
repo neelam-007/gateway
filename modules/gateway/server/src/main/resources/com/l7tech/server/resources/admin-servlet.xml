@@ -38,137 +38,163 @@
     <bean name="/IdentityAdmin" parent="httpInvokerParent">
         <property name="service" ref="identityAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/AuditAdmin" parent="httpInvokerParent">
         <property name="service" ref="auditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ServiceAdmin" parent="httpInvokerParent">
         <property name="service" ref="serviceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/FolderAdmin" parent="httpInvokerParent">
         <property name="service" ref="folderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ResourceAdmin" parent="httpInvokerParent">
         <property name="service" ref="resourceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.resources.ResourceAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/FtpAdmin" parent="httpInvokerParent">
         <property name="service" ref="ftpAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/JmsAdmin" parent="httpInvokerParent">
         <property name="service" ref="jmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/JdbcAdmin" parent="httpInvokerParent">
         <property name="service" ref="jdbcAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/CassandraAdmin" parent="httpInvokerParent">
         <property name="service" ref="cassandraAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/TrustedCertAdmin" parent="httpInvokerParent">
         <property name="service" ref="trustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/CustomAssertionsRegistrar" parent="httpInvokerParent">
         <property name="service" ref="customAssertionRegistrar"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.custom.CustomAssertionsRegistrar"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/KerberosAdmin" parent="httpInvokerParent">
         <property name="service" ref="kerberosAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ClusterStatusAdmin" parent="httpInvokerParent">
         <property name="service" ref="clusterStatusAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/RbacAdmin" parent="httpInvokerParent">
         <property name="service" ref="rbacAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/PolicyAdmin" parent="httpInvokerParent">
         <property name="service" ref="policyAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/TransportAdmin" parent="httpInvokerParent">
         <property name="service" ref="transportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/LogSinkAdmin" parent="httpInvokerParent">
         <property name="service" ref="logSinkAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EmailListenerAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailListenerAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EmailAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ScheduledTaskAdmin" parent="httpInvokerParent">
         <property name="service" ref="scheduledTaskAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.task.ScheduledTaskAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent">
         <property name="service" ref="uddiRegistryAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EncapsulatedAssertionAdmin" parent="httpInvokerParent">
         <property name="service" ref="encapsulatedAssertionAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/PolicyBackedServiceAdmin" parent="httpInvokerParent">
         <property name="service" ref="policyBackedServiceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/SiteMinderAdmin" parent="httpInvokerParent">
         <property name="service" ref="siteMinderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.siteminder.SiteMinderAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
-
 
     <bean name="/CustomKeyValueStoreAdmin" parent="httpInvokerParent">
         <property name="service" ref="customKeyValueStoreAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/DebugAdmin" parent="httpInvokerParent">
         <property name="service" ref="debugAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/WorkQueueAdmin" parent="httpInvokerParent">
         <property name="service" ref="workQueueAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin"/>
+        <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/SolutionKitAdmin" parent="httpInvokerParent">

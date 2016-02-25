@@ -128,7 +128,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      */
     @Override
     public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>();
+        java.util.List<Action> list = new ArrayList<>();
         list.addAll(Arrays.asList(super.getActions()));
         Action a = new AddIdentityAssertionAction(this);
         list.add(a);
@@ -138,6 +138,11 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
     @Override
     public String getName(boolean decorate) {
         return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
+    }
+
+    @Override
+    public String getName(boolean decorate, boolean withComments) {
+        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, withComments);
     }
 
     /**
