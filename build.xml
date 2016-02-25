@@ -399,13 +399,30 @@
             <path refid="project.classpath.fortest"/>
         </path>
 
-        <available property="makensis.available" file="${build.install.compiler}"/>
+        <condition property="makensis.available" >
+          <and>
+            <available file="${build.install.compiler}"/>
+            <available file="/usr/bin/wine"/>
+          </and>
+        </condition>
+
         <condition property="makensis.enabled">
             <and>
                 <isset property="makensis.available"/>
                 <isset property="makensis"/>
             </and>
         </condition>
+
+        <fail message="makensis specified but nsis compiler or wine not available">
+          <condition>
+            <and>
+                <isset property="makensis"/>
+              <not>
+                <isset property="makensis.available" />
+              </not>
+            </and>
+          </condition>
+        </fail>
 
         <condition property="makerpm.available">
             <or>
@@ -419,6 +436,17 @@
                 <isset property="makerpm"/>
             </and>
         </condition>
+
+        <fail message="makerpm specified but no rpm builder available">
+          <condition>
+            <and>
+           <isset property="makerpm" />
+              <not>
+                <isset property="makerpm.available" />
+              </not>
+            </and>
+          </condition>
+        </fail>
 
         <condition property="makedocker.available">
             <or>
@@ -1397,7 +1425,8 @@
         <property name="build.version.minor" value=""/>
         <property name="build.version.subminor" value=""/>
         <property name="build.version.label" value=""/>
-        <property name="build.version.revision" value=""/>
+        <!-- Revision is set to 1 for all builds except official. Official builds already set build.version.revision in OFFICIAL-build.init -->
+        <property name="build.version.revision" value="1"/>
 
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
         <property name="build.rpmversion" value="${build.version}"/>
@@ -2000,9 +2029,10 @@
     
     <target name="package.installclient.work.nsis" if="makensis.enabled" depends="package.installclient.work.main">
         <!-- Run makensis -->
-        <exec executable="${build.install.compiler}"
+        <exec executable="/usr/bin/wine"
               dir="${src.installer}/proxy/win32/"
               failonerror="true">
+            <arg value="${build.install.compiler}" />
             <arg value="/NOCD"/>
             <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
@@ -2012,7 +2042,6 @@
             <arg value="/XSetCompressor bzip2"/>
             <arg value="Client.nsi"/>
         </exec>
-
     </target>
 
     <!--
@@ -2067,9 +2096,10 @@
     </target>
     <target name="package.installmanager.work.nsis" if="makensis.enabled" depends="package.installmanager.work.main">
         <!-- Run makensis -->
-        <exec executable="${build.install.compiler}"
+        <exec executable="/usr/bin/wine"
               dir="${src.installer}/console/win32/"
               failonerror="true">
+            <arg value="${build.install.compiler}" />
             <arg value="/NOCD"/>
             <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
@@ -2100,9 +2130,10 @@
                       libDir="gateway/lib"/>
 
         <!-- Run makensis -->
-        <exec executable="${build.install.compiler}"
+        <exec executable="/usr/bin/wine"
               dir="etc/other_os_support/windows/server/win32/"
               failonerror="true">
+            <arg value="${build.install.compiler}" />
             <arg value="/NOCD"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
             <arg value="/XSetCompressor bzip2"/>
@@ -3553,6 +3584,8 @@
 
         <buildnumber/>
         <property file="build.number" prefix="install"/>
+        <!-- Set the build revision number to the build number for official builds -->
+        <property name="build.version.revision" value="${install.build.number}" />
 
         <!-- Set using provided label, only does something if not in "interactive" mode -->
         <property file="build.version" prefix="file"/>

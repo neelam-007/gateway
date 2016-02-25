@@ -5,7 +5,6 @@
 build.version.major=9
 build.version.minor=1
 build.version.subminor=00
-build.version.revision=1
 
 build.em.version.major=1
 build.em.version.minor=16
