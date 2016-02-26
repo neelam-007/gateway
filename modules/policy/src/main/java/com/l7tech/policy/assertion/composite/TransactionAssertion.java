@@ -1,5 +1,8 @@
 package com.l7tech.policy.assertion.composite;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -10,6 +13,7 @@ import com.l7tech.search.Dependency;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -35,6 +39,7 @@ public class TransactionAssertion extends CompositeAssertion implements UsesVari
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
       return Syntax.getReferencedNames(connectionName);
     }
@@ -70,6 +75,8 @@ public class TransactionAssertion extends CompositeAssertion implements UsesVari
 
     // TODO migration and dependency annotations
     @Nullable
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.JDBC_CONNECTION)
+    @Dependency(type = Dependency.DependencyType.JDBC_CONNECTION, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getConnectionName() {
       return connectionName;
     }
