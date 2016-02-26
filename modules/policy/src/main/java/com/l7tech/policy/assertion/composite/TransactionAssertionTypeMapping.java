@@ -14,6 +14,10 @@ public class TransactionAssertionTypeMapping extends CompositeAssertionMapping {
     @Override
     protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) throws InvalidPolicyTreeException {
         TransactionAssertion tass = (TransactionAssertion)object.target;
+        if(tass.getConnectionName()!=null) {
+            element.setAttribute("connectionName", tass.getConnectionName());
+            element.setAttribute("hasConnection", Boolean.toString(true));
+        }
 
         // TODO copy any assertion field values into attributes here, once we have any
 
@@ -23,8 +27,9 @@ public class TransactionAssertionTypeMapping extends CompositeAssertionMapping {
     @Override
     protected void populateObject(CompositeAssertion cass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         TransactionAssertion tass = (TransactionAssertion)cass;
-
-        // TODO copy any attribute values into field values here, once we have any
+        if(source.hasAttribute("connectionName")) {
+            tass.setConnectionName(source.getAttribute("connectionName"));
+        }
 
         super.populateObject(cass, source, visitor);
     }

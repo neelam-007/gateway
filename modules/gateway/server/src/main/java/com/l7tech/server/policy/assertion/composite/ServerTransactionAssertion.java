@@ -8,9 +8,12 @@ import com.l7tech.policy.assertion.JdbcConnectionable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.TransactionAssertion;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import java.util.Map;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -31,7 +34,8 @@ public class ServerTransactionAssertion extends ServerCompositeAssertion<Transac
     @Inject
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
-    private final String connectionName;
+    private final String[] variablesUsed;
+    private final String derivedConnectionName;
 
     private final AssertionResultListener assertionResultListener = new AssertionResultListener() {
         @Override
@@ -48,14 +52,25 @@ public class ServerTransactionAssertion extends ServerCompositeAssertion<Transac
     public ServerTransactionAssertion(TransactionAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException {
         super(data, applicationContext);
 
-        this.connectionName = getConnectionNames( data );
+      variablesUsed = assertion.getVariablesUsed();
+      if(assertion.getConnectionName()==null || assertion.getConnectionName().isEmpty()) {
+          this.derivedConnectionName = getConnectionNames(data);
+      }else{
+          this.derivedConnectionName=null;
+      }
     }
 
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-        //final String connName = getVariableExpander( context ).expandVariables( assertion.getConnectionName() );
+      String connectionName = derivedConnectionName;
 
-        if ( connectionName == null ) {
+      // use explicit connection name if specified
+      if(assertion.getConnectionName()!=null && !assertion.getConnectionName().isEmpty()) {
+        final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
+        connectionName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
+      }
+
+      if ( connectionName == null || connectionName.isEmpty()) {
             // No JDBC assertions under us, behave just like All assertion
             return iterateChildren( context, assertionResultListener );
         }

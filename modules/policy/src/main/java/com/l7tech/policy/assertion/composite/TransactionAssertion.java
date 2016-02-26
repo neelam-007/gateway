@@ -4,20 +4,39 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.search.Dependency;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * An AllAssertion that runs its children inside a single database transaction.
  */
-public class TransactionAssertion extends CompositeAssertion {
+public class TransactionAssertion extends CompositeAssertion implements UsesVariables {
+
+    private String connectionName = null;
 
     public TransactionAssertion() {
     }
 
     public TransactionAssertion( List<? extends Assertion> children ) {
         super( children );
+    }
+
+    @Override
+    public TransactionAssertion clone() {
+        TransactionAssertion copy = (TransactionAssertion) super.clone();
+
+        copy.setConnectionName(connectionName);
+        return copy;
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+      return Syntax.getReferencedNames(connectionName);
     }
 
     @Override
@@ -44,7 +63,18 @@ public class TransactionAssertion extends CompositeAssertion {
 
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
         meta.put(WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.policy.assertion.composite.TransactionAssertionTypeMapping");
+        meta.put(FEATURE_SET_NAME,"assertion:composite.Transaction");
 
         return meta;
+    }
+
+    // TODO migration and dependency annotations
+    @Nullable
+    public String getConnectionName() {
+      return connectionName;
+    }
+
+    public void setConnectionName(@Nullable String connectionName) {
+      this.connectionName = connectionName;
     }
 }
