@@ -65,7 +65,14 @@ public class DatabaseBasedRestManagementEnvironment {
     private ClassPathXmlApplicationContext applicationContext;
     private ServerRESTGatewayManagementAssertion restManagementAssertion;
 
+    /**
+     * {@code -1} means it didn't started
+     */
+    private long startupTimeMs = -1;
+
     public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException, SaveException, IOException {
+        final long startTimeStamp = System.currentTimeMillis();
+
         SyspropUtil.setProperty("com.l7tech.server.logDirectory", toPath(this.getClass().getResource("/gateway/logs")));
         SyspropUtil.setProperty("com.l7tech.server.configDirectory", toPath(this.getClass().getResource("/gateway/config")));
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", toPath(this.getClass().getResource("/gateway/var")));
@@ -102,6 +109,16 @@ public class DatabaseBasedRestManagementEnvironment {
         //This will force the default ssl key to be created
         DefaultKey defaultKey = applicationContext.getBean(DefaultKey.class);
         defaultKey.getSslInfo();
+
+        this.startupTimeMs = System.currentTimeMillis() - startTimeStamp;
+    }
+
+    /**
+     * Used for debug purposes.<br/>
+     * It's known that startup time could increase in consecutive migration test runs, this is to trace the startup time.
+     */
+    public long getStartupTimeInMs() {
+        return startupTimeMs;
     }
 
     /**
@@ -136,7 +153,8 @@ public class DatabaseBasedRestManagementEnvironment {
             System.exit(1);
             return;
         }
-        System.out.println(SERVER_STARTED);
+        //noinspection ConstantConditions
+        System.out.println(SERVER_STARTED + ":" + String.valueOf(databaseBasedRestManagementEnvironment != null ? databaseBasedRestManagementEnvironment.getStartupTimeInMs() : -1));
         Scanner sc = new Scanner(System.in);
         while (sc.hasNextLine()) {
             try {

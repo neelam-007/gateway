@@ -3,8 +3,10 @@ package com.l7tech.skunkworks.rest.tools;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +31,11 @@ public class JVMDatabaseBasedRestManagementEnvironment {
     private Scanner scanner;
     private PrintWriter printWriter;
 
+    /**
+     * {@code -1} means it didn't started
+     */
+    private long startupTimeMs = -1;
+
     private ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 10, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>());
 
     public JVMDatabaseBasedRestManagementEnvironment(String rdAddress) throws IOException {
@@ -42,6 +49,8 @@ public class JVMDatabaseBasedRestManagementEnvironment {
         command.add(javaBin);
         //increase memory otherwise it will not have enough on the build machine
         command.add("-Xmx1024m");
+        command.add("-XX:+TieredCompilation"); // seems to help the startup time a bit
+        command.add("-Djava.security.egd=" + SyspropUtil.getString("java.security.egd", "file:/dev/./urandom"));
         if( rdAddress != null && runFromIdea() ){
             command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + rdAddress);
         }
@@ -71,6 +80,21 @@ public class JVMDatabaseBasedRestManagementEnvironment {
                 logger.log(Level.WARNING, "Environment could not be properly started: " + line);
                 throw new RuntimeException("Environment could not be properly started: " + line);
             } else if (line.startsWith(DatabaseBasedRestManagementEnvironment.SERVER_STARTED)) {
+                try {
+                    final String[] strings = line.split(":");
+                    if (strings.length > 1 && StringUtils.isNotBlank(strings[1])) {
+                        try {
+                            startupTimeMs = Long.parseLong(strings[1]);
+                            logger.log(Level.INFO, "Migration JVM started in = " + startupTimeMs + " ms");
+                        } catch (NumberFormatException e) {
+                            logger.log(Level.WARNING, "Error while getting JVM startup time, SERVER_STARTED value = " + line + ":" + e.getMessage(), e);
+                        }
+                    } else {
+                        logger.log(Level.WARNING, "Unexpected SERVER_STARTED value: " + line);
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Error while parsing JVM startup time: " + e.getMessage(), e);
+                }
                 break;
             } else if (line.startsWith("Listening for transport")) {
                 logger.log(Level.INFO, line);
@@ -90,6 +114,15 @@ public class JVMDatabaseBasedRestManagementEnvironment {
                 throw new RuntimeException("Unknown message received: " + line);
             }
         }
+    }
+
+    /**
+     * Used for debug purposes.<br/>
+     * It's known that startup time could increase in consecutive migration test runs, this is to trace the startup time,
+     * and optionally tweak the environments creation timeout using "test.migration.waitTimeMinutes" property.
+     */
+    public long getStartupTimeInMs() {
+        return startupTimeMs;
     }
 
     private boolean runFromIdea() {

@@ -41,11 +41,27 @@ public abstract class MigrationTestBase {
         if (!IgnoreOnDaily.isDaily() && !runInSuite) {
             createMigrationEnvironments();
         }
+
+        System.out.println("============================================================================================");
+        System.out.println("Environment startup times:");
+        System.out.println("============================================================================================");
+        System.out.println("Source: " + String.valueOf(getSourceEnvironmentStartupTime() == -1 ? "NOT STARTED" : getSourceEnvironmentStartupTime()) + " ms.");
+        System.out.println("Target: " + String.valueOf(getTargetEnvironmentStartupTime() == -1 ? "NOT STARTED" : getTargetEnvironmentStartupTime()) + " ms.");
+        System.out.println("============================================================================================");
     }
 
     protected static void createMigrationEnvironments() throws Exception {
         final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<Exception>());
         final CountDownLatch enviromentsStarted = new CountDownLatch(2);
+
+        long waitTime;
+        try {
+            waitTime = Math.max(Long.parseLong(System.getProperty("test.migration.waitTimeMinutes", "10")), 5L);
+        } catch (Exception e) {
+            // on any error (should only be NumberFormatException though) use a default of 10 min
+            waitTime = 10L;
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -68,7 +84,7 @@ public abstract class MigrationTestBase {
                 enviromentsStarted.countDown();
             }
         }).start();
-        enviromentsStarted.await(5, TimeUnit.MINUTES);
+        enviromentsStarted.await(waitTime, TimeUnit.MINUTES);
         if(!exceptions.isEmpty()){
             throw exceptions.get(0);
         }
@@ -96,10 +112,22 @@ public abstract class MigrationTestBase {
         return sourceEnvironment;
     }
 
+    public static long getSourceEnvironmentStartupTime() {
+        if ( sourceEnvironment != null )
+            return sourceEnvironment.getStartupTimeInMs();
+        return -1;
+    }
+
     public static JVMDatabaseBasedRestManagementEnvironment getTargetEnvironment() {
         if ( targetEnvironment == null )
             throw new NullPointerException( "targetEnvironment not set up" );
         return targetEnvironment;
+    }
+
+    public static long getTargetEnvironmentStartupTime() {
+        if ( targetEnvironment != null )
+            return targetEnvironment.getStartupTimeInMs();
+        return -1;
     }
 
     protected void assertOkCreatedResponse(RestResponse response) {

@@ -21,6 +21,21 @@ public abstract class RestEntityTestBase {
         if(!IgnoreOnDaily.isDaily() && databaseBasedRestManagementEnvironment == null){
             databaseBasedRestManagementEnvironment = new DatabaseBasedRestManagementEnvironment();
         }
+
+        System.out.println("============================================================================================");
+        System.out.println("DB environment startup time: " + String.valueOf(getStartupTimeInMs() == -1 ? "NOT STARTED" : getStartupTimeInMs()) + " ms.");
+        System.out.println("============================================================================================");
+    }
+
+    /**
+     * Used for debug purposes.<br/>
+     * It's known that startup time could increase in consecutive migration test runs, this is to trace the startup time,
+     * and optionally tweak the environments creation timeout using "test.migration.waitTimeMinutes" property.
+     */
+    public static long getStartupTimeInMs() {
+        if ( databaseBasedRestManagementEnvironment != null )
+            return databaseBasedRestManagementEnvironment.getStartupTimeInMs();
+        return -1;
     }
 
     public static DatabaseBasedRestManagementEnvironment getDatabaseBasedRestManagementEnvironment() {

@@ -12,6 +12,7 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+        MigrationPrintEnvironmentStartup.class,
         ActiveConnectorMigration.class,
         AssertionAccessMigration.class,
         CassandraMigration.class,
