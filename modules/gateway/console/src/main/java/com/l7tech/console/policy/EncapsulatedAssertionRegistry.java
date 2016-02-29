@@ -4,6 +4,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -54,11 +55,21 @@ public class EncapsulatedAssertionRegistry {
      * Load all current encapsulated assertions from Gateway and register them all locally.
      */
     public void updateEncapsulatedAssertions() throws FindException {
+        updateEncapsulatedAssertions(true);
+    }
+
+    /**
+     * Load all current encapsulated assertions from Gateway and register them all locally.
+     */
+    public void updateEncapsulatedAssertions(boolean attachPolicies) throws FindException {
         Registry registry = Registry.getDefault();
         if (!registry.isAdminContextPresent()) {
             throw new FindException("Unable to load encapsulated assertions -- not connected to Gateway");
         }
         Collection<EncapsulatedAssertionConfig> configs = registry.getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
+        if (attachPolicies) {
+            EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
+        }
         replaceAllRegisteredConfigs(configs);
     }
 

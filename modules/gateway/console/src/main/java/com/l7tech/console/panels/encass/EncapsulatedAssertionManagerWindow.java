@@ -545,7 +545,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      */
     private void loadEncapsulatedAssertionConfigs(boolean updateLocalRegistry) {
         try {
-            final Collection<EncapsulatedAssertionConfig> configs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
+            final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
             EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
             iconCache.clear();
             eacTableModel.setRows(new ArrayList<>(configs));
