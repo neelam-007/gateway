@@ -25,6 +25,7 @@
 <!-- Default key usage requirements for remote SSL server certs are permissive, to permit various cipher suites. -->
 <permit action="sslServerRemote"><req>keyEncipherment</req></permit>
 <permit action="sslServerRemote"><req>keyAgreement</req></permit>
+<permit action="sslServerRemote"><req>digitalSignature</req></permit>
 <permit action="sslServerRemote"><req>id-kp-serverAuth</req></permit>
 
 <!-- Default key usage requirements for remote SSL client certs are permissive, to permit various cipher suites. -->

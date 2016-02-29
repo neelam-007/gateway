@@ -30,6 +30,7 @@ public class KeyUsageCheckerTest {
     private static X509Certificate CERT_WITH_KU_DIGSIG_KEYENC;
     private static X509Certificate CERT_WITH_EKU_SERVAUTH;
     private static X509Certificate CERT_WITH_UNCRIT_KU_CRIT_EKU_ANY;
+    private static X509Certificate CERT_WITH_EC_DIGSIG_CRIT_KU;
     private static PrivateKey CERT_WITH_EKU_SERVAUTH_PRIVATE_KEY;
 
     @BeforeClass
@@ -57,6 +58,9 @@ public class KeyUsageCheckerTest {
 
         CERT_WITH_UNCRIT_KU_CRIT_EKU_ANY =
                 certgen.reset().subject("cn=Uncrit-KU EKU-Any").keyUsage(false, X509KeyUsage.decipherOnly).extKeyUsage(true, KeyPurposeId.anyExtendedKeyUsage).generate();
+
+        CERT_WITH_EC_DIGSIG_CRIT_KU =
+                certgen.reset().subject("cn=Test KU for EC Certs").keyUsage(true,X509KeyUsage.digitalSignature).generate();
     }
 
     @Before
@@ -258,5 +262,17 @@ public class KeyUsageCheckerTest {
         }
 
 
+    }
+
+    // EC certificates for sslServer use can legitemetly have only the digitalSignature KU
+    // Test that certs with only that key usage are accepted for Activity sslServerRemote.
+    @Test
+    public void testCritECKeyUsage() throws Exception {
+        try {
+            KeyUsageChecker.setDefault(makeChecker(false));
+            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, CERT_WITH_EC_DIGSIG_CRIT_KU);
+        } catch (KeyUsageException e) {
+            fail("checker should succeed with digitalSignature KU because EC certs may have only that KU.");
+        }
     }
 }
