@@ -2979,7 +2979,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all,publish-generic-all">
     </target>
 
     <!--
@@ -3945,6 +3945,31 @@
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${rpm.filename} ${publish.rpm.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${rpm.filename}"/>
 		</exec>
 	</target>
+	
+	<!--
+		Publish all other files in dist folder
+	-->
+	<target name="publish-generic-all" if="publish.generic.target">
+		<foreach param="var" target="publish-generic" inheritall="true" parallel="true" maxThreads="5">
+			<path>
+				<fileset dir="${src.root}/dist">
+					<include name="*.zip"/>
+					<include name="*.tar.gz"/>
+					<include name="*.exe"/>
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	
+	<!--
+		Publish a generic artifact (zip, tar.gz, exe)
+	-->
+	<target name="publish-generic">
+		<basename property="generic.filename" file="${var}"/>
+		<exec executable="curl">
+			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T ./dist/${generic.filename} ${publish.generic.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${generic.filename}"/>
+		</exec>
+	</target>
 
 	<!--
 	-->
@@ -3952,6 +3977,7 @@
         <echo level="info">Enabling Artifactory publishing of integration (snapshot) repo.</echo>
         <property name="publish.jar.target" value="artifactory-snapshot"/>
 		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
+		<property name="publish.generic.target" value="${artifactory.generic.snapshot}"/>
 		<property name="publish.status" value="integration"/>
     </target>
 	
@@ -3961,6 +3987,7 @@
         <echo level="info">Enabling Artifactory publishing of release repo.</echo>
         <property name="publish.jar.target" value="artifactory-release"/>
 		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
+		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
 		<property name="publish.status" value="release"/>
     </target>
 </project>
