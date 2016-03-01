@@ -121,6 +121,8 @@ public class GatewayFeatureSets {
 
     public static final String PROFILE_GATEWAY_ENTERPRISE = "set:Profile:EnterpriseGateway";
 
+    public static final String PROFILE_GATEWAY_ESSENTIALS = "set:Profile:GatewayEssentials";
+
     public static final String PROFILE_CLOUD_CONTROL = "set:Profile:CloudControl";
 
     public static final String PROFILE_POLICY_INTEGRATION_POINT = "set:Profile:PolicyIntegrationPoint";
@@ -1271,6 +1273,11 @@ public class GatewayFeatureSets {
                 fs(jwtAssertion));
                 mass("assertion:PortalBootstrap");
 
+        GatewayFeatureSet profileGatewayEssentials =
+                fsp(PROFILE_GATEWAY_ESSENTIALS, "API Gateway Essentials",
+                        "Same features as Layer 7 API Proxy",
+                        fs(profileApi));
+
         /**
          * ### FEATURE PACK DEFINITIONS BEGIN ###
          *
@@ -1340,6 +1347,7 @@ public class GatewayFeatureSets {
                 fs(profileGateway),
                 fs(profileFederal),
                 fs(profileGatewayEnterprise),
+                fs(profileGatewayEssentials),
                 fs(profileUs),
                 fs(experimental),
                 fs(flagPermaFips),

@@ -37,6 +37,8 @@ public class LicenseGeneratorFeatureSets {
                 allProfiles.get(GatewayFeatureSets.PROFILE_GATEWAY));
         availableProfiles.put(GatewayFeatureSets.PROFILE_GATEWAY_ENTERPRISE,
                 allProfiles.get(GatewayFeatureSets.PROFILE_GATEWAY_ENTERPRISE));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_GATEWAY_ESSENTIALS,
+                allProfiles.get(GatewayFeatureSets.PROFILE_GATEWAY_ESSENTIALS));
         availableProfiles.put(GatewayFeatureSets.PROFILE_NCES_EXTENSION,
                 allProfiles.get(GatewayFeatureSets.PROFILE_NCES_EXTENSION));
         availableProfiles.put(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENSION,
