@@ -10,15 +10,17 @@ import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
-import junit.framework.Assert;
+import com.l7tech.util.Functions;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -400,6 +402,11 @@ public class InterfaceTagMigration extends com.l7tech.skunkworks.rest.tools.Migr
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // TODO: remove this method once SSG-13071 is fixed and the root cause of this test intermittent failure is found and fixed
+        printAnyPotentialFailures(sourceInterfaceTagItem, bundleItem, response);
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         //validate the the interface tags are exported
         Mapping interfaceTagMapping = getMapping(bundleItem.getContent().getMappings(), sourceInterfaceTagItem.getId());
         Assert.assertNotNull(interfaceTagMapping);
@@ -422,6 +429,43 @@ public class InterfaceTagMigration extends com.l7tech.skunkworks.rest.tools.Migr
         Assert.assertEquals(interfaceTagMapping.getSrcId(), interfaceTagMapping.getTargetId());
 
         validate(mappings);
+    }
+
+    // TODO: remove this method once SSG-13071 is fixed and the root cause of this test intermittent failure is found and fixed
+    private void printAnyPotentialFailures(final Item<InterfaceTagMO> sourceInterfaceTagItem, final Item<Bundle> bundleItem, final RestResponse response) {
+        try {
+            final String id = sourceInterfaceTagItem.getId();
+            final Collection<Mapping> mappings = bundleItem.getContent().getMappings();
+            final Mapping mapping = Functions.grepFirst(mappings, new Functions.Unary<Boolean, Mapping>() {
+                @Override
+                public Boolean call(Mapping mapping) {
+                    return id.equals(mapping.getSrcId());
+                }
+            });
+            if (mapping == null) {
+                System.out.println("============================================================================================");
+                System.out.println("InterfaceTagMigration FAILURE mapping is NULL!!!!");
+                System.out.println("============================================================================================");
+                System.out.println(
+                        "mappings: " + Arrays.toString(Functions.map(mappings, new Functions.Unary<String, Mapping>() {
+                            @Override
+                            public String call(final Mapping mapping) {
+                                return "Mapping [type=" + mapping.getType() + ", " +
+                                        "action=" + mapping.getAction() + ", " +
+                                        "actionTaken=" + mapping.getActionTaken() + ", " +
+                                        "errorType=" + mapping.getErrorType() + ", " +
+                                        "srcId=" + mapping.getSrcId() + ", " +
+                                        "targetId=" + mapping.getTargetId() + "]";
+                            }
+                        }).toArray(new String[mappings.size()]))
+                );
+                System.out.println("response: " + response.getBody());
+                System.out.println("============================================================================================");
+            }
+        } catch (final Exception e) {
+            System.err.println("!!!! InterfaceTagMigration FAILURE: " + e.getMessage());
+            e.printStackTrace(System.err);
+        }
     }
 
     @Test

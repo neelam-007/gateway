@@ -5,9 +5,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.whichmodule.WhichModuleAssertion;
-import com.l7tech.gateway.api.AssertionSecurityZoneMO;
-import com.l7tech.gateway.api.Link;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
@@ -21,12 +20,14 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
@@ -285,6 +286,12 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
                 return assertion.getClass().getName();
             }
         });
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // TODO: remove this method once SSG-13071 is fixed and the root cause of this test intermittent failure is found and fixed
+        printPotentialFailure();
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         return CollectionUtils.MapBuilder.<String, List<String>>builder()
                 .put("", assertions)
                 .put("name=" + URLEncoder.encode(assertionAccesses.get(0).getName()), Arrays.asList(assertionAccesses.get(0).getName()))
@@ -297,8 +304,8 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
                     @Override
                     public ArrayList<String> call(ArrayList<String> strings, Assertion assertion) {
                         AssertionAccess assertionAccess = assertionAccessManager.getAssertionAccessCached(assertion);
-                        if (assertionAccess != null && assertionAccess.getSecurityZone() == null) {
-                            strings.add(assertionAccess.getName());
+                        if (assertionAccess == null || assertionAccess.getSecurityZone() == null) {
+                            strings.add(assertionAccess == null ? assertion.getClass().getName() : assertionAccess.getName());
                         }
                         return strings;
                     }
@@ -310,5 +317,104 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
                 //order not specified: SSG-8451
                 .put("name=" + URLEncoder.encode(assertionAccesses.get(0).getName()) + "&name=" + URLEncoder.encode(assertionAccesses.get(1).getName()) + "&sort=name", Arrays.asList(assertionAccesses.get(0).getName(), assertionAccesses.get(1).getName()))
                 .map();
+    }
+
+    // TODO: remove this method once SSG-13071 is fixed and the root cause of this test intermittent failure is found and fixed
+    private void printPotentialFailure() {
+        try {
+            final String query = "securityZone.id=" + Goid.DEFAULT_GOID;
+            final RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), query, HttpMethod.GET, null, "");
+            final List<String> expectedIds = Functions.reduce(assertionRegistry.getAssertions(), new ArrayList<String>(), new Functions.Binary<ArrayList<String>, ArrayList<String>, Assertion>() {
+                @Override
+                public ArrayList<String> call(ArrayList<String> strings, Assertion assertion) {
+                    AssertionAccess assertionAccess = assertionAccessManager.getAssertionAccessCached(assertion);
+                    if (assertionAccess == null || assertionAccess.getSecurityZone() == null) {
+                        strings.add(assertionAccess == null ? assertion.getClass().getName() : assertionAccess.getName());
+                    }
+                    return strings;
+                }
+            });
+
+            final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+            //noinspection unchecked
+            final ItemsList<AssertionSecurityZoneMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
+            final List<Item<AssertionSecurityZoneMO>> references = item.getContent();
+            if (references == null) {
+                System.out.println("============================================================================================");
+                System.out.println("AssertionSecurityZoneRestEntityResourceTest FAILURE for search Query: " + query + ", references == null");
+                System.out.println("============================================================================================");
+            } else if (expectedIds.size() > references.size()) {
+                final Collection<String> missingIds = Functions.reduce(expectedIds, new ArrayList<String>(), new Functions.Binary<ArrayList<String>, ArrayList<String>, String>() {
+                    @Override
+                    public ArrayList<String> call(final ArrayList<String> strings, final String assId) {
+                        for (final Item<AssertionSecurityZoneMO> entity : references) {
+                            if (assId.equals(entity.getId())) {
+                                return strings;
+                            }
+                        }
+                        strings.add(assId);
+                        return strings;
+                    }
+                });
+                System.out.println("============================================================================================");
+                System.out.println("AssertionSecurityZoneRestEntityResourceTest FAILURE for search Query: " + query + ", expected:<" + expectedIds.size() + "> but was:<" + references.size() + ">");
+                System.out.println("============================================================================================");
+                System.out.println(
+                        String.valueOf(
+                                missingIds.isEmpty()
+                                        ? "expected list: " + Arrays.toString(expectedIds.toArray(new String[expectedIds.size()])) + System.lineSeparator() +
+                                        "references list: " + Arrays.toString(Functions.map(references, new Functions.Unary<String, Item<AssertionSecurityZoneMO>>() {
+                                    @Override
+                                    public String call(final Item<AssertionSecurityZoneMO> entity) {
+                                        return "AssertionSecurityZone [" +
+                                                "id=" + entity.getId() + ", " +
+                                                "name=" + entity.getName() + ", " +
+                                                "type=" + entity.getType() +
+                                                "]";
+                                    }
+                                }).toArray(new String[references.size()]))
+                                        : "missing ids: " + Arrays.toString(missingIds.toArray(new String[missingIds.size()]))
+                        )
+                );
+                System.out.println("============================================================================================");
+            } else if (expectedIds.size() < references.size()) {
+                final Collection<String> missingIds = Functions.reduce(references, new ArrayList<String>(), new Functions.Binary<ArrayList<String>, ArrayList<String>, Item<AssertionSecurityZoneMO>>() {
+                    @Override
+                    public ArrayList<String> call(final ArrayList<String> strings, final Item<AssertionSecurityZoneMO> assertionSecurityZoneMOItem) {
+                        for (final String assId : expectedIds) {
+                            if (assertionSecurityZoneMOItem.getId().equals(assId)) {
+                                return strings;
+                            }
+                        }
+                        strings.add(assertionSecurityZoneMOItem.getId());
+                        return strings;
+                    }
+                });
+                System.out.println("============================================================================================");
+                System.out.println("AssertionSecurityZoneRestEntityResourceTest FAILURE for search Query: " + query + ", expected:<" + expectedIds.size() + "> but was:<" + references.size() + ">");
+                System.out.println("============================================================================================");
+                System.out.println(
+                        String.valueOf(
+                                missingIds.isEmpty()
+                                        ? "expected list: " + Arrays.toString(expectedIds.toArray(new String[expectedIds.size()])) + System.lineSeparator() +
+                                        "references list: " + Arrays.toString(Functions.map(references, new Functions.Unary<String, Item<AssertionSecurityZoneMO>>() {
+                                    @Override
+                                    public String call(final Item<AssertionSecurityZoneMO> entity) {
+                                        return "AssertionSecurityZone [" +
+                                                "id=" + entity.getId() + ", " +
+                                                "name=" + entity.getName() + ", " +
+                                                "type=" + entity.getType() +
+                                                "]";
+                                    }
+                                }).toArray(new String[references.size()]))
+                                        : "missing ids: " + Arrays.toString(missingIds.toArray(new String[missingIds.size()]))
+                        )
+                );
+                System.out.println("============================================================================================");
+            }
+        } catch (final Exception e) {
+            System.err.println("!!!! AssertionSecurityZoneRestEntityResourceTest FAILURE: " + e.getMessage());
+            e.printStackTrace(System.err);
+        }
     }
 }
