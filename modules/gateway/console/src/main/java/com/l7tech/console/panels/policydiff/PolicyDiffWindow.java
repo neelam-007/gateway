@@ -503,8 +503,10 @@ public class PolicyDiffWindow extends JFrame {
 
         private AssertionDiffMenuAction(int assertionNodeRow) {
             super("Compare Assertion");
-            nodeL = (AssertionTreeNode) leftPolicyTree.getPathForRow(assertionNodeRow).getLastPathComponent();
-            nodeR = (AssertionTreeNode) rightPolicyTree.getPathForRow(assertionNodeRow).getLastPathComponent();
+            nodeL = leftPolicyTree.getPathForRow(assertionNodeRow) != null ?
+                        (AssertionTreeNode) leftPolicyTree.getPathForRow(assertionNodeRow).getLastPathComponent() : null;
+            nodeR = rightPolicyTree.getPathForRow(assertionNodeRow) != null ?
+                        (AssertionTreeNode) rightPolicyTree.getPathForRow(assertionNodeRow).getLastPathComponent() : null;
             this.assertionNodeRow = assertionNodeRow;
 
             setEnabled(isAssertionDiffEnabled(assertionNodeRow));
