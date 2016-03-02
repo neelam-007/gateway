@@ -123,6 +123,7 @@ public class CreateRoutingStrategyAssertion extends AbstractAdaptiveLoadBalancin
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.createroutingstrategy.console.CreateRoutingStrategyAssertionDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Create Routing Strategy Properties");
 
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.createroutingstrategy.server.ModuleLoadListener" );
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

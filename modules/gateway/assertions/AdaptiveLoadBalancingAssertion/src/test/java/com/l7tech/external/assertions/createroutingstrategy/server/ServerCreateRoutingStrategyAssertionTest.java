@@ -5,15 +5,17 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.RoundRobinFailoverStrategy;
 import com.l7tech.common.io.failover.Service;
 import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrategyAssertion;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import junit.framework.Assert;
@@ -49,6 +51,9 @@ public class ServerCreateRoutingStrategyAssertionTest {
     static ServerPolicyFactory serverPolicyFactory;
     static GenericApplicationContext applicationContext;
     static FailoverStrategyFactory failoverStrategyFactory;
+    static ModuleLoadListener moduleLoadListener;
+    static ApplicationEventProxy applicationEventProxy;
+    private PublishedService testService;
 
 
     @BeforeClass
@@ -57,12 +62,15 @@ public class ServerCreateRoutingStrategyAssertionTest {
         assertionRegistry.afterPropertiesSet();
         failoverStrategyFactory = new FailoverStrategyFactory();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        applicationEventProxy = new ApplicationEventProxy();
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("failoverStrategyFactory", failoverStrategyFactory);
+            put("applicationEventProxy", applicationEventProxy);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
+        moduleLoadListener.onModuleLoaded(applicationContext);
     }
 
     @Before
@@ -71,6 +79,9 @@ public class ServerCreateRoutingStrategyAssertionTest {
         // Get the policy enforcement context
         //create assertion
         peCtx = makeContext();
+        testService = new PublishedService();
+        testService.setGoid(Goid.DEFAULT_GOID);
+        peCtx.setService(testService);
         peCtx.setVariable("server", DSERVER_SV1);
         peCtx.setVariable("servers", new String[]{DSERVER_MV1, DSERVER_MV2});
         assertion = new CreateRoutingStrategyAssertion();
@@ -144,7 +155,7 @@ public class ServerCreateRoutingStrategyAssertionTest {
         routes.add(new Service("${empty}",null));
         ass.setRoutes(routes);
         ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
-        Assert.assertEquals(AssertionStatus.FALSIFIED,sass.checkRequest(peCtx));
+        assertEquals(AssertionStatus.FALSIFIED,sass.checkRequest(peCtx));
     }
 
 }
