@@ -187,7 +187,8 @@ public class ShellScriptPatchTask implements PatchTask {
             "com.l7tech.util.ValidationUtils$2",
             "com.l7tech.util.ValidationUtils$PredicatedValidator",
             "com.l7tech.util.ValidationUtils$ValidationPredicate",
-            "com.l7tech.util.ValidationUtils$Validator"
+            "com.l7tech.util.ValidationUtils$Validator",
+            "org.apache.commons.lang.StringUtils"
         };
     }
 
