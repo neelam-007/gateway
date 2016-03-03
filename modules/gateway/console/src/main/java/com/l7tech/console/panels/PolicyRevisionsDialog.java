@@ -407,10 +407,6 @@ public class PolicyRevisionsDialog extends JDialog {
     private static TreeNode makeMessageNode(final String message) {
         return new LeafAssertionTreeNode<CommentAssertion>(new CommentAssertion(message)) {
 
-            public String getName(final boolean decorate) {
-                return message;
-            }
-
             public String getName(final boolean decorate, final boolean withComments) {
                 return message;
             }

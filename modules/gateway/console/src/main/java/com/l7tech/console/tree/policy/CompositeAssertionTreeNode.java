@@ -136,11 +136,6 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
     }
 
     @Override
-    public String getName(boolean decorate) {
-        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
-    }
-
-    @Override
     public String getName(boolean decorate, boolean withComments) {
         return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, withComments);
     }

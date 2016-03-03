@@ -22,11 +22,6 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
     }
 
     @Override
-    public String getName(final boolean decorate) {
-        return this.getName(decorate, decorate);
-    }
-
-    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         Object o = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         if(! (o instanceof AssertionNodeNameFactory)) throw new IllegalStateException("Invalid value for meta data found");

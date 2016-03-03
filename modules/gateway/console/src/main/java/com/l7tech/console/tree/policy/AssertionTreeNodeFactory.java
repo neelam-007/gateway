@@ -135,11 +135,6 @@ public class AssertionTreeNodeFactory {
         }
 
         @Override
-        public String getName(final boolean decorate) {
-            return name;
-        }
-
-        @Override
         public String getName(final boolean decorate, final boolean withComments) {
             return name;
         }

@@ -41,11 +41,6 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     @Override
-    public String getName(final boolean decorate) {
-        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
-    }
-
-    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, withComments);
     }

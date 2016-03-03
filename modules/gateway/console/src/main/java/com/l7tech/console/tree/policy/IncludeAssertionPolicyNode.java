@@ -63,11 +63,6 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     }
 
     @Override
-    public String getName(final boolean decorate) {
-        return this.getName(decorate, decorate);
-    }
-
-    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         if(!decorate) return assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString();
 

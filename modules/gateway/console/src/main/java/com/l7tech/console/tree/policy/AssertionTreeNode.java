@@ -209,8 +209,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * should ever be added to the return string when decorate is false.
      * @return String representation of the assertion contained within the TreeNode
      */
-    abstract public String getName(boolean decorate);
-
     abstract public String getName(boolean decorate, boolean withComments);
 
     /**
@@ -218,7 +216,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      */
     @Override
     public String getName(){
-        return getName(true);
+        return getName(true, true);
     }
 
     /**

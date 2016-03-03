@@ -32,11 +32,6 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      * @return the node name that is displayed
      */
     @Override
-    public String getName( final boolean decorate ) {
-        return this.getName(decorate, decorate);
-    }
-
-    @Override
     public String getName( final boolean decorate, final boolean withComments ) {
         final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
         final String assertionName = ass.meta().get(AssertionMetadata.SHORT_NAME).toString();

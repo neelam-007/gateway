@@ -27,11 +27,6 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode<Spe
      * @return the node name that is displayed
      */
     @Override
-    public String getName(final boolean decorate) {
-        return getName(decorate, decorate);
-    }
-
-    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         final String assertionName = "Authenticate User or Group";
         if (!decorate) {

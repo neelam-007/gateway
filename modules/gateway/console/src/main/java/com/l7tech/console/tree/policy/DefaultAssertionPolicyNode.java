@@ -33,11 +33,6 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
     }
 
     @Override
-    public String getName(final boolean decorate) {
-        return getNameFromMeta(asAssertion(), decorate, true);
-    }
-
-    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         return getNameFromMeta(asAssertion(), decorate, withComments);
     }
