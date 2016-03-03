@@ -230,12 +230,18 @@ function provisionAndStartGateway() {
 	# run the gateway's headless autoconfiguration
 	# we don't need to start the gateway as the headless autoconfig does this for us
 	logInfo "running gateway's headless autoconfig"
-	generateGatewayConfig "true"
-	echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
-	if [ $? -ne 0 ]; then
-		logErrorAndExit "gateway headless autoconfig failed"
+
+	if [ "$SSG_CREATE_DATABASE" == "" ]; then
+		logErrorAndExit "need to set env var SSG_CREATE_DATABASE to either \"true\" or \"false\""
+	elif [ "$SSG_CREATE_DATABASE" != "true" ] && [ "$SSG_CREATE_DATABASE" != "false" ]; then
+		logErrorAndExit "unknown value for env var SSG_CREATE_DATABASE. It must be set to either \"true\" or \"false\""
+	else
+		generateGatewayConfig "$SSG_CREATE_DATABASE"
+		echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
+		if [ $? -ne 0 ]; then
+			logErrorAndExit "gateway headless autoconfig failed"
+		fi	
 	fi
-	
 	logInfo "gateway is now starting up"
 	doWaitForSSGStartUp
 }
