@@ -18,6 +18,7 @@ public class ApplicationEntity {
     private String oauthScope;
     private String oauthType;
     private List<ApplicationApi> apis = new ArrayList<>();
+    private ApplicationMag mag;
 
     public ApplicationEntity() {
     }
@@ -108,5 +109,13 @@ public class ApplicationEntity {
 
     public void setApis(List<ApplicationApi> apis) {
         this.apis = apis;
+    }
+
+    public ApplicationMag getMag() {
+        return mag;
+    }
+
+    public void setMag(ApplicationMag mag) {
+        this.mag = mag;
     }
 }

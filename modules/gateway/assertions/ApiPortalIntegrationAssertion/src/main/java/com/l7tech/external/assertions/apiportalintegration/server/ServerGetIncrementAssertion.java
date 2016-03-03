@@ -1,11 +1,13 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationApi;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationMag;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
@@ -15,7 +17,6 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 
@@ -143,13 +144,13 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "ax.API_UUID")),
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_REDIRECT_URI", "a.MAG_MASTER_KEY", "ax.API_UUID")),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, ax.API_UUID \n" +
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_REDIRECT_URI, a.MAG_MASTER_KEY, ax.API_UUID \n" +
                             "FROM APPLICATION a  \n" +
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
@@ -203,6 +204,14 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 }
                 appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
                 appEntity.setOauthType((String) results.get("oauth_type").get(i));
+                ApplicationMag mag = new ApplicationMag();
+                mag.setScope((String) results.get("mag_scope").get(i));
+                mag.setRedirectUri((String) results.get("mag_redirect_uri").get(i));
+                mag.getMasterKeys().add(ImmutableMap.<String, String>builder()
+                        .put("master-key", (String) results.get("mag_master_key").get(i))
+                        .put("environment", "all") // For now environment is hard-coded, in the future it will come from the database.
+                        .build());
+                appEntity.setMag(mag);
                 appMap.put(appId, appEntity);
             }
 

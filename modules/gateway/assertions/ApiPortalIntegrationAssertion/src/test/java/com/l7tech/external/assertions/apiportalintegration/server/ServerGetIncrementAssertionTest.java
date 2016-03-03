@@ -21,12 +21,10 @@ public class ServerGetIncrementAssertionTest {
     private ServerGetIncrementAssertion serverAssertion;
     private GetIncrementAssertion assertion;
     private ApplicationContext applicationContext;
-    private PolicyEnforcementContext policyContext;
 
     @Before
     public void setup() throws Exception {
         applicationContext = ApplicationContexts.getTestApplicationContext();
-        policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         assertion = new GetIncrementAssertion();
         serverAssertion = new ServerGetIncrementAssertion(assertion, applicationContext);
     }
@@ -49,7 +47,15 @@ public class ServerGetIncrementAssertionTest {
                 "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
                 "    \"apis\" : [ {\r\n" +
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
-                "    } ]\n" +
+                "    } ],\n" +
+                "    \"mag\" : {\n" +
+                "      \"scope\" : \"msso openid\",\n" +
+                "      \"redirectUri\" : \"oob\",\n" +
+                "      \"masterKeys\" : [ {\n" +
+                "        \"master-key\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
+                "        \"environment\" : \"all\"\n" +
+                "      } ]\n" +
+                "    }\n" +
                 "  } ]\n" +
                 "}";
 
@@ -80,6 +86,9 @@ public class ServerGetIncrementAssertionTest {
         results.put("oauth_type", typeList);
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc"));
         results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
+        results.put("mag_scope", Arrays.asList("msso openid"));
+        results.put("mag_redirect_uri", Arrays.asList("oob"));
+        results.put("mag_master_key", Arrays.asList("f08985a0-e164-11e5-b86d-9a79f06e9478"));
         return results;
     }
 
@@ -102,7 +111,15 @@ public class ServerGetIncrementAssertionTest {
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    }, {\n" +
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
-                "    } ]\n" +
+                "    } ],\n" +
+                "    \"mag\" : {\n" +
+                "      \"scope\" : \"msso openid\",\n" +
+                "      \"redirectUri\" : \"oob\",\n" +
+                "      \"masterKeys\" : [ {\n" +
+                "        \"master-key\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
+                "        \"environment\" : \"all\"\n" +
+                "      } ]\n" +
+                "    }\n" +
                 "  } ]\n" +
                 "}";
 
@@ -134,6 +151,9 @@ public class ServerGetIncrementAssertionTest {
         results.put("oauth_scope", Arrays.asList("\\\\\\\\\\\\%^&*()", "\\\\\\\\\\\\%^&*()"));
         results.put("oauth_type", typeList);
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc", "efb6f420-69da-49f6-bcd2-e283409e87fc"));
+        results.put("mag_scope", Arrays.asList("msso openid", "msso openid"));
+        results.put("mag_redirect_uri", Arrays.asList("oob", "oob"));
+        results.put("mag_master_key", Arrays.asList("f08985a0-e164-11e5-b86d-9a79f06e9478", "35923776-e16c-11e5-b86d-9a79f06e9478"));
         return results;
     }
 }
