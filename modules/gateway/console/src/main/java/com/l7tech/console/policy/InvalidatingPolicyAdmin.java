@@ -43,6 +43,12 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
 
     @NotNull
     @Override
+    public List<Policy> findPoliciesByGuids(@NotNull List<String> guids) throws FindException {
+        return delegate.findPoliciesByGuids(guids);
+    }
+
+    @NotNull
+    @Override
     public Collection<Policy> findPoliciesByTypeTagAndSubTag( @NotNull PolicyType policyType, @Nullable String internalTag, @Nullable String internalSubTag ) throws FindException {
         return delegate.findPoliciesByTypeTagAndSubTag( policyType, internalTag, internalSubTag );
     }

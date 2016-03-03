@@ -171,6 +171,19 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     @NotNull
     @Override
+    public List<Policy> findPoliciesByGuids(@NotNull List<String> guids) throws FindException {
+        final List<Policy> policies = new ArrayList<>(guids.size());
+        for (String guid : guids) {
+            final Policy policy = findPolicyByGuid(guid);
+            if (policy != null) {
+                policies.add(policy);
+            }
+        }
+        return policies;
+    }
+
+    @NotNull
+    @Override
     public Collection<Policy> findPoliciesByTypeTagAndSubTag( @NotNull PolicyType policyType, @Nullable String internalTag, @Nullable String internalSubTag ) throws FindException {
         Map<String, List<Object>> props = new HashMap<>();
 

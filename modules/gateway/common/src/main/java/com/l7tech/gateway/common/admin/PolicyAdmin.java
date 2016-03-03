@@ -75,6 +75,17 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     Policy findPolicyByGuid(String guid) throws FindException;
 
     /**
+     * Finds policies matching the specified GUIDs.  If a GUID does not match, it's not added to the list.
+     * @param guids the GUIDs of the Policies to retrieve. Required.
+     * @return the list of matching Policies.  If no GUIDs match return empty list.
+     */
+    @NotNull
+    @Secured(stereotype=FIND_ENTITIES)
+    @Transactional(readOnly=true)
+    @Administrative(licensed = false)
+    List<Policy> findPoliciesByGuids(@NotNull List<String> guids) throws FindException;
+
+    /**
      * Finds policies with the specified policy type, tag, and sub tag.
      * @param policyType   policy type to find. Required.
      * @param internalTag  policy tag to find, or null to avoid filtering by policy tag.

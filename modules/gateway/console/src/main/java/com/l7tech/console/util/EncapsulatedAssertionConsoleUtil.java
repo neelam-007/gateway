@@ -14,7 +14,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -101,12 +103,25 @@ public final class EncapsulatedAssertionConsoleUtil {
      */
     public static void attachPolicies(@NotNull Collection<EncapsulatedAssertionConfig> configs) throws FindException {
         final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+
+        // reduce the number of calls over the network to improve Policy Manager post-login response time
+        // get all policy guids to fetch once over the network (save on request and response overhead for each individual policy call)
+        final List<String> policyGuids = new ArrayList<>(configs.size());
+        for (final EncapsulatedAssertionConfig config : configs) {
+            policyGuids.add(config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
+        }
+        final List<Policy> policies = policyAdmin.findPoliciesByGuids(policyGuids);
+
+        int policyIndex = 0;
         for (final EncapsulatedAssertionConfig config : configs) {
             if (config.getPolicy() == null) {
                 final String policyGuid = config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID);
                 if (policyGuid != null) {
                     try {
-                        final Policy backingPolicy = policyAdmin.findPolicyByGuid(policyGuid);
+                        final Policy backingPolicy = policies.get(policyIndex++);
+                        if (!policyGuid.equals(backingPolicy.getGuid())) {
+                            throw new FindException("Policy guid: " + backingPolicy.getGuid() + " does not match configuration guid: " + policyGuid);
+                        }
                         config.setPolicy(backingPolicy);
                     } catch (final PermissionDeniedException e) {
                         logger.log(Level.WARNING, "Caller does not have permission to retrieve the backing policy with guid: " + policyGuid,

@@ -55,21 +55,12 @@ public class EncapsulatedAssertionRegistry {
      * Load all current encapsulated assertions from Gateway and register them all locally.
      */
     public void updateEncapsulatedAssertions() throws FindException {
-        updateEncapsulatedAssertions(true);
-    }
-
-    /**
-     * Load all current encapsulated assertions from Gateway and register them all locally.
-     */
-    public void updateEncapsulatedAssertions(boolean attachPolicies) throws FindException {
         Registry registry = Registry.getDefault();
         if (!registry.isAdminContextPresent()) {
             throw new FindException("Unable to load encapsulated assertions -- not connected to Gateway");
         }
         Collection<EncapsulatedAssertionConfig> configs = registry.getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
-        if (attachPolicies) {
-            EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
-        }
+        EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
         replaceAllRegisteredConfigs(configs);
     }
 
