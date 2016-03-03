@@ -10,7 +10,7 @@
 	</configurations>	
 	<publications>
 		<artifact name="SshAssertion" type="aar" ext="aar" conf="master"/>
-		<artifact name="SshAssertion" type="pom" ext="pom" conf="master"/>
+		<artifact name="SshAssertion" type="pom" ext="pom" conf="pom"/>
 	</publications>
 	<dependencies>
         <dependency org="org.apache.mina" name="mina-core" rev="2.0.7" force="true" conf="core"/>

@@ -19,10 +19,12 @@
               extends="runtime,compile"/>
         <conf name="optional" description="Contains all optional dependencies"/>
         <conf name="alternative" description="Contains all dependencies for jars with alternative implementations"/>
+        <conf name="pom"
+              description="Contains only the pom files related to master artifacts"/>
     </configurations>
     <publications>
         <artifact name="layer7-gateway-server" type="jar" ext="jar" conf="master"/>
-		<artifact name="layer7-gateway-server" type="pom" ext="pom" conf="master"/>
+		<artifact name="layer7-gateway-server" type="pom" ext="pom" conf="pom"/>
         <artifact name="layer7-gateway-server-test" type="jar" ext="jar" conf="test"/>
     </publications>
     <dependencies>

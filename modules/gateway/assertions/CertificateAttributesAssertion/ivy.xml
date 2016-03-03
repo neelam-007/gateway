@@ -10,7 +10,7 @@
 	</configurations>	
 	<publications>
 		<artifact name="CertificateAttributesAssertion" type="aar" ext="aar" conf="master"/>
-		<artifact name="CertificateAttributesAssertion" type="pom" ext="pom" conf="master"/>
+		<artifact name="CertificateAttributesAssertion" type="pom" ext="pom" conf="pom"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

@@ -10,7 +10,7 @@
     </configurations>
     <publications>
         <artifact name="layer7-siteminder" type="jar" ext="jar" conf="master"/>
-		<artifact name="layer7-siteminder" type="pom" ext="pom" conf="master"/>
+		<artifact name="layer7-siteminder" type="pom" ext="pom" conf="pom"/>
         <artifact name="layer7-siteminder-test" type="jar" ext="jar" conf="test"/>
     </publications>
     <dependencies>

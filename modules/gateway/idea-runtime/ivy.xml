@@ -21,9 +21,11 @@
               extends="runtime,compile"/>
         <conf name="optional" description="Contains all optional dependencies"/>
         <conf name="module" description="Packaged modular assertion dependencies"/>
+        <conf name="pom"
+              description="Contains only the pom files related to master artifacts"/>
     </configurations>
     <publications>
-		<artifact name="layer7-gateway-idea-runtime" type="pom" ext="pom" conf="master"/>
+		<artifact name="layer7-gateway-idea-runtime" type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
         <!-- Product Leaf Modules -->

@@ -10,7 +10,7 @@
 	</configurations>
 	<publications>
 		<artifact name="MqNativeAssertion" type="aar" ext="aar" conf="master"/>
-		<artifact name="MqNativeAssertion" type="pom" ext="pom" conf="master"/>
+		<artifact name="MqNativeAssertion" type="pom" ext="pom" conf="pom"/>
 	</publications>
 	<dependencies>
         <!-- Don't package jars with modular assertion aar (due to licensing restriction) -->

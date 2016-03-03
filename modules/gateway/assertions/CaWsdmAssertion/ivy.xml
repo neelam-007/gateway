@@ -10,7 +10,7 @@
     </configurations>	
     <publications>
         <artifact name="CaWsdmAssertion" type="aar" ext="aar" conf="master"/>
-		<artifact name="CaWsdmAssertion" type="pom" ext="pom" conf="master"/>
+		<artifact name="CaWsdmAssertion" type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
         <dependency org="axis" name="axis" rev="1.4" force="true" conf="core"/>

@@ -10,7 +10,7 @@
 	</configurations>
 	<publications>
 		<artifact name="JsonJoltAssertion" type="aar" ext="aar" conf="master"/>
-		<artifact name="JsonJoltAssertion" type="pom" ext="pom" conf="master"/>
+		<artifact name="JsonJoltAssertion" type="pom" ext="pom" conf="pom"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
