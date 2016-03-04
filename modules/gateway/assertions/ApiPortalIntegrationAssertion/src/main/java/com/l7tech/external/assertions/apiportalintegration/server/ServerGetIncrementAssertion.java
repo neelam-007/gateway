@@ -208,10 +208,11 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 mag.setScope((String) results.get("mag_scope").get(i));
                 mag.setRedirectUri((String) results.get("mag_redirect_uri").get(i));
                 mag.getMasterKeys().add(ImmutableMap.<String, String>builder()
-                        .put("master-key", (String) results.get("mag_master_key").get(i))
+                        .put("masterKey", (String) results.get("mag_master_key").get(i))
                         .put("environment", "all") // For now environment is hard-coded, in the future it will come from the database.
                         .build());
                 appEntity.setMag(mag);
+                appEntity.setCustom(""); //
                 appMap.put(appId, appEntity);
             }
 

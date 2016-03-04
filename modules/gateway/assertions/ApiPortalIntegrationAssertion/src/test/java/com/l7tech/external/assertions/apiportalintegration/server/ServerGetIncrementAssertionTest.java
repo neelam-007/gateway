@@ -52,10 +52,11 @@ public class ServerGetIncrementAssertionTest {
                 "      \"scope\" : \"msso openid\",\n" +
                 "      \"redirectUri\" : \"oob\",\n" +
                 "      \"masterKeys\" : [ {\n" +
-                "        \"master-key\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
+                "        \"masterKey\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
-                "    }\n" +
+                "    },\n" +
+                "    \"custom\" : \"\"\n" +
                 "  } ]\n" +
                 "}";
 
@@ -116,10 +117,11 @@ public class ServerGetIncrementAssertionTest {
                 "      \"scope\" : \"msso openid\",\n" +
                 "      \"redirectUri\" : \"oob\",\n" +
                 "      \"masterKeys\" : [ {\n" +
-                "        \"master-key\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
+                "        \"masterKey\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
-                "    }\n" +
+                "    },\n" +
+                "    \"custom\" : \"\"\n" +
                 "  } ]\n" +
                 "}";
 

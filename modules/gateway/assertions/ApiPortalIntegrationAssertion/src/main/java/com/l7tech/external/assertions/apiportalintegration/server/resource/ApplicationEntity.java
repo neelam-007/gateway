@@ -19,6 +19,7 @@ public class ApplicationEntity {
     private String oauthType;
     private List<ApplicationApi> apis = new ArrayList<>();
     private ApplicationMag mag;
+    private String custom;
 
     public ApplicationEntity() {
     }
@@ -117,5 +118,13 @@ public class ApplicationEntity {
 
     public void setMag(ApplicationMag mag) {
         this.mag = mag;
+    }
+
+    public String getCustom() {
+        return custom;
+    }
+
+    public void setCustom(String custom) {
+        this.custom = custom;
     }
 }
