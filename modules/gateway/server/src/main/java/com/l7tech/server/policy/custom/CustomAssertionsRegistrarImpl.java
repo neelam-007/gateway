@@ -240,10 +240,16 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
     @NotNull
     private HashSet<String> getPaths(@NotNull final String resourcePath, @Nullable final String[] paths, @NotNull final ModularAssertionModule module) throws IOException {
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(module.getModuleClassLoader());
-        Resource[] resources = resolver.getResources("/" + getPackagePath(resourcePath) + "/**/*.class");
+        Resource[] resources = null;
+        try {
+            final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(module.getModuleClassLoader());
+            resources = resolver.getResources("/" + getPackagePath(resourcePath) + "/**/*.class");
+        } catch (IOException e) {
+            // class from dependent jar library (AAR-INF/lib/) loaded later (e.g. org/json/JSONException in AAR-INF/lib/json-java-1.0-l7p2.jar)
+            logger.log(Level.FINE, "Unable to resolve assertion resource " + resourcePath + " for optimization.  Will resolve later, likely part of dependent jar library under AAR-INF/lib/." , ExceptionUtils.getDebugException(e));
+        }
 
-        HashSet<String> pathSet = new HashSet<>((paths == null ? 0 : paths.length) + (resources == null ? 0 : resources.length));
+        final HashSet<String> pathSet = new HashSet<>((paths == null ? 0 : paths.length) + (resources == null ? 0 : resources.length));
 
         if (paths != null) {
             Collections.addAll(pathSet, paths);
