@@ -232,7 +232,7 @@
                         organisation="@{organisation}"
                         module="@{name}"
                         conf="@{conf}"
-						type="jar"
+                        type="jar"
                         transitive="false"
                         log="quiet"/>
 
@@ -313,7 +313,7 @@
         <ivy-resolve conf="*"/>
         <ivy:retrieve
                 pattern="${build.dir}/repository/[organisation]/[artifact]-[revision].[ext]"
-                ivypattern="${build.dir}/repository/[organisation]/[module]-ivy-[revision].xml"/>        
+                ivypattern="${build.dir}/repository/[organisation]/[module]-ivy-[revision].xml"/>
     </target>
 
     <target name="extra-path-init-pre">
@@ -377,7 +377,7 @@
             <fileset dir="${src.main.java.dir}">
                 <include name="**/*.properties"/>
             </fileset>
-        </path>                                                        
+        </path>
         <condition property="module.invalid.properties">
             <and>
                 <equals arg1="${module.source.allow.properties}" arg2="false"/>
@@ -462,10 +462,10 @@
             depends="compile-test-all">
         <mkdir dir="${report.test.dir}"/>
 
-        <junit printsummary="yes" 
-               haltonfailure="yes" 
-               fork="on" 
-               forkmode="once" 
+        <junit printsummary="yes"
+               haltonfailure="yes"
+               fork="on"
+               forkmode="once"
                errorproperty="test.error"
                failureproperty="test.failure"
                maxmemory="2560m">
@@ -482,17 +482,17 @@
 
             <sysproperty key="src.root" value="${src.root}"/>
             <syspropertyset>
-              <propertyref prefix="com.l7tech"/>
-              <propertyref name="module.skip.forms"/>
-              <!-- This property is used to specify the build type. For example nightly or daily
-              Example: -Dbuild.type="nightly" -->
-              <propertyref name="build.type"/>
-              <!-- This is used to set the random generator. On tests we use /dev/urandom otherwise the tests will block waiting for entropy.
-               Example: run tests with: -Djava.security.egd=file:/dev/./urandom-->
-              <propertyref name="java.security.egd"/>
-              <!-- use this property to tweak the timeout for creating source and target environments  during migration
-               Example: -Dtest.migration.waitTimeMinutes=15 -->
-              <propertyref name="test.migration.waitTimeMinutes"/>
+                <propertyref prefix="com.l7tech"/>
+                <propertyref name="module.skip.forms"/>
+                <!-- This property is used to specify the build type. For example nightly or daily
+                Example: -Dbuild.type="nightly" -->
+                <propertyref name="build.type"/>
+                <!-- This is used to set the random generator. On tests we use /dev/urandom otherwise the tests will block waiting for entropy.
+                 Example: run tests with: -Djava.security.egd=file:/dev/./urandom-->
+                <propertyref name="java.security.egd"/>
+                <!-- use this property to tweak the timeout for creating source and target environments  during migration
+                 Example: -Dtest.migration.waitTimeMinutes=15 -->
+                <propertyref name="test.migration.waitTimeMinutes"/>
             </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">
@@ -637,9 +637,9 @@
 
         <ivy-resolve conf="${module.idea.configurations}" haltonfailure="false" />
         <!--<ivy:deliver deliverpattern="build/ivyidea/[organisation]/[module]-ivy-[revision].xml"-->
-                     <!--pubrevision="${module.version.target}"-->
-                     <!--status="integration"-->
-                <!--/>-->
+        <!--pubrevision="${module.version.target}"-->
+        <!--status="integration"-->
+        <!--/>-->
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      resolver="idea"
                      haltonmissing="false"
@@ -680,48 +680,50 @@
 		Run package, then publish locally, then try to publish to artifactory
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
-		<antcall target="publish-artifactory-init"/>
-		<!-- specify conf to publish and skip the test conf -->
+        <antcall target="publish-artifactory-init"/>
+        <!-- specify conf to publish and skip the test conf -->
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-					 conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
-					 pubrevision="${version}"
+                     pubrevision="${version}"
                      overwrite="true"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
-		<antcall target="publish-artifactory"/>
+        <antcall target="publish-artifactory"/>
     </target>
-	
-	<!--
-		Run ivy:resolve, ivy:deliver, and ivy:makepom to prepare for publish-artifactory
-	-->
-	<target name="publish-artifactory-init" if="publish.jar.target" description="Resolve ivy dependencies and create pom file to prepare for publishing to Artifactory">
-		<property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
-		<ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom"/>
-		<ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
-		<ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom" />
-	</target>
-	
+
+    <!--
+        Run ivy:resolve, ivy:deliver, and ivy:makepom to prepare for publish-artifactory
+    -->
+    <target name="publish-artifactory-init" if="publish.jar.target" description="Resolve ivy dependencies and create pom file to prepare for publishing to Artifactory">
+        <property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
+        <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom"/>
+        <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
+        <ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom" />
+    </target>
+
     <!--
 		Publish to artifactory if publish.jar.target is set to an artifactory resolver
     -->
     <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-					 conf="default, master, optional, core, pom"
+                     conf="default, master, optional, core, pom"
                      resolver="${publish.jar.target}"
-					 pubrevision="${version}"
+                     pubrevision="${version}"
                      overwrite="true"
-					 publishivy="false"/>
+                     publishivy="false"/>
         <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
     </target>
-	
+
     <!--
     -->
     <target name="publish-all" depends="info, clean, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository">
-		<antcall target="publish-artifactory-init"/>
+        <antcall target="publish-artifactory-init"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"
@@ -737,10 +739,12 @@
     -->
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
-		<antcall target="publish-artifactory-init"/>
+        <antcall target="publish-artifactory-init"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client"
                      resolver="shared"
-					 pubrevision="${version}"
+                     pubrevision="${version}"
                      overwrite="true"/>
         <echo message="project ${ant.project.name} released with version ${version}"/>
     </target>
