@@ -115,6 +115,14 @@ pushTheImage() {
 	echo "Done pushing the image to the Docker Registry"
 }
 
+generateBuildResultsFile() {
+	echo "Generating the build_results.properties file"
+	echo "" > build_results.properties
+	echo "REGISTRY_HOST=$REGISTRY_HOST" >> build_results.properties
+	echo "IMAGE_NAME=$IMAGE_NAME" >> build_results.properties
+	echo "IMAGE_TAG=$IMAGE_TAG" >> build_results.properties
+	echo "Done generating the build_results.properties file"
+}
 
 removeExistingImages
 loginToTheRegistry
@@ -122,5 +130,6 @@ buildTheImage
 exportTheImage
 squashTheImage
 pushTheImage
+generateBuildResultsFile
 removeExistingImages
 
