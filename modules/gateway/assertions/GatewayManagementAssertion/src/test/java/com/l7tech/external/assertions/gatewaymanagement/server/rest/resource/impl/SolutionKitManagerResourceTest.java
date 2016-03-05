@@ -605,13 +605,13 @@ public class SolutionKitManagerResourceTest {
                         Assert.assertNotNull(sigProps);
 
                         // read the signature property
-                        final String signatureB64 = (String) sigProps.get("signature");
+                        final String signatureB64 = (String) sigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         Assert.assertNotNull(signatureB64);
                         // flip random byte
                         final byte[] modSignBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signatureB64));
                         // store modified signature
-                        sigProps.setProperty("signature", HexUtils.encodeBase64(modSignBytes));
-                        assertThat(signatureB64, Matchers.not(Matchers.equalTo((String) sigProps.get("signature"))));
+                        sigProps.setProperty(SignatureTestUtils.SIGNATURE_PROP, HexUtils.encodeBase64(modSignBytes));
+                        assertThat(signatureB64, Matchers.not(Matchers.equalTo((String) sigProps.get(SignatureTestUtils.SIGNATURE_PROP))));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);
@@ -650,13 +650,13 @@ public class SolutionKitManagerResourceTest {
                         Assert.assertNotNull(sigProps);
 
                         // read the signer cert property
-                        final String signerCertB64 = (String) sigProps.get("cert");
+                        final String signerCertB64 = (String) sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signerCertB64);
                         // flip random byte
                         final byte[] modSignerCertBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signerCertB64));
                         // store modified signature
-                        sigProps.setProperty("cert", HexUtils.encodeBase64(modSignerCertBytes));
-                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
+                        sigProps.setProperty(SignatureTestUtils.SIGNING_CERT_PROPS, HexUtils.encodeBase64(modSignerCertBytes));
+                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS))));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);
@@ -739,21 +739,21 @@ public class SolutionKitManagerResourceTest {
                         Assert.assertNotNull(sigProps);
 
                         // read the signature and signer cert property
-                        final String signatureB64 = (String) sigProps.get("signature");
+                        final String signatureB64 = (String) sigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         Assert.assertNotNull(signatureB64);
                         final byte[] signatureBytes = HexUtils.decodeBase64(signatureB64);
                         Assert.assertNotNull(signatureBytes);
-                        final String signerCertB64 = (String) sigProps.get("cert");
+                        final String signerCertB64 = (String) sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signerCertB64);
                         final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
                         Assert.assertNotNull(signerCertBytes);
                         // get the trusted signature properties bytes
                         final Properties trustedSigProps = SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes);
-                        final String trustedSigB64 = (String) trustedSigProps.get("signature");
+                        final String trustedSigB64 = (String) trustedSigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         Assert.assertNotNull(trustedSigB64);
                         final byte[] trustedSigBytes = HexUtils.decodeBase64(trustedSigB64);
                         Assert.assertNotNull(trustedSigBytes);
-                        final String trustedSignerCertB64 = (String) trustedSigProps.get("cert");
+                        final String trustedSignerCertB64 = (String) trustedSigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(trustedSignerCertB64);
                         final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
                         Assert.assertNotNull(trustedSignerCertBytes);
@@ -803,21 +803,21 @@ public class SolutionKitManagerResourceTest {
                         Assert.assertNotNull(sigProps);
 
                         // read the signature and signer cert property
-                        final String signatureB64 = (String) sigProps.get("signature");
+                        final String signatureB64 = (String) sigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         Assert.assertNotNull(signatureB64);
                         final byte[] signatureBytes = HexUtils.decodeBase64(signatureB64);
                         Assert.assertNotNull(signatureBytes);
-                        final String signerCertB64 = (String) sigProps.get("cert");
+                        final String signerCertB64 = (String) sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signerCertB64);
                         final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
                         Assert.assertNotNull(signerCertBytes);
                         // get the trusted signature properties bytes
                         final Properties trustedSigProps = SignatureTestUtils.getSignatureProperties(signedTrustedAnotherSampleSkarBytes);
-                        final String trustedSigB64 = (String) trustedSigProps.get("signature");
+                        final String trustedSigB64 = (String) trustedSigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         Assert.assertNotNull(trustedSigB64);
                         final byte[] trustedSigBytes = HexUtils.decodeBase64(trustedSigB64);
                         Assert.assertNotNull(trustedSigBytes);
-                        final String trustedSignerCertB64 = (String) trustedSigProps.get("cert");
+                        final String trustedSignerCertB64 = (String) trustedSigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(trustedSignerCertB64);
                         final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
                         Assert.assertNotNull(trustedSignerCertBytes);
@@ -826,11 +826,11 @@ public class SolutionKitManagerResourceTest {
                         Assert.assertFalse(Arrays.equals(signerCertBytes, trustedSignerCertBytes));
 
                         // swap signing cert property
-                        sigProps.setProperty("cert", HexUtils.encodeBase64(trustedSignerCertBytes));
+                        sigProps.setProperty(SignatureTestUtils.SIGNING_CERT_PROPS, HexUtils.encodeBase64(trustedSignerCertBytes));
                         // make sure after the swap the signer cert is different
-                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get("cert"))));
+                        assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String) sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS))));
                         // make sure after the swap the signature is unchanged
-                        assertThat(signatureB64, Matchers.equalTo((String) sigProps.get("signature")));
+                        assertThat(signatureB64, Matchers.equalTo((String) sigProps.get(SignatureTestUtils.SIGNATURE_PROP)));
 
                         // return a pair of unchanged data-bytes and modified signature props
                         return Pair.pair(dataBytes, sigProps);

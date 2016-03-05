@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * Testing modules signature verifier as well as signer.
  */
-public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
+public class TrustedSignerCertsManagerTest {
 
     // we are going to treat this verifier (and holder of the signer certs) as trustworthy
     private static TrustedSignerCertsManager TRUSTED_VERIFIER;
@@ -46,8 +46,8 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
         SignatureTestUtils.beforeClass();
 
         // create two, trusted and untrusted, signature verifiers and signer cert holders
-        TRUSTED_VERIFIER = createSignerManager(TRUSTED_SIGNER_DNS);
-        UNTRUSTED_VERIFIER = createSignerManager(UNTRUSTED_SIGNER_DNS);
+        TRUSTED_VERIFIER = SignatureTestUtils.createSignerManager(TRUSTED_SIGNER_DNS);
+        UNTRUSTED_VERIFIER = SignatureTestUtils.createSignerManager(UNTRUSTED_SIGNER_DNS);
     }
 
     @AfterClass
@@ -98,12 +98,12 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
             final ByteArrayOutputStream outputZip = new ByteArrayOutputStream(1024);
             try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
                 // first zip entry should be the signed data bytes
-                zos.putNextEntry(new ZipEntry(SIGNED_DATA_ZIP_ENTRY));
+                zos.putNextEntry(new ZipEntry(SignatureTestUtils.SIGNED_DATA_ZIP_ENTRY));
                 // write the modified bytes into the first zip entry
                 IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.left), zos);
 
                 // next zip entry is the signature information
-                zos.putNextEntry(new ZipEntry(SIGNATURE_PROPS_ZIP_ENTRY));
+                zos.putNextEntry(new ZipEntry(SignatureTestUtils.SIGNATURE_PROPS_ZIP_ENTRY));
                 // write the modified bytes into the first zip entry
                 IOUtils.copyStream(new ByteArrayInputStream(dataAndSignatureBytes.right), zos);
             }
@@ -127,7 +127,7 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
     private static String readB64Property(final String signatureProps, final String key) throws Exception {
         Assert.assertThat(signatureProps, Matchers.not(Matchers.isEmptyOrNullString()));
         Assert.assertThat(key, Matchers.not(Matchers.isEmptyOrNullString()));
-        Assert.assertThat(key, Matchers.anyOf(Matchers.is("cert"), Matchers.is("signature")));
+        Assert.assertThat(key, Matchers.anyOf(Matchers.is(SignatureTestUtils.SIGNING_CERT_PROPS), Matchers.is(SignatureTestUtils.SIGNATURE_PROP)));
         // load props
         final Properties sigProps = new Properties();
         try (final StringReader reader = new StringReader(signatureProps)) {
@@ -145,12 +145,12 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
     private static String readAndFlipProperty(final Properties sigProps, final String key) throws Exception {
         Assert.assertThat(sigProps, Matchers.notNullValue());
         Assert.assertThat(key, Matchers.not(Matchers.isEmptyOrNullString()));
-        Assert.assertThat(key, Matchers.anyOf(Matchers.is("cert"), Matchers.is("signature")));
+        Assert.assertThat(key, Matchers.anyOf(Matchers.is(SignatureTestUtils.SIGNING_CERT_PROPS), Matchers.is(SignatureTestUtils.SIGNATURE_PROP)));
         // extract property value
         final String propertyB64 = (String)sigProps.get(key);
         Assert.assertThat(propertyB64, Matchers.not(Matchers.isEmptyOrNullString()));
         // flip random byte
-        final byte[] modPropBytes = flipRandomByte(HexUtils.decodeBase64(propertyB64));
+        final byte[] modPropBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(propertyB64));
         // store modified signature
         sigProps.setProperty(key, HexUtils.encodeBase64(modPropBytes));
         Assert.assertThat(propertyB64, Matchers.not(Matchers.equalTo((String)sigProps.get(key))));
@@ -175,13 +175,13 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
             try (final StringReader reader = new StringReader(signatureOrSignCert.left())) {
                 sigProps.load(reader);
             }
-            return readAndFlipProperty(sigProps, "signature");
+            return readAndFlipProperty(sigProps, SignatureTestUtils.SIGNATURE_PROP);
         } else {
             // signing cert
             try (final StringReader reader = new StringReader(signatureOrSignCert.right())) {
                 sigProps.load(reader);
             }
-            return readAndFlipProperty(sigProps, "cert");
+            return readAndFlipProperty(sigProps, SignatureTestUtils.SIGNING_CERT_PROPS);
         }
     }
 
@@ -202,7 +202,7 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                     public Pair<byte[], byte[]> call(final byte[] dataBytes, final byte[] sigBytes) throws Exception {
                         Assert.assertNotNull(dataBytes);
                         Assert.assertThat(dataBytes.length, Matchers.greaterThan(0));
-                        return Pair.pair(flipRandomByte(dataBytes), sigBytes);
+                        return Pair.pair(SignatureTestUtils.flipRandomByte(dataBytes), sigBytes);
                     }
                 }
         );
@@ -216,12 +216,12 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                         // read the signature props
                         final Properties sigProps = new Properties();
                         sigProps.load(new ByteArrayInputStream(sigBytes));
-                        final String signatureB64 = (String)sigProps.get("signature");
+                        final String signatureB64 = (String)sigProps.get(SignatureTestUtils.SIGNATURE_PROP);
                         // flip random byte
-                        final byte[] modSignBytes = flipRandomByte(HexUtils.decodeBase64(signatureB64));
+                        final byte[] modSignBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signatureB64));
                         // store modified signature
-                        sigProps.setProperty("signature", HexUtils.encodeBase64(modSignBytes));
-                        Assert.assertThat(signatureB64, Matchers.not(Matchers.equalTo((String)sigProps.get("signature"))));
+                        sigProps.setProperty(SignatureTestUtils.SIGNATURE_PROP, HexUtils.encodeBase64(modSignBytes));
+                        Assert.assertThat(signatureB64, Matchers.not(Matchers.equalTo((String)sigProps.get(SignatureTestUtils.SIGNATURE_PROP))));
 
                         // save the props
                         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -241,12 +241,12 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                         // read the signature props
                         final Properties sigProps = new Properties();
                         sigProps.load(new ByteArrayInputStream(sigBytes));
-                        final String signerCertB64 = (String)sigProps.get("cert");
+                        final String signerCertB64 = (String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         // flip random byte
-                        final byte[] modSignerCertBytes = flipRandomByte(HexUtils.decodeBase64(signerCertB64));
+                        final byte[] modSignerCertBytes = SignatureTestUtils.flipRandomByte(HexUtils.decodeBase64(signerCertB64));
                         // store modified signature
-                        sigProps.setProperty("cert", HexUtils.encodeBase64(modSignerCertBytes));
-                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String)sigProps.get("cert"))));
+                        sigProps.setProperty(SignatureTestUtils.SIGNING_CERT_PROPS, HexUtils.encodeBase64(modSignerCertBytes));
+                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS))));
 
                         // save the props
                         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -314,14 +314,14 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                         // read the signature props
                         final Properties sigProps = new Properties();
                         sigProps.load(new ByteArrayInputStream(sigBytes));
-                        final String signerCertB64 = (String)sigProps.get("cert");
+                        final String signerCertB64 = (String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signerCertB64);
                         final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
                         Assert.assertNotNull(signerCertBytes);
 
                         // get the trusted zip signature properties raw-bytes
                         final Properties trustedSignatureProperties = SignatureTestUtils.getSignatureProperties(trustedSignedZipBytes);
-                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get("cert");
+                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(trustedSignerCertB64);
                         final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
                         Assert.assertNotNull(trustedSignerCertBytes);
@@ -329,8 +329,8 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                         // verify they are different than signerCertBytes
                         Assert.assertFalse(Arrays.equals(signerCertBytes, trustedSignerCertBytes));
                         // store modified signer cert
-                        sigProps.setProperty("cert", HexUtils.encodeBase64(trustedSignerCertBytes));
-                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String)sigProps.get("cert"))));
+                        sigProps.setProperty(SignatureTestUtils.SIGNING_CERT_PROPS, HexUtils.encodeBase64(trustedSignerCertBytes));
+                        Assert.assertThat(signerCertB64, Matchers.not(Matchers.equalTo((String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS))));
                         // save the props
                         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                             sigProps.store(bos, "Signature");
@@ -355,22 +355,22 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                         // read the signature props (signature and signing cert)
                         final Properties sigProps = new Properties();
                         sigProps.load(new ByteArrayInputStream(sigBytes));
-                        final String signatureB64 = (String)sigProps.get("cert");
+                        final String signatureB64 = (String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signatureB64);
                         final byte[] signatureBytes = HexUtils.decodeBase64(signatureB64);
                         Assert.assertNotNull(signatureBytes);
-                        final String signerCertB64 = (String)sigProps.get("cert");
+                        final String signerCertB64 = (String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(signerCertB64);
                         final byte[] signerCertBytes = HexUtils.decodeBase64(signerCertB64);
                         Assert.assertNotNull(signerCertBytes);
 
                         // get the trusted zip signature properties raw-bytes
                         final Properties trustedSignatureProperties = SignatureTestUtils.getSignatureProperties(anotherTrustedSignedZipBytes);
-                        final String trustedSignatureB64 = (String)trustedSignatureProperties.get("cert");
+                        final String trustedSignatureB64 = (String)trustedSignatureProperties.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(trustedSignatureB64);
                         final byte[] trustedSignatureBytes = HexUtils.decodeBase64(trustedSignatureB64);
                         Assert.assertNotNull(trustedSignatureBytes);
-                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get("cert");
+                        final String trustedSignerCertB64 = (String)trustedSignatureProperties.get(SignatureTestUtils.SIGNING_CERT_PROPS);
                         Assert.assertNotNull(trustedSignerCertB64);
                         final byte[] trustedSignerCertBytes = HexUtils.decodeBase64(trustedSignerCertB64);
                         Assert.assertNotNull(trustedSignerCertBytes);
@@ -399,7 +399,7 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
             // verify signature using both digest and input stream
             SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(bytes), trustedSigProps);
             // randomly flip a data byte
-            final byte[] modBytes = flipRandomByte(Arrays.copyOf(bytes, bytes.length));
+            final byte[] modBytes = SignatureTestUtils.flipRandomByte(Arrays.copyOf(bytes, bytes.length));
             // verify signature using both digest and input stream
             try {
                 SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(modBytes), trustedSigProps);
@@ -440,7 +440,7 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
                 // this is expected
             }
             // randomly flip a byte
-            final byte[] modBytes = flipRandomByte(Arrays.copyOf(bytes, bytes.length));
+            final byte[] modBytes = SignatureTestUtils.flipRandomByte(Arrays.copyOf(bytes, bytes.length));
             // verify signature using both digest and input stream
             try {
                 SignatureTestUtils.verify(TRUSTED_VERIFIER, new ByteArrayInputStream(modBytes), untrustedSigProps);
@@ -484,12 +484,12 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
         try (final StringReader reader = new StringReader(untrustedSigProps)) {
             sigProps.load(reader);
         }
-        final String untrustedSignerB64 = (String)sigProps.get("cert");
+        final String untrustedSignerB64 = (String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS);
         // store trusted signer cert
-        final String trustedSignerB64 = readB64Property(trustedSigProps, "cert");
+        final String trustedSignerB64 = readB64Property(trustedSigProps, SignatureTestUtils.SIGNING_CERT_PROPS);
         Assert.assertThat(untrustedSignerB64, Matchers.not(Matchers.equalTo(trustedSignerB64)));
-        sigProps.setProperty("cert", trustedSignerB64);
-        Assert.assertThat(untrustedSignerB64, Matchers.not(Matchers.equalTo((String)sigProps.get("cert"))));
+        sigProps.setProperty(SignatureTestUtils.SIGNING_CERT_PROPS, trustedSignerB64);
+        Assert.assertThat(untrustedSignerB64, Matchers.not(Matchers.equalTo((String)sigProps.get(SignatureTestUtils.SIGNING_CERT_PROPS))));
         // save the props
         try (final StringWriter writer = new StringWriter()) {
             sigProps.store(writer, "Signature");
@@ -515,7 +515,7 @@ public class TrustedSignerCertsManagerTest extends SignatureTestUtils {
     @Test
     public void testGenerateTrustStoreAndTeamCerts() throws Exception {
         final Triple<File, File, Map<String, File>> trustedStoreTriple =
-                generateTrustedKeyStore(
+                SignatureTestUtils.generateTrustedKeyStore(
                         "CN=signer.mag.apim.ca.com",
                         "CN=signer.matterhorn.apim.ca.com",
                         "CN=signer.portal.apim.ca.com",

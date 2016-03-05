@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.security.signer.SignerUtilsTest;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.test.util.TestUtils;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
@@ -27,13 +26,11 @@ import java.util.zip.ZipOutputStream;
  */
 @SuppressWarnings("UnusedDeclaration")
 @Ignore
-public class SignatureTestUtils {
-    /**
-     * IMPORTANT: Revisit this code if renaming fields {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNED_DATA_ZIP_ENTRY}
-     * and {@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNATURE_PROPS_ZIP_ENTRY}.
-     */
-    public static final String SIGNED_DATA_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNED_DATA_ZIP_ENTRY", String.class);
-    public static final String SIGNATURE_PROPS_ZIP_ENTRY = TestUtils.getFieldValue(SignerUtils.class, "SIGNATURE_PROPS_ZIP_ENTRY", String.class);
+public final class SignatureTestUtils {
+    public static final String SIGNED_DATA_ZIP_ENTRY = SignerUtilsTest.SIGNED_DATA_ZIP_ENTRY;
+    public static final String SIGNATURE_PROPS_ZIP_ENTRY = SignerUtilsTest.SIGNATURE_PROPS_ZIP_ENTRY;
+    public static final String SIGNING_CERT_PROPS = SignerUtilsTest.SIGNING_CERT_PROPS;
+    public static final String SIGNATURE_PROP = SignerUtilsTest.SIGNATURE_PROP;
 
     private static final String KEYSTORES_TMP_DIR = "l7tech-keyStores-Tmp";
     private static final String TRUST_STORE_TYPE = "jks";
@@ -114,8 +111,7 @@ public class SignatureTestUtils {
         tmpFiles.clear();
     }
 
-
-    public static void cleanUpTemporaryFilesFromPreviousRuns(final String ... tmpFolderPrefixes) {
+    private static void cleanUpTemporaryFilesFromPreviousRuns(final String ... tmpFolderPrefixes) {
         //noinspection SpellCheckingInspection
         final String tmpDirPath = SyspropUtil.getProperty("java.io.tmpdir");
         final File tmpFolder = new File(tmpDirPath);
@@ -521,7 +517,6 @@ public class SignatureTestUtils {
             return outputZip.toByteArray();
         }
     }
-
 
     /**
      * As the name says it'll flip a byte, of the specified byte array, at the specified position.

@@ -275,7 +275,7 @@ public class ServerModuleFilePayloadTest {
                     )
                     .put(
                             ModuleType.Modular_Working,
-                            ModuleInfo.builder(loadResource("com/l7tech/server/policy/module/modular/com.l7tech.DuplicateClassDifferentPackageTest1.aar"))
+                            ModuleInfo.builder(loadResource("com/l7tech/server/policy/module/modular/com.l7tech.WorkingTest1.aar"))
                                     .addAssertion("ModularTest1Assertion")
                                     .moduleType(com.l7tech.gateway.common.module.ModuleType.MODULAR_ASSERTION)
                                     .build()

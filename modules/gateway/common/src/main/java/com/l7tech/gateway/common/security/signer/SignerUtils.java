@@ -299,7 +299,6 @@ public class SignerUtils {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // VERIFYING
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @SuppressWarnings("UnusedDeclaration")
     public static final class SignedZip {
         /**
          * Trusted issuer certificates.  Read-only collection.
@@ -746,7 +745,6 @@ public class SignerUtils {
      * @param signerCert           a signer cert that may or may not be trusted.  Required and cannot be {@code null}.
      * @throws Exception if the signer cert should not be trusted or if an error occurs
      */
-    @SuppressWarnings("UnusedDeclaration")
     public static void verifySignerCertIsTrusted(
             @NotNull final File trustStoreFile,
             @NotNull final String trustStoreType,

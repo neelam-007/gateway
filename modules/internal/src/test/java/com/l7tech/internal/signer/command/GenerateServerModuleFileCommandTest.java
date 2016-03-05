@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.ServerModuleFileMO;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
+import com.l7tech.test.util.TestUtils;
 import com.l7tech.util.SyspropUtil;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -117,10 +118,14 @@ public class GenerateServerModuleFileCommandTest {
 
 
     /**
-     * TODO: Important make sure these values are matching both {@link SignerUtils#SIGNING_CERT_PROPS} and {@link SignerUtils#SIGNATURE_PROP}
+     * IMPORTANT: Revisit this code if renaming fields:
+     * <ul>
+     *     <li>{@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNING_CERT_PROPS}</li>
+     *     <li>{@link com.l7tech.gateway.common.security.signer.SignerUtils#SIGNATURE_PROP}</li>
+     * </ul>
      */
-    private static final String SIGNING_CERT_PROPS = "cert";
-    private static final String SIGNATURE_PROP = "signature";
+    private static final String SIGNING_CERT_PROPS = TestUtils.getFieldValue(SignerUtils.class, "SIGNING_CERT_PROPS", String.class);
+    private static final String SIGNATURE_PROP = TestUtils.getFieldValue(SignerUtils.class, "SIGNATURE_PROP", String.class);
 
     @Test
     public void testGatherSignatureProperties() throws Exception {
