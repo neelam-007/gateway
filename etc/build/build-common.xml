@@ -675,7 +675,27 @@
             <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>
-
+	
+	<!--
+	-->
+    <target name="enable-snapshot" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of integration (snapshot) repo.</echo>
+        <property name="publish.jar.target" value="artifactory-snapshot"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
+		<property name="publish.generic.target" value="${artifactory.generic.snapshot}"/>
+		<property name="publish.status" value="integration"/>
+    </target>
+	
+	<!--
+	-->
+    <target name="enable-release" description="Enable publish of jars and rpms to Artifactory">
+        <echo level="info">Enabling Artifactory publishing of release repo.</echo>
+        <property name="publish.jar.target" value="artifactory-release"/>
+		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
+		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
+		<property name="publish.status" value="release"/>
+    </target>
+	
     <!--
 		Run package, then publish locally, then try to publish to artifactory
     -->
