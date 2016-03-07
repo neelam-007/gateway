@@ -11,6 +11,7 @@ import com.l7tech.security.xml.processor.EmbeddedSamlSignatureToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.xmlsec.ServerRequireSaml;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
@@ -53,7 +54,9 @@ public class ServerValidateNonSoapSamlTokenAssertion extends ServerRequireSaml<V
             samlElement = message.getXmlKnob().getDocumentReadOnly().getDocumentElement();
             samlAssertion = SamlAssertion.newInstance(samlElement, securityTokenResolver);
         } catch (SAXException e) {
-            throw new IOException(e);
+            logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED,
+                    new String[] {"Unable to parse SAML token" + e.getMessage()}, e);
+            throw new AssertionStatusException(AssertionStatus.BAD_REQUEST, "Unable to parse SAML token", e);
         }
 
         final ProcessorResult procesorResult;
