@@ -73,6 +73,8 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
         }
         dreq.setIncludeTimestamp(assertion.isAddTimestamp());
         dreq.setSignTimestamp(assertion.isSignTimestamp());
+        dreq.setNeverSignTimestamp(assertion.isNeverSignTimestamp());
+        dreq.setOmitTimestamp(assertion.isOmitTimestamp());
         dreq.setProtectTokens(assertion.isProtectTokens());
         dreq.setEncryptSignature(assertion.isEncryptSignature());
 

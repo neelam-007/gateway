@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.security.xml.TimestampEnum;
+import com.l7tech.security.xml.TimestampSignatureEnum;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +20,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * An assertion that can modify the pending decoration requirements for a message before it is decorated.
  */
-@RequiresSOAP(wss=true)
+@RequiresSOAP(wss = true)
 public class WssConfigurationAssertion extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
     private static final String META_INITIALIZED = WssConfigurationAssertion.class.getName() + ".metadataInitialized";
     private WsSecurityVersion wssVersion;
@@ -27,6 +29,10 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private String secureConversationNamespace;
     private boolean addTimestamp = true;
     private boolean signTimestamp = true;
+    private boolean omitTimestamp = false;
+    private boolean neverSignTimestamp = false;
+    private String timestampValue;
+    private String signTimestampValue;
     private boolean protectTokens = true;
     private boolean encryptSignature = false;
     private boolean signWsAddressingHeaders;
@@ -53,9 +59,9 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
         meta.put(SHORT_NAME, "Configure WS-Security Decoration");
         meta.put(DESCRIPTION, "Configure WS-Security decoration requirements");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WssConfigurationAssertionPropertiesDialog");
-        meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-            new Java5EnumTypeMapping(WsSecurityVersion.class, "wssVersion")
+                new Java5EnumTypeMapping(WsSecurityVersion.class, "wssVersion")
         )));
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssConfigurationAssertionValidator");
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -202,7 +208,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
         return secureConversationNamespace;
     }
 
-    public void setSecureConversationNamespace( final String secureConversationNamespace ) {
+    public void setSecureConversationNamespace(final String secureConversationNamespace) {
         this.secureConversationNamespace = secureConversationNamespace;
     }
 
@@ -220,6 +226,53 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
 
     public void setSignTimestamp(boolean signTimestamp) {
         this.signTimestamp = signTimestamp;
+    }
+
+    public boolean isOmitTimestamp() {
+        return omitTimestamp;
+    }
+
+    public void setOmitTimestamp(boolean omitTimestamp) {
+        this.omitTimestamp = omitTimestamp;
+    }
+
+    public String getTimestampValue() {
+        return timestampValue;
+    }
+
+    public void setTimestampValue(String timestampValue) {
+        if (timestampValue != null && timestampValue.equals(TimestampEnum.ADD.name())) {
+            setAddTimestamp(true);
+            setOmitTimestamp(false);
+        } else if (timestampValue != null && timestampValue.equals(TimestampEnum.OMIT.name())) {
+            setAddTimestamp(false);
+            setOmitTimestamp(true);
+        }
+        this.timestampValue = timestampValue;
+    }
+
+    public boolean isNeverSignTimestamp() {
+        return neverSignTimestamp;
+    }
+
+    public void setNeverSignTimestamp(boolean neverSignTimestamp) {
+        this.neverSignTimestamp = neverSignTimestamp;
+    }
+
+    public String getSignTimestampValue() {
+        return signTimestampValue;
+    }
+
+    public void setSignTimestampValue(String signTimestampValue) {
+        if (signTimestampValue != null && signTimestampValue.equals(TimestampSignatureEnum.ADD.name())) {
+            setSignTimestamp(true);
+            setNeverSignTimestamp(false);
+        } else if (signTimestampValue != null && signTimestampValue.equals(TimestampSignatureEnum.OMIT.name())) {
+            setSignTimestamp(false);
+            setNeverSignTimestamp(true);
+        }
+
+        this.signTimestampValue = signTimestampValue;
     }
 
     public boolean isSignWsAddressingHeaders() {

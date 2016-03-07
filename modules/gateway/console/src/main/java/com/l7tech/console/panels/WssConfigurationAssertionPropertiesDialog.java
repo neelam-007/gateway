@@ -2,10 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
-import com.l7tech.security.xml.KeyReference;
-import com.l7tech.security.xml.SupportedDigestMethods;
-import com.l7tech.security.xml.WsSecurityVersion;
-import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.*;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.SoapConstants;
 
@@ -29,11 +26,11 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JComboBox secureConversationNsComboBox;
     private JLabel secureConversationNsLabel;
     private JCheckBox useDerivedKeysCheckBox;
-    private JCheckBox signTimestampCheckBox;
     private JCheckBox signSecurityTokensCheckBox;
     private JCheckBox encryptSignatureCheckBox;
-    private JCheckBox addTimestampCheckBox;
     private JCheckBox signWSAddressingHeadersCheckBox;
+    private JComboBox timestampSignatureCombo;
+    private JComboBox timestampCombo;
 
     private static final String UNCHANGED = "<Unchanged>";
 
@@ -56,8 +53,10 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         setSelectedItemOrUnchangedIfNull(keyEncryptionAlgCombo, assertion.getKeyWrappingAlgorithmUri());
         useDerivedKeysCheckBox.setSelected(assertion.isUseDerivedKeys());
         setSelectedItemOrUnchangedIfNull(secureConversationNsComboBox, assertion.getSecureConversationNamespace());
-        addTimestampCheckBox.setSelected(assertion.isAddTimestamp());
-        signTimestampCheckBox.setSelected(assertion.isSignTimestamp());
+        final String timestampString =  assertion.getTimestampValue();
+        setSelectedItemOrUnchangedIfNull(timestampCombo, timestampString == null ? null : TimestampEnum.valueOf(timestampString));
+        final String timestampSingatureString =  assertion.getSignTimestampValue();
+        setSelectedItemOrUnchangedIfNull(timestampSignatureCombo, timestampSingatureString == null ? null : TimestampSignatureEnum.valueOf(timestampSingatureString));
         signSecurityTokensCheckBox.setSelected(assertion.isProtectTokens());
         encryptSignatureCheckBox.setSelected(assertion.isEncryptSignature());
         signWSAddressingHeadersCheckBox.setSelected(assertion.isSignWsAddressingHeaders());
@@ -77,8 +76,10 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         assertion.setKeyWrappingAlgorithmUri((String) getSelectedItemOrNullIfUnchanged(keyEncryptionAlgCombo));
         assertion.setUseDerivedKeys(useDerivedKeysCheckBox.isSelected());
         assertion.setSecureConversationNamespace((String)getSelectedItemOrNullIfUnchanged(secureConversationNsComboBox));
-        assertion.setAddTimestamp(addTimestampCheckBox.isSelected());
-        assertion.setSignTimestamp(signTimestampCheckBox.isSelected());
+        TimestampEnum timestampEnum = (TimestampEnum)getSelectedItemOrNullIfUnchanged(timestampCombo);
+        assertion.setTimestampValue( timestampEnum == null ? null : timestampEnum.name());
+        TimestampSignatureEnum timestampSignatureEnum = (TimestampSignatureEnum)getSelectedItemOrNullIfUnchanged(timestampSignatureCombo);
+        assertion.setSignTimestampValue(timestampSignatureEnum == null ? null : timestampSignatureEnum.name());
         assertion.setProtectTokens(signSecurityTokensCheckBox.isSelected());
         assertion.setEncryptSignature(encryptSignatureCheckBox.isSelected());
         assertion.setSignWsAddressingHeaders(signWSAddressingHeadersCheckBox.isSelected());
@@ -88,6 +89,8 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     @Override
     protected JPanel createPropertyPanel() {
         wssVersionCombo.setModel(new DefaultComboBoxModel(prependUnchanged(WsSecurityVersion.values())));
+        timestampCombo.setModel(new DefaultComboBoxModel(prependUnchanged(TimestampEnum.values())));
+        timestampSignatureCombo.setModel(new DefaultComboBoxModel(prependUnchanged(TimestampSignatureEnum.values())));
         signatureDigestCombo.setModel(new DefaultComboBoxModel(prependUnchanged(SupportedDigestMethods.getDigestNames())));
         signatureReferenceDigestCombo.setModel(new DefaultComboBoxModel(prependUnchanged(SupportedDigestMethods.getDigestNames())));
         Set<KeyReference> sigTypes = new HashSet<KeyReference>(KeyReference.getAllTypes());

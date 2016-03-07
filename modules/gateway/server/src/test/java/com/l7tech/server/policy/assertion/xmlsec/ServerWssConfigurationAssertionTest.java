@@ -108,6 +108,134 @@ public class ServerWssConfigurationAssertionTest {
         assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
     }
 
+    @Test
+    public void testAutoTimestampValue() throws Exception {
+        WssConfigurationAssertion ass = new WssConfigurationAssertion();
+        ass.setSignTimestampValue(TimestampSignatureEnum.AUTO.name());
+        ass.setTimestampValue(TimestampEnum.AUTO.name());
+        ass.setProtectTokens(false);
+        ass.setUseDerivedKeys(true);
+        ass.setSecureConversationNamespace( SoapConstants.WSSC_NAMESPACE3 );
+        ass.setDigestAlgorithmName("you dig it");
+        ass.setReferenceDigestAlgorithmName("you ref dig it");
+        ass.setEncryptionAlgorithmUri("you enc it");
+        ass.setKeyWrappingAlgorithmUri("you enc keys");
+        ass.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+        ass.setEncryptionKeyReference(KeyReference.SKI.getName());
+        ass.setWssVersion(WsSecurityVersion.WSS11);
+
+        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory);
+        final PolicyEnforcementContext context = context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        DecorationRequirements dreq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
+        assertTrue("Timestamp included", dreq.isIncludeTimestamp());
+        assertTrue("Timestamp signed", dreq.isSignTimestamp());
+        assertFalse("Timestamp omitted", dreq.isOmitTimestamp());
+        assertFalse("Timestamp signed", dreq.isNeverSignTimestamp());
+        assertFalse("Tokens protected", dreq.isProtectTokens());
+        assertTrue("Using derived keys", dreq.isUseDerivedKeys());
+        assertEquals("WS-SecureConversation Namespace", SoapConstants.WSSC_NAMESPACE3, dreq.getNamespaceFactory().getWsscNs());
+        assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
+        assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
+        assertEquals("Message signature message digest", dreq.getSignatureMessageDigest(), "you dig it");
+        assertEquals("Message signature reference message digest", dreq.getSignatureReferenceMessageDigest(), "you ref dig it");
+        assertEquals("Message encryption algorithm", dreq.getEncryptionAlgorithm(), "you enc it");
+        assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
+        assertNull("Kerberos ticket", dreq.getKerberosTicket());
+        assertNull("Kerberos ticket id", dreq.getKerberosTicketId());
+        assertNull("Encrypted key", dreq.getEncryptedKey());
+        assertNull("Encrypted key reference info", dreq.getEncryptedKeyReferenceInfo());
+        assertTrue("Empty encrypted elements", dreq.getElementsToEncrypt().isEmpty());
+        assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
+    }
+
+    @Test
+    public void testAddTimestampValue() throws Exception {
+        WssConfigurationAssertion ass = new WssConfigurationAssertion();
+        ass.setSignTimestampValue(TimestampSignatureEnum.ADD.name());
+        ass.setTimestampValue(TimestampEnum.ADD.name());
+        ass.setProtectTokens(false);
+        ass.setUseDerivedKeys(true);
+        ass.setSecureConversationNamespace( SoapConstants.WSSC_NAMESPACE3 );
+        ass.setDigestAlgorithmName("you dig it");
+        ass.setReferenceDigestAlgorithmName("you ref dig it");
+        ass.setEncryptionAlgorithmUri("you enc it");
+        ass.setKeyWrappingAlgorithmUri("you enc keys");
+        ass.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+        ass.setEncryptionKeyReference(KeyReference.SKI.getName());
+        ass.setWssVersion(WsSecurityVersion.WSS11);
+
+        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory);
+        final PolicyEnforcementContext context = context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        DecorationRequirements dreq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
+        assertTrue("Timestamp included", dreq.isIncludeTimestamp());
+        assertTrue("Timestamp signed", dreq.isSignTimestamp());
+        assertFalse("Timestamp omitted", dreq.isOmitTimestamp());
+        assertFalse("Timestamp signed", dreq.isNeverSignTimestamp());
+        assertFalse("Tokens protected", dreq.isProtectTokens());
+        assertTrue("Using derived keys", dreq.isUseDerivedKeys());
+        assertEquals("WS-SecureConversation Namespace", SoapConstants.WSSC_NAMESPACE3, dreq.getNamespaceFactory().getWsscNs());
+        assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
+        assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
+        assertEquals("Message signature message digest", dreq.getSignatureMessageDigest(), "you dig it");
+        assertEquals("Message signature reference message digest", dreq.getSignatureReferenceMessageDigest(), "you ref dig it");
+        assertEquals("Message encryption algorithm", dreq.getEncryptionAlgorithm(), "you enc it");
+        assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
+        assertNull("Kerberos ticket", dreq.getKerberosTicket());
+        assertNull("Kerberos ticket id", dreq.getKerberosTicketId());
+        assertNull("Encrypted key", dreq.getEncryptedKey());
+        assertNull("Encrypted key reference info", dreq.getEncryptedKeyReferenceInfo());
+        assertTrue("Empty encrypted elements", dreq.getElementsToEncrypt().isEmpty());
+        assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
+    }
+
+    @Test
+    public void testOmitTimestampValue() throws Exception {
+        WssConfigurationAssertion ass = new WssConfigurationAssertion();
+        ass.setSignTimestampValue(TimestampSignatureEnum.OMIT.name());
+        ass.setTimestampValue(TimestampEnum.OMIT.name());
+        ass.setProtectTokens(false);
+        ass.setUseDerivedKeys(true);
+        ass.setSecureConversationNamespace( SoapConstants.WSSC_NAMESPACE3 );
+        ass.setDigestAlgorithmName("you dig it");
+        ass.setReferenceDigestAlgorithmName("you ref dig it");
+        ass.setEncryptionAlgorithmUri("you enc it");
+        ass.setKeyWrappingAlgorithmUri("you enc keys");
+        ass.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+        ass.setEncryptionKeyReference(KeyReference.SKI.getName());
+        ass.setWssVersion(WsSecurityVersion.WSS11);
+
+        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory);
+        final PolicyEnforcementContext context = context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        DecorationRequirements dreq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
+        assertFalse("Timestamp included", dreq.isIncludeTimestamp());
+        assertFalse("Timestamp signed", dreq.isSignTimestamp());
+        assertTrue("Timestamp omitted", dreq.isOmitTimestamp());
+        assertTrue("Timestamp signed", dreq.isNeverSignTimestamp());
+        assertFalse("Tokens protected", dreq.isProtectTokens());
+        assertTrue("Using derived keys", dreq.isUseDerivedKeys());
+        assertEquals("WS-SecureConversation Namespace", SoapConstants.WSSC_NAMESPACE3, dreq.getNamespaceFactory().getWsscNs());
+        assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
+        assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
+        assertEquals("Message signature message digest", dreq.getSignatureMessageDigest(), "you dig it");
+        assertEquals("Message signature reference message digest", dreq.getSignatureReferenceMessageDigest(), "you ref dig it");
+        assertEquals("Message encryption algorithm", dreq.getEncryptionAlgorithm(), "you enc it");
+        assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
+        assertNull("Kerberos ticket", dreq.getKerberosTicket());
+        assertNull("Kerberos ticket id", dreq.getKerberosTicketId());
+        assertNull("Encrypted key", dreq.getEncryptedKey());
+        assertNull("Encrypted key reference info", dreq.getEncryptedKeyReferenceInfo());
+        assertTrue("Empty encrypted elements", dreq.getElementsToEncrypt().isEmpty());
+        assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
+    }
 
     private static PolicyEnforcementContext context(Document doc) {
         final Message request = new Message(doc);

@@ -3,10 +3,7 @@ package com.l7tech.security.xml.decorator;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.UsernameToken;
-import com.l7tech.security.xml.ElementEncryptionConfig;
-import com.l7tech.security.xml.KeyInfoDetails;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.WsSecurityVersion;
+import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.NamespaceFactory;
@@ -119,6 +116,37 @@ public class DecorationRequirements {
      */
     public boolean isIncludeTimestamp() {
         return includeTimestamp;
+    }
+
+    /**
+     * @see #setOmitTimestamp
+     * @return true if a timestamp will be omitted; false if a timestamp won't be omitted
+     */
+    public boolean isOmitTimestamp() {
+        return omitTimestamp;
+    }
+
+    /**
+     * If this is true, we'll always omit the timestamp in the decorated message.
+     * It won't be signed unless signTimestamp is set.
+     */
+    public void setOmitTimestamp(boolean omitTimestamp) {
+        this.omitTimestamp = omitTimestamp;
+    }
+
+    /**
+     * @see #setNeverSignTimestamp
+     * @return true if a signed timestamp will not be added.
+     */
+    public boolean isNeverSignTimestamp() {
+        return neverSignTimestamp;
+    }
+
+    /**
+     * If this is true, a signed timestamp will not be added. A signed timestamp will only be added if this is false.
+     */
+    public void setNeverSignTimestamp(boolean neverSignTimestamp) {
+        this.neverSignTimestamp = neverSignTimestamp;
     }
 
     /**
@@ -903,11 +931,13 @@ public class DecorationRequirements {
     private boolean omitSecurityContextToken = false;
     private boolean includeTimestamp = true;
     private boolean signTimestamp;
-    private Map<Element, ElementEncryptionConfig> elementsToEncrypt = new LinkedHashMap<Element, ElementEncryptionConfig>();
+    private boolean omitTimestamp;
+    private boolean neverSignTimestamp;
+    private Map<Element, ElementEncryptionConfig> elementsToEncrypt = new LinkedHashMap<>();
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     private String keyEncryptionAlgorithm = null;
-    private Set<Element> elementsToSign = new LinkedHashSet<Element>();
-    private Set<String> partsToSign = new LinkedHashSet<String>();
+    private Set<Element> elementsToSign = new LinkedHashSet<>();
+    private Set<String> partsToSign = new LinkedHashSet<>();
     private boolean signPartHeaders = false;
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
@@ -922,7 +952,7 @@ public class DecorationRequirements {
     private KeyInfoInclusionType encryptionKeyInfoInclusionType = KeyInfoInclusionType.STR_SKI;
     private byte[] encryptedKey = null;
     private KeyInfoDetails encryptedKeyReferenceInfo = null;
-    private Set<String> signatureConfirmations = new HashSet<String>();
+    private Set<String> signatureConfirmations = new HashSet<>();
     private KerberosServiceTicket kerberosTicket = null;
     private boolean includeKerberosTicket = false;
     private String kerberosTicketId = null;

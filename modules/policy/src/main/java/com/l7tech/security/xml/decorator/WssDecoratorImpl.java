@@ -76,16 +76,16 @@ public class WssDecoratorImpl implements WssDecorator {
         private final Message message;
         private final DecorationRequirements dreq;
         private long count = 0L;
-        private Map<String, Element> idToElementCache = new HashMap<String, Element>();
+        private Map<String, Element> idToElementCache = new HashMap<>();
         private NamespaceFactory nsf = new NamespaceFactory();
         private byte[] lastEncryptedKeyBytes = null;
         private SecretKey lastEncryptedKeySecretKey = null;
         private DecorationRequirements.SecureConversationSession lastWsscSecurityContext = null;
         private AttachmentEntityResolver attachmentResolver;
-        private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
-        private Set<String> encryptedSignatures = new HashSet<String>();
+        private Map<String,Boolean> signatures = new HashMap<>();
+        private Set<String> encryptedSignatures = new HashSet<>();
         private IdAttributeConfig idAttributeConfig = SoapConstants.NOSAML_ID_ATTRIBUTE_CONFIG;
-        public Map<Element,Element> wholeElementPlaintextToEncryptedMap = new HashMap<Element, Element>();
+        public Map<Element,Element> wholeElementPlaintextToEncryptedMap = new HashMap<>();
 
         private Context( final Message message,
                          final DecorationRequirements dreq ) {
@@ -139,7 +139,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Boolean includeNanoSeconds = dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.DEFAULT ?
                 null :
                 dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.NANOSECONDS;
-        if (dreq.isIncludeTimestamp() && timestamp==null) {
+        if (!dreq.isOmitTimestamp() && dreq.isIncludeTimestamp() && timestamp==null) {
             Date createdDate = dreq.getTimestampCreatedDate();
             // Have to add some uniqueness to this timestamp
             timestamp = SoapUtil.addTimestamp(securityHeader, 
@@ -151,7 +151,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // If we aren't signing the entire message, find extra elements to sign
-        if (dreq.isSignTimestamp() || !signList.isEmpty() || !signPartList.isEmpty()) {
+        if (!dreq.isOmitTimestamp() && ( dreq.isSignTimestamp() || !signList.isEmpty() || !signPartList.isEmpty()) ) {
             if (timestamp == null)
                 timestamp = SoapUtil.addTimestamp(securityHeader,
                     c.nsf.getWsuNs(),
@@ -159,7 +159,8 @@ public class WssDecoratorImpl implements WssDecorator {
                     dreq.getTimestampResolution() != DecorationRequirements.TimestampResolution.SECONDS,
                     getExtraTime( includeNanoSeconds ),
                     timeoutMillis);
-            signList.add(timestamp);
+            if (!dreq.isNeverSignTimestamp())
+                signList.add(timestamp);
         }
 
         Element xencDesiredNextSibling = null;
@@ -426,7 +427,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     Element x509Bst = addX509BinarySecurityToken(securityHeader, null, c.dreq.getSenderMessageSigningCertificate(), c);
                     String bstId = getOrCreateWsuId(c, x509Bst, null);
                     final KeyInfoDetails keyinfo = KeyInfoDetails.makeUriReference(bstId, SoapUtil.VALUETYPE_X509);
-                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
+                    senderCertKeyInfo = new Pair<>(senderMessageSigningCert, keyinfo);
                     if (c.dreq.isProtectTokens())
                         signList.add(x509Bst);
                     break; }
@@ -439,22 +440,22 @@ public class WssDecoratorImpl implements WssDecorator {
                         throw new DecoratorException("suppressBst is requested, but the sender cert has no SubjectKeyIdentifier");
                     }
                     KeyInfoDetails keyinfo = KeyInfoDetails.makeKeyId(senderSki, SoapUtil.VALUETYPE_SKI);
-                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
+                    senderCertKeyInfo = new Pair<>(senderMessageSigningCert, keyinfo);
                     break; }
                 case STR_KEYID_LITERAL_X509: {
                     senderCertKeyInfo = new Pair<>( senderMessageSigningCert, KeyInfoDetails.makeStrKeyIdLiteralX509( senderMessageSigningCert ) );
                     break; }
                 case ISSUER_SERIAL: {
-                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
+                    senderCertKeyInfo = new Pair<>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
                     break; }
                 case STR_THUMBPRINT: {
-                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeThumbprintSha1(senderMessageSigningCert));
+                    senderCertKeyInfo = new Pair<>(senderMessageSigningCert, KeyInfoDetails.makeThumbprintSha1(senderMessageSigningCert));
                     break; }
                 default:
                     throw new DecoratorException("Unsupported KeyInfoInclusionType: " + c.dreq.getKeyInfoInclusionType());
             }
         } else {
-            senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(null, null);
+            senderCertKeyInfo = new Pair<>(null, null);
         }
 
         return senderCertKeyInfo;
@@ -1285,7 +1286,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);
         template.setPrefix(DS_PREFIX);
-        final Map<Node,Node> strTransformsNodeToNode = new HashMap<Node, Node>();
+        final Map<Node,Node> strTransformsNodeToNode = new HashMap<>();
         for (int i = 0; i < numToSign; i++) {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
