@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.module;
 import com.l7tech.gateway.common.security.signer.InnerPayloadFactory;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -17,17 +18,17 @@ public class ServerModuleFilePayloadFactory implements InnerPayloadFactory<Serve
     private final CustomAssertionsScannerHelper customAssertionsScannerHelper;
     @NotNull
     private final ModularAssertionsScannerHelper modularAssertionsScannerHelper;
-    @NotNull
+    @Nullable
     private final String fileName;
 
     public ServerModuleFilePayloadFactory(
             @NotNull final CustomAssertionsScannerHelper customAssertionsScannerHelper,
             @NotNull final ModularAssertionsScannerHelper modularAssertionsScannerHelper,
-            @NotNull final String fileName
+            @Nullable final String fileName
     ) {
-        this.fileName = fileName;
         this.customAssertionsScannerHelper = customAssertionsScannerHelper;
         this.modularAssertionsScannerHelper = modularAssertionsScannerHelper;
+        this.fileName = fileName;
     }
 
     @NotNull

@@ -549,4 +549,22 @@ public final class SignatureTestUtils {
         }
         return bytes;
     }
+
+    /**
+     * Creates a new zip with content provided by zipContentCallback.
+     *
+     * @param zipContentCallback    a callback for writing into the zip stream
+     * @return the new zip {@code bytes}
+     */
+    public static byte[] createSampleZipContent(final Functions.UnaryVoidThrows<ZipOutputStream, Exception> zipContentCallback) throws Exception {
+        Assert.assertNotNull(zipContentCallback);
+        // create a new zip file
+        final ByteArrayOutputStream outputZip = new ByteArrayOutputStream();
+        try (final ZipOutputStream zos = new ZipOutputStream(outputZip)) {
+            zipContentCallback.call(zos);
+            zos.flush();
+        }
+        // finally return the bytes
+        return outputZip.toByteArray();
+    }
 }

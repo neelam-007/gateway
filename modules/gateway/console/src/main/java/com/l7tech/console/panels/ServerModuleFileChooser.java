@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.module.ServerModuleFileWithSignedBytes;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.module.*;
 import com.l7tech.gateway.common.security.signer.SignerUtils;
@@ -156,7 +157,7 @@ public class ServerModuleFileChooser {
                         )
                 )
         ) {
-            return payload.create();
+            return new ServerModuleFileWithSignedBytes(payload.create(), file);
         } catch (final SignatureException e) {
             throw new IOException(MessageFormat.format(resources.getString("error.signature.verification"), ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
         }

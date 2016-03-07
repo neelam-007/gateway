@@ -358,8 +358,13 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     @NotNull
     @Override
-    public Goid saveServerModuleFile( @NotNull ServerModuleFile moduleFile ) throws FindException, SaveException, UpdateException {
+    public Goid saveServerModuleFile(@NotNull byte[] signedDataBytes, @NotNull String entityName, @Nullable String fileName) throws SaveException {
         throw new SaveException( "not supported by stub" );
+    }
+
+    @Override
+    public void updateServerModuleFileName(@NotNull Goid goid, @NotNull String newName) throws FindException, UpdateException {
+        throw new UpdateException( "not supported by stub" );
     }
 
     @Override

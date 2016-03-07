@@ -672,28 +672,37 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     ServerModuleFile findServerModuleFileById(@NotNull Goid moduleGoid, boolean includeDataBytes) throws FindException;
 
     /**
-     * Save a new or updated ServerModuleFile, uploading new databytes if the databytes field is non-null.
+     * Save a new {@code ServerModuleFile} by uploading its {@code signedDataBytes}.<br/>
+     * Module signature and issuer will be verified before the {@code ServerModuleFile} entity is created
+     * and saved into the database.
      * <p/>
-     * If this method succeeds, the new or updated ServerModuleFile has been written to the database.
+     * If this method succeeds, the new ServerModuleFile has been written to the database.
      * The module will soon be installed and activated on cluster nodes that have module installation enabled,
      * provided the module file is valid, compatible with the Gateway version, enabled by the Gateway license,
      * and (for an update to an existing CUSTOM_ASSERTION module) the node has dynamic updates of custom assertions enabled
      * and the custom assertion enables this capability.
      * <p/>
-     * If this is a new ServerModuleFile, a non-null databytes field must be included.
-     * For an update to an existing ServerModuleFile, the databytes field may be omitted, in which case
-     * the existing databytes value will be kept.
-     *
-     * @param moduleFile module file, optionally including its databytes.  Required.
-     * @return the ID of the saved or updated module.  Never null.
-     * @throws FindException if there is a problem reading from the database
+     * @param signedDataBytes        module raw data bytes.  Required and cannot be {@code null}.
+     * @param entityName             the name of the ServerModuleFile.  Required and cannot be {@code null}.
+     * @param fileName               the name of the signed zip file (for displaying purpose).  Optional though recommended.
+     * @return the ID of the saved module.  Never {@code null}.
      * @throws SaveException if a new entity cannot be saved
-     * @throws UpdateException if an existing entity cannot be updated
      */
     @NotNull
-    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = SAVE_OR_UPDATE )
-    Goid saveServerModuleFile( @NotNull ServerModuleFile moduleFile ) throws FindException, SaveException, UpdateException;
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = SAVE )
+    Goid saveServerModuleFile(@NotNull byte[] signedDataBytes, @NotNull String entityName, @Nullable String fileName) throws SaveException;
 
+    /**
+     * Update a ServerModuleFile with a given new name, if the ServerModuleFile exists.
+     *
+     * @param goid the GOID of the updated ServerModuleFile.  Required and cannot be {@code null}.
+     * @param newName the new name of the ServerModuleFile.  Required and cannot be {@code null}.
+     *
+     * @throws FindException if there is a problem reading from the database
+     * @throws UpdateException if an existing entity cannot be updated
+     */
+    @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = UPDATE )
+    void updateServerModuleFileName(@NotNull Goid goid, @NotNull String newName) throws FindException, UpdateException;
     /**
      * Delete a ServerModuleFile.
      * <p/>

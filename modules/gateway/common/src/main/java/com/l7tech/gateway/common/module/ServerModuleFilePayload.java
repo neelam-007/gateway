@@ -20,6 +20,8 @@ import java.util.jar.JarInputStream;
 
 /**
  * {@link ServerModuleFile} payload.
+ * <p/>
+ * Important: Caller must call {@link #close()} method, to return buffers properly to the {@link com.l7tech.util.BufferPool BufferPool}.
  */
 public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload {
     /**
@@ -35,11 +37,22 @@ public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload 
     private final CustomAssertionsScannerHelper customAssertionsScannerHelper;
     @NotNull
     private final ModularAssertionsScannerHelper modularAssertionsScannerHelper;
-    @NotNull
+    @Nullable
     private final String fileName;
 
     /**
+     * Creates {@code ServerModuleFilePayload} using buffers from {@link com.l7tech.util.BufferPool BufferPool}
+     * (i.e {@link PoolByteArrayOutputStream}), typically used with signed zip.<br/>
+     * {@link #close()} method returns both data and signature buffers to the {@link com.l7tech.util.BufferPool BufferPool}.
+     * <p/>
      * Package access constructor, used by {@link com.l7tech.gateway.common.module.ServerModuleFilePayloadFactory}.
+     *
+     * @param dataStream                        A {@link PoolByteArrayOutputStream} containing data bytes.  Required and cannot be {@code null}.
+     * @param dataDigest                        Data bytes digest.   Required and cannot be {@code null}.
+     * @param signaturePropsStream              A {@link PoolByteArrayOutputStream} containing signature properties.  Required and cannot be {@code null}.
+     * @param customAssertionsScannerHelper     A {@link CustomAssertionsScannerHelper} instance used to determine whether the module data bytes are for a custom assertion.  Required and cannot be {@code null}.
+     * @param modularAssertionsScannerHelper    A {@link ModularAssertionsScannerHelper} instance used to determine whether the module data bytes are for a modular assertion.  Required and cannot be {@code null}.
+     * @param fileName                          Module file name.  Optional though recommended.
      */
     protected ServerModuleFilePayload(
             @NotNull final PoolByteArrayOutputStream dataStream,
@@ -47,15 +60,13 @@ public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload 
             @NotNull final PoolByteArrayOutputStream signaturePropsStream,
             @NotNull final CustomAssertionsScannerHelper customAssertionsScannerHelper,
             @NotNull final ModularAssertionsScannerHelper modularAssertionsScannerHelper,
-            @NotNull final String fileName
+            @Nullable final String fileName
     ) {
         super(dataStream, dataDigest, signaturePropsStream);
         this.customAssertionsScannerHelper = customAssertionsScannerHelper;
         this.modularAssertionsScannerHelper = modularAssertionsScannerHelper;
         this.fileName = fileName;
     }
-
-    // todo: add more constructors for unsigned zips/content
 
     /**
      * Helper class to collect multiple streams and close all of them when {@link #close()} is invoked.
@@ -117,7 +128,9 @@ public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload 
         long fileLength = getDataSize();
 
         // set moduleFile props accordingly
-        serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, fileName);
+        if (fileName != null) {
+            serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, fileName);
+        }
         serverModuleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(fileLength));
 
         // create module data (this will calculate module sha as well)
@@ -146,8 +159,7 @@ public class ServerModuleFilePayload extends SignerUtils.SignedZip.InnerPayload 
     /**
      * Utility method to truncate filename if its too long.
      */
-    @NotNull
-    public static String trimFileName(@NotNull final String fileName) {
+    public static String trimFileName(final String fileName) {
         return TextUtils.truncateStringAtEnd(fileName, 70);
     }
 }

@@ -2,18 +2,15 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.module.ServerModuleFileWithSignedBytes;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.module.ModuleDigest;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.security.signer.SignerUtils;
-import com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin;
-import com.l7tech.gateway.common.security.signer.TrustedSignerCertsHelper;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -34,10 +31,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -86,7 +81,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private ClusterStatusAdmin clusterStatusAdmin;
     private SecurityProvider securityProvider;
     private ClusterNodeInfo currentClusterNode;
-    private TrustedSignerCertsAdmin trustedSignerCertsAdmin;
 
     private final boolean canCreate;
     private final boolean canUpload;
@@ -249,8 +243,13 @@ public class ServerModuleFileManagerWindow extends JDialog {
         crud.setEntityEditor(new EntityEditor<ServerModuleFile>() {
             @Override
             public void displayEditDialog(final ServerModuleFile entity, @NotNull final Functions.UnaryVoidThrows<ServerModuleFile, SaveException> afterEditListener) {
-                final ServerModuleFile newMod = new ServerModuleFile();
-                newMod.copyFrom(entity, true, true, true);
+                final ServerModuleFile newMod;
+                if (entity instanceof ServerModuleFileWithSignedBytes) {
+                    newMod = new ServerModuleFileWithSignedBytes((ServerModuleFileWithSignedBytes)entity);
+                } else {
+                    newMod = new ServerModuleFile();
+                    newMod.copyFrom(entity, true, true, true);
+                }
 
                 final boolean create = PersistentEntity.DEFAULT_GOID.equals(entity.getGoid());
                 final AttemptedOperation operation = create
@@ -407,47 +406,46 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private ServerModuleFile asyncSaveModuleFile(@NotNull final ServerModuleFile moduleFile) throws SaveException {
         try {
             return doAsyncTask(
-                    resources.getString("save.async.dialog.message"),
-                    new Callable<ServerModuleFile>() {
-                        @Override
-                        public ServerModuleFile call() throws SaveException {
-                            ServerModuleFile entity = moduleFile;
+                resources.getString("save.async.dialog.message"),
+                new Callable<ServerModuleFile>() {
+                    @Override
+                    public ServerModuleFile call() throws SaveException {
+                        ServerModuleFile entity = moduleFile;
+                        Goid goid = entity.getGoid();
+
+                        // Save
+                        if (Goid.isDefault(goid)) {
+                            assert entity instanceof ServerModuleFileWithSignedBytes;
+                            final ServerModuleFileWithSignedBytes smf = (ServerModuleFileWithSignedBytes)entity;
+                            goid = getClusterStatusAdmin().saveServerModuleFile(
+                                    smf.getSignedBytes(),
+                                    smf.getName(),
+                                    smf.getProperty(ServerModuleFile.PROP_FILE_NAME)
+                            );
+                        }
+                        // Update
+                        else {
                             try {
-                                // some sanity check
-                                // todo: perhaps not needed as ServerModuleFileChooser.choose() is already validating signature
-                                // todo: in addition getClusterStatusAdmin().saveServerModuleFile is doing the same thing
-                                final byte[] bytes = entity.getData() != null ? entity.getData().getDataBytes() : null;
-                                if (bytes != null) {
-                                    final byte[] digest = ModuleDigest.digest(bytes);
-                                    if (!HexUtils.hexDump(digest).equals(entity.getModuleSha256())) {
-                                        throw new SaveException("Digest mismatch");
-                                    }
-                                    SignerUtils.verifySignatureAndIssuer(
-                                            new ByteArrayInputStream(bytes),
-                                            entity.getData().getSignatureProperties(),
-                                            TrustedSignerCertsHelper.getTrustedCertificatesForServerModuleFiles(getTrustedSignerCertsAdmin())
-                                    );
-                                }
-                                final Goid id = getClusterStatusAdmin().saveServerModuleFile(entity);
-                                entity.setGoid(id);
-                            } catch (FindException | UpdateException | IOException | SignatureException e) {
+                                getClusterStatusAdmin().updateServerModuleFileName(goid, entity.getName());
+                            } catch (final FindException | UpdateException e) {
                                 throw new SaveException(e);
                             }
-
-                            try {
-                                entity = getClusterStatusAdmin().findServerModuleFileById(entity.getGoid(), false);
-                            } catch (FindException e) {
-                                entity.setData(null);
-                                entity.setModuleSha256(null);
-                                entity.setProperty(ServerModuleFile.PROP_SIZE, null);
-                                entity.setProperty(ServerModuleFile.PROP_FILE_NAME, null);
-                                entity.setProperty(ServerModuleFile.PROP_ASSERTIONS, null);
-                                /* FALL-THROUGH and do without up-to-date sha-256 and size */
-                            }
-
-                            return entity;
                         }
+
+                        try {
+                            entity = getClusterStatusAdmin().findServerModuleFileById(goid, false);
+                        } catch (FindException e) {
+                            entity.setData(null);
+                            entity.setModuleSha256(null);
+                            entity.setProperty(ServerModuleFile.PROP_SIZE, null);
+                            entity.setProperty(ServerModuleFile.PROP_FILE_NAME, null);
+                            entity.setProperty(ServerModuleFile.PROP_ASSERTIONS, null);
+                            /* FALL-THROUGH and do without up-to-date sha-256 and size */
+                        }
+
+                        return entity;
                     }
+                }
             );
         } catch (final InvocationTargetException e) {
             // rethrow if target was SaveException
@@ -703,22 +701,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
             clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         }
         return clusterStatusAdmin;
-    }
-
-    /**
-     * Get our cached {@link com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin}
-     */
-    @NotNull
-    private TrustedSignerCertsAdmin getTrustedSignerCertsAdmin() {
-        if (trustedSignerCertsAdmin == null) {
-            final Option<TrustedSignerCertsAdmin> option = Registry.getDefault().getAdminInterface(TrustedSignerCertsAdmin.class);
-            if (option.isSome()) {
-                this.trustedSignerCertsAdmin = option.some();
-            } else {
-                throw new RuntimeException("TrustedSignerCertsAdmin interface not found.");
-            }
-        }
-        return trustedSignerCertsAdmin;
     }
 
     /**

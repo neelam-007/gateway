@@ -48,7 +48,6 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -658,96 +657,41 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         return null;
     }
 
-    /**
-     * Verify both module signature and issuer cert, as well as conveniently throw {@code SaveException} if verification failed.
-     *
-     * @param dataBytes              module raw bytes.  Required and cannot be {@code null}.
-     * @param signatureProperties    signature properties or {@code null} if module is not signed.
-     * @throws SaveException if the signature is missing or signature verification fails or module signer is not trusted.
-     */
-    private void verifyModuleSignature(
-            @NotNull final byte[] dataBytes,
-            @Nullable final String signatureProperties
-    ) throws SaveException {
-        if (StringUtils.isBlank(signatureProperties)) {
-            throw new SaveException("module file must be signed when uploading");
-        }
-
-        // todo: refactor as per SSG-12708
-        try {
-            // verify module signature
-            SignerUtils.verifySignatureAndIssuer(
-                    new ByteArrayInputStream(dataBytes),
-                    signatureProperties,
-                    TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager)
-            );
-        } catch (final SignatureException e) {
+    @NotNull
+    @Override
+    public Goid saveServerModuleFile(@NotNull final byte[] signedDataBytes, @NotNull final String entityName, @Nullable final String fileName) throws SaveException {
+        final SignerUtils.SignedZip signedZip = new SignerUtils.SignedZip(TrustedSignerCertsHelper.getTrustedCertificates(trustedSignerCertsManager));
+        try (
+                final ServerModuleFilePayload payload = signedZip.load(
+                        new ByteArrayInputStream(signedDataBytes),
+                        new ServerModuleFilePayloadFactory(
+                                new CustomAssertionsScannerHelper(getServerModuleConfig().getCustomAssertionPropertyFileName()),
+                                new ModularAssertionsScannerHelper(getServerModuleConfig().getModularAssertionManifestAssertionListKey()),
+                                fileName))
+        ) {
+            final ServerModuleFile serverModuleFile = payload.create();
+            serverModuleFile.setName(entityName);
+            serverModuleFile.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
+            // Save the SMF
+            return serverModuleFileManager.save(serverModuleFile);
+        } catch (SignatureException e) {
             throw new SaveException("module file is rejected as signature cannot be verified", e);
-        } catch (final IOException e) {
+        } catch (IOException e) {
             throw new SaveException("Error while verifying module signature: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    /**
-     * @deprecated Refactor as per SSG-12708
-     */
-    @NotNull
     @Override
-    @Deprecated
-    public Goid saveServerModuleFile(@NotNull ServerModuleFile moduleFile) throws FindException, SaveException, UpdateException {
-        Goid id = moduleFile.getGoid();
-        final byte[] dataBytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
-        final byte[] digest = dataBytes != null ? ModuleDigest.digest(dataBytes) : null;
-        final String signatureProperties = moduleFile.getData() != null ? moduleFile.getData().getSignatureProperties() : null;
-
-        if (Goid.isDefault(id)) {
-            if (dataBytes == null) {
-                throw new SaveException( "data-bytes must be provided when uploading a new module file" );
-            }
-            if (moduleFile.getModuleType() == null) {
-                throw new SaveException( "module type must be provided when uploading a new module file" );
-            }
-            // make sure the signature is verified and signer is trusted
-            verifyModuleSignature(dataBytes, signatureProperties);
-
-            // Save new module
-            moduleFile.setModuleSha256(HexUtils.hexDump(digest));
-            moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
-            moduleFile.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
-            id = serverModuleFileManager.save(moduleFile);
-        } else {
-            // Preserve existing data-bytes, leave sha-256 and size alone
-            final ServerModuleFile oldMod = serverModuleFileManager.findByPrimaryKey(id);
-            if (oldMod == null) {
-                throw new UpdateException( "No existing module with ID \"" + id + "\".  New module must use default ID and must include databytes" );
-            }
-            if (moduleFile.getModuleType() == null) {
-                throw new UpdateException( "module type must be provided when updating existing module file" );
-            }
-            // Update existing module
-            if (dataBytes == null) {
-                // TODO should we be copying the version from the new version here?
-                oldMod.copyFrom(moduleFile, false, false, false);
-            } else {
-                // make sure the signature is verified and signer is trusted
-                verifyModuleSignature(dataBytes, signatureProperties);
-
-                // New data-bytes included, ensure size and hash are up to date
-                final String byteSha256 = HexUtils.hexDump(digest);
-                moduleFile.setModuleSha256(byteSha256);
-                moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
-
-                final boolean dataReallyChanged = !byteSha256.equals(oldMod.getModuleSha256());
-                // TODO should we be copying the version from the new version here?
-                oldMod.copyFrom(moduleFile, dataReallyChanged, dataReallyChanged, false);
-                if (dataReallyChanged) {
-                    oldMod.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
-                }
-            }
-            serverModuleFileManager.update(oldMod);
+    public void updateServerModuleFileName(@NotNull final Goid goid, @NotNull final String newName) throws FindException, UpdateException {
+        final ServerModuleFile oldSMF = serverModuleFileManager.findByPrimaryKey(goid);
+        if (oldSMF == null) {
+            throw new UpdateException("No existing module with ID \"" + goid + "\".  New module must use default ID and must include databytes");
         }
 
-        return id;
+        oldSMF.setName(newName);
+
+        // Update existing module
+        serverModuleFileManager.update(oldSMF);
     }
 
     @Override
