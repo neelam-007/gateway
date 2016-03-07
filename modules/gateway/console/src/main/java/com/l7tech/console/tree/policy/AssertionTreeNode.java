@@ -205,8 +205,9 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
     /**
      * Obtain the name to display in the policy editor, validator warnings pane and assertion pallete tree.
-     * @param decorate should only be true when the name will be displayed in the policy window.
-     * @param withComments should be true when comments will be displayed in the policy window.
+     * @param decorate if true then the name with decorated messages will be displayed, else only the basic name will be
+     *                 displayed
+     * @param withComments if true then comments will be displayed
      * @return String representation of the assertion contained within the TreeNode
      */
     abstract public String getName(boolean decorate, boolean withComments);
