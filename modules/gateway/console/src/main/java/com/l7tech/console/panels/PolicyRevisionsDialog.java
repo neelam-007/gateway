@@ -407,14 +407,17 @@ public class PolicyRevisionsDialog extends JDialog {
     private static TreeNode makeMessageNode(final String message) {
         return new LeafAssertionTreeNode<CommentAssertion>(new CommentAssertion(message)) {
 
+            @Override
             public String getName(final boolean decorate, final boolean withComments) {
                 return message;
             }
 
+            @Override
             protected String iconResource(boolean open) {
                 return null;
             }
 
+            @Override
             public String toString() {
                 return message;
             }

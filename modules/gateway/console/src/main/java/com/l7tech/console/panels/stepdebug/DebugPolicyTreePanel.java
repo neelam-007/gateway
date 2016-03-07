@@ -307,14 +307,17 @@ public class DebugPolicyTreePanel extends JPanel {
     private static TreeNode makeErrorMessageNode(final String message) {
         return new LeafAssertionTreeNode<CommentAssertion>(new CommentAssertion(message)) {
 
+            @Override
             public String getName(final boolean decorate, final boolean withComments) {
                 return message;
             }
 
+            @Override
             protected String iconResource(boolean open) {
                 return null;
             }
 
+            @Override
             public String toString() {
                 return message;
             }

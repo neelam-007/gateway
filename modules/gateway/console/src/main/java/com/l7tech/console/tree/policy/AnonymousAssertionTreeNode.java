@@ -14,6 +14,7 @@ class AnonymousAssertionTreeNode extends LeafAssertionTreeNode<TrueAssertion> {
         super(node);
     }
 
+    @Override
     public String getName(final boolean decorate, final boolean withComments) {
         return "Anonymous access";
     }
@@ -23,6 +24,8 @@ class AnonymousAssertionTreeNode extends LeafAssertionTreeNode<TrueAssertion> {
      *
      * @param open for nodes that can be opened, can have children
      */
+
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/Alert16x16.gif";
     }
