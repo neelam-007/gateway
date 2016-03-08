@@ -119,7 +119,7 @@ public class ServerMongoDBAssertion extends AbstractServerAssertion<MongoDBAsser
                         }
                     }
 
-                    context.setVariable(prefix + ".output", resultString.toString());
+                    context.setVariable(prefix + ".queryresult.output", resultString.toString());
 
                     if (row < 1 && assertion.isFailIfNoResults()) {
                         getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failing assertion due to no result returned.");
