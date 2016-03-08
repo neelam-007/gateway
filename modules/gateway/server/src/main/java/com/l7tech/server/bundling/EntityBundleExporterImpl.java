@@ -51,12 +51,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
     public static final String IgnoreDependenciesOption = "IgnoreDependencies";
+    public static final String EncassAsPolicyDependencyOption = "EncassAsPolicyDependency";
     public static final String ServiceUsed = "ServiceUsed"; // service id used to access this exporter
     private static final String IncludeRequestFolder = "false";
     private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
     private static final String DefaultMapBy = "ID";
     public static final String IncludeSolutionKitsOption = "IncludeSolutionKits";
     private static final String IncludeSolutionKits = "false";
+    private static final String EncassAsPolicyDependencyDefault = "false";
     /**
      * The mapping action for read-only entities owned by {@code SolutionKit}'s.
      */
@@ -84,6 +86,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }
         if (bundleExportProperties.containsKey(IgnoreDependenciesOption)) {
             optionBuilder.put(DependencyAnalyzer.IgnoreDependenciesSearchOptionKey, bundleExportProperties.get(IgnoreDependenciesOption));
+        }
+        if (bundleExportProperties.containsKey(EncassAsPolicyDependencyOption)) {
+            optionBuilder.put(DependencyAnalyzer.EncassAsPolicyDependencyOptionKey, Boolean.parseBoolean(bundleExportProperties.getProperty(EncassAsPolicyDependencyOption, EncassAsPolicyDependencyDefault)));
         }
         optionBuilder.put(DependencyAnalyzer.IncludeSolutionKitsOptionKey, Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeSolutionKitsOption, IncludeSolutionKits)));
         // do not need assertion dependency results for building export bundle

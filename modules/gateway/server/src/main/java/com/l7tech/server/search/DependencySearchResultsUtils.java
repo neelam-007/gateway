@@ -1,6 +1,8 @@
 package com.l7tech.server.search;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.search.objects.*;
+import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,28 +59,47 @@ public class DependencySearchResultsUtils {
     public static List<Dependency> flattenDependencySearchResults(@NotNull final List<DependencySearchResults> dependencySearchResults, final boolean includeRootNode) {
         //the flat list of dependency object
         final List<Dependency> dependencyObjects = new ArrayList<>();
+        //if we are not including the dependent object in the DependencySearchResults then process only the dependencies.
+        //put all security zones first
         for (final DependencySearchResults dependencySearchResult : dependencySearchResults) {
             if (dependencySearchResult != null) {
                 if (includeRootNode) {
                     //get all security zone dependencies
                     getSecurityZoneDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
-                    //get all folder dependencies
-                    getFolderDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
-                    //include the DependencySearchResults.dependentObject
-                    buildDependentObjectsList(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
                 } else if (dependencySearchResult.getDependencies() != null) {
-                    //if we are not including the dependent object in the DependencySearchResults then process only the dependencies.
-                    //keep track of processed object, this will improve processing time.
-                    final ArrayList<DependentObject> processedObjects = new ArrayList<>();
-                    final ArrayList<DependentObject> processedSecurityZones = new ArrayList<>();
-                    final ArrayList<DependentObject> processedFolders = new ArrayList<>();
                     //loop throw all the dependencies to build up the dependent objects list.
                     for (final Dependency dependency : dependencySearchResult.getDependencies()) {
                         //get all security zone dependencies
-                        getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedSecurityZones);
+                        getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), new ArrayList<DependentObject>());
+                    }
+                }
+            }
+        }
+        //all folders are next
+        for (final DependencySearchResults dependencySearchResult : dependencySearchResults) {
+            if (dependencySearchResult != null) {
+                if (includeRootNode) {
+                    //get all folder dependencies
+                    getFolderDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
+                } else if (dependencySearchResult.getDependencies() != null) {
+                    //loop throw all the dependencies to build up the dependent objects list.
+                    for (final Dependency dependency : dependencySearchResult.getDependencies()) {
                         //get all folder dependencies
-                        getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedFolders);
-                        buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedObjects);
+                        getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), new ArrayList<DependentObject>());
+                    }
+                }
+            }
+        }
+        //traverse the graph for the remaining dependencies
+        for (final DependencySearchResults dependencySearchResult : dependencySearchResults) {
+            if (dependencySearchResult != null) {
+                if (includeRootNode) {
+                    //include the DependencySearchResults.dependentObject
+                    buildDependentObjectsList(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
+                } else if (dependencySearchResult.getDependencies() != null) {
+                    //loop throw all the dependencies to build up the dependent objects list.
+                    for (final Dependency dependency : dependencySearchResult.getDependencies()) {
+                        buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), new ArrayList<DependentObject>());
                     }
                 }
             }
@@ -159,16 +180,36 @@ public class DependencySearchResultsUtils {
         //add to the processed list before processing to avoid circular dependency issues.
         processed.add(dependent);
 
+        //If encasses are returned as policy dependencies then they need to be processed after the policy
+        final List<Dependency> policyEncassDependencies = new ArrayList<>();
         //process the dependent objects dependencies.
         if (dependencies != null) {
             for (final Dependency dependency : dependencies) {
-                buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
+                if(com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependent.getDependencyType())
+                        && com.l7tech.search.Dependency.DependencyType.ENCAPSULATED_ASSERTION.equals(dependency.getDependent().getDependencyType())
+                        && dependency.getDependencies() != null
+                        && Functions.exists(dependency.getDependencies(), new Functions.Unary<Boolean, Dependency>() {
+                    @Override
+                    public Boolean call(final Dependency dependency) {
+                        return com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType())
+                                && Goid.equals(((DependentEntity) dependent).getEntityHeader().getGoid(), ((DependentEntity) dependency.getDependent()).getEntityHeader().getGoid());
+                    }
+                })) {
+                    //this is if the dependency is an encass and the dependent is the backing policy for the encass, process the encass after adding the policy to the dependency list.
+                    policyEncassDependencies.add(dependency);
+                } else {
+                    buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
+                }
             }
         }
         //A folder or security zone would already have been added to the dependency object list so only do this if it is not a folder or security zone.
         if (!com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType()) &&
                 !com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependent.getDependencyType())) {
             addDependentToDependencyList(dependencyObjects, dependent, dependencies);
+        }
+        // if this policy is a encass backing policy process the encasses it backs after adding it to the dependency list.
+        for(final Dependency policyEncassDependency : policyEncassDependencies){
+            buildDependentObjectsList(dependencyObjects, policyEncassDependency.getDependent(), policyEncassDependency.getDependencies(), processed);
         }
     }
 

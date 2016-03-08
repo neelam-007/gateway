@@ -1,6 +1,9 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -9,17 +12,23 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
+import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
+import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -227,5 +236,30 @@ public class DependencyEncassTest extends DependencyTestBase{
                 assertNotNull( "Missing dependency:"+encassPolicy.getId(), getDependency(dep.getDependencies(),encassPolicy.getId()));
             }
         });
+    }
+
+    @Test
+    public void testPolicyExportWithEncassAsPolicyDependencyOption() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", "policy=" + encassPolicy.getGoid() + "&encassAsPolicyDependency=true", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), null);
+
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        org.junit.Assert.assertEquals("The bundle should have 3 items.", 3, bundleItem.getContent().getReferences().size());
+        org.junit.Assert.assertEquals("The bundle should have 4 items.", 4, bundleItem.getContent().getMappings().size());
+
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), encassPolicy.getGoid().toString(), encassConfig.getGoid().toString(), "Encass should be after backing policy");
+
+        response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", "policy=" + encassPolicy.getGoid(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), null);
+
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        org.junit.Assert.assertEquals("The bundle should have 3 items.", 1, bundleItem.getContent().getReferences().size());
+        org.junit.Assert.assertEquals("The bundle should have 4 items.", 2, bundleItem.getContent().getMappings().size());
     }
 }

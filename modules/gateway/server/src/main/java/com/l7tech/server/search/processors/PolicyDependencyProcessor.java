@@ -3,13 +3,14 @@ package com.l7tech.server.search.processors;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -31,7 +32,7 @@ import java.util.Map;
 public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy> implements DependencyProcessor<Policy> {
 
     @Inject
-    private SecurityZoneManager securityZoneManager;
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
     /**
      * Finds the dependencies in a policy by looking at the assertions contained in the policy
@@ -43,6 +44,23 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
     public List<Dependency> findDependencies(@NotNull final Policy policy, @NotNull final DependencyFinder processor) throws FindException, CannotRetrieveDependenciesException {
         //the super.findDependencies does not need to be called here. All policy dependencies will be explicitly handled.
 
+        final ArrayList<Dependency> dependencies = new ArrayList<>();
+
+        //SSG-11963 - include encapsulated assertions as policy dependencies.
+        final boolean encassAsDependency = processor.getOption(DependencyAnalyzer.EncassAsPolicyDependencyOptionKey, Boolean.class, false);
+        if(encassAsDependency) {
+            //Get the list of encasses that this policy backs
+            final List<EncapsulatedAssertionConfig> encapsulatedAssertionConfigs = (List<EncapsulatedAssertionConfig>)
+                    encapsulatedAssertionConfigManager.findByPolicyGoid(policy.getGoid());
+            for(final EncapsulatedAssertionConfig encapsulatedAssertionConfig : encapsulatedAssertionConfigs) {
+                //add each encass as a dependency
+                final Dependency dependency = processor.getDependency(DependencyFinder.FindResults.create(encapsulatedAssertionConfig, null));
+                if (dependency != null) {
+                    dependencies.add(dependency);
+                }
+            }
+        }
+
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
@@ -50,7 +68,6 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
             throw new CannotRetrieveDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
         }
 
-        final ArrayList<Dependency> dependencies = new ArrayList<>();
         final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();
 
         final boolean assertionsAsDependencies = processor.getOption(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, Boolean.class, true);

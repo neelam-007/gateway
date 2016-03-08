@@ -68,6 +68,12 @@ public interface DependencyAnalyzer {
     public static final String IncludeSolutionKitsOptionKey = "includeSolutionKits";
 
     /**
+     * By default encapsulated assertions are not returned as dependencies of policies this can be enabled by setting this property to true.
+     * The Default is false
+     */
+    public static final String EncassAsPolicyDependencyOptionKey = "encassAsPolicyDependency";
+
+    /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling {@link
      * #getDependencies(com.l7tech.objectmodel.EntityHeader, java.util.Map)} with an empty map for search options,
      * implying default options

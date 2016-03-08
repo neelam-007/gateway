@@ -32,6 +32,7 @@ public class BundleExporter {
     public static final String EncryptSecrets = "EncryptSecrets";
     public static final String ServiceUsed = "ServiceUsed";
     public static final String IncludeSolutionKitsOption = "IncludeSolutionKits";
+    public static final String EncassAsPolicyDependencyOption = "EncassAsPolicyDependency";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject
