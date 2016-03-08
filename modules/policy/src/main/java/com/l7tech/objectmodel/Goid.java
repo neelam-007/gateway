@@ -17,20 +17,9 @@ import java.util.regex.Pattern;
 /**
  * Goid Object represents a global object id for the gateways entities.
  *
- * WARNING
- * WARNING
- * WARNING If you change this class you MUST update "cluster-servlet.xml" to
- * WARNING permit its field instance classes (node to node whitelist)
- * WARNING
- * WARNING If you refactor this class to extend a superclass (NOT ADVISABLE BTW)
- * WARNING you MUST update "cluster-servlet.xml" to permit the superclass(es)and their fields.
- * WARNING
- * WARNING You must ensure that permitted classes ARE NOT from untrusted sources
- * WARNING and CANNOT be used to execute arbitrary Java code e.g. java.lang.System and java.lang.Runtime MUSTN'T be permitted.
- * WARNING In addition Apache InvokerTransformer is known to have remote code execution vulnerability and MUST NOT be permitted.
- * WARNING
- * WARNING
- *
+ * <p>
+ * WARNING: take caution updating this class. See https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter#Goid
+ * </p>
  * @author Victor Kazakov
  */
 @XmlSafe

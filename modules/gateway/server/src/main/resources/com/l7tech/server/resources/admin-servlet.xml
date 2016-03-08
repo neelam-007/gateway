@@ -38,162 +38,297 @@
     <bean name="/IdentityAdmin" parent="httpInvokerParent">
         <property name="service" ref="identityAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by IdentityAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/AuditAdmin" parent="httpInvokerParent">
         <property name="service" ref="auditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by AuditAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ServiceAdmin" parent="httpInvokerParent">
         <property name="service" ref="serviceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by ServiceAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/FolderAdmin" parent="httpInvokerParent">
         <property name="service" ref="folderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by FolderAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ResourceAdmin" parent="httpInvokerParent">
         <property name="service" ref="resourceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.resources.ResourceAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by ResourceAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/FtpAdmin" parent="httpInvokerParent">
         <property name="service" ref="ftpAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by FtpAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/JmsAdmin" parent="httpInvokerParent">
         <property name="service" ref="jmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by JmsAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/JdbcAdmin" parent="httpInvokerParent">
         <property name="service" ref="jdbcAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by JdbcAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/CassandraAdmin" parent="httpInvokerParent">
         <property name="service" ref="cassandraAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by CassandraAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/TrustedCertAdmin" parent="httpInvokerParent">
         <property name="service" ref="trustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by TrustedCertAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/CustomAssertionsRegistrar" parent="httpInvokerParent">
         <property name="service" ref="customAssertionRegistrar"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.custom.CustomAssertionsRegistrar"/>
+        <!--
+            TODO: remove the bypass once all classes needed by CustomAssertionsRegistrar have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/KerberosAdmin" parent="httpInvokerParent">
         <property name="service" ref="kerberosAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by KerberosAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ClusterStatusAdmin" parent="httpInvokerParent">
         <property name="service" ref="clusterStatusAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by ClusterStatusAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/RbacAdmin" parent="httpInvokerParent">
         <property name="service" ref="rbacAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by RbacAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/PolicyAdmin" parent="httpInvokerParent">
         <property name="service" ref="policyAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by PolicyAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/TransportAdmin" parent="httpInvokerParent">
         <property name="service" ref="transportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by TransportAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/LogSinkAdmin" parent="httpInvokerParent">
         <property name="service" ref="logSinkAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by LogSinkAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EmailListenerAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailListenerAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by EmailListenerAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EmailAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by EmailAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/ScheduledTaskAdmin" parent="httpInvokerParent">
         <property name="service" ref="scheduledTaskAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.task.ScheduledTaskAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by ScheduledTaskAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent">
         <property name="service" ref="uddiRegistryAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by UDDIRegistryAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/EncapsulatedAssertionAdmin" parent="httpInvokerParent">
         <property name="service" ref="encapsulatedAssertionAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by EncapsulatedAssertionAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/PolicyBackedServiceAdmin" parent="httpInvokerParent">
         <property name="service" ref="policyBackedServiceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by PolicyBackedServiceAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/SiteMinderAdmin" parent="httpInvokerParent">
         <property name="service" ref="siteMinderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.siteminder.SiteMinderAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by SiteMinderAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/CustomKeyValueStoreAdmin" parent="httpInvokerParent">
         <property name="service" ref="customKeyValueStoreAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by CustomKeyValueStoreAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/DebugAdmin" parent="httpInvokerParent">
         <property name="service" ref="debugAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by DebugAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
     <bean name="/WorkQueueAdmin" parent="httpInvokerParent">
         <property name="service" ref="workQueueAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin"/>
+        <!--
+            TODO: remove the bypass once all classes needed by WorkQueueAdmin have been whitelisted and the resulting system have been properly tested.
+            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
+                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
+        -->
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
