@@ -26,11 +26,9 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
     private boolean isLastCredential = true;
     private String namedUser;
     private String namedCertificate;
-    private String namedJsonWebToken;
     protected final MessageTargetableSupport messageTargetableSupport;
     private boolean sendUsernamePasswordCredential = true;
     private boolean sendX509CertificateCredential = false;
-    private boolean sendJWT = false;
 
     public SiteMinderAuthenticateAssertion() {
         this( TargetMessageType.REQUEST );
@@ -88,22 +86,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
     public void setNamedCertificate(String certificateName) { this.namedCertificate = certificateName; }
 
-    public boolean isSendJWT() {
-        return this.sendJWT;
-    }
-
-    public void setSendJWT(boolean sendJWT) {
-        this.sendJWT = sendJWT;
-    }
-
-    public String getNamedJsonWebToken() {
-        return this.namedJsonWebToken;
-    }
-
-    public void setNamedJsonWebToken(String jsonWebToken) {
-        this.namedJsonWebToken = jsonWebToken;
-    }
-
 
     // For compatibility: read old policy with Login element
     public void setLogin(String login) { setNamedUser(login); }
@@ -123,7 +105,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
             varsUsed.addAll(Arrays.asList(refNames));
             refNames = Syntax.getReferencedNames(namedCertificate);
             varsUsed.addAll(Arrays.asList(refNames));
-            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(namedJsonWebToken)));
         }
 
         return varsUsed.toArray(new String[varsUsed.size()]);

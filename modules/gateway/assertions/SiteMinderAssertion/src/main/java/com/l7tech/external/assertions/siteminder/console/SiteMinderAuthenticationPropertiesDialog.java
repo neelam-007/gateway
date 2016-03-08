@@ -34,8 +34,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JTextField namedCertificate;
     private JLabel usernameLabel;
     private JLabel certificateNameLabel;
-    private JCheckBox jsonWebTokenCheckBox;
-    private JTextField namedJsonWebToken;
     private final InputValidator inputValidator;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
@@ -64,8 +62,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         authenticateViaSiteMinderCookieCheckBox.addActionListener(buttonSwitchListener);
         usernameAndPasswordCheckBox.addActionListener(buttonSwitchListener);
         x509CertificateCheckBox.addActionListener(buttonSwitchListener);
-        jsonWebTokenCheckBox.addActionListener(buttonSwitchListener);
-        Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate,namedJsonWebToken);
+        Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate);
 
         inputValidator.constrainTextFieldToBeNonEmpty("Username", namedUser, null);
         inputValidator.constrainTextFieldToBeNonEmpty("Certificate CN or DN", namedCertificate, null);
@@ -103,8 +100,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             public String getValidationError() {
                 if ( specifyCredentialsRadioButton.isSelected()
                        && ! usernameAndPasswordCheckBox.isSelected()
-                       && ! x509CertificateCheckBox.isSelected()
-                       && ! jsonWebTokenCheckBox.isSelected()) {
+                       && ! x509CertificateCheckBox.isSelected()) {
                     return "At least one of Username, X.509 Certificate, or JWT must be selected when using Specified Credentials.";
                 }
 
@@ -116,8 +112,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             @Override
             public String getValidationError() {
                 if ( specifyCredentialsRadioButton.isSelected()
-                        && x509CertificateCheckBox.isSelected()
-                        && jsonWebTokenCheckBox.isSelected()) {
+                        && x509CertificateCheckBox.isSelected()) {
                     return "X.509 Certificate and JWT cannot be enabled at the same time when using Specified Credentials.";
                 }
 
@@ -136,10 +131,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         namedUser.setEnabled(specifyCredentialsRadioButton.isSelected() && usernameAndPasswordCheckBox.isSelected());
         certificateNameLabel.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
         namedCertificate.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
-
-        // JWT can only be enabled if we are specifying credentials
-        jsonWebTokenCheckBox.setEnabled(specifyCredentialsRadioButton.isSelected());
-        namedJsonWebToken.setEnabled(specifyCredentialsRadioButton.isSelected() && jsonWebTokenCheckBox.isSelected());
     }
 
     /**
@@ -163,10 +154,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         specifyCredentialsRadioButton.setSelected(!assertion.isLastCredential());
         usernameAndPasswordCheckBox.setSelected(assertion.isSendUsernamePasswordCredential());
         x509CertificateCheckBox.setSelected(assertion.isSendX509CertificateCredential());
-        jsonWebTokenCheckBox.setSelected(assertion.isSendJWT());
         namedUser.setText(assertion.getNamedUser());
         namedCertificate.setText(assertion.getNamedCertificate());
-        namedJsonWebToken.setText(assertion.getNamedJsonWebToken());
 
         enableDisableComponents();
     }
@@ -196,10 +185,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setLastCredential(useLastCredentialsRadioButton.isSelected());
         assertion.setSendUsernamePasswordCredential(usernameAndPasswordCheckBox.isSelected());
         assertion.setSendX509CertificateCredential(x509CertificateCheckBox.isSelected());
-        assertion.setSendJWT(jsonWebTokenCheckBox.isSelected());
         assertion.setNamedUser(namedUser.getText().trim());
         assertion.setNamedCertificate(namedCertificate.getText().trim());
-        assertion.setNamedJsonWebToken(namedJsonWebToken.getText().trim());
         //set user credentials
 
         return assertion;

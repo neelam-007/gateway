@@ -151,7 +151,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         boolean useLastCredential = assertion.isLastCredential();
         boolean sendBasic = assertion.isSendUsernamePasswordCredential();
         boolean sendCert = assertion.isSendX509CertificateCredential();
-        boolean sendJwt = assertion.isSendJWT();
 
         SiteMinderCredentials siteMinderCredentials = new SiteMinderCredentials();
 
@@ -172,17 +171,12 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                     addLastCertCreds(context,siteMinderCredentials);
                 }
             } else {
-                if ( ! (sendBasic || sendCert || sendJwt) ) {
+                if ( ! (sendBasic || sendCert ) ) {
                     logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
                             "Neither Username and Password; X.509 Certificate; or JWT Credentials selected to be sent to CA Single Sign-On. No credentials sent.");
                     return siteMinderCredentials;
                 }
 
-                if ( sendCert && sendJwt ) {
-                    logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
-                            "X.509 Certificate and JWT Credentials cannot be send at the same time to CA Single Sign-On. No credentials sent.");
-                    return siteMinderCredentials;
-                }
 
                 if ( sendBasic ) {
                     addSpecificBasicCreds(SiteMinderAssertionUtil.extractContextVarValue(assertion.getNamedUser(),variableMap,getAudit()), context, siteMinderCredentials);
@@ -191,19 +185,11 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 if ( sendCert ) {
                     addSpecificCertCreds(SiteMinderAssertionUtil.extractContextVarValue(assertion.getNamedCertificate(),variableMap,getAudit()), context, siteMinderCredentials);
                 }
-
-                if ( sendJwt ) {
-                    String jwt = SiteMinderAssertionUtil.extractContextVarValue(assertion.getNamedJsonWebToken(), variableMap, getAudit());
-                    siteMinderCredentials.addJWT(jwt);
-                }
             }
 
         } catch ( CertificateEncodingException e ) {
             logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to decode client certificate for login credentials.");
             logger.log(Level.WARNING, "Certificate retrieve from Policy Context improperly encoded.", ExceptionUtils.getDebugException(e));
-        } catch (UnsupportedEncodingException e) {
-            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "UTF-8 encoding not supported.");
-            logger.log(Level.WARNING, "Error retrieving JWT from Policy Context using character encoding UTF-8", ExceptionUtils.getDebugException(e));
         }
 
         return siteMinderCredentials;
