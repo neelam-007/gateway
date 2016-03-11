@@ -7,6 +7,7 @@ import com.l7tech.console.panels.solutionkit.ManageSolutionKitsDialog;
 import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
@@ -112,6 +113,13 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         // Display errors if applicable
         if (! errorKitList.isEmpty()) {
             displayErrorDialog(errorKitList);
+        }
+
+        // Reload encapsulated assertions via Encapsulated Assertion Registry
+        try {
+            TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".", ExceptionUtils.getDebugException(e));
         }
 
         // Finish installation no matter if successful or not
