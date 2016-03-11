@@ -1,57 +1,55 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.InetAddressUtil;
+import com.hazelcast.core.HazelcastInstance;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 
 import java.net.*;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.SecureRandom;
 
 /**
  * @author alex
  */
 public class ClusterBootProcess implements ServerComponentLifecycle {
+    private static final Logger logger = Logger.getLogger(ClusterBootProcess.class.getName());
+
+    private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
+    private static final Random random = new SecureRandom();
+    private String multicastAddress;
+
+    private final ClusterInfoManager clusterInfoManager;
+    private final GatewayHazelcast gatewayHazelcast;
+    private final HazelcastMessageIdManager hazelcastMessageIdManager;
 
     //- PUBLIC
 
-    public ClusterBootProcess( final ClusterInfoManager clusterInfoManager,
-                               final DistributedMessageIdManager distributedMessageIdManager,
-                               final Config config ) {
-        if ( clusterInfoManager instanceof ClusterInfoManagerImpl ) throw new IllegalArgumentException("cim autoproxy failure");
+    public ClusterBootProcess(final ClusterInfoManager clusterInfoManager,
+                              final GatewayHazelcast gatewayHazelcast,
+                              final HazelcastMessageIdManager hazelcastMessageIdManager) {
+        if (clusterInfoManager instanceof ClusterInfoManagerImpl)
+            throw new IllegalArgumentException("cim autoproxy failure");
 
         this.clusterInfoManager = clusterInfoManager;
-        this.distributedMessageIdManager = distributedMessageIdManager;
-
-        multicastAddress = config.getProperty( ServerConfigParams.PARAM_MULTICAST_ADDRESS );
-        if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
-    }
-
-    public static class AddressAlreadyInUseException extends Exception {
-        public AddressAlreadyInUseException(String address) {
-            this.address = address;
-        }
-
-        public String getAddress() {
-            return address;
-        }
-
-        private String address;
+        this.gatewayHazelcast = gatewayHazelcast;
+        this.hazelcastMessageIdManager = hazelcastMessageIdManager;
     }
 
     @Override
     public void start() throws LifecycleException {
         try {
+            // Multicast support for the Gateway Hazelcast instance has not been implemented yet; this code has not
+            // been removed or commented out because it generates and sets the ClusterNodeInfo multicast address which
+            // may be needed for other features
             ClusterNodeInfo myInfo = clusterInfoManager.getSelfNodeInf();
             clusterInfoManager.updateSelfUptime();
             Collection allNodes = clusterInfoManager.retrieveClusterStatus();
@@ -77,9 +75,11 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                 }
             }
 
-            logger.info("Initializing DistributedMessageIdManager");
-            distributedMessageIdManager.initialize(multicastAddress, PORT, myInfo.getAddress());
-            logger.info("Initialized DistributedMessageIdManager");
+            HazelcastInstance hazelcastInstance = gatewayHazelcast.getHazelcastInstance();
+
+            logger.info("Initializing HazelcastMessageIdManager");
+            hazelcastMessageIdManager.initialize(hazelcastInstance);
+            logger.info("Initialized HazelcastMessageIdManager");
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
             logger.log(Level.WARNING, msg, e);
@@ -96,9 +96,9 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
     @Override
     public void stop() throws LifecycleException {
         try {
-            distributedMessageIdManager.close();
-        } catch ( Exception e ) {
-            throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly", e);
+            gatewayHazelcast.shutdown();
+        } catch (Exception e) {
+            throw new LifecycleException("HazelcastMessageIdManager couldn't shut down properly", e);
         }
     }
 
@@ -118,7 +118,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
     }
 
     static String generateMulticastAddress4() {
-        StringBuffer addr = new StringBuffer();
+        StringBuilder addr = new StringBuilder();
 
         if ( ConfigFactory.getBooleanProperty( PROP_OLD_MULTICAST_GEN, false ) ) {
             // old method ... not so random
@@ -221,16 +221,4 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                ipv6addr.isSiteLocalAddress() ? 5 :  // site
                14;                                  // global
     }
-
-    //- PRIVATE
-
-    private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
-    private static final Random random = new SecureRandom();
-
-    private static final Logger logger = Logger.getLogger(ClusterBootProcess.class.getName());
-
-    private final ClusterInfoManager clusterInfoManager;
-    private final DistributedMessageIdManager distributedMessageIdManager;
-    private String multicastAddress;
-    private static final int PORT = 8777;
 }

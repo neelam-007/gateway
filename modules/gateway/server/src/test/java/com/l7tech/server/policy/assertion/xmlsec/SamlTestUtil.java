@@ -45,7 +45,7 @@ public class SamlTestUtil {
     public static BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
         put("securityTokenResolver", securityTokenResolver);
         put("serverConfig", new MockConfig(new Properties()));
-        put("distributedMessageIdManager", new StubMessageIdManager());
+        put("messageIdManager", new StubMessageIdManager());
     }});
     static final String SOAPENV =
             "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
@@ -61,7 +61,7 @@ public class SamlTestUtil {
                 .put("auditFactory", testAudit.factory())
                 .put("securityTokenResolver", securityTokenResolver)
                 .put("serverConfig", new MockConfig(new Properties()))
-                .put("distributedMessageIdManager", new StubMessageIdManager())
+                .put("messageIdManager", new StubMessageIdManager())
                 .unmodifiableMap()
         );
 

@@ -76,8 +76,8 @@
 
     <bean id="clusterBoot" class="com.l7tech.server.cluster.ClusterBootProcess">
         <constructor-arg index="0" ref="clusterInfoManager"/>
-        <constructor-arg index="1" ref="distributedMessageIdManager"/>
-        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="1" ref="gatewayHazelcast"/>
+        <constructor-arg index="2" ref="messageIdManager"/>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" depends-on="gatewayDbVersionChecker"
@@ -780,12 +780,10 @@
     <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
-    <!-- server side DistributedMessageIdManager -->
-    <bean id="distributedMessageIdManager" class="com.l7tech.server.cluster.DistributedMessageIdManager">
-        <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="clusterNodeId"/>
-        <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
+    <!-- server side HazelcastMessageIdManager -->
+    <bean id="messageIdManager" class="com.l7tech.server.cluster.HazelcastMessageIdManager"/>
+    <!-- server side GatewayHazelcast -->
+    <bean id="gatewayHazelcast" class="com.l7tech.server.cluster.GatewayHazelcast"/>
 
     <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerImpl">
         <constructor-arg ref="transactionManager"/>

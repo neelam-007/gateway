@@ -161,7 +161,7 @@ public class ServerWssReplayProtectionTest {
         final ServerWssReplayProtection swrp = new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("serverConfig", new MockConfig(new Properties()));
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
-            put("distributedMessageIdManager", mockManager);
+            put("messageIdManager", mockManager);
         }})){
             @Override
             protected TimeSource getTimeSource() {
@@ -246,7 +246,7 @@ public class ServerWssReplayProtectionTest {
         return new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("serverConfig", new MockConfig(new Properties()));
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
-            put("distributedMessageIdManager", createMockMessageIdManager(wrp));
+            put("messageIdManager", createMockMessageIdManager(wrp));
         }})){
             @Override
             protected TimeSource getTimeSource() {
