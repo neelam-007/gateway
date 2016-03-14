@@ -54,8 +54,7 @@ public class ServerValidateNonSoapSamlTokenAssertion extends ServerRequireSaml<V
             samlElement = message.getXmlKnob().getDocumentReadOnly().getDocumentElement();
             samlAssertion = SamlAssertion.newInstance(samlElement, securityTokenResolver);
         } catch (SAXException e) {
-            logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED,
-                    new String[] {"Unable to parse SAML token" + e.getMessage()}, e);
+            logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "Unable to parse SAML token: " + e.getMessage());
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST, "Unable to parse SAML token", e);
         }
 
