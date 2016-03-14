@@ -631,26 +631,39 @@ public class SiteMinderHighLevelAgent {
     }
 
     private  Integer getAgentPropertyInteger(final SiteMinderConfiguration smConfig, final String propName, int defaultValue) {
-        return getAgentProperty(smConfig, propName, new Integer(defaultValue), new Functions.Unary<Integer, String>() {
+        return getAgentProperty(smConfig, propName, defaultValue, new Functions.Unary<Integer, String>() {
             @Override
             public Integer call(String str) {
-                Integer valueInt = null;
-                try{
-                    valueInt = new Integer(str);
-                } catch(NumberFormatException ne) {
+                try {
+                    Integer val = new Integer(str);
+
+                    if (val > -1) {
+                        return val;
+                    } else {
+                        logger.log(Level.WARNING, "Value of " + propName + " must 0 or greater: " + str +
+                                ". Using cluster settings default.");
+                    }
+                } catch (NumberFormatException ne) {
                     logger.log(Level.WARNING, "Value of " + propName + " is not Integer: " + str, ExceptionUtils.getDebugException(ne));
                 }
-                return valueInt;
+                return null;
             }
         });
     }
 
     private Long getAgentPropertyLong(final SiteMinderConfiguration smConfig, final String propName, long defaultValue) {
-        return  getAgentProperty(smConfig, propName, new Long(defaultValue), new Functions.Unary<Long, String>() {
+        return getAgentProperty(smConfig, propName, defaultValue, new Functions.Unary<Long, String>() {
             @Override
             public Long call(String s) {
                 try {
-                    return new Long(s);
+                    Long val = new Long(s);
+
+                    if (val > -1) {
+                        return val;
+                    } else {
+                        logger.log(Level.WARNING, "Value of " + propName + " must 0 or greater: " + s +
+                                ". Using cluster settings default.");
+                    }
                 } catch (NumberFormatException ne) {
                     logger.log(Level.WARNING, "Value of " + propName + " is not Long: " + s, ExceptionUtils.getDebugException(ne));
                 }

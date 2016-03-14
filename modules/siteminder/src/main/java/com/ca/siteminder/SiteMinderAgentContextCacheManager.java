@@ -39,5 +39,5 @@ public interface SiteMinderAgentContextCacheManager {
      * Note: this operation is not atomic and might not remove all entries if new entries are
      *       added by other thread at the same time.
      */
-    void removeAllCache();
+    void removeAllCaches();
 }

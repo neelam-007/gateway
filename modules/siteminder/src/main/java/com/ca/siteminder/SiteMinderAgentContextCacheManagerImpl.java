@@ -2,12 +2,14 @@ package com.ca.siteminder;
 
 
 import com.l7tech.common.io.WhirlycacheFactory;
-
 import com.l7tech.objectmodel.Goid;
 import com.whirlycott.cache.Cache;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +20,7 @@ import java.util.logging.Logger;
 public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentContextCacheManager {
     private static final Logger LOGGER = Logger.getLogger(SiteMinderAgentContextCacheManagerImpl.class.getName());
 
+    private final Lock lock = new ReentrantLock();
     private final ConcurrentSkipListMap<Key, SiteMinderAgentContextCache> agentCacheMap;
 
     public SiteMinderAgentContextCacheManagerImpl() {
@@ -34,45 +37,132 @@ public class SiteMinderAgentContextCacheManagerImpl implements SiteMinderAgentCo
                                                    int resourceMaxEntries, long resourceMaxAge, int authenticationMaxEntries,
                                                    long authenticationMaxAge, int authorizationMaxEntries, long authorizationMaxAge) {
         Key key = new Key(smConfigGoid, smAgentName);
-        Cache resourceCache = createWhirlycache(key.toString() + ".resource",
-                resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
-        Cache authenticationCache = createWhirlycache(key.toString() + ".authentication",
-                authenticationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
-        Cache authorizationCache = createWhirlycache(key.toString() + ".authorization",
-                authorizationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
 
-        SiteMinderAgentContextCache newCache = new SiteMinderAgentContextCache(resourceCache, resourceMaxEntries, resourceMaxAge,
-                authenticationCache, authenticationMaxEntries, authenticationMaxAge, authorizationCache, authorizationMaxEntries, authorizationMaxAge);
+        SiteMinderAgentContextCache agentContextCache = null;
 
-        agentCacheMap.put(key, newCache);
+        Cache resourceCache = null;
+        Cache authenticationCache = null;
+        Cache authorizationCache = null;
 
-        LOGGER.log(Level.FINE, "Initialized new cache: {0}, resourceCache: size {1} , " +
-                        "authenticationCache: size {2}, authorizationMaxEntries: size {3}",
-                new Object[] {key, resourceMaxEntries, authenticationMaxEntries, authorizationMaxEntries});
-        return newCache;
+        try {
+            lock.lock();
+
+            // cache may have already been created
+            agentContextCache = agentCacheMap.get(key);
+
+            // if not, create it and add to agentCacheMap
+            if (null == agentContextCache) {
+                if (resourceMaxEntries > 0) {
+                    resourceCache = createWhirlycache(key.toString() + ".resource",
+                            resourceMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+                }
+
+                if (authenticationMaxEntries > 0) {
+                    authenticationCache = createWhirlycache(key.toString() + ".authentication",
+                            authenticationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+                }
+
+                if (authorizationMaxEntries > 0) {
+                    authorizationCache = createWhirlycache(key.toString() + ".authorization",
+                            authorizationMaxEntries, 59, WhirlycacheFactory.POLICY_LRU);
+                }
+
+                agentContextCache = new SiteMinderAgentContextCache(resourceCache, resourceMaxEntries, resourceMaxAge,
+                        authenticationCache, authenticationMaxEntries, authenticationMaxAge,
+                        authorizationCache, authorizationMaxEntries, authorizationMaxAge);
+
+                agentCacheMap.put(key, agentContextCache);
+
+                LOGGER.log(Level.FINE, "Initialized new cache: {0}, resourceCache: size {1}, max age {2}; " +
+                                "authenticationCache: size {3}, max age {4}; authorizationCache: size {5}, max age {6}",
+                        new Object[]{key, resourceMaxEntries, resourceMaxAge, authenticationMaxEntries,
+                                authenticationMaxAge, authorizationMaxEntries, authorizationMaxAge});
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        return agentContextCache;
     }
 
     private Cache createWhirlycache(String name, int size, int tunerInterval, String maintenancePolicy) {
         return WhirlycacheFactory.createCache(name, size, tunerInterval, maintenancePolicy);
     }
 
-    // TODO: call this when SiteMinderConfiguration is updated
     @Override
     public void removeCaches(@NotNull Goid smConfigGoid) {
-        LOGGER.log(Level.FINE, "Removing caches for Goid {0}", smConfigGoid);
+        ArrayList<SiteMinderAgentContextCache> agentContextCacheList = null;
 
-        // Look for the first key to be removed
-        Key keyToRemove = agentCacheMap.higherKey(new Key(smConfigGoid, ""));
+        try {
+            lock.lock();
 
-        while (keyToRemove != null && smConfigGoid.equals(keyToRemove.getConfigGoid())) {
-            agentCacheMap.remove(keyToRemove);
-            keyToRemove = agentCacheMap.higherKey(keyToRemove);
+            // Look for the first key to be removed
+            Key keyToRemove = agentCacheMap.higherKey(new Key(smConfigGoid, ""));
+
+            if (null == keyToRemove) {
+                // no entries, or all already removed
+                return;
+            }
+
+            LOGGER.log(Level.FINE, "Removing caches for Goid {0}", smConfigGoid);
+
+            agentContextCacheList = new ArrayList<>();
+
+            // remove all agent context caches from the agentCacheMap and add them to a list
+            while (keyToRemove != null && smConfigGoid.equals(keyToRemove.getConfigGoid())) {
+                agentContextCacheList.add(agentCacheMap.get(keyToRemove));
+                agentCacheMap.remove(keyToRemove);
+                keyToRemove = agentCacheMap.higherKey(keyToRemove);
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        // for each removed SiteMinderAgentContextCache, shutdown its Whirlycache instances
+        for (SiteMinderAgentContextCache agentContextCache : agentContextCacheList) {
+            shutdownCaches(agentContextCache);
         }
     }
 
     @Override
-    public void removeAllCache() {
-        agentCacheMap.clear();
+    public void removeAllCaches() {
+        ArrayList<SiteMinderAgentContextCache> agentContextCacheList = null;
+
+        try {
+            lock.lock();
+
+            agentContextCacheList = new ArrayList<>();
+
+            // remove all agent context caches from the agentCacheMap and add them to a list
+            for (Key key : agentCacheMap.keySet()) {
+                agentContextCacheList.add(agentCacheMap.get(key));
+                agentCacheMap.remove(key);
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        // for each removed SiteMinderAgentContextCache, shutdown its Whirlycache instances
+        for (SiteMinderAgentContextCache agentContextCache : agentContextCacheList) {
+            shutdownCaches(agentContextCache);
+        }
+    }
+
+    /**
+     * Shut down each of the Whirlycache instances for the specified SiteMinderAgentContextCache
+     *
+     * @param agentContextCache the SiteMinderAgentContextCache of whose Whirlycaches to shut down
+     */
+    private void shutdownCaches(@NotNull SiteMinderAgentContextCache agentContextCache) {
+        if (null != agentContextCache.getResourceCache()) {
+            WhirlycacheFactory.shutdown(agentContextCache.getResourceCache());
+        }
+        if (null != agentContextCache.getAuthenticationCache()) {
+            WhirlycacheFactory.shutdown(agentContextCache.getAuthenticationCache());
+        }
+        if (null != agentContextCache.getAuthorizationCache()) {
+            WhirlycacheFactory.shutdown(agentContextCache.getAuthorizationCache());
+        }
     }
 
     /**

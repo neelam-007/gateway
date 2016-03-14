@@ -2,6 +2,7 @@ package com.ca.siteminder;
 
 import com.whirlycott.cache.Cache;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * SiteMinderAgentContextCache holds the resource and session caches for a SiteMinder agent
@@ -19,9 +20,9 @@ public class SiteMinderAgentContextCache {
     private final int authenticationCacheSize;
     private final long authenticationCacheMaxAge;
 
-    public SiteMinderAgentContextCache(@NotNull Cache resourceCache, int resourceCacheSize, long resourceCacheMaxAge,
-                                       @NotNull Cache authenticationCache, int authenticationCacheSize, long authenticationCacheMaxAge,
-                                       @NotNull Cache authorizationCache, int authorizationCacheSize, long authorizationCacheMaxAge) {
+    public SiteMinderAgentContextCache(@Nullable Cache resourceCache, int resourceCacheSize, long resourceCacheMaxAge,
+                                       @Nullable Cache authenticationCache, int authenticationCacheSize, long authenticationCacheMaxAge,
+                                       @Nullable Cache authorizationCache, int authorizationCacheSize, long authorizationCacheMaxAge) {
         this.resourceCache = resourceCache;
         this.resourceCacheSize = resourceCacheSize;
         this.resourceCacheMaxAge = resourceCacheMaxAge;
