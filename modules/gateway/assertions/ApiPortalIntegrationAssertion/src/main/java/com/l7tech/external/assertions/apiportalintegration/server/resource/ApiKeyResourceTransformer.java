@@ -80,7 +80,7 @@ public class ApiKeyResourceTransformer implements ResourceTransformer<ApiKeyReso
         if (resource.getOauthCallbackUrl() != null) {
             entity.setOauthCallbackUrl(resource.getOauthCallbackUrl());
         }
-        if (resource.getOauthScope() != null) {
+        if (resource.getOauthType() != null) {
             entity.setOauthType(resource.getOauthType());
         }
         if (resource.getOauthScope() != null) {
