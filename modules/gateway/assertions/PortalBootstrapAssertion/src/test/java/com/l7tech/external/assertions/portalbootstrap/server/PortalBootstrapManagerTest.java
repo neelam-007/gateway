@@ -9,8 +9,6 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.*;
@@ -55,13 +53,10 @@ import static com.l7tech.external.assertions.portalbootstrap.server.PortalBootst
 @RunWith(MockitoJUnitRunner.class)
 public class PortalBootstrapManagerTest {
     private static final Goid ID_PROV_GOID = new Goid(0, 1);
-    private static final Goid OTK_POLICY_GOID = new Goid(0,2);
     private static final Goid OTK_ENCASS_GOID = new Goid(0,3);
     private static final Goid OTK_JDBC_GOID = new Goid(0,4);
     private static final String USER_LOGIN = "admin";
     private static final String USER_ID = "abc123";
-    private static final String OTK_CONN_ID = new Goid(1, 1).toString();
-    private static final String OTK_CONN_NAME = "OTK Connection";
     private static final String LOCALHOST = "localhost";
     private UserBean user;
     @Mock
@@ -129,9 +124,6 @@ public class PortalBootstrapManagerTest {
     @Test
     public void buildEnrollmentPostBody() throws Exception {
         when(clusterInfoManager.retrieveClusterStatus()).thenReturn(Collections.singletonList(new ClusterNodeInfo()));
-        final Policy otkPolicy = new Policy(PolicyType.INCLUDE_FRAGMENT, OTK_CLIENT_DB_GET_POLICY, "</xml>", false);
-        otkPolicy.setGoid(OTK_POLICY_GOID);
-        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(otkPolicy);
         final EncapsulatedAssertionConfig otkEncass = new EncapsulatedAssertionConfig();
         otkEncass.setGoid(OTK_ENCASS_GOID);
         when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(otkEncass);
@@ -148,7 +140,6 @@ public class PortalBootstrapManagerTest {
         assertNotNull(jsonNode.get("build_info"));
         assertEquals(USER_ID, jsonNode.get("adminuser_id").getTextValue());
         assertEquals(ID_PROV_GOID.toString(), jsonNode.get("adminuser_providerid").getTextValue());
-        assertEquals(OTK_POLICY_GOID.toString(), jsonNode.get(OTK_CLIENT_DB_GET_POLICY).getTextValue());
         assertEquals(OTK_ENCASS_GOID.toString(), jsonNode.get(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS).getTextValue());
         assertEquals(OTK_JDBC_GOID.toString(), jsonNode.get(OTK_JDBC_CONN).getTextValue());
         assertEquals("1", jsonNode.get("node_count").getTextValue());
