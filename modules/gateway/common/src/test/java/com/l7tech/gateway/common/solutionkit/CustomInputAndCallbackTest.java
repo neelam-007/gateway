@@ -9,10 +9,13 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.xpath.XpathUtil;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -32,6 +35,7 @@ import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -126,6 +130,7 @@ public class CustomInputAndCallbackTest {
     }
 
     private final String someGuidString = "someGuidString";
+    private final String someSecondGuidString = "someSecondGuidString";
     private final String someVersionString = "someVersionString";
     private final String someNameString = "someNameString";
     private final String someDescriptionString = "someDescriptionString";
@@ -155,7 +160,7 @@ public class CustomInputAndCallbackTest {
 
     @Test
     public void accessToContext() throws Exception {
-        SolutionKit solutionKit = new SolutionKit();
+        final SolutionKit solutionKit = new SolutionKit();
         setupInitialContext(solutionKit);
 
         // mock class loading
@@ -177,17 +182,17 @@ public class CustomInputAndCallbackTest {
         SolutionKitCustomization customization = customizations.get(solutionKit.getSolutionKitGuid()).right;
         CustomUiTestHook ui = (CustomUiTestHook) customization.getCustomUi();
         assert ui != null;
-        ui.setTestToRunCreateButton(new Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException>() {
+        ui.setTestToRunCreateButton(new Functions.UnaryVoidThrows<SolutionKitManagerUi, RuntimeException>() {
             @Override
-            public void call(SolutionKitManagerContext skmContext) throws RuntimeException {
+            public void call(SolutionKitManagerUi skmUi) throws RuntimeException {
                 try {
-                    verifyInitialContext(skmContext);
+                    verifyInitialContext(skmUi.getContext());
 
                     // set a key-value pair
-                    skmContext.getKeyValues().put(someKey, someValue);
+                    skmUi.getContext().getKeyValues().put(someKey, someValue);
 
                     // attempt to make read-only changes; which will be ignored and not passed to the callback
-                    attemptToModify(skmContext, READ_ONLY_STR);
+                    attemptToModify(skmUi.getContext(), READ_ONLY_STR);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -197,7 +202,7 @@ public class CustomInputAndCallbackTest {
         // set install bundle
         when(solutionKitsConfig.getBundleAsDocument(solutionKit)).thenReturn(getBundleAsDocument());
 
-        // add ui
+        // invoke add ui
         SolutionKitCustomization.addCustomUis(new JPanel(), solutionKitsConfig, solutionKit);
 
         // verify methods were called
@@ -207,16 +212,16 @@ public class CustomInputAndCallbackTest {
         // setup test hook to run in the callback
         CustomCallbackTestHook callback = (CustomCallbackTestHook) customization.getCustomCallback();
         assert callback != null;
-        callback.setTestToRunPreMigrationBundleImport(new Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException>() {
+        callback.setTestToRunPreMigrationBundleImport(new Functions.BinaryVoidThrows<SolutionKitManagerCallback, SolutionKitManagerContext, RuntimeException>() {
             @Override
-            public void call(SolutionKitManagerContext skmContext) throws RuntimeException {
+            public void call(SolutionKitManagerCallback skmCb, SolutionKitManagerContext skmContext) throws RuntimeException {
                 try {
                     // verify context same as initial context
                     // this also verifies changes in the ui don't affect the callback (e.g. read only and was correctly ignored)
                     verifyInitialContext(skmContext);
 
                     // verify instance modifier read only
-                    assertNotEquals(READ_ONLY_STR , skmContext.getInstanceModifier());
+                    assertNotEquals(READ_ONLY_STR, skmContext.getInstanceModifier());
 
                     // verify key-value pair was set in ui is available in callback
                     assertEquals(someValue, skmContext.getKeyValues().get(someKey));
@@ -247,6 +252,308 @@ public class CustomInputAndCallbackTest {
         verify(solutionKitsConfig).setMappingTargetIdsFromPreviouslyResolvedIds(solutionKit, solutionKitsConfig.getBundle(solutionKit));
     }
 
+    @Test
+    public void accessAndModifyContext() throws Exception{
+        final SolutionKit solutionKit = new SolutionKit();
+        setupInitialContext(solutionKit);
+
+        final SolutionKit solutionKit2 = new SolutionKit();
+        setupInitialContext(solutionKit2);
+        solutionKit2.setSolutionKitGuid(someSecondGuidString);
+        solutionKit2.setProperty(SolutionKit.SK_PROP_DESC_KEY, "TEST 2 DESCRIPTION");
+
+
+        final SolutionKit parentSolutionKit = new SolutionKit();
+        parentSolutionKit.setName("Parent");
+        parentSolutionKit.setSolutionKitGuid("Parent guid");
+        parentSolutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true");
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
+
+        // mock class loading
+        Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
+        when(solutionKitsConfig.getCustomizations()).thenReturn(customizations);
+        SolutionKitCustomizationClassLoader mockClassLoader = mock(SolutionKitCustomizationClassLoader.class);
+        Class uiClass = CustomUiTestHook.class;
+        // noinspection unchecked
+        when(mockClassLoader.loadClass(uiClassName)).thenReturn(uiClass);
+        Class callbackClass = CustomCallbackTestHook.class;
+        // noinspection unchecked
+        when(mockClassLoader.loadClass(callbackClassName)).thenReturn(callbackClass);
+
+        // instantiate and initialize ui
+        SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, parentSolutionKit, solutionKit, solutionKit2);
+
+        // initialize both customizations
+        skarPayload.setCustomizationInstances(solutionKit, mockClassLoader);
+        skarPayload.setCustomizationInstances(solutionKit2, mockClassLoader);
+
+        // set install bundles
+        when(solutionKitsConfig.getBundleAsDocument(solutionKit)).thenReturn(getBundleAsDocument());
+        when(solutionKitsConfig.getBundleAsDocument(solutionKit2)).thenReturn(getBundleAsDocument());
+
+        //********************** TEST THE SKMContexts FOR CUSTOM UIs **********************//
+        // setup test hook to run in the ui for solutionKit
+        SolutionKitCustomization customization = customizations.get(solutionKit.getSolutionKitGuid()).right;
+        final CustomUiTestHook ui = (CustomUiTestHook) customization.getCustomUi();
+        Assert.assertNotNull("First kit should have a ui object", ui);
+
+        // Test
+        ui.setTestToRunCreateButton(new Functions.UnaryVoidThrows<SolutionKitManagerUi, RuntimeException>() {
+            @Override
+            public void call(SolutionKitManagerUi skmUi) throws RuntimeException {
+                try {
+                    testCustomizations(
+                            skmUi.getContext(), skmUi.getContextMap(),
+                            solutionKit.getSolutionKitGuid(), solutionKit2.getSolutionKitGuid(),
+                            "UI MODIFICATION STRING FROM SK1",
+                            "UI_SK1",
+                            parentSolutionKit, solutionKit, solutionKit2
+                    );
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        // setup test hook to run in the ui for solutionKit2
+        SolutionKitCustomization customization2 = customizations.get(solutionKit2.getSolutionKitGuid()).right;
+        final CustomUiTestHook ui2 = (CustomUiTestHook) customization2.getCustomUi();
+        Assert.assertNotNull("Second kit should have a ui object", ui2);
+        //Test
+        ui2.setTestToRunCreateButton(new Functions.UnaryVoidThrows<SolutionKitManagerUi, RuntimeException>() {
+            @Override
+            public void call(SolutionKitManagerUi skmUi) throws RuntimeException {
+                try {
+                    testCustomizations(
+                            skmUi.getContext(), skmUi.getContextMap(),
+                            solutionKit2.getSolutionKitGuid(), solutionKit.getSolutionKitGuid(),
+                            "UI MODIFICATION STRING FROM SK2",
+                            "UI_SK2",
+                            parentSolutionKit, solutionKit, solutionKit2
+                    );
+
+                    // verify can access first context from UI
+                    SolutionKitManagerContext firstSolutionKitManagerContext = skmUi.getContextMap().get(solutionKit.getSolutionKitGuid());
+                    assertEquals(firstSolutionKitManagerContext.getKeyValues().get(someKey), "UI MODIFICATION STRING FROM SK1");
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        //Invoke custom create buttons
+        SolutionKitCustomization.addCustomUis(new JPanel(), solutionKitsConfig, solutionKit);
+        SolutionKitCustomization.addCustomUis(new JPanel(), solutionKitsConfig, solutionKit2);
+
+
+        //********************** TEST THE SKMContexts FOR CALLBACKS **********************//
+        // setup test hook to run in the callback for solutionKit
+        final CustomCallbackTestHook callback = (CustomCallbackTestHook) customization.getCustomCallback();
+        Assert.assertNotNull("Second kit should have a ui object", callback);
+
+        // Test
+        callback.setTestToRunPreMigrationBundleImport(new Functions.BinaryVoidThrows<SolutionKitManagerCallback, SolutionKitManagerContext, RuntimeException>() {
+            @Override
+            public void call(SolutionKitManagerCallback skmCb, SolutionKitManagerContext skmContext) throws RuntimeException {
+                try {
+                    testCustomizations(
+                            skmContext, skmCb.getContextMap(),
+                            solutionKit.getSolutionKitGuid(), solutionKit2.getSolutionKitGuid(),
+                            "CALLBACK MODIFICATION STRING FROM SK1",
+                            "CALLBACK_SK1",
+                            parentSolutionKit, solutionKit, solutionKit2
+                    );
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        // setup test hook to run in the callback for solutionKit2
+        final CustomCallbackTestHook callback2 = (CustomCallbackTestHook) customization2.getCustomCallback();
+        Assert.assertNotNull("Second kit should have a ui object", callback2);
+
+        //Test
+        callback2.setTestToRunPreMigrationBundleImport(new Functions.BinaryVoidThrows<SolutionKitManagerCallback, SolutionKitManagerContext, RuntimeException>() {
+            @Override
+            public void call(SolutionKitManagerCallback skmCb, SolutionKitManagerContext skmContext) throws RuntimeException {
+                try {
+                    testCustomizations(
+                            skmContext, skmCb.getContextMap(),
+                            solutionKit2.getSolutionKitGuid(), solutionKit.getSolutionKitGuid(),
+                            "CALLBACK MODIFICATION STRING FROM SK2",
+                            "CALLBACK_SK2",
+                            parentSolutionKit, solutionKit, solutionKit2
+                    );
+
+                    // verify can access first context from first callback
+                    SolutionKitManagerContext solutionKitManagerContext = skmCb.getContextMap().get(solutionKit.getSolutionKitGuid());
+                    assertEquals(solutionKitManagerContext.getKeyValues().get(someKey), "CALLBACK MODIFICATION STRING FROM SK1");
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        // invoke callbacks
+        solutionKitProcessor.invokeCustomCallback(solutionKit);
+        solutionKitProcessor.invokeCustomCallback(solutionKit2);
+    }
+
+    private void testCustomizations(
+            final SolutionKitManagerContext currentContext,
+            final Map<String, SolutionKitManagerContext> contextMap,
+            final String currentContextGuid,
+            final String testAgainstContextGuid,
+            final String modifyStr,
+            final String modifyEntityId,
+            final SolutionKit ... solutionKits
+    ) throws Exception {
+        Assert.assertThat(modifyEntityId, Matchers.not(Matchers.isEmptyOrNullString()));
+        //***** Test: change key values in current context
+        currentContext.getKeyValues().put(someKey, modifyStr);
+        // verify it was changed
+        assertEquals(currentContext.getKeyValues().get(someKey), modifyStr);
+
+        //***** verify can access context map
+        for (final SolutionKit solutionKit : solutionKits) {
+            assertTrue(contextMap.containsKey(solutionKit.getSolutionKitGuid()));
+        }
+        assertEquals(contextMap.size(), solutionKits.length);
+
+
+        //***** Test: Modify own MetaData, install bundle, uninstall bundle, and previously installed bundle
+        final String modifyFolderCreateAction = "action=\"AlwaysCreateNew\" srcId=\"" + modifyEntityId + "\"";
+        final String modifyFolderDeleteAction = "action=\"Delete\" srcId=\"" + modifyEntityId + "\"";
+        Document solutionKitMetadata = currentContext.getSolutionKitMetadata();
+        Document solutionKitInstallBundle = currentContext.getMigrationBundle();
+        Document solutionKitUninstallBundle = currentContext.getUninstallBundle();
+        Document solutionKitInstalledBundle = currentContext.getInstalledSolutionKitMetadata();
+        // verify metadata bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitMetadata).contains(modifyStr));
+        // verify install bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstallBundle).contains(modifyFolderCreateAction));
+        // verify uninstall bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitUninstallBundle).contains(modifyFolderDeleteAction));
+        // verify previously Installed bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstalledBundle).contains(modifyStr));
+
+        // make sure that initial assumption is true (i.e. current context is same as the one in the map)
+        assertTrue(solutionKitMetadata.isEqualNode(contextMap.get(currentContextGuid).getSolutionKitMetadata()));
+        assertTrue(solutionKitInstallBundle.isEqualNode(contextMap.get(currentContextGuid).getMigrationBundle()));
+        assertTrue(solutionKitUninstallBundle.isEqualNode(contextMap.get(currentContextGuid).getUninstallBundle()));
+        assertTrue(solutionKitInstalledBundle.isEqualNode(contextMap.get(currentContextGuid).getInstalledSolutionKitMetadata()));
+
+        // do change
+        attemptToModify(currentContext, modifyStr, modifyFolderCreateAction, modifyFolderDeleteAction);
+        solutionKitMetadata = currentContext.getSolutionKitMetadata();
+        solutionKitInstallBundle = currentContext.getMigrationBundle();
+        solutionKitUninstallBundle = currentContext.getUninstallBundle();
+        solutionKitInstalledBundle = currentContext.getInstalledSolutionKitMetadata();
+        // verify metadata bundle modified
+        assertTrue(XmlUtil.nodeToString(solutionKitMetadata).contains(modifyStr));
+        // verify install bundle modified
+        assertTrue(XmlUtil.nodeToString(solutionKitInstallBundle).contains(modifyFolderCreateAction));
+        // verify uninstall bundle modified
+        assertTrue(XmlUtil.nodeToString(solutionKitUninstallBundle).contains(modifyFolderDeleteAction));
+        // verify previously Installed bundle modified
+        assertTrue(XmlUtil.nodeToString(solutionKitInstalledBundle).contains(modifyStr));
+
+        // verify changes are reflected on the contextMap
+        assertTrue(solutionKitMetadata.isEqualNode(contextMap.get(currentContextGuid).getSolutionKitMetadata()));
+        assertTrue(solutionKitInstallBundle.isEqualNode(contextMap.get(currentContextGuid).getMigrationBundle()));
+        assertTrue(solutionKitUninstallBundle.isEqualNode(contextMap.get(currentContextGuid).getUninstallBundle()));
+        assertTrue(solutionKitInstalledBundle.isEqualNode(contextMap.get(currentContextGuid).getInstalledSolutionKitMetadata()));
+
+
+        //**** Test: Modify another MetaData, install bundle, uninstall bundle, and previously installed bundle
+        solutionKitMetadata = contextMap.get(testAgainstContextGuid).getSolutionKitMetadata();
+        solutionKitInstallBundle = contextMap.get(testAgainstContextGuid).getMigrationBundle();
+        solutionKitUninstallBundle = contextMap.get(testAgainstContextGuid).getUninstallBundle();
+        solutionKitInstalledBundle = contextMap.get(testAgainstContextGuid).getInstalledSolutionKitMetadata();
+        // verify metadata bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitMetadata).contains(modifyStr));
+        // verify install bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstallBundle).contains(modifyFolderCreateAction));
+        // verify uninstall bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitUninstallBundle).contains(modifyFolderDeleteAction));
+        // verify previously Installed bundle is unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstalledBundle).contains(modifyStr));
+        // do modify the documents
+        attemptToModify(contextMap.get(testAgainstContextGuid), modifyStr, modifyFolderCreateAction, modifyFolderDeleteAction);
+        solutionKitMetadata = contextMap.get(testAgainstContextGuid).getSolutionKitMetadata();
+        solutionKitInstallBundle = contextMap.get(testAgainstContextGuid).getMigrationBundle();
+        solutionKitUninstallBundle = contextMap.get(testAgainstContextGuid).getUninstallBundle();
+        solutionKitInstalledBundle = contextMap.get(testAgainstContextGuid).getInstalledSolutionKitMetadata();
+        // verify metadata bundle remains unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitMetadata).contains(modifyStr));
+        // verify install bundle remains unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstallBundle).contains(modifyFolderCreateAction));
+        // verify uninstall bundle remains unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitUninstallBundle).contains(modifyFolderDeleteAction));
+        // verify previously Installed bundle remains unmodified
+        assertFalse(XmlUtil.nodeToString(solutionKitInstalledBundle).contains(modifyStr));
+
+
+        //***** Test: try to put keyValues from solutionKit currentContext into solutionKit2 currentContext
+        try {
+            contextMap.get(testAgainstContextGuid).getKeyValues().put("someKey2", "someValue2");
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 KeyValues.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+
+        //***** Test: try to change skmContext2 instance modifier from skmContext1
+        try {
+            contextMap.get(testAgainstContextGuid).setInstanceModifier("Changing IM for skmContext2");
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 InstanceModifier.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+
+        //***** Test: try to change skmContext2 instance modifier from skmContext1
+        try {
+            contextMap.get(testAgainstContextGuid).setSolutionKitMetadata(Mockito.mock(Document.class));
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 SolutionKitMetadata.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+
+        //***** Test: try to change skmContext2 instance modifier from skmContext1
+        try {
+            contextMap.get(testAgainstContextGuid).setMigrationBundle(Mockito.mock(Document.class));
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 MigrationBundle.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+
+        //***** Test: try to change skmContext2 instance modifier from skmContext1
+        try {
+            contextMap.get(testAgainstContextGuid).setUninstallBundle(Mockito.mock(Document.class));
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 UninstallBundle.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+
+        //***** Test: try to change skmContext2 instance modifier from skmContext1
+        try {
+            contextMap.get(testAgainstContextGuid).setInstalledSolutionKitMetadata(Mockito.mock(Document.class));
+            // verify exception is thrown
+            Assert.fail("solutionKit currentContext should not be able to modify solutionKit2 InstalledSolutionKitMetadata.");
+        } catch (UnsupportedOperationException ex) {
+            // Success
+        }
+    }
+
     private Document getBundleAsDocument() throws Exception {
         InputStream inputStream = new ByteArrayInputStream(installBundleStr.getBytes(StandardCharsets.UTF_8));
         final Document installBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(inputStream)));
@@ -274,6 +581,7 @@ public class CustomInputAndCallbackTest {
         installedSolutionKit.setSolutionKitVersion(someInstalledVersionString);
         installedSolutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, someInstalledDescriptionString);
         when(solutionKitsConfig.getSolutionKitToUpgrade(someGuidString)).thenReturn(installedSolutionKit);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(someSecondGuidString)).thenReturn(installedSolutionKit);
     }
 
     private void verifyInitialContext(final SolutionKitManagerContext skmContext) throws Exception {
@@ -297,6 +605,38 @@ public class CustomInputAndCallbackTest {
         assertEquals(someGuidString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_ID)));
         assertEquals(someInstalledVersionString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_VERSION)));
         assertEquals(someInstalledDescriptionString, getTextValue(findExactlyOneChildElementByName(installedMetadata, SolutionKitUtils.SK_NS, SolutionKitUtils.SK_ELE_DESC)));
+    }
+
+    private void attemptToModify(
+            final SolutionKitManagerContext skmContext,
+            final String modifyStr,
+            final String modifyCreateFolder,
+            final String modifyDeleteFolder
+    ) throws SAXException, SolutionKitManagerCallback.CallbackException {
+        // modify name in metadata - ui read only
+        {
+            final Document solutionKitMetadata = skmContext.getSolutionKitMetadata();
+            final List<Element> nameElements = XpathUtil.findElements(solutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
+            if (nameElements.size() > 0) {
+                nameElements.get(0).setTextContent(modifyStr);
+            }
+        }
+
+        // modify install bundle - ui read only
+        modifyInstallBundle(skmContext.getMigrationBundle(), modifyCreateFolder);
+
+        // modify uninstall bundle - ui read only
+        modifyUninstallBundle(skmContext.getUninstallBundle(), modifyDeleteFolder);
+
+        // modify already installed metadata - read only
+        {
+            final Document installedSolutionKitMetadata = skmContext.getInstalledSolutionKitMetadata();
+            final List<Element> nameElements = XpathUtil.findElements(installedSolutionKitMetadata.getDocumentElement(), "//l7:SolutionKit/l7:Name", getNamespaceMap());
+            if (nameElements.size() > 0) {
+                nameElements.get(0).setTextContent(modifyStr);
+            }
+        }
+
     }
 
     private void attemptToModify(final SolutionKitManagerContext skmContext, final String modifyStr) throws SAXException, SolutionKitManagerCallback.CallbackException {
@@ -328,7 +668,12 @@ public class CustomInputAndCallbackTest {
         skmContext.setInstanceModifier(READ_ONLY_STR);
     }
 
+    private static final String MY_FOLDER_CREATE_ACTION_SRC_ID = "action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\"";
     private void modifyInstallBundle(final Document installBundle) throws SAXException, SolutionKitManagerCallback.CallbackException {
+        modifyInstallBundle(installBundle, MY_FOLDER_CREATE_ACTION_SRC_ID);
+    }
+    private void modifyInstallBundle(final Document installBundle, final String modStr) throws SAXException, SolutionKitManagerCallback.CallbackException {
+        Assert.assertThat(modStr, Matchers.not(Matchers.isEmptyOrNullString()));
         final String MY_FOLDER_ITEM =
                 "        <l7:Item xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                         "            <l7:Name>{0}</l7:Name>\n" +
@@ -346,7 +691,7 @@ public class CustomInputAndCallbackTest {
         myFolderItem.removeAttribute("xmlns:l7");
         referencesElements.get(0).appendChild(installBundle.importNode(myFolderItem, true));
         final String MY_FOLDER_INSTALL_MAPPING =
-                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
+                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + modStr + " srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
         final List<Element> mappingsElements = XpathUtil.findElements(installBundle.getDocumentElement(), "//l7:Bundle/l7:Mappings", getNamespaceMap());
         Element myFolderMapping = XmlUtil.stringToDocument(MY_FOLDER_INSTALL_MAPPING).getDocumentElement();
         myFolderMapping.removeAttribute("xmlns:l7");
@@ -355,8 +700,12 @@ public class CustomInputAndCallbackTest {
 
     private static final String MY_FOLDER_DELETE_ACTION_SRC_ID = "action=\"Delete\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0d\"";
     private void modifyUninstallBundle(final Document uninstallBundle) throws SolutionKitManagerCallback.CallbackException, SAXException {
+        modifyUninstallBundle(uninstallBundle, MY_FOLDER_DELETE_ACTION_SRC_ID);
+    }
+    private void modifyUninstallBundle(final Document uninstallBundle, final String modStr) throws SolutionKitManagerCallback.CallbackException, SAXException {
+        Assert.assertThat(modStr, Matchers.not(Matchers.isEmptyOrNullString()));
         final String MY_FOLDER_DELETE_MAPPING =
-                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + MY_FOLDER_DELETE_ACTION_SRC_ID + " srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
+                "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + modStr + " srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0d\" type=\"FOLDER\"/>";
 
         final List<Element> uninstallMappingsElements = XpathUtil.findElements(uninstallBundle.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
         Element myFolderMapping = XmlUtil.stringToDocument(MY_FOLDER_DELETE_MAPPING).getDocumentElement();

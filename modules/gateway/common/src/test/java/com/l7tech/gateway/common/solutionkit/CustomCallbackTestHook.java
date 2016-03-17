@@ -8,7 +8,7 @@ import com.l7tech.util.Functions;
  * Helper class to test the Solution Kit Manager UI customization framework.
  */
 public class CustomCallbackTestHook extends SolutionKitManagerCallback {
-    private Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException> testToRunPreMigrationBundleImport;
+    private Functions.BinaryVoidThrows<SolutionKitManagerCallback, SolutionKitManagerContext, RuntimeException> testToRunPreMigrationBundleImport;
 
     private boolean preMigrationBundleImportCalled = false;
 
@@ -18,11 +18,11 @@ public class CustomCallbackTestHook extends SolutionKitManagerCallback {
 
         // unit test hook
         if (testToRunPreMigrationBundleImport != null) {
-            testToRunPreMigrationBundleImport.call(context);
+            testToRunPreMigrationBundleImport.call(this, context);
         }
     }
 
-    public void setTestToRunPreMigrationBundleImport(Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException> testToRunPreMigrationBundleImport) {
+    public void setTestToRunPreMigrationBundleImport(Functions.BinaryVoidThrows<SolutionKitManagerCallback, SolutionKitManagerContext, RuntimeException> testToRunPreMigrationBundleImport) {
         this.testToRunPreMigrationBundleImport = testToRunPreMigrationBundleImport;
     }
 

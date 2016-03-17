@@ -1,6 +1,5 @@
 package com.l7tech.gateway.common.solutionkit;
 
-import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Functions;
 
@@ -10,7 +9,7 @@ import javax.swing.*;
  * Helper class to test the Solution Kit Manager UI customization framework.
  */
 public class CustomUiTestHook extends SolutionKitManagerUi {
-    private Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException> testToRunCreateButton;
+    private Functions.UnaryVoidThrows<SolutionKitManagerUi, RuntimeException> testToRunCreateButton;
 
     private boolean initializeCalled = false;
     private boolean createButtonCalled = false;
@@ -27,13 +26,13 @@ public class CustomUiTestHook extends SolutionKitManagerUi {
 
         // unit test hook
         if (testToRunCreateButton != null) {
-            testToRunCreateButton.call(getContext());
+            testToRunCreateButton.call(this);
         }
 
         return null;
     }
 
-    public void setTestToRunCreateButton(Functions.UnaryVoidThrows<SolutionKitManagerContext, RuntimeException> testToRunCreateButton) {
+    public void setTestToRunCreateButton(Functions.UnaryVoidThrows<SolutionKitManagerUi, RuntimeException> testToRunCreateButton) {
         this.testToRunCreateButton = testToRunCreateButton;
     }
 
