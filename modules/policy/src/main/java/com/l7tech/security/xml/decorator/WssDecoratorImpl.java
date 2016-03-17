@@ -1584,7 +1584,7 @@ public class WssDecoratorImpl implements WssDecorator {
             if ( SupportedDigestMethods.SHA1.getCanonicalName().equals(oaepDigestMethod.getCanonicalName()) ) {
                 digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha1");
             } else if ( SupportedDigestMethods.SHA256.getCanonicalName().equals(oaepDigestMethod.getCanonicalName()) ) {
-                digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha256");
+                digestMethodEle.setAttributeNS(null, "Algorithm", oaepDigestMethod.getIdentifier());
             } else {
                 throw new DecoratorException("DigestMethod Algorithm not supported " + oaepDigestMethod.getIdentifier() +
                     " with EncryptionMethod Algorithm " + algorithm);

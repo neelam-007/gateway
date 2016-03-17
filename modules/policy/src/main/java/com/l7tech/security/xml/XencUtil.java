@@ -362,7 +362,7 @@ public class XencUtil {
         if (encMethodValue.equals( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO)) {
             return encMethodValue;
         } else if(encMethodValue.equals( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2)) {
-            if (digestAlgo==null || ( SoapConstants.DIGSIG_URI+"sha1").equals(digestAlgo) || ( SoapConstants.DIGSIG_URI+"sha256").equals(digestAlgo)) {
+            if (digestAlgo==null || ( SoapConstants.DIGSIG_URI+"sha1").equals(digestAlgo) || ( SupportedDigestMethods.SHA256.getIdentifier() ).equals(digestAlgo)) {
                 return encMethodValue;
             }
         }
