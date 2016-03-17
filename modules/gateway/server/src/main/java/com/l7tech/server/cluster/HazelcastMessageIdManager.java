@@ -2,17 +2,10 @@ package com.l7tech.server.cluster;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
-import org.springframework.jmx.export.annotation.ManagedResource;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -21,12 +14,11 @@ import java.util.logging.Logger;
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
  */
-@ManagedResource(description="Hazelcast Data Grid", objectName="l7tech:type=Hazelcast")
 public class HazelcastMessageIdManager implements MessageIdManager {
     private final Logger logger = Logger.getLogger(HazelcastMessageIdManager.class.getName());
 
     private static final String MESSAGE_ID_MAP_NAME = "message-ids";
-    
+
     private HazelcastInstance hazelcastInstance;
     private AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -42,7 +34,7 @@ public class HazelcastMessageIdManager implements MessageIdManager {
         
         try {
             // lock access to this key, whether it is present or not, across all cluster nodes
-            messageIdMap.lock(key); // TODO jwilliams: use lock with timeout?
+            messageIdMap.lock(key);
 
             Long existingIdExpiry = messageIdMap.get(key);
 
@@ -73,22 +65,6 @@ public class HazelcastMessageIdManager implements MessageIdManager {
 
     private boolean isExpired(Long expiryTime) {
         return Math.abs(expiryTime.longValue()) < System.currentTimeMillis();
-    }
-
-    @ManagedAttribute(description="Group Members", currencyTimeLimit=30)
-    public List<String> getMemberIpAddresses() {
-        final List<String> addresses = new ArrayList<>();
-
-        for (Member member : hazelcastInstance.getCluster().getMembers()) {
-            try {
-                String address = member.getAddress().getInetAddress().getHostAddress();
-                addresses.add(address);
-            } catch (UnknownHostException e) {
-                logger.log(Level.WARNING, "Could not determine member address: " + e.getMessage()); // TODO jwilliams: further handling?
-            }
-        }
-
-        return Collections.unmodifiableList(addresses);
     }
 
     public void initialize(HazelcastInstance hazelcastInstance) throws Exception {

@@ -6,14 +6,21 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 
 import javax.inject.Inject;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,6 +28,7 @@ import java.util.logging.Logger;
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
  */
+@ManagedResource(description = "Hazelcast Data Grid", objectName = "l7tech:type=Hazelcast")
 public class GatewayHazelcast implements InitializingBean {
     private static final Logger logger = Logger.getLogger(GatewayHazelcast.class.getName());
 
@@ -64,6 +72,26 @@ public class GatewayHazelcast implements InitializingBean {
         if (null != instance) {
             instance.shutdown();
         }
+    }
+
+    @ManagedAttribute(description = "Group Members", currencyTimeLimit = 30)
+    public List<String> getMemberIpAddresses() {
+        checkShutdown();
+
+        HazelcastInstance hazelcastInstance = Hazelcast.getHazelcastInstanceByName(DEFAULT_INSTANCE_NAME);
+
+        final List<String> addresses = new ArrayList<>();
+
+        for (Member member : hazelcastInstance.getCluster().getMembers()) {
+            try {
+                String address = member.getAddress().getInetAddress().getHostAddress();
+                addresses.add(address);
+            } catch (UnknownHostException e) {
+                logger.log(Level.WARNING, "Could not determine member address: " + e.getMessage());
+            }
+        }
+
+        return Collections.unmodifiableList(addresses);
     }
 
     @Override
