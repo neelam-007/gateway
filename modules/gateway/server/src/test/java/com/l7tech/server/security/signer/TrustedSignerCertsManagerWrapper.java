@@ -8,13 +8,13 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 
 /**
- * <p>Stub for {@code SignatureVerifier}.<br/>
+ * <p>Wrapper for {@code TrustedSignerCertsManager}.<br/>
  * Basically acts as a proxy class, allowing you to set the real {@code SignatureVerifier},
  * using the {@link #setProxyManager(TrustedSignerCertsManager)}.</p>
  *
  * Throws {@code IllegalStateException} if the proxy object {@link #proxyManager} is not set.
  */
-public class TrustedSignerCertsManagerStub implements TrustedSignerCertsManager {
+public class TrustedSignerCertsManagerWrapper implements TrustedSignerCertsManager {
 
     private TrustedSignerCertsManager proxyManager;
 

@@ -21,7 +21,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.security.signer.SignatureTestUtils;
-import com.l7tech.server.security.signer.TrustedSignerCertsManagerStub;
+import com.l7tech.server.security.signer.TrustedSignerCertsManagerWrapper;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -90,10 +90,10 @@ public class ServerModuleFileEntityResourceTest extends RestEntityTests<ServerMo
     public void before() throws Exception {
         uploadEnabledOverride = null;
 
-        // change the default (stub) signature verifier with our own
-        final TrustedSignerCertsManagerStub trustedCertsStub = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedSignerCertsManager", TrustedSignerCertsManagerStub.class);
-        Assert.assertNotNull(trustedCertsStub);
-        trustedCertsStub.setProxyManager(trustedSignerManager);
+        // change the default signature verifier with our own
+        final TrustedSignerCertsManagerWrapper trustedCerts = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedSignerCertsManager", TrustedSignerCertsManagerWrapper.class);
+        Assert.assertNotNull(trustedCerts);
+        trustedCerts.setProxyManager(trustedSignerManager);
 
         serverModuleFileManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serverModuleFileManager", ServerModuleFileManager.class);
         Assert.assertThat(serverModuleFileManager, Matchers.notNullValue());
