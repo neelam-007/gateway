@@ -339,35 +339,6 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Search a solution kit object from a list of solution kits, based on a given solution kit guid.
-     * @param guid: the solution kit GUID used to search
-     * @return a solution kit, whose GUID is the same as the GUID of one of solution kits in solutionKitsToUpgrade
-     */
-    public static SolutionKit searchSolutionKitByGuidToUpgrade(@NotNull final List<SolutionKit> solutionKitsToUpgrade, @NotNull final String guid) {
-        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
-            if (guid.equals(solutionKit.getSolutionKitGuid())) {
-                return solutionKit;
-            }
-        }
-
-        return null;
-    }
-
-    public static SolutionKit searchSolutionKitFromUpgradeListByGuidAndIM(@NotNull final List<SolutionKit> solutionKitsToUpgrade, @NotNull final String guid, @Nullable final String instanceModifier) {
-        String tempIM;
-        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
-            tempIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-            if (guid.equals(solutionKit.getSolutionKitGuid()) &&
-               ((StringUtils.isBlank(tempIM) && StringUtils.isBlank(instanceModifier)) || (tempIM != null && tempIM.equals(instanceModifier)))) {
-                return solutionKit;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Check whether any two selected solution kits have same GUID and same instance modifier
      * @return a string containing error report if any two solution kits have same GUID and instance modifier; Otherwise null if no any errors exist.
      */

@@ -263,7 +263,7 @@ public class CustomInputAndCallbackTest {
         installedSolutionKit.setSolutionKitGuid(someGuidString);
         installedSolutionKit.setSolutionKitVersion(someInstalledVersionString);
         installedSolutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, someInstalledDescriptionString);
-        when(solutionKitsConfig.getSolutionKitToUpgrade(someGuidString, null)).thenReturn(installedSolutionKit);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(someGuidString)).thenReturn(installedSolutionKit);
     }
 
     private void verifyInitialContext(final SolutionKitManagerContext skmContext) throws Exception {

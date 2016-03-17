@@ -69,7 +69,7 @@ public class SolutionKitCustomization {
         }
 
         // set to context: already installed metadata
-        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
         if (solutionKitToUpgrade != null) {
             skmContext.setInstalledSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKitToUpgrade));
         }

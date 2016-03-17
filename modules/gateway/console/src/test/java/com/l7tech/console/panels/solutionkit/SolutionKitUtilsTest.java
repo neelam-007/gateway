@@ -7,12 +7,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.Matchers.either;
-import static org.hamcrest.Matchers.startsWith;
-
 /**
  * Test utility methods
  */
@@ -54,39 +48,5 @@ public class SolutionKitUtilsTest {
         SolutionKit copy = new SolutionKit();
         SolutionKitUtils.copyDocumentToSolutionKit(doc, copy);
         Assert.assertEquals(original, copy);
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @Test
-    public void testSearchSolutionKitByGuidToUpgrade() {
-        try {
-            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(null, "", null);
-        } catch (Exception e) {
-            // appears exception message can be variable: "Argument 0 for @NotNull parameter" or "Argument for @NotNull parameter 'solutionKitsToUpgrade'
-            Assert.assertThat(e.getMessage(), either(startsWith("Argument 0 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'solutionKitsToUpgrade")));
-        }
-
-        try {
-            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(new ArrayList<SolutionKit>(), null, null);
-        } catch (Exception e) {
-            // appears exception message can be variable: "Argument 1 for @NotNull parameter" or "Argument for @NotNull parameter 'guid'"
-            Assert.assertThat(e.getMessage(), either(startsWith("Argument 1 for @NotNull parameter")).or(startsWith("Argument for @NotNull parameter 'guid'")));
-        }
-
-        final List<SolutionKit> solutionKits = new ArrayList<>(2);
-        SolutionKit sk1 = new SolutionKit();
-        sk1.setSolutionKitGuid("33b16742-d62d-4095-8f8d-4db707e9ad52");
-        solutionKits.add(sk1);
-
-        SolutionKit sk2 = new SolutionKit();
-        sk2.setSolutionKitGuid("79b16742-d62d-4095-8f8d-4db707e0ad22");
-        solutionKits.add(sk2);
-
-        // Find a matched solution kit by guid
-        Assert.assertEquals(
-            "Find matched solution kit:",
-            "79b16742-d62d-4095-8f8d-4db707e0ad22",
-            SolutionKitUtils.searchSolutionKitFromUpgradeListByGuidAndIM(solutionKits, "79b16742-d62d-4095-8f8d-4db707e0ad22", null).getSolutionKitGuid()
-        );
     }
 }

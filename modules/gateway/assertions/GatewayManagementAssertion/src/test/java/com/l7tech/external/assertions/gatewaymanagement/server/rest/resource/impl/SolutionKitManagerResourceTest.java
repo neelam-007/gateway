@@ -864,11 +864,11 @@ public class SolutionKitManagerResourceTest {
         //simulate selecting non-parent solution kit for upgrade success
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         solutionKitsConfig = new SolutionKitsConfig();
-        Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
         assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 0);
 
         //Test for solution kit upgrade child success
-        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(false, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im1", null );
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(false, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im1", null);
 
         //Expect the solution kit is put on the map "selectedGuidAndImForHeadlessUpgrade" for upgrade
         assertEquals(selectedGuidAndImForHeadlessUpgrade.get("1f87436b-7ca5-41c8-9418-21d7a7848853").left, "im1");
@@ -889,18 +889,18 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
 
         //Test
-        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im2::newIM", null );
+        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im2::newIM", null);
 
-        selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
 
         //Expect only the kit with IM "im2" to be selected for upgrade
-        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
+        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 1);
         assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKit2.getSolutionKitGuid()));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate selected solution kit for upgrade based on solutionKitSelect
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        solutionKitsConfig = new SolutionKitsConfig();
+        initializeSolutionKits();
 
         //same instance modifiers as solutionKit1
         solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
@@ -913,10 +913,10 @@ public class SolutionKitManagerResourceTest {
         //Test, select for only solutionKit1
         solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1::im2", Collections.singletonList(solutionKitSelect));
 
-        selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
+        selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
 
         //expect only solutionKit1 to be selected
-        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
+        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 1);
         assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKit1.getSolutionKitGuid()));
 
     }
@@ -949,7 +949,8 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //simulate selecting for parent upgrade, no IM error
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        solutionKitsConfig = new SolutionKitsConfig();
+        initializeSolutionKits();
+
         //reset back to original Guid
         solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
         childKits.clear();
@@ -1388,12 +1389,11 @@ public class SolutionKitManagerResourceTest {
     @Test
     public void selectSolutionKitsForUpgradeSuccess() throws Exception {
         initializeSolutionKits();
-        Map<String, Pair<String, String>> selectedGuidAndIm = new HashMap<>();
+        Map<String, Pair<String, String>> selectedGuidAndIm = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
 
         //Selected solutionKit1 and 2 for upgrade
         selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
         selectedGuidAndIm.put(solutionKit2.getSolutionKitGuid(), new Pair<>("im2", "newIM"));
-        when(solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade()).thenReturn(selectedGuidAndIm);
 
         //Loaded all three solution kits
         Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
@@ -1440,9 +1440,8 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //Selected solutionKit1
-        Map<String, Pair<String, String>> selectedGuidAndIm = new HashMap<>();
+        Map<String, Pair<String, String>> selectedGuidAndIm = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
         selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
-        when(solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade()).thenReturn(selectedGuidAndIm);
 
         //Loaded solutionKit2 and 3
         Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
@@ -1562,6 +1561,8 @@ public class SolutionKitManagerResourceTest {
     }
 
     private void initializeSolutionKits() {
+        solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade().clear();
+
         solutionKitsConfig = Mockito.spy(new SolutionKitsConfig());
         Goid parentGoidSame = new Goid("1f87436b7ca541c8941821d7a7848111");
 

@@ -96,6 +96,8 @@ public class SolutionKitManagerResource {
         this.identityProviderConfigManager = identityProviderConfigManager;
     }
 
+    private final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = new HashMap<>(); // The map of guid and instance modifier of selected solution kits for headless upgrade.
+
     public SolutionKitManagerResource() {}
 
     /**
@@ -229,6 +231,7 @@ public class SolutionKitManagerResource {
 
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
         final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
+        selectedGuidAndImForHeadlessUpgrade.clear();
 
         try {
             validateParams(fileInputStream);
@@ -345,7 +348,6 @@ public class SolutionKitManagerResource {
 
     protected void updateSolutionKitsToUpgradeBasedOnGivenParameters(@NotNull final SolutionKitsConfig solutionKitsConfig) throws FindException {
         // Check precondition: the map must be filled already based on parameters given by user
-        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
         if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
             throw new IllegalArgumentException("A map of guid and instance modifier for selected to-be-upgraded solution kits has not been initialized.");
         }
@@ -855,7 +857,6 @@ public class SolutionKitManagerResource {
      */
     protected void selectSolutionKitsForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitManagerResourceException {
         // Check the precondition:
-        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();
         if (selectedGuidAndImForHeadlessUpgrade.isEmpty()) {
             throw new IllegalArgumentException("A map of guid and instance modifier for selected to-be-upgraded solution kits has not been initialized.");
         }
@@ -973,6 +974,10 @@ public class SolutionKitManagerResource {
         }
     }
 
+    protected Map<String, Pair<String, String>> getSelectedGuidAndImForHeadlessUpgrade() {
+        return selectedGuidAndImForHeadlessUpgrade;
+    }
+
     /**
      * In headless upgrade, find all mappings for guid and instance modifier for selected solution kits, based on two parameters, "instanceModifier" and "solutionKitSelect".
      */
@@ -981,8 +986,6 @@ public class SolutionKitManagerResource {
                                                           @NotNull final SolutionKitsConfig solutionKitsConfig,
                                                           @Nullable final String instanceModifierParameter,
                                                           @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException, FindException {
-        // Don't create a new return map.  Just use a map from SolutionKitConfig, so the result of this map can be shared thru accessing SolutionKitConfig.
-        final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitsConfig.getSelectedGuidAndImForHeadlessUpgrade();  // it should be emtpy at beginning.
         final Pair<String, String> globalIMPair = processGlobalInstanceModifiers(instanceModifierParameter);
         final String currentGlobalIM = globalIMPair.left;
         final String newGlobalIM = globalIMPair.right;

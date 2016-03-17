@@ -48,6 +48,10 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         final List<SolutionKit> skList = new ArrayList<>();
         if (solutionKit == null) return skList;
 
+        // Case 1: if the selected solution kit is a child, then add the parent and the selected child into the return list.
+        // Case 2: if the selected solution kit is a neither parent nor child, then add only the selected solution kit into the return list.
+        // Case 3: if the selected solution kit is a parent, then add the parent and all children into the return list.
+
         // Case 1:
         final Goid parentGoid = solutionKit.getParentGoid();
         if (parentGoid != null) {
@@ -59,7 +63,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
             }
         }
 
-        // Case 1 + Case 2 + Case 3:
+        // Case 1, Case 2, or Case 3:
         skList.add(solutionKit);
 
         // Case 3:

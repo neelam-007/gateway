@@ -22,8 +22,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.gateway.common.solutionkit.SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY;
-
 /**
  *  POJO to store user inputs for InstallSolutionKitWizard.
  */
@@ -45,7 +43,6 @@ public class SolutionKitsConfig {
     private Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
 
     private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
-    private Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = new HashMap<>(); // The map of guid and instance modifier of selected solution kits for headless upgrade.
 
     public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
 
@@ -147,15 +144,19 @@ public class SolutionKitsConfig {
         return solutionKitsToUpgrade;
     }
 
+    /**
+     * Find a solution kit from the upgrade list by a given GUID.
+     *
+     * Normally to find a unique solution kit, GUID and instance modifier must be provided. However,
+     * - In Headless, solution kits in the upgrade list are unique by GUID.  Please see the method "updateSolutionKitsToUpgradeBasedOnGivenParameters" to make such list be unique in SolutionKitManagerResource.
+     * - In UI, any two solution kits (with a same GUID) selected for upgrade are disabled.  Please see the method "initializeSolutionKitsLoaded" in SolutionKitLoadPanel.
+     * So this method is safe to look up a unique solution kit by given a GUID, without given instance modifier.
+     */
     @Nullable
-    public SolutionKit getSolutionKitToUpgrade(@NotNull final String solutionKitGuid, @Nullable final String instanceModifier) {
-        for (SolutionKit solutionKit : solutionKitsToUpgrade) {
+    public SolutionKit getSolutionKitToUpgrade(@NotNull final String solutionKitGuid) {
+        for (SolutionKit solutionKit: solutionKitsToUpgrade) {
             if (solutionKitGuid.equals(solutionKit.getSolutionKitGuid())) {
-                final String instanceModifierToCompare = solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
-                if ((instanceModifierToCompare == null && instanceModifier == null) ||
-                        (instanceModifierToCompare != null && instanceModifierToCompare.equals(instanceModifier))) {
-                    return solutionKit;
-                }
+                return solutionKit;
             }
         }
 
@@ -200,10 +201,6 @@ public class SolutionKitsConfig {
 
     public void setParentSolutionKitLoaded(@Nullable SolutionKit parentSolutionKitLoaded) {
         this.parentSolutionKitLoaded = parentSolutionKitLoaded;
-    }
-
-    public Map<String, Pair<String, String>> getSelectedGuidAndImForHeadlessUpgrade() {
-        return selectedGuidAndImForHeadlessUpgrade;
     }
 
     public void clear(boolean nullSolutionKitToUpgrade) {
