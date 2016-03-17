@@ -4,7 +4,7 @@ import com.ca.siteminder.SiteMinderAgentConstants;
 import com.ca.siteminder.SiteMinderContext;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,6 +50,9 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                         else if(remaining.equals("value")) {
                             return new Selection(attribute.getValue());
                         }
+                        else if(remaining.equalsIgnoreCase("value.tostring")) {
+                            return new Selection(convertAttrValueType(attribute.getValue()));
+                        }
                         else{
                             return null;
                         }
@@ -67,7 +70,10 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                     if(lname.length() > "attributes".length() + 1){
                         String remaining = lname.substring("attributes".length() + 1);
                         for(SiteMinderContext.Attribute attribute : attributes) {
-                            if(remaining.equalsIgnoreCase(attribute.getName())){
+                            if(remaining.equalsIgnoreCase(attribute.getName() + ".toString")) {
+                                return new Selection(convertAttrValueType(attribute.getValue()));
+                            }
+                            else if(remaining.equalsIgnoreCase(attribute.getName())){
                                 return new Selection(attribute.getValue());
                             }
                         }
@@ -237,6 +243,21 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
             elem = list.get(index);
         }
         return elem;
+    }
+
+    private String convertAttrValueType(Object val) {
+        if(val.getClass().isAssignableFrom(byte[].class)) {
+           return HexUtils.hexDump((byte[])val);
+        }
+        else if(val.getClass().isAssignableFrom(int.class)) {
+            return Integer.toString((int)val);
+        }
+        else if(val.getClass().isAssignableFrom(String.class)) {
+            return (String)val;
+        }
+        else {
+            return val.toString();
+        }
     }
 
     @Override

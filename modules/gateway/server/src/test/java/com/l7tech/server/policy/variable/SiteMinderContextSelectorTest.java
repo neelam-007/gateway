@@ -2,7 +2,6 @@ package com.l7tech.server.policy.variable;
 
 import com.ca.siteminder.SiteMinderContext;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +54,7 @@ public class SiteMinderContextSelectorTest {
         List<SiteMinderContext.Attribute> attrs = new ArrayList<>();
         attrs.add(new SiteMinderContext.Attribute("ATTR_USERDN", "cn=user,dc=l7tech,dc=com"));
         attrs.add(new SiteMinderContext.Attribute("ATTR_USERNAME", "User Name"));
+        attrs.add(new SiteMinderContext.Attribute("ATTR_230", new byte[]{0x0,0x1,0x2,0x3,0x45,0x6a,0x7f,0x1e,0xd}));
         context.setAttrList(attrs);
         context.setSsoToken(SSO_TOKEN);
         context.setTransactionId(TRANSACTION_ID);
@@ -91,7 +91,7 @@ public class SiteMinderContextSelectorTest {
     @Test
     public void shouldReturnAttributeLength() throws Exception {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.length", mockSyntaxErrorHandler, false);
-        assertEquals("9", actual.getSelectedValue());
+        assertEquals("10", actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
 
@@ -287,8 +287,34 @@ public class SiteMinderContextSelectorTest {
 
     @Test
     public void shouldReturnSessionAttributesValue() throws Exception {
-        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.2.value", mockSyntaxErrorHandler, false);
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.3.value", mockSyntaxErrorHandler, false);
         assertEquals(SESSDEF_ID, actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
+
+    @Test
+    public void shouldReturnBinaryStringValueFromBinaryAttribute() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.2.value.tostring", mockSyntaxErrorHandler, false);
+        Object val = actual.getSelectedValue();
+        assertTrue(val.getClass().isAssignableFrom(String.class));
+        assertEquals("00010203456a7f1e0d", val);
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnBinaryStringValueFromNamedAttribute() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.siteMinderContext", context, "attributes.ATTR_230.tostring", mockSyntaxErrorHandler, false);
+        Object val = actual.getSelectedValue();
+        assertTrue(val.getClass().isAssignableFrom(String.class));
+        assertEquals("00010203456a7f1e0d", val);
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnStringValueFromIntValueAttribute() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "attributes.ATTR_MAXSESSIONTIMEOUT.tostring", mockSyntaxErrorHandler, false);
+        assertEquals(Integer.toString(SESSDEF_MAXTIMEOUT), actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+    }
+
 }
