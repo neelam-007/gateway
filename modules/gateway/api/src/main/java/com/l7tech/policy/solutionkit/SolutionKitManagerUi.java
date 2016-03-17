@@ -1,6 +1,8 @@
 package com.l7tech.policy.solutionkit;
 
 import javax.swing.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * WARNING: this class is under development and is currently for CA internal use only.
@@ -48,4 +50,24 @@ public abstract class SolutionKitManagerUi {
     }
 
     // onOk()
+
+    /**
+     * Keeps a map of all {@code SolutionKit}'s context objects (with key being the {@code SolutionKit} id/guid),
+     * including the parent kit.
+     */
+    private final Map<String, SolutionKitManagerContext> contextMap = new LinkedHashMap<String, SolutionKitManagerContext>();
+
+    /**
+     * Get individual {@link SolutionKitManagerContext} for all {@code SolutionKit}'s in the skar,
+     * mapped by the {@code SolutionKit} {@code GUID}.
+     * <p/>
+     * Use this method to retrieve info about other kits in the skar, like see their meta info,
+     * check whether they've been selected for installation/upgrade by the user or even access their individual
+     * key-value pairs.
+     *
+     * @return a read-only {@code Map} of individual {@link SolutionKitManagerContext}.
+     */
+    public final Map<String, SolutionKitManagerContext> getContextMap() {
+        return contextMap;
+    }
 }

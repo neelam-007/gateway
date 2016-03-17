@@ -4,13 +4,15 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
-import com.l7tech.util.*;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,15 +49,23 @@ public class CustomInputAndCallbackTest {
         solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
     }
 
+    private static class SolutionKitManagerUiStub extends SolutionKitManagerUi {
+        @Override
+        public JButton createButton(JPanel parentPanel) { return null; }
+    }
+
+    private static class SolutionKitManagerCallbackStub extends SolutionKitManagerCallback {
+    }
+
     @Test
     public void invokeCallbackNullContext() throws Throwable {
         final SolutionKit solutionKit = new SolutionKit();
 
         // null context
-        SolutionKitManagerUi mockUi = mock(SolutionKitManagerUi.class);
+        SolutionKitManagerUi mockUi = spy(new SolutionKitManagerUiStub());
         when(mockUi.getContext()).thenReturn(null);
 
-        SolutionKitManagerCallback mockCallback = mock(SolutionKitManagerCallback.class);
+        SolutionKitManagerCallback mockCallback = spy(new SolutionKitManagerCallbackStub());
 
         Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
         customizations.put(solutionKit.getSolutionKitGuid(), new Pair<>(solutionKit, new SolutionKitCustomization(mock(SolutionKitCustomizationClassLoader.class), mockUi, mockCallback)));
@@ -74,7 +84,7 @@ public class CustomInputAndCallbackTest {
     public void invokeCallbackThrowsException() throws Exception {
         final SolutionKit solutionKit = new SolutionKit();
         solutionKit.setName("My Solution Kit");
-        SolutionKitManagerUi mockUi = mock(SolutionKitManagerUi.class);
+        SolutionKitManagerUi mockUi = spy(new SolutionKitManagerUiStub());
 
         // throw CallbackException
         final String errorMessage = "myErrorMessage";
@@ -160,7 +170,7 @@ public class CustomInputAndCallbackTest {
         when(mockClassLoader.loadClass(callbackClassName)).thenReturn(callbackClass);
 
         // instantiate and initialize ui
-        SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
+        SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, solutionKit);
         skarPayload.setCustomizationInstances(solutionKit, mockClassLoader);
 
         // setup test hook to run in the ui

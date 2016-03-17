@@ -47,7 +47,7 @@ public class SolutionKitManagerContext {
     /**
      * Optionally pass in key-value pairs from your GUI (or headless interface) to your callback code.
      */
-    private Map<String, String> keyValues = new HashMap<String, String>();
+    private final Map<String, String> keyValues = new HashMap<String, String>();
 
     public Document getSolutionKitMetadata() {
         return solutionKitMetadata;

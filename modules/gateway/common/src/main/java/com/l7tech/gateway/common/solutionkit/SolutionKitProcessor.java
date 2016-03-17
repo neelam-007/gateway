@@ -206,13 +206,17 @@ public class SolutionKitProcessor {
             customCallback = customization.right.getCustomCallback();
             if (customCallback == null) return;
 
+            // we have a callback so populate the context map
+            SolutionKitCustomization.populateSolutionKitManagerContextMap(customCallback.getContextMap(), solutionKitsConfig);
+
+            // we have a callback so populate selected solution kits set
+            SolutionKitCustomization.populateSelectedSolutionKits(customCallback.getSelectedSolutionKits(), solutionKitsConfig);
+
             customUi = customization.right.getCustomUi();
 
             // if implementer provides a context
             skContext = customUi != null ? customUi.getContext() : null;
             if (skContext != null) {
-                SolutionKitCustomization.populateSolutionKitManagerContext(solutionKitsConfig, skContext, solutionKit);
-
                 // execute callback
                 customCallback.preMigrationBundleImport(skContext);
 
