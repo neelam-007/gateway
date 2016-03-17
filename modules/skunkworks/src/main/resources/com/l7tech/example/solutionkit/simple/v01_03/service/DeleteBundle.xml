@@ -1,0 +1,5 @@
+        <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            <l7:Mappings>
+                <l7:Mapping action="Delete" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE"/>
+            </l7:Mappings>
+        </l7:Bundle>
