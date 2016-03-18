@@ -14,6 +14,7 @@ import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -79,11 +80,13 @@ public class PortalBootstrapManager {
     static final String BUILD_INFO = "build_info";
     static final String ADMINUSER_PROVIDERID = "adminuser_providerid";
     static final String ADMINUSER_ID = "adminuser_id";
+    static final String OTK_CLIENT_DB_GET_POLICY = "otk_client_db_get_policy";
     static final String OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS = "otk_require_oauth_2_token_encass";
     static final String OTK_JDBC_CONN = "otk_jdbc_conn";
     static final String NODE_COUNT = "node_count";
     static final String NODE_INFO = "nodeInfo";
     static final String NAME = "name";
+    static final String OTK_CLIENT_DB_GET = "OTK Client DB GET";
     static final String OTK_REQUIRE_OAUTH_2_0_TOKEN = "OTK Require OAuth 2.0 Token";
     static final String OAUTH = "OAuth";
 
@@ -332,10 +335,22 @@ public class PortalBootstrapManager {
         }
     }
 
-    public Pair<EncapsulatedAssertionConfig,JdbcConnection> getOtkEntities() throws IOException {
+    public Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> getOtkEntities() throws IOException {
 
+        Policy otkPolicy;
         EncapsulatedAssertionConfig otkEncass;
         JdbcConnection jdbcConnection;
+
+        //        check for OTK policy to update for portal configuration
+        try {
+            otkPolicy = policyManager.findByUniqueName(OTK_CLIENT_DB_GET);
+            if(otkPolicy == null){
+                throw new IOException( "OTK policy not found: "+OTK_CLIENT_DB_GET+"" );
+            }
+        } catch (FindException e) {
+            throw new IOException( "Error finding OTK policy: "+OTK_CLIENT_DB_GET+"", ExceptionUtils.getDebugException(e) );
+        }
+
 
         // check for OTK encapsulated assertion used by portal entity
         try {
@@ -357,7 +372,7 @@ public class PortalBootstrapManager {
             throw new IOException("Error finding OTK jdbc connection", ExceptionUtils.getDebugException(e));
         }
 
-        return Pair.pair(otkEncass,jdbcConnection);
+        return Triple.triple(otkPolicy,otkEncass,jdbcConnection);
     }
 
     void setConfig(final Config config) {
@@ -385,7 +400,7 @@ public class PortalBootstrapManager {
             throw new IOException( "Unable to load cluster info: " + ExceptionUtils.getMessage( e ), e );
         }
 
-        final Pair<EncapsulatedAssertionConfig,JdbcConnection> otkEntities = getOtkEntities();
+        final Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> otkEntities = getOtkEntities();
 
         String nodeCount = String.valueOf( infos.size() );
 
@@ -398,7 +413,8 @@ public class PortalBootstrapManager {
         gen.writeStringField(BUILD_INFO, buildInfo );
         gen.writeStringField(ADMINUSER_PROVIDERID, adminUser.getProviderId().toString() );
         gen.writeStringField(ADMINUSER_ID, adminUser.getId() );
-        gen.writeStringField(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS, otkEntities.left.getId());
+        gen.writeStringField(OTK_CLIENT_DB_GET_POLICY, otkEntities.left.getId());
+        gen.writeStringField(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS, otkEntities.middle.getId());
         gen.writeStringField(OTK_JDBC_CONN, otkEntities.right.getId());
         gen.writeStringField(NODE_COUNT, nodeCount );
         gen.writeFieldName(NODE_INFO);
