@@ -49,5 +49,8 @@ RUN chmod 700 /root/gateway-provision-and-run.sh
 # if you need to add more changes, put them at the end
 # future builds take less time that way (because of docker creating intermediate images)
 
+# remove yum since STIG doesn't allow it
+RUN rpm -e yum yum-plugin-fastestmirror yum-metadata-parser python-iniparse python-urlgrabber
+
 # the command to run when starting the container
 CMD /root/gateway-provision-and-run.sh
