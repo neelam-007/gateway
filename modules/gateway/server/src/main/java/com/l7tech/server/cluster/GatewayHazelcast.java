@@ -1,9 +1,6 @@
 package com.l7tech.server.cluster;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
@@ -34,6 +31,9 @@ public class GatewayHazelcast implements InitializingBean {
 
     private static final String DEFAULT_GROUP_NAME = "gateway";
     private static final String DEFAULT_INSTANCE_NAME = "gateway-hazelcast";
+
+    // NETWORK CONFIGURATION
+    private static final int DEFAULT_INBOUND_PORT = 8777;
 
     // PROTOCOLS
     private static final String PROTOCOL_TCPIP = "tcpip";
@@ -122,16 +122,17 @@ public class GatewayHazelcast implements InitializingBean {
         groupConfig.setName(DEFAULT_GROUP_NAME);
         groupConfig.setPassword(groupPassword);
 
-        config.getNetworkConfig()
-                .setPort(Integer.valueOf(serverConfig.getProperty(ServerConfigParams.PARAM_DATA_GRID_PORT)))
-                // Only use the configured port
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig
+                .setPort(DEFAULT_INBOUND_PORT)
+                // Only use the configured port - it's the only one open
                 .setPortAutoIncrement(false);
 
         final String protocol = serverConfig.getProperty(ServerConfigParams.PARAM_DATA_GRID_PROTOCOL);
 
         switch (protocol) {
             case PROTOCOL_TCPIP:
-                setTcpIp(config);
+                setTcpIp(networkConfig);
                 break;
             case PROTOCOL_MULTICAST:
             default:
@@ -154,11 +155,11 @@ public class GatewayHazelcast implements InitializingBean {
      *
      * It is unnecessary to update the instance as Gateway nodes join/leave the cluster.
      *
-     * @param config Hazelcast config
+     * @param networkConfig Hazelcast network config
      */
-    private void setTcpIp(final Config config) {
+    private void setTcpIp(final NetworkConfig networkConfig) {
         // disable other detection protocols
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        JoinConfig joinConfig = networkConfig.getJoin();
         joinConfig.getMulticastConfig().setEnabled(false);
         joinConfig.getAwsConfig().setEnabled(false);
 

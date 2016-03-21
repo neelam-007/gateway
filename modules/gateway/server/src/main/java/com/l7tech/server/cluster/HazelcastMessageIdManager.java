@@ -79,4 +79,8 @@ public class HazelcastMessageIdManager implements MessageIdManager {
 
         initialized.set(true);
     }
+
+    public boolean isInitialized() {
+        return initialized.get();
+    }
 }

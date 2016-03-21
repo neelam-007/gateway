@@ -89,14 +89,10 @@ COMMIT
 [0:0] -A INPUT ! -i lo -p tcp -m tcp --dport 7001 -j portdrop
 [0:0] -A INPUT ! -i lo -p tcp -m tcp --dport 7100 -j portdrop
 
-# Allow in the cluster protocol, only for multicast destinations
-# ONLY on eth0. This means that you MUST use eth0 when running
-# in a cluster
-[0:0] -A INPUT  -i eth0 -d 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
-# Allow Multicast UDP output on eth0
-[0:0] -A OUTPUT -d 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
-# Allow inbound UDP on port 7001-7100 on eth0/private side
-[0:0] -A INPUT -i eth0 -p udp -m udp --dport 7001:7100 -j ACCEPT
+# Hazelcast Data Grid
+# Allow inbound TCP on port 8777
+[0:0] -A INPUT  -i eth0 -p tcp -m tcp --dport 8777 -j ACCEPT
+
 #
 # ADD CUSTOM ALLOW RULES HERE
 #
