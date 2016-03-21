@@ -128,7 +128,11 @@ removeExistingImages
 loginToTheRegistry
 buildTheImage
 exportTheImage
-squashTheImage
+
+#squashTheImage
+# we used to tag when we squashed the image so we'll do it here if docker-squash is disabled
+docker tag "$IMAGE_ID" "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
+
 pushTheImage
 generateBuildResultsFile
 removeExistingImages
