@@ -102,26 +102,15 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         }
 
         MessageId messageId = new MessageId(messageIdAndExpiry.left, messageIdAndExpiry.right);
-
-        if (assertion.isSaveIdAndExpiry()) {
-            // set context variables
-            String prefix = assertion.getVariablePrefix() + ".";
-
-            context.setVariable(prefix + WssReplayProtection.ID_SUFFIX, messageIdAndExpiry.left);
-            context.setVariable(prefix + WssReplayProtection.EXPIRY_SUFFIX, messageIdAndExpiry.right);
-        }
-
-        if (!assertion.isBypassUniqueCheck()) {
-            try {
-                messageIdManager.assertMessageIdIsUnique(messageId);
-                logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdAndExpiry.left, targetName);
-            } catch (MessageIdManager.DuplicateMessageIdException e) {
-                logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdAndExpiry.left, targetName);
-                return getBadMessageStatus();
-            } catch (MessageIdManager.MessageIdCheckException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error checking for replay : " + ExceptionUtils.getMessage(e)}, e);
-                return AssertionStatus.FAILED;
-            }
+        try {
+            messageIdManager.assertMessageIdIsUnique(messageId);
+            logAndAudit( AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdAndExpiry.left, targetName );
+        } catch (MessageIdManager.DuplicateMessageIdException e) {
+            logAndAudit( AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdAndExpiry.left, targetName );
+            return getBadMessageStatus();
+        } catch (MessageIdManager.MessageIdCheckException e) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Error checking for replay : " + ExceptionUtils.getMessage( e ) }, e );
+            return AssertionStatus.FAILED;
         }
 
         return AssertionStatus.NONE;
@@ -275,7 +264,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 throw new AssertionStatusException(getBadMessageStatus());
             }
         }
-        return new Pair<>( messageIdStr, expires  + CACHE_ID_EXTRA_TIME_MILLIS);
+        return new Pair<String,Long>( messageIdStr, expires  + CACHE_ID_EXTRA_TIME_MILLIS);
     }
 
     private Pair<String,Long> getCustomIdentifierAndExpiry( final PolicyEnforcementContext context,
@@ -285,7 +274,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         final long expires;
         try {
             final String varName = assertion.getCustomIdentifierVariable();
-            final List<String> variableNames = new ArrayList<>();
+            final List<String> variableNames = new ArrayList<String>();
             if ( varName != null ) variableNames.add(varName);
             if ( assertion.getCustomScope() != null ){
                 variableNames.addAll(Arrays.asList(Syntax.getReferencedNames(assertion.getCustomScope())));
@@ -308,7 +297,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                     ExceptionUtils.getDebugException( e ) );
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
-        return new Pair<>( messageIdStr, expires );
+        return new Pair<String,Long>( messageIdStr, expires );
     }
 
     private String getSenderId( final Element timestampElement,
