@@ -42,14 +42,14 @@ public class VersionModifierTest {
         Assert.assertEquals("Simple Folder Suffixed", getSuffixedFolderName("Suffixed", name));
 
         name = "Simple Policy";
-        Assert.assertEquals(name, getPrefixedPolicyName(null, name));
-        Assert.assertEquals(name, getPrefixedPolicyName("", name));
-        Assert.assertEquals("Prefixed Simple Policy", getPrefixedPolicyName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
+        Assert.assertEquals("Prefixed Simple Policy", getPrefixedDefaultForEntityName("Prefixed", name));
 
         name = "Simple Encapsulated Assertion";
-        Assert.assertEquals(name, getPrefixedEncapsulatedAssertionName(null, name));
-        Assert.assertEquals(name, getPrefixedEncapsulatedAssertionName("", name));
-        Assert.assertEquals("Prefixed Simple Encapsulated Assertion", getPrefixedEncapsulatedAssertionName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
+        Assert.assertEquals("Prefixed Simple Encapsulated Assertion", getPrefixedDefaultForEntityName("Prefixed", name));
 
         String resolutionUrl = "/query";
         Assert.assertEquals(resolutionUrl, getPrefixedUrl(null, resolutionUrl));
@@ -57,14 +57,14 @@ public class VersionModifierTest {
         Assert.assertEquals("/v1/query", getPrefixedUrl("v1", resolutionUrl));
 
         name = "Simple Scheduled Task";
-        Assert.assertEquals(name, getPrefixedScheduledTaskName(null, name));
-        Assert.assertEquals(name, getPrefixedScheduledTaskName("", name));
-        Assert.assertEquals("Prefixed Simple Scheduled Task", getPrefixedScheduledTaskName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
+        Assert.assertEquals("Prefixed Simple Scheduled Task", getPrefixedDefaultForEntityName("Prefixed", name));
 
         name = "Simple Policy Backed Service";
-        Assert.assertEquals(name, getPrefixedPolicyBackedServiceName(null, name));
-        Assert.assertEquals(name, getPrefixedPolicyBackedServiceName("", name));
-        Assert.assertEquals("Prefixed Simple Policy Backed Service", getPrefixedPolicyBackedServiceName("Prefixed", name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
+        Assert.assertEquals("Prefixed Simple Policy Backed Service", getPrefixedDefaultForEntityName("Prefixed", name));
     }
 
     @Test

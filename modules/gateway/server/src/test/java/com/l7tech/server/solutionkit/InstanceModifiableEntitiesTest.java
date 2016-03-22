@@ -38,6 +38,8 @@ public class InstanceModifiableEntitiesTest {
     private final static String POLICY_BACKED_SERVICE_ID = "15c270b7aa19e0a29ad1f5e728d17d52";
     private final static String SCHEDULED_TASK_NAME = "ScheduledTaskForInstanceModifierDemo";
     private final static String SCHEDULED_TASK_ID = "94bf0377485be42734d3e4cfeea93e27";
+    private final static String SSG_CONNECTOR_NAME = "SSGConnectorForInstanceModifierDemo";
+    private final static String SSG_CONNECTOR_ID = "f7370df418628b0f050789e387987e2d";
 
     private SolutionKit sampleSolutionKit;
 
@@ -71,6 +73,8 @@ public class InstanceModifiableEntitiesTest {
         assertEquals(POLICY_BACKED_SERVICE_NAME, requestMessage.getEntityName(POLICY_BACKED_SERVICE_ID));
         // Scheduled Task
         assertEquals(SCHEDULED_TASK_NAME, requestMessage.getEntityName(SCHEDULED_TASK_ID));
+        // SSG Connector
+        assertEquals(SSG_CONNECTOR_NAME, requestMessage.getEntityName(SSG_CONNECTOR_ID));
 
         // Apply an instance modifier on these non-sharable entities
         new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), instanceModifier).apply();
@@ -95,6 +99,8 @@ public class InstanceModifiableEntitiesTest {
         assertEquals(SAMPLE_INSTANCE_MODIFIER + " " + POLICY_BACKED_SERVICE_NAME, requestMessage.getEntityName(POLICY_BACKED_SERVICE_ID));
         // Scheduled Task
         assertEquals(SAMPLE_INSTANCE_MODIFIER + " " + SCHEDULED_TASK_NAME, requestMessage.getEntityName(SCHEDULED_TASK_ID));
+        // SSG Connector
+        assertEquals(SAMPLE_INSTANCE_MODIFIER + " " + SSG_CONNECTOR_NAME, requestMessage.getEntityName(SSG_CONNECTOR_ID));
     }
 
     private void initializeSolutionKits() {
@@ -390,6 +396,42 @@ public class InstanceModifiableEntitiesTest {
         "        </l7:ScheduledTask>\n" +
         "      </l7:Resource>\n" +
         "    </l7:Item>\n" +
+        "    <l7:Item>\n" +
+        "      <l7:Name>SSGConnectorForInstanceModifierDemo</l7:Name>\n" +
+        "      <l7:Id>f7370df418628b0f050789e387987e2d</l7:Id>\n" +
+        "      <l7:Type>SSG_CONNECTOR</l7:Type>\n" +
+        "      <l7:Resource>\n" +
+        "        <l7:ListenPort id=\"f7370df418628b0f050789e387987e2d\">\n" +
+        "          <l7:Name>MAS Messaging</l7:Name>\n" +
+        "          <l7:Enabled>true</l7:Enabled>\n" +
+        "          <l7:Protocol>MQTT-TLS</l7:Protocol>\n" +
+        "          <l7:Port>8883</l7:Port>\n" +
+        "          <l7:EnabledFeatures>\n" +
+        "            <l7:StringValue>Published service message input</l7:StringValue>\n" +
+        "          </l7:EnabledFeatures>\n" +
+        "          <l7:TargetServiceReference id=\"f7370df418628b0f050789e387987de5\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\"/>\n" +
+        "          <l7:TlsSettings>\n" +
+        "            <l7:ClientAuthentication>Required</l7:ClientAuthentication>\n" +
+        "            <l7:EnabledVersions>\n" +
+        "              <l7:StringValue>TLSv1</l7:StringValue>\n" +
+        "              <l7:StringValue>TLSv1.1</l7:StringValue>\n" +
+        "              <l7:StringValue>TLSv1.2</l7:StringValue>\n" +
+        "            </l7:EnabledVersions>\n" +
+        "          </l7:TlsSettings>\n" +
+        "          <l7:Properties>\n" +
+        "            <l7:Property key=\"l7.mqtt.idleTimeout\">\n" +
+        "              <l7:StringValue>300</l7:StringValue>\n" +
+        "            </l7:Property>\n" +
+        "            <l7:Property key=\"l7.mqtt.maxClients\">\n" +
+        "              <l7:StringValue>0</l7:StringValue>\n" +
+        "            </l7:Property>\n" +
+        "            <l7:Property key=\"useExtendedFtpCommandSet\">\n" +
+        "              <l7:StringValue>false</l7:StringValue>\n" +
+        "            </l7:Property>\n" +
+        "          </l7:Properties>\n" +
+        "        </l7:ListenPort>\n" +
+        "      </l7:Resource>\n" +
+        "    </l7:Item>" +
         "  </l7:References>\n" +
         "  <l7:Mappings>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + FOLDER_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/folders/" + FOLDER_ID + "\" type=\"FOLDER\">\n" +
@@ -407,6 +449,7 @@ public class InstanceModifiableEntitiesTest {
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SERVICE_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/services/" + SERVICE_ID + "\" type=\"SERVICE\"/>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + POLICY_BACKED_SERVICE_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/policyBackedServices/" + POLICY_BACKED_SERVICE_ID + "\" type=\"POLICY_BACKED_SERVICE\"/>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SCHEDULED_TASK_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/scheduledTasks/" + SCHEDULED_TASK_ID + "\" type=\"SCHEDULED_TASK\"/>\n" +
+        "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SSG_CONNECTOR_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/listenPorts/" + SSG_CONNECTOR_ID + "\" type=\"SSG_CONNECTOR\"/>\n" +
         "  </l7:Mappings>\n" +
         "</l7:Bundle>";
 }

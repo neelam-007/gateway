@@ -34,11 +34,11 @@ public abstract class BaseInstaller {
     }
 
     public static String getPrefixedEncapsulatedAssertionName(@Nullable String versionModifier, @NotNull String encapsulatedAssertionName) {
-        return VersionModifier.getPrefixedEncapsulatedAssertionName(versionModifier, encapsulatedAssertionName);
+        return VersionModifier.getPrefixedDefaultForEntityName(versionModifier, encapsulatedAssertionName);
     }
 
     protected String getPrefixedPolicyName(@NotNull String policyName) {
-        return VersionModifier.getPrefixedPolicyName(context.getInstallationPrefix(), policyName);
+        return VersionModifier.getPrefixedDefaultForEntityName(context.getInstallationPrefix(), policyName);
     }
 
     protected String getPrefixedUrl(final String existingUrlPattern) {

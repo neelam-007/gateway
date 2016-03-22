@@ -95,7 +95,7 @@ public class InstanceModifier {
                             applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
-                                    return getPrefixedPolicyName(version, name);
+                                    return getPrefixedDefaultForEntityName(version, name);
                                 }
                             });
                             applyModifierToDescendants(item, ".//l7:Resource/l7:Policy", ATTRIBUTE_NAME_GUID, new Functions.Binary<String, String, String>() {
@@ -118,7 +118,7 @@ public class InstanceModifier {
                             applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
-                                    return getPrefixedEncapsulatedAssertionName(version, name);
+                                    return getPrefixedDefaultForEntityName(version, name);
                                 }
                             });
                             applyModifierToDescendants(item, TAG_NAME_L7_GUID, new Functions.Binary<String, String, String>() {
@@ -147,7 +147,7 @@ public class InstanceModifier {
                             applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
-                                    return getPrefixedScheduledTaskName(version, name);
+                                    return getPrefixedDefaultForEntityName(version, name);
                                 }
                             });
                             break;
@@ -155,7 +155,15 @@ public class InstanceModifier {
                             applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                 @Override
                                 public String call(String version, String name) {
-                                    return getPrefixedPolicyBackedServiceName(version, name);
+                                    return getPrefixedDefaultForEntityName(version, name);
+                                }
+                            });
+                            break;
+                        case SSG_CONNECTOR:
+                            applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
+                                @Override
+                                public String call(String version, String name) {
+                                    return getPrefixedDefaultForEntityName(version, name);
                                 }
                             });
                             break;
@@ -170,7 +178,7 @@ public class InstanceModifier {
                                 applyModifierToDescendants(item, TAG_NAME_L7_NAME, new Functions.Binary<String, String, String>() {
                                     @Override
                                     public String call(String version, String name) {
-                                        return getPrefixedPolicyBackedIdentityProviderName(version, name);
+                                        return getPrefixedDefaultForEntityName(version, name);
                                     }
                                 });
                             }
@@ -260,28 +268,12 @@ public class InstanceModifier {
         return isValidVersionModifier(versionModifier) ? folderName + " " + versionModifier : folderName;
     }
 
-    public static String getPrefixedPolicyName(@Nullable String versionModifier, @NotNull String policyName) {
-        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyName : policyName;
+    public static String getPrefixedDefaultForEntityName(@Nullable String versionModifier, @NotNull String entityName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + entityName : entityName;
     }
 
     public static String getPrefixedUrl(@Nullable String versionModifier, @NotNull String urlPattern) {
         return isValidVersionModifier(versionModifier) ? "/" + versionModifier + urlPattern : urlPattern;
-    }
-
-    public static String getPrefixedEncapsulatedAssertionName(@Nullable String versionModifier, @NotNull String encapsulatedAssertionName) {
-        return isValidVersionModifier(versionModifier) ? versionModifier + " " + encapsulatedAssertionName : encapsulatedAssertionName;
-    }
-
-    public static String getPrefixedScheduledTaskName(@Nullable String versionModifier, @NotNull String scheduledTaskName) {
-        return isValidVersionModifier(versionModifier) ? versionModifier + " " + scheduledTaskName : scheduledTaskName;
-    }
-
-    public static String getPrefixedPolicyBackedServiceName(@Nullable String versionModifier, @NotNull String policyBackedServiceName) {
-        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyBackedServiceName : policyBackedServiceName;
-    }
-
-    public static String getPrefixedPolicyBackedIdentityProviderName(@Nullable String versionModifier, @NotNull String policyBackedIdentityProviderName) {
-        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyBackedIdentityProviderName : policyBackedIdentityProviderName;
     }
 
     public static boolean isValidVersionModifier(@Nullable String versionModifier) {
