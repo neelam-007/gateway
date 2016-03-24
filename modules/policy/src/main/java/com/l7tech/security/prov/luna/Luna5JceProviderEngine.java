@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 public class Luna5JceProviderEngine extends JceProvider {
     private static final Provider JCE_PROVIDER = new LunaProvider();
     private final Provider PBE_PROVIDER;
+    private final Provider LICENSE_SIG_RSA_PROVIDER;
 
     public Luna5JceProviderEngine() {
         logIntoPartition();
@@ -38,6 +39,7 @@ public class Luna5JceProviderEngine extends JceProvider {
         }
 
         PBE_PROVIDER = Security.getProvider("SunJCE"); // Can't use Luna providers for this; they advertise an impl but it is not compatible
+        LICENSE_SIG_RSA_PROVIDER = Security.getProvider( "SunRsaSign" ); // Can't use Luna provider for this; it doesn't like our 2047 bit RSA key
     }
 
     private static void logIntoPartition()  {
@@ -103,6 +105,8 @@ public class Luna5JceProviderEngine extends JceProvider {
             return PBE_PROVIDER;
         if (SERVICE_DIFFIE_HELLMAN_SOFTWARE.equals(service))
             return PBE_PROVIDER;
+        if ( JceProvider.SERVICE_LICENSE_SIGNATURE_VERIFICATION.equalsIgnoreCase( service ) )
+            return LICENSE_SIG_RSA_PROVIDER;
         return null;
     }
 }

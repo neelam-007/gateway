@@ -1,10 +1,14 @@
 package com.l7tech.gateway.common.licensing;
 
+import com.ibm.xml.dsig.*;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -12,7 +16,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -358,7 +362,7 @@ public class LicenseUtils {
 
     public static X509Certificate getTrustedIssuer(@NotNull Document doc, @NotNull X509Certificate[] trustedIssuers) throws TooManyChildElementsException, InvalidLicenseException {
         // Look for valid signature by trusted issuer
-        Element signature = DomUtils.findOnlyOneChildElementByName(doc.getDocumentElement(), DsigUtil.DIGSIG_URI, SIGNATURE_ELEMENT);
+        final Element signature = DomUtils.findOnlyOneChildElementByName(doc.getDocumentElement(), DsigUtil.DIGSIG_URI, SIGNATURE_ELEMENT);
 
         if (signature == null) {
             return null;
@@ -368,8 +372,111 @@ public class LicenseUtils {
         final X509Certificate signatureCert;
 
         try {
-            signatureCert =
-                    DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
+            Element keyInfoElement = KeyInfo.searchForKeyInfo( signature );
+            if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
+
+            final X509Certificate signingCert;
+
+            try {
+                X509Certificate cert = null;
+                KeyInfo keyInfo = new KeyInfo(keyInfoElement);
+                String[] keyNames = keyInfo.getKeyNames();
+                if (keyNames != null && keyNames.length > 0) {
+                    cert = new SimpleSecurityTokenResolver(trustedIssuers).lookupByKeyName( CertUtils.formatDN( keyNames[0] ) );
+                }
+
+                if (cert == null)
+                    throw new SignatureException("Could not find certificate.");
+
+                signingCert = cert;
+            }
+            catch(XSignatureException xse) {
+                throw new SignatureException(xse);
+            }
+
+            PublicKey signingKey = signingCert.getPublicKey();
+            if (signingKey == null) throw new SignatureException("Unable to find signing key"); // can't happen
+
+            SignatureContext sigContext = new SignatureContext();
+            sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
+            sigContext.setIDResolver(new IDResolver(){
+                @Override
+                public Element resolveID(Document document, String id) {
+                    if (id.equals( signature.getOwnerDocument().getDocumentElement().getAttribute("Id"))) {
+                        return signature.getOwnerDocument().getDocumentElement();
+                    } else {
+                        return null;
+                    }
+                }
+            });
+
+            sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+                @Override
+                public Transform getTransform(String transform) throws NoSuchAlgorithmException {
+                    if ( Transform.XSLT.equals(transform) ||
+                            Transform.XPATH.equals(transform) ||
+                            Transform.XPATH2.equals(transform) ) {
+                        throw new NoSuchAlgorithmException(transform);
+                    }
+                    return super.getTransform(transform);
+                }
+
+                @Override
+                public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
+                    MessageDigest dig = super.getDigestMethod(s);
+                    if ("MD5".equalsIgnoreCase(dig.getAlgorithm()))
+                        throw new NoSuchAlgorithmException("MD5 not supported for digests for license signing");
+                    return dig;
+                }
+
+                @Override
+                public SignatureMethod getSignatureMethod(String s, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
+                    SupportedSignatureMethods signatureMethod = SupportedSignatureMethods.fromSignatureAlgorithm( s );
+                    if ("MD5".equalsIgnoreCase( signatureMethod.getDigestAlgorithmName() ))
+                        throw new NoSuchAlgorithmException("MD5 not supported for signature method for license signing");
+
+                    if ("RSA".equalsIgnoreCase( signatureMethod.getKeyAlgorithmName() ) ) {
+                        Provider wantProv = JceProvider.getInstance().getProviderFor( JceProvider.SERVICE_LICENSE_SIGNATURE_VERIFICATION );
+                        if ( wantProv != null ) {
+                            // SSG-10541 - always use Sun provider for license signature checks
+                            String prov = getProvider();
+                            try {
+                                setProvider( wantProv.getName() );
+                                return super.getSignatureMethod( s, o );
+                            } finally {
+                                setProvider( prov );
+                            }
+                        }
+                    }
+                    return super.getSignatureMethod(s, o);
+                }
+            });
+
+            Validity validity = DsigUtil.verify(sigContext, signature, signingKey);
+
+            if (!validity.getCoreValidity()) {
+                throw new SignatureException( DsigUtil.getInvalidSignatureMessage( validity ));
+            }
+
+            // Make sure the root element was covered by signature
+            boolean rootWasSigned = false;
+            final int numberOfReferences = validity.getNumberOfReferences();
+            for (int i = 0; i < numberOfReferences; i++) {
+                // Resolve each elements one by one.
+                String elementId = validity.getReferenceURI(i);
+                if (elementId.charAt(0) == '#')
+                    elementId = elementId.substring(1);
+                if (elementId.equals( signature.getOwnerDocument().getDocumentElement().getAttribute("Id"))) {
+                    rootWasSigned = true;
+                    break;
+                }
+            }
+
+            if (!rootWasSigned)
+                throw new SignatureException("This signature did not cover the root of the document.");
+
+            // Success.  Signature looks good.
+            signatureCert = signingCert;
         } catch (CertificateEncodingException e) {
             throw new InvalidLicenseException(ISSUER_CERTIFICATE_ENCODING_ERROR_MSG, e);
         } catch (SignatureException e) {

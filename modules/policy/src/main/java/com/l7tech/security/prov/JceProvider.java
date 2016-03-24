@@ -62,6 +62,7 @@ public abstract class JceProvider {
     public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
     public static final String SERVICE_CSR_SIGNING = "Signature.BouncyCastleCsrSigner";
     public static final String SERVICE_SIGNATURE_RSA_PRIVATE_KEY = "Signature.NONEwithRSA.privateKey"; // any RSA signing using a private key that might be from an HSM
+    public static final String SERVICE_LICENSE_SIGNATURE_VERIFICATION = "Signature.verification.license"; // any RSA verification of a license signature
     public static final String SERVICE_SIGNATURE_ECDSA = "Signature.NONEwithECDSA"; // any ECDSA signing or signature verification
     public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
