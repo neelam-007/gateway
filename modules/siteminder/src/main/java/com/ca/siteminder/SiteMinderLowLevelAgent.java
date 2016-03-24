@@ -302,13 +302,53 @@ public class SiteMinderLowLevelAgent {
         AttributeList responseAttributeList = SiteMinderUtil.convertToAttributeList(responseAttributes);
 
         result = agentApi.updateAttributes(getClientIp(userIp, context), transactionId, resCtxDef, realmDef, sessionDef, requestAttributeList, responseAttributeList);
-        if (result != AgentAPI.SUCCESS) {
-            logger.log(Level.FINE, "SiteMinder updateAttributes attempt - SiteMinder is unable to dupdate attributes '");
+
+        if (result != AgentAPI.YES) {
+            logger.log(Level.FINE, "SiteMinder updateAttributes attempt - SiteMinder is unable to update attributes");
+        } else {
+            /**
+             * Iterate updated attributes list and:
+             * - remove attributes 146 and 147 - they are "always returned for some historical reason and for
+             * caching purpose you can ignore them", according to Canh.Cao@ca.com of the SiteMinder engineering team
+             * - remove attributes for which we have received updates from the list to which we will add the updates
+             *
+             * The result of this is that if an update is requested for an attribute but not received, then we will
+             * return the old value rather than remove it from the attribute list. The expired value will be kept,
+             * and this is also the expected behaviour as per the SiteMinder engineering team.
+             */
+            List<Attribute> attributesToRemoveFromUpdateList = new ArrayList<>();
+
+            for (int i = 0; i < responseAttributeList.getAttributeCount(); i++) {
+                Attribute attr = responseAttributeList.getAttributeAt(i);
+
+                switch (attr.id) {
+                    case 146:
+                    case 147:
+                        // AttributesList is not iterable so we have to add these attributes to a temporary list
+                        attributesToRemoveFromUpdateList.add(attr);
+                        break;
+                    default:
+                        for (int j = 0; j < responseAttributes.size(); j++) {
+                            if (attr.oid.equals(responseAttributes.get(j).getOid())) {
+                                logger.log(Level.FINE, "Update found for attribute OID: " + attr.oid + ", ID: " + attr.id);
+                                responseAttributes.remove(responseAttributes.get(j));
+                                break;
+                            }
+                        }
+                        break;
+                }
+            }
+
+            for (Attribute attr : attributesToRemoveFromUpdateList) {
+                responseAttributeList.removeAttribute(attr);
+            }
+
+            // convert and store the attributes for which we received updates
+            if (responseAttributeList.getAttributeCount() > 0) {
+                storeAttributes(responseAttributes, responseAttributeList);
+            }
         }
-        else {
-            responseAttributes.clear();
-            storeAttributes(responseAttributes, responseAttributeList);
-        }
+
         return result;
     }
 
