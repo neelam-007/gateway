@@ -224,7 +224,7 @@ public class SolutionKitProcessor {
                 SolutionKitUtils.copyDocumentToSolutionKit(skContext.getSolutionKitMetadata(), solutionKit);
 
                 // set (possible) changes made to metadata and bundles (install/upgrade and uninstall)
-                solutionKit.setUninstallBundle(XmlUtil.nodeToString(skContext.getUninstallBundle()));
+                solutionKit.setUninstallBundle(skContext.getUninstallBundle() == null ? null : XmlUtil.nodeToString(skContext.getUninstallBundle()));
                 solutionKitsConfig.setBundle(solutionKit, skContext.getMigrationBundle());
 
                 solutionKitsConfig.setPreviouslyResolvedIds();  // need to call a second time; already called earlier

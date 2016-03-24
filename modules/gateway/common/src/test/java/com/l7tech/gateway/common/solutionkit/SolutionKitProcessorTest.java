@@ -7,6 +7,8 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
+import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -18,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.swing.*;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -185,8 +188,10 @@ public class SolutionKitProcessorTest {
     }
 
     @Test
-    public void invokeCustomCallback() throws Exception {
+    public void invokeCustomCallbackFromInputStream() throws Exception {
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+
+        // get payload from test skar via input stream
         initializeSkarPayload(solutionKitsConfig);
 
         final SolutionKit solutionKit = solutionKitsConfig.getLoadedSolutionKits().keySet().iterator().next();
@@ -213,6 +218,46 @@ public class SolutionKitProcessorTest {
                 assertThat(((EncapsulatedAssertionMO) item.getContent()).getProperties().get(EncapsulatedAssertionConfig.PROP_DESCRIPTION), CoreMatchers.startsWith(inputValue));
             }
         }
+    }
+
+    @Test
+    public void invokeCustomCallback() throws Exception {
+        // setup solution kit metadata
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setName("SK1");
+        solutionKit.setSolutionKitGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
+        solutionKit.setGoid(new Goid(0, 1));
+        solutionKit.setSolutionKitVersion("v1");
+        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, "SK1 description");
+        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "2016-03-24T09:08:01.603-08:00");
+        solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "false");
+
+        // mock customizations
+        Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = mock(Map.class);
+        SolutionKitCustomization customization = mock(SolutionKitCustomization.class);
+        final Pair<SolutionKit, SolutionKitCustomization> customizationPair = new Pair<>(solutionKit, customization);
+        SolutionKitManagerCallback customCallback = new SolutionKitManagerCallback() {
+            @Override
+            public void preMigrationBundleImport(SolutionKitManagerContext context) throws CallbackException {
+                super.preMigrationBundleImport(context);
+            }
+        };
+        SolutionKitManagerUi customUi = new SolutionKitManagerUi() {
+            @Override
+            public JButton createButton(JPanel parentPanel) {
+                return null;
+            }
+        };
+        when(solutionKitsConfig.getCustomizations()).thenReturn(customizations);
+        when(customizations.get(solutionKit.getSolutionKitGuid())).thenReturn(customizationPair);
+        when(customization.getCustomCallback()).thenReturn(customCallback);
+        when(customization.getCustomUi()).thenReturn(customUi);
+        customUi.getContext().setSolutionKitMetadata(SolutionKitUtils.createDocument(solutionKit));
+
+        // test customization with no uninstall bundle (SSG-13239)
+        solutionKit.setUninstallBundle(null);
+        final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
+        solutionKitProcessor.invokeCustomCallback(solutionKit);
     }
 
     @Test
