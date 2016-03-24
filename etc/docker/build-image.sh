@@ -124,6 +124,12 @@ generateBuildResultsFile() {
 	echo "Done generating the build_results.properties file"
 }
 
+generatePackagesListFile() {
+	echo "Generating the packages list file"
+	docker run -it "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" /bin/rpm -qa | sort | uniq > packages-list
+	echo "Done generating the packages list file"
+}
+
 removeExistingImages
 loginToTheRegistry
 buildTheImage
@@ -135,5 +141,6 @@ docker tag "$IMAGE_ID" "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
 
 pushTheImage
 generateBuildResultsFile
+generatePackagesListFile
 removeExistingImages
 
