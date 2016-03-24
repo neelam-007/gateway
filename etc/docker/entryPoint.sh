@@ -112,6 +112,46 @@ function collectConfig() {
 	fi
 }
 
+function validateConfig() {
+	logInfo "validating the collected config"
+	if [ "$SSG_CLUSTER_COMMAND" == "" ]; then
+		logErrorAndExit "need to set env var SSG_CLUSTER_COMMAND to either \"create\" or \"join\""
+	fi
+	if [ "$SSG_CLUSTER_COMMAND" != "create" ] && [ "$SSG_CLUSTER_COMMAND" != "join" ]; then
+		logErrorAndExit "unknown value for env var SSG_CLUSTER_COMMAND. It must be set to either \"create\" or \"join\""
+	fi
+	logInfo "done validating the collected config"
+}
+
+function waitForGatewayShutdownFile() {
+	# wait for shutdown file
+	logInfo "waiting for the shutdown file at \"$USERDATA_SHUTDOWN_FILE\" to be created"
+	while ( /bin/true ); do
+		if [ -f "$USERDATA_SHUTDOWN_FILE" ]; then
+			logInfo "found shutdown file"
+			break;
+		fi
+		sleep 1
+	done
+
+	# stop the gateway, if needed
+	if ( ps -ef | grep java | grep Controller.jar ); then
+		logInfo "stopping the gateway"
+		/etc/init.d/ssg stop
+		logInfo "waiting for the gateway to stop"
+		while (/bin/true); do
+			if ( ps -ef | grep java | grep Controller.jar ); then
+				sleep 1
+			else
+				logInfo "gateway has stopped"
+				break
+			fi
+		done
+	else
+		logInfo "did not find a gateway to stop"
+	fi
+}
+
 function createBootstrapDir() {
 	# create a bootstap directory if we need to
 	if [ -d "$GATEWAY_BOOTSTRAP_DIR" ]; then
@@ -231,17 +271,18 @@ function provisionAndStartGateway() {
 	# we don't need to start the gateway as the headless autoconfig does this for us
 	logInfo "running gateway's headless autoconfig"
 
-	if [ "$SSG_CREATE_DATABASE" == "" ]; then
-		logErrorAndExit "need to set env var SSG_CREATE_DATABASE to either \"true\" or \"false\""
-	elif [ "$SSG_CREATE_DATABASE" != "true" ] && [ "$SSG_CREATE_DATABASE" != "false" ]; then
-		logErrorAndExit "unknown value for env var SSG_CREATE_DATABASE. It must be set to either \"true\" or \"false\""
+	if [ "$SSG_CLUSTER_COMMAND" == "create" ]; then
+		generateGatewayConfig "true"
+	elif [ "$SSG_CLUSTER_COMMAND" == "join" ]; then
+		generateGatewayConfig "false"
 	else
-		generateGatewayConfig "$SSG_CREATE_DATABASE"
-		echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
-		if [ $? -ne 0 ]; then
-			logErrorAndExit "gateway headless autoconfig failed"
-		fi	
+		logErrorAndExit "unknown value for SSG_CLUSTER_COMMAND env var when generating the Gateway config"
 	fi
+	
+	echo "$SSG_HEADLESS_AUTOCONFIG" | sudo -u layer7 "$SSGCONFIG_LAUNCH_PATH" -headless create
+	if [ $? -ne 0 ]; then
+		logErrorAndExit "gateway headless autoconfig failed"
+	fi	
 	logInfo "gateway is now starting up"
 	doWaitForSSGStartUp
 }
@@ -278,9 +319,12 @@ function waitForGatewayShutdownFile() {
 #### MAIN ####
 
 collectConfig
-createBootstrapDir
-putLicenseOnDisk
-createServicesFiles
+validateConfig
+if [ "$SSG_CLUSTER_COMMAND" == "create" ]; then
+	createBootstrapDir
+	putLicenseOnDisk
+	createServicesFiles
+fi
 startTheProcessController
 waitForMySQLToBeReady
 setCredsForMySQLClient

@@ -2309,7 +2309,7 @@
        <echo level="info">Building Docker image</echo>
        <mkdir dir="${build.rpm}/docker"/>
        <copy file="etc/docker/Dockerfile" todir="${build.rpm}/docker"/>
-       <copy file="etc/docker/gateway-provision-and-run.sh" todir="${build.rpm}/docker"/>
+       <copy file="etc/docker/entryPoint.sh" todir="${build.rpm}/docker"/>
 
        <copy todir="${build.rpm}/docker" verbose="true">
           <fileset dir="${dist.dir}">

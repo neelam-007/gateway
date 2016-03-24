@@ -1,27 +1,28 @@
 ssg:
 #  image: heinrichbutowatca/ssg:9.1.00-1.svn20151027
 #  image: teamcity/ssg:9.0.00-1.svn20150828
-#  image: hbutow/ssg:9.1.00-1.svn20151217
+  image: hbutow/ssg:9.1.00-1.svn20160324
+#  image: apim-dr.l7tech.com/teamcity/ssg:9.1.00-1.svn20160314
 #  image: apim-dr.l7tech.com/teamcity/ssg:9.1.00-1.svn20160212
-  image: hbutow/ssg:provisioning-test
+#  image: hbutow/ssg:provisioning-test
 #  mem_limit: 2147483648
 #  mem_limit: 1073741824
   mem_limit: 2048m
 #  memswap_limit: 0m
-  expose:
-    - "2124"
-    - "8080"
-    - "8443"
-    - "9443"
+#  expose:
+#    - "2124"
+#    - "8080"
+#    - "8443"
+#    - "9443"
 # if you want to map the ports from the container onto the host, use this form instead.
-#  ports:
-#    - "8080:8080"
-#    - "8443:8443"
-#    - "9443:9443"
+  ports:
+    - "8080:8080"
+    - "8443:8443"
+    - "9443:9443"
 # for the environment, we use a YAML dictionary instead of an array as this lets us use a quoted string with a space in it for SSG_INTERNAL_SERVICES
   environment:
 #    ETCDCTL_ENDPOINT: "http://10.242.12.246:4001"
-    SSG_CREATE_DATABASE: "true"
+    SSG_CLUSTER_COMMAND: "create"
     SSG_CLUSTER_HOST: "localhost"
     SSG_CLUSTER_PASSWORD: "7layer"
     SSG_DATABASE_TYPE: "mysql"

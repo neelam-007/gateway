@@ -43,8 +43,8 @@ RUN wget -O - https://github.com/hashicorp/envconsul/releases/download/v0.5.0/en
 RUN wget -O - https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.2-linux-amd64.tar.gz | tar xzf - -O etcd-v2.2.2-linux-amd64/etcdctl > /usr/local/bin/etcdctl && chmod 755 /usr/local/bin/etcdctl
 
 # add the provisioning script
-ADD gateway-provision-and-run.sh /root/
-RUN chmod 700 /root/gateway-provision-and-run.sh
+ADD entryPoint.sh /root/
+RUN chmod 700 /root/entryPoint.sh
 
 # if you need to add more changes, put them at the end
 # future builds take less time that way (because of docker creating intermediate images)
@@ -53,4 +53,4 @@ RUN chmod 700 /root/gateway-provision-and-run.sh
 RUN rpm -e yum yum-plugin-fastestmirror yum-metadata-parser python-iniparse python-urlgrabber
 
 # the command to run when starting the container
-CMD /root/gateway-provision-and-run.sh
+CMD /root/entryPoint.sh

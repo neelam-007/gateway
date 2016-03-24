@@ -1,5 +1,5 @@
 ssg-follower:
-  image: hbutow/ssg:provisioning-test
+  image: hbutow/ssg:9.1.00-1.svn20160324
   mem_limit: 2048m
   expose:
     - "2124"
@@ -7,14 +7,14 @@ ssg-follower:
     - "8443"
     - "9443"
 # if you want to map the ports from the container onto the host, use this form instead.
-#  ports:
-#    - "8080:8080"
-#    - "8443:8443"
-#    - "9443:9443"
+  ports:
+    - "10080:8080"
+    - "10443:8443"
+    - "11443:9443"
 # for the environment, we use a YAML dictionary instead of an array as this lets us use a quoted string with a space in it for SSG_INTERNAL_SERVICES
   environment:
 #    ETCDCTL_ENDPOINT: "http://10.242.12.246:4001"
-    SSG_CREATE_DATABASE: "false"
+    SSG_CLUSTER_COMMAND: "join"
     SSG_CLUSTER_HOST: "localhost"
     SSG_CLUSTER_PASSWORD: "7layer"
     SSG_DATABASE_TYPE: "mysql"
