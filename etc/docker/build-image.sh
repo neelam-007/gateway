@@ -126,7 +126,7 @@ generateBuildResultsFile() {
 
 generatePackagesListFile() {
 	echo "Generating the packages list file"
-	docker run -it "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" /bin/rpm -qa | sort | uniq > packages-list
+	docker run "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" /bin/rpm -qa | sort | uniq > packages-list
 	echo "Done generating the packages list file"
 }
 
