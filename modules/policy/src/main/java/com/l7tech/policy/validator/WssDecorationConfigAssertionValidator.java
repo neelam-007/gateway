@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.security.xml.KeyReference;
 
@@ -57,7 +58,12 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
             }
         }
 
+        Assertion bottomMostWssDecorationConfigAssertion = null;
+        boolean hasDifferentKeyRefs = false;
+
         for ( Assertion pathAssertion : shouldMatch ) {
+            if (assertion == pathAssertion) continue;
+
             if ( pathAssertion instanceof PrivateKeyable &&
                  assertion instanceof PrivateKeyable ) {
                 PrivateKeyable pk1 = (PrivateKeyable) pathAssertion;
@@ -77,15 +83,8 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                 if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
                      (!wdc1.getKeyReference().equals(wdc2.getKeyReference())))
                 {
-                    String finalVal = assertion.getOrdinal() > pathAssertion.getOrdinal() ? wdc2.getKeyReference() : wdc1.getKeyReference();
-                    if (KeyReference.THUMBPRINT_SHA1.getName().equals(finalVal)) {
-                        // Assertions other than WSS Config don't currently expose this option,
-                        // so this isn't an error as long as the bottommost assertion is the one calling for THUMBPRINT_SHA1.
-                        // It will be executed last and so will override any previous setting.
-                    } else {
-                        String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
-                        result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
-                    }
+                    hasDifferentKeyRefs = true;
+                    bottomMostWssDecorationConfigAssertion = assertion.getOrdinal() > pathAssertion.getOrdinal() ? assertion : pathAssertion;
                 }
 
                 // Check for the same token protection settings
@@ -100,6 +99,14 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                     result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
                 }
             }
+        }
+
+        // After finished checking all WssDecorationConfig assertions in the path, if there exists a key reference difference,
+        // and the last WssDecorationConfig assertion in the path is not a WssConfigurationAssertion, then add a warning
+        // for key references mismatch.
+        if (hasDifferentKeyRefs && !(bottomMostWssDecorationConfigAssertion instanceof WssConfigurationAssertion)) {
+            String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, message, null));
         }
     }
 
