@@ -2,6 +2,8 @@ package com.l7tech.server.cluster;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.util.ExceptionUtils;
@@ -75,7 +77,15 @@ public class HazelcastMessageIdManager implements MessageIdManager {
         this.hazelcastInstance = hazelcastInstance;
 
         // create map (if first node in cluster)
-        hazelcastInstance.getMap(MESSAGE_ID_MAP_NAME);
+        IMap<Object, Object> messageIdMap = hazelcastInstance.getMap(MESSAGE_ID_MAP_NAME);
+
+        // add listener to log lost partitions (i.e. loss of data)
+        messageIdMap.addPartitionLostListener(new MapPartitionLostListener() {
+            @Override
+            public void partitionLost(MapPartitionLostEvent event) {
+                logger.log(Level.WARNING, "Partition loss detected for replay message ids. {0}", event);
+            }
+        });
 
         initialized.set(true);
     }

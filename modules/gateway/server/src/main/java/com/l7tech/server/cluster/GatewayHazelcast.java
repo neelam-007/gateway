@@ -70,6 +70,7 @@ public class GatewayHazelcast implements InitializingBean {
         HazelcastInstance instance = getDefaultHazelcastInstance();
 
         if (null != instance) {
+            logger.log(Level.INFO, "Shutting down Gateway Hazelcast instance");
             instance.shutdown();
         }
     }
@@ -108,6 +109,19 @@ public class GatewayHazelcast implements InitializingBean {
 
         Config config = new Config();
         config.setInstanceName(DEFAULT_INSTANCE_NAME);
+
+        // reduce the delay in merging into cluster after instance startup
+        config.setProperty("hazelcast.merge.first.run.delay.seconds", "10");
+        config.setProperty("hazelcast.merge.next.run.delay.seconds", "10");
+        config.setProperty("hazelcast.max.no.heartbeat.seconds", "10");
+        config.setProperty("hazelcast.operation.call.timeout.millis", "10000");
+
+        // disable REST and memcache features
+        config.setProperty("hazelcast.rest.enabled", "false");
+        config.setProperty("hazelcast.memcache.enabled", "false");
+
+        // disable phone home
+        config.setProperty("hazelcast.phone.home.enabled", "false");
 
         String groupPassword;
 
@@ -172,7 +186,9 @@ public class GatewayHazelcast implements InitializingBean {
         // add members
         try {
             for (ClusterNodeInfo nodeInfo : clusterInfoManager.retrieveClusterStatus()) {
-                tcpIpConfig.addMember(nodeInfo.getAddress());
+                final String member = nodeInfo.getAddress();
+                logger.log(Level.INFO, "Adding member: {0}", member);
+                tcpIpConfig.addMember(member);
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot retrieve list of cluster nodes to connect. Hazelcast will not start.");
