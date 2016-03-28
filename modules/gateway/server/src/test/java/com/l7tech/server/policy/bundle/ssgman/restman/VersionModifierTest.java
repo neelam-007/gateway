@@ -65,6 +65,11 @@ public class VersionModifierTest {
         Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
         Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
         Assert.assertEquals("Prefixed Simple Policy Backed Service", getPrefixedDefaultForEntityName("Prefixed", name));
+
+        name = "Simple ListenPort";
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName(null, name));
+        Assert.assertEquals(name, getPrefixedDefaultForEntityName("", name));
+        Assert.assertEquals("Prefixed Simple ListenPort", getPrefixedDefaultForEntityName("Prefixed", name));
     }
 
     @Test
@@ -93,7 +98,9 @@ public class VersionModifierTest {
             if (action == AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !VersionModifier.isFailOnNewMapping(item))) {
                 // list each type as sanity check for VersionModifier.isModifiableType()
                 if (entityType == FOLDER || entityType == POLICY || entityType == ENCAPSULATED_ASSERTION ||
-                        entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE) {
+                        entityType == SERVICE || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE ||
+                        entityType == SSG_CONNECTOR
+                ) {
                     assertEquals(item.getAttribute(ATTRIBUTE_NAME_TARGET_ID), getModifiedGoid(versionModifier, item.getAttribute(ATTRIBUTE_NAME_SRC_ID)));
                 } else {
                     assertEquals("", item.getAttribute(ATTRIBUTE_NAME_TARGET_ID));
@@ -155,6 +162,10 @@ public class VersionModifierTest {
                     // modify guid references
                     assertGuidReferences(versionModifier, modifiedToOriginalGuidMap, item, ".//l7:Resource/l7:Service/l7:Resources/l7:ResourceSet/l7:Resource[@type=\"policy\"]");
 
+                    break;
+                case SSG_CONNECTOR:
+                    // prefix name
+                    assertThat(entityName, startsWith(versionModifier));
                     break;
                 default:
                     // no prefix nor suffix on name

@@ -240,6 +240,9 @@ public class InstanceModifier {
         if (isEmpty(entityTypeStr)) {
             return false;
         } else {
+            // TODO (tveninov): seems that these types must match ALL cases in the switch statement in apply() above.
+            // TODO (tveninov): if that's the case then replace this TODO with IMPORTANT/NOTE.
+
             final EntityType entityType = valueOf(entityTypeStr);
 
             // If it is an identity provider, check subEntityTypeStr.
@@ -248,7 +251,7 @@ public class InstanceModifier {
                 return IdentityProviderType.POLICY_BACKED.description().equals(subEntityTypeStr);
             }
 
-            return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE;
+            return FOLDER == entityType || POLICY == entityType || ENCAPSULATED_ASSERTION == entityType || SERVICE == entityType || entityType == SCHEDULED_TASK || entityType == POLICY_BACKED_SERVICE || entityType == SSG_CONNECTOR;
         }
     }
 
@@ -331,11 +334,11 @@ public class InstanceModifier {
             entityName = item.getName();
             entityType = EntityType.valueOf(item.getType());
 
-            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION || entityType == EntityType.SCHEDULED_TASK) {
+            if (entityType == EntityType.FOLDER || entityType == EntityType.ENCAPSULATED_ASSERTION || entityType == EntityType.SCHEDULED_TASK  || entityType == EntityType.SSG_CONNECTOR) {
                 // The format of a folder name is "<folder_name> <instance_modifier>".
                 // The format of a encapsulated assertion name is "<instance_modifier> <encapsulated_assertion_name>".
                 // The format of a scheduled task name is "<instance_modifier> <scheduled_task_name>".
-                // The max length of a folder name, an encapsulated assertion name, or a scheduled task name is 128.
+                // The max length of a folder name, an encapsulated assertion name, a scheduled task name, or an SSG Connector name is 128.
                 allowedLength = 128 - entityName.length() - 1; // 1 represents one char of white space.
             } else if (entityType == EntityType.POLICY || entityType == EntityType.POLICY_BACKED_SERVICE) {
                 // The format of a policy name is "<instance_modifier> <policy_name>".
