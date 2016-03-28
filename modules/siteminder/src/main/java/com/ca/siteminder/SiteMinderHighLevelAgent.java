@@ -280,29 +280,32 @@ public class SiteMinderHighLevelAgent {
     }
 
     protected int updateCachedAttributes(String userIp, SiteMinderContext context, long cacheCreatedTimeStamp, List<SiteMinderContext.Attribute> cachedAttributes, List<SiteMinderContext.Attribute> updatedAttributes) throws SiteMinderApiClassException {
+        List<SiteMinderContext.Attribute> validAttributes = new ArrayList<>();
         List<SiteMinderContext.Attribute> attributesToUpdate = new ArrayList<>();
         long elapsedTime = (System.currentTimeMillis() - cacheCreatedTimeStamp)/1000;
 
         for(SiteMinderContext.Attribute attr : cachedAttributes) {
-            if(attr.getTtl() > 0 && elapsedTime > attr.getTtl()) {
+            if (attr.getTtl() > 0 && elapsedTime > attr.getTtl()) {
                 attributesToUpdate.add(attr);
-            }
-            else {
-                updatedAttributes.add(attr);
+            } else {
+                validAttributes.add(attr);
             }
         }
 
         int result = SUCCESS;
 
-        if(attributesToUpdate.size() > 0) {
+        if (attributesToUpdate.size() > 0) {
             SiteMinderLowLevelAgent agent = context.getAgent();
-            //TODO: figure out what to do with the request attributes
-            result = agent.updateAttributes(userIp, context.getTransactionId(), context, new ArrayList<SiteMinderContext.Attribute>(), attributesToUpdate);
-            if ( result == YES ) {
-                logger.log(Level.FINE, "SiteMinder authorization - successfully updated cached attributes");
-                updatedAttributes.addAll(attributesToUpdate);
+
+            result = agent.updateAttributes(userIp, context.getTransactionId(), context, attributesToUpdate, updatedAttributes);
+
+            if (result == YES) {
+                logger.log(Level.FINE, "SiteMinder cached attributes successfully updated");
+                // add attributes that were not expired to list of updated ones
             }
         }
+
+        updatedAttributes.addAll(validAttributes);
 
         return result;
     }
@@ -393,16 +396,16 @@ public class SiteMinderHighLevelAgent {
                     context.getAttrList().addAll(attrList);//we might have some attributes from the contexts needs to be preserved
                     cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
                 } else {
-                    List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();//cachedAuthResponseDetails.getAttrList();
+                    List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();
                     //Ensure all attributes are updated
                     int status = updateCachedAttributes(userIp, context, authResponseDetails.getCreatedTimeStamp(), authResponseDetails.getAttrList(), updatedAttributes);
                     if (status == YES) {
                         //recreate the cache entry with the new attribute list
-                        logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
+                        logger.log(Level.FINE, "SiteMinder authentication - updating SiteMinder authorization cache for the key " + cacheKey);
                         SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
                         cache.store(cacheKey, cacheEntry);
                     } else if (status != SUCCESS) {
-                        logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
+                        logger.log(Level.FINE, "SiteMinder authentication - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
                         //remove from the cache
                         cache.remove(cacheKey);
                         return status;//no need to continue

@@ -290,7 +290,7 @@ public class SiteMinderLowLevelAgent {
         return result;
     }
 
-    int updateAttributes(String userIp, String transactionId, SiteMinderContext context, List<SiteMinderContext.Attribute> requestAttributes, List<SiteMinderContext.Attribute> responseAttributes) throws SiteMinderApiClassException {
+    int updateAttributes(String userIp, String transactionId, SiteMinderContext context, List<SiteMinderContext.Attribute> attributesToUpdate, List<SiteMinderContext.Attribute> updatedAttributes) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result;
 
@@ -298,8 +298,8 @@ public class SiteMinderLowLevelAgent {
         RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
         SessionDef sessionDef = getSiteMinderSessionDefFromContext(context);// get SessionDef object from the context
 
-        AttributeList requestAttributeList = SiteMinderUtil.convertToAttributeList(requestAttributes);
-        AttributeList responseAttributeList = SiteMinderUtil.convertToAttributeList(responseAttributes);
+        AttributeList requestAttributeList = SiteMinderUtil.convertToAttributeList(attributesToUpdate);
+        AttributeList responseAttributeList = new AttributeList();
 
         result = agentApi.updateAttributes(getClientIp(userIp, context), transactionId, resCtxDef, realmDef, sessionDef, requestAttributeList, responseAttributeList);
 
@@ -316,22 +316,21 @@ public class SiteMinderLowLevelAgent {
              * return the old value rather than remove it from the attribute list. The expired value will be kept,
              * and this is also the expected behaviour as per the SiteMinder engineering team.
              */
-            List<Attribute> attributesToRemoveFromUpdateList = new ArrayList<>();
+            AttributeList updatedAttributeList = new AttributeList();
 
             for (int i = 0; i < responseAttributeList.getAttributeCount(); i++) {
-                Attribute attr = responseAttributeList.getAttributeAt(i);
+                Attribute updated = responseAttributeList.getAttributeAt(i);
 
-                switch (attr.id) {
+                switch (updated.id) {
                     case 146:
                     case 147:
-                        // AttributesList is not iterable so we have to add these attributes to a temporary list
-                        attributesToRemoveFromUpdateList.add(attr);
+                        // just remove these - they are irrelevant
                         break;
                     default:
-                        for (int j = 0; j < responseAttributes.size(); j++) {
-                            if (attr.oid.equals(responseAttributes.get(j).getOid())) {
-                                logger.log(Level.FINE, "Update found for attribute OID: " + attr.oid + ", ID: " + attr.id);
-                                responseAttributes.remove(responseAttributes.get(j));
+                        for (SiteMinderContext.Attribute original : attributesToUpdate) {
+                            if (updated.oid.equals(original.getOid())) {
+                                logger.log(Level.FINE, "Update found for attribute OID: " + updated.oid + ", ID: " + updated.id);
+                                updatedAttributeList.addAttribute(updated);
                                 break;
                             }
                         }
@@ -339,13 +338,9 @@ public class SiteMinderLowLevelAgent {
                 }
             }
 
-            for (Attribute attr : attributesToRemoveFromUpdateList) {
-                responseAttributeList.removeAttribute(attr);
-            }
-
             // convert and store the attributes for which we received updates
             if (responseAttributeList.getAttributeCount() > 0) {
-                storeAttributes(responseAttributes, responseAttributeList);
+                storeAttributes(updatedAttributes, updatedAttributeList);
             }
         }
 
