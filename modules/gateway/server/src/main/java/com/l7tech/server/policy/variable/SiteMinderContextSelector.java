@@ -59,9 +59,7 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                     }
                 }
                 else if (lname.equals("attributes.length")){
-                    if(attributes != null) {
-                        return new Selection(Integer.toString(attributes.size()));
-                    }
+                    return new Selection(Integer.toString(attributes.size()));
                 }
                 else if(lname.equals("attributes")) {
                     return new Selection(attributes, name.substring("attributes".length()));
