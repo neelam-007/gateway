@@ -29,6 +29,9 @@ public interface SiteMinderAgentConstants {
     public static final String ATTR_AUTH_DIR_SERVER = "ATTR_AUTH_DIR_SERVER";
     public static final String ATTR_SESSIONDRIFT = "ATTR_SESSIONDRIFT";
     public static final String SESS_DEF_REASON = "SESS_DEF_REASON";
+    public static final String ATTR_ONACCEPTTEXT = "ATTR_ONACCEPTTEXT";
+    public static final String ATTR_ONACCEPTREDIRECT = "ATTR_ONACCEPTREDIRECT";
+    public static final String ATTR_HTTP_COOKIE_VALUE = "ATTR_HTTP_COOKIE_VALUE";
 
     public static final int SM_AGENT_API_INVALID_SESSIONID = -57;
     public static final int ATTR_CURRENTAGENTTIME = 153; //Added as the AgentAPI list of constants do not include the ATTR_CURRENTSERVERTIME;
