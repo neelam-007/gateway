@@ -22,6 +22,10 @@ ADD ssg-appliance*.x86_64.rpm /root/
 RUN rpm -ivh /root/ssg-*.noarch.rpm /root/ssg-appliance-*.x86_64.rpm
 RUN rm /root/ssg-*.rpm
 
+# generate a random password for the ssgconfig user as customers don't need it
+RUN dd if=/dev/urandom count=50 | md5sum | passwd --stdin ssgconfig
+RUN passwd -l ssgconfig
+
 # WARNING: this is a hack to get around the process controller not starting (trying to do something like "su gateway -c /bin/echo hello" fails)
 RUN rm -f /etc/security/limits.d/*
 
