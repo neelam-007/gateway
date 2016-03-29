@@ -84,6 +84,8 @@ public class SiteMinderHighLevelAgent {
                     resourceDetails = null;//remove reference
                     logger.log(Level.FINE, "Maximum resource cache age exceeded. Removed resource cache entry: " + resourceCacheKey + " from resource cache");
                 }
+            } else {
+                logger.log(Level.FINE, "SiteMinder Resource - cache missed");
             }
 
             if (resourceDetails == null) {
