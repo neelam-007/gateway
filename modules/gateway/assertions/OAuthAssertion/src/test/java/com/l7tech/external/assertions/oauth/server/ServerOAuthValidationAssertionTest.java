@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.oauth.server;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.util.HexUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -514,17 +515,18 @@ public class ServerOAuthValidationAssertionTest {
     }
 
     private PrivateKey getEriePrivateKey(String[] crtValues) throws Exception {
+        final BigInteger n = base64ToBigInteger(crtValues[0]);
+        final BigInteger e = base64ToBigInteger(crtValues[1]);
+        final BigInteger d = base64ToBigInteger(crtValues[7]);
+        final BigInteger p = base64ToBigInteger(crtValues[2]);
+        final BigInteger q = base64ToBigInteger(crtValues[3]);
+        final BigInteger dp = base64ToBigInteger(crtValues[4]);
+        final BigInteger dq = base64ToBigInteger(crtValues[5]);
+        final BigInteger crt = base64ToBigInteger(crtValues[6]); // crt / inverse q
+        Assert.assertEquals(d.mod(p.subtract(new BigInteger("1", 10))), dp);
+        Assert.assertEquals(d.mod(q.subtract(new BigInteger("1", 10))), dq);
 
-        RSAPrivateCrtKeySpec privKeySpec = new RSAPrivateCrtKeySpec(
-                base64ToBigInteger(crtValues[0]),
-                base64ToBigInteger(crtValues[1]),
-                base64ToBigInteger(crtValues[2]),
-                base64ToBigInteger(crtValues[3]),
-                base64ToBigInteger(crtValues[4]),
-                base64ToBigInteger(crtValues[5]),
-                base64ToBigInteger(crtValues[6]),
-                base64ToBigInteger(crtValues[7])
-        );
+        final RSAPrivateCrtKeySpec privKeySpec = new RSAPrivateCrtKeySpec(n, e, d, p, q, dp, dq, crt);
 
         PrivateKey returnKey = KeyFactory.getInstance("RSA").generatePrivate(privKeySpec);
         assertNotNull(returnKey);
