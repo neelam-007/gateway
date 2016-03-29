@@ -78,7 +78,7 @@
 
 # Hazelcast Data Grid
 # Allow inbound TCP on port 8777
-[0:0] -A INPUT -i eth0 -d FF00::/8 -p tcp -m tcp --dport 8777 -j ACCEPT
+[0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 8777 -j ACCEPT
 
 #
 # ADD CUSTOM ALLOW RULES HERE
