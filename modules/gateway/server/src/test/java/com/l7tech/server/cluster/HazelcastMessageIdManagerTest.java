@@ -48,7 +48,7 @@ public class HazelcastMessageIdManagerTest {
         assertTrue(messageIdManager.isInitialized());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = MessageIdManager.MessageIdCheckException.class)
     public void testAssertMessageIdIsUnique_ManagerNotInitialized() throws Exception {
         messageIdManager.assertMessageIdIsUnique(new MessageId("id", System.currentTimeMillis()));
     }

@@ -49,6 +49,7 @@ public class GatewayHazelcast implements InitializingBean {
     @Inject
     private ServerConfig serverConfig;
 
+    private AtomicBoolean started = new AtomicBoolean(false);
     private AtomicBoolean shutdown = new AtomicBoolean(false);
 
     /**
@@ -56,6 +57,7 @@ public class GatewayHazelcast implements InitializingBean {
      */
     public HazelcastInstance getHazelcastInstance() {
         checkShutdown();
+        checkStarted();
 
         return getDefaultHazelcastInstance();
     }
@@ -78,6 +80,7 @@ public class GatewayHazelcast implements InitializingBean {
     @ManagedAttribute(description = "Group Members", currencyTimeLimit = 30)
     public List<String> getMemberIpAddresses() {
         checkShutdown();
+        checkStarted();
 
         HazelcastInstance hazelcastInstance = Hazelcast.getHazelcastInstanceByName(DEFAULT_INSTANCE_NAME);
 
@@ -97,14 +100,20 @@ public class GatewayHazelcast implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        createHazelcastInstance();
+        try {
+            createHazelcastInstance();
+            started.set(true);
+        } catch (Exception e) {
+            logger.severe("Could not create Gateway Hazelcast instance: " + e.getMessage());
+            started.set(false);
+        }
     }
 
     private HazelcastInstance getDefaultHazelcastInstance() {
         return Hazelcast.getHazelcastInstanceByName(DEFAULT_INSTANCE_NAME);
     }
 
-    private void createHazelcastInstance() {
+    private void createHazelcastInstance() throws Exception {
         logger.info("Creating Gateway Hazelcast instance");
 
         Config config = new Config();
@@ -128,7 +137,7 @@ public class GatewayHazelcast implements InitializingBean {
         try {
             groupPassword = new String(sharedKeyManager.getSharedKey());
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Cannot retrieve shared key. Hazelcast will not start.");
+            logger.log(Level.WARNING, "Cannot retrieve shared key");
             throw new IllegalStateException(e);
         }
 
@@ -191,12 +200,16 @@ public class GatewayHazelcast implements InitializingBean {
                 tcpIpConfig.addMember(member);
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Cannot retrieve list of cluster nodes to connect. Hazelcast will not start.");
+            logger.log(Level.WARNING, "Cannot retrieve list of cluster nodes to connect");
             throw new IllegalStateException(e);
         }
     }
 
+    private void checkStarted() {
+        if (!started.get()) throw new IllegalStateException("Hazelcast instance is not available");
+    }
+
     private void checkShutdown() {
-        if (shutdown.get()) throw new IllegalStateException("HazelcastInstance has already been shutdown");
+        if (shutdown.get()) throw new IllegalStateException("Hazelcast instance has already been shutdown");
     }
 }

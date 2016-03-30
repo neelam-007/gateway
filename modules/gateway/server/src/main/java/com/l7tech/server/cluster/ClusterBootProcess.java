@@ -75,11 +75,15 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                 }
             }
 
-            HazelcastInstance hazelcastInstance = gatewayHazelcast.getHazelcastInstance();
+            try {
+                HazelcastInstance hazelcastInstance = gatewayHazelcast.getHazelcastInstance();
 
-            logger.info("Initializing HazelcastMessageIdManager");
-            hazelcastMessageIdManager.initialize(hazelcastInstance);
-            logger.info("Initialized HazelcastMessageIdManager");
+                logger.info("Initializing HazelcastMessageIdManager");
+                hazelcastMessageIdManager.initialize(hazelcastInstance);
+                logger.info("Initialized HazelcastMessageIdManager");
+            } catch (Exception e) {
+                logger.warning("Could not initialize HazelcastMessageIdManager - Gateway Hazelcast instance not available!");
+            }
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
             logger.log(Level.WARNING, msg, e);

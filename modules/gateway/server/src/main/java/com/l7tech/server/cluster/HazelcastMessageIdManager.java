@@ -27,7 +27,7 @@ public class HazelcastMessageIdManager implements MessageIdManager {
     @Override
     public void assertMessageIdIsUnique(MessageId prospect) throws MessageIdCheckException {
         if (!initialized.get()) {
-            throw new IllegalStateException("MessageIDManager has not been initialized");
+            throw new MessageIdCheckException("MessageIdManager has not been initialized");
         }
 
         final IMap<String, Long> messageIdMap = hazelcastInstance.getMap(MESSAGE_ID_MAP_NAME);
@@ -71,7 +71,7 @@ public class HazelcastMessageIdManager implements MessageIdManager {
 
     public void initialize(HazelcastInstance hazelcastInstance) throws Exception {
         if (initialized.get()) {
-            throw new IllegalStateException("MessageIDManager has already been initialized");
+            throw new MessageIdCheckException("MessageIdManager has already been initialized");
         }
 
         this.hazelcastInstance = hazelcastInstance;

@@ -124,6 +124,21 @@ public class ServerWssReplayProtectionTest {
         assertEquals( "Status", AssertionStatus.BAD_REQUEST, result2 );
     }
 
+    /**
+     * Should fail when MessageIdManager has not been initialized (e.g. when the Hazelcast instance cannot be created)
+     */
+    @Test
+    public void testMessageIdManagerNotInitialized() throws Exception {
+        final WssReplayProtection wrp = buildAssertion(15000, "var", null);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("var", "customid");
+
+        final ServerWssReplayProtection swrp = buildServerAssertion(wrp, false);
+
+        final AssertionStatus result = swrp.checkRequest(context);
+        assertEquals("Status", AssertionStatus.FAILED, result);
+    }
+
     @Test
     public void testMissingIdVariable() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 900000, "var", null );
@@ -188,11 +203,15 @@ public class ServerWssReplayProtectionTest {
         return wrp;
     }
 
-    private ServerWssReplayProtection buildServerAssertion( final WssReplayProtection wrp ) {
+    private ServerWssReplayProtection buildServerAssertion(final WssReplayProtection wrp) {
+        return buildServerAssertion(wrp, true);
+    }
+
+    private ServerWssReplayProtection buildServerAssertion(final WssReplayProtection wrp, final boolean initialized) {
         return new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("serverConfig", new MockConfig(new Properties()));
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
-            put("messageIdManager", new MockMessageIdManager(wrp.getCustomExpiryTime()));
+            put("messageIdManager", new MockMessageIdManager(wrp.getCustomExpiryTime(), initialized));
         }})){
             @Override
             protected TimeSource getTimeSource() {
@@ -203,14 +222,20 @@ public class ServerWssReplayProtectionTest {
 
     private static final class MockMessageIdManager implements MessageIdManager {
         private final int expectedExpiryTime;
-        private final Set<String> ids = new HashSet<String>();
+        private final Set<String> ids = new HashSet<>();
+        private final boolean initialized;
 
-        public MockMessageIdManager( int expectedExpiryTime ) {
+        public MockMessageIdManager(int expectedExpiryTime, boolean initialized) {
             this.expectedExpiryTime = expectedExpiryTime;
+            this.initialized = initialized;
         }
 
         @Override
-        public void assertMessageIdIsUnique( final MessageId prospect ) throws MessageIdCheckException {
+        public void assertMessageIdIsUnique(final MessageId prospect) throws MessageIdCheckException {
+            if (!initialized) {
+                throw new MessageIdCheckException("MessageIdManager not initialized");
+            }
+
             long expectTime = testTimeSource.currentTimeMillis()+expectedExpiryTime;
             if ( prospect.getNotValidOnOrAfterDate() != expectTime )
                 throw new MessageIdCheckException("Expiry check failed, expected " + expectTime + " got " + prospect.getNotValidOnOrAfterDate());
