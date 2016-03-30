@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
+import com.l7tech.server.service.FirewallRulesManager;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -48,6 +49,9 @@ public class GatewayHazelcast implements InitializingBean {
 
     @Inject
     private ServerConfig serverConfig;
+
+    @Inject
+    private FirewallRulesManager firewallRulesManager;
 
     private AtomicBoolean started = new AtomicBoolean(false);
     private AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -150,6 +154,10 @@ public class GatewayHazelcast implements InitializingBean {
                 .setPort(DEFAULT_INBOUND_PORT)
                 // Only use the configured port - it's the only one open
                 .setPortAutoIncrement(false);
+
+        // ensure the firewall is open so that traffic can be sent in
+        // TODO jwilliams: check for existing rule and replace if port is different - needed when the port is user-defined
+        firewallRulesManager.openPort(DEFAULT_INSTANCE_NAME, networkConfig.getPort());
 
         final String protocol = serverConfig.getProperty(ServerConfigParams.PARAM_DATA_GRID_PROTOCOL);
 
