@@ -1,7 +1,5 @@
 package com.l7tech.server.message;
 
-import com.l7tech.test.BugId;
-
 import java.lang.annotation.*;
 
 /**
@@ -11,7 +9,6 @@ import java.lang.annotation.*;
  * when configured to behave like routing assertions.
  *
  */
-@BugId("SSG-9124")
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
