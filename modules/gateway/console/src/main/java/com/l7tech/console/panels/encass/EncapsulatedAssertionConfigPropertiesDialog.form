@@ -326,7 +326,7 @@
                     </constraints>
                     <properties>
                       <selected value="false"/>
-                      <text value="Behave like a routing assertion"/>
+                      <text value="Update routing statistics in parent policy"/>
                     </properties>
                   </component>
                 </children>
