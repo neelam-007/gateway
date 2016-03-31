@@ -203,7 +203,8 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             String[] varsUsed = this.varsUsed.get();
             Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
 
-            PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
+            PolicyEnforcementContext childContext = PolicyEnforcementContextFactory
+                    .createPolicyEnforcementContext(context, config.getBooleanProperty(PROP_PASS_METRICS_TO_PARENT));
             ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
 
             enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));

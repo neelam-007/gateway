@@ -168,73 +168,121 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
-    public void addRoutingResultListener( final RoutingResultListener listener ) {
-        context.addRoutingResultListener( listener );
+    public boolean isResponseWss11() {
+        return routingMetricsPEC.isResponseWss11();
     }
 
     @Override
-    public void removeRoutingResultListener( final RoutingResultListener listener ) {
-        context.removeRoutingResultListener( listener );
+    public void setResponseWss11(boolean wss11) {
+        routingMetricsPEC.setResponseWss11(wss11);
     }
 
     @Override
     public RoutingStatus getRoutingStatus() {
-        return context.getRoutingStatus();
+        return routingMetricsPEC.getRoutingStatus();
     }
 
     @Override
     public void setRoutingStatus( final RoutingStatus routingStatus ) {
-        context.setRoutingStatus( routingStatus );
+        routingMetricsPEC.setRoutingStatus(routingStatus);
     }
 
     @Override
     public boolean isPostRouting() {
-        return context.isPostRouting();
+        return routingMetricsPEC.isPostRouting();
     }
 
     @Override
     public void routingStarted() {
-        context.routingStarted();
+        routingMetricsPEC.routingStarted();
     }
 
     @Override
     public void routingFinished() {
-        context.routingFinished();
+        routingMetricsPEC.routingFinished();
+    }
+
+    @Override
+    public long getStartTime() {
+        return routingMetricsPEC.getStartTime();
     }
 
     @Override
     public long getRoutingStartTime() {
-        return context.getRoutingStartTime();
+        return routingMetricsPEC.getRoutingStartTime();
     }
 
     @Override
     public long getRoutingEndTime() {
-        return context.getRoutingEndTime();
+        return routingMetricsPEC.getRoutingEndTime();
     }
 
     @Override
     public long getRoutingTotalTime() {
-        return context.getRoutingTotalTime();
+        return routingMetricsPEC.getRoutingTotalTime();
+    }
+
+    @Override
+    public boolean isReplyExpected() {
+        return routingMetricsPEC.isReplyExpected();
+    }
+
+    @Override
+    public boolean isRequestWasCompressed() {
+        return routingMetricsPEC.isRequestWasCompressed();
+    }
+
+    @Override
+    public void setRequestWasCompressed(boolean wasCompressed) {
+        routingMetricsPEC.setRequestWasCompressed(wasCompressed);
     }
 
     @Override
     public URL getRoutedServiceUrl() {
-        return context.getRoutedServiceUrl();
+        return routingMetricsPEC.getRoutedServiceUrl();
     }
 
     @Override
     public void setRoutedServiceUrl( final URL routedServiceUrl ) {
-        context.setRoutedServiceUrl( routedServiceUrl );
+        routingMetricsPEC.setRoutedServiceUrl( routedServiceUrl );
     }
 
     @Override
     public long getEndTime() {
-        return context.getEndTime();
+        return routingMetricsPEC.getEndTime();
     }
 
     @Override
     public void setEndTime() {
-        context.setEndTime();
+        routingMetricsPEC.setEndTime();
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookiePath() {
+        return routingMetricsPEC.isOverwriteResponseCookiePath();
+    }
+
+    @Override
+    public void setOverwriteResponseCookiePath(final boolean overwriteResponseCookiePath) {
+        routingMetricsPEC.setOverwriteResponseCookiePath(overwriteResponseCookiePath);
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookieDomain() {
+        return routingMetricsPEC.isOverwriteResponseCookieDomain();
+    }
+
+    @Override
+    public void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain) {
+        routingMetricsPEC.setOverwriteResponseCookieDomain(overwriteResponseCookieDomain);
+    }
+
+    public void addRoutingResultListener(RoutingResultListener listener) {
+        context.addRoutingResultListener(listener);
+    }
+
+    public void removeRoutingResultListener(RoutingResultListener listener) {
+        context.removeRoutingResultListener(listener);
     }
 
     @Override
@@ -379,12 +427,65 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     //- PACKAGE
 
+    /**
+     * <p>Constructor.</p>
+     * <p>
+     *     Expects two {@link com.l7tech.server.message.PolicyEnforcementContext PEC}s: one to be the parent,
+     *     one to be the child.
+     *     You should think of the child context as 'this'.
+     *     Most method invocations on this object will simply be forwarded to the child context,
+     *     but some will go to the parent:
+     *     <ol>
+     *        <li>{@link #getOriginalContext()}</li>
+     *        <li>{@link #getOriginalContextVariable(String)}</li>
+     *        <li>{@link #getOriginalRequest()}</li>
+     *        <li>{@link #getOriginalResponse()}</li>
+     *     </ol>
+     * </p>
+     * <p>Additionally, a routing assertion-like behaviour is supported: when set to <code>true</code>, argument
+     * <code>passRoutingMetricsToParent</code> will forward the following method calls to the parent context:
+     * <ol>
+     *     <li>{@link #isResponseWss11()}</li>
+     *     <li>{@link #setResponseWss11(boolean)}</li>
+     *     <li>{@link #addRoutingResultListener(com.l7tech.server.policy.assertion.RoutingResultListener)}</li>
+     *     <li>{@link #removeRoutingResultListener(com.l7tech.server.policy.assertion.RoutingResultListener)}</li>
+     *     <li>{@link #getRoutingStatus()}</li>
+     *     <li>{@link #setRoutingStatus(com.l7tech.policy.assertion.RoutingStatus)}</li>
+     *     <li>{@link #isPostRouting()}</li>
+     *     <li>{@link #routingStarted()}</li>
+     *     <li>{@link #routingFinished()}</li>
+     *     <li>{@link #getStartTime()}</li>
+     *     <li>{@link #getRoutingStartTime()}</li>
+     *     <li>{@link #getRoutingEndTime()}</li>
+     *     <li>{@link #getRoutingTotalTime()}</li>
+     *     <li>{@link #isReplyExpected()}</li>
+     * </ol>
+     * </p>
+     * @param parent parent context
+     * @param context child (this) context
+     * @param passRoutingMetricsToParent whether to pass routing metrics to parent context
+     */
     ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
-                                   final PolicyEnforcementContext context ) {
+                                   final PolicyEnforcementContext context,
+                                   final boolean passRoutingMetricsToParent) {
         super( parent );
         this.context = context;
         this.parentContext = parent;
+        routingMetricsPEC = passRoutingMetricsToParent ? parentContext : context;
     }
+
+    /**
+     * Constructor. Creates an instance that does NOT forward routing metrics to the parent context.
+     * Equivalent to calling {@link #ChildPolicyEnforcementContext(PolicyEnforcementContext, PolicyEnforcementContext, boolean)}
+     * with a <code>false</code> value in the third argument.
+     * @param parent parent context
+     * @param context child (this) context
+     */
+    ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
+                                   final PolicyEnforcementContext context) {
+        this(parent, context, false);
+    }
+
 
     //- PRIVATE
 
@@ -413,10 +514,23 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         return false;
     }
 
+    /** The child (this) context */
     private final PolicyEnforcementContext context;
+
+    /** The parent context */
     private final PolicyEnforcementContext parentContext;
+
     private final Set<String> passthroughVariables = new HashSet<>();
     private final TreeSet<String> passthroughPrefixes = new TreeSet<>();
+
+    /**
+     * Points to the PEC that will receive routing metrics-related calls.
+     * If this instance was called using {@link #ChildPolicyEnforcementContext(PolicyEnforcementContext, PolicyEnforcementContext, boolean)}
+     * with the third argument set to <code>true</code>, it points to {@link #parentContext}.
+     * If not, it points to {@link #context}.
+     */
+    private final PolicyEnforcementContext routingMetricsPEC;
+
     private final TreeSet<String> outputVariables = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     private DebugContext debugContext = null;
 }

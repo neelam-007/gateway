@@ -65,6 +65,9 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp implemen
     /** Flag to indicate if debug tracing is allowed into the encapsulated assertion backing policy. */
     public static final String PROP_ALLOW_TRACING = "allowTracing";
 
+    /** Flag to indicate whether this assertion should pass any routing metrics to its parent. */
+    public static final String PROP_PASS_METRICS_TO_PARENT = "passMetricsToParent";
+
     /**
      * Optional template for displaying a custom node label in the policy tree.  Template may include
      * variables:

@@ -84,6 +84,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JScrollPane artifactVersionScrollPane;
     private SecurityZoneWidget zoneControl;
     private JCheckBox allowTracingCheckBox;
+    private JCheckBox passRoutingMetricsToParentCheckBox;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -421,6 +422,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
 
         allowTracingCheckBox.setSelected(config.getBooleanProperty(PROP_ALLOW_TRACING));
+        passRoutingMetricsToParentCheckBox.setSelected(config.getBooleanProperty(PROP_PASS_METRICS_TO_PARENT));
+        passRoutingMetricsToParentCheckBox.setToolTipText(
+                "Cause this assertion to record routing metrics (such as back end routing time) for its users");
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -460,6 +464,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         config.setResultDescriptors(new HashSet<>(outputsTableModel.getRows()));
         config.setSecurityZone(zoneControl.getSelectedZone());
         config.putBooleanProperty(PROP_ALLOW_TRACING, allowTracingCheckBox.isSelected());
+        config.putBooleanProperty(PROP_PASS_METRICS_TO_PARENT, passRoutingMetricsToParentCheckBox.isSelected());
     }
 
     private void enableOrDisableThings() {

@@ -72,7 +72,22 @@ public class PolicyEnforcementContextFactory {
      * @return the new child PEC.  Never null.
      */
     public static PolicyEnforcementContext createPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        final PolicyEnforcementContext context = createUnregisteredPolicyEnforcementContext(parent);
+        final PolicyEnforcementContext context = createUnregisteredPolicyEnforcementContext(parent, false);
+
+        return registerThreadLocal(context, childInstanceHolder);
+    }
+
+    /**
+     * Create a PEC that delegates to the given parent for messages and authentication,
+     * optionally also forwarding routing metrics to the parent.
+     *
+     * @param parent parent context.  Required.
+     * @param passRoutingMetricsToParent whether to pass routing metrics to the given parent
+     * @return the new child PEC.  Never null.
+     */
+    public static PolicyEnforcementContext createPolicyEnforcementContext( final PolicyEnforcementContext parent,
+                                                                           final boolean passRoutingMetricsToParent ) {
+        final PolicyEnforcementContext context = createUnregisteredPolicyEnforcementContext(parent, passRoutingMetricsToParent);
 
         return registerThreadLocal(context, childInstanceHolder);
     }
@@ -84,8 +99,12 @@ public class PolicyEnforcementContextFactory {
      * @param parent parent context.  Required.
      * @return the new child PEC.  Never null.
      */
-    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource, parent.getRequestId()) );
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent, final boolean passRoutingMetricsToParent ) {
+        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource, parent.getRequestId()), passRoutingMetricsToParent );
+    }
+
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent) {
+        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource, parent.getRequestId()));
     }
 
     /**

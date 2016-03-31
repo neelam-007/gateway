@@ -45,7 +45,10 @@ public interface PolicyEnforcementContext extends Closeable {
 
     AuthenticationContext getAuthenticationContext( Message message );
 
+    @RoutingMetricsRelated
     RoutingStatus getRoutingStatus();
+
+    @RoutingMetricsRelated
 
     void setRoutingStatus(RoutingStatus routingStatus);
 
@@ -54,8 +57,10 @@ public interface PolicyEnforcementContext extends Closeable {
      *
      * @return true iff. this context routing status is ROUTED or ATTEMPTED.
      */
+    @RoutingMetricsRelated
     boolean isPostRouting();
 
+    @RoutingMetricsRelated
     boolean isReplyExpected();
 
     Level getAuditLevel();
@@ -223,17 +228,22 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     Map<String, Object> getVariableMap(String[] names, Audit auditor);
 
+    @RoutingMetricsRelated
     void routingStarted();
 
+    @RoutingMetricsRelated
     void routingFinished();
 
+    @RoutingMetricsRelated
     long getRoutingStartTime();
 
+    @RoutingMetricsRelated
     long getRoutingEndTime();
 
     /** 
      * @return total duration (in milliseconds) of all routings (e.g., if this policy has multiple routings)
      */
+    @RoutingMetricsRelated
     long getRoutingTotalTime();
 
     /**
@@ -261,6 +271,7 @@ public interface PolicyEnforcementContext extends Closeable {
     /**
      * @return the time when this request's processing started
      */
+    @RoutingMetricsRelated
     long getStartTime();
 
     /**
@@ -280,12 +291,16 @@ public interface PolicyEnforcementContext extends Closeable {
      *
      * @see #getRoutingStatus to find out whether the routing was successful.
      */
+    @RoutingMetricsRelated
     URL getRoutedServiceUrl();
 
+    @RoutingMetricsRelated
     void setRoutedServiceUrl(URL routedServiceUrl);
 
+    @RoutingMetricsRelated
     long getEndTime();
 
+    @RoutingMetricsRelated
     void setEndTime();
 
     /**
@@ -359,6 +374,7 @@ public interface PolicyEnforcementContext extends Closeable {
      *
      * @return true if WS-Security version 1.1 is preferred for message level security in response messages.
      */
+    @RoutingMetricsRelated
     boolean isResponseWss11();
 
     /**
@@ -366,6 +382,7 @@ public interface PolicyEnforcementContext extends Closeable {
      *
      * @param wss11 true to prefer WS-Security 1.1
      */
+    @RoutingMetricsRelated
     void setResponseWss11( boolean wss11 );
 
     void setMalformedRequest();
@@ -455,8 +472,10 @@ public interface PolicyEnforcementContext extends Closeable {
 
     boolean hasTraceListener();
 
+    @RoutingMetricsRelated
     boolean isRequestWasCompressed();
 
+    @RoutingMetricsRelated
     void setRequestWasCompressed(boolean requestWasCompressed);
 
     AssertionStatus getPolicyResult();
