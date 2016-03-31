@@ -6,7 +6,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +35,14 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
         final SiteMinderContext ctx = context;
 
         if(lname.startsWith("attributes")) {
+            final List<SiteMinderContext.Attribute> attributes = getSiteMinderAttributes(ctx);
+
+            if (null == attributes) {
+                return null;
+            }
+
             Matcher m = ATTRUBUTES_PATTERN.matcher(lname);
             if(m.find()){
-                final List<SiteMinderContext.Attribute> attributes = getSiteMinderAttributes(ctx);
-
                 if(StringUtils.isNotEmpty(m.group(1))){
                     if(StringUtils.isNotEmpty(m.group(3))){
                         SiteMinderContext.Attribute attribute = getElement(attributes, m, handler);
@@ -111,20 +114,17 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                @Override
                public Selection call(String remaining) {
                    SiteMinderContext.RealmDef realmDef = ctx.getRealmDef();
-                   if(remaining.equals("formlocation")){
-                       return new Selection(realmDef.getFormLocation());
-                   }
-                   else if(remaining.equals("credentials")){
-                       return new Selection((Integer.toString(realmDef.getCredentials())));
-                   }
-                   else if(remaining.equals("oid")){
-                       return new Selection(realmDef.getOid());
-                   }
-                   else if(remaining.equals("domoid")){
-                       return new Selection(realmDef.getDomOid());
-                   }
-                   else if(remaining.equals("name")){
-                       return new Selection(realmDef.getName());
+                   switch (remaining) {
+                       case "formlocation":
+                           return new Selection(realmDef.getFormLocation());
+                       case "credentials":
+                           return new Selection((Integer.toString(realmDef.getCredentials())));
+                       case "oid":
+                           return new Selection(realmDef.getOid());
+                       case "domoid":
+                           return new Selection(realmDef.getDomOid());
+                       case "name":
+                           return new Selection(realmDef.getName());
                    }
 
                    return null;
@@ -137,17 +137,15 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                 @Override
                 public  Selection call(String remaining) {
                     SiteMinderContext.ResourceContextDef resourceContextDef = ctx.getResContextDef();
-                    if(remaining.equals("agent")){
-                        return new Selection(resourceContextDef.getAgent());
-                    }
-                    else if(remaining.equals("action")){
-                        return new Selection(resourceContextDef.getAction());
-                    }
-                    else if(remaining.equals("resource")) {
-                        return new Selection(resourceContextDef.getResource());
-                    }
-                    else if(remaining.equals("server")){
-                        return new Selection(resourceContextDef.getServer());
+                    switch (remaining) {
+                        case "agent":
+                            return new Selection(resourceContextDef.getAgent());
+                        case "action":
+                            return new Selection(resourceContextDef.getAction());
+                        case "resource":
+                            return new Selection(resourceContextDef.getResource());
+                        case "server":
+                            return new Selection(resourceContextDef.getServer());
                     }
 
                     return null;
@@ -155,33 +153,32 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
             });
         }
         else if(lname.startsWith("sessdef")) {
+            final SiteMinderContext.SessionDef sessionDef = ctx.getSessionDef();
+
+            if (null == sessionDef) {
+                return null;
+            }
+
             return matchPattern(SESSDEF_PATTERN, lname, new Functions.Unary<Selection, String>(){
                 @Override
                 public  Selection call(String remaining) {
-                    SiteMinderContext.SessionDef sessionDef = ctx.getSessionDef();
-                    if(remaining.equals("id")){
-                        return new Selection(sessionDef.getId());
-                    }
-                    else if(remaining.equals("spec")){
-                        return new Selection(sessionDef.getSpec());
-                    }
-                    else if(remaining.equals("idletimeout")) {
-                        return new Selection(Integer.toString(sessionDef.getIdleTimeout()));
-                    }
-                    else if(remaining.equals("maxtimeout")){
-                        return new Selection(Integer.toString(sessionDef.getMaxTimeout()));
-                    }
-                    else if(remaining.equals("reason")){
-                        return new Selection(Integer.toString(sessionDef.getReason()));
-                    }
-                    else if(remaining.equals("starttime")){
-                        return new Selection(Integer.toString(sessionDef.getSessionStartTime()));
-                    }
-                    else if(remaining.equals("lasttime")){
-                        return new Selection(Integer.toString(sessionDef.getSessionLastTime()));
-                    }
-                    else if(remaining.equals("currenttime")){
-                        return new Selection(Integer.toString(sessionDef.getCurrentServerTime()));
+                    switch (remaining) {
+                        case "id":
+                            return new Selection(sessionDef.getId());
+                        case "spec":
+                            return new Selection(sessionDef.getSpec());
+                        case "idletimeout":
+                            return new Selection(Integer.toString(sessionDef.getIdleTimeout()));
+                        case "maxtimeout":
+                            return new Selection(Integer.toString(sessionDef.getMaxTimeout()));
+                        case "reason":
+                            return new Selection(Integer.toString(sessionDef.getReason()));
+                        case "starttime":
+                            return new Selection(Integer.toString(sessionDef.getSessionStartTime()));
+                        case "lasttime":
+                            return new Selection(Integer.toString(sessionDef.getSessionLastTime()));
+                        case "currenttime":
+                            return new Selection(Integer.toString(sessionDef.getCurrentServerTime()));
                     }
 
                     return null;
@@ -193,8 +190,11 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
         return null;
     }
 
-    @NotNull
     private List<SiteMinderContext.Attribute> getSiteMinderAttributes(SiteMinderContext ctx) {
+        if (null == ctx.getAttrList() || null == ctx.getSessionDef()) {
+            return null;
+        }
+
         final List<SiteMinderContext.Attribute> attributes = new ArrayList<>(ctx.getAttrList());
         //add session attributes to the list of attributes
         attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONID, ctx.getSessionDef().getId()));
@@ -228,7 +228,7 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
 
     private static <T> T getElement(List<T> list, Matcher matcher, Syntax.SyntaxErrorHandler handler){
         T elem = null;
-        int index = 0;
+        int index;
         try{
             index = Integer.parseInt(matcher.group(2));
         } catch (NumberFormatException ne) {
