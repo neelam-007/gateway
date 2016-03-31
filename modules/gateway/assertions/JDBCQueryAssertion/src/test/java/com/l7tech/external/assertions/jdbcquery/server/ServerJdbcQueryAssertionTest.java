@@ -322,7 +322,7 @@ public class ServerJdbcQueryAssertionTest {
         SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
 
         ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
-        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx, 0, 1, new ServerJdbcQueryAssertion.BlobContainer());
+        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx,"");
 
         // Check the number of returned records by the query
         assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);
@@ -645,7 +645,7 @@ public class ServerJdbcQueryAssertionTest {
         SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
 
         ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
-        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx, 0, 1, new ServerJdbcQueryAssertion.BlobContainer());
+        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx, "");
 
         // Check the number of returned records by the query
         assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);

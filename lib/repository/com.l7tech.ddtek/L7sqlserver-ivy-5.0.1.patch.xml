@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.l7tech.ddtek"
 		module="L7sqlserver"
-		revision="5.1.4.patch"
-		status="release"
-		publication="20160215120554"
+		revision="5.0.1.patch"
+        status="release"
+        publication="201303221652606"
 		default="true"
 	/>
 	<configurations>
