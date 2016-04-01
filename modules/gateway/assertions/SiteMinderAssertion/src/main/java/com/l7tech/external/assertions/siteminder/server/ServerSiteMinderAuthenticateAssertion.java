@@ -82,12 +82,14 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);
             int result = hla.processAuthenticationRequest(credentials, getClientIp(message, smContext), ssoToken, smContext);
             if(result == SM_YES) {
-                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
+                        (ssoToken != null && ssoToken.trim().length() > 0) ? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 addAuthenticatedUserToContext(authContext, smContext);
                 status = AssertionStatus.NONE;
             }
             else {
-                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to authenticate user using" + (ssoToken != null? " SSO Token:" + ssoToken: " credentials: " + credentials));
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
+                        "Unable to authenticate user using" + ((ssoToken != null && ssoToken.trim().length() > 0)? " SSO Token:" + ssoToken: " credentials: " + credentials));
             }
 
             populateContextVariables(context, varPrefix, smContext);

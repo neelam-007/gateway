@@ -155,10 +155,13 @@ public class SiteMinderHighLevelAgent {
 
         //Perform Session Validation
         if ( !validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds )){
-            cache.remove( cacheKey );
             logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
-            return CHALLENGE;
 
+            if (null != cache) {
+                cache.remove(cacheKey);
+            }
+
+            return CHALLENGE;
         }
 
         // TODO: Implement a tokenReuse threshold check, as a full SiteMinder Agent is expected to perform this operation
@@ -367,10 +370,13 @@ public class SiteMinderHighLevelAgent {
                     new AuthenticationCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid());
 
             if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
-                cache.remove( cacheKey );
                 logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
-                return CHALLENGE;
 
+                if (null != cache) {
+                    cache.remove(cacheKey);
+                }
+
+                return CHALLENGE;
             }
 
             // TODO: Implement a tokenReuse threshold check, as a full SiteMinder Agent is expected to perform this operation
