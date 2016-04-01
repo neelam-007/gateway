@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this is the name of the image that build.sh produces
-IMAGE_NAME="$(whoami)/ssg"
+IMAGE_NAME="$(whoami)/gateway"
 
 # location of the docker-squash binary
 DOCKER_SQUASH="/usr/local/bin/docker-squash"
@@ -40,9 +40,19 @@ loginToTheRegistry() {
 
 buildTheImage() {
 	echo "Building the image"
-	pushd ../.. &> /dev/null
-	./build.sh makedocker docker
-	popd &> /dev/null
+	
+	# pushd ../.. &> /dev/null
+	# ./build.sh makedocker docker -Dbuild.label=$GATEWAY_RELEASE
+	#popd &> /dev/null
+	# HB: since Gateway has switched to build numbers and the Docker image build of the Gateway doesn't run
+	# in the same process as the rest of the Gateway build, this lets us do a build that
+	# shares the same build number
+	GATEWAY_VERSION=`rpm -qp --qf '%{VERSION}' ssg-*.noarch.rpm`
+	GATEWAY_RELEASE=`rpm -qp --qf '%{RELEASE}' ssg-*.noarch.rpm`
+	echo "DEBUG: GATEWAY_VERSION=\"$GATEWAY_VERSION\""
+	echo "DEBUG: GATEWAY_RELEASE=\"$GATEWAY_RELEASE\""
+	docker build --tag="${IMAGE_NAME}:${GATEWAY_VERSION}-${GATEWAY_RELEASE}" .
+
 	echo "Done building the image"
 }
 
@@ -126,7 +136,7 @@ generateBuildResultsFile() {
 
 generatePackagesListFile() {
 	echo "Generating the packages list file"
-	docker run "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" /bin/rpm -qa | sort | uniq > packages-list.txt
+	docker run "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG" /bin/rpm -qa | sort | uniq > "gateway-${IMAGE_TAG}-docker-centos-x86_64.txt"
 	echo "Done generating the packages list file"
 }
 
