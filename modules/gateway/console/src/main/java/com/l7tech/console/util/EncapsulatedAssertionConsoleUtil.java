@@ -118,11 +118,18 @@ public final class EncapsulatedAssertionConsoleUtil {
                 final String policyGuid = config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID);
                 if (policyGuid != null) {
                     try {
-                        final Policy backingPolicy = policies.get(policyIndex++);
-                        if (!policyGuid.equals(backingPolicy.getGuid())) {
-                            throw new FindException("Policy guid: " + backingPolicy.getGuid() + " does not match configuration guid: " + policyGuid);
+                        Policy backingPolicy = null;
+                        if (policies.size() > policyIndex) {
+                            backingPolicy = policies.get(policyIndex);
                         }
-                        config.setPolicy(backingPolicy);
+
+                        if (null != backingPolicy && policyGuid.equals(backingPolicy.getGuid())) {
+                            policyIndex++;
+                            config.setPolicy(backingPolicy);
+                        } else {
+                            logger.log(Level.WARNING, "Policy not found for configuration guid: " + policyGuid +
+                                    ". Caller likely does not have permission to retrieve the backing policy.");
+                        }
                     } catch (final PermissionDeniedException e) {
                         logger.log(Level.WARNING, "Caller does not have permission to retrieve the backing policy with guid: " + policyGuid,
                                 ExceptionUtils.getDebugException(e));
