@@ -110,6 +110,7 @@ public final class EncapsulatedAssertionConsoleUtil {
         for (final EncapsulatedAssertionConfig config : configs) {
             policyGuids.add(config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
         }
+        // rbac may filter results
         final List<Policy> policies = policyAdmin.findPoliciesByGuids(policyGuids);
 
         int policyIndex = 0;
@@ -119,12 +120,14 @@ public final class EncapsulatedAssertionConsoleUtil {
                 if (policyGuid != null) {
                     try {
                         Policy backingPolicy = null;
+
+                        // rbac may filter, resulting in a shorter policy list
                         if (policies.size() > policyIndex) {
                             backingPolicy = policies.get(policyIndex);
                         }
 
-                        if (null != backingPolicy && policyGuid.equals(backingPolicy.getGuid())) {
-                            policyIndex++;
+                        if (backingPolicy != null && policyGuid.equals(backingPolicy.getGuid())) {
+                            policyIndex++;   // match found (policy list is in same order as config)
                             config.setPolicy(backingPolicy);
                         } else {
                             logger.log(Level.WARNING, "Policy not found for configuration guid: " + policyGuid +
