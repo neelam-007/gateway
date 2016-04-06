@@ -183,7 +183,7 @@ public class ExtensibleSocketConnectorAssertion extends RoutingAssertion impleme
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.extensiblesocketconnectorassertion.console.ExtensibleSocketConnectorAssertionPropertiesDialog");
 
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.extensiblesocketconnectorassertion.ExtensibleSocketConnectorEntityAdminImpl");
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorModuleLoadListener");
 
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override

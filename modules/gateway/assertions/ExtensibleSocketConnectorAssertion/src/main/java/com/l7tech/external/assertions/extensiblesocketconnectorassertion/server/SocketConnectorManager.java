@@ -202,9 +202,11 @@ public class SocketConnectorManager {
     }
 
     private void unloadConnectors() {
-        //cycle through connector
-        for (ExtensibleSocketConnectorEntity connectorConfig : connectorEntities) {
-            destroySocketConnector(connectorConfig);
+        if (connectorEntities != null) {
+            //cycle through connector
+            for (ExtensibleSocketConnectorEntity connectorConfig : connectorEntities) {
+                destroySocketConnector(connectorConfig);
+            }
         }
     }
 

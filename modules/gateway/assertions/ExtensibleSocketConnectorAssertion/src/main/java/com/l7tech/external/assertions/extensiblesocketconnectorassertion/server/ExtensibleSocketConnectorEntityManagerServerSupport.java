@@ -6,19 +6,13 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.Extensi
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.service.FirewallRulesManager;
 import org.springframework.context.ApplicationContext;
 
-import javax.net.ssl.TrustManager;
-import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,15 +25,16 @@ public class ExtensibleSocketConnectorEntityManagerServerSupport {
     private static ExtensibleSocketConnectorEntityManagerServerSupport instance;
 
     private EntityManager<ExtensibleSocketConnectorEntity, GenericEntityHeader> entityManager;
-    private ClusterPropertyManager clusterPropertyManager;
-    private SsgKeyStoreManager keyStoreManager;
-    private TrustManager trustManager;
-    private SecureRandom secureRandom;
-    private StashManagerFactory stashManagerFactory;
-    private MessageProcessor messageProcessor;
-    private DefaultKey defaultKey;
-    private FirewallRulesManager firewallRulesManager;
 
+    /**
+     * Private constructor to prevent instantiation
+     */
+    private ExtensibleSocketConnectorEntityManagerServerSupport() {
+    }
+
+    /**
+     * Get the singleton instance.
+     */
     public static synchronized ExtensibleSocketConnectorEntityManagerServerSupport getInstance(final ApplicationContext context) {
         if (instance == null) {
             ExtensibleSocketConnectorEntityManagerServerSupport s = new ExtensibleSocketConnectorEntityManagerServerSupport();
@@ -49,29 +44,21 @@ public class ExtensibleSocketConnectorEntityManagerServerSupport {
         return instance;
     }
 
-    public void init(ApplicationContext context) {
-
+    private void init(ApplicationContext context) {
         GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
-        gem.registerClass(ExtensibleSocketConnectorEntity.class);
         entityManager = gem.getEntityManager(ExtensibleSocketConnectorEntity.class);
-
-        clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
-        keyStoreManager = context.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
-        trustManager = context.getBean("routingTrustManager", TrustManager.class);
-        secureRandom = context.getBean("secureRandom", SecureRandom.class);
-        stashManagerFactory = context.getBean("stashManagerFactory", StashManagerFactory.class);
-        messageProcessor = context.getBean("messageProcessor", MessageProcessor.class);
-        defaultKey = context.getBean("defaultKey", DefaultKey.class);
-        firewallRulesManager = context.getBean("ssgFirewallManager", FirewallRulesManager.class);
     }
 
+    /**
+     * Get the ExtensionInterfaceBindings
+     *
+     * @return Collection of ExtensionInterfaceBinding
+     */
     public Collection<ExtensionInterfaceBinding> getExtensionInterfaceBindings() {
-        ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<ExtensibleSocketConnectorEntityAdmin>(
+        ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(
                 ExtensibleSocketConnectorEntityAdmin.class,
                 null,
-                new ExtensibleSocketConnectorEntityAdminImpl(entityManager, clusterPropertyManager, keyStoreManager,
-                        trustManager, secureRandom, stashManagerFactory, messageProcessor, defaultKey,
-                        firewallRulesManager));
+                new ExtensibleSocketConnectorEntityAdminImpl(entityManager));
         return Collections.singletonList(binding);
     }
 }
