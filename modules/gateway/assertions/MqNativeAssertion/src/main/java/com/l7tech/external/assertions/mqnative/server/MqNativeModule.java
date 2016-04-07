@@ -7,13 +7,16 @@ import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.external.assertions.mqnative.server.decorator.*;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -105,6 +108,10 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private ApplicationEventPublisher messageProcessingEventChannel;
     @Inject
     private ServerConfig serverConfig;
+    @Inject
+    private AuditContextFactory auditContextFactory;
+    @Inject
+    private MessageSummaryAuditFactory messageSummaryAuditFactory;
 
     private MQPoolToken connectionPoolToken;
 
@@ -265,9 +272,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 } catch ( RejectedExecutionException e ) {
                     try {
                         rollbackWork( mqNativeClient );
-                    } catch ( MQException e1 ) {
-                        throw new MqNativeException( "Error rolling back work for rejected execution", e1 );
-                    } catch ( MqNativeConfigException e1 ) {
+                    } catch ( MQException | MqNativeConfigException e1 ) {
                         throw new MqNativeException( "Error rolling back work for rejected execution", e1 );
                     }
                     throw e;
@@ -344,8 +349,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final ContentTypeHeader ctype;
         final Pair<byte[], byte[]> mqRequestHeaderPayload;
         final long requestSizeLimit;
-        boolean messageTooLarge = false;
-        boolean responseSuccess = false;
+        final boolean messageTooLarge[] = { false };
+        final boolean responseSuccess[] = { false };
         try {
             // get the content type
             String contentTypeValue = connector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
@@ -366,18 +371,15 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             );
 
             if ( requestSizeLimit > 0 && size > requestSizeLimit ) {
-                messageTooLarge = true;
+                messageTooLarge[0] = true;
             }
-        } catch (IOException e) {
-            throw new MqNativeException("Error processing request message.  " + getMessage( e ), e);
-        } catch (MQDataException e) {
+        } catch (IOException | MQDataException e) {
             throw new MqNativeException("Error processing request message.  " + getMessage( e ), e);
         }
 
-        PolicyEnforcementContext context = null;
-        String faultMessage = null;
-        String faultCode = null;
-        AssertionStatus status = AssertionStatus.UNDEFINED;
+        final Message gatewayResponseMessage = new Message();
+        final PolicyEnforcementContext context[] = { null };
+        final AssertionStatus status[] = { AssertionStatus.UNDEFINED };
         try {
             // convert the payload into an input stream
             final InputStream requestStream = new ByteArrayInputStream(mqRequestHeaderPayload.right);
@@ -403,122 +405,145 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=
                     connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
 
-
-            Message gatewayResponseMessage = new Message();
             gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class);
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, gatewayResponseMessage, replyExpected);
+            context[0] = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, gatewayResponseMessage, replyExpected);
+        } catch (IOException | MQDataException | MQException e) {
+            throw new MqNativeException(e);
+        }
 
-            boolean stealthMode = false;
-            InputStream responseStream = null;
-            if ( !messageTooLarge ) {
-                try {
-                    status = messageProcessor.processMessage(context);
-
-                    context.setPolicyResult(status);
-                    logger.log(Level.FINEST, "Policy resulted in status " + status);
-
-                    Message contextResponse = context.getResponse();
-                    if (contextResponse.getKnob(XmlKnob.class) != null || contextResponse.getKnob(MimeKnob.class) != null) {
-                        // if the policy is not successful AND the stealth flag is on, drop connection
-                        if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
-                            logger.log(Level.INFO, "Policy returned error and stealth mode is set.  Not sending response message.");
-                            stealthMode = true;
-                        } else {
-                            // add more detailed diagnosis message
-                            if (!contextResponse.isXml()) {
-                                logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
-                            }
-                            responseStream = contextResponse.getMimeKnob().getFirstPart().getInputStream(false);
-                        }
-                    } else {
-                        logger.log(Level.FINER, "No response received");
-                        responseStream = null;
-                    }
-                } catch ( PolicyVersionException pve ) {
-                    String msg1 = "Request referred to an outdated version of policy";
-                    logger.log( Level.INFO, msg1 );
-                    faultMessage = msg1;
-                    faultCode = SoapUtil.FC_CLIENT;
-                } catch ( Throwable t ) {
-                    logger.warning("Exception while processing message via MQ native: " + getMessage( t ));
-                    faultMessage = t.getMessage();
-                    if ( faultMessage == null ) faultMessage = t.toString();
-                }
-            } else {
-                String msg1 = "Message too large";
-                logger.log( Level.INFO, msg1 );
-                faultMessage = msg1;
-                faultCode = SoapUtil.FC_CLIENT;
-            }
-
-            if ( responseStream == null ) {
-                if (context.isStealthResponseMode()) {
-                    logger.info("No response data available and stealth mode is set. " + "Not sending response message.");
-                    stealthMode = true;
-                } else {
-                    if ( faultMessage == null ) {
-                        faultMessage = status.getMessage();
-                    }
+        try {
+            auditContextFactory.doWithNewAuditContext(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
                     try {
-                        String faultXml = SoapFaultUtils.generateSoapFaultXml(
-                                (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
-                                faultCode == null ? SoapUtil.FC_SERVER : faultCode,
-                                faultMessage, null, "");
+                        String faultMessage = null;
+                        String faultCode = null;
+                        boolean stealthMode = false;
+                        InputStream responseStream = null;
+                        if ( !messageTooLarge[0] ) {
+                            try {
+                                status[0] = messageProcessor.processMessageNoAudit(context[0]);
 
-                        responseStream = new ByteArrayInputStream(faultXml.getBytes( Charsets.UTF8));
+                                context[0].setPolicyResult(status[0]);
+                                logger.log(Level.FINEST, "Policy resulted in status " + status[0]);
 
-                        if (faultXml != null) {
-                            messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                                Message contextResponse = context[0].getResponse();
+                                if (contextResponse.getKnob(XmlKnob.class) != null || contextResponse.getKnob(MimeKnob.class) != null) {
+                                    // if the policy is not successful AND the stealth flag is on, drop connection
+                                    if (status[0] != AssertionStatus.NONE && context[0].isStealthResponseMode()) {
+                                        logger.log(Level.INFO, "Policy returned error and stealth mode is set.  Not sending response message.");
+                                        stealthMode = true;
+                                    } else {
+                                        // add more detailed diagnosis message
+                                        if (!contextResponse.isXml()) {
+                                            logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context[0].getRequest().getMimeKnob().getOuterContentType());
+                                        }
+                                        responseStream = contextResponse.getMimeKnob().getFirstPart().getInputStream(false);
+                                    }
+                                } else {
+                                    logger.log(Level.FINER, "No response received");
+                                    responseStream = null;
+                                }
+                            } catch ( PolicyVersionException pve ) {
+                                String msg1 = "Request referred to an outdated version of policy";
+                                logger.log( Level.INFO, msg1 );
+                                faultMessage = msg1;
+                                faultCode = SoapUtil.FC_CLIENT;
+                            } catch ( Throwable t ) {
+                                logger.warning("Exception while processing message via MQ native: " + getMessage( t ));
+                                faultMessage = t.getMessage();
+                                if ( faultMessage == null ) faultMessage = t.toString();
+                            }
+                        } else {
+                            String msg1 = "Message too large";
+                            logger.log( Level.INFO, msg1 );
+                            faultMessage = msg1;
+                            faultCode = SoapUtil.FC_CLIENT;
                         }
-                    } catch (SAXException e) {
+
+                        if ( responseStream == null ) {
+                            if (context[0].isStealthResponseMode()) {
+                                logger.info("No response data available and stealth mode is set. " + "Not sending response message.");
+                                stealthMode = true;
+                            } else {
+                                if ( faultMessage == null ) {
+                                    faultMessage = status[0].getMessage();
+                                }
+                                try {
+                                    String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                            (context[0].getService() != null) ? context[0].getService().getSoapVersion() : SoapVersion.UNKNOWN,
+                                            faultCode == null ? SoapUtil.FC_SERVER : faultCode,
+                                            faultMessage, null, "");
+
+                                    responseStream = new ByteArrayInputStream(faultXml.getBytes( Charsets.UTF8));
+
+                                    if (faultXml != null) {
+                                        messageProcessingEventChannel.publishEvent(new FaultProcessed(context[0], faultXml, messageProcessor));
+                                    }
+                                } catch (SAXException e) {
+                                    throw new MqNativeException(e);
+                                }
+                            }
+                        }
+
+                        if (!stealthMode) {
+                            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
+                            final byte[] responsePayload;
+                            try {
+                                IOUtils.copyStream(responseStream, baos);
+                                responsePayload = baos.toByteArray();
+                            } finally {
+                                baos.close();
+                            }
+
+                            MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
+                            MQMessage mqResponseMessage = new MQMessage();
+                            mqResponseMessage = new PassThroughDecorator(mqResponseMessage, (MqMessageProxy) mqNativeKnob.getMessage(),
+                                    gatewayResponseMessage.getKnob(HeadersKnob.class), null, context[0], getAudit());
+                            mqResponseMessage = new DescriptorDecorator((MqMessageDecorator)mqResponseMessage);
+                            mqResponseMessage = new PropertyDecorator((MqMessageDecorator)mqResponseMessage);
+                            mqResponseMessage = new HeaderDecorator((MqMessageDecorator)mqResponseMessage);
+                            mqResponseMessage = ((MqMessageDecorator) mqResponseMessage).decorate();
+
+                            if (responsePayload != null && responsePayload.length > 0) {
+                                mqResponseMessage.write(responsePayload);
+                            }
+
+                            long startResp = System.currentTimeMillis();
+                            responseSuccess[0] = sendResponse( mqRequestMessage, mqResponseMessage, connector, mqNativeClient );
+                            logger.log(Level.INFO, "Send response took {0} milliseconds; listener {1}",
+                                    new Object[] {(System.currentTimeMillis() - startResp), connector.getName()});
+                        } else { // is stealth mode
+                            responseSuccess[0] = true;
+                        }
+                    } catch (IOException | MQDataException | MQException e) {
                         throw new MqNativeException(e);
                     }
+                    return null;
                 }
+            }, new Functions.Nullary<AuditRecord>() {
+                @Override
+                public AuditRecord call() {
+                    AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
+                    return messageSummaryAuditFactory.makeEvent( context[0], s );
+                }
+            });
+        } catch (Exception e) {
+            if (e instanceof MqNativeException) {
+                throw (MqNativeException)e;
+            } else if (e instanceof MqNativeConfigException) {
+                throw (MqNativeConfigException)e;
             }
-
-            if (!stealthMode) {
-                PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
-                final byte[] responsePayload;
-                try {
-                    IOUtils.copyStream(responseStream, baos);
-                    responsePayload = baos.toByteArray();
-                } finally {
-                    baos.close();
-                }
-
-                MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
-                MQMessage mqResponseMessage = new MQMessage();
-                mqResponseMessage = new PassThroughDecorator(mqResponseMessage, (MqMessageProxy) mqNativeKnob.getMessage(),
-                        gatewayResponseMessage.getKnob(HeadersKnob.class), null, context, getAudit());
-                mqResponseMessage = new DescriptorDecorator((MqMessageDecorator)mqResponseMessage);
-                mqResponseMessage = new PropertyDecorator((MqMessageDecorator)mqResponseMessage);
-                mqResponseMessage = new HeaderDecorator((MqMessageDecorator)mqResponseMessage);
-                mqResponseMessage = ((MqMessageDecorator) mqResponseMessage).decorate();
-
-                if (responsePayload != null && responsePayload.length > 0) {
-                    mqResponseMessage.write(responsePayload);
-                }
-
-                long startResp = System.currentTimeMillis();
-                responseSuccess = sendResponse( mqRequestMessage, mqResponseMessage, connector, mqNativeClient );
-                logger.log(Level.INFO, "Send response took {0} milliseconds; listener {1}",
-                        new Object[] {(System.currentTimeMillis() - startResp), connector.getName()});
-            } else { // is stealth mode
-                responseSuccess = true;
-            }
-        } catch (IOException e) {
-            throw new MqNativeException(e);
-        } catch(MQDataException e) {
-            throw new MqNativeException(e);
-        } catch(MQException e) {
-            throw new MqNativeException(e);
+            // it shouldn't reach here
+            // in case it does this is unexpected exception so throw RuntimeException
+            throw new RuntimeException(e);
         } finally {
             ResourceUtils.closeQuietly(context);
 
             if ( isTransactional( connector ) ) {
-                boolean handledAnyFailure = status == AssertionStatus.NONE || postMessageToFailureQueue(mqRequestMessage, connector, mqNativeClient);
+                boolean handledAnyFailure = status[0] == AssertionStatus.NONE || postMessageToFailureQueue(mqRequestMessage, connector, mqNativeClient);
 
-                if ( responseSuccess && handledAnyFailure ) {
+                if ( responseSuccess[0] && handledAnyFailure ) {
                     try {
                         logger.log( Level.FINE, "Committing MQ transaction." );
                         commitWork( mqNativeClient );
@@ -681,6 +706,14 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     void setSecurePasswordManager(final SecurePasswordManager securePasswordManager) {
         this.securePasswordManager = securePasswordManager;
+    }
+
+    void setAuditContextFactory(final AuditContextFactory auditContextFactory) {
+        this.auditContextFactory = auditContextFactory;
+    }
+
+    void setMessageSummaryAuditFactory(final MessageSummaryAuditFactory messageSummaryAuditFactory) {
+        this.messageSummaryAuditFactory = messageSummaryAuditFactory;
     }
 
     Map<Goid, Set<MqNativeListener>> getActiveListeners() {

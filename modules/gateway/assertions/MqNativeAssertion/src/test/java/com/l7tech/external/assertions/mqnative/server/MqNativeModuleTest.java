@@ -23,6 +23,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditContextFactoryStub;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -32,6 +34,7 @@ import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
@@ -293,6 +296,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqNativeModule.setStashManagerFactory(stashManagerFactory);
         mqNativeModule.setMessageProcessingEventChannel(applicationEventPublisher);
         mqNativeModule.setSecurePasswordManager(securePasswordManager);
+        mqNativeModule.setAuditContextFactory(new AuditContextFactoryStub(ConfigFactory.getCachedConfig(), "testnode"));
+        mqNativeModule.setMessageSummaryAuditFactory(new MessageSummaryAuditFactory("testnode"));
         return mqNativeModule;
     }
 
@@ -308,7 +313,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
     private void whenProcessMessageThenAnswer(final AssertionStatus assertionStatus) throws IOException, MessageProcessingSuspendedException, LicenseException,
             PolicyVersionException, MethodNotAllowedException, PolicyAssertionException {
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
@@ -340,7 +345,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 return null;
             }}).when(mqNativeModuleSpy).sendResponse(any(MQMessage.class), any(MQMessage.class), any(SsgActiveConnector.class), any(MqNativeClient.class));
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
@@ -364,7 +369,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
         when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
 
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
