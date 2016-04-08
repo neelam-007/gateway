@@ -16,15 +16,11 @@ USER root
 
 # inject the ssg and ssg-appliance RPMs into the filesystem of the container
 # the RPM is expected to be in the same directory as this Dockerfile
-RUN yum install -y sudo perl passwd util-linux-ng wget tar
+RUN yum install -y sudo perl passwd mysql util-linux-ng wget tar
 ADD ssg-*.noarch.rpm /root/
 ADD ssg-appliance*.x86_64.rpm /root/
 RUN rpm -ivh /root/ssg-*.noarch.rpm /root/ssg-appliance-*.x86_64.rpm
 RUN rm /root/ssg-*.rpm
-
-# install the MySQL client in case we need it
-ADD MySQL-client-advanced-*.x86_64.rpm /root/
-RUN rpm -ivh /root/MySQL-client-advanced-*.x86_64.rpm
 
 # generate a random password for the ssgconfig user as customers don't need it
 RUN dd if=/dev/urandom count=50 | md5sum | passwd --stdin ssgconfig
