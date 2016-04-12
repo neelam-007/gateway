@@ -368,12 +368,15 @@ public class DsigUtil {
         // NOTE: Since we have no PrefixList attribute we should not have any inlclusive namespaces
         // element (See the DTD http://www.w3.org/TR/xml-exc-c14n/exc-c14n.dtd)
         //
-        //Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-        //                                                               "InclusiveNamespaces",
-        //                                                               Transform.C14N_EXCLUSIVE,
-        //                                                               "c14n");
         // omit prefix list attribute if empty (WS-I BSP R5410)
-        //inclusiveNamespaces.setAttribute("PrefixList", "");
+        String prefix = ConfigFactory.getProperty( "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix", null );
+        if (prefix != null && !prefix.isEmpty()) {
+            Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+                    "InclusiveNamespaces",
+                    Transform.C14N_EXCLUSIVE,
+                    "c14n");
+            inclusiveNamespaces.setAttribute("PrefixList", prefix);
+        }
     }
 
     /**

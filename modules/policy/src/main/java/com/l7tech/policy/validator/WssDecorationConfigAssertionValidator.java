@@ -81,8 +81,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
 
                 // Check for the same key reference types (BST, Issuer/Serial, etc)
                 if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
-                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference())))
-                {
+                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
                     hasDifferentKeyRefs = true;
                     bottomMostWssDecorationConfigAssertion = assertion.getOrdinal() > pathAssertion.getOrdinal() ? assertion : pathAssertion;
                 }
