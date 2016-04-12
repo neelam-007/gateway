@@ -67,6 +67,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("deprecation")
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     private static final Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private static final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
@@ -125,8 +126,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private SecureAction saveAndActivateAction;
     private SecureAction saveOnlyAction;
     private SecureAction showAssertionLineNumbersAction;
-    private List<AbstractButton> showCmtsButtons = new ArrayList<AbstractButton>();
-    private List<AbstractButton> showLnNumsButtons = new ArrayList<AbstractButton>();
+    private List<AbstractButton> showCmtsButtons = new ArrayList<>();
+    private List<AbstractButton> showLnNumsButtons = new ArrayList<>();
     private ValidatePolicyAction validateAction;
     private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
@@ -710,12 +711,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     @Nullable
-    private Long getLatestVersionNumberCached() {
+    public Long getLatestVersionNumberCached() {
         if ( latestPolicyVersionNumber != null ) {
             return latestPolicyVersionNumber;
         } else {
             return getLatestVersionNumber();
         }
+    }
+
+    public void setLatestPolicyVersionNumber(Long latestPolicyVersionNumber) {
+        this.latestPolicyVersionNumber = latestPolicyVersionNumber;
     }
 
     @Nullable

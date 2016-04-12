@@ -1413,6 +1413,7 @@ public class WorkSpacePanel extends JPanel {
 
         final Goid selectedPolicyGoid = ((PolicyEditorPanel) selectedComponent).getPolicyGoid();
         final long selectedVersion = ((PolicyEditorPanel) selectedComponent).getVersionNumber();
+        final Long latestPolicyVersionNum = ((PolicyEditorPanel) selectedComponent).getLatestVersionNumberCached();
         final List<Component> duplicates = new ArrayList<>();
 
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
@@ -1439,13 +1440,15 @@ public class WorkSpacePanel extends JPanel {
                     }
                     // Keep other tabs' version unchanged
                     ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
+
+                    // Update the latest policy version number for the component and avoid to call policyAdmin.findLatestRevisionForPolicy
+                    ((PolicyEditorPanel) component).setLatestPolicyVersionNumber(latestPolicyVersionNum);
+                    // Redraw tab title
+                    ((PolicyEditorPanel) component).updateHeadings();
                 } else {
                     duplicates.add(component);
                 }
             }
-            // Redraw tab title
-            ((PolicyEditorPanel) component).invalidateCachedInfo();
-            ((PolicyEditorPanel) component).updateHeadings();
         }
 
         // At last, remove those duplicates tabs
