@@ -101,24 +101,13 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
                 if ( specifyCredentialsRadioButton.isSelected()
                        && ! usernameAndPasswordCheckBox.isSelected()
                        && ! x509CertificateCheckBox.isSelected()) {
-                    return "At least one of Username, X.509 Certificate, or JWT must be selected when using Specified Credentials.";
+                    return "At least one of Username or X.509 Certificate must be selected when using Specified Credentials.";
                 }
 
                 return null;
             }
         });
 
-        inputValidator.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if ( specifyCredentialsRadioButton.isSelected()
-                        && x509CertificateCheckBox.isSelected()) {
-                    return "X.509 Certificate and JWT cannot be enabled at the same time when using Specified Credentials.";
-                }
-
-                return null;
-            }
-        });
 
         enableDisableComponents();
 
