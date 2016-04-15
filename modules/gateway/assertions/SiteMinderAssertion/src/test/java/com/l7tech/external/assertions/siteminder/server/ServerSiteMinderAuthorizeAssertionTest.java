@@ -92,7 +92,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertion.setSetSMCookie(false);
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext), true )).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext), eq(false))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertTrue(pec.getResponse().getHttpResponseKnob() != null);
@@ -115,7 +115,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertion.setCookieComment("this is a cookie comment");
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext), true)).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext), eq(false))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertTrue(pec.getResponse().getHttpResponseKnob() != null);
@@ -142,7 +142,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         pec.setVariable("test", SSO_TOKEN);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), false )).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), eq(true))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertTrue(pec.getResponse().getHttpResponseKnob() != null);
@@ -207,7 +207,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         pec.setVariable("test", SSO_TOKEN);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), false)).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), eq(false))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
@@ -238,7 +238,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         when(mockContext.getSourceIpAddress()).thenReturn(SOURCE_IP);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(eq(SOURCE_IP), (String) isNull(), eq(mockContext), false )).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(eq(SOURCE_IP), (String) isNull(), eq(mockContext), eq(false))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         verify(mockContext, times(2)).getSourceIpAddress();
