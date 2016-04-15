@@ -66,7 +66,7 @@ public class SiteMinderAgentTest {
         for(Attribute attr : context.getAttrList()) {
             System.out.println(attr.getName() + ": " + attr.getValue());
         }
-        assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context, false));
+        assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context));
         System.out.println("SMSESSION=" + context.getSsoToken());
     }
 

@@ -13,7 +13,6 @@ public interface ServerConfigParams {
     String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     String PARAM_MULTICAST_ENABLED = "cluster.replayProtection.multicast.enabled";
-    String PARAM_DATA_GRID_PORT = "dataGrid.port";
     String PARAM_DATA_GRID_PROTOCOL = "dataGrid.protocol";
     String PARAM_DATA_GRID_TCPIP_CONNECTION_TIMEOUT = "dataGrid.tcpip.connectionTimeout";
     String PARAM_SSG_HOME_DIRECTORY = "ssgHome";

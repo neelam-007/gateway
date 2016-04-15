@@ -79,7 +79,6 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         }
 
         String ssoToken = null;
-        boolean useSMCookie = assertion.isUseVarAsCookieSource();
 
         if(assertion.isUseVarAsCookieSource() && StringUtils.isNotBlank(assertion.getCookieSourceVar())) {
             //TODO: find better solution
@@ -87,7 +86,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         }
 
         try {
-            int result = hla.processAuthorizationRequest( getClientIp(message, smContext), ssoToken, smContext, useSMCookie );
+            int result = hla.processAuthorizationRequest(getClientIp(message, smContext), ssoToken, smContext);
             if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 /////////////////////////////////////////////////////////////////////////////////////////////
