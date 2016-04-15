@@ -10,6 +10,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.server.service.FirewallRulesManager;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -67,7 +68,7 @@ public class GatewayHazelcast implements InitializingBean {
     }
 
     /**
-     * Gracefully shut down the Gateway HazelcastInstance
+     * Gracefully shut down the Gateway HazelcastInstance and remove the instance firewall rule
      */
     public void shutdown() {
         checkShutdown();
@@ -79,6 +80,8 @@ public class GatewayHazelcast implements InitializingBean {
             logger.log(Level.INFO, "Shutting down Gateway Hazelcast instance");
             instance.shutdown();
         }
+
+        firewallRulesManager.removeRule(DEFAULT_INSTANCE_NAME);
     }
 
     @ManagedAttribute(description = "Group Members", currencyTimeLimit = 30)
@@ -123,6 +126,18 @@ public class GatewayHazelcast implements InitializingBean {
         Config config = new Config();
         config.setInstanceName(DEFAULT_INSTANCE_NAME);
 
+        configureHazelcastProperties(config);
+
+        configureGroup(config.getGroupConfig());
+
+        configureNetwork(config.getNetworkConfig());
+
+        Hazelcast.newHazelcastInstance(config);
+
+        logger.info("Gateway Hazelcast instance created");
+    }
+
+    private void configureHazelcastProperties(Config config) {
         // reduce the delay in merging into cluster after instance startup
         config.setProperty("hazelcast.merge.first.run.delay.seconds", "10");
         config.setProperty("hazelcast.merge.next.run.delay.seconds", "10");
@@ -135,7 +150,9 @@ public class GatewayHazelcast implements InitializingBean {
 
         // disable phone home
         config.setProperty("hazelcast.phone.home.enabled", "false");
+    }
 
+    private void configureGroup(GroupConfig groupConfig) {
         String groupPassword;
 
         try {
@@ -145,20 +162,32 @@ public class GatewayHazelcast implements InitializingBean {
             throw new IllegalStateException(e);
         }
 
-        GroupConfig groupConfig = config.getGroupConfig();
         groupConfig.setName(DEFAULT_GROUP_NAME);
         groupConfig.setPassword(groupPassword);
+    }
 
-        NetworkConfig networkConfig = config.getNetworkConfig();
+    private void configureNetwork(NetworkConfig networkConfig) {
+        // configure port
+        int port;
+
+        try {
+            port = Integer.valueOf(serverConfig.getProperty(ServerConfigParams.PARAM_DATA_GRID_PORT));
+        } catch (NumberFormatException e) {
+            logger.log(Level.WARNING, "Specified Hazelcast port is invalid, defaulting to " +
+                    DEFAULT_INBOUND_PORT + ": " + e.getMessage());
+            port = DEFAULT_INBOUND_PORT;
+        }
+
         networkConfig
-                .setPort(DEFAULT_INBOUND_PORT)
-                // Only use the configured port - it's the only one open
+                .setPort(port)
+                // Only use the configured port - it's the only one we'll open the firewall for
                 .setPortAutoIncrement(false);
 
         // ensure the firewall is open so that traffic can be sent in
-        // TODO jwilliams: check for existing rule and replace if port is different - needed when the port is user-defined
+        firewallRulesManager.removeRule(DEFAULT_INSTANCE_NAME); // always recreate rule in case port value has changed
         firewallRulesManager.openPort(DEFAULT_INSTANCE_NAME, networkConfig.getPort());
 
+        // configure protocol
         final String protocol = serverConfig.getProperty(ServerConfigParams.PARAM_DATA_GRID_PROTOCOL);
 
         switch (protocol) {
@@ -171,10 +200,6 @@ public class GatewayHazelcast implements InitializingBean {
                 logger.log(Level.WARNING, errMsg);
                 throw new IllegalArgumentException(errMsg);
         }
-
-        Hazelcast.newHazelcastInstance(config);
-
-        logger.info("Gateway Hazelcast instance created");
     }
 
     /**

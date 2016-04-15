@@ -17,7 +17,7 @@ public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
     }
 
     @Override
-    public int processAuthorizationRequest(String userIp, String ssoCookie, SiteMinderContext context) throws SiteMinderApiClassException {
+    public int processAuthorizationRequest(String userIp, String ssoCookie, SiteMinderContext context, boolean useSMCookie) throws SiteMinderApiClassException {
         return 1;
     }
 

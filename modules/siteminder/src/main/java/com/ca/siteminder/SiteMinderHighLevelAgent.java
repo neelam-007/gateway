@@ -112,7 +112,7 @@ public class SiteMinderHighLevelAgent {
         return isProtected;
     }
 
-    public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
+    public int processAuthorizationRequest( final String userIp, final String ssoCookie, final SiteMinderContext context, final boolean useSMCookie ) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
@@ -133,18 +133,25 @@ public class SiteMinderHighLevelAgent {
         boolean updateSsoToken;
         int result;
 
-        if (null != ssoCookie && ssoCookie.trim().length() > 0) {
-            if ( null == sessionDef ){
-                //decode the ssoToken
+        /**
+         * SSG-13325: SiteMinder: Authorization assertion ignores invalid or non-existing context
+         * variable if a valid token exists in smcontext
+         */
+        if ( useSMCookie ) {
+         if (null != ssoCookie && ssoCookie.trim().length() > 0) {
+                //Always decode the ssoToken
                 result = agent.decodeSessionToken( context, ssoCookie);
 
                 if (result != SUCCESS) {
-                    logger.log(Level.FINE, "CA Single Sign-On Authorization attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
+                    logger.log(Level.FINE, "CA Single Sign-On  Authorization attempt - CA Single Sign-On  is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
                     return result;
                 }
                 sessionDef = context.getSessionDef();
+
+            } else {
+                throw new SiteMinderApiClassException("SiteMinder SsoToken is null");
             }
-        } else if ( null == context.getSessionDef() ){ // ensure that a valid SessionDef exits
+        } else if (null == context.getSessionDef()) { // ensure that a valid SessionDef exits
             throw new SiteMinderApiClassException("SiteMinder Session Definition object is null");
         }
         //Get Agent cache and the authorization cache keys
@@ -353,7 +360,6 @@ public class SiteMinderHighLevelAgent {
         }
 
         final int currentAgentTimeSeconds = SiteMinderUtil.safeLongToInt(System.currentTimeMillis() / 1000);
-
         if ( null != ssoCookie && ssoCookie.trim().length() > 0 ) {
             // Attempt to authenticate with an existing cookie/SsoToken
             // Decode the SSO token and ensure the session has not expired by
