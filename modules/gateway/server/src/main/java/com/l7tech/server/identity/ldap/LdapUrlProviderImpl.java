@@ -48,7 +48,7 @@ public class LdapUrlProviderImpl implements LdapUrlProvider {
      * Remember that the passed URL could not be used to connect normally and get the next ldap URL from
      * the list that should be tried to connect with. Will return null if all known urls have failed to
      * connect in the last while. (last while being a configurable timeout period defined in
-     * serverconfig.properties under ldap.reconnect.timeout in ms)
+     * serverconfig.properties under ldapReconnectTimeout in ms)
      *
      * @param urlThatFailed the url that failed to connect, or null if no url was previously available
      * @return the next url in the list or null if all urls were marked as failure within the last while

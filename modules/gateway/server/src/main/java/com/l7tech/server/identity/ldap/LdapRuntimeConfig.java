@@ -82,8 +82,6 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
 
     private final Config config;
 
-    private static final String PROP_RECONNECT_TIMEOUT = "ldap.reconnect.timeout";
-
     private static final long DEFAULT_INDEX_REBUILD_INTERVAL = 1000L * 60L * 10L; // 10 minutes
     private static final long DEFAULT_CACHE_CLEANUP_INTERVAL = 1000L * 60L * 10L; // 10 minutes
     private static final long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000L * 60L * 10L; // 10 minutes
@@ -91,6 +89,11 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private static final long MIN_CERT_CACHE_LIFETIME = 10000L; //10 seconds
     private static final long DEFAULT_MAX_SEARCH_RESULT_SIZE = 100L;
     private static final long DEFAULT_RECONNECT_TIMEOUT = 60000L;
+
+    // this is the serverconfig_overrides.properties value - if defined, it takes precedence over the cluster property below
+    private static final String PROP_RECONNECT_TIMEOUT_OVERRIDE = "ldap.reconnect.timeout";
+    // this is the cluster property - it will only take effect if the override property above is not defined
+    private static final String PROP_RECONNECT_TIMEOUT = "ldapReconnectTimeout";
 
     private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
     private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
@@ -153,19 +156,31 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     }
 
     private void loadReconnectTimeout() {
-        // configure timeout period
-        String property = config.getProperty(PROP_RECONNECT_TIMEOUT, Long.toString(DEFAULT_RECONNECT_TIMEOUT));
-        if (property == null || property.length() < 1) {
-            retryFailedConnectionTimeout.set(DEFAULT_RECONNECT_TIMEOUT);
-            logger.warning(PROP_RECONNECT_TIMEOUT + " server property not set. using default");
-        } else {
+        // if there's a serverconfig_override.properties value for the property, use that
+        String property = config.getProperty(PROP_RECONNECT_TIMEOUT_OVERRIDE);
+        if (property != null && property.length() > 0) {
             try {
                 retryFailedConnectionTimeout.set(Long.parseLong(property));
+                return;
+            } catch (NumberFormatException e) {
+                logger.log(Level.WARNING, PROP_RECONNECT_TIMEOUT_OVERRIDE + " property not configured properly. Trying cluster property instead", e);
+            }
+        }
+
+        // if that's not found, let's try the cluster property
+        property = config.getProperty(PROP_RECONNECT_TIMEOUT);
+        if (property != null && property.length() > 0) {
+            try {
+                retryFailedConnectionTimeout.set(Long.parseLong(property));
+                return;
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, PROP_RECONNECT_TIMEOUT + " property not configured properly. using default", e);
                 retryFailedConnectionTimeout.set(DEFAULT_RECONNECT_TIMEOUT);
             }
         }
+
+        retryFailedConnectionTimeout.set(DEFAULT_RECONNECT_TIMEOUT);
+        logger.warning(PROP_RECONNECT_TIMEOUT + " server property not set. using default");
     }
 
     private void loadIndexRebuildIntervalProperty() {
