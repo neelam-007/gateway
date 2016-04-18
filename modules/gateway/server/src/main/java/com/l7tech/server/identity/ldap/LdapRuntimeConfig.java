@@ -161,6 +161,8 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         if (property != null && property.length() > 0) {
             try {
                 retryFailedConnectionTimeout.set(Long.parseLong(property));
+                logger.warning(PROP_RECONNECT_TIMEOUT_OVERRIDE + " set from your host's serverconfig_override.properties file. " +
+                        "If you have a cluster-wide property set for this timeout, it will be ignored in favor of this setting.");
                 return;
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, PROP_RECONNECT_TIMEOUT_OVERRIDE + " property not configured properly. Trying cluster property instead", e);
