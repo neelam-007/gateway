@@ -98,12 +98,12 @@ database.</prompt>
     <option id="db-admin-user" group="db" type="USERNAME" updatable="false" order="105" name="Administrative Database Username">
         <configName>database.admin.user</configName>
         <configValue>root</configValue>
-        <description>Administrative Database Username</description>
+        <description>Administrative Database Username (not required if joining an existing cluster)</description>
         <prompt>Enter the administrative database user.</prompt>
     </option>
     <option id="db-admin-pass" group="db" type="PASSWORD" updatable="false" order="106" name="Administrative Database Password">
         <configName>database.admin.pass</configName>
-        <description>Administrative Database Password</description>
+        <description>Administrative Database Password (not required if joining an existing cluster)</description>
         <prompt>Enter the administrative database password.</prompt>
     </option>
 
@@ -128,12 +128,12 @@ database.</prompt>
     <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="SSM Username" minlength="3" maxlength="128">
         <configName>admin.user</configName>
         <regex>^[^#,+"\\&lt;&gt;;]*$</regex>
-        <description>SSM Username</description>
+        <description>SSM Username (not required if joining an existing cluster)</description>
         <prompt>Enter the SSM administrative user (3-128 characters).</prompt>
     </option>
     <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="SSM Password" minlength="6" maxlength="32">
         <configName>admin.pass</configName>
-        <description>SSM Password</description>
+        <description>SSM Password (not required if joining an existing cluster)</description>
         <prompt>Enter the SSM administrative password (6-32 characters).</prompt>
     </option>
 
@@ -142,7 +142,7 @@ database.</prompt>
     -->
     <option id="cluster-host" group="cluster" type="HOSTNAME" order="300" updatable="false" name="Cluster Host">
         <configName>cluster.host</configName>
-        <description>Cluster Hostname</description>
+        <description>Cluster Hostname (not required if joining an existing cluster)</description>
         <prompt>Enter the cluster hostname.</prompt>
     </option>
     <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" confirmed="true" name="Cluster Passphrase" minlength="6" maxlength="32">

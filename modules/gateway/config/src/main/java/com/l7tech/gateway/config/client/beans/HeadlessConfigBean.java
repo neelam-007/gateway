@@ -145,15 +145,45 @@ public class HeadlessConfigBean {
                 public void call(final PropertiesAccessor propertiesAccessor) throws ConfigurationException {
                     final OptionSet optionSet = getOptionSet();
                     final Set<Option> options = optionSet.getOptions();
+                    final Properties properties = propertiesAccessor.getProperties();
+
+                    final Option dbTypeOption = getOption("configure-db-type", options);
+                    final String databaseType = getOptionValue(dbTypeOption, properties, false);
+
+                    final Option configDbOption = getOption("configure-db", options);
+                    final String configDbValue = getOptionValue(configDbOption, properties, false);
+                    final boolean configDB = configDbValue == null? true : Boolean.parseBoolean(configDbValue);
+                    // SSG-13111:
+                    // We don't want the below method getConfigBeans(...) to validate some options such as "admin.user" and
+                    // "admin.pass", since these options are not required when a node joins an existing cluster.  Also
+                    // these options define minlength and maxlength in GatewayBAseConfiguration.xml and will cause length
+                    // validation to fail, if these options don't have value specified.
+                    if ("mysql".equals(databaseType) && !configDB) {
+                        Option option;
+                        String name;
+                        for (final Iterator<Option> itr = options.iterator(); itr.hasNext();) {
+                            option = itr.next();
+                            name = option.getConfigName();
+                            if ("admin.user".equals(name) || "admin.pass".equals(name)) {
+                                itr.remove();
+                            }
+                        }
+                    }
+
                     //validate the properties and create the config beans
-                    final Collection<ConfigurationBean> configBeans = getConfigBeans(options, propertiesAccessor.getProperties(), false);
+                    final Collection<ConfigurationBean> configBeans = getConfigBeans(options, properties, false);
                     //validate the config beans
-                    final String databaseType = getOptionValue("database.type", configBeans);
                     if (!"mysql".equals(databaseType) && !"embedded".equals(databaseType)) {
                         throw new ConfigurationException("Unknown database type '" + databaseType + "'. Expected one of: 'mysql' or 'embedded'");
                     }
                     if ("mysql".equals(databaseType)) {
-                        checkNotNullOrEmpty(configBeans, Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host"), "This property is needed when configuring a mysql database.");
+                        checkNotNullOrEmpty(
+                            configBeans,
+                            configDB?
+                                Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass", "database.admin.user", "database.admin.pass", "admin.user", "admin.pass", "cluster.host") :
+                                Arrays.asList("database.host", "database.port", "database.name", "database.user", "database.pass"),
+                            "This property is needed when configuring a mysql database."
+                        );
                         //check that both 'database.failover.host' and 'database.failover.port' are null or that they are both not null
                         final ConfigurationBean databaseFailoverHostConfigBean = getConfigBean("database.failover.host", configBeans);
                         final Object databaseFailoverHostValue = databaseFailoverHostConfigBean == null ? null : databaseFailoverHostConfigBean.getConfigValue();
@@ -175,7 +205,7 @@ public class HeadlessConfigBean {
                     }
                     //check that the cluster.host is not empty. If it is a database will not be created.
                     final String clusterHost = getOptionValue("cluster.host", configBeans);
-                    if(clusterHost != null && clusterHost.trim().isEmpty() ){
+                    if (configDB && clusterHost != null && clusterHost.trim().isEmpty()) {
                         throw new ConfigurationException("Cluster host property is specified but its value is empty. Cluster host cannot be empty.");
                     }
                     final Boolean configureNode = getOptionValue("configure.node", configBeans);

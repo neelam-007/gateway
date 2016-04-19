@@ -702,6 +702,29 @@ public class HeadlessConfigBeanTest {
     }
 
     @Test
+    public void propertiesNotRequiredForNodeJoinExistingCluster() throws Exception {
+        final Properties properties = defaultMysqlJoinProperties();
+
+        // Make five properties as empty for testing purpose
+        properties.setProperty("database.admin.user", StringUtils.EMPTY);
+        properties.setProperty("database.admin.pass", StringUtils.EMPTY);
+        properties.setProperty("admin.user", StringUtils.EMPTY);
+        properties.setProperty("admin.pass", StringUtils.EMPTY);
+        properties.setProperty("cluster.host", StringUtils.EMPTY);
+
+        HeadlessConfigBean headlessConfigBean = new HeadlessConfigBean(nodeConfigurationBeanProvider, outPrintStream);
+
+        // The following configure method should not throw any validation exception on checking the above five properties.
+        headlessConfigBean.configure("create", null, new PropertiesAccessor() {
+            @NotNull
+            @Override
+            public Properties getProperties() throws ConfigurationException {
+                return properties;
+            }
+        });
+    }
+
+    @Test
     public void createMysqlEmptyName() throws Exception {
         testCreateWithEmptyRequiredProperty("database.name", MYSQL, "Missing configuration property 'database.name'");
     }
@@ -809,6 +832,20 @@ public class HeadlessConfigBeanTest {
         properties.setProperty("database.host", "databaseHost");
         properties.setProperty("cluster.pass", "clusterPass");
         properties.setProperty("database.type", MYSQL);
+        return properties;
+    }
+
+    private Properties defaultMysqlJoinProperties() {
+        final Properties properties = new Properties();
+        properties.setProperty("database.type", MYSQL);
+        properties.setProperty("configure.db", "false");
+        properties.setProperty("node.enable", "true");
+        properties.setProperty("database.name", "databaseName");
+        properties.setProperty("database.host", "databaseHost");
+        properties.setProperty("database.port", "1234");
+        properties.setProperty("database.user", "databaseUser");
+        properties.setProperty("database.pass", "databasePass");
+        properties.setProperty("cluster.pass", "clusterPass");
         return properties;
     }
 
