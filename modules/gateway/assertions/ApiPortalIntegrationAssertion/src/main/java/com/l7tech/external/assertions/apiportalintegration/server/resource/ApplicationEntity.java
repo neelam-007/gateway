@@ -20,6 +20,8 @@ public class ApplicationEntity {
     private List<ApplicationApi> apis = new ArrayList<>();
     private ApplicationMag mag;
     private String custom;
+    private String createdBy;
+    private String modifiedBy;
 
     public ApplicationEntity() {
     }
@@ -126,5 +128,21 @@ public class ApplicationEntity {
 
     public void setCustom(String custom) {
         this.custom = custom;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getModifiedBy() {
+        return modifiedBy;
+    }
+
+    public void setModifiedBy(String modifiedBy) {
+        this.modifiedBy = modifiedBy;
     }
 }

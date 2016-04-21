@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
-import com.google.common.base.Strings;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
@@ -20,10 +20,11 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 
+import com.l7tech.util.Functions;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 
@@ -43,6 +44,10 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_SUSPEND = "suspend";
+
+    private static final String APPLICATION_MAG_SCOPE_MSSO = "msso";
+    private static final String APPLICATION_SCOPE_OOB =   "oob";
+    private static final String APPLICATION_MAG_SCOPE_OPENID =   "openid";
 
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
@@ -136,21 +141,22 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
             if (deletedIds == null || deletedIds.isEmpty()) {
-                // do not include deleted list in json response
-                appJsonObj.setDeletedIds(null);
+                appJsonObj.setDeletedIds(new ArrayList<String>());
             } else {
                 appJsonObj.setDeletedIds(deletedIds);
             }
 
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_REDIRECT_URI", "a.MAG_MASTER_KEY", "ax.API_UUID")),
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
+                            "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY")),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_REDIRECT_URI, a.MAG_MASTER_KEY, ax.API_UUID \n" +
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
+                            "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY \n" +
                             "FROM APPLICATION a  \n" +
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
@@ -196,23 +202,21 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 appEntity.setOrganizationId((String) results.get("organization_uuid").get(i));
                 appEntity.setOrganizationName((String) results.get("organization_name").get(i));
                 appEntity.setLabel((String) results.get("name").get(i));
-                final String url = (String) results.get("oauth_callback_url").get(i);
-                if (Strings.isNullOrEmpty(url)) {
-                    appEntity.setOauthCallbackUrl(url);
-                } else {
-                    appEntity.setOauthCallbackUrl(URLEncoder.encode(url, "UTF-8"));
-                }
-                appEntity.setOauthScope((String) results.get("oauth_scope").get(i));
+                appEntity.setOauthCallbackUrl((String) results.get("oauth_callback_url").get(i));
+                String oauthScope = (String) results.get("oauth_scope").get(i);
+                appEntity.setOauthScope(buildScope(oauthScope));
                 appEntity.setOauthType((String) results.get("oauth_type").get(i));
                 ApplicationMag mag = new ApplicationMag();
-                mag.setScope((String) results.get("mag_scope").get(i));
-                mag.setRedirectUri((String) results.get("mag_redirect_uri").get(i));
+                mag.setScope(buildMagScope(oauthScope, (String) results.get("mag_scope").get(i)));
+                mag.setRedirectUri(appEntity.getOauthCallbackUrl());
                 mag.getMasterKeys().add(ImmutableMap.<String, String>builder()
                         .put("masterKey", (String) results.get("mag_master_key").get(i))
                         .put("environment", "all") // For now environment is hard-coded, in the future it will come from the database.
                         .build());
                 appEntity.setMag(mag);
-                appEntity.setCustom(""); //
+                appEntity.setCustom("");
+                appEntity.setCreatedBy((String) results.get("created_by").get(i));
+                appEntity.setModifiedBy((String) results.get("modified_by").get(i));
                 appMap.put(appId, appEntity);
             }
 
@@ -221,6 +225,50 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             appEntity.getApis().add(api);
         }
         return CollectionUtils.toListFromCollection(appMap.values());
+    }
+
+    static String buildMagScope(String oauthScope, String mag_scope) {
+        List<String> scopeList = new ArrayList();
+        if(oauthScope!=null){
+            scopeList.addAll(Arrays.asList(oauthScope.split("\\s")));
+        }
+        if(mag_scope!=null){
+          scopeList.addAll(Arrays.asList(mag_scope.split("\\s")));
+        }
+
+        if(!scopeList.contains(APPLICATION_MAG_SCOPE_OPENID)){
+            scopeList.add(APPLICATION_MAG_SCOPE_OPENID);
+        }
+        if(!scopeList.contains(APPLICATION_MAG_SCOPE_MSSO)){
+          scopeList.add(APPLICATION_MAG_SCOPE_MSSO);
+        }
+       return buildScope(Joiner.on(" ").join(scopeList));
+    }
+
+    static String buildScope(String oauthScope) {
+        if(oauthScope==null){
+            return null;
+        } else if(oauthScope.trim().equalsIgnoreCase(APPLICATION_SCOPE_OOB)){
+            return APPLICATION_SCOPE_OOB;
+        }else{
+            List<String> scopeList = new ArrayList();
+            if(oauthScope!=null){
+              scopeList.addAll(Arrays.asList(oauthScope.split("\\s")));
+            }
+            if(Functions.exists(scopeList, new Functions.Unary<Boolean, String>() {
+                    @Override
+                    public Boolean call(String s) {
+                        return s.equalsIgnoreCase(APPLICATION_SCOPE_OOB);
+                    }})){
+                scopeList.removeIf( new Predicate<String>() {
+                    @Override
+                    public boolean test(String s) {
+                        return s.equalsIgnoreCase(APPLICATION_SCOPE_OOB);
+                    }
+                });
+            }
+          return Joiner.on(" ").join(scopeList);
+        }
     }
 
     Object queryJdbc(String connName, String queryString, @NotNull List<Object> preparedStmtParams) {

@@ -1,18 +1,15 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
+import static org.junit.Assert.*;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
-import com.l7tech.message.Message;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author chean22, 1/15/2016
@@ -44,19 +41,22 @@ public class ServerGetIncrementAssertionTest {
                 "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
                 "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +
+                "    \"oauthCallbackUrl\" : \"https://some-uri.com\",\n" +
                 "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
                 "    \"apis\" : [ {\r\n" +
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    } ],\n" +
                 "    \"mag\" : {\n" +
-                "      \"scope\" : \"msso openid\",\n" +
-                "      \"redirectUri\" : \"oob\",\n" +
+                "      \"scope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*() msso openid\",\n" +
+                "      \"redirectUri\" : \"https://some-uri.com\",\n" +
                 "      \"masterKeys\" : [ {\n" +
                 "        \"masterKey\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
                 "    },\n" +
-                "    \"custom\" : \"\"\n" +
+                "    \"custom\" : \"\",\n" +
+                "    \"createdBy\" : \"admin\",\n" +
+                "    \"modifiedBy\" : \"user1\"\n" +
                 "  } ]\n" +
                 "}";
 
@@ -70,7 +70,7 @@ public class ServerGetIncrementAssertionTest {
 
     private Map<String, List> buildResultsMap() {
         List urlList = new ArrayList();
-        urlList.add(null);
+        urlList.add("https://some-uri.com");
         List typeList = new ArrayList();
         typeList.add(null);
 
@@ -88,8 +88,9 @@ public class ServerGetIncrementAssertionTest {
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc"));
         results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
         results.put("mag_scope", Arrays.asList("msso openid"));
-        results.put("mag_redirect_uri", Arrays.asList("oob"));
         results.put("mag_master_key", Arrays.asList("f08985a0-e164-11e5-b86d-9a79f06e9478"));
+        results.put("created_by", Arrays.asList("admin"));
+        results.put("modified_by", Arrays.asList("user1"));
         return results;
     }
 
@@ -107,6 +108,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
                 "    \"organizationName\" : \"Sample Org\",\n" +
                 "    \"label\" : \"app1\",\n" +
+                "    \"oauthCallbackUrl\" : \"https://some-uri1.com\",\n" +
                 "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
                 "    \"apis\" : [ {\r\n" +
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
@@ -114,14 +116,16 @@ public class ServerGetIncrementAssertionTest {
                 "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
                 "    } ],\n" +
                 "    \"mag\" : {\n" +
-                "      \"scope\" : \"msso openid\",\n" +
-                "      \"redirectUri\" : \"oob\",\n" +
+                "      \"scope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*() msso openid\",\n" +
+                "      \"redirectUri\" : \"https://some-uri1.com\",\n" +
                 "      \"masterKeys\" : [ {\n" +
                 "        \"masterKey\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
                 "    },\n" +
-                "    \"custom\" : \"\"\n" +
+                "    \"custom\" : \"\",\n" +
+                "    \"createdBy\" : \"admin\",\n" +
+                "    \"modifiedBy\" : \"user1\"\n" +
                 "  } ]\n" +
                 "}";
 
@@ -135,8 +139,8 @@ public class ServerGetIncrementAssertionTest {
 
     private Map<String, List> buildResultsMapWithMultipleApis() {
         List urlList = new ArrayList();
-        urlList.add(null);
-        urlList.add(null);
+        urlList.add("https://some-uri1.com");
+        urlList.add("https://some-uri1.com");
         List typeList = new ArrayList();
         typeList.add(null);
         typeList.add(null);
@@ -154,8 +158,61 @@ public class ServerGetIncrementAssertionTest {
         results.put("oauth_type", typeList);
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc", "efb6f420-69da-49f6-bcd2-e283409e87fc"));
         results.put("mag_scope", Arrays.asList("msso openid", "msso openid"));
-        results.put("mag_redirect_uri", Arrays.asList("oob", "oob"));
         results.put("mag_master_key", Arrays.asList("f08985a0-e164-11e5-b86d-9a79f06e9478", "35923776-e16c-11e5-b86d-9a79f06e9478"));
+        results.put("created_by", Arrays.asList("admin", "admin"));
+        results.put("modified_by", Arrays.asList("user1", "user1"));
         return results;
+    }
+
+    @BugId("AMP-6117")
+    @Test
+    public void buildMagScopeTest() throws Exception {
+        String result = ServerGetIncrementAssertion.buildMagScope("other","msso_register msso_client_register email address profile phone");
+        assertTrue(result.contains("msso"));
+        assertTrue(result.contains("openid"));
+
+        // test no repeating required scopes (openid)
+        result = ServerGetIncrementAssertion.buildMagScope("other openid","msso_register msso_client_register email address profile phone");
+        assertEquals(result.indexOf("openid"), result.lastIndexOf("openid"));
+        assertTrue(result.contains("msso"));
+
+        // test OOB values
+        result = ServerGetIncrementAssertion.buildMagScope("oob openid","msso_register msso_client_register email address profile phone");
+        assertEquals(result.indexOf("openid"), result.lastIndexOf("openid"));
+        assertTrue(result.contains("msso"));
+        assertFalse(result.contains("oob"));
+
+        result = ServerGetIncrementAssertion.buildMagScope("oob other","msso_register msso_client_register email address profile phone");
+        assertTrue(result.contains("openid"));
+        assertTrue(result.contains("msso"));
+        assertFalse(result.contains("oob"));
+
+
+        // null scope values
+        result = ServerGetIncrementAssertion.buildMagScope(null,null);
+        assertFalse(result.contains("null"));
+    }
+
+    @BugId("AMP-6185")
+    @Test
+    public void buildOauthScopeTest() throws Exception {
+      String result = ServerGetIncrementAssertion.buildScope("oob");
+      assertTrue(result.equals("oob"));
+
+      result = ServerGetIncrementAssertion.buildScope("OOB");
+      assertTrue(result.equals("oob"));
+
+      result = ServerGetIncrementAssertion.buildScope("oob other");
+      assertTrue(result.equals("other"));
+
+      result = ServerGetIncrementAssertion.buildScope("OOB other");
+      assertTrue(result.equals("other"));
+
+      result = ServerGetIncrementAssertion.buildScope("SOMETHING other");
+      assertTrue(result.equals("SOMETHING other"));
+
+      // null scope values
+      result = ServerGetIncrementAssertion.buildScope(null);
+      assertTrue(result == null);
     }
 }
