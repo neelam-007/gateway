@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +50,11 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     private static final String APPLICATION_SCOPE_OOB =   "oob";
     private static final String APPLICATION_MAG_SCOPE_OPENID =   "openid";
 
+    public static final String FIELD_ENTITY_UUID = "entity_uuid";
+    public static final String FIELD_SYSTEM_PROPERTY_NAME = "system_property_name";
+    public static final String FIELD_VALUE = "value";
+
+
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -58,16 +64,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         this.variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
         jdbcConnectionManager = context.getBean("jdbcConnectionManager", JdbcConnectionManager.class);
-    }
-
-    /*
-     * For tests.
-     */
-    ServerGetIncrementAssertion(GetIncrementAssertion assertion, JdbcQueryingManager jdbcQueryingManager, JdbcConnectionManager jdbcConnectionManager) throws PolicyAssertionException {
-        super(assertion);
-        this.variablesUsed = assertion.getVariablesUsed();
-        this.jdbcQueryingManager = jdbcQueryingManager;
-        this.jdbcConnectionManager = jdbcConnectionManager;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -166,7 +162,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             appJsonObj.setDeletedIds(null);
         }
 
-        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results));
+        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results, connName));
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
@@ -180,7 +176,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return jsonInString;
     }
 
-    private List buildApplicationEntityList(Map<String, List> results) throws UnsupportedEncodingException {
+    private List buildApplicationEntityList(Map<String, List> results, String connName) throws UnsupportedEncodingException {
 
         if (results.isEmpty()) {
             return CollectionUtils.list();
@@ -224,8 +220,36 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             api.setId((String) results.get("api_uuid").get(i));
             appEntity.getApis().add(api);
         }
+        appendCustomFields(appMap, connName);
         return CollectionUtils.toListFromCollection(appMap.values());
     }
+
+
+  private void appendCustomFields(Map<String, ApplicationEntity> values, String connName) {
+    final String UUID_PARAM = "{{UUID_LIST}}";
+    final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
+            "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
+            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS=\"ENABLED\"";
+
+    String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
+
+    if (!app_uuids.isEmpty()) {
+
+      Map<String, List> results = (Map<String, List>) queryJdbc(connName, CF_QUERY.replace(UUID_PARAM, app_uuids), Collections.EMPTY_LIST);
+
+      if(results.size()>0) {
+        int elements = results.get(FIELD_ENTITY_UUID).size();
+
+        for (int i = 0; i < elements; i++) {
+          String entUuid = (String) results.get(FIELD_ENTITY_UUID).get(i);
+
+          ApplicationEntity applicationEntity = values.get(entUuid);
+          applicationEntity.getCustomFields().put((String) results.get(FIELD_SYSTEM_PROPERTY_NAME).get(i), (String) results.get(FIELD_VALUE).get(i));
+        }
+      }
+    }
+
+  }
 
     static String buildMagScope(String oauthScope, String mag_scope) {
         List<String> scopeList = new ArrayList();
