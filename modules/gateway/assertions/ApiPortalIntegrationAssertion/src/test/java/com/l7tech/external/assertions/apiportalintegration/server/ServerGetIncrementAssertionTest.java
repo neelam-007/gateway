@@ -1,15 +1,18 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
-import com.l7tech.test.BugId;
+import com.l7tech.server.jdbc.JdbcQueryingManager;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
-import java.util.*;
 
 /**
  * @author chean22, 1/15/2016
@@ -18,10 +21,14 @@ public class ServerGetIncrementAssertionTest {
     private ServerGetIncrementAssertion serverAssertion;
     private GetIncrementAssertion assertion;
     private ApplicationContext applicationContext;
+    private JdbcQueryingManager queryingManager;
 
     @Before
     public void setup() throws Exception {
-        applicationContext = ApplicationContexts.getTestApplicationContext();
+        applicationContext = mock(ApplicationContext.class);//ApplicationContexts.getTestApplicationContext();
+        queryingManager = mock(JdbcQueryingManager.class);
+        when(applicationContext.getBean("jdbcQueryingManager", JdbcQueryingManager.class)).thenReturn(queryingManager);
+
         assertion = new GetIncrementAssertion();
         serverAssertion = new ServerGetIncrementAssertion(assertion, applicationContext);
     }
@@ -54,15 +61,17 @@ public class ServerGetIncrementAssertionTest {
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
                 "    },\n" +
-                "    \"custom\" : \"\",\n" +
                 "    \"createdBy\" : \"admin\",\n" +
-                "    \"modifiedBy\" : \"user1\"\n" +
+                "    \"modifiedBy\" : \"user1\",\n" +
+                "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
                 "  } ]\n" +
                 "}";
 
         Map<String, List> results = buildResultsMap();
-        JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) applicationContext.getBean("jdbcQueryingManager");
-        jdbcQueryingManager.setMockResults(results);
+
+        when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
+                .thenReturn(results, results, buildCustomFieldsResults());
+
         String json = serverAssertion.getJsonMessage("conn", "1446501119477", "");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
@@ -94,6 +103,19 @@ public class ServerGetIncrementAssertionTest {
         return results;
     }
 
+    private Map<String, List> buildCustomFieldsResults() {
+      List urlList = new ArrayList();
+      urlList.add(null);
+      List typeList = new ArrayList();
+      typeList.add(null);
+
+      Map<String, List> results = new HashMap<>();
+      results.put("entity_uuid", Arrays.asList("085f4526-9c23-416d-be73-eaba4da83249","085f4526-9c23-416d-be73-eaba4da83249"));
+      results.put("system_property_name", Arrays.asList("TEST1","TEST2"));
+      results.put("value", Arrays.asList("123","1234"));
+      return results;
+    }
+
     @Test
     public void testGetJsonMessageWithMultipleApis() throws Exception {
         final String ref = "{\n" +
@@ -123,15 +145,15 @@ public class ServerGetIncrementAssertionTest {
                 "        \"environment\" : \"all\"\n" +
                 "      } ]\n" +
                 "    },\n" +
-                "    \"custom\" : \"\",\n" +
                 "    \"createdBy\" : \"admin\",\n" +
-                "    \"modifiedBy\" : \"user1\"\n" +
+                "    \"modifiedBy\" : \"user1\",\n" +
+                "    \"custom\" : \"{}\"\n" +
                 "  } ]\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
-        JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) applicationContext.getBean("jdbcQueryingManager");
-        jdbcQueryingManager.setMockResults(results);
+        when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
+                .thenReturn(results, new HashMap<String, String>());
         String json = serverAssertion.getJsonMessage("conn", null, "");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
