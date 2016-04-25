@@ -191,6 +191,11 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     @Administrative(licensed=false)
     ClusterProperty findPropertyByName(String name) throws FindException;
 
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY)
+    @Administrative(licensed=false)
+    ClusterProperty findServerConfigPropertyByName(String name) throws FindException;
+
     /**
      * set new value for the cluster-wide property. value set to null will delete the property from the table
      *

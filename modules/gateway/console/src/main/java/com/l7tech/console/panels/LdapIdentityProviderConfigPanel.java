@@ -5,9 +5,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
@@ -25,6 +26,10 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.ConnectException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig.PROP_LDAP_RECONNECT_TIMEOUT;
 
 
 /**
@@ -48,6 +53,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JCheckBox adminEnabledCheckbox;
     private JPanel hostUrlPanel;
     private SecurityZoneWidget zoneControl;
+    private JTextField reconnectTimeoutTextField;
 
     private LdapUrlListPanel ldapUrlListPanel;
 
@@ -55,11 +61,15 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private boolean finishAllowed = false;
     private boolean advanceAllowed = false;
     private ResourceBundle resources = null;
+    private Long ldapReconnectTimeout;
+
+    private final Pattern millisecondPattern;
 
     // Creates new form ServicePanel
     public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean providerTypeSelectable) {
         super(next);
         this.providerTypeSelectable = providerTypeSelectable;
+        millisecondPattern = Pattern.compile("\\d+");
         initResources();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -67,6 +77,17 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
     private void initGui() {
+        try {
+            ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin()
+                    .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
+            if (clusterProperty == null || clusterProperty.getValue() == null) {
+                ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+            } else {
+                ldapReconnectTimeout = Long.parseLong(clusterProperty.getValue());
+            }
+        } catch (FindException e) {
+            ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+        }
         ldapUrlListPanel = new LdapUrlListPanel();
         hostUrlPanel.setLayout(new BorderLayout());
         hostUrlPanel.add(ldapUrlListPanel, BorderLayout.CENTER);
@@ -81,6 +102,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
         ldapSearchBaseTextField.addKeyListener(keyListener);
         PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+
+        reconnectTimeoutTextField.addKeyListener(keyListener);
 
         providerTypesCombo.setEnabled(providerTypeSelectable);
         LdapIdentityProviderConfig[] templates;
@@ -122,6 +145,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 notifyListeners();
             }
         });
+
+        validationRules.add(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
+                if (!matcher.matches()) {
+                    return "Reconnect Timeout should be a number of milliseconds between 1 and " + Long.MAX_VALUE;
+                }
+                return null;
+            }
+        });
+
+
     }
 
     /**
@@ -198,49 +234,50 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     /** populate the form from the provider beans, possibly accepting new beans */
     @Override
     public void readSettings(Object settings, boolean acceptNewProvider) {
-        if (settings != null) {
+        reconnectTimeoutTextField.setText(ldapReconnectTimeout.toString());
 
-            if (settings instanceof LdapIdentityProviderConfig) {
+        if (settings == null || !(settings instanceof LdapIdentityProviderConfig)) {
+            return;
+        }
 
-                LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
+        LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
+        if (acceptNewProvider || !Goid.isDefault(iProviderConfig.getGoid())) {
+            providerNameTextField.setText(iProviderConfig.getName());
+            ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
+            ldapBindDNTextField.setText(iProviderConfig.getBindDN());
+            ldapSearchBaseTextField.setText(iProviderConfig.getSearchBase());
+            adminEnabledCheckbox.setSelected(iProviderConfig.isAdminEnabled());
+            final boolean clientAuthEnabled = iProviderConfig.isClientAuthEnabled();
+            ldapUrlListPanel.setClientAuthEnabled(clientAuthEnabled);
+            ldapUrlListPanel.selectPrivateKey(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
+            if (iProviderConfig.getReconnectTimeout() != null) {
+                reconnectTimeoutTextField.setText(iProviderConfig.getReconnectTimeout().toString());
+            }
 
-                if (acceptNewProvider || !Goid.isDefault(iProviderConfig.getGoid())) {
+            // populate host list based on what is in the iProviderConfig
+            String[] ldapUrls = iProviderConfig.getLdapUrl();
+            ldapUrlListPanel.setUrlList(ldapUrls);
+        }
 
-                    providerNameTextField.setText(iProviderConfig.getName());
-                    ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
-                    ldapBindDNTextField.setText(iProviderConfig.getBindDN());
-                    ldapSearchBaseTextField.setText(iProviderConfig.getSearchBase());
-                    adminEnabledCheckbox.setSelected(iProviderConfig.isAdminEnabled());
-                    final boolean clientAuthEnabled = iProviderConfig.isClientAuthEnabled();
-                    ldapUrlListPanel.setClientAuthEnabled(clientAuthEnabled);
-                    ldapUrlListPanel.selectPrivateKey(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
-
-                    // populate host list based on what is in the iProviderConfig
-                    String[] ldapUrls = iProviderConfig.getLdapUrl();
-                    ldapUrlListPanel.setUrlList(ldapUrls);
+        for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
+            Object toto = providerTypesCombo.getModel().getElementAt(i);
+            if (toto instanceof LdapIdentityProviderConfig) {
+                if (((LdapIdentityProviderConfig) toto).getName().equals(iProviderConfig.getTemplateName())) {
+                    providerTypesCombo.setSelectedIndex(i);
+                    break;
                 }
-
-                for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
-                    Object toto = providerTypesCombo.getModel().getElementAt(i);
-                    if (toto instanceof LdapIdentityProviderConfig) {
-                        if (((LdapIdentityProviderConfig) toto).getName().equals(iProviderConfig.getTemplateName())) {
-                            providerTypesCombo.setSelectedIndex(i);
-                            break;
-                        }
-                    }
-                }
-
-                updateControlButtonState();
-
-                // select name field for clone
-                if( iProviderConfig.getGoid().equals(LdapIdentityProviderConfig.DEFAULT_GOID))
-                {
-                    providerNameTextField.requestFocus();
-                    providerNameTextField.selectAll();
-                }
-                zoneControl.configure(iProviderConfig);
             }
         }
+
+        updateControlButtonState();
+
+        // select name field for clone
+        if( iProviderConfig.getGoid().equals(LdapIdentityProviderConfig.DEFAULT_GOID))
+        {
+            providerNameTextField.requestFocus();
+            providerNameTextField.selectAll();
+        }
+        zoneControl.configure(iProviderConfig);
     }
 
     /**
@@ -252,47 +289,49 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      */
     @Override
     public void storeSettings(Object settings) {
-
-        if (settings != null) {
-
-            Object selectedType = providerTypesCombo.getSelectedItem();
-
-            if (selectedType instanceof LdapIdentityProviderConfig) {
-                LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) selectedType;
-
-                final LdapIdentityProviderConfig ldapSettings = (LdapIdentityProviderConfig) settings;
-
-                // stores the default mappings only when the config is a new object or
-                // when the selection of the template is changed
-                if ( ldapSettings.getTemplateName() == null ||
-                        (ldapSettings.getTemplateName() != null &&
-                        !ldapSettings.getTemplateName().equals(ldapType.getTemplateName()))) {
-
-                    ldapSettings.setGroupMappings(ldapType.getGroupMappings());
-                    ldapSettings.setUserMappings(ldapType.getUserMappings());
-                }
-
-                ldapSettings.setTemplateName(ldapType.getTemplateName());
-                String[] newlist = ldapUrlListPanel.getUrlList();
-                ldapSettings.setLdapUrl(newlist);
-                ldapSettings.setName(providerNameTextField.getText());
-                ldapSettings.setSearchBase(ldapSearchBaseTextField.getText());
-                ldapSettings.setBindDN(ldapBindDNTextField.getText());
-                ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
-                ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
-
-                boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
-                ldapSettings.setClientAuthEnabled(clientAuth);
-                if (clientAuth) {
-                    ldapSettings.setKeystoreId(ldapUrlListPanel.getSelectedKeystoreId());
-                    ldapSettings.setKeyAlias(ldapUrlListPanel.getSelectedKeyAlias());
-                } else {
-                    ldapSettings.setKeystoreId(null);
-                    ldapSettings.setKeyAlias(null);
-                }
-                ldapSettings.setSecurityZone(zoneControl.getSelectedZone());
-            }
+        if (settings == null) {
+            return;
         }
+
+        Object selectedType = providerTypesCombo.getSelectedItem();
+        if (!(selectedType instanceof LdapIdentityProviderConfig)) {
+            return;
+        }
+
+        LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) selectedType;
+        final LdapIdentityProviderConfig ldapSettings = (LdapIdentityProviderConfig) settings;
+
+        // stores the default mappings only when the config is a new object or
+        // when the selection of the template is changed
+        if ( ldapSettings.getTemplateName() == null ||
+                (ldapSettings.getTemplateName() != null &&
+                !ldapSettings.getTemplateName().equals(ldapType.getTemplateName()))) {
+
+            ldapSettings.setGroupMappings(ldapType.getGroupMappings());
+            ldapSettings.setUserMappings(ldapType.getUserMappings());
+        }
+
+        ldapSettings.setTemplateName(ldapType.getTemplateName());
+        String[] newlist = ldapUrlListPanel.getUrlList();
+        ldapSettings.setLdapUrl(newlist);
+        ldapSettings.setName(providerNameTextField.getText());
+        ldapSettings.setSearchBase(ldapSearchBaseTextField.getText());
+        ldapSettings.setBindDN(ldapBindDNTextField.getText());
+        ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
+        ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
+        // todo: validation? catch NumberFormatException?
+        ldapSettings.setReconnectTimeout(Long.parseLong(reconnectTimeoutTextField.getText()));
+
+        boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
+        ldapSettings.setClientAuthEnabled(clientAuth);
+        if (clientAuth) {
+            ldapSettings.setKeystoreId(ldapUrlListPanel.getSelectedKeystoreId());
+            ldapSettings.setKeyAlias(ldapUrlListPanel.getSelectedKeyAlias());
+        } else {
+            ldapSettings.setKeystoreId(null);
+            ldapSettings.setKeyAlias(null);
+        }
+        ldapSettings.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     /**

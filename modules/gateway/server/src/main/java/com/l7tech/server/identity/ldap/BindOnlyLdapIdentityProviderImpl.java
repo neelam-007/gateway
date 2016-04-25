@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
@@ -95,7 +96,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
         this.config = (BindOnlyLdapIdentityProviderConfig) configuration;
         userManager.configure(this);
-        urlProvider = new LdapUrlProviderImpl(config.getLdapUrl(), ldapRuntimeConfig);
+        urlProvider = new LdapUrlProviderImpl(config, serverConfig);
     }
 
     @Override
@@ -207,13 +208,13 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     public void stop() throws LifecycleException {
     }
 
-    public void setLdapRuntimeConfig(LdapRuntimeConfig ldapRuntimeConfig) {
-        this.ldapRuntimeConfig = ldapRuntimeConfig;
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     private Auditor auditor;
-    private LdapRuntimeConfig ldapRuntimeConfig;
     private BindOnlyLdapIdentityProviderConfig config;
+    private ServerConfig serverConfig;
     private BindOnlyLdapUserManager userManager;
     private BindOnlyLdapGroupManager groupManager;
 

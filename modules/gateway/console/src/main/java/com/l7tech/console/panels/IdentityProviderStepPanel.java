@@ -10,6 +10,8 @@ package com.l7tech.console.panels;
 
 public abstract class IdentityProviderStepPanel extends WizardStepPanel{
 
+    protected static final Long DEFAULT_RECONNECT_TIMEOUT = 60000L;
+
     /**
      * Constructor
      *

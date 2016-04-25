@@ -14,6 +14,7 @@ import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.token.NtlmToken;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -93,7 +94,7 @@ public class LdapIdentityProviderImpl
             }
         };
 
-        urlProvider = new LdapUrlProviderImpl(config.getLdapUrl(), ldapRuntimeConfig);
+        urlProvider = new LdapUrlProviderImpl(config, serverConfig);
 
         String description = config.getName() + "(#" + config.getGoid() + "," + config.getVersion() + ")";
         ldapCertificateCache = new LdapCertificateCache(
@@ -133,6 +134,10 @@ public class LdapIdentityProviderImpl
 
     public void setLdapRuntimeConfig( final LdapRuntimeConfig ldapRuntimeConfig ) {
         this.ldapRuntimeConfig = ldapRuntimeConfig;
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public void setCertificateAuthenticator( final CertificateAuthenticator certificateAuthenticator ) {
@@ -188,10 +193,10 @@ public class LdapIdentityProviderImpl
                     if (certsAreEnabled() && realUser.getLdapCertBytes() != null) {
                         try {
                             return certificateAuthenticator.authenticateX509Credentials(pc,
-                                                                             realUser.getCertificate(),
-                                                                             realUser,
-                                                                             config.getCertificateValidationType(),
-                                                                             auditor, false);
+                                    realUser.getCertificate(),
+                                    realUser,
+                                    config.getCertificateValidationType(),
+                                    auditor, false);
                         } catch (CertificateException e) {
                             throw new AuthenticationException("Problem decoding cert located in LDAP: " + ExceptionUtils.getMessage(e), e);
                         }
@@ -1255,12 +1260,12 @@ public class LdapIdentityProviderImpl
         }
 
         try {
-            return ExpandVariables.process( filter, varMap, auditor, true, new Functions.Unary<String,String>(){
+            return ExpandVariables.process(filter, varMap, auditor, true, new Functions.Unary<String, String>() {
                 @Override
-                public String call( final String value ) {
-                    return LdapUtils.filterEscape( value );
+                public String call(final String value) {
+                    return LdapUtils.filterEscape(value);
                 }
-            } );
+            });
         } catch ( VariableNameSyntaxException vnse ) {
             throw new FindException("Search filter variable error '"+ExceptionUtils.getMessage(vnse)+"'.");
         } catch ( IllegalArgumentException iae ) {
@@ -1327,6 +1332,7 @@ public class LdapIdentityProviderImpl
     private Auditor auditor;
     private LdapRuntimeConfig ldapRuntimeConfig;
     private LdapIdentityProviderConfig config;
+    private ServerConfig serverConfig;
     private IdentityProviderConfigManager configManager;
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;

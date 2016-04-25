@@ -67,8 +67,6 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
             loadMaxGroupSearchResultSize(); // defaults to max search results size
         } else if ( ServerConfigParams.PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE.equals(propertyName)) {
             loadMaxGroupSearchResultSize();
-        } else if (PROP_RECONNECT_TIMEOUT.equals(propertyName)) {
-            loadReconnectTimeout();
         } else if ( ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL.equals(propertyName)) {
             loadIndexRebuildIntervalProperty();
         } else if ( ServerConfigParams.PARAM_LDAPCERT_CACHE_LIFETIME.equals(propertyName)) {
@@ -90,11 +88,6 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private static final long DEFAULT_MAX_SEARCH_RESULT_SIZE = 100L;
     private static final long DEFAULT_RECONNECT_TIMEOUT = 60000L;
 
-    // this is the serverconfig_overrides.properties value - if defined, it takes precedence over the cluster property below
-    private static final String PROP_RECONNECT_TIMEOUT_OVERRIDE = "ldap.reconnect.timeout";
-    // this is the cluster property - it will only take effect if the override property above is not defined
-    private static final String PROP_RECONNECT_TIMEOUT = "ldapReconnectTimeout";
-
     private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
     private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
     private final AtomicLong cachedCertEntryLife = new AtomicLong(DEFAULT_CACHED_CERT_ENTRY_LIFE);
@@ -110,7 +103,6 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         loadReadTimeout();
         loadMaxSearchResultSize();
         loadMaxGroupSearchResultSize();
-        loadReconnectTimeout();
         loadIndexRebuildIntervalProperty();
         loadCachedCertEntryLifeProperty();
     }
@@ -153,36 +145,6 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
 
     private void loadMaxGroupSearchResultSize() {
         maxGroupSearchResultSize.set( config.getLongProperty( ServerConfigParams.PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, DEFAULT_MAX_SEARCH_RESULT_SIZE ) );
-    }
-
-    private void loadReconnectTimeout() {
-        // if there's a serverconfig_override.properties value for the property, use that
-        String property = config.getProperty(PROP_RECONNECT_TIMEOUT_OVERRIDE);
-        if (property != null && property.length() > 0) {
-            try {
-                retryFailedConnectionTimeout.set(Long.parseLong(property));
-                logger.warning(PROP_RECONNECT_TIMEOUT_OVERRIDE + " set from your host's serverconfig_override.properties file. " +
-                        "If you have a cluster-wide property set for this timeout, it will be ignored in favor of this setting.");
-                return;
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, PROP_RECONNECT_TIMEOUT_OVERRIDE + " property not configured properly. Trying cluster property instead", e);
-            }
-        }
-
-        // if that's not found, let's try the cluster property
-        property = config.getProperty(PROP_RECONNECT_TIMEOUT);
-        if (property != null && property.length() > 0) {
-            try {
-                retryFailedConnectionTimeout.set(Long.parseLong(property));
-                return;
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, PROP_RECONNECT_TIMEOUT + " property not configured properly. using default", e);
-                retryFailedConnectionTimeout.set(DEFAULT_RECONNECT_TIMEOUT);
-            }
-        }
-
-        retryFailedConnectionTimeout.set(DEFAULT_RECONNECT_TIMEOUT);
-        logger.warning(PROP_RECONNECT_TIMEOUT + " server property not set. using default");
     }
 
     private void loadIndexRebuildIntervalProperty() {

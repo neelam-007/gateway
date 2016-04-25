@@ -172,6 +172,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
+    public ClusterProperty findServerConfigPropertyByName(String key) throws FindException {
+        return properties.get(key);
+    }
+
+    @Override
     public Goid saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         properties.put(clusterProperty.getName(), clusterProperty);
         return clusterProperty.getGoid();

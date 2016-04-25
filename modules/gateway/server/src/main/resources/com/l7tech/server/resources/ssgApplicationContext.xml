@@ -694,6 +694,7 @@
     <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+        <property name="serverConfig" ref="serverConfig"/>
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager">
             <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" scope="prototype">
@@ -739,7 +740,7 @@
         <constructor-arg value="bindOnlyLdapIdentityProvider"/>
     </bean>
     <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl" scope="prototype">
-        <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+        <property name="serverConfig" ref="serverConfig"/>
         <property name="userManager">
             <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManagerImpl" scope="prototype">
                 <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>

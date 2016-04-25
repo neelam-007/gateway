@@ -295,6 +295,10 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         return clusterPropertyManager.findByUniqueName(key);
     }
 
+    public ClusterProperty findServerConfigPropertyByName(String name) throws FindException {
+        return new ClusterProperty(name, serverConfig.getProperty(name));
+    }
+
     @Override
     public Goid saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         if (!("license".equals(clusterProperty.getName())))

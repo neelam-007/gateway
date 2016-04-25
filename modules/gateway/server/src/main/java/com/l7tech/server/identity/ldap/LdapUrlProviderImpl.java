@@ -1,24 +1,33 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
+import com.l7tech.server.ServerConfig;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig.PROP_LDAP_RECONNECT_TIMEOUT;
 
 /**
  * Manages a list of LDAP URLs and keeps track of which one last worked.
  */
 public class LdapUrlProviderImpl implements LdapUrlProvider {
     private static final Logger logger = Logger.getLogger(LdapUrlProviderImpl.class.getName());
+    private static final Long DEFAULT_RECONNECT_TIMEOUT = 60000L;
 
     private final ReentrantReadWriteLock fallbackLock = new ReentrantReadWriteLock();
+    private final LdapUrlBasedIdentityProviderConfig providerConfig;
     private final String[] ldapUrls;
-    private final LdapRuntimeConfig ldapRuntimeConfig;
+    private final ServerConfig serverConfig;
     private final Long[] urlStatus;
     private String lastSuccessfulLdapUrl;
 
-    public LdapUrlProviderImpl(String[] ldapUrls, LdapRuntimeConfig ldapRuntimeConfig) {
-        this.ldapUrls = ldapUrls;
-        this.ldapRuntimeConfig = ldapRuntimeConfig;
+    public LdapUrlProviderImpl(LdapUrlBasedIdentityProviderConfig providerConfig, ServerConfig serverConfig) {
+        this.providerConfig = providerConfig;
+        this.ldapUrls = providerConfig.getLdapUrl();
+        this.serverConfig = serverConfig;
         if (ldapUrls != null) {
             urlStatus = new Long[ldapUrls.length];
             lastSuccessfulLdapUrl = ldapUrls[0];
@@ -62,7 +71,15 @@ public class LdapUrlProviderImpl implements LdapUrlProvider {
             throw new RuntimeException(e);
         }
         try {
-            long retryFailedConnectionTimeout = ldapRuntimeConfig.getRetryFailedConnectionTimeout();
+            Long retryFailedConnectionTimeout = providerConfig.getReconnectTimeout();
+            if (retryFailedConnectionTimeout == null) {
+                try {
+                    retryFailedConnectionTimeout = Long.parseLong(serverConfig.getProperty(PROP_LDAP_RECONNECT_TIMEOUT));
+                } catch (NumberFormatException e) {
+                    logger.log(Level.WARNING, PROP_LDAP_RECONNECT_TIMEOUT + " property not configured properly. using default", e);
+                    retryFailedConnectionTimeout = DEFAULT_RECONNECT_TIMEOUT;
+                }
+            }
 
             //noinspection StringEquality
             if (urlThatFailed != lastSuccessfulLdapUrl) return lastSuccessfulLdapUrl;
@@ -74,7 +91,7 @@ public class LdapUrlProviderImpl implements LdapUrlProvider {
                         failurePos = i;
                         urlStatus[i] = System.currentTimeMillis();
                         logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout / 1000) +
-                          " seconds : " + ldapUrls[i]);
+                                " seconds : " + ldapUrls[i]);
                     }
                 }
                 if (failurePos > (ldapUrls.length - 1)) {
