@@ -699,7 +699,9 @@ public class ConfigFactory {
             mergeProperties( properties, propertiesAccessor( propsUrl, includedResource ) );
         }
 
-        final String includedFile = expandPropertyValue( properties.getProperty( "include-file" ), propertyGetter );
+        // SSG-5508 remove any stray quotes added to the path, e.g. "/opt/SecureSpan/Gateway/node/default"/etc/conf/serverconfig_override.properties
+        final String includedFile = StringUtils.remove(expandPropertyValue( properties.getProperty( "include-file" ), propertyGetter ), '"');
+
         if ( includedFile != null ) {
             final File propsFile = new File( includedFile );
             mergeProperties( properties, propertiesAccessor( propsFile ) );
