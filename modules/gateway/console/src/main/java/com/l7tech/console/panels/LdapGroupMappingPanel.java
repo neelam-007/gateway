@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.MemberStrategy;
@@ -52,7 +52,6 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
@@ -76,7 +75,6 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      * @param groupMapping  The object contains the new values.
      */
     public void updateListModel(GroupMappingConfig groupMapping) {
-
         if(groupMapping != null) {
             groupMapping.setObjClass(objectClass.getText());
             groupMapping.setNameAttrName(nameAttribute.getText());
@@ -118,52 +116,48 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
      */
-    public void readSettings(Object settings) throws IllegalArgumentException {
+    public void readSettings(LdapIdentityProviderConfig settings) throws IllegalArgumentException {
+        iProviderConfig = settings;
 
-        if (settings instanceof LdapIdentityProviderConfig) {
+        GroupMappingConfig[] groupMappings = iProviderConfig.getGroupMappings();
 
-            iProviderConfig = (LdapIdentityProviderConfig) settings;
+        // clear the model
+        getGroupListModel().clear();
 
-            GroupMappingConfig[] groupMappings = iProviderConfig.getGroupMappings();
+        for (GroupMappingConfig groupMapping : groupMappings) {
+            // update the user list display
+            getGroupListModel().add(groupMapping);
+        }
 
-            // clear the model
-            getGroupListModel().clear();
+        // select the first row for display of attributes
+        if (getGroupListModel().getSize() <= 0) {
+            return;
+        }
 
-            for (GroupMappingConfig groupMapping : groupMappings) {
-                // update the user list display
-                getGroupListModel().add(groupMapping);
-            }
-
-            // select the first row for display of attributes
-            if (getGroupListModel().getSize() > 0) {
-
-                if (lastSelectedGroup != null) {
-
-                    Iterator itr = getGroupListModel().iterator();
-                    boolean found = false;
-                    Object obj = null;
-                    while (itr.hasNext()) {
-                        obj = itr.next();
-                        if (obj instanceof GroupMappingConfig) {
-                            if (((GroupMappingConfig) obj).getObjClass().equals(lastSelectedGroup.getObjClass())) {
-                                // the selected group found
-                                found = true;
-                                break;
-                            }
-                        }
+        if (lastSelectedGroup != null) {
+            Iterator itr = getGroupListModel().iterator();
+            boolean found = false;
+            Object obj = null;
+            while (itr.hasNext()) {
+                obj = itr.next();
+                if (obj instanceof GroupMappingConfig) {
+                    if (((GroupMappingConfig) obj).getObjClass().equals(lastSelectedGroup.getObjClass())) {
+                        // the selected group found
+                        found = true;
+                        break;
                     }
-                    if(found) {
-                        getGroupList().setSelectedValue(obj, true);
-                        lastSelectedGroup = (GroupMappingConfig) obj;
-                    } else {
-                        getGroupList().setSelectedIndex(0);
-                        lastSelectedGroup = null;
-                    }
-                } else {
-                    getGroupList().setSelectedIndex(0);
                 }
             }
+            if(found) {
+                getGroupList().setSelectedValue(obj, true);
+                lastSelectedGroup = (GroupMappingConfig) obj;
+            } else {
+                getGroupList().setSelectedIndex(0);
+                lastSelectedGroup = null;
+            }
 
+        } else {
+            getGroupList().setSelectedIndex(0);
         }
     }
 
@@ -174,7 +168,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
-    public void storeSettings(Object settings) {
+    public void storeSettings(LdapIdentityProviderConfig settings) {
         Object groupMapping;
 
         // store the current record if selected
@@ -182,17 +176,12 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
              updateListModel((GroupMappingConfig) groupMapping);
         }
 
-        if (settings instanceof LdapIdentityProviderConfig) {
-
-            SortedListModel dataModel = getGroupListModel();
-
-            GroupMappingConfig[] groupMappings = new GroupMappingConfig[dataModel.getSize()];
-
-            for (int i = 0; i < dataModel.getSize(); i++) {
-                groupMappings[i] = (GroupMappingConfig) dataModel.getElementAt(i);
-            }
-            ((LdapIdentityProviderConfig) settings).setGroupMappings(groupMappings);
+        SortedListModel dataModel = getGroupListModel();
+        GroupMappingConfig[] groupMappings = new GroupMappingConfig[dataModel.getSize()];
+        for (int i = 0; i < dataModel.getSize(); i++) {
+            groupMappings[i] = (GroupMappingConfig) dataModel.getElementAt(i);
         }
+        settings.setGroupMappings(groupMappings);
     }
 
     /**
@@ -201,9 +190,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      * @param settings   The data of the selected group.
      */
     private void readSelectedGroupSettings(Object settings) {
-
         if (settings instanceof GroupMappingConfig) {
-
             GroupMappingConfig groupMapping = (GroupMappingConfig) settings;
             objectClass.setText(groupMapping.getObjClass());
             nameAttribute.setText(groupMapping.getNameAttrName());
@@ -217,10 +204,10 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      */
     private void clearDisplay() {
-            objectClass.setText("");
-            nameAttribute.setText("");
-            memberAttribute.setText("");
-            memberStrategy.setSelectedIndex(0);
+        objectClass.setText("");
+        nameAttribute.setText("");
+        memberAttribute.setText("");
+        memberStrategy.setSelectedIndex(0);
     }
 
     /**

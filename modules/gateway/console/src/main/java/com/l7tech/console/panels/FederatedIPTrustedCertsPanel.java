@@ -37,7 +37,7 @@ import static java.util.Collections.sort;
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
  */
-public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
+public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel<FederatedIdentityProviderConfig> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog");
 
     private Goid oid;
@@ -88,15 +88,10 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     @Override
-    public void readSettings(Object settings) throws IllegalArgumentException {
-        if (!(settings instanceof FederatedIdentityProviderConfig))
-            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
-
-        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
-
-        oid = iProviderConfig.getGoid();
-        x509CertSelected = iProviderConfig.isX509Supported();
-        trustedCertsPanel.setCertificateGoids(iProviderConfig.getTrustedCertGoids());
+    public void readSettings(FederatedIdentityProviderConfig settings) throws IllegalArgumentException {
+        oid = settings.getGoid();
+        x509CertSelected = settings.isX509Supported();
+        trustedCertsPanel.setCertificateGoids(settings.getTrustedCertGoids());
     }
 
 
@@ -108,13 +103,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     @Override
-    public void storeSettings(Object settings) {
-        if (!(settings instanceof FederatedIdentityProviderConfig))
-            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
-
-        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
-        iProviderConfig.setTrustedCertGoids(trustedCertsPanel.getCertificateGoids());
-
+    public void storeSettings(FederatedIdentityProviderConfig settings) {
+        settings.setTrustedCertGoids(trustedCertsPanel.getCertificateGoids());
     }
 
     /**

@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
@@ -21,11 +20,11 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.net.ConnectException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.ConnectException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +38,7 @@ import static com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig.PROP_L
  *
  */
 
-public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
+public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<LdapIdentityProviderConfig> {
     static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
 
     private JPanel mainPanel;
@@ -122,7 +121,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         }
         Object[] providerTypeItems = new Object[1 + templates.length];
         providerTypeItems[0] = "Select the provider type";
-        System.arraycopy( templates, 0, providerTypeItems, 1, templates.length );
+        System.arraycopy(templates, 0, providerTypeItems, 1, templates.length);
         providerTypesCombo.setModel(new DefaultComboBoxModel(providerTypeItems));
         providerTypesCombo.setRenderer(providerTypeRenderer);
         providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
@@ -146,7 +145,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             }
         });
 
-        validationRules.add(new InputValidator.ValidationRule() {
+        validationRules.add(new InputValidator.ComponentValidationRule(reconnectTimeoutTextField) {
             @Override
             public String getValidationError() {
                 Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
@@ -156,7 +155,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 return null;
             }
         });
-
 
     }
 
@@ -227,20 +225,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     /** populate the form from the provider beans */
     @Override
-    public void readSettings(Object settings) throws IllegalArgumentException {
+    public void readSettings(LdapIdentityProviderConfig settings) throws IllegalArgumentException {
         readSettings(settings, false);
     }
 
     /** populate the form from the provider beans, possibly accepting new beans */
     @Override
-    public void readSettings(Object settings, boolean acceptNewProvider) {
-        reconnectTimeoutTextField.setText(ldapReconnectTimeout.toString());
-
-        if (settings == null || !(settings instanceof LdapIdentityProviderConfig)) {
+    public void readSettings(LdapIdentityProviderConfig iProviderConfig, boolean acceptNewProvider) {
+        if (iProviderConfig == null) {
             return;
         }
 
-        LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
+        reconnectTimeoutTextField.setText(ldapReconnectTimeout.toString());
+
         if (acceptNewProvider || !Goid.isDefault(iProviderConfig.getGoid())) {
             providerNameTextField.setText(iProviderConfig.getName());
             ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
@@ -288,7 +285,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     @Override
-    public void storeSettings(Object settings) {
+    public void storeSettings(LdapIdentityProviderConfig settings) {
         if (settings == null) {
             return;
         }

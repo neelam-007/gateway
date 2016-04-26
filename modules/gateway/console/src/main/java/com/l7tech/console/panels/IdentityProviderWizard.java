@@ -24,13 +24,14 @@ import java.util.ResourceBundle;
  * $Id$
  */
 
-public class IdentityProviderWizard extends Wizard {
+public class IdentityProviderWizard extends Wizard<IdentityProviderConfig> {
 
     // don't set the buttonTest to null as the parent class will initialize it when calling createButtonPanel()
     // setting the buttonTest variable to something here will override the value initialized by the the parent class
     private JButton buttonTest;
     private ResourceBundle resources = null;
-    private boolean readOnly = false;
+
+    final private boolean readOnly;
 
     /**
      * Constructor
@@ -38,15 +39,35 @@ public class IdentityProviderWizard extends Wizard {
      * @param parent  The parent frame object reference.
      * @param panel   The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
      */
-    public IdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
-        super(parent, panel);
-        initResources();
+    public IdentityProviderWizard(Frame parent, final WizardStepPanel<IdentityProviderConfig> panel) {
+        this(parent, panel, false);
     }
-    public IdentityProviderWizard(Frame parent, final WizardStepPanel panel, boolean readOnly) {
+
+    public IdentityProviderWizard(Frame parent, final WizardStepPanel<IdentityProviderConfig> panel, boolean readOnly) {
         super(parent, panel);
         this.readOnly = readOnly;
         initResources();
+        initWizard();
     }
+
+    private void initWizard() {
+        addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
+    }
+
+    @Override
+    protected void advance() {
+        super.advance();
+
+        addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
+    }
+
+    @Override
+    protected void reverse() {
+        super.reverse();
+
+        addValidationRulesDefinedInWizardStepPanel(getSelectedWizardPanel().getClass(), getSelectedWizardPanel());
+    }
+
 
     protected final JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel();

@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * User: ymoiseyenko
  * Date: 5/2/12
  */
-public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
+public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel<LdapIdentityProviderConfig> {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog");
 
@@ -113,10 +113,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
      */
     @Override
-    public void readSettings( final Object settings ) {
-        if ( settings instanceof LdapIdentityProviderConfig) {
-            readProviderConfig( (LdapIdentityProviderConfig) settings );
-        }
+    public void readSettings(LdapIdentityProviderConfig settings) {
+        readProviderConfig(settings);
         enableAndDisableComponents();
     }
 
@@ -179,10 +177,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     @Override
-    public void storeSettings( final Object settings ) {
-        if ( settings instanceof LdapIdentityProviderConfig ) {
-            storeProviderConfig( (LdapIdentityProviderConfig) settings );
-        }
+    public void storeSettings( final LdapIdentityProviderConfig settings ) {
+        storeProviderConfig(settings);
     }
 
     private void storeProviderConfig( final LdapIdentityProviderConfig config ) {

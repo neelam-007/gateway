@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 
@@ -65,7 +64,7 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
         ldapUrlListPanel.addPropertyChangeListener(LdapUrlListPanel.PROP_DATA, listener);
         providerNameField.getDocument().addDocumentListener(listener);
 
-        validationRules.add(new InputValidator.ValidationRule() {
+        validationRules.add(new InputValidator.ComponentValidationRule(reconnectTimeoutField) {
             @Override
             public String getValidationError() {
                 Matcher matcher = millisecondPattern.matcher(reconnectTimeoutField.getText());

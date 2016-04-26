@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * Primary configuration wizard step panel for a Policy-backed identity provider configuration.
  */
-public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel {
+public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel<PolicyBackedIdentityProviderConfig> {
     private static final Logger logger = Logger.getLogger(PolicyBackedIdentityGeneralPanel.class.getName());
     private static final String CURRENT_ROLE_DETAILS_ARE_UNAVAILABLE = "Current role details are unavailable";
 
@@ -166,30 +166,27 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     }
 
     @Override
-    public void readSettings(Object settings) throws IllegalArgumentException {
+    public void readSettings(PolicyBackedIdentityProviderConfig settings) throws IllegalArgumentException {
         readSettings(settings, false);
     }
 
     @Override
-    public void readSettings(Object settings, boolean acceptNewProvider) throws IllegalArgumentException {
-        if (settings instanceof PolicyBackedIdentityProviderConfig) {
-            PolicyBackedIdentityProviderConfig config = (PolicyBackedIdentityProviderConfig) settings;
-            providerNameField.setText(config.getName());
-            selectPolicy(config.getPolicyId());
-            selectRole(config.getDefaultRoleId());
-            adminEnabledCheckbox.setSelected(config.isAdminEnabled());
-            defaultRoleCheckBox.setSelected(config.getDefaultRoleId() != null);
+    public void readSettings(PolicyBackedIdentityProviderConfig settings, boolean acceptNewProvider) throws IllegalArgumentException {
+        providerNameField.setText(settings.getName());
+        selectPolicy(settings.getPolicyId());
+        selectRole(settings.getDefaultRoleId());
+        adminEnabledCheckbox.setSelected(settings.isAdminEnabled());
+        defaultRoleCheckBox.setSelected(settings.getDefaultRoleId() != null);
 
-            // select name field for clone
-            if(Goid.isDefault(config.getGoid())) {
-                providerNameField.requestFocus();
-                providerNameField.selectAll();
-                zoneControl.configure(OperationType.CREATE, config);
-            } else {
-                zoneControl.configure(isReadOnly() ? OperationType.READ : OperationType.UPDATE, config);
-            }
+        // select name field for clone
+        if(Goid.isDefault(settings.getGoid())) {
+            providerNameField.requestFocus();
+            providerNameField.selectAll();
+            zoneControl.configure(OperationType.CREATE, settings);
+        } else {
+            zoneControl.configure(isReadOnly() ? OperationType.READ : OperationType.UPDATE, settings);
         }
-
+        
         updateControlButtonState();
     }
 
@@ -228,20 +225,15 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     }
 
     @Override
-    public void storeSettings(Object settings) throws IllegalArgumentException {
-        if (settings instanceof PolicyBackedIdentityProviderConfig) {
-            PolicyBackedIdentityProviderConfig config = (PolicyBackedIdentityProviderConfig) settings;
-            config.setName(providerNameField.getText());
+    public void storeSettings(PolicyBackedIdentityProviderConfig settings) throws IllegalArgumentException {
+        settings.setName(providerNameField.getText());
 
-            PolicyHeader policyHeader = (PolicyHeader) policyComboBox.getSelectedItem();
-            config.setPolicyId(policyHeader == null ? null : policyHeader.getGoid());
+        PolicyHeader policyHeader = (PolicyHeader) policyComboBox.getSelectedItem();
+        settings.setPolicyId(policyHeader == null ? null : policyHeader.getGoid());
 
-            config.setAdminEnabled(adminEnabledCheckbox.isSelected());
-
-            config.setDefaultRoleId(!defaultRoleCheckBox.isSelected() || selectedRole == null ? null : selectedRole.getGoid());
-
-            config.setSecurityZone(zoneControl.getSelectedZone());
-        }
+        settings.setAdminEnabled(adminEnabledCheckbox.isSelected());
+        settings.setDefaultRoleId(!defaultRoleCheckBox.isSelected() || selectedRole == null ? null : selectedRole.getGoid());
+        settings.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void updateControlButtonState() {
