@@ -339,7 +339,8 @@ class EntityPropertiesHelper {
             "userMappings",
             "version",
             "ntlmAuthenticationProviderProperties",
-            "securityZone"
+            "securityZone",
+            "reconnectTimeout"
         ) )
         .put( BindOnlyLdapIdentityProviderConfig.class, list(
             "adminEnabled",
@@ -357,7 +358,8 @@ class EntityPropertiesHelper {
             "serializedProps",
             "typeVal",
             "version",
-            "securityZone"
+            "securityZone",
+            "reconnectTimeout"
         ) )
         .put( PolicyBackedIdentityProviderConfig.class, list(
             "defaultRoleId",
