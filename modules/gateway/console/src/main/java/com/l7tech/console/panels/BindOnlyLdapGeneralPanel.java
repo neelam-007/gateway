@@ -2,13 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,16 +41,13 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     }
 
     private void initGui() {
-        try {
-            ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin()
-                    .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
-            if (clusterProperty == null || clusterProperty.getValue() == null) {
-                ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
-            } else {
-                ldapReconnectTimeout = Long.parseLong(clusterProperty.getValue());
-            }
-        } catch (FindException e) {
+        String reconnectTimeoutFromServer = Registry.getDefault().getIdentityAdmin()
+                .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
+        if (!StringUtils.isBlank(reconnectTimeoutFromServer)) {
             ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+        } else {
+            // we don't worry about NumberFormatExceptions here because the client-side form has validation
+            ldapReconnectTimeout = Long.parseLong(reconnectTimeoutFromServer);
         }
 
         RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {

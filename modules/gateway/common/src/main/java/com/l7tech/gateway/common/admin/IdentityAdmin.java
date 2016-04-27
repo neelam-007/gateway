@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.Transient;
 import java.io.Serializable;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -69,6 +70,38 @@ public interface IdentityAdmin {
     @Secured(types = ID_PROVIDER_CONFIG, stereotype = FIND_ENTITY)
     @Administrative(licensed = false)
     IdentityProviderConfig findIdentityProviderConfigByID(Goid oid) throws FindException;
+
+    /**
+     * <p>
+     * Retrieve a <code>ServerConfig</code> property by its name.
+     * This invokes <code>ServerConfig</code>'s entire resolution mechanism, so the value could ultimately be coming from
+     * a cluster property, from <code>serverconfig.properties</code>,
+     * from <code>serverconfig_override.properties</code>, or from a hardcoded default.
+     * Use only when you want the exact behaviour of <code>ServerConfig.getProperty(String)</code>.
+     * </p>
+     *
+     * <p>
+     *    You will notice that this method's {@link com.l7tech.gateway.common.admin.Administrative @Administrative}
+     *    annotation has a <code>stereotype</code> argument with a value of
+     *    {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#SAVE_OR_UPDATE SAVE_OR_UPDATE},
+     *    even though it does not save or update anything at all.
+     *    This is a <b>hack</b> to be able to capitalize on the existing AOP interceptor infrastructure while not
+     *    complying fully with its expectations.
+     *    Because this method returns a String, which is none of the return types expected by the interceptor framework,
+     *    {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#FIND_ENTITY FIND_ENTITY}
+     *    and similar stereotypes cannot be used.
+     *    Using <code>SAVE_OR_UPDATE</code> allows us to get around the security <b>on return types</b>,
+     *    while still leveraging all other checks, despite being a bit misleading in that it does not denote the
+     *    actual semantics of this method.
+     * </p>
+     *
+     * @param name the name of the property whose value you're looking for
+     * @return the value of the property whose name you provided - null if the no property by that name is found
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Administrative(licensed = false, background = true)
+    @Secured(types = EntityType.ID_PROVIDER_CONFIG, stereotype = SAVE_OR_UPDATE)
+    String findServerConfigPropertyByName(String name);
 
     /**
      * Retrieve all available LDAP templates.  An LDAP template is a preconfigured set of LDAP properties for

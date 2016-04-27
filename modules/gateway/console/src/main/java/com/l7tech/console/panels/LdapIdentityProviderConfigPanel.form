@@ -169,7 +169,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="ldapReconnectTimeout.label"/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="ldapReconnectTimeout.tooltip"/>
+              <toolTipText value=""/>
             </properties>
           </component>
           <grid id="37461" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -186,7 +186,9 @@
                     <preferred-size width="80" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="ldapReconnectTimeout.tooltip"/>
+                </properties>
               </component>
               <hspacer id="511">
                 <constraints>
@@ -204,13 +206,13 @@
               <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="ldapAdminEnabledCheckbox.tooltip"/>
             </properties>
           </component>
-		  <component id="98fcc" class="com.l7tech.console.util.SecurityZoneWidget" binding="zoneControl">
+          <component id="98fcc" class="com.l7tech.console.util.SecurityZoneWidget" binding="zoneControl">
             <constraints>
               <grid row="7" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
           </component>
-		</children>
+        </children>
       </grid>
     </children>
   </grid>

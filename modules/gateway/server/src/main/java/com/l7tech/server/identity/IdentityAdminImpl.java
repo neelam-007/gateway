@@ -1,12 +1,11 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
-import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.identity.LogonInfo;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -18,6 +17,7 @@ import com.l7tech.ntlm.protocol.AuthenticationManagerException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdminEvent;
@@ -43,11 +43,7 @@ import javax.security.auth.x500.X500Principal;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -132,6 +128,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     public IdentityProviderConfig findIdentityProviderConfigByID(Goid oid)
             throws FindException {
         return getIdProvCfgMan().findByPrimaryKey(oid);
+    }
+
+    @Override
+    public String findServerConfigPropertyByName(String name) {
+        return ServerConfig.getInstance().getProperty(name);
     }
 
     @Override

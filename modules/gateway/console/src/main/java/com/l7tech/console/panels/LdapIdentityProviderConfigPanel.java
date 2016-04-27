@@ -5,12 +5,12 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -76,17 +76,14 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     }
 
     private void initGui() {
-        try {
-            ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin()
-                    .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
-            if (clusterProperty == null || clusterProperty.getValue() == null) {
-                ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
-            } else {
-                ldapReconnectTimeout = Long.parseLong(clusterProperty.getValue());
-            }
-        } catch (FindException e) {
+        String reconnectTimeoutFromServer = Registry.getDefault().getIdentityAdmin()
+                .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
+        if (StringUtils.isBlank(reconnectTimeoutFromServer)) {
             ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+        } else {
+            ldapReconnectTimeout = Long.parseLong(reconnectTimeoutFromServer);
         }
+
         ldapUrlListPanel = new LdapUrlListPanel();
         hostUrlPanel.setLayout(new BorderLayout());
         hostUrlPanel.add(ldapUrlListPanel, BorderLayout.CENTER);
@@ -316,7 +313,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
         ldapSettings.setBindDN(ldapBindDNTextField.getText());
         ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
         ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
-        // todo: validation? catch NumberFormatException?
         ldapSettings.setReconnectTimeout(Long.parseLong(reconnectTimeoutTextField.getText()));
 
         boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();

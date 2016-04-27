@@ -39,6 +39,11 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public String findServerConfigPropertyByName(String name) {
+        return null;
+    }
+
+    @Override
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return new LdapIdentityProviderConfig[0];
     }
