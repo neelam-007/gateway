@@ -20,10 +20,7 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.solutionkit.AddendumBundleHandler;
 import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
+import com.l7tech.util.*;
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -68,7 +65,6 @@ import static org.apache.commons.lang.StringUtils.*;
 public class SolutionKitManagerResource {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerResource.class.getName());
 
-    protected static final String FORM_FIELD_NAME_BUNDLE = "bundle";
     protected static final String PARAMETER_DELIMINATOR = "::";  // double colon separate ids; key_id :: value_id (e.g. f1649a0664f1ebb6235ac238a6f71a6d :: 66461b24787941053fc65a626546e4bd)
 
     private SolutionKitManager solutionKitManager;
@@ -99,6 +95,60 @@ public class SolutionKitManagerResource {
     private final Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = new HashMap<>(); // The map of guid and instance modifier of selected solution kits for headless upgrade.
 
     public SolutionKitManagerResource() {}
+
+    /**
+     * Utility method to create a {@code HashSet} from the specified {@code String} value array.
+     * Note that the method throws {@code Error} if there is a duplicate value.
+     *
+     * @param values    values to be added into the set.  Required and cannot be {@code null}.
+     * @throws Error when {@code values} array contains a duplicate {@code string}.
+     */
+    @NotNull
+    private static Set<String> toUniqueHashSet(@NotNull final String ... values) {
+        final Set<String> set = new HashSet<>();
+        for (final String value : values) {
+            if (!set.add(value)) {
+                throw new Error("Element '" + value + "' already exists in the set");
+            }
+        }
+        return set;
+    }
+
+    /**
+     * for installOrUpgrade method add new form and/or query parameters here
+     * When adding new values or modifying exiting ones values make sure the unit test
+     * {@code SolutionKitManagerResourceTest#testMethodParams} is changed accordingly.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    static interface InstallOrUpgradeParams {
+        // Form Params go here
+        static interface Form {
+            // Form Params
+            static final String file = "file";
+            static final String instanceModifier = "instanceModifier";
+            static final String solutionKitSelect = "solutionKitSelect";
+            static final String entityIdReplace = "entityIdReplace";
+            static final String bundle = "bundle";
+            // array of all known form params
+            static final Set<String> all = Collections.unmodifiableSet(toUniqueHashSet(
+                    file,
+                    instanceModifier,
+                    solutionKitSelect,
+                    entityIdReplace,
+                    bundle
+            ));
+        }
+
+        // Query Params go here
+        static interface Query {
+            //Query Params
+            static final String id = "id";
+            // array of all known query params
+            static final Set<String> all = Collections.unmodifiableSet(toUniqueHashSet(
+                    id
+            ));
+        }
+    }
 
     /**
      * Install or upgrade a SKAR file.
@@ -213,15 +263,15 @@ public class SolutionKitManagerResource {
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response installOrUpgrade(final @FormDataParam("file") InputStream fileInputStream,
-                                     final @FormDataParam("instanceModifier") String instanceModifierParameter,
-                                     final @FormDataParam("solutionKitSelect") List<FormDataBodyPart> solutionKitSelects,
-                                     final @FormDataParam("entityIdReplace") List<FormDataBodyPart> entityIdReplaces,
-                                     final @QueryParam("id") String upgradeGuid,
+    public Response installOrUpgrade(final @FormDataParam(InstallOrUpgradeParams.Form.file) InputStream fileInputStream,
+                                     final @FormDataParam(InstallOrUpgradeParams.Form.instanceModifier) String instanceModifierParameter,
+                                     final @FormDataParam(InstallOrUpgradeParams.Form.solutionKitSelect) List<FormDataBodyPart> solutionKitSelects,
+                                     final @FormDataParam(InstallOrUpgradeParams.Form.entityIdReplace) List<FormDataBodyPart> entityIdReplaces,
+                                     final @QueryParam(InstallOrUpgradeParams.Query.id) String upgradeGuid,
                                      final FormDataMultiPart formDataMultiPart) {
-
-        // NOTE: if changing a @FormDataParam("name") name in method declaration above, also need to change in setCustomizationKeyValues() below
-        // Strings can't be made final static constants because Jersey annotations complains with error
+        // DEVELOPER NOTE: when adding new @FormDataParam or @QueryParam (or even modifying existing ones)
+        // make sure they are added as constants inside InstallOrUpgradeParams as well as adding them into
+        // corresponding InstallOrUpgradeParams#Form#all and InstallOrUpgradeParams#Query#all arrays.
 
         // Using POST to upgrade since HTML PUT does not support forms (and therefore does not support multipart file upload).
 
@@ -292,7 +342,7 @@ public class SolutionKitManagerResource {
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
             // optionally apply addendum bundle(s)
-            new AddendumBundleHandler(formDataMultiPart, solutionKitsConfig, FORM_FIELD_NAME_BUNDLE).apply();
+            new AddendumBundleHandler(formDataMultiPart, solutionKitsConfig, InstallOrUpgradeParams.Form.bundle).apply();
 
             // (SSG-11727) Check if any two selected solution kits have same GUID and instance modifier. If so, return
             // a conflict error response and stop installation.  This checking is applied to install and upgrade.
@@ -491,6 +541,32 @@ public class SolutionKitManagerResource {
     }
 
     /**
+     * for uninstall method add new form and/or query parameters here
+     * When adding new values or modifying exiting ones values make sure the unit test
+     * {@code SolutionKitManagerResourceTest#testMethodParams} is changed accordingly.
+      */
+    @SuppressWarnings("UnusedDeclaration")
+    static interface UninstallParams {
+        // Form Params go here
+        static interface Form {
+            // add potential form params here
+            static final Set<String> all = Collections.unmodifiableSet(new HashSet<String>());
+        }
+
+        // Query Params go here
+        static interface Query {
+            //Query Params
+            static final String id = "id";
+            static final String childId = "childId";
+            // array of all known query params
+            static final Set<String> all = Collections.unmodifiableSet(toUniqueHashSet(
+                    id,
+                    childId
+            ));
+        }
+    }
+
+    /**
      * Uninstall the Solution Kit record and the entities installed from the original SKAR (if delete mappings were provided by the SKAR author).
      * <ul>
      *     <li>Use a <code>DELETE</code> request.</li>
@@ -518,8 +594,8 @@ public class SolutionKitManagerResource {
      */
     @DELETE
     public Response uninstall(
-            final @QueryParam("id") String deleteGuidIM,
-            final @QueryParam("childId") List<String> childGuidIMList) {
+            final @QueryParam(UninstallParams.Query.id) String deleteGuidIM,
+            final @QueryParam(UninstallParams.Query.childId) List<String> childGuidIMList) {
 
         // Couldn't use Solution Kit ID in the URL to upgrade (i.e. @Path("{id}") and @PathParam("id")).
         //      ... com.l7tech.external.assertions.gatewaymanagement.tools.WadlTest.test(2)
@@ -943,8 +1019,8 @@ public class SolutionKitManagerResource {
             Map<String, String> parameters = bodyPart.getContentDisposition().getParameters();
             final String name = parameters.get("name");
 
-            // NOTE: skip known form fields from method declaration above (strings not final static constants because Jersey annotations complains with error)
-            if (name != null && !name.startsWith(FORM_FIELD_NAME_BUNDLE) && !"file".equals(name) && !"solutionKitSelect".equals(name) && !"entityIdReplace".equals(name)) {
+            // NOTE: skip known form fields from method declaration above
+            if (name != null && !InstallOrUpgradeParams.Form.all.contains(name)) {
                 keyValues.add(formDataMultiPart.getField(name));
             }
         }

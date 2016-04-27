@@ -1599,4 +1599,34 @@ public class SolutionKitManagerResourceTest {
         solutionKit3.setSolutionKitVersion("1");
         solutionKit3.setGoid(new Goid("1f87436b7ca541c8941821d7a7848977"));
     }
+    
+    @Test
+    public void testMethodParams() throws Exception {
+        Assert.assertThat(
+                SolutionKitManagerResource.InstallOrUpgradeParams.Form.all,
+                Matchers.containsInAnyOrder(
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.file,
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.instanceModifier,
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.solutionKitSelect,
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.entityIdReplace,
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.bundle
+                )
+        );
+        Assert.assertThat(
+                SolutionKitManagerResource.InstallOrUpgradeParams.Query.all,
+                Matchers.contains(SolutionKitManagerResource.InstallOrUpgradeParams.Query.id)
+        );
+
+        Assert.assertThat(
+                SolutionKitManagerResource.UninstallParams.Form.all,
+                Matchers.emptyCollectionOf(String.class)
+        );
+        Assert.assertThat(
+                SolutionKitManagerResource.UninstallParams.Query.all,
+                Matchers.contains(
+                        SolutionKitManagerResource.UninstallParams.Query.id,
+                        SolutionKitManagerResource.UninstallParams.Query.childId
+                )
+        );
+    }
 }
