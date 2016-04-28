@@ -101,21 +101,22 @@
         <attribute name="build-version" default="${build.version}" />
         <attribute name="repo-type" default="nexus" />
         <sequential>
-		<ivy:publish organisation="${build.org}" module="${build.name}" revision="@{build-version}" resolver="@{repo-type}-@{stage}" pubrevision="@{build-version}" overwrite="true" publishivy="true" update="true" >
+		<ivy:publish organisation="${build.org}" module="${build.name}${ssg.version}" revision="@{build-version}" resolver="@{repo-type}-@{stage}" pubrevision="@{build-version}" overwrite="true" publishivy="true" update="true" >
                 <artifacts pattern="${src.root}/target/[organisation]-[module]-[revision]-[type].[ext]"/>
             </ivy:publish>
         </sequential>
     </macrodef>
 
     <macrodef name="repo-prepare">
+        <!--   This macro has to be overwritten -->
         <attribute name="build-version" default="${build.version}" />
         <sequential>
             <!-- convert ivy.xml to pom.xml type -->
-            <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}" status="release"/>
-            <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}-@{build-version}-pom.pom"/>
+            <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}${ssg.version}" status="release"/>
+            <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-pom.pom"/>
             <!-- copy artifacts into correct name to be published -->
-            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.0.00.aar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-aar.aar"/>
-            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-9.0.00.saar" tofile="${src.root}/target/${build.org}-${build.name}-@{build-version}-saar.saar"/>
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-${ssg.version}.aar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-aar.aar"/>
+            <copy file="${src.root}/build/ivy/repository/ApiPortalIntegrationAssertion-${ssg.version}.saar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-saar.saar"/>
         </sequential>
     </macrodef>
 
@@ -123,7 +124,7 @@
         <attribute name="stage" default="snapshots" />
         <sequential>
             <http
-                    url="${nexus.server.url}/service/local/metadata/repositories/@{stage}/content/com/layer7/portal/${build.name}/"
+                    url="${nexus.server.url}/service/local/metadata/repositories/@{stage}/content/com/layer7/portal/${build.name}${ssg.version}/"
                     method="DELETE"
                     expected="204">
                 <credentials username="${nexus.user}" password="${nexus.password}"/>
@@ -166,7 +167,15 @@
         <fail unless="ivy.file.name"/>
     </target>
     
-    <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="checkVariables,ivy.generate.deploy.ivyfile,ivy.resolve">         
+    <target name="deploy" description="Upload snapshots artifacts to Nexus server" depends="checkVariables,ivy.generate.deploy.ivyfile,ivy.resolve">
+        <fail>
+            <condition>
+                <not>
+                    <isset property="ssg.version"/>
+                </not>
+            </condition>
+        </fail>
+
         <repo-prepare build-version="${build.version}-SNAPSHOT"/>
         <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT"/>
 	<!--        <repo-publish stage="snapshots" build-version="${build.version}-SNAPSHOT" repo-type="artifactory"/> -->

@@ -272,26 +272,25 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     static String buildScope(String oauthScope) {
         if(oauthScope==null){
             return null;
-        } else if(oauthScope.trim().equalsIgnoreCase(APPLICATION_SCOPE_OOB)){
+        } else if(oauthScope.trim().equals(APPLICATION_SCOPE_OOB)){
             return APPLICATION_SCOPE_OOB;
         }else{
-            List<String> scopeList = new ArrayList();
-            if(oauthScope!=null){
-              scopeList.addAll(Arrays.asList(oauthScope.split("\\s")));
-            }
-            if(Functions.exists(scopeList, new Functions.Unary<Boolean, String>() {
+            Set<String> scopeSet = new HashSet();
+            scopeSet.addAll(Arrays.asList(oauthScope.split("\\s")));
+
+            if(Functions.exists(scopeSet, new Functions.Unary<Boolean, String>() {
                     @Override
                     public Boolean call(String s) {
-                        return s.equalsIgnoreCase(APPLICATION_SCOPE_OOB);
+                        return s.equals(APPLICATION_SCOPE_OOB);
                     }})){
-                scopeList.removeIf( new Predicate<String>() {
-                    @Override
-                    public boolean test(String s) {
-                        return s.equalsIgnoreCase(APPLICATION_SCOPE_OOB);
-                    }
+                scopeSet.removeIf(new Predicate<String>() {
+                  @Override
+                  public boolean test(String s) {
+                    return s.equals(APPLICATION_SCOPE_OOB);
+                  }
                 });
             }
-          return Joiner.on(" ").join(scopeList);
+          return Joiner.on(" ").join(scopeSet);
         }
     }
 

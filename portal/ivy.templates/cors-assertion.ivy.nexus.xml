@@ -1,10 +1,10 @@
 <ivy-module version="2.0">
-    <info organisation="com.layer7.portal" module="cors-assertion9.1" revision="@REVISION_NO@" status="release"/>
+    <info organisation="com.layer7.portal" module="cors-assertion${ssg.version}" revision="@REVISION_NO@" status="release"/>
     <publications>
-        <artifact name="cors-assertion9.1" type="pom" ext="pom"/>
-        <artifact name="cors-assertion9.1" type="aar" ext="aar"/>
-        <artifact name="cors-assertion9.1" type="saar" ext="saar"/>
-        <artifact name="cors-assertion9.1" type="saar-xml" ext="saar-xml"/>
-        <artifact name="cors-assertion9.1" type="bundle-xml" ext="bundle-xml"/>
+        <artifact name="cors-assertion${ssg.version}" type="pom" ext="pom"/>
+        <artifact name="cors-assertion${ssg.version}" type="aar" ext="aar"/>
+        <artifact name="cors-assertion${ssg.version}" type="saar" ext="saar"/>
+        <artifact name="cors-assertion${ssg.version}" type="saar-xml" ext="saar-xml"/>
+        <artifact name="cors-assertion${ssg.version}" type="bundle-xml" ext="bundle-xml"/>
     </publications>
 </ivy-module>

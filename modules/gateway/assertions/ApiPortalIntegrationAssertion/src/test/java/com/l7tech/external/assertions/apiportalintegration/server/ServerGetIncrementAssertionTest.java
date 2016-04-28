@@ -222,16 +222,30 @@ public class ServerGetIncrementAssertionTest {
       assertTrue(result.equals("oob"));
 
       result = ServerGetIncrementAssertion.buildScope("OOB");
-      assertTrue(result.equals("oob"));
+      assertTrue(result.equals("OOB"));
 
       result = ServerGetIncrementAssertion.buildScope("oob other");
       assertTrue(result.equals("other"));
 
       result = ServerGetIncrementAssertion.buildScope("OOB other");
-      assertTrue(result.equals("other"));
+      assertTrue(result.contains("OOB"));
+      assertTrue(result.contains("other"));
 
       result = ServerGetIncrementAssertion.buildScope("SOMETHING other");
-      assertTrue(result.equals("SOMETHING other"));
+      assertTrue(result.contains("SOMETHING"));
+      assertTrue(result.contains("other"));
+
+      result = ServerGetIncrementAssertion.buildScope("oob OOB other");
+      assertTrue(result.contains("OOB"));
+      assertTrue(result.contains("other"));
+
+      result = ServerGetIncrementAssertion.buildScope("abc Abc ABC");
+      assertTrue(result.contains("abc"));
+      assertTrue(result.contains("Abc"));
+      assertTrue(result.contains("ABC"));
+
+      result = ServerGetIncrementAssertion.buildScope("openid openid");
+      assertTrue(result.equals("openid"));
 
       // null scope values
       result = ServerGetIncrementAssertion.buildScope(null);
