@@ -31,6 +31,7 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.Ignore;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Matchers;
 import org.mockito.Mock;
@@ -116,6 +117,7 @@ when(applicationContext.getBean("encapsulatedAssertionConfigManager", Encapsulat
         portalManagedEncasses = new ArrayList<>();
     }
 
+    @Ignore
     @Test
     public void onModuleLoadedAndUnloaded() {
         when(applicationContext.getBean("genericEntityManager", GenericEntityManager.class)).thenReturn(genericEntityManager);

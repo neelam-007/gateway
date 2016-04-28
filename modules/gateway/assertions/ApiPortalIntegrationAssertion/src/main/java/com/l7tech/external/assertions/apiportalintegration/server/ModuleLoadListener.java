@@ -71,6 +71,14 @@ public class ModuleLoadListener implements ApplicationListener {
         if (ApiKeyManagerFactory.getInstance() == null) {
             ApiKeyManagerFactory.setInstance(legacyApiKeyManager);
         }
+
+        try {
+          // init portal managed services
+          refreshAllPortalManagedServices();
+          refreshAllPortalManagedEncasses();
+        }catch(NullPointerException e){
+            logger.info("Cannot refresh portal managed entities on initialization.");
+        }
     }
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -102,6 +110,7 @@ public class ModuleLoadListener implements ApplicationListener {
     public void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ReadyForMessages) {
             // init portal managed services
+            // *** ReadyForMessages is not available when loaded from a Server Module File
             refreshAllPortalManagedServices();
             refreshAllPortalManagedEncasses();
         //TODO: confirm if this should be LicenseEvent or LicenseChangeEvent
