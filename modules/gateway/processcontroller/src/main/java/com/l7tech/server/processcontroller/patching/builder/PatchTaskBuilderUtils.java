@@ -46,8 +46,10 @@ public class PatchTaskBuilderUtils {
 
         try {
             addClassDependencies(spec, taskClass.newInstance().getClassDependencies());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error adding class dependencies for: " + taskClass);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Could not find class: " + e.getMessage() + " from " + taskClass);
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new IllegalArgumentException("Could not instantiate: " + taskClass);
         }
     }
 

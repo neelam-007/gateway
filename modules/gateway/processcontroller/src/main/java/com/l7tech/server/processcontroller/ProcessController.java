@@ -765,7 +765,7 @@ public class ProcessController implements InitializingBean {
     }
 
     private void addGatewaySystemProperties( final List<String> commands, final String propPrefix, final String ssgHome ) {
-        commands.add( propPrefix + "com.l7tech.server.home=\"" + ssgHome + "\"");
+        commands.add( propPrefix + "com.l7tech.server.home=" + ssgHome);
         commands.add( propPrefix + "com.l7tech.server.processControllerPresent=true" );
         commands.add( propPrefix + "com.l7tech.server.processControllerCert=" + new File("var/run/pc.cer").getAbsolutePath() );
         commands.add( propPrefix + "com.l7tech.server.processControllerIpAddress=" + configService.getSslIPAddress() );
