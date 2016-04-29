@@ -12,6 +12,26 @@ REGISTRY_USER='tinder'
 REGISTRY_PASS='7layer'
 REGISTRY_EMAIL='noreply@l7tech.com'
 
+removeExistingContainers() {
+	echo "Removing existing Docker containers from the build agent"
+	echo "Existing containers:"
+	docker ps -a
+	if [ $(docker ps -q | wc -l) -gt 0 ]; then
+		echo "Killing any running containers"
+		docker ps -q | xargs docker kill 
+		echo "Done killing running containers"
+	else
+		echo "No containers needed to be killed"
+	fi
+	if [ $(docker ps -a -q | wc -l) -gt 0 ]; then
+		echo "Removing the containers"
+		docker ps -a -q | docker rm -f 
+	else
+		echo "No containers needed to be removed"
+	fi
+	echo "Done removing existing Docker containers from the build agent"
+}
+
 removeExistingImages() {
 	echo "Removing existing Docker images from the build agent"
 	echo "Existing images:"
@@ -144,6 +164,7 @@ generatePackagesListFile() {
 	echo "Done generating the packages list file"
 }
 
+removeExistingContainers
 removeExistingImages
 loginToTheRegistry
 buildTheImage
