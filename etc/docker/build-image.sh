@@ -52,6 +52,10 @@ buildTheImage() {
 	echo "DEBUG: GATEWAY_VERSION=\"$GATEWAY_VERSION\""
 	echo "DEBUG: GATEWAY_RELEASE=\"$GATEWAY_RELEASE\""
 	docker build --tag="${IMAGE_NAME}:${GATEWAY_VERSION}-${GATEWAY_RELEASE}" .
+	if [ $? -ne 0 ]; then
+		echo "ERROR: there was a problem during the image build"
+		exit 1
+	fi
 
 	echo "Done building the image"
 }

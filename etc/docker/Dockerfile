@@ -55,6 +55,12 @@ RUN wget -O - https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.
 ADD entryPoint.sh /root/
 RUN chmod 700 /root/entryPoint.sh
 
+# add in the SiteMinder SDK
+RUN yum install -y glibc.i686
+RUN mkdir /siteminder
+COPY siteminder/* /siteminder/
+RUN cd /siteminder && /bin/bash ./doInstall.sh && cd / && rm -rf /siteminder
+
 # if you need to add more changes, put them at the end
 # future builds take less time that way (because of docker creating intermediate images)
 
