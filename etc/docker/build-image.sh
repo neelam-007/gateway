@@ -25,7 +25,7 @@ removeExistingContainers() {
 	fi
 	if [ $(docker ps -a -q | wc -l) -gt 0 ]; then
 		echo "Removing the containers"
-		docker ps -a -q | docker rm -f 
+		docker ps -a -q | xargs docker rm -f 
 	else
 		echo "No containers needed to be removed"
 	fi
