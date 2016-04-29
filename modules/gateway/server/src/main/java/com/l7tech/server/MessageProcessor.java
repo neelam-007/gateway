@@ -1082,7 +1082,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             try {
                 handle = policyCache.getServerPolicy( guid );
                 if ( handle != null ) {
-                    pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( context );
+                    pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context, true);
                     debugManager.onMessageArrived(pec, handle.getPolicyMetadata().getPolicyHeader().getGoid());
                     result = handle.checkRequest( pec );
                 } else {
