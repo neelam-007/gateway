@@ -9,7 +9,7 @@
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
     <bean id="embeddedDBCreationDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
-        <property name="databaseName" value="${com.l7tech.server.varDirectory}/db/ssgdb"/>
+        <property name="databaseName" value="${com.l7tech.server.derbyPrefix}/db/ssgdb"/>
         <property name="createDatabase" value="create"/>
         <property name="connectionAttributes" value="upgrade=true"/>
     </bean>
@@ -32,7 +32,7 @@
     </bean>
 
     <bean id="embeddedDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40" depends-on="createEmbeddedDB">
-        <property name="databaseName" value="${com.l7tech.server.varDirectory}/db/ssgdb"/>
+        <property name="databaseName" value="${com.l7tech.server.derbyPrefix}/db/ssgdb"/>
     </bean>
 
     <alias name="embeddedDataSource" alias="hibernateDataSource"/>
