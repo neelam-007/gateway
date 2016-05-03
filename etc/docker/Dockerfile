@@ -45,12 +45,6 @@ RUN chmod 770 /opt/SecureSpan/Gateway/node/default/etc/conf/
 # https://developer.atlassian.com/blog/2015/08/minimal-java-docker-containers/
 RUN rm -rf /opt/SecureSpan/JDK/*src.zip /opt/SecureSpan/JDK/lib/missioncontrol /opt/SecureSpan/JDK/lib/*javafx* /opt/SecureSpan/JDK/jre/lib/plugin.jar /opt/SecureSpan/JDK/jre/lib/ext/jfxrt.jar /opt/SecureSpan/JDK/jre/bin/javaws /opt/SecureSpan/JDK/jre/lib/javaws.jar /opt/SecureSpan/JDK/jre/lib/desktop /opt/SecureSpan/JDK/jre/plugin /opt/SecureSpan/JDK/jre/lib/deploy* /opt/SecureSpan/JDK/jre/lib/*javafx* /opt/SecureSpan/JDK/jre/lib/*jfx* /opt/SecureSpan/JDK/jre/lib/amd64/libdecora_sse.so /opt/SecureSpan/JDK/jre/lib/amd64/libprism_*.so /opt/SecureSpan/JDK/jre/lib/amd64/libfxplugins.so /opt/SecureSpan/JDK/jre/lib/amd64/libglass.so /opt/SecureSpan/JDK/jre/lib/amd64/libgstreamer-lite.so /opt/SecureSpan/JDK/jre/lib/amd64/libjavafx*.so /opt/SecureSpan/JDK/jre/lib/amd64/libjfx*.so
 
-# include envconsul in the build to support setting environment variable from Consul
-RUN wget -O - https://github.com/hashicorp/envconsul/releases/download/v0.5.0/envconsul_0.5.0_linux_amd64.tar.gz | tar xzf - -O envconsul_0.5.0_linux_amd64/envconsul > /usr/local/bin/envconsul && chmod 755 /usr/local/bin/envconsul
-
-# include etcdctl in the build to support setting environment variables from etcd
-RUN wget -O - https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.2-linux-amd64.tar.gz | tar xzf - -O etcd-v2.2.2-linux-amd64/etcdctl > /usr/local/bin/etcdctl && chmod 755 /usr/local/bin/etcdctl
-
 # add the provisioning script
 ADD entryPoint.sh /root/
 RUN chmod 700 /root/entryPoint.sh
