@@ -335,6 +335,7 @@ public class GatewayBoot {
 
     private void startListeners(String ipAddress) {
         final long startTime = System.currentTimeMillis();
+        logger.log( INFO, "Ready for messages" );
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
         touchStartedFile();
         logger.log( FINE, "Started listeners in {0}ms", System.currentTimeMillis() - startTime );
