@@ -53,6 +53,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     private JPanel hostUrlPanel;
     private SecurityZoneWidget zoneControl;
     private JTextField reconnectTimeoutTextField;
+    private JCheckBox useDefaultReconnectCheckbox;
 
     private LdapUrlListPanel ldapUrlListPanel;
 
@@ -60,7 +61,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     private boolean finishAllowed = false;
     private boolean advanceAllowed = false;
     private ResourceBundle resources = null;
-    private Long ldapReconnectTimeout;
+
+    /** Cluster (serverconfig_override) value from server - a.k.a. "system default" */
+    private Long reconnectTimeoutFromServer;
+
+    /** When a user enters a value for this provider, then check system default, then unchecks it,
+     * the value they had typed before is restored from here */
+    private Long reconnectTimeoutFromBefore;
 
     private final Pattern millisecondPattern;
 
@@ -76,13 +83,14 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     }
 
     private void initGui() {
-        String reconnectTimeoutFromServer = Registry.getDefault().getIdentityAdmin()
+        final String reconnectTimeoutString = Registry.getDefault().getIdentityAdmin()
                 .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
-        if (StringUtils.isBlank(reconnectTimeoutFromServer)) {
-            ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+        if (StringUtils.isBlank(reconnectTimeoutString)) {
+            reconnectTimeoutFromServer = DEFAULT_RECONNECT_TIMEOUT;
         } else {
-            ldapReconnectTimeout = Long.parseLong(reconnectTimeoutFromServer);
+            reconnectTimeoutFromServer = Long.parseLong(reconnectTimeoutString);
         }
+        reconnectTimeoutFromBefore = reconnectTimeoutFromServer;
 
         ldapUrlListPanel = new LdapUrlListPanel();
         hostUrlPanel.setLayout(new BorderLayout());
@@ -100,6 +108,24 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
         PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         reconnectTimeoutTextField.addKeyListener(keyListener);
+        useDefaultReconnectCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (useDefaultReconnectCheckbox.isSelected()) {
+                    try {
+                        reconnectTimeoutFromBefore = Long.parseLong(reconnectTimeoutTextField.getText());
+                    } catch (NumberFormatException e1) {
+                        // if the user entered something that doesn't parse, it makes no sense to interrupt the flow at this point
+                        // we just leave the previously saved value alone, and the nonsensical value will just be lost
+                    }
+                    reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
+                    reconnectTimeoutTextField.setEnabled(false);
+                } else {
+                    reconnectTimeoutTextField.setText(reconnectTimeoutFromBefore.toString());
+                    reconnectTimeoutTextField.setEnabled(true);
+                }
+            }
+        });
 
         providerTypesCombo.setEnabled(providerTypeSelectable);
         LdapIdentityProviderConfig[] templates;
@@ -233,7 +259,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
             return;
         }
 
-        reconnectTimeoutTextField.setText(ldapReconnectTimeout.toString());
+        reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
 
         if (acceptNewProvider || !Goid.isDefault(iProviderConfig.getGoid())) {
             providerNameTextField.setText(iProviderConfig.getName());
@@ -244,8 +270,15 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
             final boolean clientAuthEnabled = iProviderConfig.isClientAuthEnabled();
             ldapUrlListPanel.setClientAuthEnabled(clientAuthEnabled);
             ldapUrlListPanel.selectPrivateKey(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
-            if (iProviderConfig.getReconnectTimeout() != null) {
+            if (iProviderConfig.getReconnectTimeout() == null) {
+                reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
+                reconnectTimeoutTextField.setEnabled(false);
+                useDefaultReconnectCheckbox.setSelected(true);
+            } else {
                 reconnectTimeoutTextField.setText(iProviderConfig.getReconnectTimeout().toString());
+                reconnectTimeoutTextField.setEnabled(true);
+                useDefaultReconnectCheckbox.setSelected(false);
+                reconnectTimeoutFromBefore = iProviderConfig.getReconnectTimeout();
             }
 
             // populate host list based on what is in the iProviderConfig
@@ -313,7 +346,12 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
         ldapSettings.setBindDN(ldapBindDNTextField.getText());
         ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
         ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
-        ldapSettings.setReconnectTimeout(Long.parseLong(reconnectTimeoutTextField.getText()));
+
+        if (useDefaultReconnectCheckbox.isSelected()) {
+            ldapSettings.setReconnectTimeout(null);
+        } else {
+            ldapSettings.setReconnectTimeout(Long.parseLong(reconnectTimeoutTextField.getText()));
+        }
 
         boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
         ldapSettings.setClientAuthEnabled(clientAuth);

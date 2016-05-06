@@ -226,6 +226,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
             detail.setSearchBase( ldapIdentityProviderConfig.getSearchBase() );
             detail.setBindDn( ldapIdentityProviderConfig.getBindDN() );
+            detail.setReconnectTimeout(ldapIdentityProviderConfig.getReconnectTimeout());
             detail.setUserMappings( buildMappings( ldapIdentityProviderConfig.getUserMappings() ) );
             detail.setGroupMappings( buildMappings( ldapIdentityProviderConfig.getGroupMappings() ) );
             detail.setSpecifiedAttributes( ldapIdentityProviderConfig.getReturningAttributes()==null ? null : Arrays.asList(ldapIdentityProviderConfig.getReturningAttributes()) );
@@ -445,6 +446,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
             ldapIdentityProviderConfig.setSearchBase( detail.getSearchBase() );
             ldapIdentityProviderConfig.setBindDN( detail.getBindDn() );
+            ldapIdentityProviderConfig.setReconnectTimeout(detail.getReconnectTimeout());
             ldapIdentityProviderConfig.setBindPasswd( detail.getBindPassword() );
             ldapIdentityProviderConfig.setUserMappings( detail.hasUserMappings() ? buildUserMappings( detail.getUserMappings() ) : template.getUserMappings() );
             ldapIdentityProviderConfig.setGroupMappings( detail.hasGroupMappings() ? buildGroupMappings( detail.getGroupMappings() ) : template.getGroupMappings() );
@@ -574,6 +576,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
         oldConfig.setClientAuthEnabled( newConfig.isClientAuthEnabled() );
         oldConfig.setKeyAlias( newConfig.getKeyAlias() );
         oldConfig.setKeystoreId( newConfig.getKeystoreId() );
+        oldConfig.setReconnectTimeout(newConfig.getReconnectTimeout());
     }
 
     private void updateEntity( final PolicyBackedIdentityProviderConfig oldConfig,

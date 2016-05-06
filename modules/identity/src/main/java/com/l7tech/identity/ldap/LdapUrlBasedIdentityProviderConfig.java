@@ -18,12 +18,13 @@ import java.io.Serializable;
  * Superclass for identity provider configs that are based on a list of LDAP and/or LDAPS URLs.
  */
 public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProviderConfig implements UsesPrivateKeys, Serializable {
-    public static final String URL = "ldapurl";
-    public static final String PROP_LDAP_RECONNECT_TIMEOUT = "ldap.reconnect.timeout";
 
+    public static final String PROP_LDAP_RECONNECT_TIMEOUT = "ldap.reconnect.timeout";
+    public static final String URL = "ldapurl";
     private static final String CLIENT_AUTH_ENABLED = "clientAuth";
     private static final String KEYSTORE_ID = "keystoreId";
     private static final String KEY_ALIAS = "keyAlias";
+    private static final String RECONNECT_TIMEOUT = "reconnectTimeout";
 
     protected LdapUrlBasedIdentityProviderConfig(IdentityProviderType type) {
         super(type);
@@ -109,10 +110,10 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
     }
 
     public Long getReconnectTimeout() {
-        return getProperty(PROP_LDAP_RECONNECT_TIMEOUT);
+        return getProperty(RECONNECT_TIMEOUT);
     }
 
     public void setReconnectTimeout(Long reconnectTimeout) {
-        setProperty(PROP_LDAP_RECONNECT_TIMEOUT, reconnectTimeout);
+        setProperty(RECONNECT_TIMEOUT, reconnectTimeout);
     }
 }

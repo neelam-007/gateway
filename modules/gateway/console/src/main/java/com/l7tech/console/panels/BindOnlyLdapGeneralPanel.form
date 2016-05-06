@@ -101,7 +101,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="71270" class="javax.swing.JTextField" binding="reconnectTimeoutField">
+          <component id="71270" class="javax.swing.JTextField" binding="reconnectTimeoutTextField">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="80" height="-1"/>
@@ -111,11 +111,14 @@
               <enabled value="true"/>
             </properties>
           </component>
-          <hspacer id="632fa">
+          <component id="fe" class="javax.swing.JCheckBox" binding="useDefaultReconnectCheckbox">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
-          </hspacer>
+            <properties>
+              <text resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="reconnectTimeout.useDefaultCheckboxLabel"/>
+            </properties>
+          </component>
         </children>
       </grid>
     </children>

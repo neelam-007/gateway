@@ -505,6 +505,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private AttributeExtensibleString searchBase;
         private AttributeExtensibleString bindDn;
         private AttributeExtensibleString bindPassword;
+        private AttributeExtensibleLong reconnectTimeout;
 
         private AttributeExtensibleLdapIdentityProviderMappingList userMappings;
         private AttributeExtensibleLdapIdentityProviderMappingList groupMappings;
@@ -647,6 +648,14 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          */
         public void setBindPassword( String bindPassword ) {
             this.bindPassword = set(this.bindPassword,bindPassword);
+        }
+
+        public Long getReconnectTimeout() {
+            return get(reconnectTimeout);
+        }
+
+        public void setReconnectTimeout(Long reconnectTimeout) {
+            this.reconnectTimeout = set(this.reconnectTimeout, reconnectTimeout);
         }
 
         public void setBindPassword(final String password, final String bundleKey){

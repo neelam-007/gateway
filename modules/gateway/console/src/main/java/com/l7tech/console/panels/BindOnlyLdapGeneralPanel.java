@@ -11,6 +11,8 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,8 +28,16 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     private JTextField dnSuffixField;
     private JTextField providerNameField;
     private SecurityZoneWidget zoneControl;
-    private JTextField reconnectTimeoutField;
-    private Long ldapReconnectTimeout;
+    private JTextField reconnectTimeoutTextField;
+    private JCheckBox useDefaultReconnectCheckbox;
+
+
+    /** Cluster (serverconfig_override) value from server - a.k.a. "system default" */
+    private Long reconnectTimeoutFromServer;
+
+    /** When a user enters a value for this provider, then check system default, then unchecks it,
+     * the value they had typed before is restored from here */
+    private Long reconnectTimeoutFromBefore;
 
     private boolean finishAllowed = false;
     private final Pattern millisecondPattern;
@@ -41,14 +51,14 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     }
 
     private void initGui() {
-        String reconnectTimeoutFromServer = Registry.getDefault().getIdentityAdmin()
+        final String reconnectTimeoutString = Registry.getDefault().getIdentityAdmin()
                 .findServerConfigPropertyByName(PROP_LDAP_RECONNECT_TIMEOUT);
-        if (!StringUtils.isBlank(reconnectTimeoutFromServer)) {
-            ldapReconnectTimeout = DEFAULT_RECONNECT_TIMEOUT;
+        if (StringUtils.isBlank(reconnectTimeoutString)) {
+            reconnectTimeoutFromServer = DEFAULT_RECONNECT_TIMEOUT;
         } else {
-            // we don't worry about NumberFormatExceptions here because the client-side form has validation
-            ldapReconnectTimeout = Long.parseLong(reconnectTimeoutFromServer);
+            reconnectTimeoutFromServer = Long.parseLong(reconnectTimeoutString);
         }
+        reconnectTimeoutFromBefore = reconnectTimeoutFromServer;
 
         RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
             @Override
@@ -60,10 +70,29 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
         ldapUrlListPanel.addPropertyChangeListener(LdapUrlListPanel.PROP_DATA, listener);
         providerNameField.getDocument().addDocumentListener(listener);
 
-        validationRules.add(new InputValidator.ComponentValidationRule(reconnectTimeoutField) {
+        useDefaultReconnectCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (useDefaultReconnectCheckbox.isSelected()) {
+                    try {
+                        reconnectTimeoutFromBefore = Long.parseLong(reconnectTimeoutTextField.getText());
+                    } catch (NumberFormatException e1) {
+                        // if the user entered something that doesn't parse, it makes no sense to interrupt the flow at this point
+                        // we just leave the previously saved value alone, and the nonsensical value will just be lost
+                    }
+                    reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
+                    reconnectTimeoutTextField.setEnabled(false);
+                } else {
+                    reconnectTimeoutTextField.setText(reconnectTimeoutFromBefore.toString());
+                    reconnectTimeoutTextField.setEnabled(true);
+                }
+            }
+        });
+
+        validationRules.add(new InputValidator.ComponentValidationRule(reconnectTimeoutTextField) {
             @Override
             public String getValidationError() {
-                Matcher matcher = millisecondPattern.matcher(reconnectTimeoutField.getText());
+                Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
                 if (!matcher.matches()) {
                     return "Reconnect Timeout should be a number of milliseconds between 1 and " + Long.MAX_VALUE;
                 }
@@ -107,7 +136,7 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
 
     @Override
     public void readSettings(Object settings, boolean acceptNewProvider) throws IllegalArgumentException {
-        reconnectTimeoutField.setText(ldapReconnectTimeout.toString());
+        reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
 
         if (!(settings instanceof BindOnlyLdapIdentityProviderConfig)) {
             return;
@@ -120,8 +149,15 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
         ldapUrlListPanel.selectPrivateKey(config.getKeystoreId(), config.getKeyAlias());
         dnPrefixField.setText(config.getBindPatternPrefix());
         dnSuffixField.setText(config.getBindPatternSuffix());
-        if (config.getReconnectTimeout() != null) {
-            reconnectTimeoutField.setText(config.getReconnectTimeout().toString());
+        if (config.getReconnectTimeout() == null) {
+            reconnectTimeoutTextField.setText(reconnectTimeoutFromServer.toString());
+            reconnectTimeoutTextField.setEnabled(false);
+            useDefaultReconnectCheckbox.setSelected(true);
+        } else {
+            reconnectTimeoutTextField.setText(config.getReconnectTimeout().toString());
+            reconnectTimeoutTextField.setEnabled(true);
+            useDefaultReconnectCheckbox.setSelected(false);
+            reconnectTimeoutFromBefore = config.getReconnectTimeout();
         }
 
         // select name field for clone
@@ -144,7 +180,13 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             config.setBindPatternPrefix(dnPrefixField.getText());
             config.setBindPatternSuffix(dnSuffixField.getText());
             config.setSecurityZone(zoneControl.getSelectedZone());
-            config.setReconnectTimeout(Long.parseLong(reconnectTimeoutField.getText()));
+
+            if (useDefaultReconnectCheckbox.isSelected()) {
+                config.setReconnectTimeout(null);
+            } else {
+                config.setReconnectTimeout(Long.parseLong(reconnectTimeoutTextField.getText()));
+            }
+
             boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
             config.setClientAuthEnabled(clientAuth);
             if (clientAuth) {

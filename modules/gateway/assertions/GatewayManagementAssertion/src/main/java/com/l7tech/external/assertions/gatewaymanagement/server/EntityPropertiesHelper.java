@@ -163,8 +163,10 @@ class EntityPropertiesHelper {
             .put( "userCertificateSKISearchFilter", null )
             .put( "userCertificateUseType", "userCertificateUsage" )
             .put( "userLookupByCertMode", null )
+            .put( "reconnectTimeout", null )
             .unmodifiableMap() )
         .put(BindOnlyLdapIdentityProviderConfig.class, MapBuilder.<String, String>builder()
+            .put( "reconnectTimeout", null )
             .unmodifiableMap())
         .put(PolicyBackedIdentityProviderConfig.class, MapBuilder.<String, String>builder()
             .put( "adminEnabled", null )
@@ -339,8 +341,7 @@ class EntityPropertiesHelper {
             "userMappings",
             "version",
             "ntlmAuthenticationProviderProperties",
-            "securityZone",
-            "reconnectTimeout"
+            "securityZone"
         ) )
         .put( BindOnlyLdapIdentityProviderConfig.class, list(
             "adminEnabled",
@@ -358,8 +359,7 @@ class EntityPropertiesHelper {
             "serializedProps",
             "typeVal",
             "version",
-            "securityZone",
-            "reconnectTimeout"
+            "securityZone"
         ) )
         .put( PolicyBackedIdentityProviderConfig.class, list(
             "defaultRoleId",
