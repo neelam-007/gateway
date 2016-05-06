@@ -1,20 +1,17 @@
 package com.l7tech.server.licensing;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.server.event.AdminInfo;
-import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Initialized;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -34,7 +31,7 @@ public class BootstrapLicenseService implements PostStartupApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof Started) {
+        if (event instanceof Initialized ) {
             loadLicenseFromFile();
         }
     }

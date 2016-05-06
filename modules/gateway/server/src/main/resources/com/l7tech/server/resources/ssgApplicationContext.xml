@@ -1625,6 +1625,9 @@
         <constructor-arg index="4" ref="serviceTemplateManager"/>
     </bean>
 
+    <bean id="migrationBundleBootstrapService" class="com.l7tech.server.service.MigrationBundleBootstrapService">
+    </bean>
+
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="certValidationProcessor"/>

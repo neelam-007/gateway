@@ -1,7 +1,7 @@
 package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.Component;
-import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Initialized;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
 import org.junit.After;
@@ -37,7 +37,7 @@ public class LicenseBootstrapServiceTest {
 
         LicenseDocumentManager docManager = new LicenseDocumentManagerStub();
         BootstrapLicenseService service = new BootstrapLicenseService(docManager);
-        service.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
+        service.onApplicationEvent(new Initialized(this, Component.GATEWAY, "Test"));
         assertEquals(1, docManager.findAll().size());
     }
 
@@ -50,7 +50,7 @@ public class LicenseBootstrapServiceTest {
 
         LicenseDocumentManager docManager = new LicenseDocumentManagerStub();
         BootstrapLicenseService service = new BootstrapLicenseService(docManager);
-        service.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
+        service.onApplicationEvent(new Initialized(this, Component.GATEWAY, "Test"));
         assertEquals(2, docManager.findAll().size());
     }
 }

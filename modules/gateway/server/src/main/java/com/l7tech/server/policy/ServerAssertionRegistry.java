@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseChangeEvent;
+import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.module.AssertionModuleFinder;
 import com.l7tech.server.policy.module.*;
 import com.l7tech.util.ExceptionUtils;
@@ -281,7 +282,13 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         };
 
         // create the custom assertion scanner
-        assertionsScanner = new ModularAssertionsScanner(modulesConfig, modularAssertionCallbacks);
+        assertionsScanner = new ModularAssertionsScanner(modulesConfig, modularAssertionCallbacks) {
+            @Override
+            protected void onScanComplete( boolean changesMade ) {
+                super.onScanComplete( changesMade );
+                publishEvent( new AssertionModuleScanCompletedEvent( ServerAssertionRegistry.this, changesMade ) );
+            }
+        };
 
         // do initial scan ones, ignoring the result, before starting the timer.
         scanModularAssertions();
@@ -327,6 +334,10 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         if (applicationEvent instanceof LicenseChangeEvent) {
             // License has changed.  Ensure that module rescan occurs.
             assertionsScanner.onLicenseChange();
+        }
+
+        if ( applicationEvent instanceof Starting ) {
+            runNeededScan();
         }
     }
 
