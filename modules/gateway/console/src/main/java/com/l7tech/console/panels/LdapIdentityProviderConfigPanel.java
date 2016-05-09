@@ -173,7 +173,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
             public String getValidationError() {
                 Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
                 if (!matcher.matches()) {
-                    return "Reconnect Timeout should be a number of milliseconds between 1 and 999999";
+                    return "Reconnect Timeout should be a number of milliseconds between 0 and 999999";
                 }
                 return null;
             }
