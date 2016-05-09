@@ -75,7 +75,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean providerTypeSelectable) {
         super(next);
         this.providerTypeSelectable = providerTypeSelectable;
-        millisecondPattern = Pattern.compile("\\d+");
+        millisecondPattern = Pattern.compile("\\d{6}");
         initResources();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -173,7 +173,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
             public String getValidationError() {
                 Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
                 if (!matcher.matches()) {
-                    return "Reconnect Timeout should be a number of milliseconds between 1 and " + Long.MAX_VALUE;
+                    return "Reconnect Timeout should be a number of milliseconds between 1 and 999999";
                 }
                 return null;
             }
