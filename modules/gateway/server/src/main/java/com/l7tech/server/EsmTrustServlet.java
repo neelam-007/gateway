@@ -74,7 +74,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
     private static final Map<String,String[]> RESOURCES = Collections.unmodifiableMap( new HashMap<String,String[]>(){
         {
             put( "/ssg/esmtrust/favicon.ico", new String[]{"/com/l7tech/server/resources/favicon.ico", "image/png"} );
-            put( "/ssg/esmtrust/layer7_logo_small_32x32.png", new String[]{"/com/l7tech/server/resources/layer7_logo_small_32x32.png", "image/png"} );
+            put( "/ssg/esmtrust/CA_Logo_Black_32x32.png", new String[]{"/com/l7tech/server/resources/CA_Logo_Black_32x32.png", "image/png"} );
             put( "/ssg/esmtrust/esmtrust.css", new String[]{ FORM_CSS, "text/css"} );
             put( "/ssg/esmtrust/esmtrust.js", new String[]{ FORM_JS, "text/javascript"} );
          }
