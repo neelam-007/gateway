@@ -171,9 +171,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
         validationRules.add(new InputValidator.ComponentValidationRule(reconnectTimeoutTextField) {
             @Override
             public String getValidationError() {
-                Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
-                if (!matcher.matches()) {
-                    return "Reconnect Timeout should be a number of milliseconds between 1 and 999999";
+                if (!useDefaultReconnectCheckbox.isSelected()) {
+                    Matcher matcher = millisecondPattern.matcher(reconnectTimeoutTextField.getText());
+                    if (!matcher.matches()) {
+                        return "Reconnect Timeout should be a number of milliseconds between 1 and 999999";
+                    }
                 }
                 return null;
             }
