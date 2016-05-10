@@ -11,8 +11,8 @@
 !ifndef J2RE_PATH
   !define J2RE_PATH "${J2RE_DIR}${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !endif
-!define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "SecureSpan XML VPN Client" ;Define your own software name here
+!define COMPANY "CA Technologies"
+!define MUI_PRODUCT "CA API Gateway XML VPN Client" ;Define your own software name here
 
 !ifndef MUI_VERSION
   ; Do not edit this version number
@@ -69,7 +69,7 @@
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Layer 7 SecureSpan XML VPN Client"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "CA API Gateway XML VPN Client"
 
   !define TEMP $R0
 
@@ -83,7 +83,7 @@
 ;Language Strings
 
   ;Description
-  LangString DESC_SecCopyUI ${LANG_ENGLISH} "Copy the SecureSpan XML VPN Client files to the application folder."
+  LangString DESC_SecCopyUI ${LANG_ENGLISH} "Copy the CA API Gateway XML VPN Client files to the application folder."
 
 ;--------------------------------
 ;Data
@@ -122,10 +122,11 @@ Function CheckPreviousInstalls
 FunctionEnd
 
 
-; Ensures that the "SecureSPan XML VPN Client" service is stopped, and unregistered 
+; Ensures that the "CA API Gateway XML VPN Client" service is stopped, and unregistered
 Function StopAndUnregisterService
 
   ; Make sure service is stopped and removed first
+  ; by the old name...
   ExecWait 'sc stop "SecureSpan XML VPN Client"' $0
   DetailPrint "Stopping service returned with code $0"
   Sleep  1000
@@ -133,17 +134,25 @@ Function StopAndUnregisterService
   ExecWait '"$INSTDIR\SSXVCService.exe" -uninstall "SecureSpan XML VPN Client"' $0
   DetailPrint "Removal of service returned with code $0"
 
+  ;... and by the new name, too
+  ExecWait 'sc stop "CA API Gateway XML VPN Client"' $0
+  DetailPrint "Stopping service returned with code $0"
+  Sleep  1000
+
+  ExecWait '"$INSTDIR\SSXVCService.exe" -uninstall "CA API Gateway XML VPN Client"' $0
+  DetailPrint "Removal of service returned with code $0"
+
 FunctionEnd
 
 ;--------------------------------
 ;Installer Sections
 
-Section "SecureSpan XML VPN Client" SecCopyUI
+Section "CA API Gateway XML VPN Client" SecCopyUI
   ; First, let's check that the product was not already installed.
   Call CheckPreviousInstalls
 
   ; Before copying anything, let's stop the Windows service (if any)
-  ExecWait 'sc stop "SecureSpan XML VPN Client"' $0
+  ExecWait 'sc stop "CA API Gateway XML VPN Client"' $0
   DetailPrint "stopped windows service SSXVC. return code $0"
   Sleep 1000
 
@@ -182,7 +191,7 @@ Section "SecureSpan XML VPN Client" SecCopyUI
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
     ; other shortcuts are installed based on whether the XML VPN Client is installed as a service or not.
     ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Text Mode.lnk" "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 3
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan XML VPN Client.lnk" "$INSTDIR\Uninstall.exe"
+    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall CA API Gateway XML VPN Client.lnk" "$INSTDIR\Uninstall.exe"
     SetShellVarContext current
 
   !insertmacro MUI_STARTMENU_WRITE_END
@@ -200,22 +209,22 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-  MessageBox MB_YESNO "Would you like the SecureSpan XML VPN Client to run as a Windows Service?" IDNO skipservice
+  MessageBox MB_YESNO "Would you like the CA API Gateway XML VPN Client to run as a Windows Service?" IDNO skipservice
     Call StopAndUnregisterService
-    DetailPrint "SecureSpan XML VPN Client service will run using home directory  $INSTDIR"
+    DetailPrint "CA API Gateway XML VPN Client service will run using home directory  $INSTDIR"
     ExecWait '"$INSTDIR\ssxvcconfig.bat" /initSvcConf' $0
     IntCmpU $0 0 initOk initFailed initFailed
   initOk:
     ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
-    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$0" -Djava.library.path="$INSTDIR" -server -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Xms128m -Xmx512m -Xss256k -start com.l7tech.client.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
+    ExecWait '"$INSTDIR\SSXVCService.exe" -install "CA API Gateway XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$0" -Djava.library.path="$INSTDIR" -server -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Xms128m -Xmx512m -Xss256k -start com.l7tech.client.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "CA API Gateway XML VPN Client"' $0
     IntCmpU $0 0 regservOk regservFailed regservFailed
   regservOk:
-    MessageBox MB_YESNO "Would you like to configure the SecureSpan XML VPN Client now?" IDNO endofserviceinstall
+    MessageBox MB_YESNO "Would you like to configure the CA API Gateway XML VPN Client now?" IDNO endofserviceinstall
         ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
         ExecWait '"$INSTDIR\jre\bin\javaw.exe" -Duser.home="$0" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config -hideMenus -quitLabel Continue' $0
         DetailPrint "XML VPN Client configuration returned with code $0"
-    MessageBox MB_YESNO "Would you like to start the SecureSpan XML VPN Client service now?" IDNO endofserviceinstall
-        ExecWait 'sc start "SecureSpan XML VPN Client"' $0
+    MessageBox MB_YESNO "Would you like to start the CA API Gateway XML VPN Client service now?" IDNO endofserviceinstall
+        ExecWait 'sc start "CA API Gateway XML VPN Client"' $0
         DetailPrint "XML VPN Client service startup returned with code $0"
     goto endofserviceinstall
 
@@ -239,8 +248,8 @@ Section "SecureSpan XML VPN Client" SecCopyUI
 
   endofserviceinstall:
     SetShellVarContext all
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start "CA API Gateway XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop "CA API Gateway XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
     ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\jre\bin\javaw.exe" '-Dfile.encoding=UTF-8 -Duser.home="$0" -jar Client.jar -config' "$INSTDIR\${MUI_PRODUCT}.exe"
     SetShellVarContext current
@@ -266,10 +275,10 @@ SectionEnd
 Section "Uninstall"
 
   ; Make sure service is stopped and removed first
-  ExecWait 'sc stop "SecureSpan XML VPN Client"' $0
+  ExecWait 'sc stop "CA API Gateway XML VPN Client"' $0
   DetailPrint "Stopping service returned with code $0"
   Sleep  1000
-  ExecWait '"$INSTDIR\SSXVCService.exe" -uninstall "SecureSpan XML VPN Client"' $0
+  ExecWait '"$INSTDIR\SSXVCService.exe" -uninstall "CA API GatewayXML VPN Client"' $0
   DetailPrint "Removal of service returned with code $0"
   Sleep  1000
 
