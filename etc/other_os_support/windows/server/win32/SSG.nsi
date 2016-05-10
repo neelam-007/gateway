@@ -10,8 +10,8 @@
   !define J2RE_DIR "X:\"
 !endif
 
-!define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "SecureSpan Gateway" ;Define your own software name here
+!define COMPANY "CA"
+!define MUI_PRODUCT "API Gateway" ;Define your own software name here
 
 !ifndef MUI_VERSION
   ; Do not edit this version number
