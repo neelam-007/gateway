@@ -20,13 +20,14 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.InvalidResultSetAccessException;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
 import java.io.*;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -78,150 +79,179 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
         try {
-            final Pair<String, List<Object>> pair;
-            if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
-                pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
-                        context, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), assertion.getResolveAsObjectList(), getAudit());
-            } else {
-                pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
-                        context, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), getAudit());
-            }
-            final String plainQuery = pair.left;
-            final List<Object> preparedStmtParams = pair.right;
-
-            final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
-            final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
-            final String schema = assertion.getSchema() != null ? ExpandVariables.process(assertion.getSchema(), variableMap, getAudit()) : null;
-            // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
-            final String queryTimeoutString = (assertion.getQueryTimeout() != null) ? assertion.getQueryTimeout() : "0";
-            final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
-            if (!ValidationUtils.isValidInteger(resolvedQueryTimeout, false, 0, Integer.MAX_VALUE)) {
-                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
-                return AssertionStatus.FAILED;
-            }
-            if (schema != null && schema.matches(".*\\s.*")) {
-                throw new PolicyAssertionException(assertion, "JDBC Query assertion schema must not contain spaces: " + schema);
-            }
-            final int queryTimeout = Integer.parseInt(resolvedQueryTimeout);
-
-            //validate that the connection exists.
-            final JdbcConnection connection;
-            try {
-                connection = jdbcConnectionManager.getJdbcConnection(connName);
-                if (connection == null) throw new FindException();
-            } catch (FindException e) {
-                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Could not find JDBC connection: " + connName);
-                return AssertionStatus.FAILED;
-            }
-            //Validate the if the schema is not null then the connection is able to use that schema.
-            final String driverClass = connection.getDriverClass();
-            if (schema != null && !(driverClass.contains("oracle") || driverClass.contains("sqlserver"))) {
-                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Schema value given but JDBC connection does not support it. Connection name: " + connName);
-                return AssertionStatus.FAILED;
-            }
-
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, schema, assertion.getMaxRecords(), queryTimeout, preparedStmtParams);
+            final Object result = performQuery(context);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {
                 logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, (String) result);
                 return AssertionStatus.FAILED;
+
             } else if (result instanceof Integer) {
-                int num = (Integer) result;
-                if (num == 0 && assertion.isAssertionFailureEnabled()) {
-                    logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
-                    return AssertionStatus.FAILED;
-                } else {
-                    context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
-                }
+                processInteger(context, result);
+
             } else if (result instanceof Map) {
-                int affectedRows = setContextVariables((Map<String, List<Object>>) result, context);
-                if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
-                    logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
-                    return AssertionStatus.FAILED;
-                }
-                if (assertion.isGenerateXmlResult()) {
-                    JdbcUtil.buildXmlResultString((Map<String, List<Object>>) result, xmlResult);
-                }
+                processMap(context, xmlResult, result);
+
             } else if (result instanceof List) {
-                List<SqlRowSet> listOfRowSet = (List<SqlRowSet>) result;
-                int affectedRows = 0;
-                if (listOfRowSet.size() == 1) {
-                    affectedRows = setContextVariables(listOfRowSet.get(0), context, JdbcUtil.EMPTY_STRING);
-                    if (assertion.isGenerateXmlResult()) {
-                        buildXmlResultString(0, listOfRowSet.get(0), xmlResult);
-                    }
-                } else {
-                    int resultCount = 1;
-                    for (SqlRowSet rowSet : listOfRowSet) {
-                        String resultCountVariable = JdbcQueryAssertion.VARIABLE_RESULTSET + (resultCount++);
-                        affectedRows += setContextVariables(rowSet, context, resultCountVariable);
-                        if (assertion.isGenerateXmlResult()) {
-                            buildXmlResultString(resultCount - 1, rowSet, xmlResult);
-                        }
-                    }
-                    if (resultCount > 1) {
-                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, affectedRows);
-                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_RESULTSET_COUNT, listOfRowSet.size());
-                    }
-                }
-                if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
-                    logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
-                    return AssertionStatus.FAILED;
-                }
+                processList(context, xmlResult, result);
+
             } else {
                 throw new IllegalStateException("Invalid returned result type, " + result.getClass().getSimpleName());
             }
 
-        } catch (SQLException e) {
-            logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
+        } catch (FindException | SchemaNotSupportedException | QueryTimeoutIsNotValidIntegerException
+                | NoQueryResultAssertionFailedException e) {
             return AssertionStatus.FAILED;
-        } catch (VariableNameSyntaxException e) {
+
+        } catch (SQLException | VariableNameSyntaxException e) {
             logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
             return AssertionStatus.FAILED;
         }
+
         if (assertion.isGenerateXmlResult()) {
             xmlResult.append(XML_RESULT_TAG_CLOSE);
-            context.setVariable(getVariablePrefix(context) + assertion.VARIABLE_XML_RESULT, xmlResult.toString());
+            context.setVariable(getVariablePrefix(context) + JdbcQueryAssertion.VARIABLE_XML_RESULT, xmlResult.toString());
         }
         return AssertionStatus.NONE;
+    }
+
+    private Object performQuery(PolicyEnforcementContext context)
+    throws QueryTimeoutIsNotValidIntegerException, PolicyAssertionException, SchemaNotSupportedException, FindException {
+
+        final Pair<String, List<Object>> pair;
+        if (context instanceof AuditLookupPolicyEnforcementContext
+                || context instanceof AuditSinkPolicyEnforcementContext) {
+            pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), context,
+                    assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(),
+                    assertion.getResolveAsObjectList(), getAudit());
+        } else {
+            pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), context,
+                    assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), getAudit());
+        }
+
+        final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
+        final String connName = getConnectionName(variableMap);
+        final String query = pair.left;
+        final String schema = getSchema(connName, variableMap);
+        int maxRecords = assertion.getMaxRecords();
+        int queryTimeout = getQueryTimeout(variableMap);
+        List<Object> params = pair.right;
+        return jdbcQueryingManager.performJdbcQuery(connName, query, schema, maxRecords, queryTimeout, params);
+    }
+
+    private void processInteger(PolicyEnforcementContext context, Object result)
+    throws NoQueryResultAssertionFailedException {
+        int num = (Integer) result;
+        if (num == 0 && assertion.isAssertionFailureEnabled()) {
+            logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+            throw new NoQueryResultAssertionFailedException();
+        } else {
+            context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
+        }
+    }
+
+    private void processMap(PolicyEnforcementContext context, StringBuilder xmlResult, Object result)
+    throws SQLException, NoQueryResultAssertionFailedException {
+        @SuppressWarnings("unchecked")
+        Map<String, List<Object>> map = (Map) result;
+
+        int affectedRows = setContextVariables(map, context);
+        if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
+            logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+            throw new NoQueryResultAssertionFailedException();
+        }
+        if (assertion.isGenerateXmlResult()) {
+            JdbcUtil.buildXmlResultString(map, xmlResult);
+        }
+    }
+
+    private void processList(PolicyEnforcementContext context, StringBuilder xmlResult, Object result)
+    throws SQLException, NoQueryResultAssertionFailedException {
+        @SuppressWarnings("unchecked")
+        final List<SqlRowSet> list = (List) result;
+
+        int affectedRows = 0;
+        int resultSetCount = 0;
+        final int totalResultSets = list.size();
+        BlobContainer blobs = new BlobContainer();
+        for (SqlRowSet rowSet : list) {
+            affectedRows += setContextVariables(rowSet, context, resultSetCount, totalResultSets, blobs);
+            if (assertion.isGenerateXmlResult()) {
+                buildXmlResultString(blobs, resultSetCount, rowSet, xmlResult);
+            }
+            resultSetCount++;
+        }
+
+        if (totalResultSets > 1) {
+            String variablePrefix = getVariablePrefix(context);
+            context.setVariable(variablePrefix + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, affectedRows);
+            context.setVariable(variablePrefix + "." + JdbcQueryAssertion.MULTIPLE_RESULTSET_COUNT, totalResultSets);
+        }
+
+        if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
+            logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+            throw new NoQueryResultAssertionFailedException();
+        }
+    }
+
+    private String getConnectionName(Map<String, Object> variableMap) {
+        return ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
+    }
+
+    private String getSchema(String connectionName, Map<String, Object> variableMap)
+    throws PolicyAssertionException, SchemaNotSupportedException, FindException {
+        String driverClass = getConnectionDriverClass(connectionName);
+        final String schema = assertion.getSchema() != null ? ExpandVariables.process(assertion.getSchema(), variableMap, getAudit()) : null;
+        if (schema != null && schema.matches(".*\\s.*")) {
+            throw new PolicyAssertionException(assertion, "JDBC Query assertion schema must not contain spaces: " + schema);
+        }
+        if (schema != null && !(driverClass.contains("oracle") || driverClass.contains("sqlserver"))) {
+            logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Schema value given but JDBC connection does not support it. Connection name: " + connectionName);
+            throw new SchemaNotSupportedException();
+        }
+        return schema;
+    }
+
+    private String getConnectionDriverClass(String connectionName) throws FindException {
+        try {
+            final JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
+            if (connection == null) {
+                throw new FindException();
+            }
+            return connection.getDriverClass();
+
+        } catch (FindException e) {
+            logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED,
+                    "Could not find JDBC connection: " + connectionName);
+            throw e;
+        }
+    }
+
+    private int getQueryTimeout(final Map<String, Object> variableMap) throws QueryTimeoutIsNotValidIntegerException {
+        final String queryTimeoutString = (assertion.getQueryTimeout() != null) ? assertion.getQueryTimeout() : "0";
+        final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
+        if (!ValidationUtils.isValidInteger(resolvedQueryTimeout, false, 0, Integer.MAX_VALUE)) {
+            logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
+            throw new QueryTimeoutIsNotValidIntegerException();
+        }
+        return Integer.parseInt(resolvedQueryTimeout);
     }
 
     /**
      * process stored procedure results
      */
-    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuilder xmlResult) throws SQLException {
-        int maxRecords = assertion.getMaxRecords();
+    void buildXmlResultString(BlobContainer blobs, int resultSetNumber, final SqlRowSet resultSet,
+                              final StringBuilder xmlResult)
+    throws SQLException {
         int row = 0;
         resultSet.first();
         final StringBuilder records = new StringBuilder();
-        while (resultSet.next() && row < maxRecords) {
+
+        while (resultSet.next() && row < assertion.getMaxRecords()) {
             records.append(JdbcUtil.XML_RESULT_ROW_OPEN);
             SqlRowSetMetaData metaData = resultSet.getMetaData();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                String columnName = metaData.getColumnName(i);
-                Object value = resultSet.getObject(columnName);
-                String colType = JdbcUtil.EMPTY_STRING;
-                if (value != null) {
-                    if (value instanceof byte[]) {
-                        colType = "type=\"java.lang.byte[]\"";
-                        value = getReadableHexString((byte[]) value);
-                    } else if (value instanceof Clob) {
-                        value = getClobStringValue((Clob) value);
-                    } else if (value instanceof Blob) {
-                        colType = "type=\"java.lang.byte[]\"";
-                        value = getReadableHexString(getBlobValue((Blob) value));
-                    } else {
-                        colType = "type=\"" + value.getClass().getName() + "\"";
-                    }
-                }
-                records.append(JdbcUtil.XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
-                if (value != null) {
-                    records.append(JdbcUtil.handleSpecialXmlChar(value));
-                } else {
-                    records.append(JdbcUtil.XML_NULL_VALUE);
-                }
-                records.append(JdbcUtil.XML_RESULT_COL_CLOSE);
+                processRow(blobs, resultSet, records, metaData.getColumnName(i), row);
             }
             records.append(JdbcUtil.XML_RESULT_ROW_CLOSE);
         }
@@ -234,10 +264,36 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         }
     }
 
+    private void processRow(BlobContainer blobs, SqlRowSet resultSet, StringBuilder records, String columnName, int row)
+    throws SQLException {
+        Object value = resultSet.getObject(columnName);
+        String colType = JdbcUtil.EMPTY_STRING;
+        if (value != null) {
+            if (value instanceof byte[]) {
+                colType = "type=\"java.lang.byte[]\"";
+                value = getReadableHexString((byte[]) value);
+            } else if (value instanceof Clob) {
+                value = new String(blobs.get(row).get(columnName)).intern();
+            } else if (value instanceof Blob) {
+                colType = "type=\"java.lang.byte[]\"";
+                value = getReadableHexString(blobs.get(row).get(columnName));
+            } else {
+                colType = "type=\"" + value.getClass().getName() + "\"";
+            }
+        }
+        records.append(JdbcUtil.XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
+        if (value != null) {
+            records.append(JdbcUtil.handleSpecialXmlChar(value));
+        } else {
+            records.append(JdbcUtil.XML_NULL_VALUE);
+        }
+        records.append(JdbcUtil.XML_RESULT_COL_CLOSE);
+    }
+
     /**
      * Converts byte array to readable hexidecimal string. Ie: "12 34 56 78 9A BC DE F0"
-     * @param byteArray
-     * @return
+     * @param byteArray the array to convert
+     * @return a string in readable hex
      */
     static String getReadableHexString(byte[] byteArray) {
         StringBuilder sb = new StringBuilder();
@@ -252,7 +308,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      */
     Map<String, String> getNewMapping(Map<String, List<Object>> resultSet) {
         Map<String, String> namingMap = assertion.getNamingMap();
-        Map<String, String> newNamingMap = new TreeMap<String, String>();
+        Map<String, String> newNamingMap = new TreeMap<>();
 
         // Get mappings of column names and context variable names
         for (String columnName : resultSet.keySet()) {
@@ -278,7 +334,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      */
     Map<String, String> getNewMapping(SqlRowSet resultSet) {
         Map<String, String> namingMap = assertion.getNamingMap();
-        Map<String, String> newNamingMap = new TreeMap<String, String>();
+        Map<String, String> newNamingMap = new TreeMap<>();
 
         // Get mappings of column names and context variable names
         SqlRowSetMetaData metaData = resultSet.getMetaData();
@@ -305,27 +361,23 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      * To make sure we don't break any calls to the old signature
      */
     int setContextVariables(Map<String, List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
-        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
-        final boolean saveResultsAsContextVariables = assertion.isSaveResultsAsContextVariables();
-
-        final Map<String, String> newNamingMap;
-        if(saveResultsAsContextVariables) {
-            newNamingMap = getNewMapping(resultSet);
-        } else {
-            newNamingMap = null;
+        if (context == null) {
+            throw new IllegalStateException("Policy Enforcement Context cannot be null.");
         }
 
-        // Assign the results to context variables
-        String varPrefix = getVariablePrefix(context);
+        final boolean saveResults = assertion.isSaveResultsAsContextVariables();
+        final Map<String, String> newNamingMap = saveResults ? getNewMapping(resultSet) : null;
+        final String varPrefix = getVariablePrefix(context);
         int row = 0;
         for (String columnName : resultSet.keySet()) {
-            if (logger.isLoggable(Level.FINER) && saveResultsAsContextVariables) {
-                logger.log(Level.FINER, varPrefix + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
+            String varName = saveResults ? varPrefix + "." + newNamingMap.get(columnName.toLowerCase()) : null;
+            if (saveResults && logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, varName + Arrays.toString(resultSet.get(columnName).toArray()));
             }
             if (resultSet.get(columnName) != null) {
                 row = resultSet.get(columnName).size();
-                if(saveResultsAsContextVariables){
-                    context.setVariable(varPrefix + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
+                if (saveResults){
+                    context.setVariable(varName, resultSet.get(columnName).toArray());
                 }
             } else {
                 logger.log(Level.FINER, columnName + " result list was null");
@@ -335,59 +387,106 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return row;
     }
 
-    int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context, final String resultSetPrefix) throws SQLException {
-        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
-        final boolean saveResultsAsContextVariables = assertion.isSaveResultsAsContextVariables();
-
-        final Map<String, String> newNamingMap;
-        final Map<String, List<Object>> results;
-        if(saveResultsAsContextVariables) {
-            newNamingMap = getNewMapping(resultSet);
-
-            // Get results
-            results = new HashMap<String, List<Object>>(newNamingMap.size());
-            for (String column : newNamingMap.keySet()) results.put(column, new ArrayList<Object>());
-        } else {
-            newNamingMap = null;
-            results = null;
+    int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context, int resultSetCount,
+                            int totalResultSets, BlobContainer blobs) throws SQLException {
+        if (context == null) {
+            throw new IllegalStateException("Policy Enforcement Context cannot be null.");
         }
+
+        final boolean saveResults = assertion.isSaveResultsAsContextVariables();
+        final Map<String, String> newNamingMap = getNewMapping(resultSet);
+        final Map<String, List<Object>> results = saveResults ? getResults(newNamingMap) : null;
 
         int maxRecords = assertion.getMaxRecords();
         int row = 0;
+        resultSet.first();
         while (resultSet.next() && row < maxRecords) {
-            if(saveResultsAsContextVariables) {
-                for (String columnName : newNamingMap.keySet()) {
-                    final List<Object> rows = results.get(columnName);
-                    final Object value = resultSet.getObject(columnName);
-                    //TODO - what other types may not be directly applicable as-is?
-                    if (value instanceof Clob) {
-                        rows.add(getClobStringValue((Clob) value));
-                    } else if (value instanceof Blob) {
-                        rows.add(getBlobValue((Blob) value));
-                    } else {
-                        rows.add(value);
-                    }
-                }
+            populateBlobs(row, resultSet, newNamingMap, blobs);
+            if (saveResults) {
+                populateResults(row, resultSet, newNamingMap, results, blobs);
             }
             row++;
         }
 
         // Assign the results to context variables
         String varPrefix = getVariablePrefix(context);
-        if(saveResultsAsContextVariables) {
-            for (String column : results.keySet()) {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()) + results.get(column).toArray());
-                }
-                context.setVariable(varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()), results.get(column).toArray());
-            }
+        final String resultSetPrefix = getResultVariablePrefix(resultSetCount, totalResultSets);
+        if (saveResults) {
+            saveResults(context, newNamingMap, results, varPrefix, resultSetPrefix);
         }
         context.setVariable(varPrefix + resultSetPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
 
         return row;
     }
 
+    private void saveResults(PolicyEnforcementContext context, Map<String, String> newNamingMap,
+                             Map<String, List<Object>> results, String varPrefix, String resultSetPrefix) {
+        for (String column : results.keySet()) {
+            String varName = varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase());
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, varName + Arrays.toString(results.get(column).toArray()));
+            }
+            context.setVariable(varName, results.get(column).toArray());
+        }
+    }
+
+    private void populateBlobs(int rowNumber, SqlRowSet resultSet, Map<String, String> newNamingMap,
+                               BlobContainer blobs)
+            throws SQLException {
+        for (String oldColumnName : newNamingMap.keySet()) {
+            final Object value = resultSet.getObject(oldColumnName);
+            final String newColumnName = newNamingMap.get(oldColumnName);
+            // TODO - what other types may not be directly applicable as-is?
+            if (value instanceof Clob) {
+                String clob = getClobStringValue((Clob) value);
+                if (!blobs.containsKey(rowNumber)) {
+                    blobs.put(rowNumber, new HashMap<String, byte[]>());
+                }
+                blobs.get(rowNumber).put(newColumnName, clob.getBytes());
+            } else if (value instanceof Blob) {
+                byte[] blob = getBlobValue((Blob) value);
+                if (!blobs.containsKey(rowNumber)) {
+                    blobs.put(rowNumber, new HashMap<String, byte[]>());
+                }
+                blobs.get(rowNumber).put(newColumnName, blob);
+            }
+        }
+    }
+
+    private void populateResults(int rowNumber, SqlRowSet resultSet, Map<String, String> newNamingMap,
+                                       Map<String, List<Object>> results, BlobContainer blobs)
+    throws SQLException {
+        for (String columnName : newNamingMap.keySet()) {
+            final List<Object> rows = results.get(columnName);
+            final Object value = resultSet.getObject(columnName);
+            // TODO - what other types may not be directly applicable as-is?
+            if (value instanceof Clob) {
+                rows.add(new String(blobs.get(rowNumber).get(columnName)).intern());
+            } else if (value instanceof Blob) {
+                rows.add(blobs.get(rowNumber).get(columnName));
+            } else {
+                rows.add(value);
+            }
+        }
+    }
+
+    private Map<String, List<Object>> getResults(Map<String, String> newNamingMap) {
+        Map<String, List<Object>> results;
+        results = new HashMap<>(newNamingMap.size());
+        for (String column : newNamingMap.keySet()) {
+            results.put(column, new ArrayList<>());
+        }
+        return results;
+    }
+
     //- PRIVATE
+
+    private String getResultVariablePrefix(int i, int size) {
+        if (size == 1) {
+            return JdbcUtil.EMPTY_STRING;
+        }
+        return JdbcQueryAssertion.VARIABLE_RESULTSET + (i+1);
+    }
 
     private String getVariablePrefix(PolicyEnforcementContext context) {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
@@ -484,4 +583,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         return vc;
     }
+
+    private static class QueryTimeoutIsNotValidIntegerException extends Exception {}
+    private static class SchemaNotSupportedException extends Exception {}
+    private static class NoQueryResultAssertionFailedException extends Exception {}
+
+    static class BlobContainer extends HashMap<Integer, Map<String, byte[]>> {
+
+    }
+
 }
