@@ -38,11 +38,11 @@ public class Gui {
     // that uses it
     private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
 
-    public static final String APP_NAME = "SecureSpan " + Constants.APP_NAME;
+    public static final String APP_NAME = "CA API Gateway " + Constants.APP_NAME;
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
-    private static final String SYSTRAY_ICON = "com/l7tech/proxy/resources/logosm.gif";
+    private static final String SYSTRAY_ICON = "com/l7tech/proxy/resources/CA_Logo_Black_2014_64x64.png";
 
     private static Gui instance;
     private boolean started = false;

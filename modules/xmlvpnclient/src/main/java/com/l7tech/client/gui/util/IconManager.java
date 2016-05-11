@@ -151,7 +151,7 @@ public class IconManager {
 
     public static Image getAppImage() {
         if (iconAppIcon == null)
-            iconAppIcon = loadImage(Gui.RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+            iconAppIcon = loadImage(Gui.RESOURCE_PATH + "/CA_Logo_Black_2014_32x32.png");
         return iconAppIcon;
     }
 

@@ -38,7 +38,7 @@ class SsgNoun extends Noun {
         this.ssg = inssg;
         properties = new Words(Arrays.asList(new NounProperty[] {
                 new NounProperty(ssg, "label", "LocalEndpoint", "Proxy URI"),
-                new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecureSpan Gateway"),
+                new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of CA API Gateway"),
                 new NounProperty(ssg, "username", "Username", "Username of account on this Gateway"),
                 new PasswordProperty(),
                 new NounProperty(ssg, "chainCredentials", "ChainCredentialsFromClient", "Chain credentials from client (HTTP Basic)"),
@@ -286,7 +286,7 @@ class SsgNoun extends Noun {
     }
 
     private static final String OVERVIEW_HELP_TEXT =
-            "The Gateway Account is at the heart of the SecureSpan "+ Constants.APP_NAME+".  Each \n" +
+            "The Gateway Account is at the heart of the CA API Gateway "+ Constants.APP_NAME+".  Each \n" +
                     "Gateway Account holds a set of "+ Constants.APP_NAME+" credentials for a target Gateway.";
 
     private static final String EXAMPLE_COMMANDS = "Example Commands: show gateways\n" +

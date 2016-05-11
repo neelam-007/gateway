@@ -90,7 +90,7 @@ class SsgNetworkPanel extends JPanel {
     }
 
     private String serverType() {
-        return ssg.isGeneric() ? "Web service" : "SecureSpan Gateway";
+        return ssg.isGeneric() ? "Web service" : "CA API Gateway";
     }
 
     private void initialize() {
@@ -101,7 +101,7 @@ class SsgNetworkPanel extends JPanel {
 
         // Endpoint panel
 
-        JLabel splain01 = new JLabel("<HTML>The SecureSpan "+ Constants.APP_NAME +" listens for incoming messages at the " +
+        JLabel splain01 = new JLabel("<HTML>The CA API Gateway "+ Constants.APP_NAME +" listens for incoming messages at the " +
                                                    "following<br/>local proxy URL, then routes the messages to the " +
                                                    serverType() + ':');
         //x,y,rows,col,anchor,fill,sizex,sizey,minsize,prefsize,maxsize
@@ -214,7 +214,7 @@ class SsgNetworkPanel extends JPanel {
             }
         }));
 
-        JLabel splain02 = new JLabel("<HTML>The SecureSpan "+ Constants.APP_NAME +" offers proxied WSDL lookups at the " +
+        JLabel splain02 = new JLabel("<HTML>The CA API Gateway "+ Constants.APP_NAME +" offers proxied WSDL lookups at the " +
                                                    "following<br/>local WSDL URL:");
         wsdlUrlLabelPanel.add(splain02, gc);
 
@@ -280,7 +280,7 @@ class SsgNetworkPanel extends JPanel {
         if (ssg.isGeneric()) {
             JLabel[] labels = new JLabel[]{configureIpAddressesLabel, configureNonstandardPortsLabel};
             for (JLabel lab : labels)
-                lab.setText(lab.getText().replaceAll("SecureSpan Gateway", "Web service"));
+                lab.setText(lab.getText().replaceAll("CA API Gateway", "Web service"));
         }
 
 

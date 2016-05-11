@@ -400,13 +400,13 @@ public class RequestHandler extends AbstractHandler {
 
         response.addHeader(MimeUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
-        o.println("<html><head><title>SecureSpan "+ Constants.APP_NAME+"</title></head>" +
-          "<body><h2>SecureSpan "+ Constants.APP_NAME+"</h2>");
+        o.println("<html><head><title>CA API Gateway "+ Constants.APP_NAME+"</title></head>" +
+          "<body><h2>CA API Gateway "+ Constants.APP_NAME+"</h2>");
         List<Ssg> ssgs = ssgFinder.getSsgList();
         if (ssgs.isEmpty()) {
-            o.println("<p>There are currently no Gateways registered with SecureSpan "+ Constants.APP_NAME+".");
+            o.println("<p>There are currently no Gateways registered with CA API Gateway "+ Constants.APP_NAME+".");
         } else {
-            o.println("<p>SecureSpan "+ Constants.APP_NAME+" is ready to proxy services provided by the following Gateways:</p><ul>");
+            o.println("<p>CA API Gateway "+ Constants.APP_NAME+" is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = request.getLocalPort();
             for (Ssg ssg : ssgs) {
                 if (ssg.isWsdlProxySupported()) {

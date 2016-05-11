@@ -60,7 +60,7 @@ public final class Main extends com.l7tech.client.Main {
         
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/cliLogging.properties");
         JceProvider.init();
-        log.info("Starting SecureSpan "+ Constants.APP_NAME +" GUI Configuration Editor; " + BuildInfo.getLongBuildString());
+        log.info("Starting CA API Gateway "+ Constants.APP_NAME +" GUI Configuration Editor; " + BuildInfo.getLongBuildString());
 
         if (hideMenus && quitLabel == null) 
             quitLabel = "Quit";
@@ -95,7 +95,7 @@ public final class Main extends com.l7tech.client.Main {
 
     private static void startGuiBridge() {
         initLogging();
-        log.info("Starting SecureSpan "+ Constants.APP_NAME +" in GUI mode; " + BuildInfo.getLongBuildString());
+        log.info("Starting CA API Gateway "+ Constants.APP_NAME +" in GUI mode; " + BuildInfo.getLongBuildString());
 
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
         final ClientProxy clientProxy = createClientProxy(ssgManager);
@@ -116,7 +116,7 @@ public final class Main extends com.l7tech.client.Main {
             // Friendlier error message for starting multiple instances
             if (e instanceof BindException || e instanceof SsgManagerImpl.ConfigurationAlreadyLockedException ||
               (e instanceof MultiException && ((MultiException)e).getThrowable(0) instanceof BindException)) {
-                message = "The SecureSpan "+ Constants.APP_NAME +" is already running.  \nPlease shut down the existing " +
+                message = "The CA API Gateway "+ Constants.APP_NAME +" is already running.  \nPlease shut down the existing " +
                   Constants.APP_NAME + " and try again.";
             }
 

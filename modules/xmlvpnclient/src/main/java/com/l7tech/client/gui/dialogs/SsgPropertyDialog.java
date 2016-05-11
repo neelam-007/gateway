@@ -965,7 +965,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** @return either "SecureSpan Gateway" or "Web service" depending on whether Ssg is generic. */
     private String serverType() {
-        return ssg.isGeneric() ? "Web service" : "SecureSpan Gateway";
+        return ssg.isGeneric() ? "Web service" : "CA API Gateway";
     }
 
     /**

@@ -52,7 +52,7 @@ public class Main {
 
     public static void main(String[] args) {
         initLogging("com/l7tech/proxy/resources/cliLogging.properties");
-        System.out.println("SecureSpan "+ Constants.APP_NAME+" Configuration Editor");
+        System.out.println("CA API Gateway "+ Constants.APP_NAME+" Configuration Editor");
         JceProvider.init();
 
         if (args.length < 1 || cmdMatch(args[0], "i")) {

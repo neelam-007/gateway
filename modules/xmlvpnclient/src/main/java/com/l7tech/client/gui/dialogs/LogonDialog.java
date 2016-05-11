@@ -36,7 +36,7 @@ public class LogonDialog extends JDialog {
     private String CMD_LOGIN = "cmd.login";
 
     private static final String DEFAULT_DIALOG_TITLE = "Log On to Gateway";
-    private static final String DEFAULT_SSG_LABEL_TEXT = "for the SecureSpan Gateway:";
+    private static final String DEFAULT_SSG_LABEL_TEXT = "for the CA API Gateway:";
 
     private JButton loginButton;
     private JButton cancelButton;

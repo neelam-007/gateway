@@ -260,7 +260,7 @@
               <grid row="6" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Configure SecureSpan Gateway IP addresses below:"/>
+              <text value="Configure CA API Gateway IP addresses below:"/>
               <visible value="true"/>
             </properties>
           </component>
@@ -278,7 +278,7 @@
               <grid row="0" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Configure standard or non-standard ports for the SecureSpan Gateway below:"/>
+              <text value="Configure standard or non-standard ports for the CA API Gateway below:"/>
             </properties>
           </component>
           <component id="968d6" class="javax.swing.JCheckBox" binding="gzipCheckBox">
