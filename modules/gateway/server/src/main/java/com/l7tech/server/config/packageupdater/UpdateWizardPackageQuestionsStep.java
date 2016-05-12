@@ -32,7 +32,7 @@ import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
 public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     private static final Logger logger = Logger.getLogger(UpdateWizardPackageQuestionsStep.class.getName());
 
-    private static final String TITLE = "SecureSpan Gateway Appliance Update Wizard - Locate Update Packages";
+    private static final String TITLE = "CA API Gateway Appliance Update Wizard - Locate Update Packages";
     private static final String UPDATE_PACKAGES_BASE_DIR = "updatepackages";
 
     PackageUpdateConfigBean configBean;
@@ -224,7 +224,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                  //checksum the real file and compare with the checksum in the jar
                 boolean checkSumsMatch = compareCheckSums(checkSumBytes, originalFileBytes);
                 if (!checkSumsMatch)
-                    throw new UpdateWizardException(MessageFormat.format("File {0} has been changed since being created by Layer 7 Technologies. This is not a valid SecureSpan Update package.", update));            
+                    throw new UpdateWizardException(MessageFormat.format("File {0} has been changed since being created by CA Technologies. This is not a valid CA API Gateway Update package.", update));
             } catch (IOException e) {
                 throw new UpdateWizardException(MessageFormat.format("Error while reading the checksum for file {0}. [{1}].", update, e.getMessage()));
             } finally {
@@ -275,19 +275,19 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             });
 
             if (updateFiles == null || updateFiles.length == 0)
-                throw new UpdateWizardException("No SecureSpan Update Packages could be found at the path specified \"" + updatePath.getAbsolutePath() + "\".");
+                throw new UpdateWizardException("No CA API Gateway Update Packages could be found at the path specified \"" + updatePath.getAbsolutePath() + "\".");
 
 
             if (updateFiles.length > 1) {
                 for (File updateFile : updateFiles)
                     getAvailableUpdatePackages().add(updateFile);
 
-                throw new UpdateWizardException(MessageFormat.format("Multiple SecureSpan Update Packages were found in \"{0}\". Please specify the package you wish to install.", updatePath.getAbsolutePath()));
+                throw new UpdateWizardException(MessageFormat.format("Multiple CA API Gateway Update Packages were found in \"{0}\". Please specify the package you wish to install.", updatePath.getAbsolutePath()));
             }
             updatePath = updateFiles[0];
         } else {
             if (!updatePath.getName().endsWith(PackageUpdateConfigBean.PACKAGE_UPDATE_EXTENSION))
-                 throw new UpdateWizardException("Could not find a valid SecureSpan Update package using: \"" + updatePath.getAbsolutePath() + "\"");
+                 throw new UpdateWizardException("Could not find a valid CA API Gateway Update package using: \"" + updatePath.getAbsolutePath() + "\"");
         }
         return getUpdateInfo(updatePath);
     }
@@ -318,18 +318,18 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     private void checkStructure(File zipOutputDir) throws UpdateWizardException {
         //now check to see if things we expect are there.
         if (!new File(zipOutputDir, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME).exists()) {
-            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
+            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid CA API Gateway update package.", PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
             throw new UpdateWizardException(msg);
         }
 
         if (!new File(zipOutputDir, PackageUpdateConfigBean.UPDATE_FILE_LIST).exists()) {
-            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.UPDATE_FILE_LIST);
+            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid CA API Gateway update package.", PackageUpdateConfigBean.UPDATE_FILE_LIST);
             throw new UpdateWizardException(msg);
         }
 
         File descriptionFile = new File(zipOutputDir, PackageUpdateConfigBean.DESCRIPTION_FILENAME);
         if (!descriptionFile.exists()) {
-            logger.warning(MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.DESCRIPTION_FILENAME));
+            logger.warning(MessageFormat.format("Could not find a {0} in the update package. This is not a valid CA API Gateway update package.", PackageUpdateConfigBean.DESCRIPTION_FILENAME));
         }
     }
 
@@ -351,7 +351,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
         ZipFile zipFile = new ZipFile(updateFile);
         if (zipFile.size() == 0) {
-            logger.warning(MessageFormat.format("Update package {0} is empty. This is not a valid SecureSpan update package.",
+            logger.warning(MessageFormat.format("Update package {0} is empty. This is not a valid CA API Gateway update package.",
                                                 updateFile.getAbsolutePath()));
             return null;
         }
@@ -412,7 +412,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             byte[] buf = IOUtils.slurpStream(bis);
             description = new String(buf);
         } catch (FileNotFoundException e) {
-            String message = "No description file found. This is not a valid SecureSpan Update package.";
+            String message = "No description file found. This is not a valid CA API Gateway Update package.";
             logger.warning(message);
         } catch (IOException e) {
             String message = MessageFormat.format("Error while reading description file. Cannot proceed ({0}).", e.getMessage());

@@ -17,7 +17,7 @@ import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
  */
 public class UpdateWizardIntroStep extends BaseConsoleStep {
     private static final Logger logger = Logger.getLogger(UpdateWizardIntroStep.class.getName());
-    private static final String TITLE = "SecureSpan Gateway Appliance Update Wizard";
+    private static final String TITLE = "CA API Gateway Appliance Update Wizard";
 
     public UpdateWizardIntroStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -32,7 +32,7 @@ public class UpdateWizardIntroStep extends BaseConsoleStep {
     @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
          printText(new String[] {
-                "This wizard will install selected updates to the SecureSpan Gateway Appliance (SSG)" + EOL,
+                "This wizard will install selected updates to the CA API Gateway Appliance (SSG)" + EOL,
                 "Press [Enter] to continue" + EOL,
         });
 
