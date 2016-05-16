@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
@@ -111,7 +112,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                             // add signature confirmations
                             WSSecurityProcessorUtils.addSignatureConfirmations(message, getAudit());
                             wssDecorator.decorateMessage(message, decoration);
-                        } catch ( DecoratorException de ) {
+                        } catch ( DecoratorException | UnsupportedKeyTypeException de ) {
                             logAndAudit( AssertionMessages.WSSECURITY_ERROR, new String[] { assertion.getTargetName(), ExceptionUtils.getMessage( de ) }, ExceptionUtils.getDebugException(de) );
                             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                         }
