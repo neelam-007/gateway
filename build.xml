@@ -643,7 +643,11 @@
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
 		<modules target="publish"/>
     </target>
-
+	
+	<target name="publish-only-main-modules" depends="package.readversion, build-module-list" unless="package.jars.notrequired">
+		<modules target="publish-only"/>
+	</target>
+	
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
         <modules target="publish-all" buildpathref="module-build-all-path"/>
     </target>
