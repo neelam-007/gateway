@@ -73,10 +73,10 @@ public final class Main extends com.l7tech.client.Main {
         try {
             ssgManager.lockConfiguration();
         } catch (SsgManagerImpl.ConfigurationAlreadyLockedException e) {
-            Gui.errorMessage("Unable to start " + Constants.APP_NAME + " GUI Configuration Editor: another instance may already be running: " + ExceptionUtils.getMessage(e));
+            Gui.errorMessage("Unable to start CA API Gateway " + Constants.APP_NAME + " GUI Configuration Editor: another instance may already be running: " + ExceptionUtils.getMessage(e));
             System.exit(2);
         } catch (IOException e) {
-            Gui.errorMessage("Unable to Start", "Unable to start " + Constants.APP_NAME + " GUI Configuration Editor", ExceptionUtils.getMessage(e), e);
+            Gui.errorMessage("Unable to Start", "Unable to start CA API Gateway " + Constants.APP_NAME + " GUI Configuration Editor", ExceptionUtils.getMessage(e), e);
             System.exit(2);
         }                
 
