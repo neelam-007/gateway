@@ -2,11 +2,11 @@
 <optionSet id="software" parentName="GatewayBaseConfiguration.xml">
     <description>
 ----------------------------------------------------------------------
-SecureSpan Gateway Configuration
+CA API Gateway Configuration
 ----------------------------------------------------------------------</description>
     <prompt>
 ----------------------------------------------------------------------
-Configure SecureSpan Gateway
+Configure CA API Gateway
 ----------------------------------------------------------------------
 At any time type "quit" to quit.</prompt>
 
@@ -16,9 +16,9 @@ At any time type "quit" to quit.</prompt>
     <optionGroup id="java">
         <description>Java VM</description>
         <prompt>
-----------------------
-Set Up the SSG Java VM
-----------------------
+---------------------------------
+Set Up the CA API Gateway Java VM
+---------------------------------
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
@@ -27,9 +27,9 @@ This step lets you configure options for the Java Virtual Machine.</prompt>
     <optionGroup id="admin-listener" required="false">
         <description>Administrative HTTPS Listener</description>
         <prompt>
---------------------------------------------
-Set Up the SSG Administrative HTTPS Listener
---------------------------------------------
+-------------------------------------------------------
+Set Up the CA API Gateway Administrative HTTPS Listener
+-------------------------------------------------------
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 

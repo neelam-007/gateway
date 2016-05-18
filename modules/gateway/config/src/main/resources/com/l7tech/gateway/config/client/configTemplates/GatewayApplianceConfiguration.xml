@@ -2,24 +2,24 @@
 <optionSet id="appliance" parentName="GatewayBaseConfiguration.xml">
     <description>
 ----------------------------------------------------------------------
-SecureSpan Gateway Configuration
+CA API Gateway Configuration
 ----------------------------------------------------------------------</description>
     <prompt>
 ----------------------------------------------------------------------
-Configure SecureSpan Gateway
+Configure CA API Gateway
 ----------------------------------------------------------------------
 At any time type "quit" to quit.</prompt>
 
     <optionGroup id="node">
         <description>Node Configuration</description>
         <prompt>
--------------------
-Set Up the SSG Node
--------------------
+------------------------------
+Set Up the CA API Gateway Node
+------------------------------
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
-This step lets you set up the SSG node.</prompt>
+This step lets you set up the CA API Gateway node.</prompt>
     </optionGroup>
     <!--
       Options for node
