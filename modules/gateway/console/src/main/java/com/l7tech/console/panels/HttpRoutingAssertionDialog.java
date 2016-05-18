@@ -1016,8 +1016,14 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setHttpMethod( method );
             assertion.setHttpMethodAsString( null );
         } else if ( methodObj instanceof String ) {
-            assertion.setHttpMethod( HttpMethod.OTHER );
-            assertion.setHttpMethodAsString( (String)methodObj );
+            try {
+                HttpMethod method = HttpMethod.valueOf(methodObj.toString().toUpperCase());
+                assertion.setHttpMethod( method );
+                assertion.setHttpMethodAsString( null );
+            } catch (IllegalArgumentException e) {
+                assertion.setHttpMethod( HttpMethod.OTHER );
+                assertion.setHttpMethodAsString( (String)methodObj );
+            }
         } else {
             assertion.setHttpMethod( null );
             assertion.setHttpMethodAsString( null );
