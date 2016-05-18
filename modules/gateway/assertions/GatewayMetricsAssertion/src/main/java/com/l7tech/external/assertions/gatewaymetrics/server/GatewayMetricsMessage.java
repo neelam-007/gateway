@@ -179,6 +179,10 @@ public class GatewayMetricsMessage {
         Element gatewayStatusElement = this.addElement("gatewayStatus", rootElement);
 
         for (ClusterNodeInfo currentNode : clusterNodeInfos) {
+            // If a specific node is requested for, only add data for that node
+            if(null != clusterNodeId && !clusterNodeId.equals(currentNode.getId())) {
+                continue;
+            }
             clusterNodes.put(currentNode.getId(), currentNode.getName());
 
             GatewayStatus gatewayStatus = new GatewayStatus(currentNode);
@@ -210,6 +214,10 @@ public class GatewayMetricsMessage {
         Element serviceStatsElement = this.addElement("serviceStatistics", rootElement);
 
         for (ServiceUsage currentServiceUsage : serviceUsages) {
+            // If a specific node is requested for, only add data for that node
+            if(null != clusterNodeId && !clusterNodeId.equals(currentServiceUsage.getNodeid())) {
+                continue;
+            }
             PublishedService publishedService = serviceManager.findByPrimaryKey(currentServiceUsage.getServiceid());
             StatisticsRecord statsRecord = new StatisticsRecord(
                 publishedService.getName(),
