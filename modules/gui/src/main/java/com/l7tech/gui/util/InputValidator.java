@@ -1,7 +1,6 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.gui.NumberField;
-import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +27,6 @@ import java.util.List;
 public class InputValidator implements FocusListener {
     public static final String MUST_BE_NUMERIC = "The {0} field must be a number between {1,number,#} and {2,number,#}.";
     public static final String MUST_BE_INTEGER = "The {0} field must be an integer between {1,number,#} and {2,number,#}.";
-    public static final int DIALOG_TEXT_WRAP_LENGTH = 80;
     private final String dialogTitle;
     private final Component dialogParent;
     private final List<ValidationRule> rules = new ArrayList<ValidationRule>();
@@ -709,7 +707,7 @@ public class InputValidator implements FocusListener {
         if (err != null) {
             if (componentToMakeVisible != null)
                 makeComponentVisible(componentToMakeVisible);
-            JOptionPane.showMessageDialog(dialogParent, WordUtils.wrap(err, DIALOG_TEXT_WRAP_LENGTH), dialogTitle, JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(dialogParent, err, dialogTitle, JOptionPane.ERROR_MESSAGE);
             return false;
         }
         return true;

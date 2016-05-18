@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.swagger.server;
 
+import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.external.assertions.swagger.SwaggerAdmin;
 import com.l7tech.external.assertions.swagger.SwaggerApiMetadata;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -10,6 +11,7 @@ import com.l7tech.util.ExceptionUtils;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.AuthorizationValue;
 import io.swagger.parser.SwaggerParser;
+import org.apache.commons.lang.WordUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -41,8 +43,9 @@ public class SwaggerAdminImpl extends AsyncAdminMethodsImpl implements SwaggerAd
         try {
             swaggerDocument = serviceAdmin.resolveUrlTarget(url, CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE);
         } catch (IOException e) {
-            throw new InvalidSwaggerDocumentException("Could not download Swagger document: " +
-                    ExceptionUtils.getMessage(e));
+            throw new InvalidSwaggerDocumentException(
+                    WordUtils.wrap("Could not download Swagger document: " + ExceptionUtils.getMessage(e),
+                                    DeleteEntityNodeAction.LINE_CHAR_LIMIT));
         }
 
         Swagger model = parseSwaggerDocument(swaggerDocument);
