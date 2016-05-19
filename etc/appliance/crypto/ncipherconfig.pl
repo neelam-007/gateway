@@ -392,7 +392,7 @@ sub createNewWorld() {
 About to create a new security world.  Please ensure that:
 
 * You have at least three blank cards for the card reader
-* The card reader is connected to the nCipher HSM on the back of this Gateway appliance
+* The card reader is connected to the Thales nShield HSM on the back of this Gateway appliance
 * The module switch on the back of the HSM is in the "I" position (pre-initialization mode)
 
 EOM
@@ -559,7 +559,7 @@ sub chooseKeystoreId(@) {
     print <<'EOM';
 
 More than one keystore ID is present on the local node.  Please choose a keystore ID for the Gateway
-to use as its "nCipher HSM" keystore:
+to use as its "Thales nShield HSM" keystore:
 
 EOM
 
@@ -606,9 +606,9 @@ sub programExistingWorld() {
 
 About to program the module into a security world already present in the database.  Please ensure that:
 
-* The Gateway is configured with a database that already contains an nCipher security world
+* The Gateway is configured with a database that already contains an Thales nShield security world
 * You have at least two cards from the world's administrator cardset, along with their passphrases
-* The card reader is connected to the nCipher HSM on the back of this Gateway appliance
+* The card reader is connected to the Thales nShield HSM on the back of this Gateway appliance
 * The module switch on the back of the HSM is in the "I" position (pre-initialization mode)
 
 EOM
@@ -616,7 +616,7 @@ EOM
     if (pressEnterOrCancel()) {
 
         if (!hasDatabaseWorld()) {
-            die "The current Gateway database does not appear to contain an nCipher security world.\n";
+            die "The current Gateway database does not appear to contain an Thales nShield security world.\n";
         }
 
         if (hasLocalWorld()) {
@@ -723,11 +723,11 @@ EOM
             print "\nThe database already contains a copy of the current world file.\n";
         }
 
-        print "\nNext time it starts up configured to use the nCipher HSM, the Gateway will sync any keystore objects\n",
+        print "\nNext time it starts up configured to use the Thales nShield HSM, the Gateway will sync any keystore objects\n",
               "that use the application name \"key_jcesp\" with a matching keystore ID between the local node and the database.\n\n";
 
         if ($copiedToDb) {
-            print "IMPORTANT: World was copied to DB for first time -- please ensure this node has been started at least once\nusing the nCipher HSM before configuring any other cluster nodes to do so.\n\n";
+            print "IMPORTANT: World was copied to DB for first time -- please ensure this node has been started at least once\nusing the Thales nShield HSM before configuring any other cluster nodes to do so.\n\n";
         }
 
         pressEnter();
@@ -739,8 +739,8 @@ EOM
 sub manageHsmMenu() {
 
     my $msg = -f NCIPHERDEFS
-        ? "The Gateway is currently configured to use the nCipher HSM."
-        : "The Gateway is currently NOT configured to use the nCipher HSM.";
+        ? "The Gateway is currently configured to use the Thales nShield HSM."
+        : "The Gateway is currently NOT configured to use the Thales nShield HSM.";
 
     print "\n$msg\n";
 
@@ -780,12 +780,12 @@ sub offerToStartGateway() {
 
 sub doEnableNcipher() {
     if (-f NCIPHERDEFS) {
-        print "\nThe Gateway is already configured to use the nCipher HSM.\n\n";
+        print "\nThe Gateway is already configured to use the Tahles nShield HSM.\n\n";
         return;
     }
 
     if (!hasLocalWorld()) {
-        print "\nThere is no nCipher security world present on this local node.\n";
+        print "\nThere is no Thales nShield security world present on this local node.\n";
         print "\nPlease either create a new world or program an existing world first.\n";
         return;
     }
@@ -807,7 +807,7 @@ sub doEnableNcipher() {
         print $fh NCIPHERDEFS_CONTENTS;
         undef $fh;
     };
-    print "\nThe Gateway is now configured to use the nCipher HSM.\n\n";
+    print "\nThe Gateway is now configured to use the Thales nShield HSM.\n\n";
     offerToStartGateway();
 }
 
@@ -823,7 +823,7 @@ sub doGenerateNewKmp() {
 
 sub doDisableNcipher() {
     if (!-f NCIPHERDEFS) {
-        print "\nThe Gateway is not currently using the nCipher HSM.\n\n";
+        print "\nThe Gateway is not currently using the Thales nShield HSM.\n\n";
         return;
     }
 
@@ -833,7 +833,7 @@ sub doDisableNcipher() {
 
     unlink(NCIPHERDEFS) == 1
         or die "Unable to delete " . NCIPHERDEFS . ": $!\n";
-    print "\nThe Gateway is no longer configured to use the nCipher HSM.\n\nNote: master passphrase restored to default value -- use main menu to change it.\n\n";
+    print "\nThe Gateway is no longer configured to use the Thales nShield HSM.\n\nNote: master passphrase restored to default value -- use main menu to change it.\n\n";
     offerToStartGateway();
 }
 
@@ -890,7 +890,7 @@ MAIN: eval {
             showMenu();
         } elsif ( $input eq '2' ) {
             if (-f NCIPHERDEFS) {
-                print "\nThe Gateway is currently configured to use the nCipher HSM.\nPlease turn off Gateway use of nCipher HSM before creating a new security world.\n\n";
+                print "\nThe Gateway is currently configured to use the Thales nShield HSM.\nPlease turn off Gateway use of Thales nShield HSM before creating a new security world.\n\n";
                 pressEnter();
             } else {
                 createNewWorld();
@@ -898,7 +898,7 @@ MAIN: eval {
             showMenu();
         } elsif ( $input eq '3' ) {
             if (-f NCIPHERDEFS) {
-                print "\nThe Gateway is currently configured to use the nCipher HSM.\nPlease turn off Gateway use of nCipher HSM before programming a security world.\n\n";
+                print "\nThe Gateway is currently configured to use the Thales nShield HSM.\nPlease turn off Gateway use of Thales nShield HSM before programming a security world.\n\n";
                 pressEnter();
             } else {
                 programExistingWorld();
@@ -906,7 +906,7 @@ MAIN: eval {
             showMenu();
         } elsif ( $input eq '4' ) {
             if (-f NCIPHERDEFS) {
-                print "\nThe Gateway is currently configured to use the nCipher HSM.\nPlease turn off Gateway use of nCipher HSM before changing its security world.\n\n";
+                print "\nThe Gateway is currently configured to use the Thales nShield HSM.\nPlease turn off Gateway use of Thales nShield HSM before changing its security world.\n\n";
                 pressEnter();
             } else {
                 useAlreadyProgrammedWorld();
