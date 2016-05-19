@@ -748,8 +748,8 @@ sub manageHsmMenu() {
 
 What would you like to do?
 
- 1) Enable Gateway use of the nCipher HSM
- 2) Disable Gateway use of the nCipher HSM
+ 1) Enable Gateway use of the Thales nShield HSM
+ 2) Disable Gateway use of the Thales nShield HSM
  X) Exit menu
 
 EOM
