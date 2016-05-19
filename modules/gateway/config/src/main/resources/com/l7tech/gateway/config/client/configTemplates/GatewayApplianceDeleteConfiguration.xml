@@ -2,11 +2,11 @@
 <optionSet id="appliance-delete">
     <description>
 ----------------------------------------------------------------------
-Delete SecureSpan Gateway
+Delete CA API Gateway
 ----------------------------------------------------------------------</description>
     <prompt>
 ----------------------------------------------------------------------
-Delete SecureSpan Gateway
+Delete CA API Gateway
 ----------------------------------------------------------------------
 At any time type "quit" to quit.</prompt>
 
