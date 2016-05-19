@@ -861,12 +861,12 @@ sub doMigrateKmpToOmp() {
 sub showMenu() {
     print <<'EOM';
 
-This menu allows you to configure the nCipher Hardware Security Module
-on the SecureSpan Gateway Appliance
+This menu allows you to configure the Thales nShield Hardware Security Module
+on the CA API Gateway Appliance
 
 What would you like to do?
 
- 1) Manage Gateway nCipher HSM status
+ 1) Manage Gateway Thales nShield HSM status
  2) Create new security world
  3) Program into existing security world
  4) Use manually-programmed security world
