@@ -377,14 +377,11 @@ public class ServerSnmpAgentAssertion extends AbstractServerAssertion<SnmpAgentA
             public int compare(Object o1, Object o2) {
                 ServiceUsage p1 = (ServiceUsage) o1;
                 ServiceUsage p2 = (ServiceUsage) o2;
-                int c = convertGoidToUints(p1.getServiceid()).compareTo(convertGoidToUints(p2.getServiceid()));
-                if(c > 0) {
-                    return 1;
-                } else if(c < 0) {
-                    return -1;
-                }else{
-                    return 0;
-                }
+
+                // SNMP getnext requires that we return in lexiographical order
+                // since we convert the GOID to int32 unsigned value, it is easier to utilize the String comparison
+                // on the Goid.toHexString() as the hex string length is consistent
+                return p1.getServiceid().toHexString().compareTo(p2.getServiceid().toHexString());
             }
         });
 

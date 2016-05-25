@@ -4,9 +4,11 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.snmpagent.SnmpAgentAssertion;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -318,6 +321,43 @@ public class ServerSnmpAgentAssertionTest {
         // This one we need to calculate the amount, based on the values we have used.
         performLoopbackSecurityTest(buildGetServiceCall(MockSnmpValues.GET_POLICY_VIOLATIONS_FINE));
         compareResponseForServiceCall(MockSnmpValues.GET_POLICY_VIOLATIONS_FINE);
+    }
+
+    @Test
+    public void testSortServiceUsage() throws Exception {
+        SnmpAgentAssertion assertion = new SnmpAgentAssertion();
+        ServerSnmpAgentAssertion serverSnmpAgentAssertion = new ServerSnmpAgentAssertion(assertion, appContext);
+
+        ServiceUsage usage1 = new ServiceUsage();
+        usage1.setNodeid("1");
+        usage1.setServiceid(Goid.parseGoid("2002e92596132a36dca7bb3f2b16b6b0"));
+        ServiceUsage usage2 = new ServiceUsage();
+        usage2.setNodeid("1");
+        usage2.setServiceid(Goid.parseGoid("8ab47a1b3f00374afaf25b2a32fd71b4"));
+        ServiceUsage usage3 = new ServiceUsage();
+        usage3.setNodeid("1");
+        usage3.setServiceid(Goid.parseGoid("9f38c4e30a868245dd7780aa1ea16d0e"));
+        ServiceUsage usage4 = new ServiceUsage();
+        usage4.setNodeid("1");
+        usage4.setServiceid(Goid.parseGoid("ffffffffffffffffffffffffffffffff"));
+        ServiceUsage usage5 = new ServiceUsage();
+        usage5.setNodeid("1");
+        usage5.setServiceid(Goid.parseGoid("00000000000000000000000000000000"));
+        ServiceUsage usage6 = new ServiceUsage();
+        usage6.setNodeid("1");
+        usage6.setServiceid(Goid.DEFAULT_GOID);
+
+
+        ServiceUsage[] toSortUsages = new ServiceUsage[] {
+                usage2, usage3, usage4, usage5, usage1, usage6
+        };
+
+        ServiceUsage[] expectedUsages = new ServiceUsage[] {
+                usage5, usage6, usage1, usage2, usage3, usage4
+        };
+
+        ServiceUsage[] result = serverSnmpAgentAssertion.sortByServiceOid(toSortUsages);
+        assertTrue(Arrays.equals(expectedUsages, result));
     }
 
     /**
