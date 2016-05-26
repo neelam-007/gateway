@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -85,7 +86,12 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
             context.setVariable(assertion.getVariablePrefix() + ".found", result.isFound());
             final int count = result.getCount();
             context.setVariable(assertion.getVariablePrefix() + ".count", count);
-            if(!result.isFound()){
+            if(result.getResults().isEmpty()) {
+                if(result.isFound()) {
+                    context.setVariable(assertion.getVariablePrefix() + ".result", Collections.singletonList("[]"));
+                    context.setVariable(assertion.getVariablePrefix() + ".results", Collections.singletonList("[]"));
+                    return AssertionStatus.NONE;
+                }
                 logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
                 context.setVariable(assertion.getVariablePrefix() + ".result", null);
                 context.setVariable(assertion.getVariablePrefix() + ".results", null);

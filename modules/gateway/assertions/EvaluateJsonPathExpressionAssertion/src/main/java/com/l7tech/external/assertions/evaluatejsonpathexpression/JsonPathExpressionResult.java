@@ -12,13 +12,15 @@ import java.util.List;
 public class JsonPathExpressionResult implements Serializable {
 
     private final List<String> results;
+    private final boolean isFound;
 
     /**
      * Construct a new JsonPathExpressionResult.
      *
      * @param results the results.
      */
-    public JsonPathExpressionResult(final List<String> results) {
+    public JsonPathExpressionResult(final List<String> results, boolean isFound) {
+        this.isFound = isFound;
         this.results = results == null ? Collections.singletonList("") : results;
     }
 
@@ -27,7 +29,8 @@ public class JsonPathExpressionResult implements Serializable {
      * @return true if a result was found, false otherwise.
      */
     public boolean isFound() {
-        return (results != null && !results.isEmpty());
+        return isFound;
+//        return (results != null && !results.isEmpty());
     }
 
     /**
