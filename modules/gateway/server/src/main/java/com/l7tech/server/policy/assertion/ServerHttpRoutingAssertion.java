@@ -64,11 +64,8 @@ import java.util.zip.GZIPInputStream;
  */
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
 
-    public static final String PROP_ENABLE_THREAD_LOCAL_STATE = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.threadLocalState.enable";
-    public static final boolean ENABLE_THREAD_LOCAL_STATE = SyspropUtil.getBoolean( PROP_ENABLE_THREAD_LOCAL_STATE, false );
-
     public static final String PROP_ENABLE_STATE_POOL = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.statePool.enable";
-    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, false );
+    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, true );
 
     //Define the failed reason code.
     public static final int HOST_NOT_FOUND = -1; // The Host can not be reached
@@ -657,7 +654,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 if ( pooledState != null ) {
                     routedRequestParams.setState( new GenericHttpState( pooledState ) );
                 }
-            } else if ( ENABLE_THREAD_LOCAL_STATE && localState.get() != null ) {
+            } else if ( localState.get() != null ) {
                 routedRequestParams.setState(new GenericHttpState(localState.get()));
             }
 
@@ -671,7 +668,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                         statePool.offer( returnState );
                     }
                 } );
-            } else if ( ENABLE_THREAD_LOCAL_STATE && routedRequestParams.getState() != null ) {
+            } else if ( routedRequestParams.getState() != null ) {
                 localState.set(routedRequestParams.getState().getStateObject());
             }
 
