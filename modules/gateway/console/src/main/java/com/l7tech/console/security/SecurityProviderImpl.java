@@ -29,7 +29,10 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.remoting.RemoteAccessException;
 import org.springframework.remoting.RemoteConnectFailureException;
+import org.springframework.remoting.RemoteInvocationFailureException;
+import sun.jvm.hotspot.debugger.cdbg.AccessControl;
 
+import javax.persistence.Access;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
@@ -123,7 +126,22 @@ public class SecurityProviderImpl extends SecurityProvider
                             //determine the type of logon process should be performed
                             if (newPassword == null) {
                                 //proceed with normal logon process
-                                result = adminLogin.loginNew(creds.getUserName(), new String(creds.getPassword()));
+                                try {
+                                    result = adminLogin.loginNew( creds.getUserName(), new String( creds.getPassword() ) );
+                                } catch ( RemoteInvocationFailureException rife ) {
+                                    // SSM-4691: Handle special case for this call only, if this looks like a version mismatch (Gateway versions older than 8.2 do not contain loginNew method)
+                                    @SuppressWarnings( "ThrowableResultOfMethodCallIgnored" )
+                                    AccessControlException ace = ExceptionUtils.getCauseIfCausedBy( rife, AccessControlException.class );
+                                    if ( ace != null && ace.getMessage().contains( "Admin request disallowed: no credentials." ) ) {
+                                        // Log exception so it doesn't get lost -- we can't chain it as the cause, or the RMI error handler will try to look at it
+                                        logger.log( Level.WARNING, "Unable to invoke loginNew -- possible older Gateway version: " + ExceptionUtils.getMessage( rife ), rife );
+                                        // Translate into VersionException for more-relevant error message to user
+                                        throw new VersionException( "Possible too-old Gateway version: " + ExceptionUtils.getMessage( rife ) );
+                                    }
+
+                                    // Not the "attempt to loginNew to old Gateway" special case; let regular RMI error handling take it from here
+                                    throw rife;
+                                }
                             } else {
                                 //proceed with password change and then logon process
                                 result = adminLogin.loginWithPasswordUpdate(creds.getUserName(), new String(creds.getPassword()), newPassword);
