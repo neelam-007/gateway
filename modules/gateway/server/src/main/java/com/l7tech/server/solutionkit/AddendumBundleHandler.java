@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.jetbrains.annotations.NotNull;
@@ -136,6 +137,15 @@ public class AddendumBundleHandler {
 
                     // replace skar bundle mapping with addendum bundle mapping
                     mappings.set(mappings.indexOf(mapping), addendumMapping);
+
+                    // set addendum mapping targetId for any previously resolved ids (e.g. instance modified, user configured)
+                    Pair<SolutionKit, Map<String, String>> previouslyResolvedIds = solutionKitsConfig.getPreviouslyResolvedEntityIds().get(solutionKit.getSolutionKitGuid());
+                    if (previouslyResolvedIds != null) {
+                        String resolvedId = previouslyResolvedIds.right.get(addendumMapping.getSrcId());
+                        if (resolvedId != null) {
+                            addendumMapping.setTargetId(resolvedId);
+                        }
+                    }
 
                     // check if addendum bundle has reference item with srdId
                     Item addendumReferenceItem = addendumIdReferenceMap.get(addendumMapping.getSrcId());

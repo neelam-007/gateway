@@ -293,7 +293,6 @@ public class SolutionKitsConfig {
     /**
      * Set mapping targetId if mapping srcId matches *previously* resolved ID.
      * Previously resolved ID is set by {@link #setPreviouslyResolvedIds()}.  We resolve a previous entity ID when upgrading, we map the ID in bundle to an actual installed ID.
-     * We ignore if there's already an existing mapping targetId.  This is needed to preserve instance modified entity which uses a *deterministic* modified ID (see {@link com.l7tech.gateway.common.solutionkit.InstanceModifier#apply()}).
      *
      * @param solutionKit the SolutionKit holding the resolved entities.  Required and cannot be {@code null}.
      * @param bundle the bundle XML to install or upgrade
