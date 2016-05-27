@@ -15,15 +15,16 @@ import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.security.SecureRandom;
 import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +48,7 @@ public class ContextFreeServerJdbcQueryAssertionTest {
     static final String QUERY_TIMEOUT_STRING = "10";
     static final int QUERY_TIMEOUT_INT = 10;
     static final String COLUMN_NAME_BLOB = "blob";
+    static final String COLUMN_NAME_CLOB = "clob";
     final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
     final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
 
@@ -55,8 +57,12 @@ public class ContextFreeServerJdbcQueryAssertionTest {
         SecureRandom seeder = new SecureRandom();
         byte[] generatedSeed = seeder.generateSeed(128);
         System.out.println("Creating random BLOB with SecureRandom seeded with " + Arrays.toString(generatedSeed));
-        new SecureRandom(generatedSeed).nextBytes(BLOB_CONTENT);
+        SecureRandom random = new SecureRandom(generatedSeed);
+        random.nextBytes(BLOB_CONTENT);
     }
+
+    static final String CLOB_CONTENT = "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 " +
+            "00 00 00 00 00 00 00 00 00 00";
 
     @Test
     public void shouldThrowIllegalStateExceptionWhenApplicationContextIsNull() throws PolicyAssertionException {
@@ -640,7 +646,8 @@ public class ContextFreeServerJdbcQueryAssertionTest {
     }
 
     @Test
-    public void shouldHitDatabaseOnlyOnceWhenReadingOracleBlob() throws PolicyAssertionException, IOException, NoSuchVariableException {
+    public void shouldHitDatabaseOnlyOnceWhenReadingOracleBlob()
+            throws PolicyAssertionException, IOException, NoSuchVariableException {
         JdbcQueryAssertion clientAssertion = new JdbcQueryAssertionBuilder()
                 .withVariables(NO_VARIABLES).withSchema(SCHEMA_NAME).withConnectionName(CONNECTION_NAME)
                 .withSqlQuery(SQL_QUERY).withMaxRecords(MAX_RECORDS).withQueryTimeout(QUERY_TIMEOUT_STRING)
@@ -682,6 +689,47 @@ public class ContextFreeServerJdbcQueryAssertionTest {
                 QUERY_TIMEOUT_INT, new ArrayList<>());
 
         assertEquals("Unexpected assertion status returned: " + assertionStatus, AssertionStatus.NONE, assertionStatus);
+    }
+
+    @Test
+    public void shouldFindLobInOwnInternalLobContainerWhenNamingMapChangesCase()
+            throws PolicyAssertionException, IOException {
+        JdbcQueryAssertion clientAssertion = new JdbcQueryAssertionBuilder()
+                .withVariables(NO_VARIABLES).withConnectionName(CONNECTION_NAME).withSchema(SCHEMA_NAME)
+                .withSqlQuery(SQL_QUERY).withMaxRecords(MAX_RECORDS).withQueryTimeout(QUERY_TIMEOUT_STRING)
+                .withSaveResultsAsContextVariables(true)
+                .withNamingMap(CollectionUtils.MapBuilder.<String, String>builder()
+                        .put(COLUMN_NAME_CLOB.toLowerCase(), COLUMN_NAME_CLOB.toUpperCase())
+                        .map())
+                .withVariablePrefix(JdbcQueryAssertion.DEFAULT_VARIABLE_PREFIX).withGenerateXmlResult(true)
+                .build();
+
+        ApplicationContext applicationContext = new ApplicationContextBuilder()
+                .withJdbcQueryingManager(new JdbcQueryingManagerBuilder()
+                        .<SqlRowSet>whenPerformJdbcQuery(CONNECTION_NAME, SQL_QUERY, SCHEMA_NAME, MAX_RECORDS,
+                                QUERY_TIMEOUT_INT, new ArrayList<>())
+                        .thenLazyReturn(new ListBuilder<SqlRowSet>()
+                                .add(new SqlRowSetBuilder()
+                                        .withColumns(COLUMN_NAME_CLOB.toUpperCase())
+                                        .addRow(new ClobBuilder()
+                                                .withCharacterStreamContaning(CLOB_CONTENT)
+                                                .build())
+                                        .build()))
+                        .build())
+                .withJdbcConnectionManager(new JdbcConnectionManagerBuilder()
+                        .withConnection(CONNECTION_NAME, new JdbcConnectionBuilder()
+                                .withDriverClass(DRIVER_CLASS_ORACLE)
+                                .build())
+                        .build())
+                .withConfig(new ConfigBuilder()
+                        .withLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, 10485760L)
+                        .build())
+                .build();
+
+        ServerJdbcQueryAssertion assertion = new ServerJdbcQueryAssertion(clientAssertion, applicationContext);
+
+        PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContextBuilder().build();
+        AssertionStatus assertionStatus = assertion.checkRequest(policyEnforcementContext);
     }
 }
 
@@ -798,7 +846,7 @@ class BlobBuilder {
      */
     BlobBuilder withBinaryStreamContaining(final byte[] content) {
         try {
-            when(blob.getBinaryStream()).thenReturn(new MockInputStream(content));
+            when(blob.getBinaryStream()).thenReturn(new MockBinaryInputStream(content));
             return this;
         } catch (SQLException e) {
             throw new RuntimeException("Unexpected SQLException: " + e.getMessage());
@@ -810,11 +858,32 @@ class BlobBuilder {
     }
 }
 
-class MockInputStream extends ByteArrayInputStream {
+class ClobBuilder {
+    private final Clob clob;
+
+    ClobBuilder() {
+        clob = mock(Clob.class);
+    }
+
+    Clob build() {
+        return clob;
+    }
+
+    public ClobBuilder withCharacterStreamContaning(String clobContent) {
+        try {
+            when(clob.getCharacterStream()).thenReturn(new StringReader(clobContent));
+            return this;
+        } catch (SQLException e) {
+            throw new RuntimeException("Unexpected SQLException: " + e.getMessage());
+        }
+    }
+}
+
+class MockBinaryInputStream extends ByteArrayInputStream {
 
     private boolean closed;
 
-    MockInputStream(byte[] bytes) {
+    MockBinaryInputStream(byte[] bytes) {
         super(bytes);
         closed = false;
     }

@@ -12,15 +12,12 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Created by drace01 on 3/24/2016.
- */
 class SqlRowSetBuilder {
 
     private final SqlRowSet rowSet;
     private final SqlRowSetMetaData metaData;
     private List<String> columns;
-    private List<Map<String, Object>> rows;
+    private List<Map<CaseInsensitiveString, Object>> rows;
     private int currentRow;
 
     SqlRowSetBuilder() {
@@ -51,10 +48,10 @@ class SqlRowSetBuilder {
         if (row.length != columns.size()) {
             throw new IllegalArgumentException("Your row has " + row.length + " columns, but you declared " + columns.size());
         }
-        Map<String, Object> newRow = new HashMap<>();
+        Map<CaseInsensitiveString, Object> newRow = new HashMap<>();
         rows.add(newRow);
         for (int i = 0; i < row.length; i++) {
-            newRow.put(columns.get(i), row[i]);
+            newRow.put(new CaseInsensitiveString(columns.get(i)), row[i]);
         }
         return this;
     }
@@ -66,7 +63,7 @@ class SqlRowSetBuilder {
             @Override
             public String answer(InvocationOnMock invocationOnMock) throws Throwable {
                 Integer i = (Integer) invocationOnMock.getArguments()[0];
-                return columns.get(i-1); // columns are 1-based in this API... go figure
+                return columns.get(i - 1); // columns are 1-based in this API... go figure
             }
         });
 
@@ -95,10 +92,37 @@ class SqlRowSetBuilder {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 String columnName = (String) invocationOnMock.getArguments()[0];
-                return rows.get(currentRow).get(columnName);
+                return rows.get(currentRow).get(new CaseInsensitiveString(columnName.toUpperCase()));
             }
         });
 
         return rowSet;
+    }
+}
+
+/**
+ * This class is used because of DataDirect's SqlRowSet.getObject() UNBELIEVABLE case-insensitive behaviour
+ */
+class CaseInsensitiveString {
+    private final String string;
+
+    CaseInsensitiveString(String string) {
+        this.string = string;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CaseInsensitiveString that = (CaseInsensitiveString) o;
+
+        return !(string != null ? !string.toLowerCase().equals(that.string.toLowerCase()) : that.string != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return string != null ? string.toLowerCase().hashCode() : 0;
     }
 }

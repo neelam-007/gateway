@@ -456,14 +456,15 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     private void populateResults(int rowNumber, SqlRowSet resultSet, Map<String, String> newNamingMap,
                                        Map<String, List<Object>> results, BlobContainer blobs)
     throws SQLException {
-        for (String columnName : newNamingMap.keySet()) {
-            final List<Object> rows = results.get(columnName);
-            final Object value = resultSet.getObject(columnName);
+        for (String oldColumnName : newNamingMap.keySet()) {
+            String newColumnName = newNamingMap.get(oldColumnName);
+            final List<Object> rows = results.get(oldColumnName);
+            final Object value = resultSet.getObject(oldColumnName);
             // TODO - what other types may not be directly applicable as-is?
             if (value instanceof Clob) {
-                rows.add(new String(blobs.get(rowNumber).get(columnName)).intern());
+                rows.add(new String(blobs.get(rowNumber).get(newColumnName)).intern());
             } else if (value instanceof Blob) {
-                rows.add(blobs.get(rowNumber).get(columnName));
+                rows.add(blobs.get(rowNumber).get(newColumnName));
             } else {
                 rows.add(value);
             }
