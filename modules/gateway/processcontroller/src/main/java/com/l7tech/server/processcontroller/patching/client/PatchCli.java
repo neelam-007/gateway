@@ -293,7 +293,7 @@ public class PatchCli {
                         return grouping[0].startsWith(SORT_DESCENDING_PREFIX) ?
                                 sortedStatusesByField(PatchStatus.Field.valueOf(grouping[0].substring(1)), false, statuses): // descending
                                 sortedStatusesByField(PatchStatus.Field.valueOf(grouping[0]), true, statuses); // ascending
-                    } else if (grouping.length == 2) {
+                    } else if (grouping.length > 1) {
                         // group by the specified states and sort each state by the specified sort field
                         final String[] states = grouping[0].split(SORT_FORMAT_VALUE_DELIMITER);
                         final String[] fields = grouping[1].split(SORT_FORMAT_VALUE_DELIMITER);

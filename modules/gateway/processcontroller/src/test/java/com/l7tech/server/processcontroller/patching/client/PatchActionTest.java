@@ -145,6 +145,22 @@ public class PatchActionTest {
 
         );
         cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED::UPLOADED|-ID::LAST_MOD|something", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED::UPLOADED|-ID::LAST_MOD|something"));
+        statuses = new ArrayList<>(listAction.call(api));
+        Assert.assertThat(statuses, Matchers.hasSize(sampleApiPatchStatuses.size()));
+        doTestExpectedValuesEx(
+                sampleApiPatchStatuses,
+                statuses,
+                Arrays.asList(0, 8, 3, 1, 5, 9, 4, 7, 2, 6)
+
+        );
+        cleanAction(listAction);
     }
 
     @Test
@@ -242,6 +258,56 @@ public class PatchActionTest {
             Assert.assertThat(ex.getMessage(), Matchers.startsWith("No enum constant"));
             Assert.assertThat(ex.getMessage(), Matchers.endsWith("PatchStatus.Field.sort_options"));
         }
+        cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED::blah|ID::-LAST_MOD", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED::blah|ID::-LAST_MOD"));
+        try {
+            listAction.call(api);
+            Assert.fail("should have failed with IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            Assert.assertThat(ex.getMessage(), Matchers.startsWith("No enum constant"));
+            Assert.assertThat(ex.getMessage(), Matchers.endsWith("PatchStatus.State.blah"));
+        }
+        cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED::UPLOADED|ID::-blah", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED::UPLOADED|ID::-blah"));
+        try {
+            listAction.call(api);
+            Assert.fail("should have failed with IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            Assert.assertThat(ex.getMessage(), Matchers.startsWith("No enum constant"));
+            Assert.assertThat(ex.getMessage(), Matchers.endsWith("PatchStatus.Field.blah"));
+        }
+        cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED::UPLOADED|ID", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED::UPLOADED|ID"));
+        statuses = listAction.call(api);
+        Assert.assertThat(statuses, Matchers.<Collection<PatchStatus>>sameInstance(sampleApiPatchStatuses));
+        cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED|ID::-LAST_MOD", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED|ID::-LAST_MOD"));
+        statuses = listAction.call(api);
+        Assert.assertThat(statuses, Matchers.<Collection<PatchStatus>>sameInstance(sampleApiPatchStatuses));
         cleanAction(listAction);
     }
 
