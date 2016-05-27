@@ -730,6 +730,57 @@ public class ContextFreeServerJdbcQueryAssertionTest {
 
         PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContextBuilder().build();
         AssertionStatus assertionStatus = assertion.checkRequest(policyEnforcementContext);
+        // succeeds by not throwing a NullPointerException
+    }
+
+    @Test
+    public void shouldNotFetchConnectionsWithTheSameNameMoreThanOnce() throws PolicyAssertionException, IOException, FindException {
+        JdbcConnectionManager connectionManager;
+        ApplicationContext applicationContext = new ApplicationContextBuilder()
+                .withJdbcQueryingManager(new JdbcQueryingManagerBuilder()
+                        .whenPerformJdbcQuery("connection1", SQL_QUERY, null, MAX_RECORDS,
+                                QUERY_TIMEOUT_INT, new ArrayList<>())
+                        .thenReturn(new ListBuilder<SqlRowSet>()
+                                .add(new SqlRowSetBuilder().withColumns("column1").addRow("value1").build())
+                            .build())
+                        .whenPerformJdbcQuery("connection2", SQL_QUERY, null, MAX_RECORDS,
+                                QUERY_TIMEOUT_INT, new ArrayList<>())
+                        .thenReturn(new ListBuilder<SqlRowSet>()
+                                .add(new SqlRowSetBuilder().withColumns("column2").addRow("value2").build())
+                            .build())
+                        .build())
+                .withJdbcConnectionManager(connectionManager = new JdbcConnectionManagerBuilder()
+                        .withConnection("connection1", new JdbcConnectionBuilder()
+                                .withDriverClass(DRIVER_CLASS_ORACLE)
+                                .build())
+                        .withConnection("connection2", new JdbcConnectionBuilder()
+                                .withDriverClass(DRIVER_CLASS_MYSQL) // doesn't matter, but why not use different ones
+                                .build())
+                        .build())
+                .build();
+
+        JdbcQueryAssertion clientAssertion1 = new JdbcQueryAssertionBuilder().withVariables(NO_VARIABLES)
+                .withSqlQuery(SQL_QUERY).withConnectionName("connection1")
+                .withMaxRecords(MAX_RECORDS).withQueryTimeout(QUERY_TIMEOUT_STRING)
+                .withVariablePrefix(JdbcQueryAssertion.DEFAULT_VARIABLE_PREFIX)
+                .build();
+        JdbcQueryAssertion clientAssertion2 = new JdbcQueryAssertionBuilder().withVariables(NO_VARIABLES)
+                .withSqlQuery(SQL_QUERY).withConnectionName("connection2")
+                .withMaxRecords(MAX_RECORDS).withQueryTimeout(QUERY_TIMEOUT_STRING)
+                .withVariablePrefix(JdbcQueryAssertion.DEFAULT_VARIABLE_PREFIX)
+                .build();
+
+        ServerJdbcQueryAssertion assertion1 = new ServerJdbcQueryAssertion(clientAssertion1, applicationContext);
+        ServerJdbcQueryAssertion assertion2 = new ServerJdbcQueryAssertion(clientAssertion2, applicationContext);
+        PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContextBuilder().build();
+        for (int i = 0; i < 10; i++) {
+            assertion1.checkRequest(policyEnforcementContext);
+            assertion2.checkRequest(policyEnforcementContext);
+        }
+
+        // check that the calls only happened once
+        verify(connectionManager, times(1)).getJdbcConnection("connection1");
+        verify(connectionManager, times(1)).getJdbcConnection("connection2");
     }
 }
 

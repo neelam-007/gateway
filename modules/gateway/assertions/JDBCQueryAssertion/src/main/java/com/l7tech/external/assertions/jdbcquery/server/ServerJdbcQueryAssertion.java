@@ -20,14 +20,13 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
-import org.springframework.jdbc.InvalidResultSetAccessException;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
 import java.io.*;
-import java.math.BigDecimal;
-import java.sql.*;
-import java.sql.Date;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -39,23 +38,29 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
  * @see com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion
  */
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
-    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
+    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+            "<L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
     private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
 
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
     private final Config config;
+    private final Map<String, JdbcConnection> jdbcConnectionCache;
 
-    public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context)
+            throws PolicyAssertionException {
         super(assertion);
 
-        if (context == null) throw new IllegalStateException("Application context cannot be null.");
+        if (context == null) {
+            throw new IllegalStateException("Application context cannot be null.");
+        }
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
         jdbcConnectionManager = context.getBean("jdbcConnectionManager", JdbcConnectionManager.class);
         config = validated(context.getBean("serverConfig", Config.class));
+        jdbcConnectionCache = new HashMap<>();
 
         if (assertion.getConnectionName() == null) {
             throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
@@ -63,7 +68,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         if (assertion.getSqlQuery() == null) {
             throw new PolicyAssertionException(assertion, "Assertion must supply a sql statement");
         }
-
         if (assertion.getSchema() != null && !Syntax.isAnyVariableReferenced(assertion.getSchema()) && assertion.getSchema().matches(".*\\s.*")) {
             throw new PolicyAssertionException(assertion, "JDBC Query assertion schema must not contain spaces: " + assertion.getSchema());
         }
@@ -116,8 +120,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private Object performQuery(PolicyEnforcementContext context)
-    throws QueryTimeoutIsNotValidIntegerException, PolicyAssertionException, SchemaNotSupportedException, FindException {
-
+            throws QueryTimeoutIsNotValidIntegerException, PolicyAssertionException, SchemaNotSupportedException, FindException {
         final Pair<String, List<Object>> pair;
         if (context instanceof AuditLookupPolicyEnforcementContext
                 || context instanceof AuditSinkPolicyEnforcementContext) {
@@ -140,7 +143,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private void processInteger(PolicyEnforcementContext context, Object result)
-    throws NoQueryResultAssertionFailedException {
+            throws NoQueryResultAssertionFailedException {
         int num = (Integer) result;
         if (num == 0 && assertion.isAssertionFailureEnabled()) {
             logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
@@ -151,7 +154,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private void processMap(PolicyEnforcementContext context, StringBuilder xmlResult, Object result)
-    throws SQLException, NoQueryResultAssertionFailedException {
+            throws SQLException, NoQueryResultAssertionFailedException {
         @SuppressWarnings("unchecked")
         Map<String, List<Object>> map = (Map) result;
 
@@ -166,7 +169,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private void processList(PolicyEnforcementContext context, StringBuilder xmlResult, Object result)
-    throws SQLException, NoQueryResultAssertionFailedException {
+            throws SQLException, NoQueryResultAssertionFailedException {
         @SuppressWarnings("unchecked")
         final List<SqlRowSet> list = (List) result;
 
@@ -199,7 +202,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private String getSchema(String connectionName, Map<String, Object> variableMap)
-    throws PolicyAssertionException, SchemaNotSupportedException, FindException {
+            throws PolicyAssertionException, SchemaNotSupportedException, FindException {
         String driverClass = getConnectionDriverClass(connectionName);
         final String schema = assertion.getSchema() != null ? ExpandVariables.process(assertion.getSchema(), variableMap, getAudit()) : null;
         if (schema != null && schema.matches(".*\\s.*")) {
@@ -214,16 +217,29 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
     private String getConnectionDriverClass(String connectionName) throws FindException {
         try {
-            final JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
-            if (connection == null) {
-                throw new FindException();
-            }
+            JdbcConnection connection = getJdbcConnectionFromCache(connectionName);
             return connection.getDriverClass();
 
         } catch (FindException e) {
             logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED,
                     "Could not find JDBC connection: " + connectionName);
             throw e;
+        }
+    }
+
+    private JdbcConnection getJdbcConnectionFromCache(String connectionName) throws FindException {
+        synchronized (jdbcConnectionCache) {
+            if (jdbcConnectionCache.containsKey(connectionName)) {
+                return jdbcConnectionCache.get(connectionName);
+            }
+
+            final JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
+            if (connection == null) {
+                throw new FindException();
+            }
+
+            jdbcConnectionCache.put(connectionName, connection);
+            return connection;
         }
     }
 
@@ -242,7 +258,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      */
     void buildXmlResultString(BlobContainer blobs, int resultSetNumber, final SqlRowSet resultSet,
                               final StringBuilder xmlResult)
-    throws SQLException {
+            throws SQLException {
         int row = 0;
         resultSet.first();
         final StringBuilder records = new StringBuilder();
@@ -265,7 +281,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     }
 
     private void processRow(BlobContainer blobs, SqlRowSet resultSet, StringBuilder records, String columnName, int row)
-    throws SQLException {
+            throws SQLException {
         Object value = resultSet.getObject(columnName);
         String colType = JdbcUtil.EMPTY_STRING;
         if (value != null) {
@@ -455,7 +471,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
     private void populateResults(int rowNumber, SqlRowSet resultSet, Map<String, String> newNamingMap,
                                        Map<String, List<Object>> results, BlobContainer blobs)
-    throws SQLException {
+            throws SQLException {
         for (String oldColumnName : newNamingMap.keySet()) {
             String newColumnName = newNamingMap.get(oldColumnName);
             final List<Object> rows = results.get(oldColumnName);
