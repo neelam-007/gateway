@@ -4,6 +4,7 @@ import com.l7tech.server.processcontroller.patching.PatchServiceApi;
 import com.l7tech.server.processcontroller.patching.PatchStatus;
 import com.l7tech.util.Pair;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +25,7 @@ public class PatchActionTest {
     @Mock
     PatchServiceApi api;
 
+    PatchCli.PatchAction listAction;
     List<PatchStatus> sampleApiPatchStatuses;
 
     @Before
@@ -47,6 +49,11 @@ public class PatchActionTest {
         Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        cleanAction(listAction);
+    }
+
     private static PatchStatus createPatchStatusMock(
             final String id,
             final String desc,
@@ -68,7 +75,7 @@ public class PatchActionTest {
     @Test
     public void testListSortArg() throws Exception {
         List<String> args = new ArrayList<>(Arrays.asList("list", "-sort", "INSTALLED::UPLOADED|ID::-LAST_MOD", "blah"));
-        PatchCli.PatchAction listAction = PatchCli.PatchAction.fromArgs(args);
+        listAction = PatchCli.PatchAction.fromArgs(args);
         Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
         Assert.assertThat(args, Matchers.contains("list", "blah"));
         Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
@@ -166,7 +173,7 @@ public class PatchActionTest {
     @Test
     public void testListSortArgErrorCases() throws Exception {
         List<String> args = new ArrayList<>(Arrays.asList("list"));
-        PatchCli.PatchAction listAction = PatchCli.PatchAction.fromArgs(args);
+        listAction = PatchCli.PatchAction.fromArgs(args);
         Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
         Assert.assertThat(args, Matchers.contains("list"));
         Assert.assertThat(listAction.getOutputFormat(), Matchers.isEmptyOrNullString());
@@ -308,6 +315,52 @@ public class PatchActionTest {
         Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("INSTALLED|ID::-LAST_MOD"));
         statuses = listAction.call(api);
         Assert.assertThat(statuses, Matchers.<Collection<PatchStatus>>sameInstance(sampleApiPatchStatuses));
+        cleanAction(listAction);
+    }
+
+    @Test
+    public void testListSortArgLetterCase() throws Exception {
+        long timer = 10000L;
+        sampleApiPatchStatuses = new ArrayList<>(
+                Arrays.asList(
+                        /*0*/ createPatchStatusMock("b4", "desc for b4", PatchStatus.State.INSTALLED, ++timer, null, null),
+                        /*1*/ createPatchStatusMock("a3", "desc for a3", PatchStatus.State.UPLOADED, ++timer, null, null),
+                        /*2*/ createPatchStatusMock("A4", "desc for A4", PatchStatus.State.ERROR, ++timer, null, null),
+                        /*3*/ createPatchStatusMock("B3", "desc for B3", PatchStatus.State.INSTALLED, ++timer, null, null),
+                        /*4*/ createPatchStatusMock("C1", "desc for C1", PatchStatus.State.ROLLED_BACK, ++timer, null, "a3"),
+                        /*5*/ createPatchStatusMock("c2", "desc for c2", PatchStatus.State.UPLOADED, ++timer, null, null)
+                )
+        );
+        Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches();
+
+        List<String> args = new ArrayList<>(Arrays.asList("list", "-sort", "ID", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("ID"));
+        List<PatchStatus> statuses = new ArrayList<>(listAction.call(api));
+        doTestExpectedValuesEx(
+                sampleApiPatchStatuses,
+                statuses,
+                Arrays.asList(2, 3, 4, 1, 0, 5)
+
+        );
+        cleanAction(listAction);
+
+        args = new ArrayList<>(Arrays.asList("list", "-sort", "-ID", "blah"));
+        listAction = PatchCli.PatchAction.fromArgs(args);
+        Assert.assertThat(listAction, Matchers.sameInstance(PatchCli.PatchAction.LIST));
+        Assert.assertThat(args, Matchers.contains("list", "blah"));
+        Assert.assertThat(listAction.getOutputFormat(), Matchers.equalTo("blah"));
+        Assert.assertThat(listAction.sortingFormat, Matchers.equalTo("-ID"));
+        statuses = new ArrayList<>(listAction.call(api));
+        doTestExpectedValuesEx(
+                sampleApiPatchStatuses,
+                statuses,
+                Arrays.asList(5, 0, 1, 4, 3, 2)
+
+        );
         cleanAction(listAction);
     }
 
