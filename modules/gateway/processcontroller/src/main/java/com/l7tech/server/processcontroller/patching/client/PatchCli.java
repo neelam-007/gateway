@@ -45,7 +45,7 @@ public class PatchCli {
         try {
             if (args == null || args.length == 0)
                 throw new IllegalArgumentException("No arguments specified.");
-            List<String> argList = new ArrayList<String>(Arrays.asList(args));
+            List<String> argList = new ArrayList<>(Arrays.asList(args));
             programName = PatchCli.extactProgramName(argList);
             patchAction = PatchAction.fromArgs(argList);
         } catch (IllegalArgumentException e) {
@@ -107,6 +107,10 @@ public class PatchCli {
     private static final long PATCH_API_CONNECT_TIMEOUT = 30000;
     private static final long PATCH_API_RECEIVE_TIMEOUT = 600000;
 
+    private static final String SORT_ARG_NAME = "-sort";
+    private static final String SORT_FORMAT_GROUP_DELIMITER = "\\|";
+    private static final String SORT_FORMAT_VALUE_DELIMITER = "::";
+    private static final String SORT_DESCENDING_PREFIX = "-";
 
     private static void initLogging() {
         // configure logging if the logs directory is found, else leave console output
@@ -189,7 +193,7 @@ public class PatchCli {
         return properties;
     }
 
-    private static enum PatchAction {
+    static enum PatchAction {
 
         // - PUBLIC
 
@@ -236,17 +240,157 @@ public class PatchCli {
                 final PatchStatus status = api.getStatus(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
+        /**
+         * Newly added optional argument {@code [-sort <sorting_format>]} is not exposed to the end user.
+         * <p/>
+         * The {@code sorting_format} format is "group_by_states|states_sort_field", where
+         * {@code group_by_states} is optional and specifies whether to group the result by the specified
+         * {@link com.l7tech.server.processcontroller.patching.PatchStatus.State state}'s (separated by {@code ::}), and
+         * {@code states_sort_field} indicates the sorting {@link com.l7tech.server.processcontroller.patching.PatchStatus.Field field}(s)
+         * (also separated by {@code ::}).<br>
+         * Note that when {@code group_by_states} is specified, then the number of fields inside {@code states_sort_field} must match.
+         * <p/>
+         * Example: <br>
+         *     {@code -sort "INSTALLED:UPLOADED|-LAST_MOD:ID"}<br>
+         *         this indicates that the result should be grouped by state, having {@link com.l7tech.server.processcontroller.patching.PatchStatus.State#INSTALLED INSTALLED}
+         *         patches first sorted by {@link com.l7tech.server.processcontroller.patching.PatchStatus.Field#LAST_MOD LAST_MOD} desc,
+         *         followed by {@link com.l7tech.server.processcontroller.patching.PatchStatus.State#UPLOADED UPLOADED} sorted by {@link com.l7tech.server.processcontroller.patching.PatchStatus.Field#ID ID} asc,
+         *         and the remaining patches should be unsorted and group by their natural state order (as defined by the enum itself).
+         *     <p/>
+         *     {@code -sort "ID"}<br>
+         *         this indicates that the result should be ungrouped and sorted by {@link com.l7tech.server.processcontroller.patching.PatchStatus.Field#ID ID} in ascending order.
+         *
+         */
         LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"", false, false) {
             @Override
             void extractActionArguments(List<String> args) {
-                if (! args.isEmpty() && args.size() > 1) {
+                // first read the optional sort args
+                if (!args.isEmpty() && args.size() > 1) {
+                    final int sortArgIndex = args.indexOf(SORT_ARG_NAME);
+                    if (sortArgIndex != -1) {
+                        // make sure the sort format is next
+                        if (sortArgIndex + 1 < args.size()) {
+                            this.sortingFormat = args.get(sortArgIndex + 1);
+                            args.remove(sortArgIndex + 1);
+                        } else {
+                            // silently fail as is there was no sorting specified
+                            logger.log(Level.WARNING, "ignoring -sort without specifying sorting_format");
+                        }
+                        args.remove(sortArgIndex);
+                    }
+                }
+                if (!args.isEmpty() && args.size() > 1) {
                     this.outputFormat = extractOneStringActionArgument(args);
                 }
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
-                return api.listPatches();
-            }};
+                final Collection<PatchStatus> statuses = api.listPatches();
+                if (statuses != null && statuses.size() > 1 && hasSortArg() ) {
+                    final String[] grouping = sortingFormat.split(SORT_FORMAT_GROUP_DELIMITER);
+                    if (grouping.length == 1) {
+                        // do not group by status only sort by the specified field
+                        return grouping[0].startsWith(SORT_DESCENDING_PREFIX) ?
+                                sortedStatusesByField(PatchStatus.Field.valueOf(grouping[0].substring(1)), false, statuses): // descending
+                                sortedStatusesByField(PatchStatus.Field.valueOf(grouping[0]), true, statuses); // ascending
+                    } else if (grouping.length == 2) {
+                        // group by the specified states and sort each state by the specified sort field
+                        final String[] states = grouping[0].split(SORT_FORMAT_VALUE_DELIMITER);
+                        final String[] fields = grouping[1].split(SORT_FORMAT_VALUE_DELIMITER);
+                        if (states.length > 0 && states.length == fields.length) {
+                            final Map<PatchStatus.State, Collection<PatchStatus>> result = new LinkedHashMap<>(PatchStatus.State.values().length);
+                            // add requested states first
+                            for (int i = 0; i < states.length; ++i) {
+                                final PatchStatus.State state = PatchStatus.State.valueOf(states[i]);
+                                if (!result.containsKey(state)) {
+                                    result.put(
+                                            state,
+                                            fields[i].startsWith(SORT_DESCENDING_PREFIX) ?
+                                                    sortedStatusesByField(PatchStatus.Field.valueOf(fields[i].substring(1)), false): // descending
+                                                    sortedStatusesByField(PatchStatus.Field.valueOf(fields[i]), true) // ascending
+                                    );
+                                }
+                            }
+                            // add the remaining states in order of the enum, having unsorted array of patch statuses
+                            for (final PatchStatus.State state : PatchStatus.State.values()) {
+                                if (!result.containsKey(state))
+                                    result.put(state, new ArrayList<PatchStatus>());
+                            }
+                            // loop through all statuses returned from the api and add them in the corresponding sorted collection
+                            for (final PatchStatus status : statuses) {
+                                final PatchStatus.State state = PatchStatus.State.valueOf(status.getField(PatchStatus.Field.STATE));
+                                if (state == null) {
+                                    throw new IllegalStateException("Mandatory field 'STATE' missing from patch status: " + status.toString());
+                                }
+                                final Collection<PatchStatus> patchStatuses = result.get(state);
+                                if (patchStatuses == null) {
+                                    throw new IllegalStateException("Missing state '" + state.name() + "' from sorted status map");
+                                }
+                                patchStatuses.add(status);
+                            }
+                            // finally create a resulting ordered collection
+                            final Collection<PatchStatus> orderedStatuses = new ArrayList<>();
+                            for (final Collection<PatchStatus> patchStatuses : result.values()) {
+                                orderedStatuses.addAll(patchStatuses);
+                            }
+                            return orderedStatuses;
+                        }
+                    }
+                    // silently ignore invalid format
+                    logger.log(Level.WARNING, "ignoring invalid sorting_format: " + sortingFormat);
+                }
+                return statuses;
+            }
+
+            private SortedSet<PatchStatus> sortedStatusesByField(final PatchStatus.Field field, final boolean asc) {
+                return sortedStatusesByField(field, asc, null);
+            }
+
+            private SortedSet<PatchStatus> sortedStatusesByField(final PatchStatus.Field field, final boolean asc, final Collection<PatchStatus> initialStatuses) {
+                final SortedSet<PatchStatus> result = new TreeSet<>(new Comparator<PatchStatus>() {
+                    @Override
+                    public int compare(final PatchStatus o1, final PatchStatus o2) {
+                        if (o1 == o2) {
+                            // same instance
+                            return 0;
+                        }
+
+                        final Object value1, value2;
+                        if (PatchStatus.Field.LAST_MOD == field) {
+                            // number comparison
+                            value1 = o1 != null ? Long.parseLong(o1.getField(field)) : null;
+                            value2 = o2 != null ? Long.parseLong(o2.getField(field)) : null;
+                        } else {
+                            // string comparison
+                            value1 = o1 != null ? o1.getField(field) : null;
+                            value2 = o2 != null ? o2.getField(field) : null;
+                        }
+
+                        final int diff;
+                        if (value1 == null) {
+                            diff = -1;
+                        } else if (value2 == null) {
+                            diff = 1;
+                        } else {
+                            // compare objects
+                            diff = value1 instanceof Long ?
+                                    ((Long)value1).compareTo((Long)value2) :
+                                    ((String)value1).compareTo((String)value2);
+                        }
+
+                        return asc ? diff : -diff;
+                    }
+                });
+                if (initialStatuses != null) {
+                    result.addAll(initialStatuses);
+                }
+                return result;
+            }
+
+            private boolean hasSortArg() {
+                return sortingFormat != null && !sortingFormat.trim().isEmpty();
+            }
+        };
 
         public String getSyntax() {
             return syntax;
@@ -310,6 +454,7 @@ public class PatchCli {
         String target;
         String argument;
         String outputFormat;
+        String sortingFormat;
 
         // - PRIVATE
 
