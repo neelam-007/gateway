@@ -125,13 +125,13 @@ database.</prompt>
     <!--
       Options for Administrative user account configuration
     -->
-    <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="SSM Username" minlength="3" maxlength="128">
+    <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="Policy Manager Username" minlength="3" maxlength="128">
         <configName>admin.user</configName>
         <regex>^[^#,+"\\&lt;&gt;;]*$</regex>
         <description>CA API Gateway Policy Manager Username (not required if joining an existing cluster)</description>
         <prompt>Enter the CA API Gateway Policy Manager administrative user (3-128 characters).</prompt>
     </option>
-    <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="SSM Password" minlength="6" maxlength="32">
+    <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="Policy Manager Password" minlength="6" maxlength="32">
         <configName>admin.pass</configName>
         <description>CA API Gateway Policy Manager Password (not required if joining an existing cluster)</description>
         <prompt>Enter the CA API Gateway Policy Manager administrative password (6-32 characters).</prompt>
