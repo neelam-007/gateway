@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.solutionkit.BadRequestException;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.util.IOUtils;
@@ -67,7 +68,7 @@ public class AddendumBundleHandler {
         this.bundleFormFieldName = bundleFormFieldName;
     }
 
-    public void apply() throws IOException, SAXException, AddendumBundleException {
+    public void apply() throws IOException, BadRequestException, AddendumBundleException {
         final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
         final FormDataBodyPart addendumPart = formDataMultiPart.getField(bundleFormFieldName);
         if (addendumPart != null) {
@@ -88,7 +89,14 @@ public class AddendumBundleHandler {
 
             final InputStream addendumInputStream = addendumPart.getValueAs(InputStream.class);
             final DOMSource addendumBundleSource = new DOMSource();
-            final Document addendumBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(addendumInputStream)));
+
+            final Document addendumBundleDoc;
+            try {
+                addendumBundleDoc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(addendumInputStream)));
+            } catch (SAXException e) {
+                throw new BadRequestException("Error parsing addendum bundle XML: " + e.getMessage(), e);
+            }
+
             final Element addendumBundleEle = addendumBundleDoc.getDocumentElement();
             addendumBundleSource.setNode(addendumBundleEle);
             final Bundle addendumBundle = MarshallingUtils.unmarshal(Bundle.class, addendumBundleSource, true);
@@ -119,9 +127,14 @@ public class AddendumBundleHandler {
             }
 
             // use addendum bundle to build a map of id->reference
-            final Map<String, Item> addendumIdReferenceMap = new HashMap<>(addendumBundle.getReferences().size());
-            for (Item referenceItem : addendumBundle.getReferences()) {
-                addendumIdReferenceMap.put(referenceItem.getId(), referenceItem);
+            final Map<String, Item> addendumIdReferenceMap;
+            if (addendumBundle.getReferences() == null) {
+                addendumIdReferenceMap = new HashMap<>(0);
+            } else {
+                addendumIdReferenceMap = new HashMap<>(addendumBundle.getReferences().size());
+                for (Item referenceItem : addendumBundle.getReferences()) {
+                    addendumIdReferenceMap.put(referenceItem.getId(), referenceItem);
+                }
             }
 
             // make decisions on addendum bundle mappings

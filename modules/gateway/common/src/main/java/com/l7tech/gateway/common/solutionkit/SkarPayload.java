@@ -161,9 +161,9 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
 
             setCustomizationInstances(solutionKit, classLoader);
         } catch (SAXException| MissingRequiredElementException | TooManyChildElementsException e) {
-            throw new BadRequestException("Error loading skar file :" + e.getMessage(), e);
+            throw new BadRequestException("Error loading skar file: " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new SolutionKitException("Error loading skar file :" + e.getMessage(), e);
+            throw new SolutionKitException("Error loading skar file: " + e.getMessage(), e);
         } finally {
             ResourceUtils.closeQuietly(zis);
         }
