@@ -20,8 +20,8 @@ public class PreemptiveCompression extends Assertion {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(PALETTE_FOLDERS, new String[]{"xml"});
-        meta.put(SHORT_NAME, "Compress Messages to/from SecureSpan XVC");
-        meta.put(DESCRIPTION, "Messages to and from the SecureSpan XML VPN Client will be compressed using the gzip algorithm.");
+        meta.put(SHORT_NAME, "Compress Messages to/from XVC");
+        meta.put(DESCRIPTION, "Messages to and from the XML VPN Client will be compressed using the gzip algorithm.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.PreemptiveCompressionAction");
