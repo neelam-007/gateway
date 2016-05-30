@@ -1,5 +1,6 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -10,9 +11,9 @@ import com.l7tech.server.ServerConfigParams;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
+
+import static com.l7tech.server.ServerConfigParams.PARAM_JDBC_CONNECTION_CACHE_MAXAGE;
 
 /**
  * The implementation of managing JDBC Connection Entity
@@ -23,6 +24,8 @@ import java.util.StringTokenizer;
 public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
+
+    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 300_000; // five minutes, as per serverconfig.properties
 
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
@@ -35,7 +38,10 @@ public class JdbcConnectionManagerImpl
     }
 
     /**
-     * Retrieve a JDBC Connection entity from the database by using a connection name.
+     * <p>Retrieve a JDBC Connection entity from the database by using a connection name.</p>
+     *
+     * <p>This method hits the database every single time it is called.
+     * You might want to consider using {@link #getJdbcConnectionCached(String)} instead.</p>
      *
      * @param connectionName: the name of a JDBC connection
      * @return a JDBC Connection entity with the name, "connectionName".
@@ -44,6 +50,23 @@ public class JdbcConnectionManagerImpl
     @Override
     public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
         return findByUniqueName(connectionName);
+    }
+
+    /**
+     * <p>Retrieve a JDBC Connection entity from the database by using a connection name.</p>
+     *
+     * <p>This method caches connections. Consider using this instead of {@link #getJdbcConnection(String)} unless
+     * you specifically want to hit the database with each call.</p>
+     *
+     * @param connectionName the name of a JDBC connection
+     * @return a JDBC Connection entity with the name <code>connectionName</code>
+     * @throws FindException when there is an error finding the connection
+     */
+    @Override
+    public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
+        int maxAge = ServerConfig.getInstance().getIntProperty(PARAM_JDBC_CONNECTION_CACHE_MAXAGE,
+                JDBC_CONNECTION_CACHE_MAX_AGE);
+        return getCachedEntityByName(connectionName, maxAge);
     }
 
     @Override

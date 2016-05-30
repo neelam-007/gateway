@@ -46,7 +46,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     private final JdbcQueryingManager jdbcQueryingManager;
     private final JdbcConnectionManager jdbcConnectionManager;
     private final Config config;
-    private final Map<String, JdbcConnection> jdbcConnectionCache;
 
     public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context)
             throws PolicyAssertionException {
@@ -60,7 +59,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
         jdbcConnectionManager = context.getBean("jdbcConnectionManager", JdbcConnectionManager.class);
         config = validated(context.getBean("serverConfig", Config.class));
-        jdbcConnectionCache = new HashMap<>();
 
         if (assertion.getConnectionName() == null) {
             throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
@@ -217,29 +215,16 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
     private String getConnectionDriverClass(String connectionName) throws FindException {
         try {
-            JdbcConnection connection = getJdbcConnectionFromCache(connectionName);
+            final JdbcConnection connection = jdbcConnectionManager.getJdbcConnectionCached(connectionName);
+            if (connection == null) {
+                throw new FindException();
+            }
             return connection.getDriverClass();
 
         } catch (FindException e) {
             logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED,
                     "Could not find JDBC connection: " + connectionName);
             throw e;
-        }
-    }
-
-    private JdbcConnection getJdbcConnectionFromCache(String connectionName) throws FindException {
-        synchronized (jdbcConnectionCache) {
-            if (jdbcConnectionCache.containsKey(connectionName)) {
-                return jdbcConnectionCache.get(connectionName);
-            }
-
-            final JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
-            if (connection == null) {
-                throw new FindException();
-            }
-
-            jdbcConnectionCache.put(connectionName, connection);
-            return connection;
         }
     }
 

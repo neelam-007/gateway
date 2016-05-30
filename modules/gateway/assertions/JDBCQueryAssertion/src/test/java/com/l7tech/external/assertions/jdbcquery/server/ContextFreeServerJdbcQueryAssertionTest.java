@@ -49,7 +49,8 @@ public class ContextFreeServerJdbcQueryAssertionTest {
     static final int QUERY_TIMEOUT_INT = 10;
     static final String COLUMN_NAME_BLOB = "blob";
     static final String COLUMN_NAME_CLOB = "clob";
-    final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
+    final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+            "<L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
     final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
 
     static final byte[] BLOB_CONTENT = new byte[8192];

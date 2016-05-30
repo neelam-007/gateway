@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,11 @@ public class JdbcConnectionManagerStub extends EntityManagerStub<JdbcConnection,
             throw new FindException("Couldn't find unique entity");
         }
         return e;
+    }
+
+    @Override
+    public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
+        throw new NotImplementedException();
     }
 
     @Override

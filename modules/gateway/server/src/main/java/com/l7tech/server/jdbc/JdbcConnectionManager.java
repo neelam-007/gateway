@@ -22,6 +22,8 @@ public interface JdbcConnectionManager extends EntityManager<JdbcConnection, Ent
      */
     JdbcConnection getJdbcConnection(String connectionName) throws FindException;
 
+    JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException;
+
     /**
      * To retrieve a list of driver classes which the JDBC Query Assertion is allowed to use.
      *
