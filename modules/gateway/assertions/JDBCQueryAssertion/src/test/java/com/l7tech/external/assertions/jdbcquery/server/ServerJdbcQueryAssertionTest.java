@@ -119,9 +119,9 @@ public class ServerJdbcQueryAssertionTest {
 
         appCtx = Mockito.spy(appCtx);
         Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
-        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq(connectionName))).thenReturn(jdbcConnection);
+        when(jdbcConnectionManager.getJdbcConnectionCached(Matchers.eq(connectionName))).thenReturn(jdbcConnection);
         when(jdbcConnection.getDriverClass()).thenReturn("com.mysql.jdbc.Driver");
-        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
+        when(jdbcConnectionManager.getJdbcConnectionCached(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
 
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.getMetaData()).thenReturn(databaseMetaData);

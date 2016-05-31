@@ -33,7 +33,7 @@ public class JdbcConnectionManagerStub extends EntityManagerStub<JdbcConnection,
 
     @Override
     public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
-        throw new NotImplementedException();
+        return getJdbcConnection(connectionName);
     }
 
     @Override
