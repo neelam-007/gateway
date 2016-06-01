@@ -110,7 +110,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     @Override
     public PatchStatus deletePackage(String patchId) throws PatchException {
         PatchStatus status = getPackageStatus(patchId);
-        if (! status.allowDelete() || PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
+        if (PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
             throw new PatchException("Cannot delete patch package when status is " + status.getField(PatchStatus.Field.STATE));
         }
 
