@@ -163,4 +163,11 @@ public interface ConfigService {
      * @return The property value, or the default
      */
     boolean getBooleanProperty(String propertyName, boolean defaultValue);
+
+    /**
+     * Get Patcher persistent set of properties.
+     *
+     * @return Our singleton instance of {@link PatcherProperties}, never {@code null}.
+     */
+    PatcherProperties getPatcherProperties();
 }

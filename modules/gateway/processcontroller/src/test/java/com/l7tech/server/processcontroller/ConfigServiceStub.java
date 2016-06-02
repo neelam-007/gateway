@@ -160,6 +160,11 @@ public class ConfigServiceStub implements ConfigService {
         throw new UnsupportedOperationException("Not implemented.");
     }
 
+    @Override
+    public PatcherProperties getPatcherProperties() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
     // - PRIVATE
 
     private Set<X509Certificate> trustedPatchCerts;

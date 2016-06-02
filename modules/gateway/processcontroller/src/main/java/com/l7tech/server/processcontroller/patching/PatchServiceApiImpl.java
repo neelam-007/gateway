@@ -3,6 +3,7 @@ package com.l7tech.server.processcontroller.patching;
 import com.l7tech.server.processcontroller.ApiWebEndpoint;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.PCUtils;
+import com.l7tech.server.processcontroller.PatcherProperties;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 
@@ -75,66 +76,74 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             logger.log(Level.INFO, "Installing patch " + patchId);
         }
 
+        final boolean autoDelete = getAutoDeleteProperty();
+        logger.fine("Patch files 'autoDelete' is '" + String.valueOf(autoDelete) + "'");
         try {
-            // todo: exec with timeout?
-            List<String> commandLine = new ArrayList<>();
-            getPatchLauncher(commandLine, patch);
-            getInstallParams(commandLine, patch, nodes);
-            logger.log(Level.INFO, "Executing " + commandLine);
+            try {
+                // todo: exec with timeout?
+                List<String> commandLine = new ArrayList<>();
+                getPatchLauncher(commandLine, patch);
+                getInstallParams(commandLine, patch, nodes);
+                logger.log(Level.INFO, "Executing " + commandLine);
 
-            ProcessBuilder processBuilder = new ProcessBuilder(commandLine);
-            processBuilder.redirectErrorStream(true);
-            Process process = processBuilder.start();
-            InputStream processStdOut = process.getInputStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(processStdOut);
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            String line;
-            while((line = bufferedReader.readLine()) != null) {
-                System.out.println(line);
-                System.out.flush();
-                logger.log(Level.INFO, "Output from patch install: " + line);
+                ProcessBuilder processBuilder = new ProcessBuilder(commandLine);
+                processBuilder.redirectErrorStream(true);
+                Process process = processBuilder.start();
+                InputStream processStdOut = process.getInputStream();
+                InputStreamReader inputStreamReader = new InputStreamReader(processStdOut);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    System.out.println(line);
+                    System.out.flush();
+                    logger.log(Level.INFO, "Output from patch install: " + line);
+                }
+                processExitCode = process.waitFor();
+                System.out.println("Patch exit code: " + processExitCode);
+                logger.log(Level.INFO, "Patch exit code: " + processExitCode);
+
+                recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
+                if (rollback != null)
+                    recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
+            } catch (IOException | InterruptedException e) {
+                throw new PatchException("Error installing patch: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
             }
-            processExitCode = process.waitFor();
-            System.out.println("Patch exit code: " + processExitCode);
-            logger.log(Level.INFO, "Patch exit code: " + processExitCode);
 
-            recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
-            if (rollback != null)
-                recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
-        }
-        catch (IOException | InterruptedException e) {
-            throw new PatchException("Error installing patch: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
-        }
-
-        // check exec result and update status
-        PatchStatus status2;
-        if(processExitCode == 0) {
-            // revert any rollback's statuses from INSTALLED to ROLLED_BACK
-            if (PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE))) {
-                for(String maybeInstalledRolledback : packageManager.getRollbacksFor(patchId)) {
-                    PatchStatus rollbackStatus = packageManager.getPackageStatus(maybeInstalledRolledback);
-                    if (PatchStatus.State.INSTALLED.name().equals(rollbackStatus.getField(PatchStatus.Field.STATE))) {
-                        packageManager.updatePackageStatus(maybeInstalledRolledback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
-                        recordManager.save(new PatchRecord(System.currentTimeMillis(), maybeInstalledRolledback, Action.ROLLBACK));
+            // check exec result and update status
+            PatchStatus status2;
+            if (processExitCode == 0) {
+                // revert any rollback's statuses from INSTALLED to ROLLED_BACK
+                if (PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE))) {
+                    for (String maybeInstalledRolledback : packageManager.getRollbacksFor(patchId)) {
+                        PatchStatus rollbackStatus = packageManager.getPackageStatus(maybeInstalledRolledback);
+                        if (PatchStatus.State.INSTALLED.name().equals(rollbackStatus.getField(PatchStatus.Field.STATE))) {
+                            packageManager.updatePackageStatus(maybeInstalledRolledback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
+                            recordManager.save(new PatchRecord(System.currentTimeMillis(), maybeInstalledRolledback, Action.ROLLBACK));
+                        }
                     }
                 }
+
+                status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
+                status1.setField(PatchStatus.Field.STATUS_MSG, "");
+                status2 = packageManager.setPackageStatus(status1);
+                if (rollback != null)
+                    packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
+                logger.log(Level.INFO, "Patch " + patchId + " is installed.");
+            } else {
+                String errMsg = "";
+                status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
+                status1.setField(PatchStatus.Field.STATUS_MSG, errMsg);
+                status2 = packageManager.setPackageStatus(status1);
+                logger.log(Level.WARNING, "Error installing " + patchId);
             }
 
-            status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
-            status1.setField(PatchStatus.Field.STATUS_MSG, "");
-            status2 = packageManager.setPackageStatus(status1);
-            if (rollback != null)
-                packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
-            logger.log(Level.INFO, "Patch " + patchId + " is installed.");
-        } else {
-            String errMsg = "";
-            status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
-            status1.setField(PatchStatus.Field.STATUS_MSG, errMsg);
-            status2 = packageManager.setPackageStatus(status1);
-            logger.log(Level.WARNING, "Error installing " + patchId);
+            return status2;
+        } finally {
+            if (autoDelete) {
+                logger.log(Level.INFO, "Patch files 'autoDelete' is ON; trying to delete patch ID: " + patchId);
+                deletePackageArchive(patchId);
+            }
         }
-
-        return status2;
     }
 
     @Override
@@ -159,6 +168,68 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         PatchStatus patchStatus = packageManager.getPackageStatus(patchId);
         recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.STATUS));
         return patchStatus;
+    }
+
+    @Override
+    public String getPatcherProperty(final String name, final String defaultValue) throws PatchException {
+        if (name == null) {
+            throw new PatchException("Property name cannot be null");
+        }
+
+        try {
+            return getPatcherProperties().getProperty(name, defaultValue);
+        } catch (final IOException e) {
+            throw new PatchException(e);
+        }
+    }
+
+    @Override
+    public String setPatcherProperty(final String name, final String value) throws PatchException {
+        if (name == null) {
+            throw new PatchException("Property name cannot be null");
+        }
+        if (value == null) {
+            throw new PatchException("Property value cannot be null");
+        }
+
+        try {
+            final String prevValue = getPatcherProperties().setProperty(name, value);
+            final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.PROPERTY);
+            record.setLogMessage("Setting patcher property '" + name + "' to '" + value + "'");
+            recordManager.save(record);
+            return prevValue;
+        } catch (IOException e) {
+            throw new PatchException(e);
+        }
+    }
+
+    @Override
+    public boolean getAutoDelete() throws PatchException {
+        try {
+            return getPatcherProperties().getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE);
+        } catch (final IOException e) {
+            throw new PatchException(e);
+        }
+    }
+
+    @Override
+    public Boolean setAutoDelete(final boolean value) throws PatchException {
+        try {
+            final String prevValue = getPatcherProperties().setProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, String.valueOf(value));
+            final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.AUTO_DELETE);
+            record.setLogMessage((value ? "Enabling" : "Disabling") + " patch files (L7P) auto delete");
+            recordManager.save(record);
+            if (prevValue != null) {
+                if ("true".equalsIgnoreCase(prevValue)) {
+                    return true;
+                } else if ("false".equalsIgnoreCase(prevValue)) {
+                    return false;
+                }
+            }
+            return null;
+        } catch (final IOException e) {
+            throw new PatchException(e);
+        }
     }
 
     // - PRIVATE
@@ -216,5 +287,35 @@ public class PatchServiceApiImpl implements PatchServiceApi {
                 }
             }
         }
+    }
+
+    /**
+     * Utility method for retrieving {@link PatcherProperties#PROP_L7P_AUTO_DELETE PROP_L7P_AUTO_DELETE}
+     */
+    private boolean getAutoDeleteProperty() {
+        try {
+            final PatcherProperties patcherProperties = config.getPatcherProperties();
+            if (patcherProperties == null) {
+                logger.warning("Failed to retrieve patcher properties, 'autoDelete' is set to default '" + String.valueOf(PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE) + "'");
+                return PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE;
+            }
+
+            return patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE);
+        } catch (Exception e) {
+            logger.warning("Error while retrieving 'autoDelete', defaulting to '" + String.valueOf(PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE) + "'");
+            return PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE;
+        }
+    }
+
+    /**
+     * @return Configured {@link PatcherProperties}, never {@code null}.
+     * @throws PatchException if there is an error getting {@link PatcherProperties}.
+     */
+    private PatcherProperties getPatcherProperties() throws PatchException {
+        final PatcherProperties patcherProperties = config.getPatcherProperties();
+        if (patcherProperties == null) {
+            throw new PatchException("Failed to retrieve patcher properties");
+        }
+        return patcherProperties;
     }
 }

@@ -69,6 +69,11 @@ public class ConfigServiceImpl implements ConfigService {
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
 
+    /**
+     * Patcher persistent set of properties.
+     */
+    private final PatcherProperties patcherProperties;
+
     @Inject
     private MonitoringKernel monitoringKernel;
     private final File monitoringConfigFile;
@@ -165,6 +170,7 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         this.host = hostConfig;
+        this.patcherProperties = new PatcherPropertiesImpl(this.configDirectory);
     }
 
     private Option<String[]> getStringArrayProperty( final Properties properties,
@@ -739,4 +745,8 @@ public class ConfigServiceImpl implements ConfigService {
         host.getNodes().put( nodeName, config );
     }
 
+    @Override
+    public PatcherProperties getPatcherProperties() {
+        return patcherProperties;
+    }
 }
