@@ -13,6 +13,7 @@ import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
+import javax.xml.ws.WebServiceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -81,8 +82,15 @@ public class PatchCli {
             thrown = e2;
             errPrefix = "Patch API Error: ";
         } catch (RuntimeException re) {
-            thrown = re;
-            errPrefix = "Runtime error (check configuration): ";
+            // todo: perhaps remove check for instanceof WebServiceException
+            // todo: probably it should be safe to treat RuntimeException(s) with cause IOException as an IO errors
+            if (re instanceof WebServiceException && re.getCause() instanceof IOException) {
+                thrown = re.getCause();
+                errPrefix = "I/O Error: ";
+            } else {
+                thrown = re;
+                errPrefix = "Runtime error (check configuration): ";
+            }
         }
 
         if (thrown != null) {
