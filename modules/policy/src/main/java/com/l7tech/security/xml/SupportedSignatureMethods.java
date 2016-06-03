@@ -1,6 +1,6 @@
 package com.l7tech.security.xml;
 
-import java.util.*;
+import java.util.EnumSet;
 
 import static com.l7tech.security.xml.SupportedDigestMethods.*;
 
@@ -23,6 +23,8 @@ public enum SupportedSignatureMethods {
     HMAC_SHA1("SecretKey", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", SHA1),
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", SHA256),
+    /* RSA with SHA-256 to support RSASSA-PSS with Parameters */
+    RSA_SHA256_MGF1("RSA", "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1", SHA256),
     /** RSA with SHA-384 extension*/
     RSA_SHA384("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", SHA384),
     /** RSA with SHA-512 extension*/

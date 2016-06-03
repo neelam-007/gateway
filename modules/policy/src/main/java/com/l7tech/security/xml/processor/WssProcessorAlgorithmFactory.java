@@ -17,7 +17,10 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Node;
 
 import javax.crypto.NoSuchPaddingException;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -88,6 +91,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public WssProcessorAlgorithmFactory( @Nullable final Map<Node, Node> strToTarget, @Nullable Provider defaultProvider, @Nullable Provider ecdsaProvider ) {
         this.strToTarget = strToTarget;
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256_MGF1.getAlgorithmIdentifier(), "SHA256withRSAandMGF1");
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA384.getAlgorithmIdentifier(), "SHA384withRSA");
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA512.getAlgorithmIdentifier(), "SHA512withRSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "SHA1withECDSA");
