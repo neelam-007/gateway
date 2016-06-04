@@ -1,9 +1,6 @@
 package com.l7tech.server.processcontroller.patching.client;
 
-import com.l7tech.server.processcontroller.ConfigService;
-import com.l7tech.server.processcontroller.ConfigServiceImpl;
-import com.l7tech.server.processcontroller.CxfUtils;
-import com.l7tech.server.processcontroller.PCUtils;
+import com.l7tech.server.processcontroller.*;
 import com.l7tech.server.processcontroller.patching.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -71,7 +68,13 @@ public class PatchCli {
                 if (patchAction.isReportStatusErrors()) {
                     System.out.println(isError ? "There were errors during the patch operation." : "Patch operation completed successfully.");
                 }
-            } else {
+            } else if (patchAction == PatchAction.AUTODELETE) {
+                if (result == null) { // null result represents getting current auto delete status.
+                    System.out.println(patchAction.getCurrentAutoDeleteStatus());
+                }
+            } else if (patchAction == PatchAction.DELETE) {
+                System.out.println("No patches have been deleted.");
+            } else  {
                 System.out.println("No patches have been uploaded.");
             }
             logger.log(Level.INFO, patchAction.name() + " returned " + (result == null ? 0 : result.size()) + " results.");
@@ -228,15 +231,34 @@ public class PatchCli {
                 final PatchStatus status = api.installPatch(getArgument(), null);
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        DELETE("<patch_id>", "Deletes the package archive of patch represented by the provided ID from the gateway patch manager's repository.") {
+        DELETE("[<patch_id> | all]", "If <patch_id> specified, deletes the package archive of a patch represented by the provided ID from the gateway patch manager's repository.  If 'all' specified, bulk deletes installed patches.") {
             @Override
             void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
-                final PatchStatus status = api.deletePackageArchive(getArgument());
-                return new ArrayList<PatchStatus>() {{ add(status); }};
+                return api.deletePackageArchive(getArgument());
+            }},
+        AUTODELETE("[true | false]", "Uses 'true'/'false' to enable/disable automatic patch deletion after installation.  If no option specified, displays the current status of this configuration.") {
+            @Override
+            void extractActionArguments(List<String> args) {
+                if (args.size() == 1) {
+                    argument = null;
+                } else if (args.size() > 1) {
+                    argument = extractOneStringActionArgument(args);
+                }
+            }
+            @Override
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
+                final String option = getArgument();
+                if (option == null) { // Display auto delete status
+                    currentAutoDeleteStatus = String.valueOf(api.getAutoDelete());
+                    return null;
+                } else {
+                    api.setAutoDelete(new Boolean(option));
+                    return new ArrayList<>();
+                }
             }},
         STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.", true, false) {
             @Override
@@ -420,6 +442,10 @@ public class PatchCli {
             return outputFormat;
         }
 
+        String getCurrentAutoDeleteStatus() {
+            return currentAutoDeleteStatus;
+        }
+
         public boolean isHidden() {
             return hidden;
         }
@@ -463,6 +489,7 @@ public class PatchCli {
         String argument;
         String outputFormat;
         String sortingFormat;
+        String currentAutoDeleteStatus;
 
         // - PRIVATE
 

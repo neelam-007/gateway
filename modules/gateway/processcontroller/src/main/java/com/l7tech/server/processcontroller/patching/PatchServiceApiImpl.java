@@ -147,11 +147,28 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     @Override
-    public PatchStatus deletePackageArchive(String patchId) throws PatchException {
-        logger.log(Level.INFO, "Deleting patch ID: " + patchId);
-        PatchStatus status = packageManager.deletePackage(patchId);
-        recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.PACKAGE_DELETE));
-        return status;
+    public Collection<PatchStatus> deletePackageArchive(String option) throws PatchException {
+        final List<String> deletedPatchIds = new ArrayList<>();
+
+        if (BULK_DELETE_OPTION.equals(option)) {
+            for (final PatchStatus patchStatus: listPatches()) {
+                if (PatchStatus.State.INSTALLED.name().equals(patchStatus.getField(PatchStatus.Field.STATE))) {
+                    deletedPatchIds.add(patchStatus.getField(PatchStatus.Field.ID));
+                }
+            }
+        } else {
+            deletedPatchIds.add(option);
+        }
+
+        Collection<PatchStatus> statuses = new ArrayList<>();
+        for (String patchId: deletedPatchIds) {
+            logger.log(Level.INFO, "Deleting patch ID: " + patchId);
+            PatchStatus status = packageManager.deletePackage(patchId);
+            recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.PACKAGE_DELETE));
+            statuses.add(status);
+        }
+
+        return statuses;
     }
 
     @Override
@@ -205,35 +222,27 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public boolean getAutoDelete() throws PatchException {
-        try {
-            return getPatcherProperties().getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE);
-        } catch (final IOException e) {
-            throw new PatchException(e);
-        }
+        return Boolean.parseBoolean(getPatcherProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, String.valueOf(PatcherProperties.PROP_L7P_AUTO_DELETE_DEFAULT_VALUE)));
     }
 
     @Override
     public Boolean setAutoDelete(final boolean value) throws PatchException {
-        try {
-            final String prevValue = getPatcherProperties().setProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, String.valueOf(value));
-            final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.AUTO_DELETE);
-            record.setLogMessage((value ? "Enabling" : "Disabling") + " patch files (L7P) auto delete");
-            recordManager.save(record);
-            if (prevValue != null) {
-                if ("true".equalsIgnoreCase(prevValue)) {
-                    return true;
-                } else if ("false".equalsIgnoreCase(prevValue)) {
-                    return false;
-                }
+        final String prevValue = setPatcherProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, new Boolean(value).toString());
+        final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.AUTO_DELETE);
+        record.setLogMessage((value ? "Enabling" : "Disabling") + " patch files (L7P) auto delete");
+        recordManager.save(record);
+        if (prevValue != null) {
+            if ("true".equalsIgnoreCase(prevValue)) {
+                return true;
+            } else if ("false".equalsIgnoreCase(prevValue)) {
+                return false;
             }
-            return null;
-        } catch (final IOException e) {
-            throw new PatchException(e);
         }
+        return null;
     }
 
     // - PRIVATE
-
+    private static final String BULK_DELETE_OPTION = "all";
     private static final String NODE_PATTERN = "[a-zA-Z0-9_-]{1,1024}";
 
     @Inject

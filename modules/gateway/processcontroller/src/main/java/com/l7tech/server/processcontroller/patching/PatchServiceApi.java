@@ -16,7 +16,7 @@ public interface PatchServiceApi {
 
     public PatchStatus installPatch(String patchId, Collection<String> nodes) throws PatchException;
 
-    public PatchStatus deletePackageArchive(String patchId) throws PatchException;
+    public Collection<PatchStatus> deletePackageArchive(String option) throws PatchException;
 
     public Collection<PatchStatus> listPatches();
 
