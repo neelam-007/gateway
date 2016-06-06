@@ -343,11 +343,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
                 }
             });
             try {
-                if (caseInsensitive) {
-                    return Pattern.compile(patstr, Pattern.CASE_INSENSITIVE);
-                } else {
-                    return Pattern.compile(patstr);
-                }
+                return Pattern.compile(patstr, patternFlags());
             } catch (PatternSyntaxException e) {
                 //noinspection ThrowableResultOfMethodCallIgnored
                 logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID, new String[] { patstr, ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
