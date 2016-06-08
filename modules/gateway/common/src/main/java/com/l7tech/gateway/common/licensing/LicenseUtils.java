@@ -550,7 +550,6 @@ public class LicenseUtils {
 
             // TODO look up the human-readable marketing name rather than attempting to make one up here
             if (name.startsWith(setProf) && name.length() > setProfLen) {
-                sb.append("SecureSpan ");
                 name = name.substring(setProfLen);
                 if (name.equals("Accel")) name = "Acceleration";
                 else if (name.equals("IPS")) name = "XML IPS";

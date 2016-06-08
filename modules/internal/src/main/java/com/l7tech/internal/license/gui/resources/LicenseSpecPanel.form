@@ -519,8 +519,8 @@
         <properties>
           <editable value="true"/>
           <model>
-            <item value="Layer 7 SecureSpan Suite"/>
-            <item value="Layer 7 Enterprise Service Manager"/>
+            <item value="CA API Gateway"/>
+            <item value="CA API Gateway Enterprise Service Manager"/>
           </model>
         </properties>
       </component>

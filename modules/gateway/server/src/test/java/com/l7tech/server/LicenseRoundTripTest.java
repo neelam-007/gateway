@@ -74,7 +74,7 @@ public class LicenseRoundTripTest {
         assertEquals("developers@layer7tech.com", license.getLicenseeContactEmail());
         assertEquals("phuckoff", license.getEulaText());
 
-        assertTrue(license.isProductEnabled(BuildInfo.getProductName(), "3", "4"));
+        assertTrue(license.isProductEnabled(BuildInfo.getProductName(), "3", "4")  || license.isProductEnabled(BuildInfo.getLegacyProductName(), "3", "4"));
         assertTrue(license.isHostnameEnabled("*"));
         assertTrue(license.isIpEnabled("*"));
 

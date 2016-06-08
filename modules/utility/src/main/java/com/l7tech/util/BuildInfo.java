@@ -24,7 +24,7 @@ public class BuildInfo {
     /**
      * Get the long form of the build string.
      *
-     * <code>Layer 7 SecureSpan Suite X.Y.Z build 1234, built 20001231235959 by user at host.l7tech.com</code>
+     * <code>CA API Gateway X.Y.Z build 1234, built 20001231235959 by user at host.l7tech.com</code>
      *
      * @return The build string
      */
@@ -39,7 +39,7 @@ public class BuildInfo {
     /**
      * Get the long form of the build string.
      *
-     * <code>Layer 7 SecureSpan Suite X.Y.Z build 1234</code>
+     * <code>CA API Gateway X.Y.Z build 1234</code>
      *
      * @return The build string
      */
@@ -124,12 +124,22 @@ public class BuildInfo {
     }
 
     /**
-     * Get the product name, ie "Layer 7 SecureSpan Suite".  NOTE: Licenses bind to this.
+     * Get the product name, ie "CA API Gateway".  NOTE: Licenses bind to this.
      *
      * @return The strict product name
      */
     public static String getProductName() {
         return getBuildProperty(PROP_BUILD_PRODUCT, productName);
+    }
+
+    /**
+     * Get the legacy product name, ie "Layer 7 SecureSpan Suite".  NOTE: Old Licenses are bind to this so
+     * we need to support legacy product name in order to support upgrade.
+     *
+     * @return The strict product name
+     */
+    public static String getLegacyProductName() {
+        return getBuildProperty(PROP_BUILD_PRODUCT, legacy_productName);
     }
 
     /**
@@ -191,7 +201,8 @@ public class BuildInfo {
     private static final String PROP_BUILD_NUMBER = "Build-Number";    
 
     private static Package packageInfo = BuildInfo.class.getPackage();
-    private static String productName = "Layer 7 SecureSpan Suite";
+    private static String productName = "CA API Gateway";
+    private static String legacy_productName = "Layer 7 SecureSpan Suite";
 
     private static String getPackageImplementationVersion() {
         String version = "0";

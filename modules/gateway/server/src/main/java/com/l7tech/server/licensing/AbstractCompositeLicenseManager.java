@@ -53,6 +53,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
     private static final long DB_RETRY_INTERVAL = 5L * 60L * 1000L; // in case of a db failure, retry rebuilding the composite license every 5 minutes
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
     private static final String BUILD_PRODUCT_NAME = BuildInfo.getProductName();
+    private static final String BUILD_LEGACY_PRODUCT_NAME = BuildInfo.getLegacyProductName();
     private static final String BUILD_VERSION_MAJOR = BuildInfo.getProductVersionMajor();
     private static final String BUILD_VERSION_MINOR = BuildInfo.getProductVersionMinor();
 
@@ -170,7 +171,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
     }
 
     private void validateProduct(FeatureLicense license) throws InvalidLicenseException {
-        if (!license.isProductEnabled(BUILD_PRODUCT_NAME) || !license.isVersionEnabled(BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR)) {
+        if (!(license.isProductEnabled(BUILD_PRODUCT_NAME) || license.isProductEnabled(BUILD_LEGACY_PRODUCT_NAME)) || !license.isVersionEnabled(BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR)) {
             throw new InvalidLicenseException("License " + license.getId() +
                     " does not grant access to this version of this product " +
                     "(" + BUILD_PRODUCT_NAME + " " + BUILD_VERSION_MAJOR + "." + BUILD_VERSION_MINOR + ").");
