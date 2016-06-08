@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -36,13 +37,14 @@ public class SecurePasswordComboBox extends JComboBox<SecurePassword> {
         reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
     }
 
-    public void reloadPasswordList(SecurePassword.SecurePasswordType typeFilter) {
+    // If typeFilter is null, it means do not filter anything.  That is, all types of passwords will be loaded.
+    public void reloadPasswordList(@Nullable SecurePassword.SecurePasswordType typeFilter) {
         try {
             SecurePassword selectedSecurePassword = this.getSelectedSecurePassword();
             securePasswords = new ArrayList<>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
             for (Iterator<SecurePassword> iterator = securePasswords.iterator(); iterator.hasNext(); ) {
                 SecurePassword securePassword =  iterator.next();
-                if (securePassword.getType() != typeFilter) {
+                if (typeFilter != null && securePassword.getType() != typeFilter) {
                     iterator.remove();
                 }
             }

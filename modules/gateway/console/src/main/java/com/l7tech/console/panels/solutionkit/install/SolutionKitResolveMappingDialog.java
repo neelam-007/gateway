@@ -132,7 +132,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
         errorTypeFieldLabel.setText(mapping.getErrorType().toString());
 
         if (securePasswordComboBox != null) {
-            securePasswordComboBox.reloadPasswordList();
+            securePasswordComboBox.reloadPasswordList(null);
         } else if (privateKeysComboBox != null) {
             privateKeysComboBox.repopulate();
         } else if (jdbcConnectionComboBox != null) {
@@ -176,7 +176,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
                 DialogDisplayer.pack(SolutionKitResolveMappingDialog.this);
             }
         });
-        securePasswordComboBox.reloadPasswordList();
+        securePasswordComboBox.reloadPasswordList(null);
     }
 
     private void manageJdbcConnections() {
