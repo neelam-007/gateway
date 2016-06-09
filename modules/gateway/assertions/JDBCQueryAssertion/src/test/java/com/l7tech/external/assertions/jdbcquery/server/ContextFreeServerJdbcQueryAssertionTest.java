@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.l7tech.external.assertions.jdbcquery.server.ContextFreeServerJdbcQueryAssertionTest.*;
+import static com.l7tech.util.CollectionUtils.mapBuilder;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -732,6 +733,50 @@ public class ContextFreeServerJdbcQueryAssertionTest {
         PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContextBuilder().build();
         AssertionStatus assertionStatus = assertion.checkRequest(policyEnforcementContext);
         // succeeds by not throwing a NullPointerException
+    }
+
+    @Test
+    public void shouldNotThrowNPEWhenNamingMapContainsColumnWithDifferentCaseFromResult() throws PolicyAssertionException, IOException {
+        JdbcQueryAssertion clientAssertion = new JdbcQueryAssertionBuilder()
+                .withVariables(NO_VARIABLES).withConnectionName(CONNECTION_NAME)
+                .withSchema(SCHEMA_NAME).withMaxRecords(MAX_RECORDS).withQueryTimeout(QUERY_TIMEOUT_STRING)
+                .withSqlQuery(SQL_QUERY)
+                .withSaveResultsAsContextVariables(true)
+                .withNamingMap(CollectionUtils.MapBuilder.<String, String>builder()
+                        .put(COLUMN_NAME_BLOB.toLowerCase(), "result")
+                        .map())
+                .withVariablePrefix(JdbcQueryAssertion.DEFAULT_VARIABLE_PREFIX).withGenerateXmlResult(true)
+                .build();
+
+        ApplicationContext applicationContext = new ApplicationContextBuilder()
+                .withJdbcQueryingManager(new JdbcQueryingManagerBuilder()
+                        .whenPerformJdbcQuery(CONNECTION_NAME, SQL_QUERY, SCHEMA_NAME, MAX_RECORDS,
+                                QUERY_TIMEOUT_INT, new ArrayList<>())
+                        .thenReturn(new ListBuilder<SqlRowSet>()
+                                .add(new SqlRowSetBuilder()
+                                        .withColumns(COLUMN_NAME_BLOB.toUpperCase())
+                                        .addRow(new BlobBuilder()
+                                                .withBinaryStreamContaining("this is a blob".getBytes())
+                                                .build())
+                                        .build())
+                                .build())
+                        .build())
+                .withJdbcConnectionManager(new JdbcConnectionManagerBuilder()
+                        .withConnection(CONNECTION_NAME, new JdbcConnectionBuilder()
+                                .withDriverClass(DRIVER_CLASS_ORACLE)
+                                .build())
+                        .build())
+                .withConfig(new ConfigBuilder()
+                        .withLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, 10485760L)
+                        .build())
+                .build();
+
+        ServerJdbcQueryAssertion assertion = new ServerJdbcQueryAssertion(clientAssertion, applicationContext);
+
+        PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContextBuilder().build();
+        AssertionStatus assertionStatus = assertion.checkRequest(policyEnforcementContext);
+
+        // succeeds by not throwing
     }
 
 }

@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.jdbcquery.server;
 
+import com.l7tech.external.assertions.jdbcquery.server.ServerJdbcQueryAssertion.CaseInsensitiveString;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -100,29 +101,3 @@ class SqlRowSetBuilder {
     }
 }
 
-/**
- * This class is used because of DataDirect's SqlRowSet.getObject() UNBELIEVABLE case-insensitive behaviour
- */
-class CaseInsensitiveString {
-    private final String string;
-
-    CaseInsensitiveString(String string) {
-        this.string = string;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        CaseInsensitiveString that = (CaseInsensitiveString) o;
-
-        return !(string != null ? !string.toLowerCase().equals(that.string.toLowerCase()) : that.string != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return string != null ? string.toLowerCase().hashCode() : 0;
-    }
-}

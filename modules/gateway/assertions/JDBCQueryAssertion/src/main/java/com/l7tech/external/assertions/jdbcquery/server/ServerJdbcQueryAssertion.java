@@ -274,10 +274,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 colType = "type=\"java.lang.byte[]\"";
                 value = getReadableHexString((byte[]) value);
             } else if (value instanceof Clob) {
-                value = new String(blobs.get(row).get(columnName)).intern();
+                value = new String(blobs.get(row, columnName)).intern();
             } else if (value instanceof Blob) {
                 colType = "type=\"java.lang.byte[]\"";
-                value = getReadableHexString(blobs.get(row).get(columnName));
+                value = getReadableHexString(blobs.get(row, columnName));
             } else {
                 colType = "type=\"" + value.getClass().getName() + "\"";
             }
@@ -436,20 +436,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             throws SQLException {
         for (String oldColumnName : newNamingMap.keySet()) {
             final Object value = resultSet.getObject(oldColumnName);
-            final String newColumnName = newNamingMap.get(oldColumnName);
             // TODO - what other types may not be directly applicable as-is?
             if (value instanceof Clob) {
                 String clob = getClobStringValue((Clob) value);
-                if (!blobs.containsKey(rowNumber)) {
-                    blobs.put(rowNumber, new HashMap<String, byte[]>());
-                }
-                blobs.get(rowNumber).put(newColumnName, clob.getBytes());
+                blobs.put(rowNumber, oldColumnName, clob.getBytes());
             } else if (value instanceof Blob) {
                 byte[] blob = getBlobValue((Blob) value);
-                if (!blobs.containsKey(rowNumber)) {
-                    blobs.put(rowNumber, new HashMap<String, byte[]>());
-                }
-                blobs.get(rowNumber).put(newColumnName, blob);
+                blobs.put(rowNumber, oldColumnName, blob);
             }
         }
     }
@@ -458,14 +451,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                                        Map<String, List<Object>> results, BlobContainer blobs)
             throws SQLException {
         for (String oldColumnName : newNamingMap.keySet()) {
-            String newColumnName = newNamingMap.get(oldColumnName);
             final List<Object> rows = results.get(oldColumnName);
             final Object value = resultSet.getObject(oldColumnName);
             // TODO - what other types may not be directly applicable as-is?
             if (value instanceof Clob) {
-                rows.add(new String(blobs.get(rowNumber).get(newColumnName)).intern());
+                rows.add(new String(blobs.get(rowNumber, oldColumnName)).intern());
             } else if (value instanceof Blob) {
-                rows.add(blobs.get(rowNumber).get(newColumnName));
+                rows.add(blobs.get(rowNumber, oldColumnName));
             } else {
                 rows.add(value);
             }
@@ -590,8 +582,53 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     private static class SchemaNotSupportedException extends Exception {}
     private static class NoQueryResultAssertionFailedException extends Exception {}
 
-    static class BlobContainer extends HashMap<Integer, Map<String, byte[]>> {
+    /**
+     * A container for LOBs so that they can be saved for later processing at the moment of retrieval
+     */
+    static class BlobContainer {
+        private final HashMap<Integer, Map<CaseInsensitiveString, byte[]>> map = new HashMap<>();
 
+        public void put(Integer row, String column, byte[] lob) {
+            if (!map.containsKey(row)) {
+                map.put(row, new HashMap<CaseInsensitiveString, byte[]>());
+            }
+
+            map.get(row).put(new CaseInsensitiveString(column), lob);
+        }
+
+        public byte[] get(Integer row, String column) {
+            return map.get(row).get(new CaseInsensitiveString(column));
+        }
+    }
+
+    static class CaseInsensitiveString {
+        @NotNull
+        private final String string;
+
+        CaseInsensitiveString(@NotNull String string) {
+            this.string = string;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CaseInsensitiveString that = (CaseInsensitiveString) o;
+
+            return string.equalsIgnoreCase(that.string);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return string.toLowerCase().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "CaseInsensitiveString(\"" + string + "\")";
+        }
     }
 
 }
