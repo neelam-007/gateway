@@ -27,7 +27,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.Table;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -892,7 +892,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         CacheInfo cacheInfo;
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            SoftReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             return cacheInfo != null && cacheInfo.timestamp + (long) maxAge >= System.currentTimeMillis();
@@ -910,7 +910,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         Lock read = cacheLock.readLock();
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByName.get(name);
+            SoftReference<CacheInfo<ET>> ref = cacheInfoByName.get(name);
             read.unlock(); read = null;
             CacheInfo<ET> cinfo = ref == null ? null : ref.get();
 
@@ -987,7 +987,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         CacheInfo<ET> cacheInfo;
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            SoftReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             if (cacheInfo == null) {
@@ -1136,7 +1136,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         Lock read = cacheLock.readLock();
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            SoftReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             info = ref == null ? null : ref.get();
         } finally {
             if (read != null) read.unlock();
@@ -1149,7 +1149,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             // new item to cache
             if (info == null) {
                 info = new CacheInfo<ET>();
-                WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
+                SoftReference<CacheInfo<ET>> newref = new SoftReference<>(info);
 
                 cacheInfoByGoid.put(goid, newref);
                 if (thing instanceof NamedEntity) {
@@ -1312,8 +1312,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty( "com.l7tech.server.hibernate.useOptimizedCount", true );
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private Map<Goid, WeakReference<CacheInfo<ET>>> cacheInfoByGoid = new HashMap<Goid, WeakReference<CacheInfo<ET>>>();
-    private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
+    private Map<Goid, SoftReference<CacheInfo<ET>>> cacheInfoByGoid = new HashMap<>();
+    private Map<String, SoftReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<>();
     private String tableName;
     private EntityType entityType;
 

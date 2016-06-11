@@ -1,6 +1,5 @@
 package com.l7tech.server.jdbc;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -11,9 +10,9 @@ import com.l7tech.server.ServerConfigParams;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
-import static com.l7tech.server.ServerConfigParams.PARAM_JDBC_CONNECTION_CACHE_MAXAGE;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * The implementation of managing JDBC Connection Entity
@@ -25,7 +24,7 @@ public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
 
-    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 300_000; // five minutes, as per serverconfig.properties
+    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 500;
 
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
@@ -64,9 +63,7 @@ public class JdbcConnectionManagerImpl
      */
     @Override
     public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
-        int maxAge = ServerConfig.getInstance().getIntProperty(PARAM_JDBC_CONNECTION_CACHE_MAXAGE,
-                JDBC_CONNECTION_CACHE_MAX_AGE);
-        return getCachedEntityByName(connectionName, maxAge);
+        return getCachedEntityByName(connectionName, JDBC_CONNECTION_CACHE_MAX_AGE);
     }
 
     @Override
