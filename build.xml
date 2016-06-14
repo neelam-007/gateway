@@ -3558,24 +3558,7 @@
     <target name="OFFICIAL-build.init.pre" depends="ssg-install-full-init">
         <delete file="local.build.version"/>
     </target>
-    <target name="OFFICIAL-build.interactive" depends="init-core" unless="build.label">
-        <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?"
-               validargs="Y,y,N,n" addproperty="sure"/>
-
-        <condition property="die">
-            <not>
-                <or>
-                    <equals arg1="${sure}" arg2="y"/>
-                    <equals arg1="${sure}" arg2="Y"/>
-                </or>
-            </not>
-        </condition>
-        <fail if="die" message="Aborted at user request."/>
-
-        <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
-        <input message="Enter API version number" addproperty="official.build.api.version"/>
-    </target>
-    <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init-core,OFFICIAL-build.interactive">
+    <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init-core">
         <condition property="rightdir">
             <equals arg1="${user.dir}" arg2="${src.root}"/>
         </condition>
@@ -3608,6 +3591,7 @@
             depends="OFFICIAL-build.init, clean">
         <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${install.build.number}' build.number</echo>
         <svn>
+		    <switch path="build.number" recurse="false" url="https://thesource.l7tech.com/thesource/UneasyRooster/trunk/build.number"/>
             <commit file="build.number" recurse="false" message="[OFFICIAL-build] Incremented build number to ${build.number}"/>
         </svn>
     </target>
