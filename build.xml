@@ -3981,4 +3981,15 @@
 		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
 		<property name="publish.status" value="release"/>
     </target>
+	
+	<!--
+	SonarQube target
+    -->
+	<target name="sonar">
+		<taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+			<classpath path="lib/tools/sonar-ant-task-2.3.jar" />
+		</taskdef>
+		<sonar:sonar />
+	</target>
+
 </project>
