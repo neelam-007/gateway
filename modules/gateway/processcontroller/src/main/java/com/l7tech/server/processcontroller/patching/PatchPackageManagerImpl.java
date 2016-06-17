@@ -79,7 +79,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
         String patchId = patch.getProperty(PatchPackage.Property.ID);
         PatchStatus status = getPackageStatus(patchId);
 
-        if (! status.allowDelete()) {
+        if (PatchStatus.State.INSTALLED.name().equals(status.getField(PatchStatus.Field.STATE))) {
             throw new PatchException("Cannot overwrite patch when status is " + status.getField(PatchStatus.Field.STATE));
         }
 
@@ -116,11 +116,19 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
             throw new PatchException("Cannot delete patch package when status is " + status.getField(PatchStatus.Field.STATE));
         }
 
-        if (!FileUtils.deleteFileSafely(getPackageFile(patchId).getPath())) {
-            throw new PatchException("Error deleting patch package " + patchId);
+        // If .L7P file does not exist, then do not attempt to delete file
+        final String path = getPackageFile(patchId).getPath();
+        if (path != null && new File(path).exists()) {
+            if (!FileUtils.deleteFileSafely(path)) {
+                throw new PatchException("Error deleting patch package " + patchId);
+            }
         }
 
-        status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
+        // SSG-13579: Retain the last status for any patch deletion except deleting uploaded patches
+        //            If only uploaded and then deleted, set status to NONE.
+        if (PatchStatus.State.UPLOADED.name().equals(status.getField(PatchStatus.Field.STATE))) {
+            status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
+        }
 
         return status;
     }

@@ -152,7 +152,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
         if (BULK_DELETE_OPTION.equals(option)) {
             for (final PatchStatus patchStatus: listPatches()) {
-                if (PatchStatus.State.INSTALLED.name().equals(patchStatus.getField(PatchStatus.Field.STATE))) {
+                if (! PatchStatus.State.NONE.name().equals(patchStatus.getField(PatchStatus.Field.STATE))) {
                     deletedPatchIds.add(patchStatus.getField(PatchStatus.Field.ID));
                 }
             }

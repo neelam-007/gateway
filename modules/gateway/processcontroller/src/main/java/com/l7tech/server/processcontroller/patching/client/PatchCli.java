@@ -231,7 +231,7 @@ public class PatchCli {
                 final PatchStatus status = api.installPatch(getArgument(), null);
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        DELETE("[<patch_id> | all]", "If <patch_id> specified, deletes the package archive of a patch represented by the provided ID from the gateway patch manager's repository.  If 'all' specified, bulk deletes installed patches.") {
+        DELETE("[<patch_id> | all]", "If <patch_id> specified, deletes the package archive of a patch represented by the provided ID from the gateway patch manager's repository.  If 'all' specified, bulk deletes all patch files.") {
             @Override
             void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
