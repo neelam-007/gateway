@@ -305,7 +305,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         if (params.isUseExpectContinue() && !useHttp1_0) { // ignore expect-continue unless > HTTP 1.0
             clientParams.setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, Boolean.valueOf(params.isUseExpectContinue()));//"http.protocol.expect-continue"
         }
-        if (!params.isUseKeepAlives() && !useHttp1_0) {
+        if (!params.isUseKeepAlives()) {
             // default is to persist so add close
             clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "close")));//"http.default-headers"
             if(ConfigFactory.getBooleanProperty(PROP_TERMINATE_CONNECTION_WITHOUT_FIN, false)){
