@@ -162,7 +162,7 @@ public class ConfigServiceStub implements ConfigService {
 
     @Override
     public PatcherProperties getPatcherProperties() {
-        throw new UnsupportedOperationException("Not implemented.");
+        return null;
     }
 
     // - PRIVATE

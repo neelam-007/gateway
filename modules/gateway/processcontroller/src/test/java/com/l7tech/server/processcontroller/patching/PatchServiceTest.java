@@ -1,14 +1,12 @@
 package com.l7tech.server.processcontroller.patching;
 
-import org.junit.Test;
-import org.junit.Ignore;
-import org.junit.Before;
-import org.junit.After;
+import com.l7tech.server.processcontroller.*;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-import com.l7tech.server.processcontroller.CxfUtils;
-import com.l7tech.server.processcontroller.ConfigService;
-import com.l7tech.server.processcontroller.ConfigServiceStub;
-import com.l7tech.server.processcontroller.PCUtils;
 import com.l7tech.server.processcontroller.patching.builder.PatchSpec;
 import com.l7tech.server.processcontroller.patching.builder.PatchSpecClassEntry;
 import com.l7tech.util.IOUtils;
@@ -30,10 +28,15 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.jar.*;
 
+import static org.mockito.Mockito.when;
+
 /**
  * @author jbufu
  */
+@RunWith(MockitoJUnitRunner.class)
 public class PatchServiceTest {
+    @Rule
+    public TemporaryFolder patcherPropertiesFolder = new TemporaryFolder();
 
     @Before
     public void setUp() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
@@ -67,7 +70,8 @@ public class PatchServiceTest {
         this.patchSignerCert = patchSignerCert;
 
         // init services / mocks
-        config = new ConfigServiceStub();
+        final PatcherProperties patcherProperties = new PatcherPropertiesImpl(patcherPropertiesFolder.newFolder());
+        when(config.getPatcherProperties()).thenReturn(patcherProperties);
         ReflectionTestUtils.setField(config, "trustedPatchCerts", new HashSet<X509Certificate>() {{ add(PatchServiceTest.this.patchSignerCert); }});
         PatchPackageManager packageManager = new PatchPackageManagerImpl();
         ReflectionTestUtils.setField(packageManager, "repositoryDir", config.getPatchesDirectory());
@@ -207,6 +211,9 @@ public class PatchServiceTest {
     }
 
     private void testPatchRollback(boolean install, boolean allowRollback) throws Exception {
+        // Disable automatic patch deletion to keep patch files for this test case.
+        config.getPatcherProperties().setProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, "false");
+
         File patch = null;
         File rollback = null;
         boolean temp1DeleteOk, temp2DeleteOk;
@@ -1091,7 +1098,8 @@ public class PatchServiceTest {
     private static final String TEST_SIGNER_PASSWORD = "password"; // for both key and keystore
 
     private final PatchServiceApi patchService = new PatchServiceApiImpl();
-    private ConfigService config;
+    @Spy
+    private ConfigService config = new ConfigServiceStub();
     private X509Certificate patchSignerCert;
     private String keystorePath;
     private String untrustedKeystorePath;

@@ -22,12 +22,12 @@ public class PatcherPropertiesTest {
     @Test
     public void testAutoDelete() throws Exception {
         // make sure default is false
-        Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, true), Matchers.is(false));
-        Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, false), Matchers.is(false));
-
-        Assert.assertThat(patcherProperties.setProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, "true"), Matchers.equalToIgnoringCase("false"));
         Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, true), Matchers.is(true));
         Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, false), Matchers.is(true));
+
+        Assert.assertThat(patcherProperties.setProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, "false"), Matchers.equalToIgnoringCase("true"));
+        Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, true), Matchers.is(false));
+        Assert.assertThat(patcherProperties.getBooleanProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, false), Matchers.is(false));
     }
 
     @Test

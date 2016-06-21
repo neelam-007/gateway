@@ -25,7 +25,7 @@ public class PatcherPropertiesImpl implements PatcherProperties {
         // add new properties here
     }};
 
-    PatcherPropertiesImpl(final File propertyFileLocation) {
+    public PatcherPropertiesImpl(final File propertyFileLocation) {
         if (propertyFileLocation == null || !(propertyFileLocation.exists() && propertyFileLocation.isDirectory())) {
             throw new IllegalStateException("Patcher properties location is invalid: " + (propertyFileLocation != null ? propertyFileLocation.getAbsolutePath() : "<null>"));
         }

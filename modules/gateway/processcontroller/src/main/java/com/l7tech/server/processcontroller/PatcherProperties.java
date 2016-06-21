@@ -13,7 +13,7 @@ public interface PatcherProperties {
     /**
      * {@link #PROP_L7P_AUTO_DELETE} default value if missing.
      */
-    public static final boolean PROP_L7P_AUTO_DELETE_DEFAULT_VALUE = false;
+    public static final boolean PROP_L7P_AUTO_DELETE_DEFAULT_VALUE = true;
 
     /**
      * Get a {@code String} value from patcher.properties.
