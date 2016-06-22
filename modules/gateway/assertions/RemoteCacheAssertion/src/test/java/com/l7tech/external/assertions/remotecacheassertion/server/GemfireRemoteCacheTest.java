@@ -235,7 +235,15 @@ public class GemfireRemoteCacheTest {
      */
     @Test
     public void testRemoteCacheCreation() throws Exception {
-        String tempDir = System.getProperty("java.io.tmpdir") + "/SSG-GemFire-Cache/";
+        final StringBuilder sb = new StringBuilder();
+        sb.append(System.getProperty("java.io.tmpdir"));
+        if ( !sb.toString().endsWith(File.separator) ) {
+              sb.append(File.separator);
+        }
+        sb.append("SSG-GemFire-Cache");
+        sb.append(File.separator);
+        String tempDir = sb.toString();
+
         String cacheFile = "GemfireRegionExpiration_" + entity.getProperties().get(GemfireRemoteCache.PROPERTY_CACHE_NAME) + "_.xml";
 
         Object clientCacheFactory = mock(Object.class);

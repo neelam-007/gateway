@@ -113,7 +113,6 @@ public class MemcachedRemoteCacheTest {
      */
     @Test
     public void testSuccessfulSetByteCacheMessage() throws Exception {
-        int expiryTime = (int) (System.currentTimeMillis() / 1000) + entity.getTimeout();
         CachedMessageData message = mock(CachedMessageData.class);
         when(message.getValueType()).thenReturn(CachedMessageData.ValueType.BYTE_ARRAY);
         when(client.set(anyString(), anyInt(), anyObject())).thenReturn(futureOperation);
@@ -121,7 +120,7 @@ public class MemcachedRemoteCacheTest {
         cache = new MemcachedRemoteCache(entity, client);
         cache.set(cacheKey, message, entity.getTimeout());
 
-        verify(client).set(cacheKey, expiryTime, null);
+        verify(client).set(eq(cacheKey), anyInt(), eq(null));
         verify(futureOperation).get(entity.getTimeout(), TimeUnit.SECONDS);
     }
 
@@ -132,7 +131,6 @@ public class MemcachedRemoteCacheTest {
      */
     @Test
     public void testSuccessfulSetJsonCacheMessage() throws Exception {
-        int expiryTime = (int) (System.currentTimeMillis() / 1000) + entity.getTimeout();
         CachedMessageData message = mock(CachedMessageData.class);
         when(message.getValueType()).thenReturn(CachedMessageData.ValueType.JSON);
         when(client.set(anyString(), anyInt(), anyObject())).thenReturn(futureOperation);
@@ -140,7 +138,7 @@ public class MemcachedRemoteCacheTest {
         cache = new MemcachedRemoteCache(entity, client);
         cache.set(cacheKey, message, entity.getTimeout());
 
-        verify(client).set(cacheKey, expiryTime, null);
+        verify(client).set(eq(cacheKey), anyInt(), eq(null));
         verify(futureOperation).get(entity.getTimeout(), TimeUnit.SECONDS);
     }
 
