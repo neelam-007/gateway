@@ -122,6 +122,7 @@ public class PatchCli {
     private static final String SORT_FORMAT_GROUP_DELIMITER = "\\|";
     private static final String SORT_FORMAT_VALUE_DELIMITER = "::";
     private static final String SORT_DESCENDING_PREFIX = "-";
+    private static final String IGNORE_DELETED_PATCHES_ARG_NAME = "-ignoreDeletedPatches";
 
     private static void initLogging() {
         // configure logging if the logs directory is found, else leave console output
@@ -290,8 +291,12 @@ public class PatchCli {
          *     {@code -sort "ID"}<br>
          *         this indicates that the result should be ungrouped and sorted by {@link com.l7tech.server.processcontroller.patching.PatchStatus.Field#ID ID} in ascending order.
          *
+         *  Newly added optional argument {@code <-ignoreDeletedPatches>} will indicated if a returned patch list contains those patches with .L7P files deleted.
+         *  If the argument is provided, then the return list will not contains those deleted patches.
+         *  If the arugment is not provied, then the return list will contain any status of patches.
          */
-        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"", false, false) {
+        LIST("[output_format]<-ignoreDeletedPatches>", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"." +
+            "\n\t\t<-ignoreDeletedPatches>: if provided, the return list will exclude those patches, whose L7P files have been deleted.", false, false) {
             @Override
             void extractActionArguments(List<String> args) {
                 // first read the optional sort args
@@ -310,12 +315,19 @@ public class PatchCli {
                     }
                 }
                 if (!args.isEmpty() && args.size() > 1) {
+                    final int argIndex = args.indexOf(IGNORE_DELETED_PATCHES_ARG_NAME);
+                    if (argIndex != -1) {
+                        ignoreDeletedPatches = true;
+                        args.remove(argIndex);
+                    }
+                }
+                if (!args.isEmpty() && args.size() > 1) {
                     this.outputFormat = extractOneStringActionArgument(args);
                 }
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
-                final Collection<PatchStatus> statuses = api.listPatches();
+                final Collection<PatchStatus> statuses = api.listPatches(ignoreDeletedPatches);
                 if (statuses != null && statuses.size() > 1 && hasSortArg() ) {
                     final String[] grouping = sortingFormat.split(SORT_FORMAT_GROUP_DELIMITER);
                     if (grouping.length == 1) {
@@ -490,6 +502,7 @@ public class PatchCli {
         String outputFormat;
         String sortingFormat;
         String currentAutoDeleteStatus;
+        boolean ignoreDeletedPatches;
 
         // - PRIVATE
 

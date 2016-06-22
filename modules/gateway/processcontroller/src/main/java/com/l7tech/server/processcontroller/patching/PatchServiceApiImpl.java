@@ -151,7 +151,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         final List<String> deletedPatchIds = new ArrayList<>();
 
         if (BULK_DELETE_OPTION.equals(option)) {
-            for (final PatchStatus patchStatus: listPatches()) {
+            for (final PatchStatus patchStatus: listPatches(true)) {
                 if (! PatchStatus.State.NONE.name().equals(patchStatus.getField(PatchStatus.Field.STATE))) {
                     deletedPatchIds.add(patchStatus.getField(PatchStatus.Field.ID));
                 }
@@ -172,9 +172,9 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     @Override
-    public Collection<PatchStatus> listPatches() {
+    public Collection<PatchStatus> listPatches(boolean ignoreDeletedPatches) {
         logger.log(Level.INFO, "Listing patches...");
-        Collection<PatchStatus> statuses = packageManager.listPatches();
+        final Collection<PatchStatus> statuses = packageManager.listPatches(ignoreDeletedPatches);
         recordManager.save(new PatchRecord(System.currentTimeMillis(), "", Action.LIST));
         return statuses;
     }
@@ -227,7 +227,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public Boolean setAutoDelete(final boolean value) throws PatchException {
-        final String prevValue = setPatcherProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, new Boolean(value).toString());
+        final String prevValue = setPatcherProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, Boolean.toString(value));
         final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.AUTO_DELETE);
         record.setLogMessage((value ? "Enabling" : "Disabling") + " patch files (L7P) auto delete");
         recordManager.save(record);

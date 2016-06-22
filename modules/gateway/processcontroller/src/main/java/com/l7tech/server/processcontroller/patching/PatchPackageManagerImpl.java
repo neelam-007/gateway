@@ -116,7 +116,8 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
             throw new PatchException("Cannot delete patch package when status is " + status.getField(PatchStatus.Field.STATE));
         }
 
-        // If .L7P file does not exist, then do not attempt to delete file
+        // If .L7P file does not exist, then do not attempt to delete file.
+        // Do not delete the below checking, since the deletion function can attempt to delete a single patch without L7P file.
         final String path = getPackageFile(patchId).getPath();
         if (path != null && new File(path).exists()) {
             if (!FileUtils.deleteFileSafely(path)) {
@@ -134,12 +135,16 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     }
 
     @Override
-    public Collection<PatchStatus> listPatches() {
-        Collection<PatchStatus> list = new ArrayList<PatchStatus>();
+    public Collection<PatchStatus> listPatches(final boolean ignoreDeletedPatches) {
+        final Collection<PatchStatus> list = new ArrayList<>();
         File[] statusFiles = repositoryDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith(PatchStatus.PATCH_STATUS_SUFFIX);
+                if (name.endsWith(PatchStatus.PATCH_STATUS_SUFFIX)) {
+                    final String l7pFile = name.replace(PatchStatus.PATCH_STATUS_SUFFIX, PATCH_EXTENSION);
+                    return (! ignoreDeletedPatches) || new File(dir, l7pFile).exists();
+                }
+                return false;
             }
         });
 
@@ -156,8 +161,8 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
     @Override
     public Collection<String> getRollbacksFor(String patchId) {
-        Collection<String> rollbacks = new ArrayList<String>();
-        for(PatchStatus status : listPatches()) {
+        final Collection<String> rollbacks = new ArrayList<>();
+        for(PatchStatus status : listPatches(false)) {
             if(patchId.equals(status.getField(PatchStatus.Field.ROLLBACK_FOR_ID)))
                 rollbacks.add(status.getField(PatchStatus.Field.ID));
         }
