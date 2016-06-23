@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.remotecacheassertion.server;
 
 import com.l7tech.external.assertions.remotecacheassertion.RemoteCacheEntity;
+import com.l7tech.util.TimeSource;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.MemcachedClient;
@@ -32,6 +33,8 @@ public class MemcachedRemoteCache implements RemoteCache {
     public static final String PROP_BUCKET_SPECIFIED = "bucketSpecified";
     public static final String PROP_PASSWORD = "password";
     public static final String PROP_SERVERPORTS = "ports";
+    static TimeSource clock = new TimeSource();
+
     private MemcachedClient client;
     private RemoteCacheEntity remoteCacheEntity;
 
@@ -119,7 +122,7 @@ public class MemcachedRemoteCache implements RemoteCache {
 
     @Override
     public void set(String key, CachedMessageData value, int expiry) throws Exception {
-        int expiryTime = (int) (System.currentTimeMillis() / 1000) + expiry;
+        int expiryTime = (int) (clock.currentTimeMillis() / 1000L) + expiry;
 
         Future<Boolean> result = null;
         try {
