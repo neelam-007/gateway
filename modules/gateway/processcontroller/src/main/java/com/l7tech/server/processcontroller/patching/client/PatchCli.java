@@ -61,20 +61,21 @@ public class PatchCli {
             Collection<PatchStatus> result = patchAction.call(api);
             if (result != null && ! result.isEmpty()) {
                 boolean isError = false;
-                for(PatchStatus status : result) {
-                    System.out.println(status.toString(patchAction.getOutputFormat()));
-                    isError = isError || PatchStatus.State.ERROR.name().equals(status.getField(PatchStatus.Field.STATE));
+                // Suppress error when deleting a patch with ERROR status.
+                if (patchAction != PatchAction.DELETE) {
+                    for(PatchStatus status : result) {
+                        System.out.println(status.toString(patchAction.getOutputFormat()));
+                        isError = isError || PatchStatus.State.ERROR.name().equals(status.getField(PatchStatus.Field.STATE));
+                    }
                 }
                 if (patchAction.isReportStatusErrors()) {
                     System.out.println(isError ? "There were errors during the patch operation." : "Patch operation completed successfully.");
                 }
-            } else if (patchAction == PatchAction.AUTODELETE) {
-                if (result == null) { // null result represents getting current auto delete status.
-                    System.out.println(patchAction.getCurrentAutoDeleteStatus());
-                }
+            } else if (patchAction == PatchAction.AUTODELETE && result == null) { // result == null represents autodelete function getting current auto delete configuration status.
+                System.out.println(patchAction.getCurrentAutoDeleteStatus());     // result.isEmpty represents autodelete function setting auto delete configuration.
             } else if (patchAction == PatchAction.DELETE) {
                 System.out.println("No patches have been deleted.");
-            } else  {
+            } else if (patchAction == PatchAction.UPLOAD) {
                 System.out.println("No patches have been uploaded.");
             }
             logger.log(Level.INFO, patchAction.name() + " returned " + (result == null ? 0 : result.size()) + " results.");
