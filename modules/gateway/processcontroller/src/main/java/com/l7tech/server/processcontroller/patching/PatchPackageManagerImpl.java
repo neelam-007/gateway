@@ -111,11 +111,6 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     public PatchStatus deletePackage(String patchId) throws PatchException {
         PatchStatus status = getPackageStatus(patchId);
 
-        // A patch with NONE status can not be overwritten.
-        if (PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
-            throw new PatchException("Cannot delete patch package when status is " + status.getField(PatchStatus.Field.STATE));
-        }
-
         // If .L7P file does not exist, then do not attempt to delete file.
         // Do not delete the below checking, since the deletion function can attempt to delete a single patch without L7P file.
         final String path = getPackageFile(patchId).getPath();
@@ -150,7 +145,10 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
         for(File file : statusFiles) {
             try {
-                list.add(PatchStatus.loadPatchStatus(file));
+                final PatchStatus status =  PatchStatus.loadPatchStatus(file);
+                if (! PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
+                    list.add(PatchStatus.loadPatchStatus(file));
+                }
             } catch (PatchException e) {
                 logger.log(Level.WARNING, "Error reading patch status file: " + file.getName() + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
