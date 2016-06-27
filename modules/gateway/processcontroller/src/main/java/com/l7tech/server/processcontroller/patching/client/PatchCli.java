@@ -74,7 +74,7 @@ public class PatchCli {
             } else if (patchAction == PatchAction.AUTODELETE && result == null) { // result == null represents autodelete function getting current auto delete configuration status.
                 System.out.println(patchAction.getCurrentAutoDeleteStatus());     // result.isEmpty represents autodelete function setting auto delete configuration.
             } else if (patchAction == PatchAction.DELETE) {
-                System.out.println("No patches have been deleted.");
+                System.out.println("There are no patches that can be deleted.\n\nOnly patches that have .L7P files existing in patch repository can be deleted.");
             } else if (patchAction == PatchAction.UPLOAD) {
                 System.out.println("No patches have been uploaded.");
             }
@@ -328,7 +328,7 @@ public class PatchCli {
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
-                final Collection<PatchStatus> statuses = api.listPatches(ignoreDeletedPatches);
+                final Collection<PatchStatus> statuses = api.listPatches(ignoreDeletedPatches, true);
                 if (statuses != null && statuses.size() > 1 && hasSortArg() ) {
                     final String[] grouping = sortingFormat.split(SORT_FORMAT_GROUP_DELIMITER);
                     if (grouping.length == 1) {

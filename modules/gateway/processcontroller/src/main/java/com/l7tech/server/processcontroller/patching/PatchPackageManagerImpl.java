@@ -130,7 +130,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     }
 
     @Override
-    public Collection<PatchStatus> listPatches(final boolean ignoreDeletedPatches) {
+    public Collection<PatchStatus> listPatches(final boolean ignoreDeletedPatches, boolean ignoreNoneStatus) {
         final Collection<PatchStatus> list = new ArrayList<>();
         File[] statusFiles = repositoryDir.listFiles(new FilenameFilter() {
             @Override
@@ -146,7 +146,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
         for(File file : statusFiles) {
             try {
                 final PatchStatus status =  PatchStatus.loadPatchStatus(file);
-                if (! PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
+                if ((! ignoreNoneStatus) || (! PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE)))) {
                     list.add(PatchStatus.loadPatchStatus(file));
                 }
             } catch (PatchException e) {
@@ -160,7 +160,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     @Override
     public Collection<String> getRollbacksFor(String patchId) {
         final Collection<String> rollbacks = new ArrayList<>();
-        for(PatchStatus status : listPatches(false)) {
+        for(PatchStatus status : listPatches(false, true)) {
             if(patchId.equals(status.getField(PatchStatus.Field.ROLLBACK_FOR_ID)))
                 rollbacks.add(status.getField(PatchStatus.Field.ID));
         }

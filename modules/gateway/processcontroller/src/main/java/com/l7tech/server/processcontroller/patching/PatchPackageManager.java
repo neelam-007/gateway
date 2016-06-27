@@ -21,7 +21,7 @@ public interface PatchPackageManager {
 
     public PatchStatus deletePackage(String patchId) throws PatchException;
 
-    public Collection<PatchStatus> listPatches(boolean ignoreDeletedPatches);
+    public Collection<PatchStatus> listPatches(boolean ignoreDeletedPatches, boolean ignoreNoneStatus);
 
     public Collection<String> getRollbacksFor(String patchId);
     

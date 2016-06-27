@@ -46,7 +46,7 @@ public class PatchActionTest {
                         /*9*/ createPatchStatusMock("bb", "desc for bb", PatchStatus.State.UPLOADED, ++timer, null, null)
                 )
         );
-        Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches(false);
+        Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches(false, true);
     }
 
     @After
@@ -331,7 +331,7 @@ public class PatchActionTest {
                         /*5*/ createPatchStatusMock("c2", "desc for c2", PatchStatus.State.UPLOADED, ++timer, null, null)
                 )
         );
-        Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches(false);
+        Mockito.doReturn(sampleApiPatchStatuses).when(api).listPatches(false, true);
 
         List<String> args = new ArrayList<>(Arrays.asList("list", "-sort", "ID", "blah"));
         listAction = PatchCli.PatchAction.fromArgs(args);

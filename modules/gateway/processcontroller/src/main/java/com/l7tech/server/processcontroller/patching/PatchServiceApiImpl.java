@@ -151,10 +151,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         final List<String> deletedPatchIds = new ArrayList<>();
 
         if (BULK_DELETE_OPTION.equals(option)) {
-            for (final PatchStatus patchStatus: listPatches(true)) {
-                if (! PatchStatus.State.NONE.name().equals(patchStatus.getField(PatchStatus.Field.STATE))) {
-                    deletedPatchIds.add(patchStatus.getField(PatchStatus.Field.ID));
-                }
+            for (final PatchStatus patchStatus: listPatches(true, false)) {
+                deletedPatchIds.add(patchStatus.getField(PatchStatus.Field.ID));
             }
         } else {
             deletedPatchIds.add(option);
@@ -172,9 +170,9 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     @Override
-    public Collection<PatchStatus> listPatches(boolean ignoreDeletedPatches) {
+    public Collection<PatchStatus> listPatches(boolean ignoreDeletedPatches, boolean ignoreNoneStatus) {
         logger.log(Level.INFO, "Listing patches...");
-        final Collection<PatchStatus> statuses = packageManager.listPatches(ignoreDeletedPatches);
+        final Collection<PatchStatus> statuses = packageManager.listPatches(ignoreDeletedPatches, ignoreNoneStatus);
         recordManager.save(new PatchRecord(System.currentTimeMillis(), "", Action.LIST));
         return statuses;
     }
