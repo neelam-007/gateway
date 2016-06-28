@@ -224,6 +224,11 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     @Override
+    public VERSION getLatestPatchServiceApiVersion() {
+        return VERSION.VERSION_2;
+    }
+
+    @Override
     public Boolean setAutoDelete(final boolean value) throws PatchException {
         final String prevValue = setPatcherProperty(PatcherProperties.PROP_L7P_AUTO_DELETE, Boolean.toString(value));
         final PatchRecord record = new PatchRecord(System.currentTimeMillis(), "", Action.AUTO_DELETE);

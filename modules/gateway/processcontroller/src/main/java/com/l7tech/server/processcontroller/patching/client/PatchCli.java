@@ -71,6 +71,8 @@ public class PatchCli {
                 if (patchAction.isReportStatusErrors()) {
                     System.out.println(isError ? "There were errors during the patch operation." : "Patch operation completed successfully.");
                 }
+            } else if (patchAction == PatchAction.VERSION) {
+                System.out.println(patchAction.getPatchServiceApiVersion());
             } else if (patchAction == PatchAction.AUTODELETE && result == null) { // result == null represents autodelete function getting current auto delete configuration status.
                 System.out.println(patchAction.getCurrentAutoDeleteStatus());     // result.isEmpty represents autodelete function setting auto delete configuration.
             } else if (patchAction == PatchAction.DELETE) {
@@ -261,6 +263,22 @@ public class PatchCli {
                     api.setAutoDelete(new Boolean(option));
                     return new ArrayList<>();
                 }
+            }},
+        /**
+         * New action to distinguish if Patch Service API is a new version or old version.
+         * The new version has a few changes such as single deletion, bulk deletion, auto
+         * deletion, etc.  This new action is hidden from user.
+         */
+        VERSION("", "Retrieve the version number of Patch Service API.  No arguments for this action.", true, false) {
+            @Override
+            void extractActionArguments(List<String> args) {
+                // No any argument needed
+                argument = null;
+            }
+            @Override
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
+                patchServiceApiVersion = api.getLatestPatchServiceApiVersion().toString();
+                return null;
             }},
         STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.", true, false) {
             @Override
@@ -455,6 +473,10 @@ public class PatchCli {
             return outputFormat;
         }
 
+        public String getPatchServiceApiVersion() {
+            return patchServiceApiVersion;
+        }
+
         String getCurrentAutoDeleteStatus() {
             return currentAutoDeleteStatus;
         }
@@ -503,6 +525,7 @@ public class PatchCli {
         String outputFormat;
         String sortingFormat;
         String currentAutoDeleteStatus;
+        String patchServiceApiVersion;
         boolean ignoreDeletedPatches;
 
         // - PRIVATE

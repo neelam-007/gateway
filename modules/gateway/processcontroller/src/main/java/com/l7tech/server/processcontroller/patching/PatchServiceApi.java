@@ -11,6 +11,24 @@ import java.util.Collection;
 @WebService(name="PatchServiceApi", targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/patchServiceApi")
 @MTOM
 public interface PatchServiceApi {
+    enum VERSION implements Comparable<VERSION> {
+        //Note these must be listed in proper order! Starting with the first version and ending with the last.
+        VERSION_1(1, 0),  // corresponding to pre-9.2 gateways
+        VERSION_2(2, 0);  // corresponding to 9.2 or later gateways
+
+        private final int major;
+        private final int minor;
+
+        VERSION(int major, int minor) {
+            this.major = major;
+            this.minor = minor;
+        }
+
+        @Override
+        public String toString() {
+            return major + "." + minor;
+        }
+    }
 
     public PatchStatus uploadPatch(DataHandler patchData) throws PatchException;
 
@@ -49,6 +67,13 @@ public interface PatchServiceApi {
      * @throws PatchException if an error occurs while retrieving the property.
      */
     public boolean getAutoDelete() throws PatchException;
+
+    /**
+     * Get the latest version of Patch Service API.
+     *
+     * @return a VERSION enum
+     */
+    public PatchServiceApiImpl.VERSION getLatestPatchServiceApiVersion();
 
     /**
      * Enable or disable auto deletion of *.L7P after installation.
