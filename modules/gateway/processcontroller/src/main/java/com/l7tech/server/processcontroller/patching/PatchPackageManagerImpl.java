@@ -122,7 +122,9 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
         // SSG-13579: Retain the last status for any patch deletion except deleting uploaded patches
         //            If only uploaded and then deleted, set status to NONE.
-        if (PatchStatus.State.UPLOADED.name().equals(status.getField(PatchStatus.Field.STATE))) {
+        // SSG-13648: When deleting patch with status ROLLED_BACK, the status should be changed to NONE
+        if (PatchStatus.State.UPLOADED.name().equals(status.getField(PatchStatus.Field.STATE)) ||
+            PatchStatus.State.ROLLED_BACK.name().equals(status.getField(PatchStatus.Field.STATE))) {
             status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
         }
 
