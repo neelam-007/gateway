@@ -38,6 +38,7 @@
         <copy todir="${classes.main.dir}">
             <fileset refid="verifier-dependencies"/>
             <fileset dir="${class-dependencies}" includes="**/*.properties"/>
+            <fileset dir="${class-dependencies}" includes="com/l7tech/server/processcontroller/patching/signer/trusted_signers"/>
         </copy>
 
         <delete dir="${class-dependencies}"/>

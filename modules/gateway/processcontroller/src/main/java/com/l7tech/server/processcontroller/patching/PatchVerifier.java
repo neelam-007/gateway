@@ -4,7 +4,13 @@ import com.l7tech.util.*;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.processcontroller.ConfigServiceImpl;
+import org.jetbrains.annotations.Contract;
 
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Attributes;
@@ -18,8 +24,6 @@ import java.io.InputStream;
 import java.io.File;
 import java.security.cert.X509Certificate;
 import java.security.cert.Certificate;
-import java.security.CodeSource;
-import java.security.CodeSigner;
 
 /**
  * Utility class for verifying patch package signature integrity and if the signer is trusted.
@@ -107,7 +111,8 @@ public class PatchVerifier {
         Object mainClass = jar.getManifest().getMainAttributes().get(Attributes.Name.MAIN_CLASS);
         if (mainClass == null || ! (mainClass instanceof String) || ((String)mainClass).isEmpty())
             throw new PatchException("Invalid patch: main class not specified.");
-        checkEntryExists(jar, PatchUtils.classToEntryName((String) mainClass));
+        // jar entries are always separated with "/"
+        checkEntryExists(jar, classToJarEntryName((String) mainClass));
 
         for(String manifestEntry : jar.getManifest().getEntries().keySet())
             checkEntryExists(jar, manifestEntry);
@@ -128,6 +133,13 @@ public class PatchVerifier {
     }
 
     // - PRIVATE
+
+    @Contract("null -> fail")
+    private static String classToJarEntryName(final String className) {
+        if (className == null)
+            throw new NullPointerException("className cannot be null");
+        return className.replace('.', '/') + ".class";
+    }
 
     private PatchVerifier() { }
 
@@ -187,7 +199,7 @@ public class PatchVerifier {
 
 
         Set<X509Certificate> allTrusted = new HashSet<X509Certificate>();
-        allTrusted.addAll(getJarCodeSignerCerts());
+        allTrusted.addAll(getJarTrustedSignerCerts());
 
         if (trustedCerts == null || trustedCerts.isEmpty())
             logger.log(Level.INFO, "No user supplied trusted certificates for patch verification.");
@@ -208,25 +220,57 @@ public class PatchVerifier {
         }
     }
 
-    private static Set<X509Certificate> getJarCodeSignerCerts() {
-        Set<X509Certificate> result = new HashSet<X509Certificate>(); 
-        CodeSource codeSource = PatchVerifier.class.getProtectionDomain().getCodeSource();
-        if (codeSource != null) {
-            CodeSigner[] signers = codeSource.getCodeSigners();
-            if (signers == null) {
-                logger.log(Level.WARNING, "Code signer certificate for patch verification not found.");
-            } else {
-                for (CodeSigner signer : signers) {
-                    Certificate signerCert = signer.getSignerCertPath().getCertificates().get(0);
-                    if (! (signerCert instanceof X509Certificate)) {
-                        logger.log(Level.WARNING, "Ignoring non-X509 code signer certificate: " + signer);
+    private static final String TRUSTED_SIGNERS_KEYSTORE = "com/l7tech/server/processcontroller/patching/signer/trusted_signers";
+    private static final String TRUSTED_SIGNERS_KEYSTORE_TYPE = "JKS";
+    private static final char[] TRUSTED_SIGNERS_KEYSTORE_PASSWORD = "changeit".toCharArray();
+
+    /**
+     * Get trusted patch signer certificates from a trust store file within this jar.<br/>
+     * The location of the trust store is {@link #TRUSTED_SIGNERS_KEYSTORE}<br/>
+     * The trust store type is {@link #TRUSTED_SIGNERS_KEYSTORE_TYPE}<br/>
+     * The trust store password is {@link #TRUSTED_SIGNERS_KEYSTORE_PASSWORD}<br/>
+     *
+     * @return read-only set containing every X.509 certificate from a trusted certificate entry within the trust store, never {@code null}.
+     * @throws PatchException if an error happens while gathering trusted patch signer certificates.
+     */
+    private static Set<X509Certificate> getJarTrustedSignerCerts() throws PatchException {
+        final Set<X509Certificate> result = new HashSet<X509Certificate>();
+
+        final ClassLoader classLoader = PatchVerifier.class.getClassLoader();
+        if (classLoader == null) {
+            throw new PatchException("Failed to get PatchVerifier ClassLoader.");
+        }
+
+        final URL trustedSignersResource = classLoader.getResource(TRUSTED_SIGNERS_KEYSTORE);
+        if (trustedSignersResource == null) {
+            throw new PatchException("Failed to get trusted signers resource '" + TRUSTED_SIGNERS_KEYSTORE + "' from ClassLoader.");
+        }
+
+        try {
+            final KeyStore keyStore = KeyStore.getInstance(TRUSTED_SIGNERS_KEYSTORE_TYPE);
+            try (final InputStream is = trustedSignersResource.openStream()) {
+                keyStore.load(is, TRUSTED_SIGNERS_KEYSTORE_PASSWORD);
+                final Enumeration<String> aliases = keyStore.aliases();
+                while (aliases.hasMoreElements()) {
+                    final String alias = aliases.nextElement();
+                    if (keyStore.isCertificateEntry(alias)) {
+                        final java.security.cert.Certificate cert = keyStore.getCertificate(alias);
+                        if (cert instanceof X509Certificate) {
+                            final X509Certificate x509 = (X509Certificate) cert;
+                            result.add(x509);
+                        } else {
+                            logger.log(Level.WARNING, "Ignoring non-X509 signer certificate: " + alias);
+                        }
                     } else {
-                        result.add((X509Certificate) signerCert);
+                        logger.log(Level.WARNING, "Ignoring non certificate key entry: " + alias);
                     }
                 }
             }
+        } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
+            throw new PatchException("Error while extracting trusted signer certificates : " + ExceptionUtils.getMessage(e));
         }
-        return result;
+
+        return Collections.unmodifiableSet(result);
     }
 
     private static String getJarParam(String[] args) {

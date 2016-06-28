@@ -65,6 +65,10 @@ public class PatchUtils {
     }
 
     public static String classToEntryName(String className) {
+        // todo (tveninov): this cannot be File.separatorChar for jar entries! for jar entries path separator is always "/"!
+        // todo (tveninov): revisit all usages of this method, and if the method is used only for jar entries, then
+        // todo (tveninov): change File.separatorChar with "/", otherwise this logic WILL NOT work properly for platforms
+        // todo (tveninov): not having "/" as file separator i.e. this will most definitely not work on Windows.
         return className.replace('.', File.separatorChar) + ".class";
     }
 
