@@ -493,6 +493,13 @@
                 <!-- use this property to tweak the timeout for creating source and target environments  during migration
                  Example: -Dtest.migration.waitTimeMinutes=15 -->
                 <propertyref name="test.migration.waitTimeMinutes"/>
+                <!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
+                 Example: -Dcode.signer.alias=signer6 -->
+                <propertyref name="code.signer.alias"/>
+                <!-- use this property to tweak the code signing certificate expiry period (in days) threshold
+                nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold
+                 Example: -Dcode.signer.expiry.days=180 -->
+                <propertyref name="code.signer.expiry.days"/>
             </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">
