@@ -29,8 +29,8 @@ public class CodeSigningCertTest {
     private static final String SSG_KEYSTORE_TYPE = "JKS";
     private static final char[] SSG_KEYSTORE_PASS = "password".toCharArray();
 
-    private static final String CODE_SIGNER_ALIAS_SYS_PROP = "code.signer.alias";
-    private static final String CODE_SIGNER_EXPIRY_DAYS_SYS_PROP = "code.signer.expiry.days";
+    private static final String CODE_SIGNER_ALIAS_SYS_PROP = "code.signer.cert.alias";
+    private static final String CODE_SIGNER_EXPIRY_DAYS_SYS_PROP = "code.signer.cert.expiry.reminder.days";
 
     /**
      * Test if current code signing certificate, specified with {@link #CODE_SIGNER_ALIAS_SYS_PROP} system property,
