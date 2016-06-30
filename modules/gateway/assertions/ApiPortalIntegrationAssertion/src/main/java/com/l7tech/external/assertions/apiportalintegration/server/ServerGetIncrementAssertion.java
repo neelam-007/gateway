@@ -151,12 +151,14 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
-                            "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY \n" +
+                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
+                            "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, max(r.CREATE_TS) as LATEST_REQ \n" +
                             "FROM APPLICATION a  \n" +
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
-                            "WHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')", Collections.EMPTY_LIST);
+                            "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
+                            "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
+                            "\tGROUP BY a.UUID", Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
