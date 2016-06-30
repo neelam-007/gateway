@@ -144,7 +144,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "a.STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
                             "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY")),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
