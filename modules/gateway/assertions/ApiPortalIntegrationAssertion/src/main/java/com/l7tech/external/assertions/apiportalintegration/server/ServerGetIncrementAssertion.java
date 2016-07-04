@@ -19,20 +19,19 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
-
 import com.l7tech.util.Functions;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.logging.Logger;
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
+
+import javax.xml.bind.JAXBException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the GetIncrementAssertion.
@@ -144,14 +143,14 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "a.NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "concat(a.NAME,'-',o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
                             "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY")),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
             results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
+                    "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
                             "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, max(r.CREATE_TS) as LATEST_REQ \n" +
                             "FROM APPLICATION a  \n" +
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
