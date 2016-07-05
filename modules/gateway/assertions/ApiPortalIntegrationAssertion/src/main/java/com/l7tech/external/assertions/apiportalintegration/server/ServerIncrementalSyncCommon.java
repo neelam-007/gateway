@@ -18,7 +18,7 @@ public class ServerIncrementalSyncCommon {
             "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
             "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
             "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR ( o.MODIFY_TS > ? and  o.MODIFY_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))" +
-            "\tGROUP BY a.UUID";
+            "\tGROUP BY a.UUID, ax.API_UUID";
     final static String SELECT_DELETED_ENTITIES_SQL="SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = '%s' AND DELETED_TS > ? AND DELETED_TS <= ?";
     static final String BULK_SYNC_TRUE = "true";
     static final String BULK_SYNC_FALSE = "false";

@@ -157,7 +157,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
                             "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
                             "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
-                            "\tGROUP BY a.UUID", Collections.EMPTY_LIST);
+                            "\tGROUP BY a.UUID, ax.API_UUID", Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
