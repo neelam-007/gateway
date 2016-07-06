@@ -40,15 +40,8 @@ public class RemoteCacheEntityManagerServerSupport {
         return instance;
     }
 
-    public void init(ApplicationContext context) {
+    private void init(ApplicationContext context) {
         GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
-        final GenericEntityMetadata meta = new GenericEntityMetadata().
-                addSafeXmlClasses("java.util.HashMap").
-                addSafeXmlConstructors("java.util.HashMap()").
-                addSafeXmlMethods(
-                        "java.util.HashMap.put(java.lang.Object,java.lang.Object)",
-                        "java.util.HashMap.remove(java.lang.Object)");
-        gem.registerClass(RemoteCacheEntity.class, meta);
 
         entityManager = gem.getEntityManager(RemoteCacheEntity.class);
 

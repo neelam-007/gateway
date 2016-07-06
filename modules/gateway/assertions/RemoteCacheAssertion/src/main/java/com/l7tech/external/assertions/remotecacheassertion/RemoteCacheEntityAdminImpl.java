@@ -6,8 +6,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.policy.export.PolicyExporterImporterManager;
-import org.springframework.context.ApplicationContext;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,9 +25,6 @@ import java.util.logging.Logger;
 public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
 
     private static final Logger logger = Logger.getLogger(RemoteCacheEntityAdminImpl.class.getName());
-
-    private static PolicyExporterImporterManager policyExporterImporterManager;
-    private static RemoteCacheExternalReferenceFactory externalReferenceFactory;
 
     private EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager;
     private ServerConfig serverConfig;
@@ -176,23 +171,6 @@ public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
             classLoader.notifyLibraryAdded();
         } catch(IOException e) {
             throw new SaveException("Unable to save library.");
-        }
-    }
-
-    public static synchronized void onModuleLoaded(final ApplicationContext context) {
-        if (policyExporterImporterManager == null) {
-            policyExporterImporterManager = context.getBean("policyExporterImporterManager", PolicyExporterImporterManager.class);
-        }
-        externalReferenceFactory = new RemoteCacheExternalReferenceFactory();
-        policyExporterImporterManager.register(externalReferenceFactory);
-    }
-
-    public static synchronized void onModuleUnloaded() {
-        RemoteCachesManagerImpl.shutdown();
-
-        if (policyExporterImporterManager != null && externalReferenceFactory != null) {
-            policyExporterImporterManager.unregister(externalReferenceFactory);
-            externalReferenceFactory = null;
         }
     }
 }

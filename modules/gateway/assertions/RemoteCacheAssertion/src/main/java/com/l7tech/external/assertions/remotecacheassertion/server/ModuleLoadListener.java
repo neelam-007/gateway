@@ -16,6 +16,7 @@ public class ModuleLoadListener {
     private static RemoteCacheExternalReferenceFactory storeExternalReferenceFactory;
     private static RemoteCacheExternalReferenceFactory lookupExternalReferenceFactory;
     private static RemoteCacheExternalReferenceFactory removeExternalReferenceFactory;
+    private static RemoteCacheExternalReferenceFactory externalReferenceFactory;
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         registerExternalReferenceFactory(context);
@@ -41,6 +42,9 @@ public class ModuleLoadListener {
 
         removeExternalReferenceFactory = new RemoteCacheExternalReferenceFactory(RemoteCacheRemoveAssertion.class, RemoteCacheReference.class);
         policyExporterImporterManager.register(removeExternalReferenceFactory);
+
+        externalReferenceFactory = new RemoteCacheExternalReferenceFactory();
+        policyExporterImporterManager.register(externalReferenceFactory);
     }
 
     private static void unregisterExternalReferenceFactory() {
@@ -55,6 +59,10 @@ public class ModuleLoadListener {
         if (policyExporterImporterManager != null && removeExternalReferenceFactory != null) {
             policyExporterImporterManager.unregister(removeExternalReferenceFactory);
             removeExternalReferenceFactory = null;
+        }
+        if (policyExporterImporterManager != null && externalReferenceFactory != null) {
+            policyExporterImporterManager.unregister(externalReferenceFactory);
+            externalReferenceFactory = null;
         }
     }
 }

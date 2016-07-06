@@ -27,7 +27,7 @@ public class ModuleLoadListenerTest {
         ModuleLoadListener.onModuleLoaded(applicationContext);
         ModuleLoadListener.onModuleUnloaded();
 
-        verify(policyExporterImporterManager, times(3)).register(any(RemoteCacheExternalReferenceFactory.class));
-        verify(policyExporterImporterManager, times(3)).unregister(any(RemoteCacheExternalReferenceFactory.class));
+        verify(policyExporterImporterManager, times(4)).register(any(RemoteCacheExternalReferenceFactory.class));
+        verify(policyExporterImporterManager, times(4)).unregister(any(RemoteCacheExternalReferenceFactory.class));
     }
 }
