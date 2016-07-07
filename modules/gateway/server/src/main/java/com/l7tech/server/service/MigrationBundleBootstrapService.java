@@ -30,10 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -129,8 +126,19 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
 
             String thing = skarMultipart ? "RESTMAN multipart parameterized solution kit" : "RESTMAN migration bundle";
             logger.info("Installing " + thing + " from: " + bundleFile.getCanonicalPath());
+            final String multipartBoundary;
+            //if this is a skmult file we need to read the multipart/form-data boundary from the first line in the input
+            // stream so that it can be added to the multipart/form-data header
+            if(skarMultipart) {
+                try(BufferedReader brTest = new BufferedReader(new FileReader(bundleFile))) {
+                    //Note we need to strip out the first 2 characters
+                    multipartBoundary = brTest.readLine().substring(2);
+                }
+            } else {
+                multipartBoundary=null;
+            }
             try ( InputStream fis = new FileInputStream( bundleFile ) ) {
-                installSkarOrBundle( fis, skarMultipart, adminUser );
+                installSkarOrBundle( fis, skarMultipart, multipartBoundary, adminUser );
             }
 
         } catch ( Exception e ) {
@@ -143,7 +151,7 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
 
 
     private void installSkarOrBundle(@NotNull InputStream bundleInputStream,
-                       final boolean isSkarMultipart,
+                       final boolean isSkarMultipart, final String multipartBoundary,
                        @NotNull User adminUser) throws IOException, BundleInstallFailedException
     {
 
@@ -169,7 +177,7 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
                 // SKAR bundle
                 logger.log( Level.INFO, "SKAR bundle detected");
 
-                ContentTypeHeader formDataContentType = ContentTypeHeader.parseValue( "multipart/form-data" );
+                ContentTypeHeader formDataContentType = ContentTypeHeader.parseValue( "multipart/form-data; boundary=" + multipartBoundary );
                 mess.initialize( stashManagerFactory.createStashManager(), formDataContentType, bundleInputStream );
                 context.setVariable( "restGatewayMan.action", "POST" );
                 context.setVariable( "restGatewayMan.uri", "1.0/solutionKitManagers" );
