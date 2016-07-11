@@ -47,116 +47,123 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         Map<String, Object> vars = context.getVariableMap(this.variablesUsed, auditor);
-        String toReturn = "";
-        final String key = ExpandVariables.process(assertion.getKey(), vars, auditor, true);
-        // This can be unset (and subsequently null), especially in unit tests!
-        // (Like when a policy is pasted from XML into a gateway, and no UI is ever used)
-        // Because this field is OPTIONAL, it shouldn't be treated as it's always present.
+        // Optional field. This can be unset (and subsequently null), especially in unit tests!
+        // (eg. When a policy is pasted from XML into a gateway, and no UI is ever used)
         final String iv = (assertion.getIv() != null ? ExpandVariables.process(assertion.getIv(), vars, auditor, true) : "");
+        final String key = ExpandVariables.process(assertion.getKey(), vars, auditor, true);
         final String transformation = assertion.getAlgorithm();
         final String text = ExpandVariables.process(assertion.getText(), vars, auditor, true);
         final String pgpPassPhrase = (assertion.getPgpPassPhrase() != null ? ExpandVariables.process(assertion.getPgpPassPhrase(), vars, auditor, true) : "");
         final String variableName = assertion.getOutputVariableName();
         final boolean isEncrypt = assertion.getIsEncrypt();
 
-        // Block of code to verify all required data has been submitted
+        // Verify data submission
         if (transformation == null || transformation.length() == 0) {
             logger.log(Level.WARNING, "Algorithm is not set");
             return AssertionStatus.FAILED;
         }
         if (text == null || text.length() == 0) {
-            logger.log(Level.WARNING, "text is not set");
+            logger.log(Level.WARNING, "Text is not set");
             return AssertionStatus.FAILED;
         }
         if (variableName == null || variableName.length() == 0) {
-            logger.log(Level.WARNING, "variable is not set");
+            logger.log(Level.WARNING, "Variable is not set");
             return AssertionStatus.FAILED;
         }
 
-
-        /*-----------------------------------------------------------*/
-
-        /*Set things up: PREP START------------------------------ */
-        //prep the input
-        byte[] inputbytes = HexUtils.decodeBase64(text);
-
-        // Lets make sure a proper input was base64 decoded.  In this case "proper" = inputbytes.length() > 0
-        if (inputbytes == null || inputbytes.length <= 0) {
+        /* ---------------------------PREP START------------------------------ */
+        byte[] inputBytes = HexUtils.decodeBase64(text);
+        if (inputBytes == null || inputBytes.length <= 0) {
             logger.log(Level.WARNING, "Text is not properly set");
             return AssertionStatus.FAILED;
         }
 
 
         if (transformation.equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP)) {
-            byte[] output = new byte[0];
-            InputStream is = new ByteArrayInputStream(inputbytes);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            return encryptDecryptWithPgp(context, inputBytes, pgpPassPhrase, isEncrypt, variableName, key);
+        } else {
+            return encryptDecryptWithoutPgp(context, inputBytes, transformation, isEncrypt, variableName, key, iv);
+        }
 
-            // first setup the pass phrase properly
-            if (pgpPassPhrase == null || pgpPassPhrase.length() == 0) {
-                logger.log(Level.WARNING, "PGP PassPhrase is not set");
+    }
+
+    /*
+     * Perform encryption/decryption with PGP transformation
+     */
+    private AssertionStatus encryptDecryptWithPgp(PolicyEnforcementContext context, byte[] inputBytes, String pgpPassPhrase,
+                                                  boolean isEncrypt, String variableName, String key) throws IOException {
+        byte[] output;
+        InputStream is = new ByteArrayInputStream(inputBytes);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        // Setup pass phrase
+        if (pgpPassPhrase.length() == 0) {
+            logger.log(Level.WARNING, "PGP PassPhrase is not set");
+            return AssertionStatus.FAILED;
+        }
+
+        byte[] pgpPassPhraseBytes = HexUtils.decodeBase64(pgpPassPhrase);
+        char[] passwordCharArray = new String(pgpPassPhraseBytes).toCharArray();
+
+        // Verify pgpPassPhraseBytes is properly decoded
+        if (pgpPassPhraseBytes.length <= 0) {
+            logger.log(Level.WARNING, "PGP PassPhrase  is not properly set");
+            return AssertionStatus.FAILED;
+        }
+
+        if (isEncrypt) {
+            try {
+                PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), passwordCharArray, false, true);
+                output = out.toByteArray();
+                return this.doFinalCheckAndFinishCrypto(output, variableName, context);
+            } catch (PgpUtil.PgpException e) {
+                logger.log(Level.WARNING, "Error encrypting text", ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
-            }
-
-            byte[] pgpPassPhraseBytes = HexUtils.decodeBase64(pgpPassPhrase);
-            char[] passwordCharArray = new String(pgpPassPhraseBytes).toCharArray();
-
-            // Lets make sure a proper pgpPassPhraseBytes was base 64 decoded.  In this case "proper" = pgpPassPhraseBytes.length() > 0
-            if (pgpPassPhraseBytes == null || pgpPassPhraseBytes.length <= 0) {
-                logger.log(Level.WARNING, "PGP PassPhrase  is not properly set");
-                return AssertionStatus.FAILED;
-            }
-
-            if (isEncrypt) {
-                try {
-                    PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), passwordCharArray, false, true);
-                    output = out.toByteArray();
-                    return this.doFinalCheckAndFinishCrypto(output, variableName, context);
-                } catch (PgpUtil.PgpException e) {
-                    logger.log(Level.WARNING, "Error encrypting text", ExceptionUtils.getDebugException(e));
-                    return AssertionStatus.FAILED;
-                }
-            } else {
-                try {
-                    if (key != null && !key.equals(""))
-                    {
-                        // setup the key properly
-                        byte[] keyBytes = HexUtils.decodeBase64(key);
-
-                        // Lets make sure a proper key was base 64 decoded.  In this case "proper" = keyBytes.length() > 0
-                        if (keyBytes == null || keyBytes.length <= 0) {
-                            logger.log(Level.WARNING, "Key is not properly set");
-                            return AssertionStatus.FAILED;
-                        }
-                        InputStream keyStream = new ByteArrayInputStream(keyBytes);
-
-                        final PgpUtil.DecryptionMetadata metadata = PgpUtil.decrypt(is,keyStream,out,passwordCharArray);
-                    }
-                    else
-                    {
-                       final PgpUtil.DecryptionMetadata metadata = PgpUtil.decrypt(is,out,passwordCharArray);
-                    }
-                    output = out.toByteArray();
-                    return this.doFinalCheckAndFinishCrypto(output, variableName, context);
-                } catch (PgpUtil.PgpException e) {
-                    logger.log(Level.WARNING, "Error decrypting text", ExceptionUtils.getDebugException(e));
-                    return AssertionStatus.FAILED;
-                }
             }
         } else {
-            // assume the chunk of data before the first "/" of the algorithm portion of the Assertion class is the proper algorithm name
-            String algorithmName = "";
-            String blockMode = "";
-            String[] temp;
-            temp = transformation.split(SymmetricKeyEncryptionDecryptionAssertion.DEFAULT_TRANS_SEPERATOR);
-            algorithmName = temp[0];
-            // we hope and assume the "/" will always be used as the delimiter for the transformation
-            // if not, the split method will return the entire string right back which will just end up being the algorithm Name
-            if (temp.length > 1) {
-                blockMode = temp[1];
+            try {
+                if (key != null && !key.equals(""))
+                {
+                    byte[] keyBytes = HexUtils.decodeBase64(key);
+
+                    // Verify keyBytes is properly decoded
+                    if (keyBytes == null || keyBytes.length <= 0) {
+                        logger.log(Level.WARNING, "Key is not properly set");
+                        return AssertionStatus.FAILED;
+                    }
+                    InputStream keyStream = new ByteArrayInputStream(keyBytes);
+                    PgpUtil.decrypt(is,keyStream,out,passwordCharArray);
+                }
+                else
+                {
+                    PgpUtil.decrypt(is,out,passwordCharArray);
+                }
+                output = out.toByteArray();
+                return this.doFinalCheckAndFinishCrypto(output, variableName, context);
+            } catch (PgpUtil.PgpException e) {
+                logger.log(Level.WARNING, "Error decrypting text", ExceptionUtils.getDebugException(e));
+                return AssertionStatus.FAILED;
             }
-            /*Algorithm:
-            1) generate the SecretKeyspec
+        }
+    }
+
+    /*
+     * Perform encryption/decryption without PGP transformation
+     */
+    private AssertionStatus encryptDecryptWithoutPgp(PolicyEnforcementContext context, byte[] inputBytes, String transformation,
+                                                     boolean isEncrypt, String variableName, String key, String iv) {
+        // If "/" is not the delimiter for the transformation, split will return the entire string as the algorithm name
+        String algorithmName;
+        String blockMode = "";
+        String[] temp;
+        temp = transformation.split(SymmetricKeyEncryptionDecryptionAssertion.DEFAULT_TRANS_SEPERATOR);
+        algorithmName = temp[0];
+        if (temp.length > 1) {
+            blockMode = temp[1];
+        }
+            /*
+            Algorithm:
+            1) generate the SecretKeySpec
             2) decide if we are going to encrypt or decrypt
             3) get the cipher object
             4) prep the input: does it need to be base 64 decoded
@@ -164,82 +171,72 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                 Depending on the encryption algorithm, the block size will differ
             6) finish the process
             7) base 64 encode
-            done!*/
-            // setup the key properly
-            if (key == null || key.length() == 0) {
-                logger.log(Level.WARNING, "Key is not set");
-                return AssertionStatus.FAILED;
-            }
+            done!
+            */
 
-            byte[] keyBytes = HexUtils.decodeBase64(key);
+        if (key == null || key.length() == 0) {
+            logger.log(Level.WARNING, "Key is not set");
+            return AssertionStatus.FAILED;
+        }
 
-            // Lets make sure a proper key was base 64 decoded.  In this case "proper" = keyBytes.length() > 0
-            if (keyBytes == null || keyBytes.length <= 0) {
-                logger.log(Level.WARNING, "Key is not properly set");
-                return AssertionStatus.FAILED;
-            }
-            SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, algorithmName);
+        byte[] keyBytes = HexUtils.decodeBase64(key);
 
-            // We don't check the IV value, if it's not present, it's not used.
-            // Only checked on decryption, though...not used on encryption in this case.
-            byte[] ivBytes = null;
-            if ( (iv != null && iv.length() > 0) && (isEncrypt != true)) {
-                // We have an IV value to use.
-                ivBytes = HexUtils.decodeBase64(iv);
-                if (ivBytes == null || ivBytes.length <= 0) {
-                    logger.log(Level.WARNING, "IV was specified, but wasn't properly decoded from base64.");
-                    return AssertionStatus.FAILED;
-                }
-            }
+        // Verify keyBytes is properly decoded
+        if (keyBytes == null || keyBytes.length <= 0) {
+            logger.log(Level.WARNING, "Key is not properly set");
+            return AssertionStatus.FAILED;
+        }
+        SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, algorithmName);
 
-            // initialize the cipher for encrypt mode
-            Cipher cipher = null;
-            int mode;
-            try {
-                // get the proper Cipher
-                cipher = JceProvider.getCipher(transformation, null);
-
-                /* ----------------------- PREP OVER -------------------*/
-
-                byte[] output = new byte[0];
-                if (isEncrypt) {
-                    output = encrypt(cipher, skeySpec, inputbytes, algorithmName, blockMode);
-                } else {
-                    output = decrypt(cipher, skeySpec, inputbytes, algorithmName, blockMode, ivBytes);
-                }
-
-                return this.doFinalCheckAndFinishCrypto(output, variableName, context);
-
-            } catch (NoSuchAlgorithmException
-                    nsaE) {
-                logger.log(Level.WARNING, "Missing transformation: " + transformation, ExceptionUtils.getDebugException(nsaE));
-                return AssertionStatus.FAILED;
-            } catch (NoSuchPaddingException
-                    nspE) {
-                logger.log(Level.WARNING, "There is no padding specified in the transformation: " + transformation, ExceptionUtils.getDebugException(nspE));
-                return AssertionStatus.FAILED;
-            } catch (InvalidKeyException
-                    ikE) {
-                logger.log(Level.WARNING, "Problem with the key specified", ExceptionUtils.getDebugException(ikE));
-                return AssertionStatus.FAILED;
-            } catch (BadPaddingException
-                    bpE) {
-                logger.log(Level.WARNING, "There is a problem with the padding specified in the transformation: " + transformation, ExceptionUtils.getDebugException(bpE));
-                return AssertionStatus.FAILED;
-            } catch (IllegalBlockSizeException
-                    ibsE) {
-                logger.log(Level.WARNING, "There is a problem with the block size.  Please monitor the transformation: " + transformation, ExceptionUtils.getDebugException(ibsE));
-                return AssertionStatus.FAILED;
-            } catch (InvalidAlgorithmParameterException
-                    e) {
-                logger.log(Level.WARNING, "There is a problem with the parameters passed into the encryption process.  Please monitor the transformation: " + transformation, ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FAILED;
-            } catch (ShortBufferException e) {
-                logger.log(Level.WARNING, "There is a problem with the Encryption/Decryption process.  The internal buffer has run out of space.", ExceptionUtils.getDebugException(e));
+        // On decryption, check the IV value if it is present
+        byte[] ivBytes = null;
+        if ( (iv != null && iv.length() > 0) && !isEncrypt) {
+            ivBytes = HexUtils.decodeBase64(iv);
+            if (ivBytes == null || ivBytes.length <= 0) {
+                logger.log(Level.WARNING, "IV was specified, but wasn't properly decoded from base64.");
                 return AssertionStatus.FAILED;
             }
         }
+        Cipher cipher;
+        try {
+            cipher = JceProvider.getCipher(transformation, null);
 
+                /* ----------------------- PREP OVER -------------------*/
+            byte[] output;
+            if (isEncrypt) {
+                output = encrypt(cipher, skeySpec, inputBytes, algorithmName, blockMode);
+            } else {
+                output = decrypt(cipher, skeySpec, inputBytes, algorithmName, blockMode, ivBytes);
+            }
+            return this.doFinalCheckAndFinishCrypto(output, variableName, context);
+        } catch (NoSuchAlgorithmException
+                nsaE) {
+            logger.log(Level.WARNING, "Missing transformation: " + transformation, ExceptionUtils.getDebugException(nsaE));
+            return AssertionStatus.FAILED;
+        } catch (NoSuchPaddingException
+                nspE) {
+            logger.log(Level.WARNING, "There is no padding specified in the transformation: " + transformation, ExceptionUtils.getDebugException(nspE));
+            return AssertionStatus.FAILED;
+        } catch (InvalidKeyException
+                ikE) {
+            logger.log(Level.WARNING, "Problem with the key specified", ExceptionUtils.getDebugException(ikE));
+            return AssertionStatus.FAILED;
+        } catch (BadPaddingException
+                bpE) {
+            logger.log(Level.WARNING, "There is a problem with the padding specified in the transformation: " + transformation, ExceptionUtils.getDebugException(bpE));
+            return AssertionStatus.FAILED;
+        } catch (IllegalBlockSizeException
+                ibsE) {
+            logger.log(Level.WARNING, "There is a problem with the block size.  Please monitor the transformation: " + transformation, ExceptionUtils.getDebugException(ibsE));
+            return AssertionStatus.FAILED;
+        } catch (InvalidAlgorithmParameterException
+                e) {
+            logger.log(Level.WARNING, "There is a problem with the parameters passed into the encryption process.  Please monitor the transformation: " + transformation, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
+        } catch (ShortBufferException e) {
+            logger.log(Level.WARNING, "There is a problem with the Encryption/Decryption process.  The internal buffer has run out of space.", ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
+        }
     }
 
     /*
