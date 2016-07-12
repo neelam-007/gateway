@@ -17,7 +17,12 @@
 
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
-
+	
+	<!-- set properties used to create saars -->
+	<property name="saar.keystore" value="etc/signer/portalKeyStore.p12"/>
+	<property name="saar.access.password" value="7layer"/>
+	<property name="saar.load.password" value="7layer"/>
+	
     <!--
       Set default build properties
       Properties that were not specified in user properties
@@ -642,6 +647,7 @@
 
     <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
 		<modules target="publish"/>
+		<modules target="create-saar"/>
     </target>
 	
 	<target name="publish-only-main-modules" depends="package.readversion, build-module-list" unless="package.jars.notrequired">
@@ -3795,9 +3801,21 @@
         Target to build the skar signer and sign .aar file.
     -->
     <target name="sign-aar-full" depends="package.skarsigner,sign-aar" description="Sign an AAR file" />
-    <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign a aar file and generate RESTman XML for an signed file" />
-    <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign aa aar file and generate RESTman XML for an signed file" />
+    <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign an aar file and generate RESTman XML for an signed file" />
+    <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for an signed file" />
 
+	<target name="sign-assertions" description="Sign assertions">
+        <echo level="info">Signing assertions in build</echo>
+        <property name="module.sign.assertions" value="true"/>
+    </target>
+	
+	<target name="create-saar" if="module.sign.assertions">
+		<property name="assertion" value="${ant.project.name}"/>
+		<property name="keystore" value="${saar.keystore}"/>
+		<property name="access.password" value="${saar.access.password}"/>
+		<property name="load.password" value="${saar.load.password}"/>
+		<antcall target="sign-aar-gensmfxml-full"/>
+	</target>
 
     <!-- check if the SkarSigner jar file exists -->
     <target name="skar-jar-check">
