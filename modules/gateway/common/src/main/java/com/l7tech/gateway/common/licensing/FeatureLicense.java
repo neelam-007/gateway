@@ -80,6 +80,32 @@ public class FeatureLicense implements Serializable {
                 (WILDCARD.equals(this.minorVersion) || this.minorVersion.equals(minorVersion));
     }
 
+    /**
+     * Check if the license is valid for a future version of the product (e.g. an imminent upgrade) given
+     * the major and minor version numbers.
+     *
+     * @param majorVersion the major version number
+     * @param minorVersion the minor version number
+     * @return iff the given minor version and/or major version numbers apply to a future version of the product
+     */
+    public boolean isFutureVersionEnabled(String majorVersion, String minorVersion) {
+        if (WILDCARD.equals(this.majorVersion)) {
+            return true;
+        } else if (this.majorVersion.equals(majorVersion)) {
+            if (WILDCARD.equals(this.minorVersion)) {
+                return true;
+            } else {
+                Integer buildMinor = new Integer(minorVersion);
+                Integer licenseMinor = new Integer(this.minorVersion);
+                return buildMinor < licenseMinor;
+            }
+        } else {
+            Integer buildMajor = new Integer(majorVersion);
+            Integer licenseMajor = new Integer(this.majorVersion);
+            return buildMajor < licenseMajor;
+        }
+    }
+
     public boolean isLicensePeriodCurrent() {
         return isLicensePeriodCurrent(System.currentTimeMillis());
     }

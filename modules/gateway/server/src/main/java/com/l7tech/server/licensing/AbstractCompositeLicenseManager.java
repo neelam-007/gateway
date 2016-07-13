@@ -171,7 +171,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
     }
 
     private void validateProduct(FeatureLicense license) throws InvalidLicenseException {
-        if (!(license.isProductEnabled(BUILD_PRODUCT_NAME) || license.isProductEnabled(BUILD_LEGACY_PRODUCT_NAME)) || !license.isVersionEnabled(BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR)) {
+        if (!(license.isProductEnabled(BUILD_PRODUCT_NAME) || license.isProductEnabled(BUILD_LEGACY_PRODUCT_NAME)) ||
+                (!license.isVersionEnabled(BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR) && !license.isFutureVersionEnabled(BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR))) {
             throw new InvalidLicenseException("License " + license.getId() +
                     " does not grant access to this version of this product " +
                     "(" + BUILD_PRODUCT_NAME + " " + BUILD_VERSION_MAJOR + "." + BUILD_VERSION_MINOR + ").");
