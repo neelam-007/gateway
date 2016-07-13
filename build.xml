@@ -3809,6 +3809,7 @@
     </target>
 	
 	<target name="create-saar-full" if="module.sign.assertions">
+		<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="lib/ant-contrib-1.0b3.jar">
 		<for param="assertion-file">
 			<path>
 				<fileset dir="build/ivy/repository">
