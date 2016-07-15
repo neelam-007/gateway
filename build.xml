@@ -14,7 +14,14 @@
 
     <!-- Set src.root to ${basedir} if not already set -->
     <property name="src.root" location="${basedir}"/>
-
+	
+	<!-- get the build number api URL, username and password -->
+	<property name="build.number.api.baseUrl" value="${env.build.number.api.baseUrl}"/>
+	<property name="build.number.api.username" value="${env.build.number.api.username}"/>
+	<property name="build.number.api.password" value="${env.build.number.api.password}"/>
+	<property name="build.artifact.name" value="${env.build.artifact.name}"/>
+	<property name="build.number.api.parameters" value="${env.build.number.api.parameters}"/>
+	
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
 
@@ -3563,24 +3570,23 @@
             <equals arg1="${user.dir}" arg2="${src.root}"/>
         </condition>
         <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
-
-        <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
-        <svn>
-            <switch path="build.number" recurse="false" url="https://thesource.l7tech.com/thesource/UneasyRooster/trunk/build.number"/>
-        </svn>
-
-        <buildnumber/>
-        <property file="build.number" prefix="install"/>
-        <!-- Set the build revision number to the build number for official builds -->
-        <property name="build.version.revision" value="${install.build.number}" />
-
-        <!-- Set using provided label, only does something if not in "interactive" mode -->
-        <property file="build.version" prefix="file"/>
-        <property name="build.label" value=""/>
-
+		
+		<!-- Set using provided label, only does something if not in "interactive" mode -->
+		<property file="build.version" prefix="file"/>
+		<property name="build.label" value=""/>
         <property name="official.build.version" value="${file.build.version.major}.${file.build.version.minor}.${file.build.version.subminor}${build.label}"/>
         <property name="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}.${file.build.api.version.subminor}${build.label}"/>
-        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
+	
+		<!-- Use result of build number API call as value of property build.version.revision -->
+		<property name="build.number.api.fullUrl" value="${build.number.api.baseUrl}/${build.artifact.name}${build.number.api.parameters}"/>
+		<exec executable="curl">
+			<arg line="-X POST -u ${build.number.api.username}:${build.number.api.password} -o build.number ${build.number.api.fullUrl}"/>
+		</exec>
+		<property file="build.number" prefix="install"/>
+
+		<!-- Set the build revision number to the build number for official builds -->
+        <property name="build.version.revision" value="${install.build.number}" />
+		<echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
     </target>
 
     <!--
@@ -3589,11 +3595,7 @@
     <target name="OFFICIAL-build"
             description="Set the official buildnumber and product version."
             depends="OFFICIAL-build.init, clean">
-        <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${install.build.number}' build.number</echo>
-        <svn>
-		    <switch path="build.number" recurse="false" url="https://thesource.l7tech.com/thesource/UneasyRooster/trunk/build.number"/>
-            <commit file="build.number" recurse="false" message="[OFFICIAL-build] Incremented build number to ${build.number}"/>
-        </svn>
+        <echo level="info">Using build.number ${install.build.number}</echo>
     </target>
 
     <!--
