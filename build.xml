@@ -20,8 +20,8 @@
 	
 	<!-- set properties used to create saars -->
 	<property name="saar.keystore" value="portalKeyStore.p12"/>
-	<property name="saar.access.password" value="7layer"/>
-	<property name="saar.load.password" value="7layer"/>
+	<property name="saar.access.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
+	<property name="saar.load.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 	
     <!--
       Set default build properties
