@@ -36,6 +36,13 @@
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}local.properties</value>
             </list>
         </property>
+        <property name="properties">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetObject" ref="nodePropertiesLoader"/>
+                <property name="propertyPath" value="properties"/>
+            </bean>
+        </property>
+        <property name="localOverride" value="true"/>
     </bean>
 
     <!-- Configures data source based on hibernateProperties -->
@@ -56,6 +63,13 @@
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
             </list>
         </property>
+        <property name="properties">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetObject" ref="nodePropertiesLoader"/>
+                <property name="propertyPath" value="properties"/>
+            </bean>
+        </property>
+        <property name="localOverride" value="true"/>
     </bean>
     <bean id="configureConnectionIsolation"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

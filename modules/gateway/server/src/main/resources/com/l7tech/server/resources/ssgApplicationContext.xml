@@ -65,13 +65,13 @@
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess"
           depends-on="systemAuditListener systemProperties serviceWsdlImportChecker"><!-- sinkManager -->
         <property name="serverConfig" ref="serverConfig"/>
-        <property name="otherPropertiesFiles">
-            <map>
-                <entry key="com.l7tech.server"
-                       value="${com.l7tech.server.configDirectory}${file.separator}node.properties"/>
-            </map>
-        </property>
         <property name="systemProperties" ref="systemProperties"/>
+        <property name="nodeProperties">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetObject" ref="nodePropertiesLoader"/>
+                <property name="propertyPath" value="properties"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="clusterBoot" class="com.l7tech.server.cluster.ClusterBootProcess">
@@ -775,6 +775,7 @@
         <constructor-arg index="0" ref="clusterNodeId"/>
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
+        <property name="clusterIDManager" ref="clusterIDManager"/>
     </bean>
     <bean id="clusterInfoRefresher" class="com.l7tech.server.cluster.ClusterInfoRefresher"/>
     <!-- server side Service Usage  manager -->
@@ -1401,6 +1402,8 @@
         <property name="objectType" value="javax.net.ssl.KeyManager[]"/>
     </bean>
 
+    <bean id="nodePropertiesLoader" class="com.l7tech.server.NodePropertiesLoaderImpl" factory-method="getInstance"/>
+
     <bean id="nodeProperties"
           class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
           depends-on="systemProperties">
@@ -1411,6 +1414,13 @@
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
             </list>
         </property>
+        <property name="properties">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetObject" ref="nodePropertiesLoader"/>
+                <property name="propertyPath" value="properties"/>
+            </bean>
+        </property>
+        <property name="localOverride" value="true"/>
     </bean>
 
     <!-- server Wss Decorator -->
