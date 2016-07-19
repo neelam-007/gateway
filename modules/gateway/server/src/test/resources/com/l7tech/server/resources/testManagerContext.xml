@@ -66,7 +66,6 @@
         <constructor-arg index="0" ref="clusterNodeId"/>
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
-        <property name="clusterIDManager" ref="clusterIDManager"/>
     </bean>
 
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
@@ -112,8 +111,6 @@
     <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
-
-    <bean id="nodePropertiesLoader" class="com.l7tech.server.NodePropertiesLoaderStub"/>
 
     <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
         <constructor-arg ref="masterPasswordManager"/>
