@@ -167,10 +167,8 @@ public class NodeConfigurationManager {
             try {
                 origFis = new FileInputStream( nodeProperties );
                 props.load(origFis);
-            } catch (ConfigurationException ce) {
+            } catch (ConfigurationException | FileNotFoundException ce) {
                 throw new CausedIOException("Error reading properties file '"+nodeProperties.getAbsolutePath()+"'.", ce);
-            } catch (FileNotFoundException e) {
-                throw new CausedIOException("Error reading properties file '"+nodeProperties.getAbsolutePath()+"'.", e);
             } finally {
                 ResourceUtils.closeQuietly(origFis);
             }
