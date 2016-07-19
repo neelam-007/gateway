@@ -155,7 +155,9 @@ public class SsgCacheManager {
         if (updateConfig) {
             cache.updateConfig(config);
         }
-        logger.log(Level.FINE, "Returning cache " + cache);
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Returning cache " + cache);
+        }
         return cache;
     }
 
