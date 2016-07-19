@@ -1,6 +1,5 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.server.NodePropertiesLoader;
 import com.l7tech.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -11,7 +10,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -95,7 +93,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
      * @return a collection containing strings representing mac addresses in the following format:
      * XX:XX:XX:XX:XX:XX
      */
-    public Collection<String> getMacs() {
+    static Collection<String> getMacs() {
         ArrayList<String> output = new ArrayList<String>();
 
         // try to get mac from system property
@@ -197,9 +195,6 @@ public class ClusterIDManager extends HibernateDaoSupport {
             "from " + TABLE_NAME +
                     " in class " + ClusterNodeInfo.class.getName() +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = ?";
-
-    @Inject
-    private NodePropertiesLoader nodePropertiesLoader;
 
     private String selfId;
 
@@ -363,36 +358,26 @@ public class ClusterIDManager extends HibernateDaoSupport {
     /**
      * Load the nodes id from the properties file
      */
-    public String loadNodeProperty(String propertyName) {
-        String propertyValue = nodePropertiesLoader.getProperty(propertyName, null);
-
-        if (null != propertyValue) {
-            return propertyValue;
-        }
-
-        if (nodePropertiesLoader.isDiskless()) {
-            logger.log(Level.WARNING, "Node property '" + "' is not defined.");
-        } else {
-            // not found and not diskless config mode - consult node.properties file
-            String configDirectory = ConfigFactory.getProperty(SYSPROP_CONFIG_HOME);
-            if (configDirectory != null) {
-                File configDir = new File(configDirectory);
-                File configProps = new File(configDir, NODE_ID_FILE);
-                if (configProps.isFile()) {
-                    Properties properties = new Properties();
-                    InputStream in = null;
-                    try {
-                        properties.load(in = new FileInputStream(configProps));
-                        propertyValue = properties.getProperty(propertyName);
-                    } catch (IOException ioe) {
-                        logger.log(Level.WARNING, "Error loading node properties.", ioe);
-                    } finally {
-                        ResourceUtils.closeQuietly(in);
-                    }
+    static String loadNodeProperty(String propertyName) {
+        String propertyValue = null;
+        String configDirectory = ConfigFactory.getProperty( SYSPROP_CONFIG_HOME );
+        if ( configDirectory != null ) {
+            File configDir = new File( configDirectory );
+            File configProps = new File( configDir, NODE_ID_FILE );
+            if ( configProps.isFile() ) {
+                Properties properties = new Properties();
+                InputStream in = null;
+                try {
+                    properties.load( in = new FileInputStream(configProps) );
+                    propertyValue = properties.getProperty( propertyName );
+                } catch ( IOException ioe ) {
+                    logger.log( Level.WARNING, "Error loading node properties.", ioe);
+                } finally {
+                    ResourceUtils.closeQuietly(in);
                 }
-            } else {
-                logger.warning("Could not determine configuration directory.");
             }
+        } else {
+            logger.warning("Could not determine configuration directory.");
         }
 
         return propertyValue;

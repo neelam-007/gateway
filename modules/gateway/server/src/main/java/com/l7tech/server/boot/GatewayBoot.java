@@ -2,7 +2,10 @@ package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.*;
+import com.l7tech.server.BootProcess;
+import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.server.util.FirewallUtils;
@@ -20,6 +23,7 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +48,7 @@ public class GatewayBoot {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
 
-    private NodePropertiesLoader nodeProperties = NodePropertiesLoaderImpl.getInstance();
+    private Properties nodeProperties;
     private ClassPathXmlApplicationContext applicationContext;
     private ShutdownWatcher shutdowner;
 
@@ -105,7 +109,15 @@ public class GatewayBoot {
                     p = (Provider) Class.forName(providerName).newInstance();
                 }
                 Security.addProvider(p);
-            } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (InvocationTargetException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (NoSuchMethodException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (IllegalAccessException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (InstantiationException e) {
                 throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
             }
         }
@@ -133,6 +145,7 @@ public class GatewayBoot {
         try {
             final long startTime = System.currentTimeMillis();
             ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_LOG_DIRECTORY, true);
+            loadNodeProperties();
             FirewallUtils.initializeFirewall();
             dbInit();
             createApplicationContext();
@@ -193,6 +206,15 @@ public class GatewayBoot {
             destroy();
         } finally {
             notifyExit( exitLatch );
+        }
+    }
+
+    private void loadNodeProperties() throws LifecycleException {
+        final File configDir = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, false );
+        try {
+            nodeProperties = IOUtils.loadProperties( new File( configDir, "node.properties" ) );
+        } catch ( IOException e ) {
+            throw new LifecycleException( "Error accessing node properties", e );
         }
     }
 

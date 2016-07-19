@@ -57,11 +57,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         this.config = config;
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    public void setClusterIDManager(ClusterIDManager clusterIDManager) {
-        this.clusterIDManager = clusterIDManager;
-    }
-
     @Override
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public String thisNodeId() {
@@ -299,7 +294,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private final String nodeid;
 
     private Config config;
-    private ClusterIDManager clusterIDManager;
 
     private ClusterNodeInfo recreateRow() {
         ClusterNodeInfo recreatedNodeInfo = getSelfNodeInf();
@@ -479,7 +473,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private synchronized String getMac() {
         String mac = thisNodeMac;
         if ( mac == null ) {
-            Collection<String> macs = clusterIDManager.getMacs();
+            Collection<String> macs = ClusterIDManager.getMacs();
             if ( !macs.isEmpty() ) {
                 mac = macs.iterator().next();
                 thisNodeMac = mac;
@@ -513,7 +507,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * Get the IP address from node.properties/cluster.node.ip.
      */
     private String getNodePropertiesIPAddress() {
-        return clusterIDManager.loadNodeProperty(NODE_CLUSTER_IP_ADDRESS);
+        return ClusterIDManager.loadNodeProperty(NODE_CLUSTER_IP_ADDRESS);
     }
 
     /**

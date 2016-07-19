@@ -61,7 +61,6 @@
         <constructor-arg index="0" ref="clusterNodeId"/>
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
-        <property name="clusterIDManager" ref="clusterIDManager"/>
     </bean>
 
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">

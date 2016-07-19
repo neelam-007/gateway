@@ -31,6 +31,8 @@ import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
 import java.io.*;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,6 +97,14 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
                         if ( !bundleFolder.isDirectory() ) return false;
                         File[] bundleFiles = bundleFolder.listFiles();
                         if ( bundleFiles == null ) return false;
+
+                        //sort in alphabetical order
+                        Arrays.sort(bundleFiles, new Comparator<File>() {
+                            @Override
+                            public int compare(File o1, File o2) {
+                                return o1.getName().compareTo(o2.getName());
+                            }
+                        });
 
                         for ( File bundleFile : bundleFiles ) {
                             installBundleFile( bundleFile, adminUser );
