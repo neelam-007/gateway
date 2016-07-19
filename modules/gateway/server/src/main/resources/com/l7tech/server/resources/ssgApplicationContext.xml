@@ -767,6 +767,7 @@
 
     <!-- server side Cluster ID manager -->
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
+        <constructor-arg index="0" ref="nodePropertiesLoader"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
     <!-- server side Cluster Info manager -->

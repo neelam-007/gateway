@@ -30,6 +30,10 @@ public class ClusterIDManager extends HibernateDaoSupport {
 
     //- PUBLIC
 
+    public ClusterIDManager(NodePropertiesLoader nodePropertiesLoader) {
+        this.nodePropertiesLoader = nodePropertiesLoader;
+    }
+
     /**
      * returns the node id to which this server applies to  
      */
@@ -198,8 +202,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
                     " in class " + ClusterNodeInfo.class.getName() +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = ?";
 
-    @Inject
-    private NodePropertiesLoader nodePropertiesLoader;
+    private final NodePropertiesLoader nodePropertiesLoader;
 
     private String selfId;
 
@@ -401,6 +404,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
     /**
      * Store the node id to the properties file.
      */
+    // TODO jwilliams: investigate
     private void storeNodeIdProperty( final String nodeid ) {
         logger.config("Storing node identifier '"+nodeid+"'.");
         String configDirectory = ConfigFactory.getProperty( SYSPROP_CONFIG_HOME );
