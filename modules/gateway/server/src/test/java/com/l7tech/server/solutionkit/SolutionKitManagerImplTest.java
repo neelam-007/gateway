@@ -645,7 +645,7 @@ public class SolutionKitManagerImplTest {
         solutionKits.addAll(sampleData);
 
         // force updateProtectedEntityTracking
-        skManager.handleEvent(new EntityInvalidationEvent(this, SolutionKit.class, new Goid[0], new char[0]));
+        skManager.getListener().onApplicationEvent(new EntityInvalidationEvent(this, SolutionKit.class, new Goid[0], new char[0]));
         // make sure bulkUpdateReadOnlyEntitiesList is called with the correct list
         final ArgumentCaptor<Collection> argument = ArgumentCaptor.forClass(Collection.class);
         //noinspection unchecked

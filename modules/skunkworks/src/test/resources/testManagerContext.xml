@@ -1746,6 +1746,8 @@
     <bean id="postStartupApplicationListenerRegistration"
           class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
+    <bean id="postStartupTransactionalApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupTransactionalApplicationListener$StartupListenerRegistration"/>
+
     <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl"
           parent="hibernateBean"/>
 

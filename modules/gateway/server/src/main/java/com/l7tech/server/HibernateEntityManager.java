@@ -10,10 +10,12 @@ import com.l7tech.util.Functions;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.hibernate.jdbc.Work;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -1318,6 +1320,18 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         ET entity;
         long timestamp;
         int version;
+    }
+
+
+    /**
+     * Prevent accidental use of ApplicationListener and PostStartupApplicationListener which triggers expensive and unnecessary transaction handling for ALL events (see SSG-13621).
+     * Use PostStartupTransactionalApplicationListener instead.
+     * @param event application event
+     * @param <E> the specific
+     */
+    @Contract("_ -> fail")
+    public final <E extends ApplicationEvent> void onApplicationEvent(E event) {
+        throw new UnsupportedOperationException("Transactional HibernateEntityManager should not listen to application events since Spring transaction are expensive and can lead to poor performance.");
     }
 
 

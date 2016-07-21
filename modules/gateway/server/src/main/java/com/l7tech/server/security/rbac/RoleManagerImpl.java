@@ -10,6 +10,7 @@ import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.server.util.PostStartupTransactionalApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -22,6 +23,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +39,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
-public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices, PostStartupApplicationListener {
+public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices, PostStartupTransactionalApplicationListener {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
     private static final String IDENTITY_ID = "identityId";
@@ -634,24 +636,37 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         if (rbacServices == null) throw new IllegalStateException("rbacServices component is missing");
     }
 
+    /**
+     * Creates and returns a new ApplicationListener.
+     * Currently this method is only used once while initializing PostStartupTransactionalApplicationListener. {@link StartupListenerRegistration#start()}
+     * If method usage increases in the future, consider using a lazy initializer for the listener.
+     * @return new ApplicationListener
+     */
+    @NotNull
     @Override
-    public void onApplicationEvent(@NotNull final ApplicationEvent event) {
-        if (event instanceof RoleAwareEntityDeletionEvent) {
-            final Entity deleted = ((RoleAwareEntityDeletionEvent)event).getEntity();
-            final EntityType type = EntityType.findTypeByEntity(deleted.getClass());
-            if (type != null && type != EntityType.ANY) {
-                try {
-                    if (deleted instanceof PersistentEntity) {
-                        deleteEntitySpecificRoles(type, ((PersistentEntity) deleted).getGoid());
-                    } else if (deleted instanceof SsgKeyEntry) {
-                        deleteEntitySpecificPermissions(type, deleted.getId());
+    public ApplicationListener getListener() {
+        return new ApplicationListener() {
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                if (event instanceof RoleAwareEntityDeletionEvent) {
+                    final Entity deleted = ((RoleAwareEntityDeletionEvent)event).getEntity();
+                    final EntityType type = EntityType.findTypeByEntity(deleted.getClass());
+                    if (type != null && type != EntityType.ANY) {
+                        try {
+                            if (deleted instanceof PersistentEntity) {
+                                deleteEntitySpecificRoles(type, ((PersistentEntity) deleted).getGoid());
+                            } else if (deleted instanceof SsgKeyEntry) {
+                                deleteEntitySpecificPermissions(type, deleted.getId());
+                            }
+                        } catch (final DeleteException e) {
+                            logger.log(Level.WARNING, "Error deleting roles for entity " + deleted + ": " + ExceptionUtils.getMessage(e),
+                                    ExceptionUtils.getDebugException(e));
+                        }
                     }
-                } catch (final DeleteException e) {
-                    logger.log(Level.WARNING, "Error deleting roles for entity " + deleted + ": " + ExceptionUtils.getMessage(e),
-                            ExceptionUtils.getDebugException(e));
                 }
+
             }
-        }
+        };
     }
 
     @Override

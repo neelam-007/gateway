@@ -2570,6 +2570,8 @@
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
+    <bean id="postStartupTransactionalApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupTransactionalApplicationListener$StartupListenerRegistration"/>
+
     <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" >
         <property name="config" ref="serverConfig" />
     </bean>

@@ -1285,7 +1285,7 @@ public class SolutionKitManagerEntityTest extends EntityManagerTest {
         final ProtectedEntityTracker protectedEntityTracker = getProtectedEntityTracker();
         Assert.assertNotNull(protectedEntityTracker);
         // updateProtectedEntityTracking by emulating EntityInvalidationEvent
-        solutionKitManagerImpl.handleEvent(new EntityInvalidationEvent(this, SolutionKit.class, new Goid[0], new char[0]));
+        solutionKitManagerImpl.getListener().onApplicationEvent(new EntityInvalidationEvent(this, SolutionKit.class, new Goid[0], new char[0]));
         // now make sure the protected entity tracker has the right state
         for (final Pair<EntityHeaderRef, Boolean> expectedReadOnlyFlag : expectedReadOnlyFlags) {
             Assert.assertNotNull(expectedReadOnlyFlag.left);

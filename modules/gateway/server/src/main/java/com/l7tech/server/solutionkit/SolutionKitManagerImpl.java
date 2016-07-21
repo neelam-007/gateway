@@ -20,6 +20,7 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.server.util.PostStartupTransactionalApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
@@ -31,6 +32,7 @@ import org.hibernate.type.StringType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +53,7 @@ import java.util.logging.Logger;
 
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker.*;
 
-public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, SolutionKitHeader> implements SolutionKitManager, PostStartupApplicationListener {
+public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, SolutionKitHeader> implements SolutionKitManager, PostStartupTransactionalApplicationListener {
     private static final Logger logger = Logger.getLogger(SolutionKitManagerImpl.class.getName());
 
     private static final String REST_GATEWAY_MANAGEMENT_POLICY_XML =
@@ -351,23 +353,31 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
     }
 
-    public void handleEvent(ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
-            if (SolutionKit.class.equals(invalidationEvent.getEntityClass())) {
-                try {
-                    updateProtectedEntityTracking();
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "Unable to update ProtectedEntityTracker: " + ExceptionUtils.getMessage(e),
-                            ExceptionUtils.getDebugException(e));
+    /**
+     * Creates and returns a new ApplicationListener.
+     * Currently this method is only used once while initializing PostStartupTransactionalApplicationListener. {@link StartupListenerRegistration#start()}
+     * If method usage increases in the future, consider using a lazy initializer for the listener.
+     * @return new ApplicationListener
+     */
+    @NotNull
+    @Override
+    public ApplicationListener getListener() {
+        return new ApplicationListener() {
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                if (event instanceof EntityInvalidationEvent) {
+                    EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
+                    if (SolutionKit.class.equals(invalidationEvent.getEntityClass())) {
+                        try {
+                            updateProtectedEntityTracking();
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Unable to update ProtectedEntityTracker: " + ExceptionUtils.getMessage(e),
+                                    ExceptionUtils.getDebugException(e));
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    @Override
-    public void onApplicationEvent(final ApplicationEvent event) {
-        handleEvent(event);
+        };
     }
 
     @Override

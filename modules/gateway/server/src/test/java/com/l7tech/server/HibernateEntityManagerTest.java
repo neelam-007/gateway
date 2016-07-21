@@ -3,6 +3,8 @@ package com.l7tech.server;
 import com.l7tech.objectmodel.*;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.springframework.context.ApplicationEvent;
 
 import static org.junit.Assert.*;
 
@@ -12,6 +14,9 @@ public class HibernateEntityManagerTest {
     private static final Goid ZONE_GOID = new Goid(0,1111L);
     private HibernateEntityManager<PersistentEntity, EntityHeader> genericHeaderManager;
     private SecurityZone zone;
+
+    @Mock
+    ApplicationEvent mockEvent;
 
     @Before
     public void setup() {
@@ -44,6 +49,11 @@ public class HibernateEntityManagerTest {
     public void newHeaderEntityZoneableNullZone() {
         final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, null));
         assertNull(header.getSecurityZoneId());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void unsupportedOnApplicationEventTest() {
+        genericHeaderManager.onApplicationEvent(mockEvent);
     }
 
     private class TestableHibernateEntityManager extends HibernateEntityManager<PersistentEntity, EntityHeader> {

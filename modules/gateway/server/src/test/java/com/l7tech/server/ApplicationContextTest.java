@@ -8,9 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.BeanUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.MutablePropertyValues;
@@ -23,6 +21,7 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -540,8 +539,11 @@ public class ApplicationContextTest  {
             final BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
             if ( beanDef.getBeanClassName()==null ) continue;
             final Class<?> beanClass = Class.forName(beanDef.getBeanClassName());
-            if ( HibernateEntityManager.class.isAssignableFrom( beanClass ) && ApplicationListener.class.isAssignableFrom( beanClass ) )
+            if ( HibernateEntityManager.class.isAssignableFrom( beanClass ) && ApplicationListener.class.isAssignableFrom( beanClass ) ) {
                 Assert.fail( "Bean " + beanId + " is a HibernateEntityManager implementing ApplicationListener -- this may cause every application event to trigger a transaction" );
+            } else if (hasTransactionalOnApplicationEventMethod(beanClass)){
+                Assert.fail("Bean " + beanId + " has transactional onApplicationEvent() method -- this may cause every application event to trigger a transaction");
+            }
             if ( !IGNORED_APPLICATION_LISTENER_BEANS.contains(beanId) ) {
                 if ( ApplicationListener.class.isAssignableFrom( beanClass ) ) {
                     beans.add( beanId );
@@ -586,4 +588,46 @@ public class ApplicationContextTest  {
             }
         }
     }
+
+    private boolean hasTransactionalOnApplicationEventMethod(Class<?> aClass) {
+        try {
+            final Method method = aClass.getDeclaredMethod("onApplicationEvent", ApplicationEvent.class);
+            final Transactional classTransactional = aClass.getAnnotation(Transactional.class);
+            final Transactional methodTransactional = method.getAnnotation(Transactional.class);
+            if (methodTransactional != null) {
+                return Propagation.SUPPORTS != methodTransactional.propagation();
+            } else if (classTransactional != null) {
+                return Propagation.SUPPORTS != classTransactional.propagation();
+            } else {
+                for (final Class<?> intf : aClass.getInterfaces()) {
+                    if (isTransactionalClass(intf)) {
+                        return true;
+                    }
+                }
+                final Class<?> superClass = aClass.getSuperclass();
+                if (superClass != null) {
+                    return isTransactionalClass(superClass);
+                }
+            }
+        } catch (final NoSuchMethodException ignore) {
+            // continue no onApplicationEvent method
+        }
+        return false;
+    }
+
+    private boolean isTransactionalClass(Class<?> aClass) {
+        Assert.assertNotNull(aClass);
+        final Transactional classTransactional = aClass.getAnnotation(Transactional.class);
+        if (classTransactional != null) {
+            return Propagation.SUPPORTS != classTransactional.propagation();
+        }
+        for (final Class<?> intf : aClass.getInterfaces()) {
+            if (isTransactionalClass(intf)) {
+                return true;
+            }
+        }
+        final Class<?> superClass = aClass.getSuperclass();
+        return superClass != null && isTransactionalClass(superClass);
+    }
+
 }
