@@ -20,6 +20,8 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +55,8 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JSpinner maximumResultsSpinner;
     private JCheckBox failIfNoResultsCheckBox;
     private JCheckBox failIfTooManyResultsCheckBox;
+    private JComboBox selectScopeCombo;
+    private JTextField dnField;
     private boolean wasOKed = false;
     private LDAPQueryAssertion assertion;
     private java.util.List<QueryAttributeMapping> localMappings = new ArrayList<QueryAttributeMapping>();
@@ -63,14 +67,29 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     public LDAPQueryPropertiesDialog(Window owner, LDAPQueryAssertion assertion) throws HeadlessException {
         super(owner, assertion);
         this.assertion = assertion;
+        this.assertion.setDnText(null);
         initialize();
+        selectScopeCombo.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                initStateOnScopeSelection();
+                switch(selectScopeCombo.getSelectedIndex()) {
+                    case 0:     break;
+                    case 1:     break;
+                    case 2:     dnField.setEnabled(true);
+                                allowMultipleSearchResultsCheckBox.setEnabled(false);
+                                failIfTooManyResultsCheckBox.setEnabled(false);
+                                break;
+                    default: break;
+                }
+            }
+        });
     }
 
     private void initialize() {
         setContentPane(mainPanel);
         mappingTable.setModel(tableModel);
         Utilities.setEscKeyStrokeDisposes( this );
-
         final InputValidator validator = new InputValidator( this, getTitle() );
         validator.attachToButton(okBut, new ActionListener(){
             @Override
@@ -121,13 +140,10 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 enableDisableComponents();
             }
         };
-
         mappingTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         cacheLDAPAttributeValuesCheckBox.addActionListener(enableDisableListener);
         allowMultipleSearchResultsCheckBox.addActionListener(enableDisableListener);
-
         Utilities.equalizeButtonSizes(new JButton[]{okBut, editButton, deleteButton});
-
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
         cacheSizeSpinner.setModel(new SpinnerNumberModel(assertion.getCacheSize(), 0, 100000, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cacheSizeSpinner, "Cache size"));
@@ -136,6 +152,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         maximumResultsSpinner.setModel( new SpinnerNumberModel(0, 0, null, 1) );
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(maximumResultsSpinner, "Maximum results"));
         maximumResultsSpinner.getEditor().setPreferredSize( cachePeriodSpinner.getEditor().getPreferredSize() );
+
 
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
             @Override
@@ -176,6 +193,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
         searchField.setText(assertion.getSearchFilter());
         searchField.setCaretPosition( 0 );
+
         protectAgainstLDAPInjectionCheckBox.setSelected(assertion.isSearchFilterInjectionProtected());
         cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
         cacheSizeSpinner.setValue(assertion.getCacheSize());
@@ -184,6 +202,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         failIfTooManyResultsCheckBox.setSelected(assertion.isFailIfTooManyResults());
         allowMultipleSearchResultsCheckBox.setSelected(assertion.isAllowMultipleResults());
         maximumResultsSpinner.setValue(assertion.getMaximumResults());
+
     }
 
     private void viewToModel() {
@@ -284,6 +303,14 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             ComboItem ci = (ComboItem)selected;
             assertion.setLdapProviderOid(ci.oid);
         }
+
+        int scopeSelected = selectScopeCombo.getSelectedIndex();
+        if(scopeSelected >= 0){
+            assertion.setSelectedScope(getScopeName(scopeSelected));
+        }
+
+        if(dnField.isEnabled()) assertion.setDnText(dnField.getText());
+
         assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
         assertion.setSearchFilterInjectionProtected(protectAgainstLDAPInjectionCheckBox.isSelected());
@@ -343,6 +370,27 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 default:
                     throw new IllegalArgumentException("No such column " + column);
             }
+        }
+    }
+
+    private void initStateOnScopeSelection(){
+        dnField.setEnabled(false);
+        dnField.setText(null);
+        assertion.setDnText(null);
+        allowMultipleSearchResultsCheckBox.setEnabled(true);
+        failIfTooManyResultsCheckBox.setEnabled(true);
+    }
+
+    private String getScopeName(int index){
+        switch(index){
+            case 0:
+                return "sub";
+            case 1:
+                return "one";
+            case 2:
+                return "base";
+            default:
+                return "sub";
         }
     }
 }
