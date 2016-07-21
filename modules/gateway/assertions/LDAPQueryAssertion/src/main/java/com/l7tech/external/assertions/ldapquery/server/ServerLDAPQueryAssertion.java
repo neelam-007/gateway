@@ -19,6 +19,7 @@ import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.BeanFactory;
 
+import javax.naming.CompositeName;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.PartialResultException;
@@ -152,14 +153,21 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             NamingEnumeration answer = null;
             try {
                 dirContext = identityProvider.getBrowseContext();
+                String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                if("base".equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                else if("one".equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+                else sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                //sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );
                 }
-                answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
 
+                if(null == assertion.getDnText()) answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
+                else answer = dirContext.search(assertion.getDnText(), filter, sc);
+
+               // answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
                 while ( answer.hasMore() && (availableResultCount++ < maxResults || maxResults==0) ) {
                     final SearchResult sr = (SearchResult) answer.next();
                     if ( logger.isLoggable( Level.FINE ) ) {
