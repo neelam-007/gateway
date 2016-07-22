@@ -3811,21 +3811,20 @@
 	<target name="create-saar-full" if="module.sign.assertions">
 		<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="lib/ant-contrib-1.0b3.jar"/>
 		<for param="assertion-file">
+			<!-- No need to override input and output properties if file extension is .aar -->
 			<path>
 				<fileset dir="build/ivy/repository">
 					<include name="**/*.aar"/>
 				</fileset>
 			</path>
 			<sequential>
-				<var name="input" unset="true"/>
-				<basename property="input" file="@{assertion-file}"/>
-				<var name="output" unset="true"/>
-				<basename property="output" file="@{assertion-file}" suffix=".aar"/>
-				<var name="output" value="${output}.saar"/>
+				<var name="assertion" unset="true"/>
+				<basename property="assertion" file="@{assertion-file}" suffix="-${build.version.major}.${build.version.minor}.${build.version.subminor}.aar"/>
 				<antcall target="create-saar"/>
 			</sequential>
 		</for>
 		<for param="assertion-file">
+			<!-- Override input and output properties if file extension is .jar -->
 			<path>
 				<fileset dir="build/ivy/repository">
 					<include name="**/*.jar"/>
@@ -3834,9 +3833,10 @@
 			<sequential>
 				<var name="input" unset="true"/>
 				<basename property="input" file="@{assertion-file}"/>
+				<var name="assertion" unset="true"/>
+				<basename property="assertion" file="@{assertion-file}" suffix="-${build.version.major}.${build.version.minor}.${build.version.subminor}.jar"/>
 				<var name="output" unset="true"/>
-				<basename property="output" file="@{assertion-file}" suffix=".jar"/>
-				<var name="output" value="${output}.sjar"/>
+				<var name="output" value="${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.sjar"/>
 				<antcall target="create-saar"/>
 			</sequential>
 		</for>
