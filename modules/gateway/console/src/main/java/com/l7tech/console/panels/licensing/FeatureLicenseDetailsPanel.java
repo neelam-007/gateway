@@ -117,7 +117,8 @@ public class FeatureLicenseDetailsPanel extends JPanel {
         // check for malformed, unsigned, wrong product/version, or not started yet
         if (null == featureLicense || !featureLicense.hasTrustedIssuer() ||
                 !(featureLicense.isProductEnabled(BuildInfo.getProductName()) || featureLicense.isProductEnabled(BuildInfo.getLegacyProductName())) ||
-                !featureLicense.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor()) ||
+                (!featureLicense.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor()) &&
+                        !featureLicense.isFutureVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) ||
                 !featureLicense.isLicensePeriodStartBefore(System.currentTimeMillis())) {
             statusField.setText(LICENSE_STATUS_INVALID);
             statusField.setForeground(Color.WHITE);
