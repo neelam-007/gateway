@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 
+import javax.naming.directory.SearchControls;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
@@ -67,23 +68,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     public LDAPQueryPropertiesDialog(Window owner, LDAPQueryAssertion assertion) throws HeadlessException {
         super(owner, assertion);
         this.assertion = assertion;
-        this.assertion.setDnText(null);
         initialize();
-        selectScopeCombo.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                initStateOnScopeSelection();
-                switch(selectScopeCombo.getSelectedIndex()) {
-                    case 0:     break;
-                    case 1:     break;
-                    case 2:     dnField.setEnabled(true);
-                                allowMultipleSearchResultsCheckBox.setEnabled(false);
-                                failIfTooManyResultsCheckBox.setEnabled(false);
-                                break;
-                    default: break;
-                }
-            }
-        });
     }
 
     private void initialize() {
@@ -99,6 +84,25 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 dispose();
             }
         });
+
+        selectScopeCombo.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                resetOptionsOnScopeChange();
+                switch(selectScopeCombo.getSelectedIndex()) {
+                    case 0:     break;
+                    case 1:     break;
+                    case 2:     dnField.setEnabled(true);
+                        allowMultipleSearchResultsCheckBox.setEnabled(false);
+                        allowMultipleSearchResultsCheckBox.setSelected(false);
+                        failIfTooManyResultsCheckBox.setEnabled(false);
+                        failIfTooManyResultsCheckBox.setSelected(false);
+                        break;
+                    default: break;
+                }
+            }
+        });
+
         cancelButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -175,6 +179,21 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         });
 
+        validator.constrainTextFieldToBeNonEmpty("Base DN", dnField, new InputValidator.ComponentValidationRule(dnField) {
+            @Override
+            public String getValidationError() {
+                String val = dnField.getText();
+                if (dnField.isEnabled() && (val == null || val.trim().length() == 0)){
+                    okBut.setEnabled(false);
+                    return "The Base DN cannot be empty";
+                }
+                else {
+                    okBut.setEnabled(true);
+                    return null;
+                }
+            }
+        });
+
         Utilities.setDoubleClickAction(mappingTable, editButton);
         modelToView();
         enableDisableComponents();
@@ -214,7 +233,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         if (sel == -1) return;
         final QueryAttributeMapping found = localMappings.get(sel);
         DialogDisplayer.showConfirmDialog(this,
-                        MessageFormat.format("Are you sure you want to remove the mapping for \"{0}\"", found.getAttributeName()),
+                MessageFormat.format("Are you sure you want to remove the mapping for \"{0}\"", found.getAttributeName()),
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION,
                 new DialogDisplayer.OptionListener() {
@@ -305,11 +324,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
 
         int scopeSelected = selectScopeCombo.getSelectedIndex();
-        if(scopeSelected >= 0){
-            assertion.setSelectedScope(getScopeName(scopeSelected));
-        }
-
-        if(dnField.isEnabled()) assertion.setDnText(dnField.getText());
+        if(scopeSelected >= 0)  assertion.setSelectedScope(getLDAPScope(scopeSelected));
+        if(dnField.isEnabled()) this.assertion.setDnText(dnField.getText());
+        else this.assertion.setDnText(null);
 
         assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
@@ -323,7 +340,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         if ( allowMultipleSearchResultsCheckBox.isSelected() ) {
             assertion.setMaximumResults( (Integer) maximumResultsSpinner.getValue() );
         } else {
-            assertion.setMaximumResults( 0 );   
+            assertion.setMaximumResults( 0 );
         }
         return assertion;
     }
@@ -341,7 +358,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         public int getRowCount() {
             return localMappings.size();
         }
-                                                                              
+
         @Override
         public int getColumnCount() {
             return 2;
@@ -373,24 +390,33 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
     }
 
-    private void initStateOnScopeSelection(){
+    /**
+     * Reset LDAP Properties GUI options on changing the Scope Field.
+     */
+    private void resetOptionsOnScopeChange(){
         dnField.setEnabled(false);
         dnField.setText(null);
-        assertion.setDnText(null);
+        this.assertion.setDnText(null);
         allowMultipleSearchResultsCheckBox.setEnabled(true);
         failIfTooManyResultsCheckBox.setEnabled(true);
     }
 
-    private String getScopeName(int index){
-        switch(index){
+    /**
+     * Utility to Map Selected GUI scopes to LDAP Scope.
+     * Default Scope is always SubTree Scope.
+     * @param scopeIndex
+     * @return
+     */
+    private String getLDAPScope(int scopeIndex){
+        switch(scopeIndex){
             case 0:
-                return "sub";
+                return "SUBTREE";
             case 1:
-                return "one";
+                return "ONELEVEL";
             case 2:
-                return "base";
+                return "OBJECT";
             default:
-                return "sub";
+                return "SUBTREE";
         }
     }
 }

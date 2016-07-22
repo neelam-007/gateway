@@ -56,13 +56,13 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         // reconstruct filter expression
         final Map<String,Object> variableMap = pec.getVariableMap(varsUsed, getAudit());
         final String filterExpression = !assertion.isSearchFilterInjectionProtected() ?
-            ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit()) :
-            ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit(), new Functions.Unary<String,String>(){
-                @Override
-                public String call( final String replacement ) {
-                    return LdapUtils.filterEscape( replacement );
-                }
-            });
+                ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit()) :
+                ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit(), new Functions.Unary<String,String>(){
+                    @Override
+                    public String call( final String replacement ) {
+                        return LdapUtils.filterEscape( replacement );
+                    }
+                });
 
         logAndAudit( AssertionMessages.LDAP_QUERY_SEARCH_FILTER, filterExpression );
 
@@ -78,7 +78,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 logAndAudit( AssertionMessages.LDAP_QUERY_ERROR, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
                 return AssertionStatus.SERVER_ERROR;
             }
-            
+
             if (assertion.isEnableCache()) {
                 cachedAttributeValues.put(filterExpression, cacheEntry);
             }
@@ -155,19 +155,18 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 dirContext = identityProvider.getBrowseContext();
                 String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                if("base".equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
-                else if("one".equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
-                else sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                //sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                if("SUBTREE".equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                else if("OBJECT".equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                else if("ONELEVEL".equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );
                 }
 
-                if(null == assertion.getDnText()) answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
+                if(SearchControls.OBJECT_SCOPE != sc.getSearchScope()) answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
                 else answer = dirContext.search(assertion.getDnText(), filter, sc);
 
-               // answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
+                // answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
                 while ( answer.hasMore() && (availableResultCount++ < maxResults || maxResults==0) ) {
                     final SearchResult sr = (SearchResult) answer.next();
                     if ( logger.isLoggable( Level.FINE ) ) {
@@ -419,5 +418,5 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             this.timestamp = System.currentTimeMillis();
             this.cachedAttributes = Collections.unmodifiableMap( cachedAttributes );
         }
-    }    
+    }
 }

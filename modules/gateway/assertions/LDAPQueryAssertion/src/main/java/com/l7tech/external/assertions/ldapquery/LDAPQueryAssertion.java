@@ -159,8 +159,8 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
-            oldEntityHeader.getGoid().equals(ldapProviderOid) &&
-            newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                oldEntityHeader.getGoid().equals(ldapProviderOid) &&
+                newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
             ldapProviderOid = newEntityHeader.getGoid();
         }
     }
