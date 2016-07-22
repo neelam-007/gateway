@@ -3817,8 +3817,26 @@
 				</fileset>
 			</path>
 			<sequential>
-				<var name="assertion" unset="true"/>
-				<basename property="assertion" file="@{assertion-file}" suffix=".aar"/>
+				<var name="input" unset="true"/>
+				<basename property="input" file="@{assertion-file}"/>
+				<var name="output" unset="true"/>
+				<basename property="output" file="@{assertion-file}" suffix=".aar"/>
+				<var name="output" value="${output}.saar"/>
+				<antcall target="create-saar"/>
+			</sequential>
+		</for>
+		<for param="assertion-file">
+			<path>
+				<fileset dir="build/ivy/repository">
+					<include name="**/*.jar"/>
+				</fileset>
+			</path>
+			<sequential>
+				<var name="input" unset="true"/>
+				<basename property="input" file="@{assertion-file}"/>
+				<var name="output" unset="true"/>
+				<basename property="output" file="@{assertion-file}" suffix=".jar"/>
+				<var name="output" value="${output}.sjar"/>
 				<antcall target="create-saar"/>
 			</sequential>
 		</for>
