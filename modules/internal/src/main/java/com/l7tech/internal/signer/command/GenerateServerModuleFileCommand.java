@@ -205,16 +205,16 @@ public class GenerateServerModuleFileCommand extends Command {
             } catch (final IOException e) {
                 throw e;
             } catch (Exception e) {
-                throw new IOException(MessageFormat.format("Failed to verify signature for file: '{0}'.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+                throw new IOException(MessageFormat.format("Failed to verify signature for file: ''{0}''.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
             }
         } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(MessageFormat.format("Failed to read signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+            throw new RuntimeException(MessageFormat.format("Failed to read signed zip ''{0}'' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
         } catch (InvocationTargetException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IOException) {
                 throw (IOException)cause;
             }
-            throw new RuntimeException(MessageFormat.format("Failed to process signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+            throw new RuntimeException(MessageFormat.format("Failed to process signed zip ''{0}'' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
         }
     }
 
