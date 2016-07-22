@@ -19,7 +19,7 @@
     <property file="${src.root}/build.version"/>
 	
 	<!-- set properties used to create saars -->
-	<property name="saar.keystore" value="portalKeyStore.p12"/>
+	<property name="saar.keystore" value="gatewayKeyStore.p12"/>
 	<property name="saar.access.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 	<property name="saar.load.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 	
@@ -3846,7 +3846,8 @@
 		<property name="keystore" value="${saar.keystore}"/>
 		<property name="access.password" value="${saar.access.password}"/>
 		<property name="load.password" value="${saar.load.password}"/>
-		<antcall target="sign-aar-gensmfxml-full"/>
+		<!-- <antcall target="sign-aar-gensmfxml-full"/> -->
+		<antcall target="sign-aar-full"/>
 	</target>
 
     <!-- check if the SkarSigner jar file exists -->
