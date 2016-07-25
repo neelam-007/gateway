@@ -3831,12 +3831,16 @@
 				</fileset>
 			</path>
 			<sequential>
-				<var name="input" unset="true"/>
-				<basename property="input" file="@{assertion-file}"/>
 				<var name="assertion" unset="true"/>
 				<basename property="assertion" file="@{assertion-file}" suffix="-${build.version.major}.${build.version.minor}.${build.version.subminor}.jar"/>
+				<var name="input" unset="true"/>
+				<var name="input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.jar"/>
 				<var name="output" unset="true"/>
-				<var name="output" value="${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.sjar"/>
+				<var name="output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.sjar"/>
+				<var name="saar-input" unset="true"/>
+				<var name="saar-input" value="${output}"/>
+				<var name="xml-output" unset="true"/>
+				<var name="xml-output" value="${saar-input}.xml"/>
 				<antcall target="create-saar"/>
 			</sequential>
 		</for>
