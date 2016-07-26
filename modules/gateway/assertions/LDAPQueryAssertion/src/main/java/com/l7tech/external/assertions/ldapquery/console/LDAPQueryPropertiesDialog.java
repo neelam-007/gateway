@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ldapquery.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.ldapquery.LDAPConstants;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -14,8 +15,6 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
-
-import javax.naming.directory.SearchControls;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
@@ -212,7 +211,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
         searchField.setText(assertion.getSearchFilter());
         searchField.setCaretPosition( 0 );
-
+        selectScopeCombo.setSelectedIndex(Integer.parseInt(LDAPConstants.SCOPEREF().get(assertion.getSelectedScope())));
         protectAgainstLDAPInjectionCheckBox.setSelected(assertion.isSearchFilterInjectionProtected());
         cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
         cacheSizeSpinner.setValue(assertion.getCacheSize());
@@ -324,7 +323,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
 
         int scopeSelected = selectScopeCombo.getSelectedIndex();
-        if(scopeSelected >= 0)  assertion.setSelectedScope(getLDAPScope(scopeSelected));
+        if(scopeSelected >= 0)  assertion.setSelectedScope(LDAPConstants.SCOPEREF().get(Integer.toString(scopeSelected)));
         if(dnField.isEnabled()) this.assertion.setDnText(dnField.getText());
         else this.assertion.setDnText(null);
 
@@ -401,12 +400,15 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         failIfTooManyResultsCheckBox.setEnabled(true);
     }
 
-    /**
+/*
+    */
+/**
      * Utility to Map Selected GUI scopes to LDAP Scope.
      * Default Scope is always SubTree Scope.
      * @param scopeIndex
      * @return
-     */
+     *//*
+
     private String getLDAPScope(int scopeIndex){
         switch(scopeIndex){
             case 0:
@@ -419,4 +421,21 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 return "SUBTREE";
         }
     }
+
+    private int getLDAPScopeIndex(String scope){
+        switch(scope){
+            case "SUBTREE":
+                return 0;
+            case "ONELEVEL":
+                return 1;
+            case "OBJECT":
+                return 2;
+            default:
+                return 0;
+        }
+    }
+
+*/
+
+
 }

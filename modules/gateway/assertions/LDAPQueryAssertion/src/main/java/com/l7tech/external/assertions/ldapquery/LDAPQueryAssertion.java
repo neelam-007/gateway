@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.XmlSafe;
+import org.apache.commons.collections.Unmodifiable;
 
 import java.io.Serializable;
 import java.util.*;
@@ -51,6 +53,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private String dnText;
 
     public LDAPQueryAssertion() {
+
     }
 
     /**

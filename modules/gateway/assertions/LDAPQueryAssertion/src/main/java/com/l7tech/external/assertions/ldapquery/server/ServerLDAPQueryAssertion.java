@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ldapquery.server;
 
+import com.l7tech.external.assertions.ldapquery.LDAPConstants;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -155,9 +156,9 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 dirContext = identityProvider.getBrowseContext();
                 String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                if("SUBTREE".equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                else if("OBJECT".equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
-                else if("ONELEVEL".equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+                if(LDAPConstants.SCOPE_SUBTREE.equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                else if(LDAPConstants.SCOPE_OBJECT.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                else if(LDAPConstants.SCOPE_ONELEVEL.equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );
