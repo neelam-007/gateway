@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  */
 public class GatewayMain {
     private static final String JAXB_CLASS_TAILOR = "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize";
+    private static final String JDK_TLS_EPHEMERALDHKEYSIZE = "jdk.tls.ephemeralDHKeySize";
 
     public static void main(String[] args) {
         try {
@@ -49,6 +50,10 @@ public class GatewayMain {
         if ( null == System.getProperty( JAXB_CLASS_TAILOR ) ) {
             // This could probably be moved to the system.properties resource file
             System.setProperty( JAXB_CLASS_TAILOR, "true" );
+        }
+        if ( null == System.getProperty( JDK_TLS_EPHEMERALDHKEYSIZE ) ) {
+            // This could probably be moved to the system.properties resource file
+            System.setProperty( JDK_TLS_EPHEMERALDHKEYSIZE, "matched" );
         }
     }
 
