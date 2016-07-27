@@ -399,43 +399,4 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         allowMultipleSearchResultsCheckBox.setEnabled(true);
         failIfTooManyResultsCheckBox.setEnabled(true);
     }
-
-/*
-    */
-/**
-     * Utility to Map Selected GUI scopes to LDAP Scope.
-     * Default Scope is always SubTree Scope.
-     * @param scopeIndex
-     * @return
-     *//*
-
-    private String getLDAPScope(int scopeIndex){
-        switch(scopeIndex){
-            case 0:
-                return "SUBTREE";
-            case 1:
-                return "ONELEVEL";
-            case 2:
-                return "OBJECT";
-            default:
-                return "SUBTREE";
-        }
-    }
-
-    private int getLDAPScopeIndex(String scope){
-        switch(scope){
-            case "SUBTREE":
-                return 0;
-            case "ONELEVEL":
-                return 1;
-            case "OBJECT":
-                return 2;
-            default:
-                return 0;
-        }
-    }
-
-*/
-
-
 }

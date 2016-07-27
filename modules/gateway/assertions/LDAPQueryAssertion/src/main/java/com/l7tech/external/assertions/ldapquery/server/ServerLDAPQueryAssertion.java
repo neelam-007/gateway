@@ -19,8 +19,6 @@ import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.BeanFactory;
-
-import javax.naming.CompositeName;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.PartialResultException;
@@ -156,9 +154,9 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 dirContext = identityProvider.getBrowseContext();
                 String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                if(LDAPConstants.SCOPE_SUBTREE.equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                else if(LDAPConstants.SCOPE_OBJECT.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
-                else if(LDAPConstants.SCOPE_ONELEVEL.equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+                if(LDAPConstants.SUBTREE_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                else if(LDAPConstants.OBJECT_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                else if(LDAPConstants.ONELEVEL_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );

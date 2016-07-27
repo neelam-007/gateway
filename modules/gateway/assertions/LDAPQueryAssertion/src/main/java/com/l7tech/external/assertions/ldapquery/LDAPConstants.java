@@ -5,24 +5,39 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Holds Mapping between GUI and Logical SCOPES.
+ * Could contain other LDAP related Constants and Utilities.
+ *
+ * <p/>
+ * <p/>
+ * <br/><br/>
+ * CA TECHNOLOGIES, INC<br/>
+ * User: jaibh01<br/>
+ * Date: July 26, 2016<br/>
+
+ *
+ */
 public class LDAPConstants{
 
-    public static final String SCOPE_SUBTREE = "SUBTREE";
-    public static final String SCOPE_ONELEVEL = "ONELEVEL";
-    public static final String SCOPE_OBJECT= "OBJECT";
+    public static final String SUBTREE_SCOPE = "SUBTREE";
+    public static final String ONELEVEL_SCOPE = "ONELEVEL";
+    public static final String OBJECT_SCOPE= "OBJECT";
 
-    private static final Map<String,String> SCOPE = new HashMap<String,String>();
+    //Map holding Bi Directional Data for easy retrieval, without dealing with Iterators.
+    //Example : GUI Option Index <==> LOGICAL SCOPE
+    private static final Map<String,String> SCOPE = new HashMap<String,String>(){
+        {
+            put(SUBTREE_SCOPE, "0");
+            put(ONELEVEL_SCOPE, "1");
+            put(OBJECT_SCOPE, "2");
+            put("0", SUBTREE_SCOPE);
+            put("1", ONELEVEL_SCOPE);
+            put("2", OBJECT_SCOPE);
+        }
+    };
 
     public static Map<String,String> SCOPEREF(){
-        if(0 != SCOPE.size()){
-            return Collections.unmodifiableMap(SCOPE);
-        }
-        SCOPE.put(SCOPE_SUBTREE, "0");
-        SCOPE.put(SCOPE_ONELEVEL, "1");
-        SCOPE.put(SCOPE_OBJECT, "2");
-        SCOPE.put("0", SCOPE_SUBTREE);
-        SCOPE.put("1", SCOPE_ONELEVEL);
-        SCOPE.put("2",SCOPE_OBJECT);
         return Collections.unmodifiableMap(SCOPE);
     }
 }
