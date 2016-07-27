@@ -22,13 +22,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.persistence.Table;
 import java.util.*;
 
-import static com.l7tech.server.CesarHibernateEntityManagerTest.MOCK_TABLE;
-import static com.l7tech.server.CesarHibernateEntityManagerTest.randomGoid;
+import static com.l7tech.server.HibernateEntityManagerTestAutonomous.MOCK_TABLE;
+import static com.l7tech.server.HibernateEntityManagerTestAutonomous.randomGoid;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-public class CesarHibernateEntityManagerTest {
+public class HibernateEntityManagerTestAutonomous {
 
     private static final Random RANDOM = new Random();
     private static final Goid ENTITY_GOID = randomGoid();
