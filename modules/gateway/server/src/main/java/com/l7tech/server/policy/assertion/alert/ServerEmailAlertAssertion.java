@@ -71,9 +71,11 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             props.put("mail." + protoVal + ".socketFactory.class", EmailUtils.StartTlsSocketFactory.class.getName());
             props.put("mail." + protoVal + ".socketFactory.fallback", "false");
             props.put("mail." + protoVal + ".starttls.enable", "true");
+            props.put("mail." + protoVal + ".ssl.protocols", "TLSv1 TLSv1.1 TLSv1.2" );
         } else if (protocol == EmailAlertAssertion.Protocol.SSL) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
             props.put("mail." + protoVal + ".socketFactory.fallback", "false");
+            props.put("mail." + protoVal + ".ssl.protocols", "TLSv1 TLSv1.1 TLSv1.2" );
         }
 
         if (assertion.isAuthenticate()) {
