@@ -637,6 +637,8 @@
                 <propertyref prefix="idea"/>
 				<propertyref name="publish.jar.target"/>
 				<propertyref name="publish.status"/>
+				<propertyref name="module.skarsigner.sign.archive"/>
+				<propertyref name="module.skarsigner.generate.restman.xml"/>
             </propertyset>
         </subant>
     </presetdef>
