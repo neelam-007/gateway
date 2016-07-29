@@ -38,5 +38,8 @@
 	
 	<conf name="pom"
           description="Contains only the pom files related to master artifacts"/>
+		  
+	<conf name="skarsigner"
+          description="Contains only files related to the SkarSigner"/>
 
 </configurations>

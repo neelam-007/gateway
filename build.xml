@@ -614,7 +614,9 @@
     <presetdef name="modules">
         <subant buildpathref="module-build-path" >
             <property name="module.version.default.target" value="${build.version}"/>
-
+			<property name="module.skarsigner.sign.all.archives" value="${skarsigner.sign.archives}"/>
+			<property name="module.skarsigner.generate.all.restman.xmls" value="${skarsigner.generate.restman.xmls}"/>
+			
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
                 <propertyref prefix="module.obfuscate"/>
@@ -2990,7 +2992,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,create-saar-full,publish-rpms-all,publish-generic-all">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all,publish-generic-all">
     </target>
 
     <!--
@@ -3805,58 +3807,18 @@
     <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign an aar file and generate RESTman XML for an signed file" />
     <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for an signed file" />
 
-	<target name="sign-assertions" description="Sign assertions">
-        <echo level="info">Signing assertions in build</echo>
-        <property name="module.sign.assertions" value="true"/>
+	<target name="skarsigner-sign-archives" description="Sign aar/jar/skar">
+        <echo level="info">Sign all archives that are indicated to be signed</echo>
+        <property name="skarsigner.sign.archives" value="true"/>
     </target>
 	
-	<target name="create-saar-full" if="module.sign.assertions">
-		<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="lib/ant-contrib-1.0b3.jar"/>
-		<for param="assertion-file">
-			<!-- No need to override input and output properties if file extension is .aar -->
-			<path>
-				<fileset dir="build/ivy/repository">
-					<include name="**/*.aar"/>
-				</fileset>
-			</path>
-			<sequential>
-				<var name="assertion" unset="true"/>
-				<basename property="assertion" file="@{assertion-file}" suffix="-${build.version.major}.${build.version.minor}.${build.version.subminor}.aar"/>
-				<antcall target="create-saar"/>
-			</sequential>
-		</for>
-		<for param="assertion-file">
-			<!-- Override input and output properties if file extension is .jar -->
-			<path>
-				<fileset dir="build/ivy/repository">
-					<include name="**/*.jar"/>
-				</fileset>
-			</path>
-			<sequential>
-				<var name="assertion" unset="true"/>
-				<basename property="assertion" file="@{assertion-file}" suffix="-${build.version.major}.${build.version.minor}.${build.version.subminor}.jar"/>
-				<var name="input" unset="true"/>
-				<var name="input" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.jar"/>
-				<var name="output" unset="true"/>
-				<var name="output" value="build/ivy/repository/${assertion}-${build.version.major}.${build.version.minor}.${build.version.subminor}.sjar"/>
-				<var name="saar-input" unset="true"/>
-				<var name="saar-input" value="${output}"/>
-				<var name="xml-output" unset="true"/>
-				<var name="xml-output" value="${saar-input}.xml"/>
-				<antcall target="create-saar"/>
-			</sequential>
-		</for>
-	</target>
-			
-	<target name="create-saar" if="module.sign.assertions">
-		<property name="keystore" value="${saar.keystore}"/>
-		<property name="access.password" value="${saar.access.password}"/>
-		<property name="load.password" value="${saar.load.password}"/>
-		<!-- <antcall target="sign-aar-gensmfxml-full"/> -->
-		<antcall target="sign-aar-full"/>
-	</target>
-
-    <!-- check if the SkarSigner jar file exists -->
+	<target name="skarsigner-generate-restman-xmls" description="Generate RESTman XMLs">
+        <echo level="info">Generate RESTman XMLs for all signed archives that are indicated to have RESTman XMLs generated</echo>
+		<fail unless="skarsigner.sign.archives" message="Archives must be signed before RESTman XMLs can be generated"/>
+        <property name="skarsigner.generate.restman.xmls" value="true"/>
+    </target>
+	
+	<!-- check if the SkarSigner jar file exists -->
     <target name="skar-jar-check">
         <condition property="skar-jar-exists">
             <available file="${src.root}/modules/internal/build/SkarSigner.jar"/>

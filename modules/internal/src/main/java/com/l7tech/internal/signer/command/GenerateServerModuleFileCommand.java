@@ -18,8 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.transform.dom.DOMResult;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Map;
@@ -167,9 +166,22 @@ public class GenerateServerModuleFileCommand extends Command {
     }
 
     /**
-     * This is a very very hacky way of reading a signed zip file, however I rather have this hack than making
-     * {@link SignerUtils.SignedZip#readSignedZip(java.io.InputStream, com.l7tech.gateway.common.security.signer.InnerPayloadFactory)}
-     * with public access.
+     * Utility class with a single purpuse of accessing {@link SignerUtils#readSignedZip(InputStream, InnerPayloadFactory)} method.
+     * <p/>
+     * TODO: this is ugly and should be considered for refactoring.
+     */
+    private static class SignerUtilsReadSignedZipAdaptor extends SignerUtils {
+        @NotNull
+        private static ServerModuleFilePayload readSignedZip(
+                @NotNull final InputStream signedZip,
+                @NotNull final ServerModuleFilePayloadFactory payloadFactory
+        ) throws IOException, NoSuchAlgorithmException {
+            return SignerUtils.readSignedZip(signedZip, payloadFactory);
+        }
+    }
+
+    /**
+     * Load the ServerModuleFile from the specified signed zip stream.
      *
      * @param signedZipStream    signed zip {@code InputStream}.  Required and cannot be {@code null}.
      * @param fileName           module filename.  Required and cannot be {@code null}.
@@ -180,41 +192,23 @@ public class GenerateServerModuleFileCommand extends Command {
             @NotNull final InputStream signedZipStream,
             @NotNull final String fileName
     ) throws IOException {
-        try {
-            final Method method = SignerUtils.class.getDeclaredMethod("readSignedZip", InputStream.class, InnerPayloadFactory.class);
-            if (method == null) {
-                throw new RuntimeException("method readSignedZip either missing from class SignerUtils or its deceleration has been modified");
-            }
-            method.setAccessible(true);
-            final Object ret = method.invoke(
-                    null,
-                    signedZipStream,
-                    new ServerModuleFilePayloadFactory(
-                            new CustomAssertionsScannerHelper("custom_assertions.properties"),
-                            new ModularAssertionsScannerHelper("ModularAssertion-List"),
-                            fileName
-                    )
-            );
-            if (!(ret instanceof ServerModuleFilePayload)) {
-                throw new RuntimeException("method readSignedZip return unexpected payload");
-            }
-            try (final ServerModuleFilePayload payload = (ServerModuleFilePayload)ret) {
-                // we cannot check whether issuer is trusted, but we can validate signature here
-                SignerUtils.verifySignature(payload.getDataStream(), payload.getSignaturePropertiesString());
-                return payload.create();
-            } catch (final IOException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new IOException(MessageFormat.format("Failed to verify signature for file: '{0}'.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
-            }
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(MessageFormat.format("Failed to read signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
-        } catch (InvocationTargetException e) {
-            final Throwable cause = e.getCause();
-            if (cause instanceof IOException) {
-                throw (IOException)cause;
-            }
-            throw new RuntimeException(MessageFormat.format("Failed to process signed zip '{0}' content.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
+        try (
+                final ServerModuleFilePayload payload = SignerUtilsReadSignedZipAdaptor.readSignedZip(
+                        signedZipStream,
+                        new ServerModuleFilePayloadFactory(
+                                new CustomAssertionsScannerHelper("custom_assertions.properties"),
+                                new ModularAssertionsScannerHelper("ModularAssertion-List"),
+                                fileName
+                        )
+                )
+        ) {
+            // we cannot check whether issuer is trusted, but we can validate signature here
+            SignerUtils.verifySignature(payload.getDataStream(), payload.getSignaturePropertiesString());
+            return payload.create();
+        } catch (final IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(MessageFormat.format("Failed to verify signature for file: ''{0}''.\nCause: {1}", ServerModuleFilePayload.trimFileName(fileName), ExceptionUtils.getMessage(e)), e);
         }
     }
 

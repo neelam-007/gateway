@@ -530,6 +530,9 @@ public class SignerUtils {
      * Use this method for reading the contents of a signed zip file.  It'll provide a consistent way of processing signed zip file.
      * <p/>
      * The caller must close {@code InnerPayload} after done using, in order to properly release data and signature buffers.
+     * <p/>
+     * UGLY ... Method modifier changed from private to protected, to address SSG-13742.<br/>
+     * !!!!!!DO NOT USE THIS METHOD, AS IT"S MEANT FOR INTERNAL USE ONLY!!!!!!
      *
      * @param signedZip    input stream containing .ZIP file as produced by signZip.  Required and cannot be {@code null}.
      * @return a {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload} object containing
@@ -537,7 +540,7 @@ public class SignerUtils {
      * @throws IOException if an error happens while reading {@code signedZip} or calculating digest.
      */
     @NotNull
-    private static <T extends SignedZip.InnerPayload> T readSignedZip(
+    protected static <T extends SignedZip.InnerPayload> T readSignedZip(
             @NotNull final InputStream signedZip,
             @NotNull final InnerPayloadFactory<T> payloadFactory
     ) throws IOException, NoSuchAlgorithmException {
