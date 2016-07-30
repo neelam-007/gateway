@@ -404,8 +404,13 @@ public class ClusterIDManager extends HibernateDaoSupport {
     /**
      * Store the node id to the properties file.
      */
-    // TODO jwilliams: investigate
     private void storeNodeIdProperty( final String nodeid ) {
+        if (nodePropertiesLoader.isDiskless()) {
+            // if we are using diskless config we are assuming that there is no node.properties file to store to
+            logger.warning("Could not store node identifier to node.properties - diskless config enabled.");
+            return;
+        }
+
         logger.config("Storing node identifier '"+nodeid+"'.");
         String configDirectory = ConfigFactory.getProperty( SYSPROP_CONFIG_HOME );
         if ( configDirectory != null ) {
