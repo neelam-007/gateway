@@ -3807,14 +3807,13 @@
     <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign an aar file and generate RESTman XML for an signed file" />
     <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for an signed file" />
 
-	<target name="skarsigner-sign-archives" description="Sign aar/jar/skar">
+	<target name="skarsigner-sign" depends="build-skar-if-not-exists" description="Sign aar/jar/skar">
         <echo level="info">Sign all archives that are indicated to be signed</echo>
         <property name="skarsigner.sign.archives" value="true"/>
     </target>
 	
-	<target name="skarsigner-generate-restman-xmls" description="Generate RESTman XMLs">
+	<target name="skarsigner-sign-and-generate" depends="skarsigner-sign" description="Generate RESTman XMLs">
         <echo level="info">Generate RESTman XMLs for all signed archives that are indicated to have RESTman XMLs generated</echo>
-		<fail unless="skarsigner.sign.archives" message="Archives must be signed before RESTman XMLs can be generated"/>
         <property name="skarsigner.generate.restman.xmls" value="true"/>
     </target>
 	

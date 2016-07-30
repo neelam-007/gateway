@@ -226,7 +226,7 @@
 			<attribute name="keystore" default="${src.root}/etc/signer/gatewayKeyStore.p12"/>
 			<attribute name="access.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 			<attribute name="load.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
-			<attribute name="skarSigner" default="${src.root}/SkarSigner.jar"/>
+			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
 			<attribute name="input" default="${build.dir}/${ant.project.name}.${file.extension}"/>
 			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
 			<sequential>
@@ -247,7 +247,7 @@
 		-->
 		<macrodef name="skarsigner-generate-restman-xml">
 			<!-- Defaults that could be overridden -->
-			<attribute name="skarSigner" default="${src.root}/SkarSigner.jar"/>
+			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
 			<attribute name="assertion" default="${ant.project.name}"/>
 			<attribute name="input" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
 			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}.xml"/>
