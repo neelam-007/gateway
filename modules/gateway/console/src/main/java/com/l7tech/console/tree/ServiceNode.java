@@ -122,6 +122,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new PolicyRevisionsAction(this));
         try {
             actions.add(new PolicyStepDebugAction(this, this.getPolicy()));
+         //   actions.add(new TracePolicyAction(this, this.getPolicy()));
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Cannot add PolicyStepDebug action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
         }

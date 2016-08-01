@@ -108,6 +108,16 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
+        System.out.print(getEntityHeader());
+        System.out.print(getEntityHeader().getPolicyType());
+        actions.add(new TracePolicyAction(this));
+        /*if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
+            try {
+                actions.add(new TracePolicyAction(this*//*, this.getPolicy()*//*));
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Cannot add PolicyTraceAction action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
+            }
+        }*/
         if (getEntityHeader().getPolicyType().equals(PolicyType.GLOBAL_FRAGMENT)) {
             try {
                 actions.add(new PolicyStepDebugAction(this, this.getPolicy()));
