@@ -209,6 +209,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         }
         connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherlist.toString());
+        connector.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, "TLSv1, TLSv1.1, TLSv1.2");
 
         editAndSave(connector, connector.getReadOnlyCopy(), true);
     }

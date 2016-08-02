@@ -35,7 +35,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
     public static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";
     public static final String PROP_PROTOCOLS = "https.protocols";
 
-    public static final String DEFAULT_PROTOCOLS = null; // "TLSv1";
+    public static final String DEFAULT_PROTOCOLS = null; // "TLSv1.2";
 
     public SecureHttpComponentsClient() {
         this( getDefaultKeyManagers() );

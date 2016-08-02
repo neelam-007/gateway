@@ -134,7 +134,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
             SsgConnector.PROP_TLS_PROTOCOLS,
             SsgConnector.PROP_TLS_CIPHERLIST
     );
-    private static final List<String> DEFAULT_TLS_VERSIONS = Collections.unmodifiableList( split( ConfigFactory.getProperty( "com.l7tech.external.assertions.gatewaymanagement.listenPortDefaultTlsVersions", "TLSv1" ) ) );
+    private static final List<String> DEFAULT_TLS_VERSIONS = Collections.unmodifiableList( split( ConfigFactory.getProperty( "com.l7tech.external.assertions.gatewaymanagement.listenPortDefaultTlsVersions", "TLSv1.2" ) ) );
 
     private static final Unary<Option<String>,String> BOOLEAN_VALIDATOR =  new Unary<Option<String>,String>(){
         @Override

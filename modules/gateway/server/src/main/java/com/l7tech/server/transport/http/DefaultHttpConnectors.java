@@ -83,6 +83,7 @@ public class DefaultHttpConnectors {
             https.setScheme(SsgConnector.SCHEME_HTTPS);
             https.setEndpoints(defaultHttpsEndpoints);
             setListenerCiphers(https);
+            setTLSVersions(https);
             https.setPort(initPort);
             https.setKeyAlias(null);
             https.setKeystoreGoid(null);
@@ -104,6 +105,7 @@ public class DefaultHttpConnectors {
             https.setScheme(SsgConnector.SCHEME_HTTPS);
             https.setEndpoints(defaultHttpsEndpoints);
             setListenerCiphers(https);
+            setTLSVersions(https);
             https.setPort(8443);
             https.setKeyAlias(null);
             https.setKeystoreGoid(null);
@@ -126,6 +128,7 @@ public class DefaultHttpConnectors {
         httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
         httpsNocc.setEndpoints(defaultHttpsEndpoints);
         setListenerCiphers(httpsNocc);
+        setTLSVersions(httpsNocc);
         httpsNocc.setPort(9443);
         httpsNocc.setKeyAlias(null);
         httpsNocc.setKeystoreGoid(null);
@@ -144,6 +147,10 @@ public class DefaultHttpConnectors {
     private static void setListenerCiphers(SsgConnector https) {
         if (defaultListenerStrongCiphers != null && defaultListenerStrongCiphers.trim().length() > 0)
             https.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, defaultListenerStrongCiphers);
+    }
+
+    private static void setTLSVersions(SsgConnector https) {
+        https.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, "TLSv1, TLSv1.1, TLSv1.2");
     }
 
     public static Collection<SsgConnector> getRequiredConnectors( final Collection<SsgConnector> existingConnectors ) {
@@ -174,6 +181,7 @@ public class DefaultHttpConnectors {
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
         nodeHttps.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, defaultInternodeStrongCiphers);
+        nodeHttps.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, "TLSv1, TLSv1.1, TLSv1.2");
         if ( !"0".equals(defaultInternodePoolSize) )
             nodeHttps.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, defaultInternodePoolSize);
         return nodeHttps;

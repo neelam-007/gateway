@@ -1322,6 +1322,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         String protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
+        //Protocols is null select TLS1.0 by default
+        //This is for backward compatibility previous default was "TLS1" and we were not saving anything in the
+        //database if default is selected
         if (protocols == null) {
             tls10CheckBox.setSelected(true);
             tls11CheckBox.setSelected(false);
@@ -1412,10 +1415,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (tls11CheckBox.isSelected()) protos.add("TLSv1.1");
         if (tls12CheckBox.isSelected()) protos.add("TLSv1.2");
         String protoString = TextUtils.join(",", protos).toString();
-        if ("TLSv1".equals(protoString)) {
-            // We will avoid specifying a protocol string if it would match the default one anyway
-            protoString = null;
-        }
         connector.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, protoString);
 
         connector.removeProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);

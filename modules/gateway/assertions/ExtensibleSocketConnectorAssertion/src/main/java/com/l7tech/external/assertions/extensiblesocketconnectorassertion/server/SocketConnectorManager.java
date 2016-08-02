@@ -349,7 +349,7 @@ public class SocketConnectorManager {
             }
 
             Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-            SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2", provider);
             sslContext.init(keyManagers, new TrustManager[]{tm}, secureRandom);
 
             sslFilterWrapper = SslFilterWrapper.create(sslContext);
