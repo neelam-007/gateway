@@ -2995,6 +2995,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                 manageMenu.add(getMenuItemPreferences(false));
                 manageMenu.add(getMyAccountMenuItem(false));
+                manageMenu.add(getManageClusterLicensesMenuItem());
 
                 appletManagePopUpMenu = manageMenu;
             }
