@@ -154,9 +154,9 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 dirContext = identityProvider.getBrowseContext();
                 String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                if(LDAPConstants.SUBTREE_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                else if(LDAPConstants.OBJECT_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                if(LDAPConstants.OBJECT_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
                 else if(LDAPConstants.ONELEVEL_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+                else sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );
