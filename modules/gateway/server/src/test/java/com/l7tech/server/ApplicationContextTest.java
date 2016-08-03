@@ -9,7 +9,10 @@ import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
+import com.l7tech.util.SyspropUtil;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -32,6 +35,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 
 import static com.l7tech.util.CollectionUtils.set;
@@ -92,6 +96,19 @@ public class ApplicationContextTest  {
             "licenseManager"   // TODO legacy - figure out if LicenseManager should use PostStartup instead
             // Do not add a new bean here unless you know it needs and is safe for it to use ApplicationListener instead of PostStartupApplicationListener
     );
+
+    private static final String CONF_SYS_PROP = "com.l7tech.server.configDirectory";
+
+    @Before
+    public void setUp() {
+        final URL resourceConf = ApplicationContextTest.class.getResource("resources");
+        SyspropUtil.setProperty(CONF_SYS_PROP, resourceConf.getPath());
+    }
+
+    @After
+    public void tearDown() {
+        SyspropUtil.clearProperty(CONF_SYS_PROP);
+    }
 
     /**
      * Loading the definitions in this way will check the syntax and that all the

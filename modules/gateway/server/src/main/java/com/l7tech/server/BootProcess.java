@@ -74,6 +74,10 @@ public class BootProcess
         this.systemProperties = systemProperties;
     }
 
+    public void setNodeProperties(Properties nodeProperties) {
+        this.nodeProperties = nodeProperties;
+    }
+
     public void start() throws LifecycleException {
         try {
             initialize();
@@ -171,20 +175,23 @@ public class BootProcess
 
         auditor = new Auditor(this, applicationContext, logger);
 
-        if (otherPropertiesFiles == null || otherPropertiesFiles.isEmpty()) return;
+        // adding node properties here so we can eliminate use of node.properties file in "otherPropertiesFiles"
+        systemProperties.setSystemProperties(nodeProperties, "com.l7tech.server", false);
 
-        for (String systemPropertyPrefix : otherPropertiesFiles.keySet()) {
-            String filename = otherPropertiesFiles.get(systemPropertyPrefix);
-            Properties props = new Properties();
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(new File(filename));
-                props.load(fis);
-                systemProperties.setSystemProperties(props, systemPropertyPrefix, false);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Couldn't read from " + filename + "; ignoring", e);
-            } finally {
-                ResourceUtils.closeQuietly(fis);
+        if (otherPropertiesFiles != null && !otherPropertiesFiles.isEmpty()) {
+            for (String systemPropertyPrefix : otherPropertiesFiles.keySet()) {
+                String filename = otherPropertiesFiles.get(systemPropertyPrefix);
+                Properties props = new Properties();
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(new File(filename));
+                    props.load(fis);
+                    systemProperties.setSystemProperties(props, systemPropertyPrefix, false);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't read from " + filename + "; ignoring", e);
+                } finally {
+                    ResourceUtils.closeQuietly(fis);
+                }
             }
         }
 
@@ -348,6 +355,7 @@ public class BootProcess
     private Collection<ServerComponentLifecycle> discoveredComponents;
     private Map<String, String> otherPropertiesFiles;
     private SystemProperties systemProperties;
+    private Properties nodeProperties;
     private ServerConfig serverConfig;
     private Auditor auditor;
     private String ipAddress;
