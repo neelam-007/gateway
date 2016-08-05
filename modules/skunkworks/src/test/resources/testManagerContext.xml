@@ -1645,6 +1645,8 @@
         <constructor-arg index="2" value="ADMIN"/>
     </bean>
 
+    <bean id="nodePropertiesLoader" class="com.l7tech.server.NodePropertiesLoaderImpl" factory-method="getInstance"/>
+
     <bean id="nodeProperties"
           class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
           depends-on="systemProperties">
