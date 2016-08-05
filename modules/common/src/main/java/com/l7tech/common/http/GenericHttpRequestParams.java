@@ -590,7 +590,18 @@ public class GenericHttpRequestParams {
      *          to force including a request body and the method allows this to be forced.
      */
     public boolean needsRequestBody(@NotNull HttpMethod method) {
-        return method.needsRequestBody() || (isForceIncludeRequestBody() && method.canForceIncludeRequestBody());
+        HttpMethod resolvedMethod = method;
+
+        if (HttpMethod.OTHER == method && methodAsString != null) {
+            try {
+                resolvedMethod = HttpMethod.valueOf(methodAsString);
+            } catch (IllegalArgumentException e) {
+                // resolved method will be evaluated as OTHER
+            }
+        }
+
+        return resolvedMethod.needsRequestBody() ||
+                (isForceIncludeRequestBody() && resolvedMethod.canForceIncludeRequestBody());
     }
 
     public SSLContext getSslContext() {

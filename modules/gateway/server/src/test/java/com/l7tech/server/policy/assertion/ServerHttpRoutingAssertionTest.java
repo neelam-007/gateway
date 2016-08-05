@@ -67,11 +67,13 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -1444,6 +1446,120 @@ public class ServerHttpRoutingAssertionTest {
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
         assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-13709")
+    @Test
+    public void testMethodFromContextVariable_HEAD_BodyForcedIncluded() throws Exception {
+        String requestBody = "<foo/>";
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        assertion.setHttpMethod(HttpMethod.OTHER);
+        assertion.setHttpMethodAsString("${contextVar}");
+        assertion.setForceIncludeRequestBody(true);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest(new MockServletContext());
+        mockHttpServletRequest.setMethod("GET");
+
+        Message request = new Message(XmlUtil.stringAsDocument(requestBody));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
+        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        pec.setVariable("contextVar", "HEAD");
+
+        TestingHttpClientFactory testingHttpClientFactory =
+                appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+
+        final MockGenericHttpClient mockClient =
+                new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}), null, 0L, new byte[0]);
+
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals(requestBody, new String(mockClient.getRequestBody()));
+    }
+
+    @BugId("SSG-13709")
+    @Test
+    public void testMethodFromContextVariable_HEAD_BodyNotIncluded() throws Exception {
+        String requestBody = "<foo/>";
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        assertion.setHttpMethod(HttpMethod.OTHER);
+        assertion.setHttpMethodAsString("${contextVar}");
+        assertion.setForceIncludeRequestBody(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest(new MockServletContext());
+        mockHttpServletRequest.setMethod("GET");
+
+        Message request = new Message(XmlUtil.stringAsDocument(requestBody));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
+        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        pec.setVariable("contextVar", "HEAD");
+
+        TestingHttpClientFactory testingHttpClientFactory =
+                appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+
+        final MockGenericHttpClient mockClient =
+                new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}), null, 0L, new byte[0]);
+
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertNull(mockClient.getRequestBody());
+    }
+
+    @BugId("SSG-13709")
+    @Test
+    public void testMethodFromContextVariable_PUT_BodyIncluded() throws Exception {
+        String requestBody = "<foo/>";
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        assertion.setHttpMethod(HttpMethod.OTHER);
+        assertion.setHttpMethodAsString("${contextVar}");
+        assertion.setForceIncludeRequestBody(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest(new MockServletContext());
+        mockHttpServletRequest.setMethod("GET");
+
+        Message request = new Message(XmlUtil.stringAsDocument(requestBody));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
+        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        pec.setVariable("contextVar", "PUT");
+
+        TestingHttpClientFactory testingHttpClientFactory =
+                appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+
+        final MockGenericHttpClient mockClient =
+                new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}), null, 0L, new byte[0]);
+
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals(requestBody, new String(mockClient.getRequestBody()));
     }
 
     private PolicyEnforcementContext createContentTypeTestPec(HttpRoutingAssertion hra, ApplicationContext appContext, String method, final Header[] contentTypeHeaders, final String[] contentTypeHeaderValueCollector, boolean nobody) throws Exception {
