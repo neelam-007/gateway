@@ -8,8 +8,12 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.ConditionalIgnoreRule;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -29,7 +33,11 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ServerConfig.class, TerracottaToolkitClassLoader.class, GemFireClassLoader.class, CoherenceClassLoader.class})
 @PowerMockIgnore("javax.management.*")
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class RemoteCacheManagerImplTest {
+
+    @Rule
+    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
     private RemoteCachesManager remoteCachesManager = null;
 
