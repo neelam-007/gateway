@@ -136,6 +136,7 @@ public class JdbcModelToMetadata implements Func1<JdbcModel, JdbcMetadataMapping
 
                 boolean hasIdField = false;
                 boolean hasUuidField = false;
+                boolean hasTenantIdField = false;
                 for (JdbcColumn jdbcColumn : jdbcTable.columns) {
                     String propertyName = getPropertyName(jdbcColumn.columnName);
                     EdmType propertyType = getEdmType(jdbcColumn.columnType, jdbcColumn.columnTypeName, jdbcColumn.columnSize);
@@ -149,10 +150,16 @@ public class JdbcModelToMetadata implements Func1<JdbcModel, JdbcMetadataMapping
                         } else if (propertyName.equalsIgnoreCase("Uuid")) {
                             hasUuidField = true;
                         }
+                        if (propertyName.equalsIgnoreCase("TenantId")) {
+                          hasTenantIdField = true;
+                        }
                         //TODO: make this fallback key configurable???
                     }
                 }
                 if (isView || isCustom) {
+                    if(hasTenantIdField){
+                      entityType.addKeys("TenantId");
+                    }
                     if (hasIdField) {
                         entityType.addKeys("Id");
                     } else if (!hasIdField && hasUuidField) {

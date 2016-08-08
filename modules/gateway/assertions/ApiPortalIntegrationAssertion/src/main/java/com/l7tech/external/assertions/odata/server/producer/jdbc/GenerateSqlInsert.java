@@ -38,9 +38,7 @@ public class GenerateSqlInsert {
                     } else if (prop.getValue() != null && prop.getValue().toString().equals(JdbcCreateEntityCommand.MAGIC_STRING_UUID)) {
                         generateGUIDForThisField = true;
                     }
-                    break;
                 }
-                break;
             }
 
             EdmProperty edmProp = entitySet.getType().findProperty(prop.getName());
