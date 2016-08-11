@@ -48,6 +48,7 @@ public class JdbcCreateEntityCommand implements Command<CreateEntityCommandConte
     for (String key : keys) {
       for (OProperty<?> prop : oEntity.getProperties()) {
         if (prop.getName().equals(key) && prop.getValue() != null) {
+          //preserve tenant id value to use it later to query the results
           if (key.equals(TENANT_ID)) {
             tenantId = prop.getValue().toString();
           } else {
@@ -97,12 +98,14 @@ public class JdbcCreateEntityCommand implements Command<CreateEntityCommandConte
     if (generatedUUID != null) {
       HashMap<String, Object> entityKeys = new HashMap();
       entityKeys.put(keyHolder.keyName, generatedUUID);
+      //if tenant id is there add it to the list of keys
       if (tenantId != null)
         entityKeys.put("TenantId", tenantId);
       entityKey = OEntityKey.create(entityKeys);
     } else if (keyHolder.notInRequestFlag && keyHolder.id > 0) {
       HashMap<String, Object> entityKeys = new HashMap();
       entityKeys.put(keyHolder.keyName, keyHolder.id);
+      //if tenant id is there add it to the list of keys
       if (tenantId != null)
         entityKeys.put("TenantId", tenantId);
       entityKey = OEntityKey.create(entityKeys);

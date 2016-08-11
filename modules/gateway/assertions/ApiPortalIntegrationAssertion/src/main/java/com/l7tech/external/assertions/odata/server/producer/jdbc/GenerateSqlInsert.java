@@ -27,6 +27,7 @@ public class GenerateSqlInsert {
         for (OProperty<?> prop : entity.getProperties()) {
             //if it's a key, it's a number type and is -1, most probably an autogen field
             //find the actual field name for the key
+            //added support for multiple key fields for insert
             //TODO: do we need to actually handle a request where the id was not part of the request?
             boolean skipThisFieldForInsert = false;
             boolean generateGUIDForThisField = false;

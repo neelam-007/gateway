@@ -150,6 +150,7 @@ public class JdbcModelToMetadata implements Func1<JdbcModel, JdbcMetadataMapping
                         } else if (propertyName.equalsIgnoreCase("Uuid")) {
                             hasUuidField = true;
                         }
+                        //Set flag if tenant id is in properties
                         if (propertyName.equalsIgnoreCase("TenantId")) {
                           hasTenantIdField = true;
                         }
@@ -157,6 +158,7 @@ public class JdbcModelToMetadata implements Func1<JdbcModel, JdbcMetadataMapping
                     }
                 }
                 if (isView || isCustom) {
+                    //Add tenant id to the list of fields for views
                     if(hasTenantIdField){
                       entityType.addKeys("TenantId");
                     }
