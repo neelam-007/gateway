@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.mongodb;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntity;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntityAdmin;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntityAdminImpl;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -33,10 +35,12 @@ public class MongoDBAssertionSpringApplicationListener implements ApplicationLis
     private X509TrustManager trustManager = null;
     private SecureRandom secureRandom = null;
     private DefaultKey defaultKey = null;
+    private EntityManager<MongoDBConnectionEntity, GenericEntityHeader> entityManager = null;
 
 
-    public MongoDBAssertionSpringApplicationListener(SecurePasswordManager securePasswordManager, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager,
+    public MongoDBAssertionSpringApplicationListener(EntityManager<MongoDBConnectionEntity, GenericEntityHeader> entityManager, SecurePasswordManager securePasswordManager, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager,
                                                      SecureRandom secureRandom, DefaultKey defaultKey) {
+        this.entityManager = entityManager;
         this.securePasswordManager = securePasswordManager;
         this.keyStoreManager = keyStoreManager;
         this.trustManager = trustManager;
@@ -48,8 +52,8 @@ public class MongoDBAssertionSpringApplicationListener implements ApplicationLis
     public void onApplicationEvent(ApplicationEvent event) {
 
         if (event instanceof ReadyForMessages) {
-            MongoDBConnectionManager.createMongoDBConnectionManager(securePasswordManager, keyStoreManager, trustManager, secureRandom, defaultKey);
-            MongoDBConnectionManager.getInstance().loadMongoDBConnections();
+            // Connection manager should have already been instantiated before this
+            MongoDBConnectionManager.getInstance().loadMongoDBConnections(entityManager);
         }
 
         if (event instanceof EntityInvalidationEvent &&
@@ -61,7 +65,7 @@ public class MongoDBAssertionSpringApplicationListener implements ApplicationLis
 
             if (sourceEntity.getEntityClassName().equals(MongoDBConnectionEntity.class.getName())) {
 
-                MongoDBConnectionEntityAdmin mongoDBConnectionEntityAdmin = MongoDBConnectionEntityAdminImpl.getInstance(null);
+                MongoDBConnectionEntityAdmin mongoDBConnectionEntityAdmin = MongoDBConnectionEntityAdminImpl.getInstance(entityManager);
                 MongoDBConnectionEntity connectionEntity = null;
                 Goid goid = sourceEntity.getGoid();
 

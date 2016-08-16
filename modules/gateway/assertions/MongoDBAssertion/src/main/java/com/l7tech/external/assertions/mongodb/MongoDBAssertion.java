@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.mongodb;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.mongodb.console.MongoDBConnectionsDialog;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntity;
@@ -10,7 +9,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -33,7 +31,7 @@ import java.util.logging.Logger;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 
 /**
- * 
+ *
  */
 public class MongoDBAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(MongoDBAssertion.class.getName());
@@ -152,13 +150,13 @@ public class MongoDBAssertion extends Assertion implements UsesVariables, SetsVa
     }
 
     @Override
-       public VariableMetadata[] getVariablesSet() {
-           List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
-           varMeta.add(new VariableMetadata(prefix + ".queryresult.count", false, false, null, false, DataType.INTEGER));
-            varMeta.add(new VariableMetadata(prefix + ".queryresult.output", false, false, null, false, DataType.STRING));
+    public VariableMetadata[] getVariablesSet() {
+        List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
+        varMeta.add(new VariableMetadata(prefix + ".queryresult.count", false, false, null, false, DataType.INTEGER));
+        varMeta.add(new VariableMetadata(prefix + ".queryresult.output", false, false, null, false, DataType.STRING));
 
-           return varMeta.toArray(new VariableMetadata[varMeta.size()]);
-       }
+        return varMeta.toArray(new VariableMetadata[varMeta.size()]);
+    }
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -176,9 +174,9 @@ public class MongoDBAssertion extends Assertion implements UsesVariables, SetsVa
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
 
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
+        // Add to palette folder(s)
+        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
+        //   misc, audit, policyLogic, threatProtection
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
 
@@ -191,11 +189,11 @@ public class MongoDBAssertion extends Assertion implements UsesVariables, SetsVa
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
 
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
-               @Override
-               public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                   return  MongoDBConnectionEntityManagerSupport.getInstance(appContext).getExtensionInterfaceBindings();
-               }
-           });
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                return  MongoDBConnectionEntityManagerSupport.getInstance(appContext).getExtensionInterfaceBindings();
+            }
+        });
 
 
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mongodb.MongoDBAssertionModuleLoadListener");
@@ -215,53 +213,52 @@ public class MongoDBAssertion extends Assertion implements UsesVariables, SetsVa
     private final static String baseName = "Perform MongoDB Operation";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<MongoDBAssertion>(){
-            @Override
-            public String getAssertionName( final MongoDBAssertion assertion, final boolean decorate) {
-                if(!decorate) return baseName;
+        @Override
+        public String getAssertionName( final MongoDBAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
 
-                StringBuilder builder= new StringBuilder(baseName);
-                builder.append(": ").append(assertion.getOperation());
+            StringBuilder builder= new StringBuilder(baseName);
+            builder.append(": ").append(assertion.getOperation());
 
-                return builder.toString();
-            }
-        };
+            return builder.toString();
+        }
+    };
 
     public static class MongoDBConnectionEntityManagerSupport {
-           private static MongoDBConnectionEntityManagerSupport instance;
-           private EntityManager<MongoDBConnectionEntity, GenericEntityHeader> entityManager;
+        private static MongoDBConnectionEntityManagerSupport instance;
+        private EntityManager<MongoDBConnectionEntity, GenericEntityHeader> entityManager;
 
-           public static synchronized MongoDBConnectionEntityManagerSupport getInstance(final ApplicationContext context) {
-               if(instance == null){
-                   MongoDBConnectionEntityManagerSupport support = new MongoDBConnectionEntityManagerSupport();
-                   support.init(context);
-                   instance = support;
-               }
-               return instance;
-           }
+        public static synchronized MongoDBConnectionEntityManagerSupport getInstance(final ApplicationContext context) {
+            if(instance == null){
+                MongoDBConnectionEntityManagerSupport support = new MongoDBConnectionEntityManagerSupport();
+                support.init(context);
+                instance = support;
+            }
+            return instance;
+        }
 
-           public void init(final ApplicationContext _context) {
-               GenericEntityManager gem = _context.getBean("genericEntityManager", GenericEntityManager.class);
-               gem.registerClass(MongoDBConnectionEntity.class);
-               entityManager = gem.getEntityManager(MongoDBConnectionEntity.class);
-           }
+        public void init(final ApplicationContext _context) {
+            GenericEntityManager gem = _context.getBean("genericEntityManager", GenericEntityManager.class);
+            entityManager = gem.getEntityManager(MongoDBConnectionEntity.class);
+        }
 
-           public Collection<ExtensionInterfaceBinding> getExtensionInterfaceBindings() {
-               ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<MongoDBConnectionEntityAdmin>(MongoDBConnectionEntityAdmin.class, null, MongoDBConnectionEntityAdminImpl.getInstance(entityManager));
-               return Collections.singleton(binding);
-           }
-       }
+        public Collection<ExtensionInterfaceBinding> getExtensionInterfaceBindings() {
+            ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(MongoDBConnectionEntityAdmin.class, null, MongoDBConnectionEntityAdminImpl.getInstance(entityManager));
+            return Collections.singleton(binding);
+        }
+    }
 
     public static class CustomAction extends AbstractAction {
-            public CustomAction() {
-                super("Configure MongoDB Connection", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Bean16.gif"));
-            }
+        public CustomAction() {
+            super("Configure MongoDB Connection", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Bean16.gif"));
+        }
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MongoDBConnectionsDialog mongoDBConnectionsDialog = new MongoDBConnectionsDialog(TopComponents.getInstance().getTopParent());
-                Utilities.centerOnScreen(mongoDBConnectionsDialog);
-                DialogDisplayer.display(mongoDBConnectionsDialog);
-            }
-       }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            MongoDBConnectionsDialog mongoDBConnectionsDialog = new MongoDBConnectionsDialog(TopComponents.getInstance().getTopParent());
+            Utilities.centerOnScreen(mongoDBConnectionsDialog);
+            DialogDisplayer.display(mongoDBConnectionsDialog);
+        }
+    }
 
 }

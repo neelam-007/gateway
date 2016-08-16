@@ -4,8 +4,10 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntity;
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntityAdminImpl;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -68,13 +70,12 @@ public final class MongoDBConnectionManager {
         this.secureRandom = secureRandom;
     }
 
-    public void loadMongoDBConnections()  {
+    public void loadMongoDBConnections(EntityManager<MongoDBConnectionEntity, GenericEntityHeader> entityManager)  {
 
-        List<MongoDBConnectionEntity> mongoDBConnections = null;
+        List<MongoDBConnectionEntity> mongoDBConnections = new ArrayList<>();
 
         try {
-            mongoDBConnections = new ArrayList<MongoDBConnectionEntity>();
-            Collection<MongoDBConnectionEntity> mongoDBConnectionEntities = MongoDBConnectionEntityAdminImpl.getInstance(null).findByType();
+            Collection<MongoDBConnectionEntity> mongoDBConnectionEntities = MongoDBConnectionEntityAdminImpl.getInstance(entityManager).findByType();
             if (mongoDBConnectionEntities != null) {
                 mongoDBConnections.addAll(mongoDBConnectionEntities);
             }
@@ -99,20 +100,20 @@ public final class MongoDBConnectionManager {
 
     public void closeConnections() {
 
-            for (MongoDBConnection mongoDBConnection : connectionMap.values()){
-                try {
-                    mongoDBConnection.getMongoClient().close();
-                } catch (Exception e) {
-                    logger.log(Level.INFO, "Unable to close mongo connection", e);
-                }
+        for (MongoDBConnection mongoDBConnection : connectionMap.values()){
+            try {
+                mongoDBConnection.getMongoClient().close();
+            } catch (Exception e) {
+                logger.log(Level.INFO, "Unable to close mongo connection", e);
             }
+        }
 
     }
 
     public void addConnection(MongoDBConnectionEntity mongoDBConnectionEntity) {
 
-            MongoDBConnection mongoDBConnection = createConnection(mongoDBConnectionEntity);
-            connectionMap.put(mongoDBConnectionEntity.getGoid(), mongoDBConnection);
+        MongoDBConnection mongoDBConnection = createConnection(mongoDBConnectionEntity);
+        connectionMap.put(mongoDBConnectionEntity.getGoid(), mongoDBConnection);
     }
 
     public void removeConnection(MongoDBConnectionEntity mongoDBConnectionEntity) {
