@@ -46,6 +46,9 @@ public class  NewPrivateKeyDialog extends JDialog {
     private static final String TITLE = "Create Private Key";
     private static final String DEFAULT_EXPIRY = Long.toString(365 * 5);
 
+    // we can't have a duration that will push the expiry beyond year 9999 - just under a million days should be more than enough
+    public static final int MAX_DAYS_DURATION = 999999;
+
     private static class KeyType {
         private final int size;
         private final String label;
@@ -225,9 +228,9 @@ public class  NewPrivateKeyDialog extends JDialog {
             }
         });
 
-        validator.constrainTextFieldToNumberRange("Days until expiry", expiryDaysField, 1, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("Days until expiry", expiryDaysField, 1, MAX_DAYS_DURATION);
 
-        expiryDaysField.setDocument(new NumberField(8));
+        expiryDaysField.setDocument(new NumberField(String.valueOf(MAX_DAYS_DURATION).length()));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
         // Some EC curve names commented out because they aren't supported by RSA BSAFE Crypto-J as of version 4.1.0.1
