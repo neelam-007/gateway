@@ -21,7 +21,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -82,7 +81,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
-    private GenericHttpClientFactory httpClientFactory;
+    private final GenericHttpClientFactory httpClientFactory;
     private final StashManagerFactory stashManagerFactory;
     private final HostnameVerifier hostnameVerifier;
     private final FailoverStrategy<String> failoverStrategy;
@@ -197,6 +196,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         this.senderVouchesSignerInfo = signerInfo;
         this.socketFactory = sslSocketFactory;
 
+        GenericHttpClientFactory httpClientFactory;
+        try {
+            httpClientFactory = makeHttpClientFactory();
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
+            httpClientFactory = new IdentityBindingHttpClientFactory();
+        }
+        this.httpClientFactory = httpClientFactory;
+
         StashManagerFactory smFactory;
         try {
             smFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
@@ -238,8 +246,31 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         varNames = assertion.getVariablesUsed();
     }
 
-    public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
+    private GenericHttpClientFactory makeHttpClientFactory() throws FindException {
+        final String proxyHost = assertion.getProxyHost();
+        if (proxyHost == null) {
+            return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
+        }
 
+        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
+
+        // Use a proxy
+        return new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return createHttpClient(-1, -1, -1, -1, null);
+            }
+
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
+                        identity, connectTimeout, timeout,  proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), proxyPassword);
+            }
+        };
+    }
+
+
+    public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
 
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
 
@@ -254,15 +285,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        GenericHttpClientFactory httpClientFactory;
-        try {
-            httpClientFactory = makeHttpClientFactory(context);
-        } catch (Exception e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
-            httpClientFactory = new IdentityBindingHttpClientFactory();
-        }
-        this.httpClientFactory = httpClientFactory;
-
         final Message requestMessage = getRequestMessage(context);
 
         URL u = null;
@@ -322,47 +344,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return AssertionStatus.FAILED;
         } finally {
             context.routingFinished();
-        }
-    }
-
-    private GenericHttpClientFactory makeHttpClientFactory(PolicyEnforcementContext pec) throws FindException {
-        if (assertion.getProxyHost() == null) {
-            return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
-        }
-
-        final String proxyHost = expand(pec, assertion.getProxyHost());
-        final int proxyPort = tryParsePort(pec, assertion.getProxyPort());
-        final String proxyUsername = expand(pec, assertion.getProxyUsername());
-        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
-
-        // Use a proxy
-        return new GenericHttpClientFactory() {
-            @Override
-            public GenericHttpClient createHttpClient() {
-                return createHttpClient(-1, -1, -1, -1, null);
-            }
-
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
-                        identity, connectTimeout, timeout,  proxyHost, proxyPort, proxyUsername, proxyPassword);
-            }
-        };
-    }
-
-    private String expand(PolicyEnforcementContext policyEnforcementContext, String expression) {
-        final VariableExpander variableExpander = getVariableExpander(policyEnforcementContext);
-        return Syntax.isAnyVariableReferenced(expression)
-                ? variableExpander.expandVariables(expression)
-                : expression;
-    }
-
-    private int tryParsePort(PolicyEnforcementContext pec, String port) throws NumberFormatException {
-        try {
-            return Integer.parseInt(expand(pec , port));
-        } catch (NumberFormatException e) {
-            logAndAudit(AssertionMessages.SET_VARIABLE_UNABLE_TO_PARSE_INTEGER, new String[]{assertion.getProxyPort()}, e);
-            throw e;
         }
     }
 

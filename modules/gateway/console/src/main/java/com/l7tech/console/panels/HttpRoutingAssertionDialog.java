@@ -39,7 +39,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
-import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -320,29 +319,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         maxRetriesSpinner.setModel(new SpinnerNumberModel(3,0,100,1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRetriesSpinner, "Maximum retries"));
 
-        inputValidator.constrainTextField(proxyPortField, new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                final String value = proxyPortField.getText();
-                if (StringUtils.isEmpty(value)) {
-                    return "Please provide a value for the proxy port";
-                }
-                if (Syntax.isOnlyASingleVariableReferenced(value)) {
-                    return null;
-                }
-                if (Syntax.isAnyVariableReferenced(value)) {
-                    return "Please reference a single context variable for the proxy port";
-                }
-                if (!StringUtils.isNumeric(value)) {
-                    return "Please reference a single context variable or provide a numeric value for the proxy port";
-                }
-                if (Integer.parseInt(value) > 65535) {
-                    return "Port numbers must be an integer value between 1 and 65535";
-                }
-                return null;
-            }
-        });
-
+        inputValidator.constrainTextFieldToNumberRange("proxy port", proxyPortField, -1, 65535);
         inputValidator.constrainTextFieldToBeNonEmpty("proxy host", proxyHostField, null);
 
         ActionListener enableSpinners = new ActionListener() {
@@ -1066,12 +1043,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
             assertion.setProxyHost(proxyHostField.getText());
-            assertion.setProxyPort(proxyPortField.getText());
+            assertion.setProxyPort(Integer.parseInt(proxyPortField.getText()));
             assertion.setProxyUsername(proxyUsernameField.getText());
             assertion.setProxyPassword(new String(proxyPasswordField.getPassword()));
         } else {
             assertion.setProxyHost(null);
-            assertion.setProxyPort(null);
+            assertion.setProxyPort(-1);
             assertion.setProxyUsername(null);
             assertion.setProxyPassword(null);
         }
