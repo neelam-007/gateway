@@ -111,8 +111,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     private HttpMethod httpMethod;
     private GenericHttpRequestParams.HttpVersion httpVersion;
     private boolean useKeepAlives = true;
-    private String proxyHost = null;
-    private int proxyPort = -1;
+    private String proxyHost = "";
+    private String proxyPort;
     private String proxyUsername = "";
     private String proxyPassword = "";
 
@@ -558,6 +558,10 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         expressions.add(timeout);
         expressions.add(connectionTimeout);
         expressions.add(httpMethodAsString);
+        expressions.add(proxyHost);
+        expressions.add(proxyPort);
+        expressions.add(proxyUsername);
+        expressions.add(proxyPassword);
         expressions.add( Syntax.getVariableExpression( authOauthTokenVar ) );
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
@@ -783,11 +787,15 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.proxyHost = proxyHost;
     }
 
-    public int getProxyPort() {
+    public String getProxyPort() {
         return proxyPort;
     }
 
     public void setProxyPort(int proxyPort) {
+        this.proxyPort = Integer.toString(proxyPort);
+    }
+
+    public void setProxyPort(String proxyPort) {
         this.proxyPort = proxyPort;
     }
 

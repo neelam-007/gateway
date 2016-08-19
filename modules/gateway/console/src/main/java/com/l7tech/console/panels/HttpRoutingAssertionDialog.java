@@ -24,21 +24,27 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.*;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
-import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
@@ -314,7 +320,29 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         maxRetriesSpinner.setModel(new SpinnerNumberModel(3,0,100,1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRetriesSpinner, "Maximum retries"));
 
-        inputValidator.constrainTextFieldToNumberRange("proxy port", proxyPortField, -1, 65535);
+        inputValidator.constrainTextField(proxyPortField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                final String value = proxyPortField.getText();
+                if (StringUtils.isEmpty(value)) {
+                    return "Please provide a value for the proxy port";
+                }
+                if (Syntax.isOnlyASingleVariableReferenced(value)) {
+                    return null;
+                }
+                if (Syntax.isAnyVariableReferenced(value)) {
+                    return "Please reference a single context variable for the proxy port";
+                }
+                if (!StringUtils.isNumeric(value)) {
+                    return "Please reference a single context variable or provide a numeric value for the proxy port";
+                }
+                if (Integer.parseInt(value) > 65535) {
+                    return "Port numbers must be an integer value between 1 and 65535";
+                }
+                return null;
+            }
+        });
+
         inputValidator.constrainTextFieldToBeNonEmpty("proxy host", proxyHostField, null);
 
         ActionListener enableSpinners = new ActionListener() {
@@ -1038,12 +1066,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
             assertion.setProxyHost(proxyHostField.getText());
-            assertion.setProxyPort(Integer.parseInt(proxyPortField.getText()));
+            assertion.setProxyPort(proxyPortField.getText());
             assertion.setProxyUsername(proxyUsernameField.getText());
             assertion.setProxyPassword(new String(proxyPasswordField.getPassword()));
         } else {
             assertion.setProxyHost(null);
-            assertion.setProxyPort(-1);
+            assertion.setProxyPort(null);
             assertion.setProxyUsername(null);
             assertion.setProxyPassword(null);
         }
