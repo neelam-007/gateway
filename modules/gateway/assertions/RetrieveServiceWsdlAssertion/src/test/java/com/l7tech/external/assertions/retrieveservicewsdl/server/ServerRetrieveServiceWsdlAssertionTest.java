@@ -520,8 +520,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
             fail("Expected AssertionStatusException");
         } catch (AssertionStatusException e) {
             assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
-            assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.RETRIEVE_WSDL_INVALID_SERVICE_ID,
-                    "Cannot create a goid from this String, it does not decode to a 16 byte array."));
+            assertTrue( testAudit.isAuditPresent( AssertionMessages.RETRIEVE_WSDL_INVALID_SERVICE_ID ) );
         }
     }
 

@@ -335,8 +335,14 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     static String decompressString( @NotNull final String goidString ) {
+        if ( goidString.length() > 32 ) {
+            // Too long, don't try to decompress it (SSG-13849)
+            throw new IllegalArgumentException( "Invalid GOID (too long)" );
+        }
+
         StringBuilder sb = new StringBuilder();
         String string = goidString;
+        int segs = 0;
 
         while ( string.length() > 0 ) {
             Matcher m = PAT_TRAILING_HEX.matcher( string );
@@ -344,16 +350,21 @@ public final class Goid implements Comparable<Goid>, Serializable {
                 string = m.replaceFirst( "" );
                 sb.insert( 0, m.group( 0 ) );
             } else if ( string.endsWith( "n" ) || string.endsWith( "N" ) ) {
+                segs++;
                 string = string.substring( 0, string.length() - 1 );
                 int neededNybbles = 16 - sb.length() % 16;
                 sb.insert( 0, ONES[neededNybbles] );
             } else if ( string.endsWith( "z" ) || string.endsWith( "Z" ) ) {
+                segs++;
                 string = string.substring( 0, string.length() - 1 );
                 int neededNybbles = 16 - sb.length() % 16;
                 sb.insert( 0, ZEROS[neededNybbles] );
             } else {
-                throw new IllegalArgumentException( "Invalid Goid (unrecognized suffix): " + goidString );
+                throw new IllegalArgumentException( "Invalid Goid (unrecognized suffix)" );
             }
+
+            if ( segs > 2 )
+                throw new IllegalArgumentException( "Invalid Goid (too many segments)" );
         }
 
         return sb.toString();
