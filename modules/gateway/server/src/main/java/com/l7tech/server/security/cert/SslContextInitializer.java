@@ -66,8 +66,8 @@ public class SslContextInitializer {
     private static final String PROP_SUPPORTED_SSL_PROTOCOLS  = "com.l7tech.server.security.cert.sslProtocolsEnabled";
 
     private static final boolean INSTALL_DEFAULT_SSL_CONTEXT = SyspropUtil.getBoolean(PROP_INSTALL_DEFAULT_SSL_CONTEXT, false );
-    private static final String DEFAULT_SSL_PROTOCOL = SyspropUtil.getString( PROP_DEFAULT_SSL_PROTOCOL, "TLSv1" );
-    private static final String[] SUPPORTED_SSL_PROTOCOLS = SyspropUtil.getString( PROP_SUPPORTED_SSL_PROTOCOLS, "SSLv3, TLSv1" ).split( "[,\\s]{1,128}" );
+    private static final String DEFAULT_SSL_PROTOCOL = SyspropUtil.getString( PROP_DEFAULT_SSL_PROTOCOL, "TLSv1.2" );
+    private static final String[] SUPPORTED_SSL_PROTOCOLS = SyspropUtil.getString( PROP_SUPPORTED_SSL_PROTOCOLS, "SSLv3, TLSv1, TLSv1.1, TLSv1.2" ).split( "[,\\s]{1,128}" );
 
     private final X509TrustManager trustManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
