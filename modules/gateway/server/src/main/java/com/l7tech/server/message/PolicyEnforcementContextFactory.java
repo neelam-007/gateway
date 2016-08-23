@@ -1,5 +1,6 @@
 package com.l7tech.server.message;
 
+import com.l7tech.gateway.common.RequestId;
 import com.l7tech.message.Message;
 import com.l7tech.util.TimeSource;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +66,27 @@ public class PolicyEnforcementContextFactory {
         return context;
     }
 
+
+    /**
+     * TODO: add javadoc why we need this override (to support concurrent all passing on the parent requestid to all kid PEC's)
+     * @param request
+     * @param response
+     * @param requestId
+     * @param replyExpected
+     * @return
+     */
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext(
+            @Nullable final Message request,
+            @Nullable final Message response,
+            @NotNull final RequestId requestId,
+            final boolean replyExpected
+    ) {
+        // Construct PEC
+        final PolicyEnforcementContextImpl context = new PolicyEnforcementContextImpl( request, response, timeSource, requestId);
+        context.setReplyExpected( replyExpected );
+        return context;
+    }
+
     /**
      * Create a PEC that delegates to the given parent for messages and authentication.
      *
@@ -72,9 +94,7 @@ public class PolicyEnforcementContextFactory {
      * @return the new child PEC.  Never null.
      */
     public static PolicyEnforcementContext createPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        final PolicyEnforcementContext context = createUnregisteredPolicyEnforcementContext(parent, false);
-
-        return registerThreadLocal(context, childInstanceHolder);
+        return createPolicyEnforcementContext(parent, false);
     }
 
     /**

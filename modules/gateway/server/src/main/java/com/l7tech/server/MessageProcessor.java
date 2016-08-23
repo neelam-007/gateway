@@ -31,6 +31,8 @@ import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.*;
+import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
+import com.l7tech.server.message.metrics.PerformanceMetricsUtils;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -69,6 +71,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -88,6 +91,8 @@ import static com.l7tech.util.Functions.map;
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
+    private static final String CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE = "performanceMetrics.enable";
+    private static final boolean CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE = true;
     private final ServiceCache serviceCache;
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
@@ -102,10 +107,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
+    private final AtomicBoolean performanceMetricsEnable = new AtomicBoolean(CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE);
 
     @Inject
     @Named("debugManager")
     private DebugManager debugManager;
+
+    @Inject
+    @Named("performanceMetricsPublisher")
+    private PerformanceMetricsPublisher performanceMetricsEventsPublisher;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -183,6 +193,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
+
+        performanceMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE, CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE));
     }
 
     /**
@@ -299,6 +311,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
     {
         doRequestPreChecks( context );
+
+        // set performance metrics publisher
+        PerformanceMetricsUtils.setPublisher(context, performanceMetricsEnable.get() ? performanceMetricsEventsPublisher : null);
 
         final MessageProcessingContext mc = new MessageProcessingContext(context);
 
@@ -501,6 +516,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     public void afterPropertiesSet() throws Exception {
         if (this.debugManager == null) {
             throw new IllegalArgumentException("Debug Manager is required");
+        }
+
+        if (this.performanceMetricsEventsPublisher == null) {
+            throw new IllegalArgumentException("PerformanceMetrics events publisher is required");
         }
 
         this.auditor = new Auditor(this, getApplicationContext(), logger);

@@ -818,4 +818,7 @@
     </bean>
 
     <bean id="trustedSignerCertsManager" class="com.l7tech.server.security.signer.TrustedSignerCertsManagerWrapper" />
+
+    <!-- An events publisher for PerformanceMetricsEvent's. -->
+    <bean id="performanceMetricsPublisher" class="com.l7tech.server.message.metrics.PerformanceMetricsPublisher"/>
 </beans>

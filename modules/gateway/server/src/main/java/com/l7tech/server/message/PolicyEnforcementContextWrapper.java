@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -235,7 +236,7 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public ArrayList<String> getIncrementedCounters() {
+    public List<String> getIncrementedCounters() {
         return delegate.getIncrementedCounters();
     }
 
@@ -380,8 +381,13 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status ) {
-        delegate.assertionFinished( assertion, status );
+    public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status) {
+        assertionFinished(assertion, status, null);
+    }
+
+    @Override
+    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics ) {
+        delegate.assertionFinished( assertion, status, assertionMetrics );
     }
 
     @Override
@@ -473,6 +479,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public boolean hasTraceListener() {
         return delegate.hasTraceListener();
+    }
+
+    @Override
+    public AssertionTraceListener getTraceListener() {
+        return delegate.getTraceListener();
     }
 
     @Override

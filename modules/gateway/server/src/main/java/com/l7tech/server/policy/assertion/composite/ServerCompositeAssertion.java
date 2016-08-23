@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -30,8 +31,8 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
 {
     private static final Logger logger = Logger.getLogger(ServerCompositeAssertion.class.getName());
     private List<ServerAssertion> children;
-    private final boolean[] recordLatency;
-    private final TimeSource timeSource;
+    private final boolean[] recordLatencyInContext;
+    protected final TimeSource timeSource;
 
     public ServerCompositeAssertion(CT composite, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(composite);
@@ -43,16 +44,16 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         final List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
 
         timeSource = getTimeSource();
-        recordLatency = new boolean[composite.getChildren().size()];
+        recordLatencyInContext = new boolean[composite.getChildren().size()];
         try {
             Assertion prevChild = null;
             int index = 0;
             for ( final Iterator<Assertion> i = composite.children(); i.hasNext(); ) {
                 final Assertion child = i.next();
-                recordLatency[index] = false;
+                recordLatencyInContext[index] = false;
                 if (prevChild != null) {
                     if (PolicyVariableUtils.usesAnyVariable(child, BuiltinVariables.ASSERTION_LATENCY_MS, BuiltinVariables.ASSERTION_LATENCY_NS)) {
-                        recordLatency[index-1] = true;
+                        recordLatencyInContext[index-1] = true;
                     }
                 }
                 prevChild = child;
@@ -120,7 +121,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
      * @throws IOException if there is a problem reading a request or response
      * @throws PolicyAssertionException as an alternate mechanism to return an assertion status other than AssertionStatus.NONE.
      */
-    protected AssertionStatus iterateChildren(PolicyEnforcementContext context, AssertionResultListener listener) throws IOException, PolicyAssertionException {
+    protected final AssertionStatus iterateChildren(PolicyEnforcementContext context, AssertionResultListener listener) throws IOException, PolicyAssertionException {
         final List<ServerAssertion> kids = getChildren();
         AssertionStatus result = AssertionStatus.NONE;
 
@@ -130,19 +131,23 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
 
             context.assertionStarting(kid);
 
-            if (recordLatency[i]) {
+            if (recordLatencyInContext[i]) {
                 startTime = timeSource.nanoTime();
             }
+            final long assLatencyStartTime = timeSource.currentTimeMillis();
+            final long assLatencyEndTime;
             try {
                 result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {
                 result = e.getAssertionStatus();
+            } finally {
+                assLatencyEndTime = timeSource.currentTimeMillis();
             }
-            if (recordLatency[i]) {
+            if (recordLatencyInContext[i]) {
                 context.setAssertionLatencyNanos(timeSource.nanoTime() - startTime);
             }
             i++;
-            context.assertionFinished(kid, result);
+            context.assertionFinished(kid, result, new AssertionMetrics(assLatencyStartTime, assLatencyEndTime));
 
             if (listener != null) {
                 boolean proceed = listener.assertionFinished(context, result);

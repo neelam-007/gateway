@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -182,7 +183,7 @@ public interface PolicyEnforcementContext extends Closeable {
 
     void setCache(PolicyContextCache cache);
 
-    ArrayList<String> getIncrementedCounters();
+    List<String> getIncrementedCounters();
 
     /**
      * Sets the value of a new or existing context variable.
@@ -325,10 +326,21 @@ public interface PolicyEnforcementContext extends Closeable {
     void assertionStarting(ServerAssertion assertion);
 
     /**
+     * TODO: this is used when assertion metrics is not available
      * @param assertion the ServerAssertion that just finished. Must not be null.
      * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
      */
     void assertionFinished(ServerAssertion assertion, AssertionStatus status);
+
+
+    /**
+     * TODO: this is used when assertion metrics is available
+     * @param assertion the ServerAssertion that just finished. Must not be null.
+     * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
+     * @param assertionMetrics the {@link AssertionMetrics} for the specified {@code assertion}.  Optional and can
+     *                         be {@code null} if there are no metrics gathered for the assertion
+     */
+    void assertionFinished(ServerAssertion assertion, AssertionStatus status, @Nullable AssertionMetrics assertionMetrics);
 
     /**
      * A linear log of the results of processing each assertion that was run in the policy.
@@ -471,6 +483,12 @@ public interface PolicyEnforcementContext extends Closeable {
     void setTraceListener(AssertionTraceListener traceListener);
 
     boolean hasTraceListener();
+
+    /**
+     * TODO add javadoc
+     * @return
+     */
+    AssertionTraceListener getTraceListener();
 
     @RoutingMetricsRelated
     boolean isRequestWasCompressed();

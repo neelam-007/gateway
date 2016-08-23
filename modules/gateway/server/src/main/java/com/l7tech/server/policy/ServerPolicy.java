@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -12,6 +13,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.AbstractReferenceCounted;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -54,6 +57,7 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
                 folderPathCallback );
         this.policyMetadata = policyMetadata;
         this.rootAssertion = rootAssertion;
+        this.timeSource = getTimeSource();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
@@ -62,16 +66,25 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
         if (context != null)
             context.assertionStarting(rootAssertion);
 
+        final long assLatencyStartTime = timeSource.currentTimeMillis();
+        final long assLatencyEndTime;
         try {
             result = rootAssertion.checkRequest(context);
         } catch (AssertionStatusException e) {
             result = e.getAssertionStatus();
+        } finally {
+            assLatencyEndTime = timeSource.currentTimeMillis();
         }
 
         if (context != null)
-            context.assertionFinished(rootAssertion, result);
+            context.assertionFinished(rootAssertion, result, new AssertionMetrics(assLatencyStartTime, assLatencyEndTime));
 
         return result;
+    }
+
+    @NotNull
+    private TimeSource getTimeSource() {
+        return new TimeSource();
     }
 
     public Assertion getPolicyAssertion() throws IOException {
@@ -99,6 +112,7 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
     private final PolicyMetadata policyMetadata;
     private final ServerPolicyMetadata serverPolicyMetadata;
     private final ServerAssertion rootAssertion;
+    private final TimeSource timeSource;
 
     private PolicyUniqueIdentifier buildPolicyUniqueIdentifier( final Policy policy,
                                                                 final Map<Goid, Integer> dependentVersions,

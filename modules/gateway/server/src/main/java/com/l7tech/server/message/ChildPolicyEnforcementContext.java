@@ -3,11 +3,16 @@ package com.l7tech.server.message;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
+import com.l7tech.server.message.metrics.PerformanceMetricsSupport;
+import com.l7tech.server.message.metrics.PerformanceMetricsUtils;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -15,6 +20,7 @@ import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -31,7 +37,7 @@ import java.util.*;
  * by the parent PEC. The child PEC is responsible for variables, routing and
  * other instance specific duties.</p>
  */
-class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext, ShadowsParentVariables, HasOutputVariables {
+class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext, ShadowsParentVariables, HasOutputVariables, PerformanceMetricsSupport {
 
     //- PUBLIC
 
@@ -65,7 +71,7 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
-    public ArrayList<String> getIncrementedCounters() {
+    public List<String> getIncrementedCounters() {
         return context.getIncrementedCounters();
     }
 
@@ -295,11 +301,15 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
-    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status ) {
-        context.assertionFinished( assertion, status );
+    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics ) {
+        context.assertionFinished( assertion, status, assertionMetrics);
 
         if (debugContext != null) {
             debugContext.onFinishAssertion(this);
+        }
+
+        if (performanceMetricsEventsPublisher != null && assertionMetrics != null) {
+            performanceMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
         }
     }
 
@@ -369,6 +379,11 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
+    public AssertionTraceListener getTraceListener() {
+        return context.getTraceListener();
+    }
+
+    @Override
     public void close() {
         // Do not close super, the parent context is not owned by the child
         context.close();
@@ -425,6 +440,17 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         outputVariables.add(variableName);
     }
 
+    @Override
+    public void setPerformanceMetricsEventsPublisher(@Nullable final PerformanceMetricsPublisher publisher) {
+        this.performanceMetricsEventsPublisher = publisher;
+    }
+
+    @Nullable
+    @Override
+    public PerformanceMetricsPublisher getPerformanceMetricsEventsPublisher() {
+        return this.performanceMetricsEventsPublisher;
+    }
+
     //- PACKAGE
 
     /**
@@ -472,6 +498,7 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         this.context = context;
         this.parentContext = parent;
         routingMetricsPEC = passRoutingMetricsToParent ? parentContext : context;
+        PerformanceMetricsUtils.setPublisher(parent, this);
     }
 
     /**
@@ -533,4 +560,6 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     private final TreeSet<String> outputVariables = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     private DebugContext debugContext = null;
+
+    private @Nullable PerformanceMetricsPublisher performanceMetricsEventsPublisher;
 }

@@ -17,6 +17,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.metrics.PerformanceMetricsUtils;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -111,11 +112,23 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         final PolicyEnforcementContext context;
         final Future<KidResult> futureResult;
         KidResult actualResult;
+        final AssertionMetricsWrapper assertionMetricsWrapper;
 
-        private KidContext(ServerAssertion serverAssertion, PolicyEnforcementContext context, Future<KidResult> futureResult) {
+        private KidContext(
+                final ServerAssertion serverAssertion,
+                final PolicyEnforcementContext context,
+                final Future<KidResult> futureResult,
+                final AssertionMetricsWrapper assertionMetricsWrapper
+        ) {
             this.serverAssertion = serverAssertion;
             this.context = context;
             this.futureResult = futureResult;
+            this.assertionMetricsWrapper = assertionMetricsWrapper;
+        }
+
+        @Nullable
+        public AssertionMetrics getAssertionMetrics() {
+            return assertionMetricsWrapper != null ? assertionMetricsWrapper.getAssertionMetrics() : null;
         }
     }
 
@@ -156,6 +169,18 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
+    // TODO explain the existance of this wrapper
+    private static final class AssertionMetricsWrapper {
+        private AssertionMetrics assertionMetrics;
+
+        void setAssertionMetrics(final AssertionMetrics assertionMetrics) {
+            this.assertionMetrics = assertionMetrics;
+        }
+        AssertionMetrics getAssertionMetrics() {
+            return this.assertionMetrics;
+        }
+    }
+
     private AssertionStatus doCheckRequest(List<ServerAssertion> kids, PolicyEnforcementContext context, List<KidContext> contexts) throws IOException {
         assert kids.size() == varsUsed.size();
         Iterator<String[]> varsUsedIter = varsUsed.iterator();
@@ -164,6 +189,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
             final Map<String, Object> kidVarMap = context.getVariableMap(varsUsedByKid, getAudit());
             final PolicyEnforcementContext kidPec = copyContext(context, kidVarMap);
+            final AssertionMetricsWrapper assertionMetricsWrapper = new AssertionMetricsWrapper();
             Future<KidResult> kidResult = assertionExecutor.submit(new Callable<KidResult>() {
                 @Override
                 public KidResult call() throws Exception {
@@ -174,7 +200,27 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                                 // Configure the thread-local audit context to buffer detail messages
                                 AuditContext auditContext = AuditContextFactory.getCurrent();
 
-                                AssertionStatus status = doCall();
+                                final AssertionStatus status = PolicyEnforcementContextFactory.doWithCurrentContext(
+                                        kidPec,
+                                        new Callable<AssertionStatus>() {
+                                            @Override
+                                            public AssertionStatus call() throws Exception {
+                                                kidPec.assertionStarting( kid );
+                                                final long startTime = timeSource.currentTimeMillis();
+                                                try {
+                                                    return kid.checkRequest(kidPec);
+                                                } catch (AssertionStatusException e) {
+                                                    return e.getAssertionStatus();
+                                                } catch (Throwable t) {
+                                                    auditFactory.newInstance(this, logger).logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                                            new String[] { "Unable to run concurrent assertion: " + ExceptionUtils.getMessage(t) }, t);
+                                                    return AssertionStatus.SERVER_ERROR;
+                                                } finally {
+                                                    assertionMetricsWrapper.setAssertionMetrics(new AssertionMetrics(startTime, timeSource.currentTimeMillis()));
+                                                }
+                                            }
+                                        }
+                                );
 
                                 Map<Object, List<AuditDetail>> details = auditContext.getDetails();
                                 return new KidResult(status, details);
@@ -190,21 +236,8 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                         return new KidResult(AssertionStatus.SERVER_ERROR, fakeDetails);
                     }
                 }
-
-                AssertionStatus doCall() throws Exception {
-                    kidPec.assertionStarting( kid );
-                    try {
-                        return kid.checkRequest(kidPec);
-                    } catch (AssertionStatusException e) {
-                        return e.getAssertionStatus();
-                    } catch (Throwable t) {
-                        auditFactory.newInstance(this, logger).logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                new String[] { "Unable to run concurrent assertion: " + ExceptionUtils.getMessage(t) }, t);
-                        return AssertionStatus.SERVER_ERROR;
-                    }
-                }
             });
-            contexts.add(new KidContext(kid, kidPec, kidResult));
+            contexts.add(new KidContext(kid, kidPec, kidResult, assertionMetricsWrapper));
         }
 
         // Collect all results
@@ -232,7 +265,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             result = kidResult.assertionStatus;
             importAuditDetails(kidResult.details);
 
-            context.assertionFinished(kid, result);
+            context.assertionFinished(kid, result, kidContext.getAssertionMetrics());
 
             if (result != AssertionStatus.NONE) {
                 seenAssertionStatus(context, result);
@@ -273,7 +306,8 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
      * @throws java.io.IOException if a Message variable is to be copied and it cannot be read
      */
     private PolicyEnforcementContext copyContext(PolicyEnforcementContext source, Map<String, Object> varsMap) throws IOException {
-        PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(new Message(), new Message(), source.getRequestId(), true);
+        PerformanceMetricsUtils.setPublisher(source, ret);
 
         ret.setRequestWasCompressed(source.isRequestWasCompressed());
         ret.setService(source.getService());
@@ -281,6 +315,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         ret.setCurrentPolicyMetadata(source.getCurrentPolicyMetadata());
         ret.setAuditLevel(source.getAuditLevel());
         ret.setPolicyExecutionAttempted(true);
+        ret.setTraceListener(source.getTraceListener());
 
         for (Map.Entry<String, Object> entry : varsMap.entrySet()) {
             String name = entry.getKey();

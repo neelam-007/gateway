@@ -1,5 +1,6 @@
 package com.l7tech.server.trace;
 
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.AssertionTraceListener;
@@ -8,6 +9,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -65,9 +67,10 @@ public class TracePolicyEvaluator implements AssertionTraceListener {
     }
 
     @Override
-    public void assertionFinished(ServerAssertion assertion, AssertionStatus status) {
+    public void assertionFinished(ServerAssertion assertion, AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics) {
         tracePec.setTracedAssertion(assertion);
         tracePec.setTracedStatus(status);
+        tracePec.setTracedAssertionMetrics(assertionMetrics);
 
         try {
             PolicyEnforcementContextFactory.doWithCurrentContext(tracePec, new Callable<Object>() {

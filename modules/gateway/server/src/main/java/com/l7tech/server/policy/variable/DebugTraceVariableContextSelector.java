@@ -4,12 +4,16 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -30,6 +34,8 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
     private static final String ASSERTION_SHORTNAME = "assertion.shortname";
     private static final String ASSERTION_XML = "assertion.xml";
+    private static final String ASSERTION_STARTTIME_MILLIS = "assertion.starttime.ms";
+    private static final String ASSERTION_LATENCY_MILLIS = "assertion.latency.ms";
     private static final String STATUS = "status";
     private static final String STATUS_MESSAGE = "status.message";
     private static final String REQUEST = "request";
@@ -170,24 +176,9 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
         simpleFields.put(ASSERTION_NUMBERSTR, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
-                StringBuilder ret = new StringBuilder();
-
-                Collection<Integer> steps = ctx.getContext().getOriginalContext().getAssertionOrdinalPath();
-                boolean first = true;
-                for (Integer step : steps) {
-                    if (!first) ret.append('.');
-                    ret.append(step);
-                    first = false;
-                }
-
                 ServerAssertion tsass = ctx.getContext().getTracedAssertion();
                 Assertion ass = tsass == null ? null : tsass.getAssertion();
-                if (ass != null) {
-                    if (!first) ret.append('.');
-                    ret.append(ass.getOrdinal());
-                }
-
-                return new Selection(ret.toString());
+                return new Selection(buildAssertionNumberStr(ctx.getContext().getOriginalContext(), ass));
             }
         });
 
@@ -218,6 +209,35 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             }
         });
 
+        simpleFields.put(ASSERTION_STARTTIME_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
+// TODO: cleanup these comments
+//                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+//                return new Selection(assertionMetrics == null ? "N/A" : sdf.format(new Date(assertionMetrics.getStartTimeMs())));
+                return new Selection(assertionMetrics == null ? "N/A" : assertionMetrics.getStartTimeMs());
+            }
+        });
+
+// TODO: cleanup these comments
+//        simpleFields.put("assertion.endtime.ms", new Functions.Unary<Selection, DebugTraceVariableContext>() {
+//            @Override
+//            public Selection call(DebugTraceVariableContext ctx) {
+//                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
+//                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+//                return new Selection(assertionMetrics == null ? "N/A" : sdf.format(new Date(assertionMetrics.getEndTimeMs())));
+//            }
+//        });
+
+        simpleFields.put(ASSERTION_LATENCY_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
+                return new Selection(assertionMetrics == null ? "N/A" : assertionMetrics.getLatencyMs());
+            }
+        });
+
         simpleFields.put(STATUS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
@@ -240,5 +260,24 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
                 return new Selection(ctx.getContext().getTraceOut());
             }
         });
+    }
+
+    public static String buildAssertionNumberStr(@NotNull final PolicyEnforcementContext originalContext, @Nullable final Assertion ass) {
+        StringBuilder ret = new StringBuilder();
+
+        Collection<Integer> steps = originalContext.getAssertionOrdinalPath();
+        boolean first = true;
+        for (Integer step : steps) {
+            if (!first) ret.append('.');
+            ret.append(step);
+            first = false;
+        }
+
+        if (ass != null) {
+            if (!first) ret.append('.');
+            ret.append(ass.getOrdinal());
+        }
+
+        return ret.toString();
     }
 }

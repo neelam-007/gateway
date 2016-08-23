@@ -218,7 +218,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
         all.addChild(new CommentAssertion("This policy will be invoked after every assertion for any service with debug tracing enabled."));
         all.addChild(new CommentAssertion("For example, we can trigger auditing of trace information about the assertion that just finished."));
         all.addChild(new AuditAssertion(Level.WARNING, false, false, false, false));
-        all.addChild(new AuditDetailAssertion("TRACE: service.name=${trace.service.name} policy.name=${trace.policy.name} policy.guid=${trace.policy.guid} assertion.number=${trace.assertion.numberstr} assertion.shortname=${trace.assertion.shortname} status=${trace.status}"));
+        all.addChild(new AuditDetailAssertion("TRACE: service.name=${trace.service.name} \npolicy.name=${trace.policy.name} \npolicy.guid=${trace.policy.guid} \nassertion.number=${trace.assertion.numberstr} \nassertion.shortname=${trace.assertion.shortname} \nassertion.starttime=${trace.assertion.starttime.ms} \nassertion.latency=${trace.assertion.latency.ms} \nstatus=${trace.status}"));
         return all;
     }
 

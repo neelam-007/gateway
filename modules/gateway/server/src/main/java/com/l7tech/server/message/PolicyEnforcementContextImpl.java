@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -22,6 +23,9 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
+import com.l7tech.server.message.metrics.PerformanceMetricsSupport;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -51,12 +55,12 @@ import java.util.logging.Level;
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
-class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext {
+class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext, PerformanceMetricsSupport {
     private final long startTime;
     private long assertionLatencyNanos = 0;
     private long endTime;
     private final RequestId requestId;
-    private ArrayList<String> incrementedCounters = new ArrayList<>();
+    private List<String> incrementedCounters = new ArrayList<>();
     private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<>();
     private boolean replyExpected;
     private Level auditLevel;
@@ -94,6 +98,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private PolicyMetadata policyMetadata = null;
     private PolicyMetadata servicePolicyMetadata = null;
     private @Nullable AuditContext auditContext;
+    private @Nullable PerformanceMetricsPublisher performanceMetricsEventsPublisher;
 
     protected PolicyEnforcementContextImpl(@Nullable Message request, @Nullable Message response, @NotNull TimeSource timeSource) {
         this(request, response, timeSource, RequestIdGenerator.next());
@@ -298,7 +303,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
-    public ArrayList<String> getIncrementedCounters() {
+    public List<String> getIncrementedCounters() {
         return incrementedCounters;
     }
 
@@ -556,19 +561,38 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     /**
+     * TODO: add java doc here
      * @param assertion the ServerAssertion that just finished. Must not be null.
      * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
      */
     @Override
-    public void assertionFinished(ServerAssertion assertion, AssertionStatus status) {
+    public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status) {
+        assertionFinished(assertion, status, null);
+    }
+
+    /**
+     * @param assertion the ServerAssertion that just finished. Must not be null.
+     * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
+     * @param assertionMetrics the {@link AssertionMetrics} for the specified {@code assertion}.  Optional and can
+     *                         be {@code null} when there are no metrics gathered for the {@code assertion}.
+     */
+    @Override
+    public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics) {
         if (assertion == null || status == null) throw new NullPointerException();
         assertionStatuses.put(assertion, status);
         if (traceListener != null)
-            traceListener.assertionFinished(assertion, status);
+            traceListener.assertionFinished(assertion, status, assertionMetrics);
         if (debugContext != null) {
             debugContext.onFinishAssertion(this);
         }
         currentAssertion = null; // we don't currently keep a stack since composites are not interesting
+
+        if (performanceMetricsEventsPublisher != null && assertionMetrics != null) {
+            performanceMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
+        }
+
+        // global policy invoker in message processor, message processor invocation of service policy, concurrent all
+        // in bound transport pass pec into all assertions?  default as traceable
     }
 
     /**
@@ -860,6 +884,11 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
+    public AssertionTraceListener getTraceListener() {
+        return traceListener;
+    }
+
+    @Override
     public boolean isRequestWasCompressed() {
         return requestWasCompressed;
     }
@@ -867,5 +896,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setRequestWasCompressed(boolean requestWasCompressed) {
         this.requestWasCompressed = requestWasCompressed;
+    }
+
+    @Override
+    public void setPerformanceMetricsEventsPublisher(@Nullable final PerformanceMetricsPublisher publisher) {
+        this.performanceMetricsEventsPublisher = publisher;
+    }
+
+    @Nullable
+    @Override
+    public PerformanceMetricsPublisher getPerformanceMetricsEventsPublisher() {
+        return this.performanceMetricsEventsPublisher;
     }
 }

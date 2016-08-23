@@ -1564,7 +1564,7 @@ public class ServerGatewayManagementAssertionTest {
                 "            &lt;L7p:ChangeSaveResponse booleanValue=&quot;false&quot;/&gt;\n" +
                 "        &lt;/L7p:AuditAssertion&gt;\n" +
                 "        &lt;L7p:AuditDetailAssertion&gt;\n" +
-                "            &lt;L7p:Detail stringValue=&quot;TRACE: service.name=${trace.service.name} policy.name=${trace.policy.name} policy.guid=${trace.policy.guid} assertion.number=${trace.assertion.numberstr} assertion.shortname=${trace.assertion.shortname} status=${trace.status}&quot;/&gt;\n" +
+                "            &lt;L7p:Detail stringValue=&quot;TRACE: service.name=${trace.service.name} \npolicy.name=${trace.policy.name} \npolicy.guid=${trace.policy.guid} \nassertion.number=${trace.assertion.numberstr} \nassertion.shortname=${trace.assertion.shortname} \nassertion.starttime=${trace.assertion.starttime.ms} \nassertion.latency=${trace.assertion.latency.ms} \nstatus=${trace.status}&quot;/&gt;\n" +
                 "            &lt;L7p:Enabled booleanValue=&quot;false&quot;/&gt;\n" +
                 "        &lt;/L7p:AuditDetailAssertion&gt;\n" +
                 "        &lt;L7p:AuditDetailAssertion&gt;\n" +
