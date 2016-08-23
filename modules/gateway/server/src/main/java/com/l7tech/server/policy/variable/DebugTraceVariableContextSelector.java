@@ -34,7 +34,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
     private static final String ASSERTION_SHORTNAME = "assertion.shortname";
     private static final String ASSERTION_XML = "assertion.xml";
-    private static final String ASSERTION_STARTTIME_MILLIS = "assertion.starttime.ms";
+    private static final String ASSERTION_START_MILLIS = "assertion.start.ms";
     private static final String ASSERTION_LATENCY_MILLIS = "assertion.latency.ms";
     private static final String STATUS = "status";
     private static final String STATUS_MESSAGE = "status.message";
@@ -209,7 +209,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             }
         });
 
-        simpleFields.put(ASSERTION_STARTTIME_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+        simpleFields.put(ASSERTION_START_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
