@@ -32,10 +32,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 
 /**
  * Dialog that offers ways of creating a new key pair and associated metadata.
@@ -45,9 +48,6 @@ public class  NewPrivateKeyDialog extends JDialog {
 
     private static final String TITLE = "Create Private Key";
     private static final String DEFAULT_EXPIRY = Long.toString(365 * 5);
-
-    // we can't have a duration that will push the expiry beyond year 9999 - just under a million days should be more than enough
-    public static final int MAX_DAYS_DURATION = 999999;
 
     private static class KeyType {
         private final int size;
@@ -228,9 +228,25 @@ public class  NewPrivateKeyDialog extends JDialog {
             }
         });
 
-        validator.constrainTextFieldToNumberRange("Days until expiry", expiryDaysField, 1, MAX_DAYS_DURATION);
+        validator.constrainTextField(expiryDaysField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                final String uiExpiryDays = expiryDaysField.getText().trim();
+                if ( !isValidInteger( uiExpiryDays, true, 1, Integer.MAX_VALUE )) {
+                    errMsg = "Days until expiry must be a number between 1 to 9999999.";
+                } else {
+                    int expiryYear = Integer.valueOf(uiExpiryDays) / 365 + Calendar.getInstance().get(Calendar.YEAR);
+                    if (expiryYear >  9999) {
+                        errMsg = "Days until expiry must not push beyond year 9999 (current expiry year: "
+                                + String.format("%,d", expiryYear) + ").";
+                    }
+                }
+                return errMsg;
+            }
+        });
 
-        expiryDaysField.setDocument(new NumberField(String.valueOf(MAX_DAYS_DURATION).length()));
+        expiryDaysField.setDocument(new NumberField(7));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
         // Some EC curve names commented out because they aren't supported by RSA BSAFE Crypto-J as of version 4.1.0.1
