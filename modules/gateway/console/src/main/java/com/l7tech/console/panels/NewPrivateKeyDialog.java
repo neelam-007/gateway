@@ -238,7 +238,7 @@ public class  NewPrivateKeyDialog extends JDialog {
                 } else {
                     int expiryYear = Integer.valueOf(uiExpiryDays) / 365 + Calendar.getInstance().get(Calendar.YEAR);
                     if (expiryYear >  9999) {
-                        errMsg = "Days until expiry must not push beyond year 9999 (current expiry year: "
+                        errMsg = "Days until expiry must not push beyond year 9,999 (current expiry year: "
                                 + String.format("%,d", expiryYear) + ").";
                     }
                 }
