@@ -73,6 +73,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             Object jdbcConnectionName = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_JDBC_CONNECTION);
             Object sinceStr = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_SINCE);
             Object nodeId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_NODE_ID);
+            Object tenantId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_TENANT_ID);
 
             // validate inputs
             if (entityType == null) {
@@ -96,6 +97,10 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
             }
 
+            if (tenantId == null) {
+              throw new PolicyAssertionException(assertion, "Assertion must supply a valid tenant prefix");
+            }
+
             // validate that the connection exists.
             final JdbcConnection connection;
             try {
@@ -107,7 +112,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // create result
-            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString());
+            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString(), tenantId.toString());
 
             // save result
             context.setVariable(assertion.getVariablePrefix() + '.' + GetIncrementAssertion.SUFFIX_JSON, jsonStr);
@@ -122,7 +127,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return AssertionStatus.NONE;
     }
 
-    String getJsonMessage(final String connName, final Object since, final String nodeId) throws IOException {
+    String getJsonMessage(final String connName, final Object since, final String nodeId, final String tenantId) throws IOException {
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
@@ -133,7 +138,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         if (since != null) {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
             // get deleted IDs
-            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION), CollectionUtils.list(since, incrementStart));
+            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION, tenantId), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
             if (deletedIds == null || deletedIds.isEmpty()) {
                 appJsonObj.setDeletedIds(new ArrayList<String>());
@@ -144,7 +149,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             // get new or updated or last sync error apps
             results = (Map<String, List>) queryJdbc(connName,
                     ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "concat(a.NAME,'-',o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
-                            "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY")),
+                            "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY"), tenantId),
                         CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
@@ -156,7 +161,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                             "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
                             "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
-                            "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
+                            "\tWHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='"+tenantId+"' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
                             "\tGROUP BY a.UUID, ax.API_UUID", Collections.EMPTY_LIST);
 
             // do not include deleted list in json response

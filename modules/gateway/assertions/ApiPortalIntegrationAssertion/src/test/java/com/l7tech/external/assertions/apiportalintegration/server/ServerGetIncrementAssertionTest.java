@@ -72,7 +72,7 @@ public class ServerGetIncrementAssertionTest {
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
                 .thenReturn(results, results, buildCustomFieldsResults());
 
-        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "");
+        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
@@ -154,7 +154,7 @@ public class ServerGetIncrementAssertionTest {
         Map<String, List> results = buildResultsMapWithMultipleApis();
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
                 .thenReturn(results, new HashMap<String, String>());
-        String json = serverAssertion.getJsonMessage("conn", null, "");
+        String json = serverAssertion.getJsonMessage("conn", null, "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }

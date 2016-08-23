@@ -124,7 +124,7 @@ public class ServerIncrementPostBackAssertionTest {
                     }
                 }
         );
-        List<String> outputErrors = serverAssertion.updateErrorEntities(jdbcConnectionName, nodeId, errors, incrementEnd, tableName, columnName);
+        List<String> outputErrors = serverAssertion.updateErrorEntities(jdbcConnectionName, nodeId, errors, incrementEnd, tableName, columnName,"");
         assertTrue("output list should contain " + errorEntityWillBeInserted, outputErrors.contains(errorEntityWillBeInserted));
         assertTrue("output list should contain " + errorEntityWillBeUpdated, outputErrors.contains(errorEntityWillBeUpdated));
         assertTrue("performJdbcQuery should be called twice instead of " + calledEntityIds.size(), calledEntityIds.size() == 2);
@@ -492,7 +492,7 @@ public class ServerIncrementPostBackAssertionTest {
         );
 
         try {
-            serverAssertion.handleApplicationSyncPostback(jdbcConnectionName, postback, nodeId);
+            serverAssertion.handleApplicationSyncPostback(jdbcConnectionName, postback, nodeId, "");
         } catch (PolicyAssertionException e) {
             fail("should not throw PolicyAssertionException");
         }

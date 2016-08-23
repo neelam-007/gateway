@@ -17,9 +17,9 @@ public class ServerIncrementalSyncCommon {
             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
             "\tLEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a.UUID \n" +
             "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
-            "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR ( o.MODIFY_TS > ? and  o.MODIFY_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL))" +
+            "\tWHERE a.API_KEY IS NOT NULL AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL') AND ( (a.MODIFY_TS > ? and a.MODIFY_TS <=  ? ) OR (a.MODIFY_TS =0 and a.CREATE_TS > ? and  a.CREATE_TS <=  ?) OR ( o.MODIFY_TS > ? and  o.MODIFY_TS <=  ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL)) AND a.TENANT_ID = '%s' " +
             "\tGROUP BY a.UUID, ax.API_UUID";
-    final static String SELECT_DELETED_ENTITIES_SQL="SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = '%s' AND DELETED_TS > ? AND DELETED_TS <= ?";
+    final static String SELECT_DELETED_ENTITIES_SQL="SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = '%s' AND DELETED_TS > ? AND DELETED_TS <= ? AND TENANT_ID='%s'";
     static final String BULK_SYNC_TRUE = "true";
     static final String BULK_SYNC_FALSE = "false";
     static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
@@ -27,14 +27,13 @@ public class ServerIncrementalSyncCommon {
     public ServerIncrementalSyncCommon() {
     }
 
-    public final static String getSyncDeletedEntities(String type) {
-        return String.format(SELECT_DELETED_ENTITIES_SQL, type);
+    public final static String getSyncDeletedEntities(String type, String tenantId) {
+        return String.format(SELECT_DELETED_ENTITIES_SQL, type, tenantId);
     }
 
-    public final static String getSyncUpdatedAppEntities(List<String> columns) {
+    public final static String getSyncUpdatedAppEntities(List<String> columns, String tenantId ) {
         String columnStr = Joiner.on(",").join(columns);
-        return String.format(SELECT_ENTITIES_SQL, columnStr
-        );
+        return String.format(SELECT_ENTITIES_SQL, columnStr, tenantId);
     }
 
     public static int getQueryTimeout() {
