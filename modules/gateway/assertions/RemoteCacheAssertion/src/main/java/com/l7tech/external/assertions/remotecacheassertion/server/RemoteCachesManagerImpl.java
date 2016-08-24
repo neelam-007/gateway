@@ -8,13 +8,11 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,10 +23,11 @@ import java.util.logging.Logger;
  * Time: 4:15 PM
  * To change this template use File | Settings | File Templates.
  */
-public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCachesManager {
-    private static final Logger logger = Logger.getLogger(RemoteCachesManagerImpl.class.getName());
+public class RemoteCachesManagerImpl implements RemoteCachesManager {
+    private static final Logger LOGGER = Logger.getLogger(RemoteCachesManagerImpl.class.getName());
 
-    private HashMap<Goid, RemoteCache> currentlyUsedCaches = new HashMap<>();
+    private ConcurrentMap<Goid, RemoteCache> currentlyUsedCaches = new ConcurrentHashMap<>();
+
     private ServerConfig serverConfig;
     private EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager;
     private ClusterPropertyManager clusterPropertyManager;
@@ -38,15 +37,15 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
     private TerracottaToolkitClassLoader terracottaToolkitClassLoader;
     private GemFireClassLoader gemfireClassLoader;
 
-    public static void createRemoteCachesManager(EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager,
+    public static synchronized void createRemoteCachesManager(EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager,
                                                  ClusterPropertyManager clusterPropertyManager,
                                                  ServerConfig serverConfig) {
-        synchronized (RemoteCachesManagerImpl.class) {
-            if (INSTANCE != null) {
-                throw new IllegalStateException("A remote cache manager already exists.");
-            }
-            INSTANCE = new RemoteCachesManagerImpl(entityManager, clusterPropertyManager, serverConfig);
+        LOGGER.log(Level.FINE, "Creating RemoteCachesManager singleton instance...");
+
+        if (INSTANCE != null) {
+            throw new IllegalStateException("A remote cache manager already exists.");
         }
+        INSTANCE = new RemoteCachesManagerImpl(entityManager, clusterPropertyManager, serverConfig);
     }
 
     public static RemoteCachesManager getInstance() {
@@ -58,7 +57,7 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
         INSTANCE = instance;
     }
 
-    HashMap<Goid, RemoteCache> getCurrentlyUsedCaches() {
+    ConcurrentMap<Goid, RemoteCache> getCurrentlyUsedCaches() {
         return currentlyUsedCaches;
     }
 
@@ -68,83 +67,64 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
         this.entityManager = entityManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.serverConfig = serverConfig;
-        try {
-            Collection<RemoteCacheEntity> remoteEntities = entityManager.findAll();
-            for (RemoteCacheEntity ce : remoteEntities) {
-                connectionAdded(ce);
+    }
+
+    public RemoteCache getRemoteCache(Goid goid) throws RemoteCacheConnectionException {
+
+        // JAVA 7
+        RemoteCache remoteCache = currentlyUsedCaches.get(goid);
+
+        if (remoteCache == null) {
+            // Attempt to create the connection
+            RemoteCache cacheCreated = createRemoteCache(goid);
+
+            // if it still does not exists, put it in the cache; otherwise use existing value
+            // we should use the com.google.common.cache.LoadingCache instead with a removal listener
+            //       as it would make the creation of the cache and putting it in the cache atomic
+            try {
+                remoteCache = currentlyUsedCaches.putIfAbsent(goid, cacheCreated);
+            } finally {
+                // This is to handle if a second thread created a cache already, we should shutdown the one thats get
+                // created and use the one from the cache.
+                if (remoteCache == null) {
+                    remoteCache = cacheCreated;
+                } else {
+                    cacheCreated.shutdown();
+                }
             }
-        } catch (FindException e) {
-            logger.log(Level.FINER, e.getMessage(), e);
         }
+        return remoteCache;
     }
 
-    public void connectionAdded(RemoteCacheEntity remoteCacheEntity) {
-        if (currentlyUsedCaches.get(remoteCacheEntity.getGoid()) != null) {
-            throw new RuntimeException("Trying to start new remote cache " + remoteCacheEntity.getName() + " but it already exists.");
-        }
-        try {
-            createRemoteCache(remoteCacheEntity);
-        } catch (RemoteCacheConnectionException e) {
-            logger.warning("Error occurred while starting the remote cache " + e.getMessage());
-        }
-    }
+    public void invalidateRemoteCache(Goid goid) {
+        RemoteCache remoteCache = currentlyUsedCaches.remove(goid);
 
-    public void connectionUpdated(RemoteCacheEntity remoteCacheEntity) {
-        try {
-            RemoteCache remoteC = getRemoteCache(remoteCacheEntity.getGoid());
-            if (null == remoteC) {
-                throw new RuntimeException("Error occurred while updating the remote cache instance. " +
-                        remoteCacheEntity.getName() + " cache does not exist, and cannot update");
-            }
-            remoteC.shutdown();
-            createRemoteCache(remoteCacheEntity);
-        } catch (RemoteCacheConnectionException e) {
-            logger.warning("Error occurred while starting the remote cache " + e.getMessage());
-        }
-    }
-
-    public void connectionRemoved(RemoteCacheEntity remoteCacheEntity) {
-        RemoteCache remoteCache = currentlyUsedCaches.remove(remoteCacheEntity.getGoid());
         if (remoteCache != null) {
             remoteCache.shutdown();
-        } else {
-            logger.warning("Couldn't shutdown " + remoteCacheEntity.getName() + " as its not present on the SSG cache.");
+            LOGGER.log(Level.FINE, "Shutting down existing Remote Cache connection for goid {0} ...", goid);
         }
     }
 
-    public RemoteCache getRemoteCache(Goid cacheGoid) throws RemoteCacheConnectionException {
-        synchronized (currentlyUsedCaches) {
-            if (currentlyUsedCaches.containsKey(cacheGoid)) {
-                return currentlyUsedCaches.get(cacheGoid);
-            }
-
-            try {
-                RemoteCacheEntity remoteCacheEntity = entityManager.findByPrimaryKey(cacheGoid);
-                if (remoteCacheEntity != null) {
-                    return createRemoteCache(remoteCacheEntity);
-                } else {
-                    throw new RemoteCacheConnectionException("Could not find remote cache.  " +
-                            "Please ensure the assertion is configured with a valid remote cache");
-                }
-            } catch (FindException e) {
-                logger.warning("Error occurred!!!!" + e.getMessage());
-            }
-            return null;
+    private RemoteCache createRemoteCache(Goid goid) throws RemoteCacheConnectionException {
+        RemoteCacheEntity remoteCacheEntity = null;
+        try {
+            remoteCacheEntity = entityManager.findByPrimaryKey(goid);
+        } catch (FindException e) {
+            throw new RemoteCacheConnectionException("Remote cache with goid " + goid.toString() + " cannot be found.  It may have been removed");
         }
-    }
-
-    private RemoteCache createRemoteCache(RemoteCacheEntity remoteCacheEntity) throws RemoteCacheConnectionException {
         RemoteCacheTypes type = RemoteCacheTypes.getEntityEnumType(remoteCacheEntity.getType());
         RemoteCache remoteCache;
         if (!remoteCacheEntity.isEnabled()) {
-            currentlyUsedCaches.remove(remoteCacheEntity.getGoid());
+            LOGGER.log(Level.WARNING, "Remote Cache with name: {0} type: {1} is not enabled", new Object[]{remoteCacheEntity.getName(), type});
             throw new RemoteCacheConnectionException("Remote cache: " + remoteCacheEntity.getName() + " is not enabled.");
         }
+
+        LOGGER.log(Level.FINE, "Creating a new Remote Cache connection for name: {0} type: {1}", new Object[]{remoteCacheEntity.getName(), type});
+
         switch (type) {
             case Memcached:
                 try {
                     remoteCache = new MemcachedRemoteCache(remoteCacheEntity);
-                    currentlyUsedCaches.put(remoteCacheEntity.getGoid(), remoteCache);
                     break;
                 } catch (Exception e) {
                     throw new RemoteCacheConnectionException("Failed to connect to the remote cache.", e);
@@ -155,7 +135,6 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
                         terracottaToolkitClassLoader = TerracottaToolkitClassLoader.getInstance(RemoteCachesManagerImpl.class.getClassLoader(), serverConfig.getProperty("com.l7tech.server.home"));
                     }
                     remoteCache = new TerracottaRemoteCache(remoteCacheEntity, clusterPropertyManager, terracottaToolkitClassLoader);
-                    currentlyUsedCaches.put(remoteCacheEntity.getGoid(), remoteCache);
                     break;
                 } catch (Exception e) {
                     throw new RemoteCacheConnectionException("Failed to connect to the remote cache.", e);
@@ -182,7 +161,6 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
                         }
                     });
 
-                    currentlyUsedCaches.put(remoteCacheEntity.getGoid(), remoteCache);
                     break;
                 } catch (Exception e) {
                     throw new RemoteCacheConnectionException("Failed to connect to the remote cache.", e);
@@ -194,7 +172,6 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
                     }
 
                     remoteCache = new GemfireRemoteCache(remoteCacheEntity, gemfireClassLoader);
-                    currentlyUsedCaches.put(remoteCacheEntity.getGoid(), remoteCache);
                     break;
                 } catch (Exception e) {
                     throw new RemoteCacheConnectionException("Failed to connect to the remote cache.", e);
@@ -202,7 +179,6 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
             case Redis:
                 try {
                     remoteCache = new RedisRemoteCache(remoteCacheEntity);
-                    currentlyUsedCaches.put(remoteCacheEntity.getGoid(), remoteCache);
                     break;
                 } catch (Exception e) {
                     throw new RemoteCacheConnectionException("Failed to connect to the remote cache.", e);
@@ -213,13 +189,10 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
         return remoteCache;
     }
 
-    public static void shutdown() {
-        RemoteCachesManagerImpl manager = null;
-
-        synchronized (RemoteCachesManagerImpl.class) {
-            manager = INSTANCE;
-            INSTANCE = null;
-        }
+    public synchronized static void shutdown() {
+        LOGGER.log(Level.FINE, "Shutting down RemoteCachesManager singleton instance");
+        RemoteCachesManagerImpl manager = INSTANCE;
+        INSTANCE = null;
 
         if (manager != null) {
             manager.shutdownConnections();
@@ -227,15 +200,10 @@ public class RemoteCachesManagerImpl implements ApplicationListener, RemoteCache
     }
 
     private void shutdownConnections() {
-        synchronized (currentlyUsedCaches) {
-            for (RemoteCache remoteCache : currentlyUsedCaches.values()) {
-                remoteCache.shutdown();
-            }
-            currentlyUsedCaches.clear();
+        for (RemoteCache remoteCache : currentlyUsedCaches.values()) {
+            remoteCache.shutdown();
         }
-    }
 
-    @Override
-    public void onApplicationEvent(ApplicationEvent event) {
+        currentlyUsedCaches.clear();
     }
 }

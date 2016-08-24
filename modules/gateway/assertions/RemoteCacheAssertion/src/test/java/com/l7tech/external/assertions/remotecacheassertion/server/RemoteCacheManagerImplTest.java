@@ -85,6 +85,7 @@ public class RemoteCacheManagerImplTest {
         properties.put(MemcachedRemoteCache.PROP_BUCKET_SPECIFIED, "false");
         properties.put(MemcachedRemoteCache.PROP_SERVERPORTS, hosts);
         memCachedEntity.setProperties(properties);
+        when(entityManager.findByPrimaryKey(memCachedGoid)).thenReturn(memCachedEntity);
 
         //redis entity
         redisEntity = new RemoteCacheEntity();
@@ -98,8 +99,9 @@ public class RemoteCacheManagerImplTest {
         properties.put(RedisRemoteCache.PROPERTY_IS_CLUSTER, "false");
         properties.put(RedisRemoteCache.PROPERTY_PASSWORD, "");
         redisEntity.setProperties(properties);
+        when(entityManager.findByPrimaryKey(redisGoid)).thenReturn(redisEntity);
 
-//gemfire entity
+        //gemfire entity
         gemFireEntity = new RemoteCacheEntity();
         gemFireEntity.setEnabled(true);
         gemFireEntity.setName(cacheName);
@@ -111,6 +113,7 @@ public class RemoteCacheManagerImplTest {
         properties.put(GemfireRemoteCache.PROPERTY_CACHE_OPTION, "locator");
         properties.put(GemfireRemoteCache.PROPERTY_SERVERS, hosts);
         gemFireEntity.setProperties(properties);
+        when(entityManager.findByPrimaryKey(gemfireGoid)).thenReturn(gemFireEntity);
 
         //coherence entity
         coherenceEntity = new RemoteCacheEntity();
@@ -123,6 +126,7 @@ public class RemoteCacheManagerImplTest {
         properties.put(CoherenceRemoteCache.PROP_CACHE_NAME, cacheName);
         properties.put(CoherenceRemoteCache.PROP_SERVERS, hosts);
         coherenceEntity.setProperties(properties);
+        when(entityManager.findByPrimaryKey(coherenceGoid)).thenReturn(coherenceEntity);
 
         //terrecotta entity
         terrecottaEntity = new RemoteCacheEntity();
@@ -135,6 +139,7 @@ public class RemoteCacheManagerImplTest {
         properties.put(TerracottaRemoteCache.PROPERTY_CACHE_NAME, cacheName);
         properties.put(TerracottaRemoteCache.PROPERTY_URLS, hosts);
         terrecottaEntity.setProperties(properties);
+        when(entityManager.findByPrimaryKey(terracottaGoid)).thenReturn(terrecottaEntity);
 
         RemoteCachesManagerImpl.createRemoteCachesManager(entityManager, clusterPropertyManager, serverConfig);
         remoteCachesManager = RemoteCachesManagerImpl.getInstance();
@@ -162,7 +167,7 @@ public class RemoteCacheManagerImplTest {
         RemoteCachesManagerImpl.createRemoteCachesManager(entityManager, clusterPropertyManager, serverConfig);
         RemoteCachesManager remoteCachesManager = RemoteCachesManagerImpl.getInstance();
 
-        assertEquals(2, ((RemoteCachesManagerImpl) remoteCachesManager).getCurrentlyUsedCaches().size());
+        assertEquals(0, ((RemoteCachesManagerImpl) remoteCachesManager).getCurrentlyUsedCaches().size());
     }
 
 
@@ -234,10 +239,10 @@ public class RemoteCacheManagerImplTest {
      * Tesst creating a connection fails for unknown cache type
      */
     @Test(expected = IllegalArgumentException.class)
-    public void testCreateConnectionFailsForUnkwonType() {
+    public void testCreateConnectionFailsForUnkownType() throws Exception {
         memCachedEntity.setType("Invalid");
 
-        remoteCachesManager.connectionAdded(memCachedEntity);
+        remoteCachesManager.getRemoteCache(memCachedGoid);
     }
 
     /**
@@ -245,15 +250,12 @@ public class RemoteCacheManagerImplTest {
      *
      * @throws RemoteCacheConnectionException
      */
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testCreateConnectionFailsForAlreadyExistingConnection() throws RemoteCacheConnectionException {
         //create memcached
-        remoteCachesManager.connectionAdded(memCachedEntity);
         RemoteCache remoteCacheCreated = remoteCachesManager.getRemoteCache(memCachedGoid);
-        assertNotNull(remoteCacheCreated);
-        assertEquals(1, ((RemoteCachesManagerImpl) remoteCachesManager).getCurrentlyUsedCaches().size());
 
-        remoteCachesManager.connectionAdded(memCachedEntity);
+        remoteCachesManager.getRemoteCache(memCachedGoid);
     }
 
     /**
@@ -299,10 +301,12 @@ public class RemoteCacheManagerImplTest {
      *
      * @throws RemoteCacheConnectionException
      */
-    @Test(expected = RemoteCacheConnectionException.class)
-    public void testGetRemoteCacheFailsWhenEntityNotFound() throws RemoteCacheConnectionException {
-        remoteCachesManager.getRemoteCache(memCachedGoid);
-    }
+//    @Test(expected = RemoteCacheConnectionException.class)
+//    Can this test work with the new logic?
+//    public void testGetRemoteCacheFailsWhenEntityNotFound() throws RemoteCacheConnectionException {
+//        remoteCachesManager.invalidateRemoteCache(memCachedGoid);
+//        remoteCachesManager.getRemoteCache(memCachedGoid);
+//    }
 
     /**
      * test successfully getting a connection
@@ -324,7 +328,8 @@ public class RemoteCacheManagerImplTest {
      *
      * @throws Exception
      */
-    @Test
+    @Test(expected = RemoteCacheConnectionException.class)
+
     public void testConnectionIsNotCreatedForFailedConnections() throws Exception {
         HashMap<String, String> properties = new HashMap<>();
         properties.put(MemcachedRemoteCache.PROP_SERVERPORTS, "");
@@ -338,11 +343,11 @@ public class RemoteCacheManagerImplTest {
         when(GemFireClassLoader.getInstance(RemoteCachesManagerImpl.class.getClassLoader(), serverConfig.getProperty("com.l7tech.server.home"))).thenReturn(null);
         when(CoherenceClassLoader.getInstance(RemoteCachesManagerImpl.class.getClassLoader(), serverConfig.getProperty("com.l7tech.server.home"))).thenReturn(null);
 
-        remoteCachesManager.connectionAdded(memCachedEntity);
-        remoteCachesManager.connectionAdded(redisEntity);
-        remoteCachesManager.connectionAdded(gemFireEntity);
-        remoteCachesManager.connectionAdded(coherenceEntity);
-        remoteCachesManager.connectionAdded(terrecottaEntity);
+        remoteCachesManager.getRemoteCache(memCachedGoid);
+        remoteCachesManager.getRemoteCache(redisGoid);
+        remoteCachesManager.getRemoteCache(gemfireGoid);
+        remoteCachesManager.getRemoteCache(coherenceGoid);
+        remoteCachesManager.getRemoteCache(terracottaGoid);
 
         assertEquals(0, ((RemoteCachesManagerImpl) remoteCachesManager).getCurrentlyUsedCaches().size());
     }

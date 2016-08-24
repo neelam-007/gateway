@@ -28,7 +28,6 @@ public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
 
     private EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager;
     private ServerConfig serverConfig;
-    private RemoteCachesManager connectionManager;
 
     public RemoteCacheEntityAdminImpl(EntityManager<RemoteCacheEntity, GenericEntityHeader> entityManager,
                                       ServerConfig serverConfig,
@@ -38,7 +37,6 @@ public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
         this.serverConfig = serverConfig;
         try {
             RemoteCachesManagerImpl.createRemoteCachesManager(this.entityManager, clusterPropertyManager, serverConfig);
-            connectionManager = RemoteCachesManagerImpl.getInstance();
         } catch(IllegalStateException e) {
             logger.log(Level.WARNING, "Error creating the Remote Cache connection manager.", e);
         }
@@ -58,11 +56,9 @@ public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
         if (entity.getGoid().equals(RemoteCacheEntity.DEFAULT_GOID)) {
             Goid goid = entityManager.save(entity);
             entity.setGoid(goid);
-            connectionManager.connectionAdded(entity);
             return goid;
         } else {
             entityManager.update(entity);
-            connectionManager.connectionUpdated(entity);
             return entity.getGoid();
         }
     }
@@ -70,7 +66,6 @@ public class RemoteCacheEntityAdminImpl implements RemoteCacheEntityAdmin {
     @Override
     public void delete(RemoteCacheEntity entity) throws DeleteException, FindException {
         entityManager.delete(entity);
-        connectionManager.connectionRemoved(entity);
     }
 
     @Override

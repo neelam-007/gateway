@@ -204,9 +204,6 @@ public class ResolveForeignRemoteCachePanel extends WizardStepPanel {
                 for (int i = 0; i < updateAssertionsRemoteCacheConnectionComboBox.getItemCount(); i++) {
                     RemoteCacheEntity entity = (RemoteCacheEntity) updateAssertionsRemoteCacheConnectionComboBox.getItemAt(i);
                     if (savedGoid.equals(entity.getGoid())) {
-                        if (RemoteCachesManagerImpl.getInstance() != null) {
-                            RemoteCachesManagerImpl.getInstance().connectionAdded(entity);
-                        }
                         updateAssertionsRemoteCacheConnectionComboBox.setSelectedIndex(i);
                         break;
                     }

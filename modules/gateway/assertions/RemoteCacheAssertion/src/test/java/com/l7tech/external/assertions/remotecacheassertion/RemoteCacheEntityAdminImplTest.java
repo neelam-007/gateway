@@ -76,7 +76,6 @@ public class RemoteCacheEntityAdminImplTest {
         Goid savedGoid = remoteCacheEntityAdmin.save(entity);
 
         assertEquals(goid, savedGoid);
-        verify(connectionManager).connectionAdded(entity);
         verify(entityManager).save(entity);
 
     }
@@ -92,7 +91,6 @@ public class RemoteCacheEntityAdminImplTest {
         Goid savedGoid = remoteCacheEntityAdmin.save(entity);
 
         assertEquals(goid, savedGoid);
-        verify(connectionManager).connectionUpdated(entity);
         verify(entityManager).update(entity);
 
     }
@@ -107,7 +105,6 @@ public class RemoteCacheEntityAdminImplTest {
     public void testSuccessfulRemoveEntity() throws FindException, DeleteException {
         remoteCacheEntityAdmin.delete(entity);
 
-        verify(connectionManager).connectionRemoved(entity);
         verify(entityManager).delete(entity);
     }
 
