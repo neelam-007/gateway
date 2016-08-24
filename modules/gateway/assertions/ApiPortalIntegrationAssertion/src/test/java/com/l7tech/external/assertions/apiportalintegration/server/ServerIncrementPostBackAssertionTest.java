@@ -67,7 +67,9 @@ public class ServerIncrementPostBackAssertionTest {
 
     Map<String, Object> vars;
 
-    final static String NODE_ID="theNodeId";
+  final static String NODE_ID="theNodeId";
+  final static String TENANT_ID="theTenantId";
+
 
     @Before
     public void setup() throws Exception {
@@ -81,6 +83,7 @@ public class ServerIncrementPostBackAssertionTest {
         vars = Maps.newHashMap();
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JDBC_CONNECTION, connectionName);
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_NODE_ID, NODE_ID);
+      vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_TENANT_ID, TENANT_ID);
         when(context.getVariableMap(any(String[].class), any(Audit.class))).thenReturn(vars);
         when(transactionManager.getTransaction(any(DefaultTransactionDefinition.class))).thenReturn(status);
     }
@@ -222,7 +225,7 @@ public class ServerIncrementPostBackAssertionTest {
                         } else if (((String) invocation.getArguments()[2]).startsWith("SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?")) {
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(entity_uuid_column, Lists.<String>newArrayList("updatedelete1", "insertdelete2"));
                             return result;
-                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase()))) {
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase(),TENANT_ID ))) {
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(uuid_column, Lists.newArrayList("update1", "insert1"));
                             return result;
                         }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
@@ -282,7 +285,7 @@ public class ServerIncrementPostBackAssertionTest {
                             return Integer.valueOf(1);
                         } else if (((String) invocation.getArguments()[2]).startsWith("SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?")) {
                             return null;
-                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase()))) {
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase(),TENANT_ID))) {
                             return null;
                         }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
                                 application_uuid_column.toUpperCase()))) {
@@ -476,7 +479,7 @@ public class ServerIncrementPostBackAssertionTest {
                             successSqlCalls.add((String) invocation.getArguments()[2]);
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(entity_uuid_column, Lists.<String>newArrayList("updatedelete1", "insertdelete2"));
                             return result;
-                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase()))) {
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase(),TENANT_ID))) {
                             successSqlCalls.add((String) invocation.getArguments()[2]);
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(uuid_column, Lists.newArrayList("update1", "insert1"));
                             return result;
