@@ -19,6 +19,7 @@ private String variablePrefix = "portal.sync.increment.postback";
     public static final String SUFFIX_JDBC_CONNECTION = "jdbc";
     public static final String SUFFIX_NODE_ID = "nodeId";
     public static final String SUFFIX_JSON = "json";
+    public static final String SUFFIX_TENANT_ID = "tenantId";
 
 
     public String getVariablePrefix() {
@@ -34,7 +35,8 @@ private String variablePrefix = "portal.sync.increment.postback";
     public String[] getVariablesUsed() {
         return VariableUseSupport.variables(variablePrefix +"."+ SUFFIX_NODE_ID,
                                             variablePrefix +"."+ SUFFIX_JDBC_CONNECTION,
-                                            variablePrefix +"."+ SUFFIX_JSON
+                                            variablePrefix +"."+ SUFFIX_JSON,
+                                            variablePrefix +"."+ SUFFIX_TENANT_ID
         ).asArray();
     }
 
