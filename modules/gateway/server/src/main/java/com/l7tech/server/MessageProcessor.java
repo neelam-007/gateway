@@ -31,8 +31,8 @@ import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.*;
-import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
-import com.l7tech.server.message.metrics.PerformanceMetricsUtils;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -91,8 +91,8 @@ import static com.l7tech.util.Functions.map;
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
-    private static final String CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE = "performanceMetrics.enable";
-    private static final boolean CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE = true;
+    private static final String CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE = "relayGatewayMetrics.enable";
+    private static final boolean CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE = true;
     private final ServiceCache serviceCache;
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
@@ -107,15 +107,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
-    private final AtomicBoolean performanceMetricsEnable = new AtomicBoolean(CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE);
+    private final AtomicBoolean gatewayMetricsEnable = new AtomicBoolean(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE);
 
     @Inject
     @Named("debugManager")
     private DebugManager debugManager;
 
     @Inject
-    @Named("performanceMetricsPublisher")
-    private PerformanceMetricsPublisher performanceMetricsEventsPublisher;
+    @Named("gatewayMetricsPublisher")
+    private GatewayMetricsPublisher gatewayMetricsEventsPublisher;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -194,7 +194,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
 
-        performanceMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE, CLUSTER_PROP_PERFORMANCE_METRICS_ENABLE_DEFAULT_VALUE));
+        gatewayMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
     }
 
     /**
@@ -312,8 +312,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     {
         doRequestPreChecks( context );
 
-        // set performance metrics publisher
-        PerformanceMetricsUtils.setPublisher(context, performanceMetricsEnable.get() ? performanceMetricsEventsPublisher : null);
+        // set gateway metrics publisher
+        GatewayMetricsUtils.setPublisher(context, gatewayMetricsEnable.get() ? gatewayMetricsEventsPublisher : null);
 
         final MessageProcessingContext mc = new MessageProcessingContext(context);
 
@@ -518,8 +518,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             throw new IllegalArgumentException("Debug Manager is required");
         }
 
-        if (this.performanceMetricsEventsPublisher == null) {
-            throw new IllegalArgumentException("PerformanceMetrics events publisher is required");
+        if (this.gatewayMetricsEventsPublisher == null) {
+            throw new IllegalArgumentException("GatewayMetrics events publisher is required");
         }
 
         this.auditor = new Auditor(this, getApplicationContext(), logger);

@@ -17,7 +17,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.metrics.PerformanceMetricsUtils;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -307,7 +307,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
      */
     private PolicyEnforcementContext copyContext(PolicyEnforcementContext source, Map<String, Object> varsMap) throws IOException {
         final PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(new Message(), new Message(), source.getRequestId(), true);
-        PerformanceMetricsUtils.setPublisher(source, ret);
+        GatewayMetricsUtils.setPublisher(source, ret);
 
         ret.setRequestWasCompressed(source.isRequestWasCompressed());
         ret.setService(source.getService());

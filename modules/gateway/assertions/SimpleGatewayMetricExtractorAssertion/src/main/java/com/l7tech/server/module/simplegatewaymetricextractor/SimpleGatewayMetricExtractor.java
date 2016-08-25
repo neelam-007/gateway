@@ -8,8 +8,8 @@ import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.metrics.PerformanceMetricsListener;
-import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsListener;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.variable.DebugTraceVariableContextSelector;
 import com.l7tech.util.ExceptionUtils;
@@ -28,15 +28,15 @@ import java.util.logging.Logger;
 /**
  * TODO
  */
-public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
+public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractor.class.getName());
 
     private static SimpleGatewayMetricExtractor instance = null;
-    private final PerformanceMetricsPublisher performanceMetricsEventsPublisher;
+    private final GatewayMetricsPublisher gatewayMetricsEventsPublisher;
 
     private SimpleGatewayMetricExtractor(final ApplicationContext applicationContext) {
-        performanceMetricsEventsPublisher = applicationContext.getBean("performanceMetricsPublisher", PerformanceMetricsPublisher.class);
-        performanceMetricsEventsPublisher.addListener(this);
+        gatewayMetricsEventsPublisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
+        gatewayMetricsEventsPublisher.addListener(this);
     }
 
     @Override
@@ -45,10 +45,7 @@ public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
 
         final PolicyEnforcementContext pec = assertionFinished.getContext();
         String assertionNumber = getAssertionNumber(pec, assertion);
-//            String assertionNumber = buildAssertionOrdinalPath((EventObject) applicationEvent.getSource(), assertion);
-
         final AssertionMetrics metrics = assertionFinished.getAssertionMetrics();
-
         final Pair<String, String> policyNameAndGuid = getPolicyNameAndGuid(pec);
 
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -72,29 +69,6 @@ public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
         // TODO add / verify access to requestId
     }
 
-    // build assertion ordinal path
-    private String buildAssertionOrdinalPath(@NotNull final PolicyEnforcementContext pec, @NotNull final Assertion assertion) {
-        String ordinalPath = Integer.toString(assertion.getOrdinal());
-
-        final Collection<Integer> ordinals = pec.getAssertionOrdinalPath();
-        final int ordinalsSize = ordinals.size();
-        if (ordinalsSize > 0) {
-            StringBuilder stringBuilder = new StringBuilder(ordinalsSize * 2);
-            for (Iterator<Integer> iterator = ordinals.iterator(); iterator.hasNext(); ) {
-                Integer ordinal = iterator.next();
-                stringBuilder.append(ordinal);
-                if (iterator.hasNext()) {
-                    stringBuilder.append('.');
-                }
-            }
-            stringBuilder.append('.');
-            stringBuilder.append(Integer.toString(assertion.getOrdinal()));
-            ordinalPath = stringBuilder.toString();
-        }
-
-        return ordinalPath;
-    }
-
     private String getAssertionNumber(@NotNull final PolicyEnforcementContext pec, @Nullable final Assertion assertion) {
         return DebugTraceVariableContextSelector.buildAssertionNumberStr(pec, assertion);
     }
@@ -115,15 +89,6 @@ public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
         return requestId == null ? "N/A" : requestId.toString();
     }
 
-//    private String getAssertionNumber(@NotNull final EventObject eventSource) {
-//        String result = null;
-//        if (eventSource.getSource() instanceof  PolicyEnforcementContext) {
-//            final Collection<Integer> assertionNumber = ((PolicyEnforcementContext) eventSource.getSource()).getAssertionNumber();
-//            result = TextUtils.join(".", assertionNumber).toString();
-//        }
-//        return result;
-//    }
-
     /**
      * Get the current instance, if there is one.
      *
@@ -134,8 +99,8 @@ public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
     }
 
     private void destroy() throws Exception {
-        if (performanceMetricsEventsPublisher != null)
-            performanceMetricsEventsPublisher.removeListener(this);
+        if (gatewayMetricsEventsPublisher != null)
+            gatewayMetricsEventsPublisher.removeListener(this);
     }
 
     /*

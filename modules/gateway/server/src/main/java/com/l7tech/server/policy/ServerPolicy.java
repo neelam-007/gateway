@@ -57,7 +57,6 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
                 folderPathCallback );
         this.policyMetadata = policyMetadata;
         this.rootAssertion = rootAssertion;
-        this.timeSource = getTimeSource();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
@@ -80,11 +79,6 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
             context.assertionFinished(rootAssertion, result, new AssertionMetrics(assLatencyStartTime, assLatencyEndTime));
 
         return result;
-    }
-
-    @NotNull
-    private TimeSource getTimeSource() {
-        return new TimeSource();
     }
 
     public Assertion getPolicyAssertion() throws IOException {
@@ -112,7 +106,7 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
     private final PolicyMetadata policyMetadata;
     private final ServerPolicyMetadata serverPolicyMetadata;
     private final ServerAssertion rootAssertion;
-    private final TimeSource timeSource;
+    private final TimeSource timeSource = new TimeSource();
 
     private PolicyUniqueIdentifier buildPolicyUniqueIdentifier( final Policy policy,
                                                                 final Map<Goid, Integer> dependentVersions,

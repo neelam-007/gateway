@@ -24,8 +24,8 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.metrics.AssertionFinished;
-import com.l7tech.server.message.metrics.PerformanceMetricsPublisher;
-import com.l7tech.server.message.metrics.PerformanceMetricsSupport;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsSupport;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -55,7 +55,7 @@ import java.util.logging.Level;
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
-class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext, PerformanceMetricsSupport {
+class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext, GatewayMetricsSupport {
     private final long startTime;
     private long assertionLatencyNanos = 0;
     private long endTime;
@@ -98,7 +98,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private PolicyMetadata policyMetadata = null;
     private PolicyMetadata servicePolicyMetadata = null;
     private @Nullable AuditContext auditContext;
-    private @Nullable PerformanceMetricsPublisher performanceMetricsEventsPublisher;
+    private @Nullable GatewayMetricsPublisher gatewayMetricsEventsPublisher;
 
     protected PolicyEnforcementContextImpl(@Nullable Message request, @Nullable Message response, @NotNull TimeSource timeSource) {
         this(request, response, timeSource, RequestIdGenerator.next());
@@ -587,8 +587,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         }
         currentAssertion = null; // we don't currently keep a stack since composites are not interesting
 
-        if (performanceMetricsEventsPublisher != null && assertionMetrics != null) {
-            performanceMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
+        if (gatewayMetricsEventsPublisher != null && assertionMetrics != null) {
+            gatewayMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
         }
 
         // global policy invoker in message processor, message processor invocation of service policy, concurrent all
@@ -899,13 +899,13 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
-    public void setPerformanceMetricsEventsPublisher(@Nullable final PerformanceMetricsPublisher publisher) {
-        this.performanceMetricsEventsPublisher = publisher;
+    public void setGatewayMetricsEventsPublisher(@Nullable final GatewayMetricsPublisher publisher) {
+        this.gatewayMetricsEventsPublisher = publisher;
     }
 
     @Nullable
     @Override
-    public PerformanceMetricsPublisher getPerformanceMetricsEventsPublisher() {
-        return this.performanceMetricsEventsPublisher;
+    public GatewayMetricsPublisher getGatewayMetricsEventsPublisher() {
+        return this.gatewayMetricsEventsPublisher;
     }
 }

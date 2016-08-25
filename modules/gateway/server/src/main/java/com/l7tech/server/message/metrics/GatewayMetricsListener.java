@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * TODO: override methods to receive individual events if interested
  */
-public abstract class PerformanceMetricsListener {
+public abstract class GatewayMetricsListener {
 
     @SuppressWarnings("UnusedParameters")
     public void assertionFinished(@NotNull final AssertionFinished event) {

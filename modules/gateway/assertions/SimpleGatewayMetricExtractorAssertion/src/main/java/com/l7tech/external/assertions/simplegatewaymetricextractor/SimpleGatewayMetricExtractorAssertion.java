@@ -31,21 +31,12 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Simple Gateway Metric Extractor");
         meta.put(AssertionMetadata.LONG_NAME, "Simple Gateway Metric Extractor");
-
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/CA_Logo_Black_16x16.png");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

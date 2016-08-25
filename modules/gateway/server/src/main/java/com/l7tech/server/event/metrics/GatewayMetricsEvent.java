@@ -27,10 +27,10 @@ import java.util.logging.Level;
 /**
  * TODO: add javadoc
  */
-abstract class PerformanceMetricsEvent {
+abstract class GatewayMetricsEvent {
     private final PolicyEnforcementContext context;
 
-    protected PerformanceMetricsEvent(@NotNull final PolicyEnforcementContext context) {
+    protected GatewayMetricsEvent(@NotNull final PolicyEnforcementContext context) {
         this.context = context;
     }
 

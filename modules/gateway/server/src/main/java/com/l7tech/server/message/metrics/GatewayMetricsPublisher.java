@@ -14,17 +14,17 @@ import java.util.Set;
 /**
  * TODO: add javadoc
  */
-public final class PerformanceMetricsPublisher implements PostStartupApplicationListener {
+public final class GatewayMetricsPublisher implements PostStartupApplicationListener {
 
     // don't care about the order in which an event will be published to subscribers
-    private final Set<PerformanceMetricsListener> subscribers = new ConcurrentHashSet<>();
+    private final Set<GatewayMetricsListener> subscribers = new ConcurrentHashSet<>();
 
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
         if (event instanceof AssertionModuleUnregistrationEvent) {
             final ClassLoader classLoader = ((AssertionModuleUnregistrationEvent)event).getModuleClassLoader();
-            final List<PerformanceMetricsListener> toRemove = new ArrayList<>();
-            for (final PerformanceMetricsListener subscriber : subscribers) {
+            final List<GatewayMetricsListener> toRemove = new ArrayList<>();
+            for (final GatewayMetricsListener subscriber : subscribers) {
                 if (subscriber.getClass().getClassLoader() == classLoader) {
                     toRemove.add(subscriber);
                 }
@@ -34,11 +34,11 @@ public final class PerformanceMetricsPublisher implements PostStartupApplication
     }
 
 
-    public void addListener(@NotNull final PerformanceMetricsListener listener) {
+    public void addListener(@NotNull final GatewayMetricsListener listener) {
         subscribers.add(listener);
     }
 
-    public void removeListener(@NotNull final PerformanceMetricsListener listener) {
+    public void removeListener(@NotNull final GatewayMetricsListener listener) {
         subscribers.remove(listener);
     }
 
@@ -47,7 +47,7 @@ public final class PerformanceMetricsPublisher implements PostStartupApplication
     }
 
     public void publishEvent(@NotNull final AssertionFinished event) {
-        for (final PerformanceMetricsListener subscriber : subscribers) {
+        for (final GatewayMetricsListener subscriber : subscribers) {
             subscriber.assertionFinished(event);
         }
     }

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * TODO: add javadoc
  */
-public final class AssertionFinished extends PerformanceMetricsEvent {
+public final class AssertionFinished extends GatewayMetricsEvent {
     private final Assertion assertion;
     private final AssertionMetrics assertionMetrics;
 
