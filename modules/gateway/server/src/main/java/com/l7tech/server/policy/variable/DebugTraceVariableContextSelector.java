@@ -213,28 +213,15 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
-// TODO: cleanup these comments
-//                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-//                return new Selection(assertionMetrics == null ? "N/A" : sdf.format(new Date(assertionMetrics.getStartTimeMs())));
-                return new Selection(assertionMetrics == null ? "N/A" : assertionMetrics.getStartTimeMs());
+                return new Selection(assertionMetrics == null ? null : assertionMetrics.getStartTimeMs());
             }
         });
-
-// TODO: cleanup these comments
-//        simpleFields.put("assertion.endtime.ms", new Functions.Unary<Selection, DebugTraceVariableContext>() {
-//            @Override
-//            public Selection call(DebugTraceVariableContext ctx) {
-//                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
-//                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-//                return new Selection(assertionMetrics == null ? "N/A" : sdf.format(new Date(assertionMetrics.getEndTimeMs())));
-//            }
-//        });
 
         simpleFields.put(ASSERTION_LATENCY_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
-                return new Selection(assertionMetrics == null ? "N/A" : assertionMetrics.getLatencyMs());
+                return new Selection(assertionMetrics == null ? null : assertionMetrics.getLatencyMs());
             }
         });
 

@@ -54,16 +54,16 @@ public class SimpleGatewayMetricExtractor extends PerformanceMetricsListener {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         logger.log(
                 Level.INFO,
-                new StringBuilder("ASSERTION LATENCY: ").append(System.lineSeparator())
-                        .append("request-id=").append(getRequestId(pec)).append(System.lineSeparator())
-                        .append("service name=").append(getServiceName(pec)).append(System.lineSeparator())
-                        .append("policy name=").append(policyNameAndGuid.left).append(System.lineSeparator())
-                        .append("policy guid=").append(policyNameAndGuid.right).append(System.lineSeparator())
-                        .append("number=").append(assertionNumber).append(System.lineSeparator())
-                        .append("className=").append(assertion.getClass().getSimpleName()).append(System.lineSeparator())
-                        .append("assName=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(System.lineSeparator())
-                        .append("startTime=\t").append(metrics.getStartTimeMs()).append(", ").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(System.lineSeparator())
-                        .append("endTime=\t").append(metrics.getEndTimeMs()).append(", ").append(sdf.format(new Date(metrics.getEndTimeMs()))).append(System.lineSeparator())
+                new StringBuilder("ASSERTION LATENCY: ")
+                        .append("request-id=").append(getRequestId(pec)).append(" ")
+                        .append("service name=").append(getServiceName(pec)).append(" ")
+                        .append("policy name=").append(policyNameAndGuid.left).append(" ")
+                        .append("policy guid=").append(policyNameAndGuid.right).append(" ")
+                        .append("number=").append(assertionNumber).append(" ")
+                        .append("className=").append(assertion.getClass().getSimpleName()).append(" ")
+                        .append("assName=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
+                        .append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
+                        .append("endTime=").append(sdf.format(new Date(metrics.getEndTimeMs()))).append(" ")
                         .append("latency=").append(metrics.getLatencyMs())
                         .toString()
         );
