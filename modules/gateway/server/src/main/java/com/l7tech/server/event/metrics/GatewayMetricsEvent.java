@@ -30,8 +30,33 @@ import java.util.logging.Level;
 abstract class GatewayMetricsEvent {
     private final PolicyEnforcementContext context;
 
+    /**
+     * Thread local to protect against passing instances of this class to to another thread.<br/>
+     * The thread who creates the instance (calls the constructor) owns it and only that thread can access its content.
+     */
+    private ThreadLocal<Boolean> ownedByThisThread = new ThreadLocal<Boolean>(){
+        @Override
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+
     protected GatewayMetricsEvent(@NotNull final PolicyEnforcementContext context) {
         this.context = context;
+
+        // set this thread as the owner of this instance
+        ownedByThisThread.set(true);
+    }
+
+    /**
+     * Check whether the calling thread is the owner of this object.
+     *
+     * @throws IllegalStateException when the calling thread is not the owner (i.e the one created this object) of this object
+     */
+    protected void checkOwnerThread() throws IllegalStateException {
+        if (!ownedByThisThread.get()) {
+            throw new IllegalStateException("Event is not owned by this thread");
+        }
     }
 
     /**
@@ -314,7 +339,9 @@ abstract class GatewayMetricsEvent {
     }
 
     @NotNull
-    public PolicyEnforcementContext getContext() {
+    public final PolicyEnforcementContext getContext() {
+        // make sure the PEC is accessed only by the owner thread
+        checkOwnerThread();
         return new ReadOnlyPolicyEnforcementContext(context);
     }
 }

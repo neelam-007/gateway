@@ -24,11 +24,17 @@ public final class AssertionFinished extends GatewayMetricsEvent {
 
     @NotNull
     public AssertionMetrics getAssertionMetrics() {
+        // AssertionMetrics is immutable class therefore it can easely be passed to different thread.
+        // Uncomment the line below if that changes in the future (in which case don't forget to update the appropriate unit test)
+        // checkOwnerThread();
         return assertionMetrics;
     }
 
     @NotNull
     public Assertion getAssertion() {
+        // Not sure whether Assertion object is OK to be passed to different thread
+        // comment out the line below if it is FINE (in which case don't forget to update the appropriate unit test)
+        checkOwnerThread();
         return assertion;
     }
 }
