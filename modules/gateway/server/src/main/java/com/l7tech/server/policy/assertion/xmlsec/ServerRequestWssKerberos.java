@@ -14,6 +14,7 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
+import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -93,11 +94,24 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         for( XmlSecurityToken tok : tokens ) {
             if( tok instanceof KerberosSigningSecurityToken) {
                 KerberosSigningSecurityToken ksst = (KerberosSigningSecurityToken) tok;
-                if(!configSpn.equals(ksst.getServiceTicket().getServicePrincipalName())) {
-                    logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+ksst.getServiceTicket().getServicePrincipalName()+"').");
+
+                // SSG-13640 - When the SSG has multiple service keys (SPNs) in its keytab it attempts to:
+                //     guess the SPN required to authenticate the via in the bound URL (KerberosUtils.extractSpnFromRequest())
+                //     or by reverse lookup the remote calling endpoint and do the same (to support Load Balancer Proxies)
+                //     or failing those uses the first key in the keytab.
+                //     If this property is set true the SSG will manually parse the Kerberos Ticket to determine
+                //     the service SPN from the ticket itself.
+
+                if ( ! config.getBooleanProperty(WssProcessorImpl.KRB5_USE_SPN_FROM_TICKET_PROP,false) ) {
+                    if (!configSpn.equals(ksst.getServiceTicket().getServicePrincipalName())) {
+                        logger.info("Ignoring Kerberos session for another service ('" + configSpn + "', '" + ksst.getServiceTicket().getServicePrincipalName() + "').");
+                    } else {
+                        kerberosToken = ksst;
+                    }
                 } else {
                     kerberosToken = ksst;
                 }
+
             }
         }
 

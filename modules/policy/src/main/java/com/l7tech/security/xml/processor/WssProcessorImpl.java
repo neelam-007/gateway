@@ -60,9 +60,12 @@ import java.util.logging.Logger;
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class WssProcessorImpl implements WssProcessor {
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
-
     static final boolean DEFAULT_CHECK_SIGNING_CERT_EXPIRY = true;
     static boolean checkSigningCertExpiry = DEFAULT_CHECK_SIGNING_CERT_EXPIRY;
+
+    private static final Config config = ConfigFactory.getCachedConfig();
+
+    public static final String KRB5_USE_SPN_FROM_TICKET_PROP = "com.l7tech.kerberos.useSpnFromInboundTicket";
 
     static {
         JceProvider.init();
@@ -1629,6 +1632,22 @@ public class WssProcessorImpl implements WssProcessor {
             URL requestUrl = requestKnob != null? requestKnob.getRequestURL(): null;
             String remoteAddress = requestKnob != null? requestKnob.getRemoteAddress(): null;
             String spn = KerberosUtils.extractSpnFromRequest(requestUrl, remoteAddress);
+
+            // SSG-13640 - When the SSG has multiple service keys (SPNs) in its keytab it attempts to:
+            //     guess the SPN required to authenticate the request via in the bound URL (KerberosUtils.extractSpnFromRequest())
+            //     or by reverse lookup the remote calling endpoint and do the same (to support Load Balancer Proxies)
+            //     or failing those uses the first key in the keytab.
+            //     If this property is set true the SSG will manually parse the Kerberos Ticket to determine
+            //     the service SPN from the ticket itself.
+
+            if ( config.getBooleanProperty(KRB5_USE_SPN_FROM_TICKET_PROP, false) ) {
+                try {
+                    Krb5ApReq apReq = new Krb5ApReq(decodedValue);
+                    spn = apReq.getSpn();
+                } catch (Krb5ApReqException e) {
+                    logger.warning("Configured to Decode Kerberos Ticket to identify SPN for Gateway Service but Cannot Parse Ticket in the BinarySecurtyToken");
+                }
+            }
 
             securityTokens.add(new KerberosSigningSecurityTokenImpl(spn, new KerberosGSSAPReqTicket(decodedValue),
                                                                            getClientInetAddress(message),
