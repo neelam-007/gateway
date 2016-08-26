@@ -155,7 +155,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
 
+            // HACK: If SSLv2Hello requested, can't use SSL-J; have to use SunJSSE instead
             Provider tlsProvider = null;
+            if ( assertion.getTlsVersion() != null && assertion.getTlsVersion().contains( "SSLv2Hello" ) ) {
+                tlsProvider = JceProvider.getInstance().getProviderFor( "SSLContext.TLSv1" );
+            }
             sslContext = tlsProvider == null
                     ? SSLContext.getInstance( "TLS" )
                     : SSLContext.getInstance( "TLS", tlsProvider );
