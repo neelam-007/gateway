@@ -22,4 +22,14 @@ public class ConfiguredUrlConnectionHttpClientFactory extends ConfiguredHttpClie
                                             final int readTimeout ) {
         return new UrlConnectionHttpClient();
     }
+
+    @Override
+    GenericHttpClient newGenericHttpClient(int connectTimeout,
+                                           int readTimeout,
+                                           String proxyHost,
+                                           int proxyPort,
+                                           String proxyUsername,
+                                           String proxyPassword) {
+        return new UrlConnectionHttpClient();
+    }
 }

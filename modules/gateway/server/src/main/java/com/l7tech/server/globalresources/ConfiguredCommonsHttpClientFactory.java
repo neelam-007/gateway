@@ -35,6 +35,11 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
         return new HttpComponentsClient( connectionManager, connectTimeout, readTimeout );
     }
 
+    @Override
+    GenericHttpClient newGenericHttpClient(int connectTimeout, int readTimeout, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+        return new HttpComponentsClient( connectionManager, null, connectTimeout, readTimeout, proxyHost, proxyPort, proxyUsername, proxyPassword );
+    }
+
     //- PRIVATE
 
     private static final String PROP_MAX_CONN_PER_HOST = ConfiguredCommonsHttpClientFactory.class.getName() + ".maxConnectionsPerHost";

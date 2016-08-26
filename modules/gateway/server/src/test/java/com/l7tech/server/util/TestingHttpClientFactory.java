@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
-import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.security.MockGenericHttpClient;
 
 /**
@@ -28,6 +28,12 @@ public class TestingHttpClientFactory implements GenericHttpClientFactory {
             mockGenericHttpClient.setIdentity(identity);
         
         return mockGenericHttpClient;
+    }
+
+    @Override
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                              String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+        return createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity);
     }
 
     public void setMockHttpClient(MockGenericHttpClient mockClient) {

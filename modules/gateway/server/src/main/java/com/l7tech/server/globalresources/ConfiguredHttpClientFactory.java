@@ -33,7 +33,13 @@ abstract class ConfiguredHttpClientFactory implements GenericHttpClientFactory {
         return configure(newGenericHttpClient( connectTimeout, timeout ));
     }
 
-    //- PACKAGE
+    @Override
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+        return newGenericHttpClient(connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
+    }
+
+
+//- PACKAGE
 
     ConfiguredHttpClientFactory( final HttpConfigurationCache httpConfigurationCache,
                                  final boolean useSslKeyForDefault ) {
@@ -50,6 +56,13 @@ abstract class ConfiguredHttpClientFactory implements GenericHttpClientFactory {
      */
     abstract GenericHttpClient newGenericHttpClient( final int connectTimeout,
                                                      final int readTimeout );
+
+    abstract GenericHttpClient newGenericHttpClient( final int connectTimeout,
+                                                     final int readTimeout,
+                                                     final String proxyHost,
+                                                     final int proxyPort,
+                                                     final String proxyUsername,
+                                                     final String proxyPassword );
 
     /**
      * Wrap the given client to make it HTTP configuration aware.

@@ -1,13 +1,6 @@
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -174,6 +167,13 @@ public class HttpSchemaSourceResolver implements PostStartupApplicationListener,
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity));
+            }
+
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+                return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity,
+                        proxyHost, proxyPort, proxyUsername, proxyPassword));
             }
 
             private GenericHttpClient wrapHttpClient(final GenericHttpClient httpClient) {

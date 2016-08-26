@@ -35,6 +35,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.util.*;
+import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.springframework.context.ApplicationContext;
@@ -54,6 +55,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
+
+import static com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory.ConnectionManagerType.POOLING;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -198,6 +201,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         this.senderVouchesSignerInfo = signerInfo;
         this.socketFactory = sslSocketFactory;
 
+        GenericHttpClientFactory httpClientFactory;
+        try {
+            httpClientFactory = makeHttpClientFactory();
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
+            httpClientFactory = new IdentityBindingHttpClientFactory();
+        }
+        this.httpClientFactory = httpClientFactory;
+
         StashManagerFactory smFactory;
         try {
             smFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
@@ -239,6 +251,38 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         varNames = assertion.getVariablesUsed();
     }
 
+    private GenericHttpClientFactory makeHttpClientFactory() throws FindException {
+        final String proxyHost = assertion.getProxyHost();
+        if (proxyHost == null) {
+            return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
+        }
+
+        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
+
+        // Use a proxy
+        return new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return createHttpClient(-1, -1, -1, -1, null);
+            }
+
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
+                        identity, connectTimeout, timeout,  proxyHost, Integer.parseInt(assertion.getProxyPort()), assertion.getProxyUsername(), proxyPassword);
+            }
+
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout,
+                                                      int timeout, Object identity, String proxyHost, int proxyPort,
+                                                      String proxyUsername, String proxyPassword) {
+                final ClientConnectionManagerFactory ccmFactory = ClientConnectionManagerFactory.getInstance();
+                final ClientConnectionManager connectionManager = ccmFactory.createConnectionManager(POOLING, hostConnections, totalConnections);
+                return new HttpComponentsClient(connectionManager, identity, connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
+            }
+        };
+    }
+
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
 
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
@@ -254,15 +298,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        GenericHttpClientFactory httpClientFactory;
-        try {
-            httpClientFactory = makeHttpClientFactory(context);
-        } catch (Exception e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
-            httpClientFactory = new IdentityBindingHttpClientFactory();
-        }
-        this.httpClientFactory = httpClientFactory;
-
         final Message requestMessage = getRequestMessage(context);
 
         URL u = null;
@@ -320,34 +355,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlBlacklist(), blacklist.toArray(new String[blacklist.size()]));
             logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
             return AssertionStatus.FAILED;
+
+        } catch (FindException e) {
+            throw new PolicyAssertionException(assertion, e);
         } finally {
             context.routingFinished();
         }
-    }
-
-    private GenericHttpClientFactory makeHttpClientFactory(PolicyEnforcementContext pec) throws FindException {
-        if (assertion.getProxyHost() == null) {
-            return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
-        }
-
-        final String proxyHost = expand(pec, assertion.getProxyHost());
-        final int proxyPort = tryParsePort(pec, assertion.getProxyPort());
-        final String proxyUsername = expand(pec, assertion.getProxyUsername());
-        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
-
-        // Use a proxy
-        return new GenericHttpClientFactory() {
-            @Override
-            public GenericHttpClient createHttpClient() {
-                return createHttpClient(-1, -1, -1, -1, null);
-            }
-
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
-                        identity, connectTimeout, timeout,  proxyHost, proxyPort, proxyUsername, proxyPassword);
-            }
-        };
     }
 
     private String expand(PolicyEnforcementContext policyEnforcementContext, String expression) {
@@ -366,7 +379,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    private AssertionStatus tryUrl(PolicyEnforcementContext context, Message requestMessage, URL url) throws PolicyAssertionException {
+    private AssertionStatus tryUrl(PolicyEnforcementContext context, Message requestMessage, URL url) throws PolicyAssertionException, FindException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
         context.setRoutedServiceUrl(url);
         setHttpRoutingUrlContextVariables(context);
@@ -556,7 +569,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
-                                         URL url, boolean allowRetry, Map<String,?> vars) throws PolicyAssertionException {
+                                         URL url, boolean allowRetry, Map<String,?> vars) throws PolicyAssertionException, FindException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
         Message routedResponseDestination = null;
@@ -611,12 +624,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            GenericHttpClient httpClient = httpClientFactory.createHttpClient(
-                                                                 getMaxConnectionsPerHost(),
-                                                                 getMaxConnectionsAllHosts(),
-                                                                 getConnectionTimeout(vars),
-                                                                 getTimeout(vars),
-                                                                 connectionId);
+            final GenericHttpClient httpClient;
+            if (assertion.getProxyHost() == null) {
+                httpClient = httpClientFactory.createHttpClient(getMaxConnectionsPerHost(),
+                        getMaxConnectionsAllHosts(), getConnectionTimeout(vars), getTimeout(vars), connectionId);
+            } else {
+                final String proxyHost = expand(context, assertion.getProxyHost());
+                final int proxyPort = tryParsePort(context, assertion.getProxyPort());
+                final String proxyUsername = expand(context, assertion.getProxyUsername());
+                final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
+
+                httpClient = httpClientFactory.createHttpClient(getMaxConnectionsPerHost(),
+                        getMaxConnectionsAllHosts(), getConnectionTimeout(vars), getTimeout(vars), connectionId, proxyHost,
+                        proxyPort, proxyUsername, proxyPassword);
+            }
 
             if (httpClient instanceof RerunnableGenericHttpClient ||
                 (!assertion.isPassthroughHttpAuthentication() &&

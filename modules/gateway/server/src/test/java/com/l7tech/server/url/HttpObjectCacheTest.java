@@ -92,6 +92,11 @@ public class HttpObjectCacheTest {
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return createHttpClient();
             }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+                return createHttpClient();
+            }
         };
 
 
@@ -164,6 +169,11 @@ public class HttpObjectCacheTest {
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return createHttpClient();
             }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+                return createHttpClient();
+            }
         };
 
 
@@ -234,6 +244,11 @@ public class HttpObjectCacheTest {
             }
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
                 return createHttpClient();
             }
         };
@@ -328,6 +343,11 @@ public class HttpObjectCacheTest {
             }
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
                 return createHttpClient();
             }
         };
@@ -540,6 +560,11 @@ public class HttpObjectCacheTest {
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return createHttpClient();
             }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+                return createHttpClient();
+            }
         };
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
@@ -597,6 +622,11 @@ public class HttpObjectCacheTest {
             }
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
+                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
                 return createHttpClient();
             }
         };

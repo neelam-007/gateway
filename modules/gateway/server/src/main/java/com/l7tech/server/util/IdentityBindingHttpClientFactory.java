@@ -27,6 +27,14 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
                 identity);
     }
 
+    @Override
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout,
+              Object identity, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+        return new HttpComponentsClient(getHttpConnectionManager(hostConnections, totalConnections),
+                identity, connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
+    }
+
+
     /**
      * Optional configuration for an HttpConnectionManagerListener
      *
