@@ -48,7 +48,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         final AssertionMetrics metrics = assertionFinished.getAssertionMetrics();
         final Pair<String, String> policyNameAndGuid = getPolicyNameAndGuid(pec);
 
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        //final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         logger.log(
                 Level.INFO,
                 new StringBuilder("ASSERTION LATENCY: ")
@@ -59,8 +59,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                         .append("number=").append(assertionNumber).append(" ")
                         .append("className=").append(assertion.getClass().getSimpleName()).append(" ")
                         .append("assName=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
-                        .append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
-                        .append("endTime=").append(sdf.format(new Date(metrics.getEndTimeMs()))).append(" ")
+                        .append("startTime=").append(metrics.getStartTimeMs()).append(" ")//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
                         .append("latency=").append(metrics.getLatencyMs())
                         .toString()
         );
