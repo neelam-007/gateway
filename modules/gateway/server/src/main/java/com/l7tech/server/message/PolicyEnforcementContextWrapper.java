@@ -381,11 +381,6 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status) {
-        assertionFinished(assertion, status, null);
-    }
-
-    @Override
     public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics ) {
         delegate.assertionFinished( assertion, status, assertionMetrics );
     }

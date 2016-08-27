@@ -928,9 +928,9 @@ public class SoapFaultManagerTest {
         TestServerAssertion ass2 = new TestServerAssertion(new HttpBasic());
         TestServerAssertion ass3 = new TestServerAssertion(new SpecificUser());
 
-        context.assertionFinished( ass1, AssertionStatus.NONE );
-        context.assertionFinished( ass2, AssertionStatus.NONE );
-        context.assertionFinished( ass3, AssertionStatus.FALSIFIED );
+        context.assertionFinished( ass1, AssertionStatus.NONE, null );
+        context.assertionFinished( ass2, AssertionStatus.NONE, null );
+        context.assertionFinished( ass3, AssertionStatus.FALSIFIED, null );
 
         stub.addDetail( new AuditDetail( AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER ), ass1 );
         stub.addDetail( new AuditDetail( AssertionMessages.HTTPCREDS_FOUND_USER ), ass2 );

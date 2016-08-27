@@ -222,11 +222,6 @@ abstract class GatewayMetricsEvent {
         }
 
         @Override
-        public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics) {
             throw new UnsupportedOperationException();
         }

@@ -561,16 +561,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     /**
-     * TODO: add java doc here
-     * @param assertion the ServerAssertion that just finished. Must not be null.
-     * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
-     */
-    @Override
-    public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status) {
-        assertionFinished(assertion, status, null);
-    }
-
-    /**
      * @param assertion the ServerAssertion that just finished. Must not be null.
      * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
      * @param assertionMetrics the {@link AssertionMetrics} for the specified {@code assertion}.  Optional and can

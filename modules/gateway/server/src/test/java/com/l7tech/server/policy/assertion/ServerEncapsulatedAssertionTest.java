@@ -406,8 +406,8 @@ public class ServerEncapsulatedAssertionTest {
 
         // trace executed in assertionFinished(...), which is called after normal Gateway execution (e.g. ServerConcurrentAllAssertion, ServerPolicy, ServerCompositeAssertion)
         PolicyEnforcementContext childContext = childContextReference.get();
-        childContext.assertionFinished(serverAssertion, AssertionStatus.NONE);
-        context.assertionFinished(serverAssertion, AssertionStatus.NONE);
+        childContext.assertionFinished(serverAssertion, AssertionStatus.NONE, null);
+        context.assertionFinished(serverAssertion, AssertionStatus.NONE, null);
 
         assertTrue(childContext.hasTraceListener());
 
