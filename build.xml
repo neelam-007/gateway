@@ -3805,7 +3805,7 @@
 		Target to sign archive files and generate RESTman xml files if properties are set in individual file's build.xml
 		If module.skarsigner.sign.archive is true, then the archive will be signed
 		If module.skarsigner.generate.restman.xml is true, then the corresponding RESTman xml will be generated
-		module.skarsigner.keystore determines which keystore to use. Value is the keystore filename in etc/signer without the extension (e.g. gatewayKeyStore)
+		module.skarsigner.keystore determines which keystore to use. Value is the keystore filepath relative to src.root
 		See modules/gateway/assertions/ApiPortalIntegrationAssertion/build.xml for an example.
 		
 		For publish to repository (ivy or Artifactory), the artifacts are set using conf="skarsigner"

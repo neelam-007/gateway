@@ -693,7 +693,7 @@
 	</target>
 		
 	<target name="package.skarsigner.sign.archive" depends="check.sign.archive" if="sign.archive" description="Sign aar/jar with the SkarSigner">
-		<skarsigner-sign-archive keystore="${src.root}/etc/signer/${module.skarsigner.keystore}.p12"/>
+		<skarsigner-sign-archive keystore="${src.root}/${module.skarsigner.keystore}"/>
 	</target>
 		
 	<target name="package.skarsigner.generate.restman.xml" depends="check.generate.restman.xml" if="generate.restman.xml" description="Generate RESTman xml with the SkarSigner">
