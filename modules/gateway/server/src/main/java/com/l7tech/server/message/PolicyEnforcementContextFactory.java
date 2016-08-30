@@ -66,14 +66,16 @@ public class PolicyEnforcementContextFactory {
         return context;
     }
 
-
     /**
-     * TODO: add javadoc why we need this override (to support concurrent all passing on the parent requestid to all kid PEC's)
-     * @param request
-     * @param response
-     * @param requestId
-     * @param replyExpected
-     * @return
+     * Create a new PEC with the specified {@code requestId} for the given {@code messages},
+     * without replacing any current thread-local PEC that is already registered.
+     * Support {@code ServerConcurrentAllAssertion} passing parent requestId to all kid PEC's
+     *
+     * @param request The request message to use (optional, created if missing)
+     * @param response  The response message to use (optional, created if missing)
+     * @param requestId The requestId of the parent context to be passed to the kid PEC
+     * @param replyExpected True if a reply is expected for the context
+     * @return The new unregistered PEC
      */
     public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext(
             @Nullable final Message request,

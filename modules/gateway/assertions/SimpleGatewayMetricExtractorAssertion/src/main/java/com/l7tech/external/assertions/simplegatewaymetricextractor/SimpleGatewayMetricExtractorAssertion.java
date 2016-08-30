@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * 
+ * A sample monitoring assertion for the GateWayMetrics framework.
  */
 public class SimpleGatewayMetricExtractorAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractorAssertion.class.getName());

@@ -4,6 +4,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditFactory;
@@ -126,6 +127,9 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             this.assertionMetricsWrapper = assertionMetricsWrapper;
         }
 
+        /**
+         * @return the associated {@link AssertionMetrics} for the kid PEC or {@code null} if it does not exist.
+         */
         @Nullable
         public AssertionMetrics getAssertionMetrics() {
             return assertionMetricsWrapper != null ? assertionMetricsWrapper.getAssertionMetrics() : null;
@@ -169,7 +173,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
-    // TODO explain the existance of this wrapper
+    /**
+     * {@link AssertionMetrics} is created in the kid PEC and is immutable. {@link com.l7tech.server.event.metrics.AssertionFinished AssertionFinished} is published after the completion of all the kid PECs.
+     * Therefore, a wrapper class is created to contain the current kidPECs AssertionMetrics.
+     */
     private static final class AssertionMetricsWrapper {
         private AssertionMetrics assertionMetrics;
 
@@ -297,13 +304,15 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     /**
-     * Create a new PolicyEnforcmentContext with a blank request and response, all String and Message context
-     * variables deep-copied from the specified source context.
+     * Create a new unregistered PolicyEnforcementContext with a blank request and response, the requestId of the parent, and all String and Message context
+     * variables deep-copied from the specified source context. The PEC does not replace any current thread-local PEC that is already registered
      *
      * @param source the context to copy.  Required.
      * @param varsMap the variables to copy over.  Required.
      * @return a new context with some material copied from the specified one.
      * @throws java.io.IOException if a Message variable is to be copied and it cannot be read
+     *
+     * @see PolicyEnforcementContextFactory#createUnregisteredPolicyEnforcementContext(Message, Message, RequestId, boolean)
      */
     private PolicyEnforcementContext copyContext(PolicyEnforcementContext source, Map<String, Object> varsMap) throws IOException {
         final PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(new Message(), new Message(), source.getRequestId(), true);

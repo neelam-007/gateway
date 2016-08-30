@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion;
 
 /**
- * Created by fonia01 on 2016-08-03.
  * Class created to contain assertion metrics
  * current holds start and end times in MS
  */

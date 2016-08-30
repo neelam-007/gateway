@@ -107,7 +107,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
-    private final AtomicBoolean gatewayMetricsEnable = new AtomicBoolean(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE);
+    private final AtomicBoolean relayGatewayMetricsEnable = new AtomicBoolean(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE);
 
     @Inject
     @Named("debugManager")
@@ -194,7 +194,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
 
-        gatewayMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
+        relayGatewayMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
     }
 
     /**
@@ -313,7 +313,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         doRequestPreChecks( context );
 
         // set gateway metrics publisher
-        GatewayMetricsUtils.setPublisher(context, gatewayMetricsEnable.get() ? gatewayMetricsEventsPublisher : null);
+        GatewayMetricsUtils.setPublisher(context, relayGatewayMetricsEnable.get() ? gatewayMetricsEventsPublisher : null);
 
         final MessageProcessingContext mc = new MessageProcessingContext(context);
 

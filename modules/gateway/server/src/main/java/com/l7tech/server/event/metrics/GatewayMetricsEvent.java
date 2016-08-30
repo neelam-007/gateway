@@ -25,7 +25,8 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * TODO: add javadoc
+ * Abstract GatewayMetricsEvent class that any future events will extend off of.
+ * The thread that creates this object will be the sole owner and have access to the content.
  */
 abstract class GatewayMetricsEvent {
     private final PolicyEnforcementContext context;
@@ -60,8 +61,9 @@ abstract class GatewayMetricsEvent {
     }
 
     /**
-     * TODO: add javadoc
+     * Creates a read only copy of the {@link PolicyEnforcementContext}. Any method that modifies the PEC will throw a {@link UnsupportedOperationException}.
      */
+    //TODO: change blacklist to whitelist
     private static class ReadOnlyPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
 
         ReadOnlyPolicyEnforcementContext(final PolicyEnforcementContext delegate) {
@@ -333,6 +335,11 @@ abstract class GatewayMetricsEvent {
         }
     }
 
+    /**
+     * @return a read only copy of the PEC {@link PolicyEnforcementContext} only to the thread owner.
+     *
+     * @throws IllegalStateException if the calling thread is not the owner (i.e the one created this object) of this object
+     */
     @NotNull
     public final PolicyEnforcementContext getContext() {
         // make sure the PEC is accessed only by the owner thread

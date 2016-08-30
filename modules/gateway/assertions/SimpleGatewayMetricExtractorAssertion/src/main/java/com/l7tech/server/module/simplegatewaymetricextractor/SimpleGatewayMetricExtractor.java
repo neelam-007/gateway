@@ -26,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO
+ * Sample listener for a monitoring assertion.
  */
 public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractor.class.getName());
@@ -39,6 +39,9 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         gatewayMetricsEventsPublisher.addListener(this);
     }
 
+    /**
+     * Extracts and logs the content in AssertionFinished
+     */
     @Override
     public void assertionFinished(@NotNull final AssertionFinished assertionFinished) {
         final Assertion assertion = assertionFinished.getAssertion();

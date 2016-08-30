@@ -327,7 +327,8 @@ public interface PolicyEnforcementContext extends Closeable {
 
 
     /**
-     * TODO: this is used when assertion metrics is available
+     * Notify the context that an assertion is finished.
+     *
      * @param assertion the ServerAssertion that just finished. Must not be null.
      * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
      * @param assertionMetrics the {@link AssertionMetrics} for the specified {@code assertion}.  Optional and can
@@ -478,8 +479,9 @@ public interface PolicyEnforcementContext extends Closeable {
     boolean hasTraceListener();
 
     /**
-     * TODO add javadoc
-     * @return
+     * Returns the trace listener
+     *
+     * @return the trace listener
      */
     AssertionTraceListener getTraceListener();
 
