@@ -18,11 +18,6 @@
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
 	
-	<!-- set properties used to create saars -->
-	<property name="saar.keystore" value="gatewayKeyStore.p12"/>
-	<property name="saar.access.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
-	<property name="saar.load.password" value="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
-	
     <!--
       Set default build properties
       Properties that were not specified in user properties
@@ -614,8 +609,7 @@
     <presetdef name="modules">
         <subant buildpathref="module-build-path" >
             <property name="module.version.default.target" value="${build.version}"/>
-			<property name="module.skarsigner.sign.all.archives" value="${skarsigner.sign.archives}"/>
-			<property name="module.skarsigner.generate.all.restman.xmls" value="${skarsigner.generate.restman.xmls}"/>
+			<property name="module.skarsigner.sign.all" value="${skarsigner.sign.all}"/>
 			
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
@@ -3806,15 +3800,21 @@
     <target name="sign-aar-full" depends="package.skarsigner,sign-aar" description="Sign an AAR file" />
     <target name="sign-aar-gensmfxml-full" depends="build-skar-if-not-exists,sign-aar-gensmfxml" description="Build the SkarSigner package if it does not exist, sign an aar file and generate RESTman XML for an signed file" />
     <target name="sign-aar-gensmfxml" depends="sign-aar,gensmfxml-saar" description="Sign an aar file and generate RESTman XML for an signed file" />
-
-	<target name="skarsigner-sign" depends="build-skar-if-not-exists" description="Sign aar/jar/skar">
-        <echo level="info">Sign all archives that are indicated to be signed</echo>
-        <property name="skarsigner.sign.archives" value="true"/>
-    </target>
 	
-	<target name="skarsigner-sign-and-generate" depends="skarsigner-sign" description="Generate RESTman XMLs">
-        <echo level="info">Generate RESTman XMLs for all signed archives that are indicated to have RESTman XMLs generated</echo>
-        <property name="skarsigner.generate.restman.xmls" value="true"/>
+	<!-- 
+		Target to sign archive files and generate RESTman xml files if properties are set in individual file's build.xml
+		If module.skarsigner.sign.archive is true, then the archive will be signed
+		If module.skarsigner.generate.restman.xml is true, then the corresponding RESTman xml will be generated
+		module.skarsigner.keystore determines which keystore to use. Value is the keystore filename in etc/signer without the extension (e.g. gatewayKeyStore)
+		See modules/gateway/assertions/ApiPortalIntegrationAssertion/build.xml for an example.
+		
+		For publish to repository (ivy or Artifactory), the artifacts are set using conf="skarsigner"
+		See modules/gateway/assertions/ApiPortalIntegrationAssertion/ivy.xml for an example
+		If the 3 module.skarsigner properties are not set in build.xml, the artifact lines in ivy.xml must be removed
+	-->
+	<target name="skarsigner-sign" depends="build-skar-if-not-exists" description="Sign aar/jar/skar and generate RESTman XMLs">
+        <echo level="info">Sign all archives and generate RESTman xmls for them</echo>
+        <property name="skarsigner.sign.all" value="true"/>
     </target>
 	
 	<!-- check if the SkarSigner jar file exists -->

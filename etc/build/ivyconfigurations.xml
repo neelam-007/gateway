@@ -40,6 +40,6 @@
           description="Contains only the pom files related to master artifacts"/>
 		  
 	<conf name="skarsigner"
-          description="Contains only files related to the SkarSigner"/>
+          description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
 
 </configurations>
