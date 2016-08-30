@@ -21,6 +21,8 @@
         <conf name="alternative" description="Contains all dependencies for jars with alternative implementations"/>
         <conf name="pom"
               description="Contains only the pom files related to master artifacts"/>
+		<conf name="skarsigner"
+              description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
     </configurations>
     <publications>
         <artifact name="layer7-gateway-server" type="jar" ext="jar" conf="master"/>
