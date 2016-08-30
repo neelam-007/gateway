@@ -2,6 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.http.HttpProxyConfig;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.server.transport.http.HttpConnectionManagerListener;
@@ -16,23 +17,18 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
 
     @Override
     public GenericHttpClient createHttpClient() {
-        return createHttpClient(-1, -1, -1, -1, null);
+        return createHttpClient(-1, -1, -1, -1, null, null);
     }
 
     @Override
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
         return new HttpComponentsClient(getHttpConnectionManager(hostConnections, totalConnections),
+                identity,
                 connectTimeout,
                 timeout,
-                identity);
+                proxyConfig);
     }
 
-    @Override
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout,
-              Object identity, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
-        return new HttpComponentsClient(getHttpConnectionManager(hostConnections, totalConnections),
-                identity, connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
-    }
 
 
     /**

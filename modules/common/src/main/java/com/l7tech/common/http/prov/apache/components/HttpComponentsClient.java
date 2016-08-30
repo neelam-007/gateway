@@ -13,6 +13,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
@@ -52,6 +53,7 @@ import org.apache.http.params.*;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLException;
@@ -60,7 +62,9 @@ import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.net.*;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -148,10 +152,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private final int timeout;
     private final Object identity;
     private final boolean isBindingManager;
-    private final String proxyHost;
-    private final int proxyPort;
-    private final String proxyUsername;
-    private final String proxyPassword;
+    private final @Nullable HttpProxyConfig proxyConfig;
 
 
     public static ClientConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
@@ -168,30 +169,28 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     }
 
     public HttpComponentsClient(ClientConnectionManager cman, int connectionTimeout, int timeout) {
-        this(cman, null, connectionTimeout, timeout, null, -1, null, null);
+        this(cman, null, connectionTimeout, timeout, new HttpProxyConfig(null, -1, null, null));
     }
 
     public HttpComponentsClient() {
         this(newConnectionManager(), -1, -1, null);
     }
-    public HttpComponentsClient(int connectionTimeout, int timeout, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword){
-        this(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, 1, 1000), null, connectionTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
+
+    public HttpComponentsClient(int connectionTimeout, int timeout, @Nullable HttpProxyConfig proxyConfig){
+        this(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, 1, 1000), null, connectionTimeout, timeout, proxyConfig);
     }
 
     public HttpComponentsClient(ClientConnectionManager cman, int connectTimeout, int timeout, Object identity) {
-        this(cman, identity, connectTimeout, timeout, null, -1, null, null);
+        this(cman, identity, connectTimeout, timeout, new HttpProxyConfig(null, -1, null, null));
     }
 
-    public HttpComponentsClient(ClientConnectionManager cman, Object identity, int connectionTimeout, int timeout, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+    public HttpComponentsClient(ClientConnectionManager cman, Object identity, int connectionTimeout, int timeout, @Nullable HttpProxyConfig proxyConfig) {
         this.cman = cman;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
         this.connectionTimeout = connectionTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectionTimeout;
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
-        this.proxyHost = proxyHost;
-        this.proxyPort = proxyPort;
-        this.proxyUsername = proxyUsername;
-        this.proxyPassword = proxyPassword;
+        this.proxyConfig = proxyConfig;
     }
 
     private void configureSocketFactories(HttpClient hc, URL url, GenericHttpRequestParams params) {
@@ -665,11 +664,12 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 client.setCredentialsProvider(proxyCredProvider);
                 proxyConfigured = true;
             }
-        } else if (proxyHost != null && proxyHost.length() > 0) {
-            HttpHost proxy = new HttpHost( proxyHost, proxyPort );
+
+        } else if (proxyConfig != null && !StringUtils.isEmpty(proxyConfig.getHost())) {
+            HttpHost proxy = new HttpHost( proxyConfig.getHost(), proxyConfig.getPort() );
             clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-            if (proxyUsername != null && proxyUsername.length() > 0) {
-                configureProxyAuthentication(proxyCredProvider, clientParams, proxy, proxyUsername, proxyPassword);
+            if (!StringUtils.isEmpty(proxyConfig.getUsername())) {
+                configureProxyAuthentication(proxyCredProvider, clientParams, proxy, proxyConfig.getUsername(), proxyConfig.getPassword());
                 client.setCredentialsProvider(proxyCredProvider);
                 proxyConfigured = true;
             }

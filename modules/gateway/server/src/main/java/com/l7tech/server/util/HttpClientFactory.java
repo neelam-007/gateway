@@ -7,6 +7,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ConfigFactory;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.*;
 import java.security.GeneralSecurityException;
@@ -48,7 +49,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
     }
 
     public GenericHttpClient createHttpClient() {
-        return createHttpClient(-1, -1, -1, -1, null);
+        return createHttpClient(-1, -1, -1, -1, null, null);
     }
 
     /**
@@ -57,8 +58,9 @@ public class HttpClientFactory implements GenericHttpClientFactory {
      * @param connectTimeout -1 for default
      * @param timeout -1 for default
      * @param identity IGNORED this factory does not support identity binding
+     * @param proxyConfig IGNORED this factory does not support proxying
      */
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, @Nullable HttpProxyConfig proxyConfig) {
         return new HttpComponentsClient(connectionManager, connectTimeout, timeout) {
             public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 final String proto = params.getTargetUrl().getProtocol();
@@ -75,24 +77,6 @@ public class HttpClientFactory implements GenericHttpClientFactory {
                 return super.createRequest(method, params);
             }
         };
-    }
-
-    /**
-     * @param hostConnections IGNORED this factory uses 100
-     * @param totalConnections IGNORED this factory uses 1000
-     * @param connectTimeout -1 for default
-     * @param timeout -1 for default
-     * @param identity IGNORED this factory does not support identity binding
-     * @param proxyHost IGNORED this factory does not use proxying
-     * @param proxyPort IGNORED this factory does not use proxying
-     * @param proxyUsername IGNORED this factory does not use proxying
-     * @param proxyPassword IGNORED this factory does not use proxying
-     * @return
-     */
-    @Override
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                              String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
-        return createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity);
     }
 
     /**

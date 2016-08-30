@@ -35,7 +35,7 @@ public class IdentityBindingHttpClientFactoryTest {
         requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "NTLM"));
         requestParams.setTargetUrl(new URL("http://localhost:" +httpServer.getPort()));
         GenericHttpRequest request = null;
-        GenericHttpClient client = factory.createHttpClient(2, 10, -1, -1, "MyConnection");
+        GenericHttpClient client = factory.createHttpClient(2, 10, -1, -1, "MyConnection", null);
         try {
             request = client.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();
@@ -48,7 +48,7 @@ public class IdentityBindingHttpClientFactoryTest {
             }
         }
 
-        client = factory.createHttpClient(2, 10, -1, -1, "MyConnection");
+        client = factory.createHttpClient(2, 10, -1, -1, "MyConnection", null);
         try {
             request = client.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();
@@ -72,7 +72,7 @@ public class IdentityBindingHttpClientFactoryTest {
 
         requestParams.setTargetUrl(new URL("http://localhost:" +httpServer.getPort()));
         GenericHttpRequest request = null;
-        GenericHttpClient client = factory.createHttpClient(2, 10, -1, -1, "MyConnection1");
+        GenericHttpClient client = factory.createHttpClient(2, 10, -1, -1, "MyConnection1", null);
         try {
             request = client.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();
@@ -85,7 +85,7 @@ public class IdentityBindingHttpClientFactoryTest {
             }
         }
 
-        client = factory.createHttpClient(2, 10, -1, -1, "MyConnection2");
+        client = factory.createHttpClient(2, 10, -1, -1, "MyConnection2", null);
         try {
             request = client.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();

@@ -1,10 +1,12 @@
 package com.l7tech.server.globalresources;
 
 import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.HttpProxyConfig;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.server.transport.http.HttpConnectionManagerListener;
 import com.l7tech.util.ConfigFactory;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,14 +33,11 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
 
     @Override
     GenericHttpClient newGenericHttpClient( final int connectTimeout,
-                                            final int readTimeout ) {
-        return new HttpComponentsClient( connectionManager, connectTimeout, readTimeout );
+                                            final int readTimeout,
+                                            @Nullable final HttpProxyConfig proxyConfig) {
+        return new HttpComponentsClient( connectionManager, connectTimeout, readTimeout, proxyConfig );
     }
 
-    @Override
-    GenericHttpClient newGenericHttpClient(int connectTimeout, int readTimeout, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
-        return new HttpComponentsClient( connectionManager, null, connectTimeout, readTimeout, proxyHost, proxyPort, proxyUsername, proxyPassword );
-    }
 
     //- PRIVATE
 

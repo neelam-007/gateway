@@ -331,16 +331,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     return null;
                 }
 
-                int intValue;
-                try {
-                    intValue = Integer.parseInt(value);
-                } catch (NumberFormatException e) {
-                    intValue = -1;
-                }
-
-                if ((Syntax.isAnyVariableReferenced(value)     // variables are referenced, but it's an expression more complex than ${variable}: REJECT
-                        || !StringUtils.isNumeric(value))      // does not reference a variable but it's not a number either: REJECT
-                        || intValue < 1 || intValue > 65535) { // the value is out of range for a port: REJECT
+                final int intValue = StringUtils.isNumeric(value) ? Integer.parseInt(value) : -1;
+                if (Syntax.isAnyVariableReferenced(value)      // variables are referenced, but it's an expression more complex than ${variable}: REJECT
+                        || intValue < 1 || intValue > 65535) { // the value is out of range for a port, or neither a variable nor a number: REJECT
                     return "Please reference a single context variable or provide a number between 1 and 65535 for the proxy port";
                 }
 

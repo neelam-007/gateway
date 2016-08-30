@@ -89,12 +89,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };
@@ -166,12 +161,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };
@@ -243,12 +233,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };
@@ -342,12 +327,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };
@@ -557,12 +537,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };
@@ -621,12 +596,7 @@ public class HttpObjectCacheTest {
                 return hc;
             }
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return createHttpClient();
-            }
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, HttpProxyConfig proxyConfig) {
                 return createHttpClient();
             }
         };

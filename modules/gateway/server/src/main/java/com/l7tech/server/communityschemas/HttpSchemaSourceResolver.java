@@ -11,6 +11,7 @@ import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.xml.sax.EntityResolver;
 
@@ -165,16 +166,10 @@ public class HttpSchemaSourceResolver implements PostStartupApplicationListener,
             }
 
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity));
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, @Nullable HttpProxyConfig proxyConfig) {
+                return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity, proxyConfig));
             }
 
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity,
-                                                      String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
-                return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity,
-                        proxyHost, proxyPort, proxyUsername, proxyPassword));
-            }
 
             private GenericHttpClient wrapHttpClient(final GenericHttpClient httpClient) {
                 return new GenericHttpClient() {

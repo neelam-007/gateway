@@ -2,6 +2,8 @@ package com.l7tech.server.globalresources;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.http.HttpProxyConfig;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Support class for GenericHttpClientFactory's that create HTTP configuration aware GenericHttpClients.
@@ -12,7 +14,7 @@ abstract class ConfiguredHttpClientFactory implements GenericHttpClientFactory {
 
     @Override
     public GenericHttpClient createHttpClient() {
-        return configure(newGenericHttpClient( -1, -1 ));
+        return configure(newGenericHttpClient( -1, -1, null ));
     }
 
     /**
@@ -25,19 +27,14 @@ abstract class ConfiguredHttpClientFactory implements GenericHttpClientFactory {
      * @param identity IGNORED this factory does not support identity binding
      */
     @Override
-    public GenericHttpClient createHttpClient( final int hostConnections,
-                                               final int totalConnections,
-                                               final int connectTimeout,
-                                               final int timeout,
-                                               final Object identity ) {
-        return configure(newGenericHttpClient( connectTimeout, timeout ));
+    public GenericHttpClient createHttpClient(final int hostConnections,
+                                              final int totalConnections,
+                                              final int connectTimeout,
+                                              final int timeout,
+                                              final Object identity,
+                                              @Nullable HttpProxyConfig proxyConfig) {
+        return configure(newGenericHttpClient( connectTimeout, timeout, proxyConfig ));
     }
-
-    @Override
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
-        return newGenericHttpClient(connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
-    }
-
 
 //- PACKAGE
 
@@ -55,14 +52,9 @@ abstract class ConfiguredHttpClientFactory implements GenericHttpClientFactory {
      * @return The new client
      */
     abstract GenericHttpClient newGenericHttpClient( final int connectTimeout,
-                                                     final int readTimeout );
-
-    abstract GenericHttpClient newGenericHttpClient( final int connectTimeout,
                                                      final int readTimeout,
-                                                     final String proxyHost,
-                                                     final int proxyPort,
-                                                     final String proxyUsername,
-                                                     final String proxyPassword );
+                                                     @Nullable HttpProxyConfig proxyConfig);
+
 
     /**
      * Wrap the given client to make it HTTP configuration aware.

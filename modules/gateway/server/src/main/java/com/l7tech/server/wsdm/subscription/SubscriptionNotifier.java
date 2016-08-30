@@ -523,7 +523,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                                              final String message ) {
         boolean notificationSent = false;
 
-        GenericHttpClient client = httpClientFactory.createHttpClient(-1,-1,getConnectionTimeout(),getTimeout(), null);
+        GenericHttpClient client = httpClientFactory.createHttpClient(-1,-1,getConnectionTimeout(),getTimeout(), null, null);
         GenericHttpRequestParams requestParams = new GenericHttpRequestParams( urltarget );
         requestParams.setFollowRedirects( false );
         requestParams.setContentType( ContentTypeHeader.XML_DEFAULT );

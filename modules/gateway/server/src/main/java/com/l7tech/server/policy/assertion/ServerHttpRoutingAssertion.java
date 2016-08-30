@@ -35,9 +35,11 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.util.*;
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -263,24 +265,26 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return new GenericHttpClientFactory() {
             @Override
             public GenericHttpClient createHttpClient() {
-                return createHttpClient(-1, -1, -1, -1, null);
+                return createHttpClient(-1, -1, -1, -1, null, null);
             }
 
             @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
-                        identity, connectTimeout, timeout,  proxyHost, Integer.parseInt(assertion.getProxyPort()), assertion.getProxyUsername(), proxyPassword);
-            }
-
-            @Override
-            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout,
-                                                      int timeout, Object identity, String proxyHost, int proxyPort,
-                                                      String proxyUsername, String proxyPassword) {
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity, @Nullable HttpProxyConfig proxyConfig) {
                 final ClientConnectionManagerFactory ccmFactory = ClientConnectionManagerFactory.getInstance();
                 final ClientConnectionManager connectionManager = ccmFactory.createConnectionManager(POOLING, hostConnections, totalConnections);
-                return new HttpComponentsClient(connectionManager, identity, connectTimeout, timeout, proxyHost, proxyPort, proxyUsername, proxyPassword);
+                return new HttpComponentsClient(connectionManager, identity, connectTimeout, timeout,  proxyConfig);
             }
+
         };
+    }
+
+    /**
+     * This method is package-private so unit tests can override the factory instantiated by the
+     * {@link #ServerHttpRoutingAssertion(HttpRoutingAssertion, ApplicationContext) constructor}
+     * @param factory
+     */
+    void setHttpClientFactory(GenericHttpClientFactory factory) {
+        this.httpClientFactory = factory;
     }
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
@@ -624,20 +628,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            final GenericHttpClient httpClient;
-            if (assertion.getProxyHost() == null) {
-                httpClient = httpClientFactory.createHttpClient(getMaxConnectionsPerHost(),
-                        getMaxConnectionsAllHosts(), getConnectionTimeout(vars), getTimeout(vars), connectionId);
-            } else {
-                final String proxyHost = expand(context, assertion.getProxyHost());
-                final int proxyPort = tryParsePort(context, assertion.getProxyPort());
-                final String proxyUsername = expand(context, assertion.getProxyUsername());
-                final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
-
-                httpClient = httpClientFactory.createHttpClient(getMaxConnectionsPerHost(),
-                        getMaxConnectionsAllHosts(), getConnectionTimeout(vars), getTimeout(vars), connectionId, proxyHost,
-                        proxyPort, proxyUsername, proxyPassword);
-            }
+            final HttpProxyConfig proxyConfig = StringUtils.isEmpty(assertion.getProxyHost())
+                    ? null
+                    : buildHttpProxyConfig(context);
+            final GenericHttpClient httpClient = httpClientFactory.createHttpClient(getMaxConnectionsPerHost(),
+                        getMaxConnectionsAllHosts(), getConnectionTimeout(vars), getTimeout(vars), connectionId, proxyConfig);
 
             if (httpClient instanceof RerunnableGenericHttpClient ||
                 (!assertion.isPassthroughHttpAuthentication() &&
@@ -893,6 +888,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    private HttpProxyConfig buildHttpProxyConfig(PolicyEnforcementContext context) throws FindException {
+        final String host = expand(context, assertion.getProxyHost());
+        final int port = tryParsePort(context, assertion.getProxyPort());
+        final String username = expand(context, assertion.getProxyUsername());
+        final String password = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
+
+        return new HttpProxyConfig(host, port, username, password);
     }
 
     private void addContentTypeFromRequest(Message requestMessage, GenericHttpRequestParams routedRequestParams) {

@@ -1,5 +1,7 @@
 package com.l7tech.common.http;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Factory for GenericHttpClient instances.
  *
@@ -35,43 +37,14 @@ public interface GenericHttpClientFactory {
      * @param connectTimeout The socket timeout for connections (-1 for default)
      * @param timeout The socket timeout for reads (-1 for default)
      * @param identity The identity to bind (may be null)
+     * @param proxyConfig proxy configuration - if no proxying is desired, leave it null
      * @return The new client.
      */
     GenericHttpClient createHttpClient(int hostConnections,
                                        int totalConnections,
                                        int connectTimeout,
                                        int timeout,
-                                       Object identity);
-
-    /**
-     * Create a client with the given settings.
-     *
-     * <p>This will create a new GenericHttpClient instance ready to make
-     * outgoing requests, possibly already including any SSL setup required
-     * for the current environment.</p>
-     *
-     * <p>Some factories may not support all configuration settings. In this
-     * case defaults will be used (or the settings ignored if not meaningful
-     * for the client implementation)</p>
-     *
-     * @param hostConnections The maximum number of connections per host (-1 for default)
-     * @param totalConnections The maximum number of connections (-1 for default)
-     * @param connectTimeout The socket timeout for connections (-1 for default)
-     * @param timeout The socket timeout for reads (-1 for default)
-     * @param identity The identity to bind (may be null)
-     * @param proxyHost the HTTP proxy host name
-     * @param proxyPort the HTTP proxy port number
-     * @param proxyUsername if auth is required by the HTTP proxy, the user name goes here - leave null otherwise
-     * @param proxyPassword if auth is required by the HTTP proxy, the password goes here - leave null otherwise
-     * @return
-     */
-    GenericHttpClient createHttpClient(int hostConnections,
-                                       int totalConnections,
-                                       int connectTimeout,
-                                       int timeout,
                                        Object identity,
-                                       String proxyHost,
-                                       int proxyPort,
-                                       String proxyUsername,
-                                       String proxyPassword);
+                                       @Nullable HttpProxyConfig proxyConfig);
+
 }
