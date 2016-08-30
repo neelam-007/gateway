@@ -11,6 +11,8 @@
 	<publications>
 		<artifact name="JsonJoltAssertion" type="aar" ext="aar" conf="master"/>
 		<artifact name="JsonJoltAssertion" type="pom" ext="pom" conf="pom"/>
+		<artifact name="JsonJoltAssertion" type="saar" ext="saar" conf="skarsigner"/>
+		<artifact name="JsonJoltAssertion" type="saar.xml" ext="saar.xml" conf="skarsigner"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

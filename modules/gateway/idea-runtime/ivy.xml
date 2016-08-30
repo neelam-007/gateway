@@ -23,6 +23,8 @@
         <conf name="module" description="Packaged modular assertion dependencies"/>
         <conf name="pom"
               description="Contains only the pom files related to master artifacts"/>
+		<conf name="skarsigner"
+              description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
     </configurations>
     <publications>
 		<artifact name="layer7-gateway-idea-runtime" type="pom" ext="pom" conf="pom"/>

@@ -11,6 +11,8 @@
     <publications>
         <artifact name="ApiPortalIntegrationAssertion" type="aar" ext="aar" conf="master"/>
 		<artifact name="ApiPortalIntegrationAssertion" type="pom" ext="pom" conf="pom"/>
+		<artifact name="ApiPortalIntegrationAssertion" type="saar" ext="saar" conf="skarsigner"/>
+		<artifact name="ApiPortalIntegrationAssertion" type="saar.xml" ext="saar.xml" conf="skarsigner"/>
     </publications>
     <dependencies>
         <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>

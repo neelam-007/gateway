@@ -1,3 +1,6 @@
 <project name="CORSAssertion" default="compile">
+	<property name="module.skarsigner.sign.archive" value="true"/>
+	<property name="module.skarsigner.generate.restman.xml" value="true"/>
+	<property name="module.skarsigner.keystore" value="etc/signer/portalKeyStore.p12"/>
     <import file="../assertion-build.xml"/>
 </project>

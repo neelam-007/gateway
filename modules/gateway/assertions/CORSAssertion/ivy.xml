@@ -11,6 +11,8 @@
 	<publications>
 		<artifact name="CORSAssertion" type="aar" ext="aar" conf="master"/>
 		<artifact name="CORSAssertion" type="pom" ext="pom" conf="pom"/>
+		<artifact name="CORSAssertion" type="saar" ext="saar" conf="skarsigner"/>
+		<artifact name="CORSAssertion" type="saar.xml" ext="saar.xml" conf="skarsigner"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

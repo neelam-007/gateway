@@ -27,10 +27,11 @@
     <property name="ivy.settings.filepath" value="${src.root}/etc/build/ivysettings.xml"/>
     <property name="ivy.file" value="${basedir}/ivy.xml"/>
 
-    <property name="jar.sign.pattern" value="*.jar"/>
-    <property name="jar.file" value="${build.dir}/${ant.project.name}.jar"/>
-    <property name="jar.file.unsigned" value="${build.dir}/${ant.project.name}-unsigned.jar"/>
-    <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.jar"/>
+	<property name="file.extension" value="jar"/>
+    <property name="jar.sign.pattern" value="*.${file.extension}"/>
+    <property name="jar.file" value="${build.dir}/${ant.project.name}.${file.extension}"/>
+    <property name="jar.file.unsigned" value="${build.dir}/${ant.project.name}-unsigned.${file.extension}"/>
+    <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.${file.extension}"/>
     <property name="main.class.name" value="${ant.project.name}.Main"/>
 
     <property name="module.version.default.target" value="1.0"/>
@@ -216,7 +217,51 @@
                 </path>
             </signjar>
         </presetdef>
-
+		
+		<!--
+		Macrodef for signing aars/jars using SkarSigner
+		-->
+		<macrodef name="skarsigner-sign-archive">
+			<!-- Defaults that could be overridden -->
+			<attribute name="keystore" default="${src.root}/etc/signer/gatewayKeyStore.p12"/>
+			<attribute name="access.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
+			<attribute name="load.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
+			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
+			<attribute name="input" default="${build.dir}/${ant.project.name}.${file.extension}"/>
+			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
+			<sequential>
+				<echo level="info">Signing @{input} as @{output} using key @{keystore}</echo>
+				<java jar="@{skarSigner}" fork="true" failonerror="true">
+					<arg line="sign"/>
+					<arg line="-f &quot;@{keystore}&quot;"/>
+					<arg line="-p &quot;@{access.password}&quot;"/>
+					<arg line="-k &quot;@{load.password}&quot;"/>
+					<arg line="-s &quot;@{input}&quot;"/>
+					<arg line="-o &quot;@{output}&quot;"/>
+				</java>
+			</sequential>
+		</macrodef>
+		
+		<!--
+		Macrodef for signing aars/jars using SkarSigner
+		-->
+		<macrodef name="skarsigner-generate-restman-xml">
+			<!-- Defaults that could be overridden -->
+			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
+			<attribute name="assertion" default="${ant.project.name}"/>
+			<attribute name="input" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
+			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}.xml"/>
+			<sequential>
+				<echo level="info">Generate RESTman XML for @{input} as @{output}</echo>
+				<java jar="@{skarSigner}" fork="true" failonerror="true">
+					<arg line="genSmfXml"/>
+					<arg line="-n &quot;@{assertion}&quot;"/>
+					<arg line="-f &quot;@{input}&quot;"/>
+					<arg line="-o &quot;@{output}&quot;"/>
+				</java>
+			</sequential>
+		</macrodef>
+	
         <!--
           Module task to unpack an artifact into this modules classes directory (useful to combine JARs for Applets, etc)
         -->
@@ -622,9 +667,39 @@
         <sign-jar/>
         <move file="${jar.file.unsigned}.tmp" tofile="${jar.file.unsigned}"/>
     </target>
-    <target name="package" depends="version, compile, package.work, package.custom.post, package.sign" description="Package this project">
+	
+	<target name="package" depends="version, compile, package.work, package.custom.post, package.sign, package.skarsigner.sign.archive, package.skarsigner.generate.restman.xml" description="Package this project">
     </target>
-
+	
+	<!--
+	Check if both global and specific assertion properties have been set
+	-->
+	<target name="check.sign.archive">
+		<condition property="sign.archive">
+			<and>
+				<equals arg1="${module.skarsigner.sign.all}" arg2="true"/>
+				<isset property="module.skarsigner.sign.archive"/>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check.generate.restman.xml">
+		<condition property="generate.restman.xml">
+			<and>
+				<equals arg1="${module.skarsigner.sign.all}" arg2="true"/>
+				<isset property="module.skarsigner.generate.restman.xml"/>
+			</and>
+		</condition>
+	</target>
+		
+	<target name="package.skarsigner.sign.archive" depends="check.sign.archive" if="sign.archive" description="Sign aar/jar with the SkarSigner">
+		<skarsigner-sign-archive keystore="${src.root}/${module.skarsigner.keystore}"/>
+	</target>
+		
+	<target name="package.skarsigner.generate.restman.xml" depends="check.generate.restman.xml" if="generate.restman.xml" description="Generate RESTman xml with the SkarSigner">
+		<skarsigner-generate-restman-xml/>
+	</target>
+	
     <!--
     -->
     <target name="packagetests" if="module.tests.available" depends="version, test" description="Package this project">
@@ -704,19 +779,17 @@
     </target>
 	
     <!--
-		Run package, then publish locally, then try to publish to artifactory
+		Run package, then publish locally
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
-        <!-- <antcall target="publish-artifactory-init"/> -->
         <!-- specify conf to publish and skip the test conf -->
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
-        <!-- <antcall target="publish-artifactory"/> -->
     </target>
     
 	<!--
@@ -727,7 +800,7 @@
         <!-- specify conf to publish and skip the test conf -->
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"/>
@@ -740,7 +813,7 @@
     -->
     <target name="publish-artifactory-init" if="publish.jar.target" description="Resolve ivy dependencies and create pom file to prepare for publishing to Artifactory">
         <property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
-        <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom"/>
+        <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom, skarsigner"/>
         <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
         <ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom" />
     </target>
@@ -751,27 +824,27 @@
     <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, optional, core, pom"
+                     conf="default, master, optional, core, pom, skarsigner"
                      resolver="${publish.jar.target}"
                      pubrevision="${version}"
                      overwrite="true"
                      publishivy="false"/>
         <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
     </target>
-
+	
     <!--
     -->
     <target name="publish-all" depends="info, clean, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository">
-        <antcall target="publish-artifactory-init"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"
                 />
         <echo message="project ${ant.project.name} released with version ${version}"/>
+		<!-- <antcall target="publish-skarsigner"/> -->
     </target>
 
     <target name="skiptests">
@@ -782,16 +855,16 @@
     -->
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
-        <antcall target="publish-artifactory-init"/>
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"/>
         <echo message="project ${ant.project.name} released with version ${version}"/>
+		<!-- <antcall target="publish-skarsigner"/> -->
     </target>
-
+	
     <!--
     -->
     <target name="clean" description="Clean the project">

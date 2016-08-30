@@ -11,7 +11,8 @@
     <property name="module.package.jar.disabled" value="true"/>
     <property name="module.compile.optimize" value="on"/>
     <property name="module.idea.dependencies.scope" value="PROVIDED"/>
-    <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
+	<property name="file.extension" value="${moduleFileExtension}"/>
+	<property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
     <property name="src.root" value="${basedir}/../../../../"/>
 
