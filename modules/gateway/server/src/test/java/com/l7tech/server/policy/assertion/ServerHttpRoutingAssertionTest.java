@@ -1564,7 +1564,7 @@ public class ServerHttpRoutingAssertionTest {
 
     @BugId("SSG-7885")
     @Test
-    public void testSomethingToDoWithTheProxyConfig() throws Exception {
+    public void testProxyConfigInAssertionGetPassedToFactory() throws Exception {
         String requestBody = "<foo/>";
 
         HttpRoutingAssertion assertion = new HttpRoutingAssertion();
