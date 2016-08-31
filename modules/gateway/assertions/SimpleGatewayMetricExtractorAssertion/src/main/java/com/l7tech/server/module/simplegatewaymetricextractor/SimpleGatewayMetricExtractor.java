@@ -4,8 +4,8 @@ import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.metrics.GatewayMetricsListener;
@@ -18,10 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +56,6 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                         .append("policy name=").append(policyNameAndGuid.left).append(" ")
                         .append("policy guid=").append(policyNameAndGuid.right).append(" ")
                         .append("number=").append(assertionNumber).append(" ")
-                        .append("className=").append(assertion.getClass().getSimpleName()).append(" ")
                         .append("assName=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
                         .append("startTime=").append(metrics.getStartTimeMs()).append(" ")//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
                         .append("latency=").append(metrics.getLatencyMs())

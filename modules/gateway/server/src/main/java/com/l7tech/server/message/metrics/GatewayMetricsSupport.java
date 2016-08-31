@@ -9,7 +9,7 @@ public interface GatewayMetricsSupport {
     /**
      * sets the {@link GatewayMetricsPublisher}
      *
-     * @param publisher the publisher to be set. Can be {@code null} in the case there are no subscribers {@link GatewayMetricsListener}
+     * @param publisher the publisher to be set. Can be {@code null} in the case there are no {@link GatewayMetricsListener subscribers}
      */
     void setGatewayMetricsEventsPublisher(@Nullable GatewayMetricsPublisher publisher);
 

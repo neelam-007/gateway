@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.AbstractReferenceCounted;
@@ -71,6 +72,10 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
             result = rootAssertion.checkRequest(context);
         } catch (AssertionStatusException e) {
             result = e.getAssertionStatus();
+        } catch (final Throwable ex) {
+            if (context != null)
+                GatewayMetricsUtils.publishAssertionFinish(context, rootAssertion, new AssertionMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
+            throw ex;
         } finally {
             assLatencyEndTime = timeSource.currentTimeMillis();
         }

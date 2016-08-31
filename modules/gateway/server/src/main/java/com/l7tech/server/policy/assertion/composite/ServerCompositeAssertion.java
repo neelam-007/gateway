@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -16,6 +17,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
@@ -140,6 +142,9 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
                 result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {
                 result = e.getAssertionStatus();
+            } catch (final Throwable ex) {
+                GatewayMetricsUtils.publishAssertionFinish(context, kid, new AssertionMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
+                throw ex;
             } finally {
                 assLatencyEndTime = timeSource.currentTimeMillis();
             }

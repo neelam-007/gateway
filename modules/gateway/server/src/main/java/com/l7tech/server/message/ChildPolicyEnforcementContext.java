@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsSupport;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
@@ -308,8 +307,8 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
             debugContext.onFinishAssertion(this);
         }
 
-        if (gatewayMetricsEventsPublisher != null && assertionMetrics != null) {
-            gatewayMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
+        if (assertionMetrics != null) {
+            GatewayMetricsUtils.publishAssertionFinish(this, assertion, assertionMetrics);
         }
     }
 

@@ -23,9 +23,9 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsSupport;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -577,12 +577,9 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         }
         currentAssertion = null; // we don't currently keep a stack since composites are not interesting
 
-        if (gatewayMetricsEventsPublisher != null && assertionMetrics != null) {
-            gatewayMetricsEventsPublisher.publishEvent(new AssertionFinished(this, assertion.getAssertion(), assertionMetrics));
+        if (assertionMetrics != null) {
+            GatewayMetricsUtils.publishAssertionFinish(this, assertion, assertionMetrics);
         }
-
-        // global policy invoker in message processor, message processor invocation of service policy, concurrent all
-        // in bound transport pass pec into all assertions?  default as traceable
     }
 
     /**

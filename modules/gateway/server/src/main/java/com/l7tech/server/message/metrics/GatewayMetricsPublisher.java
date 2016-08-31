@@ -75,7 +75,7 @@ public final class GatewayMetricsPublisher implements PostStartupApplicationList
      *
      * @param event the event {@link AssertionFinished} to be published. Cannot be {@code null}
      */
-    public void publishEvent(@NotNull final AssertionFinished event) {
+    void publishEvent(@NotNull final AssertionFinished event) {
         for (final GatewayMetricsListener subscriber : subscribers) {
             try {
                 subscriber.assertionFinished(event);
