@@ -65,6 +65,9 @@ public final class GatewayMetricsUtils {
         }
     }
 
+    /**
+     * Our private {@link GatewayMetricsEvent} implementation.
+     */
     private static class GatewayMetricsEventImpl implements GatewayMetricsEvent {
         private final ReadOnlyPolicyEnforcementContext context;
 
@@ -663,7 +666,7 @@ public final class GatewayMetricsUtils {
     }
 
     /**
-     * {@link AssertionFinished} implementation.
+     * Our private {@link AssertionFinished} implementation.
      */
     private static class AssertionFinishedImpl extends GatewayMetricsEventImpl implements AssertionFinished {
         private final Assertion assertion;
@@ -712,6 +715,15 @@ public final class GatewayMetricsUtils {
         }
     }
 
+    /**
+     * Utility method to create a new instance of our private {@link AssertionFinished} event.<br/>
+     * Used by unit tests.
+     *
+     * @param context             the associated PEC.  Required and cannot be {@code null}.
+     * @param assertion           the assertion that finished executing.  Required and cannot be {@code null}.
+     * @param assertionMetrics    the {@code assertion} metrics.  Required and cannot be {@code null}.
+     * @return a new instance of {@link AssertionFinishedImpl}, never {@code null}.
+     */
     @NotNull
     static AssertionFinished createAssertionFinishedEvent(
             @NotNull final PolicyEnforcementContext context,

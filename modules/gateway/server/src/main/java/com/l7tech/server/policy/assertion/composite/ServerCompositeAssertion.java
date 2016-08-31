@@ -17,7 +17,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeSource;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
