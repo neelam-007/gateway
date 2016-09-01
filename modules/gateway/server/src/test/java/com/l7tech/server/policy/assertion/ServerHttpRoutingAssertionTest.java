@@ -19,7 +19,9 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.log.TestHandler;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -33,8 +35,10 @@ import com.l7tech.server.identity.cert.TrustedCertServicesImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.security.cert.TestCertValidationProcessor;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.SslClientHostnameVerifier;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
@@ -68,6 +72,7 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1564,47 +1569,33 @@ public class ServerHttpRoutingAssertionTest {
 
     @BugId("SSG-7885")
     @Test
-    public void testProxyConfigInAssertionGetPassedToFactory() throws Exception {
-        String requestBody = "<foo/>";
+    public void testProxyConfigGetsResolvedFromContextVariables() throws Exception {
+        ServerVariables.setSecurePasswordManager(new SecurePasswordManagerBuilder()
+                .addPassword("proxypassword", "passwordOfProxy")
+                .build());
 
-        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
-        assertion.setProtectedServiceUrl("http://localhost:8080/test");
-        assertion.setHttpMethod(HttpMethod.POST);
-        assertion.setProxyHost("proxy.com");
-        assertion.setProxyPort(1330);
-        assertion.setProxyUsername("proxyUserName");
-        assertion.setProxyPassword("proxyPassword");
+        // let's build a ServerHttpRoutingAssertion that tries to contact a proxy
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(
+                new HttpRoutingAssertionBuilder()
+                        .withProtectedServiceUrl("http://localhost:8080/test").withHttpMethod(HttpMethod.POST)
+                        .withProxyHost("${proxyHost}").withProxyPort("${proxyPort}").withProxyUsername("${proxyUserName}")
+                        .withProxyPassword("${secpass.proxypassword.plaintext}")
+                        .build(),
+                ApplicationContexts.getTestApplicationContext()
+        );
 
-        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
-        GenericHttpResponse response = mock(GenericHttpResponse.class);
-        when(response.getAsString(anyBoolean(), anyInt())).thenThrow(new RuntimeException("Cesar exception!!!"));
-
-        InputStream responseStream = mock(InputStream.class);
-        when(response.getInputStream()).thenReturn(responseStream);
-        when(response.getContentLength()).thenThrow(new RuntimeException("Cesar exception!!!"));
-        when(response.getContentType()).thenThrow(new RuntimeException("Cesar exception!!!"));
-        when(response.getStatus()).thenReturn(200);
-        when(response.getHeaders()).thenReturn(mock(HttpHeaders.class));
-
-        GenericHttpRequest request = mock(GenericHttpRequest.class);
-        when(request.getResponse()).thenReturn(response);
-
+        // let's build a fake HttpComponentsClient that returns a status of 200 and does nothing else
+        GenericHttpRequest request = new GenericHttpRequestBuilder()
+                .withResponse(new GenericHttpResponseBuilder().withStatus(200).withHeaders(mock(HttpHeaders.class))
+                        .build())
+                .build();
         final HttpComponentsClient client = mock(HttpComponentsClient.class);
         when(client.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(request);
 
-        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest(new MockServletContext());
-        mockHttpServletRequest.setMethod("POST");
-
-        Message requestMessage = new Message(XmlUtil.stringAsDocument(requestBody));
-        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
-        requestMessage.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
-        requestMessage.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
-
-        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
-
-        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        // we need a container where we can keep track of the ProxyConfig object passed to the client factory
         final HttpProxyConfig[] proxyConfigPassedIn = new HttpProxyConfig[1];
+
+        // let's override client factory
         routingAssertion.setHttpClientFactory(new GenericHttpClientFactory() {
             @Override
             public GenericHttpClient createHttpClient() {
@@ -1617,13 +1608,141 @@ public class ServerHttpRoutingAssertionTest {
                 return client;
             }
         });
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        pec.setVariable("proxyHost", "proxy.com");
+        pec.setVariable("proxyPort", "1330");
+        pec.setVariable("proxyUsername", "userNameOfProxy");
+        pec.setVariable("proxypassword", "passwordOfProxy");
+
         assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
         assertNotNull("Proxy config was not passed into createClient method", proxyConfigPassedIn[0]);
         assertEquals("Wrong proxy config was pass into createClient method",
-                new HttpProxyConfig("proxy.com", 1330, "proxyUserName", "proxyPassword"),
+                new HttpProxyConfig("proxy.com", 1330, "userNameOfProxy", "passwordOfProxy"),
                 proxyConfigPassedIn[0]);
     }
 
+    static class SecurePasswordManagerBuilder {
+        private final Map<String, String> passwords;
+
+        SecurePasswordManagerBuilder() {
+            passwords = new HashMap<>();
+        }
+
+        SecurePasswordManagerBuilder addPassword(String key, String password) {
+            passwords.put(key, password);
+            return this;
+        }
+
+        SecurePasswordManager build() throws FindException, ParseException {
+            SecurePasswordManager manager = mock(SecurePasswordManager.class);
+            for (Map.Entry<String, String> entry : passwords.entrySet()) {
+                SecurePassword password = new SecurePassword(entry.getKey());
+                password.setUsageFromVariable(true);
+                password.setEncodedPassword(entry.getValue());
+                when(manager.findByUniqueName(entry.getKey())).thenReturn(password);
+                when(manager.decryptPassword(entry.getValue())).thenReturn(entry.getValue().toCharArray());
+            }
+
+            return manager;
+        }
+    }
+
+    static class HttpRoutingAssertionBuilder {
+        private final HttpRoutingAssertion assertion;
+
+        HttpRoutingAssertionBuilder() {
+            this.assertion = new HttpRoutingAssertion();
+        }
+
+        HttpRoutingAssertionBuilder withProtectedServiceUrl(String url) {
+            assertion.setProtectedServiceUrl(url);
+            return this;
+        }
+
+        HttpRoutingAssertionBuilder withHttpMethod(HttpMethod method) {
+            assertion.setHttpMethod(method);
+            return this;
+        }
+
+        HttpRoutingAssertionBuilder withProxyHost(String host) {
+            assertion.setProxyHost(host);
+            return this;
+        }
+
+        HttpRoutingAssertionBuilder withProxyPort(String port) {
+            assertion.setProxyPort(port);
+            return this;
+        }
+
+        HttpRoutingAssertionBuilder withProxyUsername(String username) {
+            assertion.setProxyUsername(username);
+            return this;
+        }
+
+        HttpRoutingAssertionBuilder withProxyPassword(String password) {
+            assertion.setProxyPassword(password);
+            return this;
+        }
+
+        HttpRoutingAssertion build() {
+            return assertion;
+        }
+    }
+
+    static class GenericHttpResponseBuilder {
+        private int status;
+        private HttpHeaders headers;
+
+        GenericHttpResponseBuilder withStatus(int status) {
+            this.status = status;
+            return this;
+        }
+
+        GenericHttpResponseBuilder withHeaders(HttpHeaders headers) {
+            this.headers = headers;
+            return this;
+        }
+
+        GenericHttpResponse build() throws GenericHttpException {
+            GenericHttpResponse response = mock(GenericHttpResponse.class);
+            when(response.getStatus()).thenReturn(status);
+            when(response.getHeaders()).thenReturn(headers);
+            return response;
+        }
+    }
+
+    static class GenericHttpRequestBuilder {
+        private GenericHttpResponse response;
+
+        GenericHttpRequestBuilder withResponse(GenericHttpResponse response) throws GenericHttpException {
+            this.response = response;
+            return this;
+        }
+
+        GenericHttpRequest build() throws GenericHttpException {
+            GenericHttpRequest request = mock(GenericHttpRequest.class);
+            when(request.getResponse()).thenReturn(response);
+            return request;
+        }
+    }
+
+    static class MockHttpServletRequestBuilder {
+        private final MockHttpServletRequest request;
+
+        MockHttpServletRequestBuilder() {
+            request = new MockHttpServletRequest();
+        }
+
+        MockHttpServletRequestBuilder withMethod(String method) {
+            request.setMethod(method);
+            return this;
+        }
+
+        MockHttpServletRequest build() {
+            return request;
+        }
+    }
 
     private PolicyEnforcementContext createContentTypeTestPec(HttpRoutingAssertion hra, ApplicationContext appContext, String method, final Header[] contentTypeHeaders, final String[] contentTypeHeaderValueCollector, boolean nobody) throws Exception {
         // Configure to combine passthrough

@@ -259,8 +259,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
         }
 
-        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
-
         // Use a proxy
         return new GenericHttpClientFactory() {
             @Override
