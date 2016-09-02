@@ -6,6 +6,10 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.message.metrics.GatewayMetricsListener;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsSupport;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.test.BugId;
 import org.apache.commons.collections.CollectionUtils;
@@ -121,6 +125,22 @@ public class ChildPolicyEnforcementContextTest {
         invokeAllRoutingMetricMethods(context);
 
         assertTrue("No methods should be getting forwarded", forwarded.isEmpty());
+    }
+
+    /**
+     * Test {@link GatewayMetricsUtils#setPublisher(PolicyEnforcementContext, PolicyEnforcementContext)} method.
+     * {@link ChildPolicyEnforcementContext} is only accessible within its package; therefore, the test is written here
+     * @throws Exception
+     */
+    @Test
+    public void testSetPublisherForChildPec() throws Exception {
+        GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
+        GatewayMetricsListener subscriber = new GatewayMetricsListener() {};
+        publisher.addListener(subscriber);
+        GatewayMetricsUtils.setPublisher(parent, publisher);
+
+        GatewayMetricsUtils.setPublisher(parent,child);
+        assertEquals(((GatewayMetricsSupport)parent).getGatewayMetricsEventsPublisher(), child.getGatewayMetricsEventsPublisher());
     }
 
     private PolicyEnforcementContext buildParentExpectingForwards(final Set<String> forwarded) {

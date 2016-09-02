@@ -56,7 +56,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                         .append("policy name=").append(policyNameAndGuid.left).append(" ")
                         .append("policy guid=").append(policyNameAndGuid.right).append(" ")
                         .append("number=").append(assertionNumber).append(" ")
-                        .append("assName=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
+                        .append("assertion name=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
                         .append("startTime=").append(metrics.getStartTimeMs()).append(" ")//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
                         .append("latency=").append(metrics.getLatencyMs())
                         .toString()

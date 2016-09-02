@@ -25,11 +25,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 /**
+ * Unit Tests for {@link GatewayMetricsUtils}
  */
 @RunWith(MockitoJUnitRunner.class)
 public class GatewayMetricsUtilsTest {
-
     @Mock
     private ServerAssertion serverAssertion;
 
@@ -39,11 +42,14 @@ public class GatewayMetricsUtilsTest {
     @Mock
     AssertionTraceListener traceListener;
 
+    private PolicyEnforcementContext context;
     private final GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
+    private GatewayMetricsListener subscriber = new GatewayMetricsListener() {};
 
     @Before
     public void setUp() throws FindException {
         Mockito.doReturn(assertion).when(serverAssertion).getAssertion();
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
     }
 
     static class MyListener extends GatewayMetricsListener {
@@ -60,6 +66,16 @@ public class GatewayMetricsUtilsTest {
 
     private GatewayMetricsListener createListener(final Functions.UnaryVoid<AssertionFinished> callable) {
         return new MyListener(callable);
+    }
+
+    @Test
+    public void testSetPublisher() throws Exception {
+        GatewayMetricsUtils.setPublisher(context, publisher);
+        assertNull("Publisher has no subscribers, should be null", ((GatewayMetricsSupport)context).getGatewayMetricsEventsPublisher());
+
+        publisher.addListener(subscriber);
+        GatewayMetricsUtils.setPublisher(context, publisher);
+        assertNotNull("Publisher has subscribers, should be not null", ((GatewayMetricsSupport)context).getGatewayMetricsEventsPublisher());
     }
 
     @Test
@@ -191,4 +207,10 @@ public class GatewayMetricsUtilsTest {
         }
     }
 
+    @Test
+    public void testAssertionFinishedImpl() throws Exception {
+        AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, serverAssertion.getAssertion(), new AssertionMetrics(0, 0));
+        assertNotNull("Assertion in assertionFinished cannot be null", assertionFinished.getAssertion());
+        assertNotNull("AssertionMetrics in assertionFinished cannot be null", assertionFinished.getAssertionMetrics());
+    }
 }
