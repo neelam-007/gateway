@@ -593,7 +593,13 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             public Void call( final ClientBag clientBag ) throws MQException {
                                 MQQueue replyToQueue = null;
                                 try {
-                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption());
+                                    if (StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
+                                        logger.log(Level.FINER, "Accessing reply queue specifying replyToQueueManagerName: " + requestMessage.replyToQueueManagerName);
+                                        replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption(), requestMessage.replyToQueueManagerName, null, null);
+                                    } else {
+                                        logger.log(Level.FINER, "Accessing reply queue without specifying replyToQueueManagerName");
+                                        replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption());
+                                    }
                                     logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
                                     setResponseCorrelationId(connector, requestMessage, responseMessage);
                                     replyToQueue.put( responseMessage, replyOptions );
@@ -604,9 +610,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                                 return null;
                             }
                         }, allowReconnect );
-                    } catch ( MQException e ) {
-                        logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
-                    } catch ( MqNativeConfigException e ) {
+                    } catch ( MQException | MqNativeConfigException e ) {
                         logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
                     }
                 }
