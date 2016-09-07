@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
+import com.ibm.mq.MQQueue;
+import com.ibm.mq.MQQueueManager;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH2;
@@ -34,9 +36,7 @@ import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,20 +48,21 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.GregorianCalendar;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeClient.MqNativeConnectionListener;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeModule.DEFAULT_MESSAGE_MAX_BYTES;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.Functions.NullaryThrows;
 import static org.junit.Assert.*;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
@@ -359,6 +360,108 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
 
         mqNativeModuleSpy.handleMessageForConnector(ssgActiveConnector, mqNativeClient, mqMessage);
 
+    }
+
+    /**
+     * Ensure that the replyToQueueManagerName IS specified when accessing the reply queue when the
+     * io.mqRoutingIncludeReplyToQueueManagerName cluster property is set to true (enabled)
+     */
+    @Test
+    public void testSendResponse_ReplyToQueueManagerNameSpecified_NameUsedToAccessQueue() throws Exception {
+        handleMessageInitialize();
+
+        String replyQueue = "replyQueue";
+        String queueManagerName = "exampleReplyQueueManager1";
+
+        mqMessage.replyToQueueName = replyQueue;
+        mqMessage.replyToQueueManagerName = queueManagerName;
+
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_AUTOMATIC);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(anyString(), anyInt(), anyString(), anyString(), anyString())).thenReturn(mock(MQQueue.class));
+
+        ClientBag clientBag = mock(ClientBag.class);
+
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
+
+        verify(queueManager, times(1)).accessQueue(eq(replyQueue), anyInt(), eq(queueManagerName), anyString(), anyString());
+        verify(queueManager, never()).accessQueue(anyString(), anyInt());
+    }
+
+    /**
+     * Ensure that the replyToQueueManagerName is NOT specified when accessing the reply queue when the
+     * io.mqRoutingIncludeReplyToQueueManagerName cluster property is set to false (disabled)
+     */
+    @Test
+    public void testSendResponse_ReplyToQueueManagerNameSpecifiedButIncludeDisabled_NameNotUsedToAccessQueue() throws Exception {
+        handleMessageInitialize();
+
+        String replyQueue = "replyQueue";
+        String queueManagerName = "exampleReplyQueueManager1";
+
+        mqMessage.replyToQueueName = replyQueue;
+        mqMessage.replyToQueueManagerName = queueManagerName;
+
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_AUTOMATIC);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(anyString(), anyInt())).thenReturn(mock(MQQueue.class));
+
+        ClientBag clientBag = mock(ClientBag.class);
+
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        mqNativeModule.propertyChange(new PropertyChangeEvent(this, "io.mqRoutingIncludeReplyToQueueManagerName", null, "false"));
+
+        mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
+
+        verify(queueManager, never()).accessQueue(anyString(), anyInt(), anyString(), anyString(), anyString());
+        verify(queueManager, times(1)).accessQueue(eq(replyQueue), anyInt());
     }
 
     @Test

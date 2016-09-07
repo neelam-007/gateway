@@ -38,6 +38,8 @@ import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +48,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +70,7 @@ import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 /**
  * MQ native listener module (aka boot process).
  */
-public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
+public class MqNativeModule extends ActiveTransportModule implements ApplicationListener, PropertyChangeListener {
     static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     static final int DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS = 1000;
 
@@ -78,7 +81,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private static final String PROP_ENABLE_MQ_LOGGING = "com.l7tech.external.assertions.mqnative.server.enableMqLogging";
     private static final String SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT = "com.ibm.mq.tuning.socketConnectTimeout";
 
-    private final Map<Goid, Set<MqNativeListener>> activeListeners = new ConcurrentHashMap<Goid, Set<MqNativeListener>> ();
+    private final Map<Goid, Set<MqNativeListener>> activeListeners = new ConcurrentHashMap<>();
     private final ThreadPoolBean threadPoolBean;
 
     static {
@@ -115,6 +118,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     private MQPoolToken connectionPoolToken;
 
+    private boolean includeReplyToQueueManagerName = true;
+
     /**
      * Single constructor for MQNative boot process.
      *
@@ -136,6 +141,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      */
     @Override
     protected void doStart() throws LifecycleException {
+        this.includeReplyToQueueManagerName =
+                serverConfig.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, true);
+
         // initialize the default connection pool
         if ( connectionPoolToken == null && serverConfig.getBooleanProperty( PROP_ENABLE_POOLING, false ) ) {
             connectionPoolToken = new MQPoolToken();
@@ -220,7 +228,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             numberOfListenersToCreate = maxListenersAllowed;
         }
 
-        Set<MqNativeListener> listenerSet = new HashSet<MqNativeListener>( numberOfListenersToCreate );
+        Set<MqNativeListener> listenerSet = new HashSet<>( numberOfListenersToCreate );
         activeListeners.put( ssgActiveConnector.getGoid(), listenerSet );
         for ( int i = 1; i <= numberOfListenersToCreate; i++ ) {
             MqNativeListener newListener = null;
@@ -593,7 +601,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             public Void call( final ClientBag clientBag ) throws MQException {
                                 MQQueue replyToQueue = null;
                                 try {
-                                    if (StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
+                                    if (includeReplyToQueueManagerName && StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
                                         logger.log(Level.FINER, "Accessing reply queue specifying replyToQueueManagerName: " + requestMessage.replyToQueueManagerName);
                                         replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption(), requestMessage.replyToQueueManagerName, null, null);
                                     } else {
@@ -683,13 +691,18 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     }
                 }, false );
                 posted = true;
-            } catch (MQException e) {
-                logger.log( Level.WARNING, "Error sending message to failure queue: " + getMessage(e), getDebugException(e));
-            } catch ( MqNativeConfigException e ) {
+            } catch (MQException | MqNativeConfigException e) {
                 logger.log( Level.WARNING, "Error sending message to failure queue: " + getMessage(e), getDebugException(e));
             }
         }
         return posted;
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME.equals(evt.getPropertyName())) {
+            includeReplyToQueueManagerName = Boolean.parseBoolean((String) evt.getNewValue());
+        }
     }
 
     void setMessageProcessor(final MessageProcessor messageProcessor) {
