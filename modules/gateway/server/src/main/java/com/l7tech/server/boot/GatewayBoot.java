@@ -44,7 +44,6 @@ public class GatewayBoot {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
 
-    private NodePropertiesLoader nodeProperties = NodePropertiesLoaderImpl.getInstance();
     private ClassPathXmlApplicationContext applicationContext;
     private ShutdownWatcher shutdowner;
 
@@ -262,7 +261,7 @@ public class GatewayBoot {
     private void createApplicationContext() {
         final boolean allowCircularDependencies = ConfigFactory.getBooleanProperty( SYSPROP_ALLOW_CIRCULARITY, false );
         final long startTime = System.currentTimeMillis();
-        final String dbType = nodeProperties.getProperty("node.db.type", "mysql");
+        final String dbType = NodePropertiesLoaderImpl.getInstance().getProperty("node.db.type", "mysql");
         logger.info("Database type: " + dbType);
         final boolean useMysql = "mysql".equals(dbType);
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());

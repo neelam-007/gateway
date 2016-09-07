@@ -19,19 +19,7 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
     private static final String NODE_PROPERTIES_FILE_NAME = "node.properties";
     private static final String ENV_VAR_DEFINITIONS_FILE = "resources/nodePropsEnvVarDefs.properties";
 
-    private static final String NODE_ID = "node.id";
-    private static final String NODE_ENABLED = "node.enabled";
-    private static final String NODE_JAVA_PATH = "node.java.path";
-    private static final String NODE_JAVA_HEAP = "node.java.heap";
-    private static final String NODE_CLUSTER_PASS = "node.cluster.pass";
-    private static final String NODE_DB_TYPE = "node.db.type";
-    private static final String NODE_DB_CONFIG_MAIN_NAME = "node.db.config.main.name";
-    private static final String NODE_DB_CONFIG_MAIN_HOST = "node.db.config.main.host";
-    private static final String NODE_DB_CONFIG_MAIN_PORT = "node.db.config.main.port";
-    private static final String NODE_DB_CONFIG_MAIN_USER = "node.db.config.main.user";
-    private static final String NODE_DB_CONFIG_MAIN_PASS = "node.db.config.main.pass";
-
-    private static NodePropertiesLoader INSTANCE = new NodePropertiesLoaderImpl();
+    private static NodePropertiesLoader INSTANCE = null;
 
     private Properties properties = new Properties();
 
@@ -47,48 +35,27 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
         if (diskless) {
             Properties envVarDefs = new Properties();
 
+            // load corresponding environment variable names for node properties
             try {
                 envVarDefs.load(NodePropertiesLoaderImpl.class.getResourceAsStream(ENV_VAR_DEFINITIONS_FILE));
             } catch (IOException e) {
                 throw new IllegalStateException("Could not load node properties environment variable definitions");
             }
 
-            String idVar = envVarDefs.getProperty(NODE_ID);
-            String enabledVar = envVarDefs.getProperty(NODE_ENABLED);
-            String javaPathVar = envVarDefs.getProperty(NODE_JAVA_PATH);
-            String javaHeapVar = envVarDefs.getProperty(NODE_JAVA_HEAP);
-            String clusterPassVar = envVarDefs.getProperty(NODE_CLUSTER_PASS);
-            String dbTypeVar = envVarDefs.getProperty(NODE_DB_TYPE);
-            String dbConfigMainNameVar = envVarDefs.getProperty(NODE_DB_CONFIG_MAIN_NAME);
-            String dbConfigMainHostVar = envVarDefs.getProperty(NODE_DB_CONFIG_MAIN_HOST);
-            String dbConfigMainPortVar = envVarDefs.getProperty(NODE_DB_CONFIG_MAIN_PORT);
-            String dbConfigMainUserVar = envVarDefs.getProperty(NODE_DB_CONFIG_MAIN_USER);
-            String dbConfigMainPassVar = envVarDefs.getProperty(NODE_DB_CONFIG_MAIN_PASS);
+            // add all node properties from environment variables
+            for (String nodePropertyName : envVarDefs.stringPropertyNames()) {
+                String environmentVariable = envVarDefs.getProperty(nodePropertyName);
 
-            String nodeId = System.getenv(idVar);
+                String nodePropertyValue = System.getenv(environmentVariable);
 
-            /**
-             * When using a node.properties file a generated a node id is added to the properties file if one is
-             * not present, which is then used on subsequent gateway restarts.
-             * If we are operating in diskless config mode then a node id must be specified via an environment variable
-             * otherwise a new id will be generated on each gateway startup and stored to the database in the cluster
-             * node info table, leading to an ever-increasing number of invalid entries.
-             */
-            if (null == nodeId || nodeId.trim().isEmpty()) {
-                throw new IllegalStateException("A node id must be specified");
+                if (null == nodePropertyValue) {
+                    throw new IllegalStateException("The '" + environmentVariable +
+                            "' environment variable must be defined for the '" + nodePropertyName +
+                            "' node property when using diskless config mode");
+                } else {
+                    properties.setProperty(nodePropertyName, nodePropertyValue);
+                }
             }
-
-            properties.setProperty(NODE_ID, nodeId);
-            properties.setProperty(NODE_ENABLED, System.getenv(enabledVar));
-            properties.setProperty(NODE_JAVA_PATH, System.getenv(javaPathVar));
-            properties.setProperty(NODE_JAVA_HEAP, System.getenv(javaHeapVar));
-            properties.setProperty(NODE_CLUSTER_PASS, System.getenv(clusterPassVar));
-            properties.setProperty(NODE_DB_TYPE, System.getenv(dbTypeVar));
-            properties.setProperty(NODE_DB_CONFIG_MAIN_NAME, System.getenv(dbConfigMainNameVar));
-            properties.setProperty(NODE_DB_CONFIG_MAIN_HOST, System.getenv(dbConfigMainHostVar));
-            properties.setProperty(NODE_DB_CONFIG_MAIN_PORT, System.getenv(dbConfigMainPortVar));
-            properties.setProperty(NODE_DB_CONFIG_MAIN_USER, System.getenv(dbConfigMainUserVar));
-            properties.setProperty(NODE_DB_CONFIG_MAIN_PASS, System.getenv(dbConfigMainPassVar));
         } else {
             final File configDir = ServerConfig.getInstance()
                     .getLocalDirectoryProperty(ServerConfigParams.PARAM_CONFIG_DIRECTORY, false);
@@ -118,6 +85,14 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
     }
 
     public static NodePropertiesLoader getInstance() {
+        if (null == INSTANCE) {
+            synchronized (NodePropertiesLoaderImpl.class) {
+                if (null == INSTANCE) {
+                    INSTANCE = new NodePropertiesLoaderImpl();
+                }
+            }
+        }
+
         return INSTANCE;
     }
 
