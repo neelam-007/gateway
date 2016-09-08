@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.XmlSafe;
+import org.apache.commons.collections.Unmodifiable;
 
 import java.io.Serializable;
 import java.util.*;
@@ -47,8 +49,11 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private boolean failIfTooManyResults = false;
     private boolean allowMultipleResults = false;
     private int maximumResults = 0;
+    private String selectedScope;
+    private String dnText;
 
     public LDAPQueryAssertion() {
+
     }
 
     /**
@@ -112,7 +117,6 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     public String getSearchFilter() {
         return searchFilter;
     }
-
     public void setSearchFilter(String searchFilter) {
         this.searchFilter = searchFilter;
     }
@@ -158,8 +162,8 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
-            oldEntityHeader.getGoid().equals(ldapProviderOid) &&
-            newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                oldEntityHeader.getGoid().equals(ldapProviderOid) &&
+                newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
             ldapProviderOid = newEntityHeader.getGoid();
         }
     }
@@ -241,6 +245,22 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
 
     public void setMaximumResults( final int maximumResults ) {
         this.maximumResults = maximumResults;
+    }
+
+    public String getSelectedScope() {
+        return this.selectedScope;
+    }
+
+    public void setSelectedScope(final String selectedScope) {
+        this.selectedScope = selectedScope;
+    }
+
+    public String getDnText() {
+        return dnText;
+    }
+
+    public void setDnText(String dnText) {
+        this.dnText = dnText;
     }
 
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */
