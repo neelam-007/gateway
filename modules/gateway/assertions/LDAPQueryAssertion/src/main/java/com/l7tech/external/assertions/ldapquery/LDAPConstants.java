@@ -20,7 +20,6 @@ import java.util.Map;
  */
 public class LDAPConstants{
 
-    public static final String SUBTREE_SCOPE = "SUBTREE";
     public static final String ONELEVEL_SCOPE = "ONELEVEL";
     public static final String OBJECT_SCOPE= "OBJECT";
 
@@ -28,10 +27,8 @@ public class LDAPConstants{
     //Example : GUI Option Index <==> LOGICAL SCOPE
     private static final Map<String,String> SCOPE = new HashMap<String,String>(){
         {
-            put(SUBTREE_SCOPE, "0");
             put(ONELEVEL_SCOPE, "1");
             put(OBJECT_SCOPE, "2");
-            put("0", SUBTREE_SCOPE);
             put("1", ONELEVEL_SCOPE);
             put("2", OBJECT_SCOPE);
         }

@@ -25,6 +25,7 @@ import java.awt.event.ItemListener;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -210,8 +211,10 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         }
         searchField.setText(assertion.getSearchFilter());
-        searchField.setCaretPosition( 0 );
-        selectScopeCombo.setSelectedIndex(Integer.parseInt(LDAPConstants.SCOPEREF().get(assertion.getSelectedScope())));
+        searchField.setCaretPosition(0);
+        //Default Option should be Subtree
+        if(LDAPConstants.SCOPEREF().get(assertion.getSelectedScope()) == null) selectScopeCombo.setSelectedIndex(0);
+        else selectScopeCombo.setSelectedIndex(Integer.parseInt(LDAPConstants.SCOPEREF().get(assertion.getSelectedScope())));
         protectAgainstLDAPInjectionCheckBox.setSelected(assertion.isSearchFilterInjectionProtected());
         cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
         cacheSizeSpinner.setValue(assertion.getCacheSize());
