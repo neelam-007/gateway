@@ -207,6 +207,9 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                     .createPolicyEnforcementContext(context, config.getBooleanProperty(PROP_PASS_METRICS_TO_PARENT));
             ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
 
+            for (Integer assertionOrdinal : context.getAssertionOrdinalPath()) {
+                childContext.pushAssertionOrdinal(assertionOrdinal);
+            }
             enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));
 
             populateInputVariables(config, variableMap, context, childContext, spv);
@@ -226,10 +229,6 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     protected void enableTracing(final PolicyEnforcementContext parentContext, final PolicyEnforcementContext childContext, boolean allowTracing) {
         if (parentContext.hasTraceListener() && allowTracing) {
-            for (Integer assertionOrdinal : parentContext.getAssertionOrdinalPath()) {
-                childContext.pushAssertionOrdinal(assertionOrdinal);
-            }
-
             String traceGuid = config().getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
             if (traceGuid == null || traceGuid.trim().length() < 1) {
                 logger.info("Tracing enabled but no trace policy configured");
