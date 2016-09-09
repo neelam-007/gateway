@@ -135,23 +135,7 @@ public class DependencyFinder {
         final List ignoreDependenciesHeaders = getOption(DependencyAnalyzer.IgnoreDependenciesSearchOptionKey, List.class, (List) Collections.<EntityHeader>emptyList());
         // Adds the dependency to the dependencies found set. This needs to be done before calling the
         // getDependencies() method in order to handle the cyclical case
-        boolean bAddEntitiesAndMapping = true;
-        boolean bIncludeOnlyServicePolicy = (PropertiesUtil.getOption("IncludeOnlyServicePolicyOption", Boolean.class, false, searchOptions));
-        boolean bIncludeOnlyDependencies = (PropertiesUtil.getOption("IncludeOnlyDependenciesOption", Boolean.class, false, searchOptions));
-        if (bIncludeOnlyServicePolicy) {
-            if(!(dependency.getDependent().getDependencyType().toString().equals("SERVICE")) && !(dependency.getDependent().getDependencyType().toString().equals("POLICY")) && !(dependency.getDependent().getDependencyType().toString().equals("FOLDER"))) {
-                bAddEntitiesAndMapping = false;
-            }
-        }
-        if (bIncludeOnlyDependencies) {
-            if (dependency.getDependent().getDependencyType().toString().equals("SERVICE")) {
-                bAddEntitiesAndMapping = false;
-            }
-        }
-        if (bAddEntitiesAndMapping)
         dependenciesFound.add(dependency);
-        else
-            return null;
         //check to make sure the max search depth has not been reached.
         if (searchDepth != 0 && !ignoreDependenciesHeaders.contains(getHeader(dependent))) {
             //decrement the search depth.

@@ -53,7 +53,6 @@ import com.l7tech.server.search.processors.DependencyProcessorStore;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Service;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -231,17 +230,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     private List<List<EntityHeader>> loadAllGatewayEntities(@NotNull final Map<String, Object> searchOptions) throws FindException {
         final List<List<EntityHeader>> headerLists = new ArrayList<>();
-        Boolean bIncludeOnlyServicePolicy = (PropertiesUtil.getOption("IncludeOnlyServicePolicyOption", Boolean.class, false, searchOptions));
-        Boolean bIncludeOnlyDependencies = (PropertiesUtil.getOption("IncludeOnlyDependenciesOption", Boolean.class, false, searchOptions));
         for (final Class<? extends Entity> entityClass : entityClasses) {
             final EntityHeaderSet<EntityHeader> entityHeaders;
-            if((bIncludeOnlyDependencies) && (PublishedService.class.equals(entityClass)) ) {
-                continue;
-            }
-            else if( (bIncludeOnlyServicePolicy) && (!PublishedService.class.equals(entityClass))&& (!Policy.class.equals(entityClass))&& (!Folder.class.equals(entityClass)) ){
-                continue;
-            }
-            else if (Policy.class.equals(entityClass)) {
+            if (Policy.class.equals(entityClass)) {
                 //exclude private service policies
                 EntityHeaderSet<EntityHeader> policyHeaders = entityCrud.findAll(entityClass);
                 entityHeaders = policyHeaders == null ? null : Functions.reduce(policyHeaders, new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, EntityHeader>() {
@@ -329,11 +320,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                 for(final EntityHeader header : roleHeaders){
                     if(header instanceof RoleEntityHeader){
                         final RoleEntityHeader roleHeader = (RoleEntityHeader)header;
-                        if((bIncludeOnlyDependencies) && (roleHeader.getEntityType() != null)&& (roleHeader.getEntityType().toString().equals("SERVICE")) )
-                        {
-                            continue;
-                        }
-                        else if(roleHeader.getEntityGoid() != null && ignoreIds.contains(roleHeader.getEntityGoid().toString())){
+                        if(roleHeader.getEntityGoid() != null && ignoreIds.contains(roleHeader.getEntityGoid().toString())){
                             //this is the role for an ignored entity so don't include the role
                             continue;
                         }
