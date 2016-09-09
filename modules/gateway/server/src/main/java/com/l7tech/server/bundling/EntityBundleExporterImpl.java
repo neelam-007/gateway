@@ -24,6 +24,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -59,6 +60,10 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     public static final String IncludeSolutionKitsOption = "IncludeSolutionKits";
     private static final String IncludeSolutionKits = "false";
     private static final String EncassAsPolicyDependencyDefault = "false";
+    public static final String IncludeOnlyServicePolicyOption = "IncludeOnlyServicePolicy";
+    public static final String IncludeOnlyServicePolicy = "false";
+    public static final String IncludeOnlyDependenciesOption = "IncludeOnlyDependencies";
+    public static final String IncludeOnlyDependencies = "false";
     /**
      * The mapping action for read-only entities owned by {@code SolutionKit}'s.
      */
@@ -93,6 +98,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         optionBuilder.put(DependencyAnalyzer.IncludeSolutionKitsOptionKey, Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeSolutionKitsOption, IncludeSolutionKits)));
         // do not need assertion dependency results for building export bundle
         optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
+        optionBuilder.put("IncludeOnlyServicePolicyOption",Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeOnlyServicePolicyOption, IncludeOnlyServicePolicy)));
+        optionBuilder.put("IncludeOnlyDependenciesOption",Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeOnlyDependenciesOption, IncludeOnlyDependencies)));
         return optionBuilder.map();
     }
 
