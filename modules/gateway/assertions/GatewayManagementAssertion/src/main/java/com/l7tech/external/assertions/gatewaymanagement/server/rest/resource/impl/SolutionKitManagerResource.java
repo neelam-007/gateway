@@ -134,6 +134,7 @@ public class SolutionKitManagerResource {
             static final Set<String> all = Collections.unmodifiableSet(toUniqueHashSet(
                     file,
                     instanceModifier,
+                    failOnExist,
                     solutionKitSelect,
                     entityIdReplace,
                     bundle
