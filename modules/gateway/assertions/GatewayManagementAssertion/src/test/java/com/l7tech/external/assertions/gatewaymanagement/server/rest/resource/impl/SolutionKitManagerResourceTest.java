@@ -1624,6 +1624,7 @@ public class SolutionKitManagerResourceTest {
                 Matchers.containsInAnyOrder(
                         SolutionKitManagerResource.InstallOrUpgradeParams.Form.file,
                         SolutionKitManagerResource.InstallOrUpgradeParams.Form.instanceModifier,
+                        SolutionKitManagerResource.InstallOrUpgradeParams.Form.failOnExist,
                         SolutionKitManagerResource.InstallOrUpgradeParams.Form.solutionKitSelect,
                         SolutionKitManagerResource.InstallOrUpgradeParams.Form.entityIdReplace,
                         SolutionKitManagerResource.InstallOrUpgradeParams.Form.bundle
