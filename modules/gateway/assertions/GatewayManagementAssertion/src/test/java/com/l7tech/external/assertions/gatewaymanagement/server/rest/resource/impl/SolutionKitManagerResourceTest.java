@@ -11,6 +11,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.signer.SignatureTestUtils;
+import com.l7tech.server.solutionkit.SolutionKitAdminHelper;
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import com.l7tech.server.solutionkit.SolutionKitManagerStub;
 import com.l7tech.test.util.TestUtils;
@@ -167,6 +168,8 @@ public class SolutionKitManagerResourceTest {
     private FormDataMultiPart formDataMultiPart;
     @Mock
     private SolutionKitsConfig solutionKitsConfig;
+    @Mock
+    private SolutionKitAdminHelper solutionKitAdminHelper;
 
     @Spy
     private SolutionKitManager solutionKitManager = new SolutionKitManagerStub();
@@ -252,6 +255,7 @@ public class SolutionKitManagerResourceTest {
         Response response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(sampleSkar),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -287,6 +291,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(sampleSkar),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -315,6 +320,7 @@ public class SolutionKitManagerResourceTest {
             Response response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about instanceModifier\nnull, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -355,6 +361,7 @@ public class SolutionKitManagerResourceTest {
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -395,6 +402,7 @@ public class SolutionKitManagerResourceTest {
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -433,6 +441,7 @@ public class SolutionKitManagerResourceTest {
             Response response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -473,6 +482,7 @@ public class SolutionKitManagerResourceTest {
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -513,6 +523,7 @@ public class SolutionKitManagerResourceTest {
             response = solutionKitResource.installOrUpgrade(
                     new ByteArrayInputStream(signedSampleSkarBytes),
                     null, // don't care about instanceModifier
+                    null, // don't care about failOnExist
                     null, // don't care about solutionKitSelects
                     null, // don't care about entityIdReplaces
                     null, // don't care about upgradeGuid
@@ -576,6 +587,7 @@ public class SolutionKitManagerResourceTest {
         Response response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -622,6 +634,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -667,6 +680,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -709,6 +723,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(signedTrustedAnotherSampleSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -772,6 +787,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -843,6 +859,7 @@ public class SolutionKitManagerResourceTest {
         response = solutionKitResource.installOrUpgrade(
                 new ByteArrayInputStream(tamperedSignedSkarBytes),
                 null, // don't care about instanceModifier
+                null, // don't care about failOnExist
                 null, // don't care about solutionKitSelects
                 null, // don't care about entityIdReplaces
                 null, // don't care about upgradeGuid
@@ -1320,7 +1337,7 @@ public class SolutionKitManagerResourceTest {
         when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
 
         //test Install solution kits with IM "global IM"
-        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null);
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, solutionKitAdminHelper, true);
 
         //expect all the solution kits installed have IM "global IM"
         Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
@@ -1342,7 +1359,7 @@ public class SolutionKitManagerResourceTest {
         solutionKitSelects.add(solutionKitSelect2);
 
         //Only Install
-        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects);
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, solutionKitAdminHelper, true);
 
         //Expect only solutionKit 1 and 2 to be added
         selected = solutionKitsConfig.getSelectedSolutionKits();
@@ -1371,7 +1388,7 @@ public class SolutionKitManagerResourceTest {
 
         //test try to Install solution kits with IM "global IM" with no solution kits loaded
         try {
-            solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", Collections.singletonList(solutionKitSelect1));
+            solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", Collections.singletonList(solutionKitSelect1), solutionKitAdminHelper, true);
             fail("Solution kit to install not found in skar error should be thrown");
         } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
             assertEquals(e.getResponse().getEntity().toString(), "Solution Kit ID to install: " +

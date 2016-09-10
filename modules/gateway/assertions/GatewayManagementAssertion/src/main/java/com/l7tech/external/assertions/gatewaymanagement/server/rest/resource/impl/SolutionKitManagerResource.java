@@ -126,6 +126,7 @@ public class SolutionKitManagerResource {
             // Form Params
             static final String file = "file";
             static final String instanceModifier = "instanceModifier";
+            static final String failOnExist = "failOnExist";
             static final String solutionKitSelect = "solutionKitSelect";
             static final String entityIdReplace = "entityIdReplace";
             static final String bundle = "bundle";
@@ -255,6 +256,7 @@ public class SolutionKitManagerResource {
      *
      * @param fileInputStream Input stream of the upload SKAR file.
      * @param instanceModifierParameter Global instance modifiers of to-be-upgraded/installed solution kit(s).
+     * @param failOnExistParameter Configures if Solution Kit installation should fail if one is already installed with the same ID and version. Default is true.
      * @param solutionKitSelects Which Solution Kit(s) (found by ID and Instance Modifier) in the uploaded SKAR to install/upgrade. If not provided, all Solution Kit(s) in the upload SKAR will be installed/upgraded.
      * @param entityIdReplaces Optional. To map one entity ID (from the SKAR) to an existing gateway entity ID to resolve entity conflict.  Format [find_id]::[replace_with_id].
      * @param upgradeGuid Optional, note this is a query parameter, not a form key-value. Select which Solution Kit ID(s) in the uploaded SKAR to upgrade.
@@ -265,6 +267,7 @@ public class SolutionKitManagerResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response installOrUpgrade(final @FormDataParam(InstallOrUpgradeParams.Form.file) InputStream fileInputStream,
                                      final @FormDataParam(InstallOrUpgradeParams.Form.instanceModifier) String instanceModifierParameter,
+                                     final @FormDataParam(InstallOrUpgradeParams.Form.failOnExist) String failOnExistParameter,
                                      final @FormDataParam(InstallOrUpgradeParams.Form.solutionKitSelect) List<FormDataBodyPart> solutionKitSelects,
                                      final @FormDataParam(InstallOrUpgradeParams.Form.entityIdReplace) List<FormDataBodyPart> entityIdReplaces,
                                      final @QueryParam(InstallOrUpgradeParams.Query.id) String upgradeGuid,
@@ -335,8 +338,11 @@ public class SolutionKitManagerResource {
                 throw new SignatureException("Invalid signed Zip: " + ExceptionUtils.getMessage(e), e);
             }
 
+            final boolean failOnExist;
+            failOnExist = failOnExistParameter == null || !failOnExistParameter.equalsIgnoreCase("false");
+
             // handle any user selection(s) - child solution kits
-            setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifierParameter);
+            setUserSelections(solutionKitsConfig, solutionKitSelects, !isUpgrade, instanceModifierParameter, solutionKitAdminHelper, failOnExist);
 
             // Note that these selected solution kits have been assigned with instance modifiers (default: empty/null)
             final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
@@ -544,7 +550,7 @@ public class SolutionKitManagerResource {
      * for uninstall method add new form and/or query parameters here
      * When adding new values or modifying exiting ones values make sure the unit test
      * {@code SolutionKitManagerResourceTest#testMethodParams} is changed accordingly.
-      */
+     */
     @SuppressWarnings("UnusedDeclaration")
     static interface UninstallParams {
         // Form Params go here
@@ -768,7 +774,7 @@ public class SolutionKitManagerResource {
             message.append("ERROR IN SOLUTION KIT UNINSTALLATION WHEN PROCESSING '").append(currentSolutionKitName)
                     .append("' (GUID = '").append(currentSolutionKitGuid).append("', ")
                     .append(printIM(currentSolutionKitIM)).append(")")
-                            .append(lineSeparator()).append(lineSeparator())
+                    .append(lineSeparator()).append(lineSeparator())
                     .append("Please see below for more details").append(lineSeparator()).append("--------------------");
             logger.log(Level.WARNING, e.getMessage(), e);    // log full exception for unexpected errors
             return status(INTERNAL_SERVER_ERROR).entity(message.toString() + lineSeparator() + e.getMessage() + lineSeparator()).build();
@@ -842,11 +848,13 @@ public class SolutionKitManagerResource {
             @NotNull final SolutionKitsConfig solutionKitsConfig,
             @Nullable final List<FormDataBodyPart> solutionKitSelects,
             final boolean isInstall,
-            @Nullable final String instanceModifierParameter) throws SolutionKitManagerResourceException, UnsupportedEncodingException {
+            @Nullable final String instanceModifierParameter,
+            @NotNull final SolutionKitAdminHelper solutionKitAdminHelper,
+            final boolean failOnExist) throws FindException, SolutionKitManagerResourceException, UnsupportedEncodingException {
 
         // Case 1: For Install
         if (isInstall) {
-            selectSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects);
+            selectSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects, solutionKitAdminHelper, failOnExist);
         }
         // Case 2: For Upgrade
         else {
@@ -859,7 +867,9 @@ public class SolutionKitManagerResource {
      */
     protected void selectSolutionKitsForInstall(@NotNull final SolutionKitsConfig solutionKitsConfig,
                                                 @Nullable final String instanceModifierParameter,
-                                                @Nullable final List<FormDataBodyPart> solutionKitSelects) throws UnsupportedEncodingException, SolutionKitManagerResourceException {
+                                                @Nullable final List<FormDataBodyPart> solutionKitSelects,
+                                                @NotNull final SolutionKitAdminHelper solutionKitAdminHelper,
+                                                final boolean failOnExist) throws FindException, UnsupportedEncodingException, SolutionKitManagerResourceException {
 
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
 
@@ -871,13 +881,24 @@ public class SolutionKitManagerResource {
 
         // Case 1: There are no "solutionKitSelect" parameters specified.
         if (solutionKitSelects == null || solutionKitSelects.isEmpty()) {
+            final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
             if (StringUtils.isNotBlank(globalInstanceModifier)) {
                 for (SolutionKit solutionKit: loadedSolutionKits) {
-                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
-                    InstanceModifier.setCustomContext(solutionKitsConfig, solutionKit);
+
+                    SolutionKit existingSolutionKit = solutionKitAdminHelper.get(solutionKit.getGoid());
+
+                    if( failOnExist ||
+                            (existingSolutionKit == null) ||
+                            (! existingSolutionKit.getSolutionKitVersion().equals(solutionKit.getSolutionKitVersion())) ) {
+                        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                        InstanceModifier.setCustomContext(solutionKitsConfig, solutionKit);
+                        selectedSolutionKits.add(solutionKit);
+                    }
+
                 }
             }
-            solutionKitsConfig.setSelectedSolutionKits(loadedSolutionKits);
+
+            solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
         }
         // Case 2: There are some "solutionKitSelect" parameter(s) specified.
         else {
@@ -903,18 +924,25 @@ public class SolutionKitManagerResource {
 
                 selectedSolutionKit = loadedSolutionKitMap.get(guid);
 
-                // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
-                if (StringUtils.isNotBlank(individualInstanceModifier)) {
-                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
-                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
-                }
-                // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
-                else if (StringUtils.isNotBlank(globalInstanceModifier)) {
-                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
-                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
-                }
+                SolutionKit existingSolutionKit = solutionKitAdminHelper.get(selectedSolutionKit.getGoid());
 
-                selectedSolutionKits.add(selectedSolutionKit);
+                if( failOnExist ||
+                        (existingSolutionKit == null) ||
+                        (! existingSolutionKit.getSolutionKitVersion().equals(selectedSolutionKit.getSolutionKitVersion())) ) {
+
+                    // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
+                    if (StringUtils.isNotBlank(individualInstanceModifier)) {
+                        selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
+                        InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
+                    }
+                    // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
+                    else if (StringUtils.isNotBlank(globalInstanceModifier)) {
+                        selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                        InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
+                    }
+
+                    selectedSolutionKits.add(selectedSolutionKit);
+                }
             }
 
             //TODO: redundant condition?
