@@ -1371,6 +1371,105 @@ public class SolutionKitManagerResourceTest {
     }
 
     @Test
+    public void selectSolutionKitsForInstallWithFailOnExistFalse() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install all solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKit1, null);
+        loaded.put(solutionKit2, null);
+        loaded.put(solutionKit3, null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
+
+        //test Install solution kits with IM "global IM"
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, solutionKitAdminHelper, false);
+
+        //expect all the solution kits installed have IM "global IM"
+        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
+        for(SolutionKit solutionKit : selected) {
+            assertEquals((solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY)),"global IM");
+        }
+        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
+        assertFalse("The second solution should not be selected.", selected.contains(solutionKit2));
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install selected solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
+
+        // only select solutionkit1 and 2
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid()+"::im1");
+        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(solutionKitSelect1);
+        solutionKitSelects.add(solutionKitSelect2);
+
+        //Only Install
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, solutionKitAdminHelper, false);
+
+        //Expect only solutionKit 1
+        selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selected.size(), 1);
+        for (SolutionKit solutionKit : selected) {
+            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKit1.getSolutionKitGuid()));
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForInstallWithFailOnExistFalseAndNoInstanceModifier() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install all solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKit1, null);
+        loaded.put(solutionKit2, null);
+        loaded.put(solutionKit3, null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
+
+        //test Install solution kits with IM "global IM"
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, null, solutionKitAdminHelper, false);
+
+        //expect all the solution kits installed have IM "global IM"
+        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
+        assertFalse("The second solution should not be selected.", selected.contains(solutionKit2));
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install selected solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
+
+        // only select solutionkit1 and 2
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid());
+        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(solutionKitSelect1);
+        solutionKitSelects.add(solutionKitSelect2);
+
+        //Only Install
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, solutionKitSelects, solutionKitAdminHelper, false);
+
+        //Expect only solutionKit 1
+        selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selected.size(), 1);
+        for (SolutionKit solutionKit : selected) {
+            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKit1.getSolutionKitGuid()));
+        }
+    }
+
+    @Test
     public void selectSolutionKitsForInstallFail() throws Exception {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // guid not found in skar

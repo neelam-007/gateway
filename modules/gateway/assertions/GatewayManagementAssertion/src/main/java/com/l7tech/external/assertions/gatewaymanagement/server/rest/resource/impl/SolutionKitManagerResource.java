@@ -873,6 +873,7 @@ public class SolutionKitManagerResource {
                                                 final boolean failOnExist) throws FindException, UnsupportedEncodingException, SolutionKitManagerResourceException {
 
         final Set<SolutionKit> loadedSolutionKits = new TreeSet<>(solutionKitsConfig.getLoadedSolutionKits().keySet());
+        final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
 
         String globalInstanceModifier = null; // Global instance modifier shared by all children
         if (instanceModifierParameter != null) {
@@ -882,24 +883,13 @@ public class SolutionKitManagerResource {
 
         // Case 1: There are no "solutionKitSelect" parameters specified.
         if (solutionKitSelects == null || solutionKitSelects.isEmpty()) {
-            final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
             if (StringUtils.isNotBlank(globalInstanceModifier)) {
                 for (SolutionKit solutionKit: loadedSolutionKits) {
-
-                    SolutionKit existingSolutionKit = solutionKitAdminHelper.get(solutionKit.getGoid());
-
-                    if( failOnExist ||
-                            (existingSolutionKit == null) ||
-                            (! existingSolutionKit.getSolutionKitVersion().equals(solutionKit.getSolutionKitVersion())) ) {
-                        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
-                        InstanceModifier.setCustomContext(solutionKitsConfig, solutionKit);
-                        selectedSolutionKits.add(solutionKit);
-                    }
-
+                    solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, solutionKit);
                 }
             }
-
-            solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
+            selectedSolutionKits.addAll(loadedSolutionKits);
         }
         // Case 2: There are some "solutionKitSelect" parameter(s) specified.
         else {
@@ -909,7 +899,6 @@ public class SolutionKitManagerResource {
                 loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
             }
 
-            final Set<SolutionKit> selectedSolutionKits = new TreeSet<>();
             String decodedStr, guid, individualInstanceModifier;
             SolutionKit selectedSolutionKit;
 
@@ -925,25 +914,18 @@ public class SolutionKitManagerResource {
 
                 selectedSolutionKit = loadedSolutionKitMap.get(guid);
 
-                SolutionKit existingSolutionKit = solutionKitAdminHelper.get(selectedSolutionKit.getGoid());
-
-                if( failOnExist ||
-                        (existingSolutionKit == null) ||
-                        (! existingSolutionKit.getSolutionKitVersion().equals(selectedSolutionKit.getSolutionKitVersion())) ) {
-
-                    // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
-                    if (StringUtils.isNotBlank(individualInstanceModifier)) {
-                        selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
-                        InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
-                    }
-                    // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
-                    else if (StringUtils.isNotBlank(globalInstanceModifier)) {
-                        selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
-                        InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
-                    }
-
-                    selectedSolutionKits.add(selectedSolutionKit);
+                // Firstly check if individual instance modifier is specified.  In Install, this instance modifier will override the global instance modifier.
+                if (StringUtils.isNotBlank(individualInstanceModifier)) {
+                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, individualInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
                 }
+                // Secondly check if global instance modifier is specified.  This global value is only used in install, not applied for upgrade.
+                else if (StringUtils.isNotBlank(globalInstanceModifier)) {
+                    selectedSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, globalInstanceModifier);
+                    InstanceModifier.setCustomContext(solutionKitsConfig, selectedSolutionKit);
+                }
+
+                selectedSolutionKits.add(selectedSolutionKit);
             }
 
             //TODO: redundant condition?
@@ -951,7 +933,20 @@ public class SolutionKitManagerResource {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(
                         "There are no any solution kits being selectable for install." + lineSeparator()).build());
             }
+        }
 
+        // remove selected solution kits if fail on existing is false an they are already installed.
+        if (!failOnExist) {
+            final Set<SolutionKit> filteredSolutionKits = new TreeSet<>();
+            for (final SolutionKit solutionKit : selectedSolutionKits) {
+                final Collection<SolutionKit> existingSolutionKit = solutionKitAdminHelper.find(solutionKit.getSolutionKitGuid());
+                if (existingSolutionKit.size() != 1 ||
+                        !existingSolutionKit.iterator().next().getSolutionKitVersion().equals(solutionKit.getSolutionKitVersion())) {
+                    filteredSolutionKits.add(solutionKit);
+                }
+            }
+            solutionKitsConfig.setSelectedSolutionKits(filteredSolutionKits);
+        } else {
             solutionKitsConfig.setSelectedSolutionKits(selectedSolutionKits);
         }
     }
