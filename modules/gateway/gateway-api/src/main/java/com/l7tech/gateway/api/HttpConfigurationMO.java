@@ -2,8 +2,13 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
+import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The HttpConfigurationMO managed object represents a http configuration.
@@ -14,7 +19,7 @@ import javax.xml.bind.annotation.*;
  * @see com.l7tech.gateway.api.ManagedObjectFactory#createHttpConfiguration()
  */
 @XmlRootElement(name = "HttpConfiguration")
-@XmlType(name = "HttpConfigurationType", propOrder = {"host", "port", "protocol", "path", "username", "passwordId", "ntlmHost", "ntlmDomain", "tlsVersion", "tlsKeyUse", "tlsKeystoreId", "tlsKeystoreAlias", "tlsCipherSuites", "connectTimeout", "readTimeout", "followRedirects", "proxyUse", "proxyConfiguration", "extensions", "extension"})
+@XmlType(name = "HttpConfigurationType", propOrder = {"host", "port", "protocol", "path", "username", "passwordId", "ntlmHost", "ntlmDomain", "tlsVersion", "tlsKeyUse", "tlsKeystoreId", "tlsKeystoreAlias", "tlsCipherSuites", "connectTimeout", "readTimeout", "followRedirects", "proxyUse", "proxyConfiguration", "httpHeaders",  "extensions", "extension"})
 @AccessorSupport.AccessibleResource(name = "httpConfigurations")
 public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
     private String host;
@@ -35,6 +40,7 @@ public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
     private boolean followRedirects;
     private Option proxyUse;
     private HttpProxyConfiguration proxyConfiguration;
+    private Map<String, String> httpHeaders;
 
     HttpConfigurationMO() {
     }
@@ -382,6 +388,21 @@ public class HttpConfigurationMO extends ElementExtendableAccessibleObject {
      */
     public void setProxyConfiguration(HttpProxyConfiguration proxyConfiguration) {
         this.proxyConfiguration = proxyConfiguration;
+    }
+
+    /**
+     * Get the properties for this cluster property.
+     *
+     * @return The properties (may be null)
+     */
+    @XmlElement(name="HttpHeaders")
+    @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
+    public Map<String, String> getHttpHeaders() {
+        return httpHeaders;
+    }
+
+    public void setHttpHeaders(Map<String, String> httpHeaders) {
+        this.httpHeaders = httpHeaders;
     }
 
     @XmlType(name = "HttpProxyConfigurationType", propOrder = {"host", "port", "username", "passwordId"})

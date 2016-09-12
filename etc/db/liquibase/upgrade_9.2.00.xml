@@ -12,4 +12,22 @@
             </update>
         </rollback>
     </changeSet>
+    <changeSet author="gateway" id="create_http_header_table">
+        <createTable tableName="http_header">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="http_configuration_goid" type="${goid.type}"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="http_configuration_goid" baseTableName="http_header" constraintName="fk_http_config_http_header" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="http_configuration"/>
+    </changeSet>
 </databaseChangeLog>
