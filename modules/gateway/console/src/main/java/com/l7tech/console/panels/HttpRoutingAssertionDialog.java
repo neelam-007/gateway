@@ -323,6 +323,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextField(proxyPortField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                if (rbProxyNone.isSelected()) {
+                    return null;
+                }
+
                 final String value = proxyPortField.getText();
                 if (StringUtils.isEmpty(value)) {
                     return "Please provide a value for the proxy port";
