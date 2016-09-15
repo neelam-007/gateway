@@ -11,21 +11,23 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.metrics.GatewayMetricsListener;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
 import com.l7tech.test.BugId;
+import com.sun.istack.NotNull;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
@@ -38,7 +40,7 @@ import static org.junit.Assert.*;
 
 /**
  * Test the logic of composite assertions.
- * Relies on no concrete assertions other than TrueAssertion and FalseAssertion.
+ * Relies on no concrete assertions other than TrueAssertion, FalseAssertion, and RaiseErrorAssertion.
  * User: mike
  * Date: Jun 13, 2003
  * Time: 9:54:23 AM
@@ -203,5 +205,45 @@ public class CompositeAssertionTest {
         OneOrMoreAssertion oom = new OneOrMoreAssertion( Collections.<Assertion>emptyList() );
         ServerOneOrMoreAssertion sOom = new ServerOneOrMoreAssertion( oom, applicationContext );
         assertEquals( AssertionStatus.FALSIFIED, sOom.checkRequest( context ) );
+    }
+
+    @Test
+    @BugId( "SSG-13883" )
+    public void testAssertionLatencyOnError() throws Exception {
+        ServerPolicyFactory.doWithEnforcement(false, new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                final PolicyEnforcementContext context =
+                        PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
+                                new Message(),
+                                false);
+                GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
+                MockSubscriber mockSubscriber = new MockSubscriber();
+                publisher.addListener(mockSubscriber);
+                GatewayMetricsUtils.setPublisher(context, publisher);
+
+                try {
+                    assertFalse(mockSubscriber.getAssertionFinishedFired());
+                    new ServerAllAssertion(new AllAssertion(Arrays.asList(new RaiseErrorAssertion())), applicationContext).checkRequest(context);
+                } catch (RaisedByPolicyException ex) {
+                    assertTrue(mockSubscriber.getAssertionFinishedFired());
+                }
+
+                return null;
+            }
+        });
+    }
+
+    private class MockSubscriber extends GatewayMetricsListener {
+        private Boolean assertionFinishedFired = false;
+        @Override
+        public void assertionFinished(@NotNull AssertionFinished event) {
+            assertionFinishedFired = true;
+        }
+
+        public Boolean getAssertionFinishedFired() {
+            return assertionFinishedFired;
+        }
     }
 }
