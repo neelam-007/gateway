@@ -37,6 +37,9 @@ import static com.l7tech.util.TextUtils.join;
 @ResourceFactory.ResourceType(type=ListenPortMO.class)
 public class ListenPortResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ListenPortMO, SsgConnector, EntityHeader> {
 
+    //A property that specifies if the listen port uses ssl/tls
+    public static final String SSG_CONNECTOR_IS_SECURE_OPTION = "usesTLS";
+
     //- PUBLIC
 
     public ListenPortResourceFactory( final RbacServices services,
@@ -211,7 +214,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
     private TlsSettings buildTlsSettings( final SsgConnector entity ) {
         TlsSettings tlsSettings = null;
 
-        if ( isSecureProtocol( entity.getScheme() ) ) {
+        if ( isSecureProtocol( entity.getScheme() ) || entity.isSecure() ) {
             tlsSettings = ManagedObjectFactory.createTlsSettings();
             if ( entity.getKeyAlias() != null ) {
                 tlsSettings.setPrivateKeyId( PrivateKeyResourceFactory.toExternalId( entity.getKeystoreGoid(), entity.getKeyAlias() ) );
@@ -229,6 +232,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
             }
             tlsSettings.setEnabledVersions( coalesce( split( entity.getProperty( SsgConnector.PROP_TLS_PROTOCOLS ) ), DEFAULT_TLS_VERSIONS ) );
             tlsSettings.setEnabledCipherSuites( split(entity.getProperty( SsgConnector.PROP_TLS_CIPHERLIST )) );
+            tlsSettings.setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put(SSG_CONNECTOR_IS_SECURE_OPTION, true).map());
         }
 
         return tlsSettings;
@@ -236,7 +240,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
 
     private void setTlsProperties( final ListenPortMO listenPort,
                                    final SsgConnector connector ) throws InvalidResourceException {
-        if ( isSecureProtocol( listenPort.getProtocol() ) ) {
+        if ( isSecureProtocol( listenPort.getProtocol() ) || isSecureProtocol(listenPort) ) {
             connector.setSecure( true );
             final Option<TlsSettings> tlsSettings = optional( listenPort.getTlsSettings() );
             if ( tlsSettings.isSome() ) {
@@ -263,6 +267,10 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
                 connector.setClientAuth( SsgConnector.CLIENT_AUTH_OPTIONAL );
             }
         }
+    }
+
+    private boolean isSecureProtocol(final ListenPortMO listenPort) {
+        return (listenPort.getTlsSettings() != null && listenPort.getTlsSettings().getProperties() != null && listenPort.getTlsSettings().getProperties().get(SSG_CONNECTOR_IS_SECURE_OPTION) != null && Boolean.parseBoolean(listenPort.getTlsSettings().getProperties().get(SSG_CONNECTOR_IS_SECURE_OPTION).toString()) );
     }
 
     private Map<String, Object> buildProperties( final SsgConnector entity ) {
