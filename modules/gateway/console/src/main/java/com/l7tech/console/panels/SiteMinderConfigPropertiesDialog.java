@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
-import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.gui.MaxLengthDocument;
@@ -282,17 +282,24 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     }
 
     private void doRegister() {
-        register(new SiteMinderHost(configuration.getHostname(),
-                clusterSettingsMap.get(RESOURCES.getString("property.cluster.server.address")),
-                configuration.getHostConfiguration(),
-                SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
-                configuration.getUserName(),
-                configuration.getPasswordGoid(),
-                zoneControl.getSelectedZone()));
+        if (validateSiteMinderConfigurationNameNotEmpty() && validateSiteMinderConfigurationNameUnique()) {
+            register(new SiteMinderHost(configuration.getHostname(),
+                    clusterSettingsMap.get(RESOURCES.getString("property.cluster.server.address")),
+                    configuration.getHostConfiguration(),
+                    SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
+                    configuration.getUserName(),
+                    configuration.getPasswordGoid(),
+                    zoneControl.getSelectedZone()),
+                    configurationNameTextField.getText().trim(),
+                    !disableCheckBox.isSelected());
+        }
     }
 
-    private void register(final SiteMinderHost siteMinderHost) {
-        final SiteMinderRegisterConfigDialog dlg = new SiteMinderRegisterConfigDialog(this, siteMinderHost);
+    private void register(final SiteMinderHost siteMinderHost, final String siteMinderConfigurationName,
+                          final boolean isConfigurationEnabled) {
+        final SiteMinderRegisterConfigDialog dlg = new SiteMinderRegisterConfigDialog(this, siteMinderHost,
+                                                            siteMinderConfigurationName,
+                                                            isConfigurationEnabled);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
 
@@ -609,6 +616,23 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                     "Error validating CA Single Sign-On Configuration: Disconnected from gateway.",
                     RESOURCES.getString("dialog.title.error.saving.config"),
                     JOptionPane.ERROR_MESSAGE, null);
+        }
+
+        return valid;
+    }
+
+    private boolean validateSiteMinderConfigurationNameNotEmpty() {
+        boolean valid = false;
+
+        final String newName = configurationNameTextField.getText();
+        if (newName == null || newName.trim().isEmpty()) {
+            DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                    "The configuration name must not be empty.",
+                    RESOURCES.getString("dialog.title.error.saving.config"),
+                    JOptionPane.WARNING_MESSAGE, null);
+        }
+        else {
+            valid = true;
         }
 
         return valid;

@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
@@ -46,14 +48,21 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
     private JButton managePasswordsButton;
     private SiteMinderHost siteMinderHost;
     private boolean confirmed;
+    private String siteMinderConfigurationName;
+    private boolean isConfigurationEnabled;
 
-    public SiteMinderRegisterConfigDialog(Dialog owner, SiteMinderHost siteMinderHost) {
+    public SiteMinderRegisterConfigDialog(Dialog owner, SiteMinderHost siteMinderHost,
+                                          String siteMinderConfigurationName,
+                                          boolean isConfigurationEnabled) {
         super(owner, RESOURCES.getString("dialog.title.siteminder.register.properties"));
-        initialize(siteMinderHost);
+        initialize(siteMinderHost, siteMinderConfigurationName, isConfigurationEnabled);
     }
 
-    private void initialize(SiteMinderHost siteMinderHost) {
+    private void initialize(SiteMinderHost siteMinderHost, String siteMinderConfigurationName,
+                            boolean isConfigurationEnabled) {
         this.siteMinderHost = siteMinderHost;
+        this.siteMinderConfigurationName = siteMinderConfigurationName;
+        this.isConfigurationEnabled = isConfigurationEnabled;
 
         confirmed = false;
 
@@ -152,6 +161,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         SiteMinderFipsModeOption fipsMode = fipsModeComboBox.getItemAt(modeIndex);
 
         SiteMinderConfiguration c = new SiteMinderConfiguration();
+        c.setName(siteMinderConfigurationName);
         c.setAddress(address);
         c.setUserName(userName);
         c.setPasswordGoid(password);
@@ -159,6 +169,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         c.setHostConfiguration(hostConfiguration);
         c.setFipsmode(fipsMode.getCode());
         c.setSecurityZone(siteMinderHost.getSecurityZone());
+        c.setEnabled(isConfigurationEnabled);
 
         Either<String, SiteMinderHost> either;
 
