@@ -6,7 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 /**
- * A knob which stores http-specific cookies.
+ * A knob which stores http-specific cookies. More importantly, it enables to manipulate cookies during the policy execution.
+ * Assertions can depend on this knob to update existing cookies or to create new cookies.
  */
 public interface HttpCookiesKnob extends MessageKnob {
     /**

@@ -21,6 +21,8 @@ import java.util.Map;
 public interface HttpRequestKnob extends TlsKnob, TcpKnob, UriKnob, HasSoapAction, HasHeaders {
     /**
      * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
+     * Note that, this call does not yield mutable cookies. It is known that cookies are subjected to change during the policy execution.
+     * Refer to {@link HttpCookiesKnob object from message} to yield (im-)mutable cookies.
      */
     HttpCookie[] getCookies();
 

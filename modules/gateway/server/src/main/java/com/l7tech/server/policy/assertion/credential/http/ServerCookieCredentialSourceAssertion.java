@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -33,8 +34,9 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
         final AssertionStatus assertionStatus = super.checkRequest(context);
         if (AssertionStatus.NONE.equals(assertionStatus)) {
             if (StringUtils.isNotBlank(assertion.getVariablePrefix())) {
+                // consider more specific knob for cookies
                 // set cookie context variable
-                for (final HttpCookie cookie : context.getRequest().getHttpRequestKnob().getCookies()) {
+                for (final HttpCookie cookie : context.getRequest().getHttpCookiesKnob().getCookies()) {
                     if (cookie.getCookieName().equals(cookieName)) {
                         context.setVariable(assertion.getVariablePrefix() + "." + cookie.getCookieName(), cookie.getCookieValue());
                         break;
@@ -49,9 +51,9 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
 
     @Override
     protected LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
-        HttpRequestKnob hrk = request.getHttpRequestKnob();
-        HttpCookie[] cookies = hrk.getCookies();
-        for (final HttpCookie cookie : cookies) {
+        // consider more specific knob for cookies
+        HttpCookiesKnob hck = request.getHttpCookiesKnob();
+        for (final HttpCookie cookie : hck.getCookies()) {
             if (cookieName.equalsIgnoreCase(cookie.getCookieName())) {
                 final String cookieValue = cookie.getCookieValue();
                 if (cookieValue != null && cookieValue.length() > 0) {

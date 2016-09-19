@@ -733,6 +733,9 @@ public final class Message implements Closeable {
 
     /**
      * @return the HttpCookiesKnob attached to this message, creating one if necessary.
+     * Same is used to retrieve http-cookies including modified ones (due to policy execution).
+     * Note that, cookies originated from the original request ({@link HttpRequestKnob#getCookies()})are subjected to change by policy execution (refer to Manage Cookies assertion).
+     * Sometimes, new cookies could also be added to the list.
      */
     @NotNull
     public HttpCookiesKnob getHttpCookiesKnob() {

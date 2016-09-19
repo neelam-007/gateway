@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpRequestKnob;
@@ -11,6 +12,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.util.ServletUtils;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
@@ -203,10 +205,19 @@ public class ServerCookieCredentialSourceAssertionTest {
 
     private Message createRequest(final Cookie... cookies) {
         mockRequest = new MockHttpServletRequest();
-        mockRequest.setCookies(cookies);
+
+        // add an equivalent cookie header
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                mockRequest.addHeader(HttpConstants.HEADER_COOKIE, cookie.getName() + "=" + cookie.getValue());
+            }
+        }
+
         final HttpRequestKnob knob = new HttpServletRequestKnob(mockRequest);
         final Message request = new Message();
         request.attachHttpRequestKnob(knob);
+        ServletUtils.loadHeaders(mockRequest, request);
+
         return request;
     }
 
