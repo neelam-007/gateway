@@ -1956,6 +1956,7 @@
                         <wadl:doc>Default bundling action. By default this is NewOrExisting</wadl:doc>
                         <wadl:option value="NewOrExisting"/>
                         <wadl:option value="NewOrUpdate"/>
+                        <wadl:option value="Ignore"/>
                     </wadl:param>
                     <wadl:param name="exportGatewayRestManagementService" style="query" type="xsd:boolean" default="false">
                         <wadl:doc>If true the gateway management service will be exported too. False by
@@ -2020,6 +2021,7 @@
                             <wadl:doc>Default bundling action. By default this is NewOrExisting</wadl:doc>
                             <wadl:option value="NewOrExisting"/>
                             <wadl:option value="NewOrUpdate"/>
+                            <wadl:option value="Ignore"/>
                         </wadl:param>
                         <wadl:param name="defaultMapBy" style="query" type="xsd:string" default="id">
                             <wadl:doc>Default map by action.</wadl:doc>
