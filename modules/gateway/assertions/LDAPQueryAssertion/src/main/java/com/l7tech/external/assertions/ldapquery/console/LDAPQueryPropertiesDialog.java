@@ -90,14 +90,14 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             public void itemStateChanged(ItemEvent e) {
                 resetOptionsOnScopeChange();
                 switch(selectScopeCombo.getSelectedIndex()) {
-                    case 0:     break;
-                    case 1:     break;
-                    case 2:     dnField.setEnabled(true);
-                        allowMultipleSearchResultsCheckBox.setEnabled(false);
-                        allowMultipleSearchResultsCheckBox.setSelected(false);
-                        failIfTooManyResultsCheckBox.setEnabled(false);
-                        failIfTooManyResultsCheckBox.setSelected(false);
-                        break;
+                    case 0: assertion.setDnText(null); break;
+                    case 1: assertion.setDnText(null); break;
+                    case 2: dnField.setEnabled(true);
+                            allowMultipleSearchResultsCheckBox.setEnabled(false);
+                            allowMultipleSearchResultsCheckBox.setSelected(false);
+                            failIfTooManyResultsCheckBox.setEnabled(false);
+                            failIfTooManyResultsCheckBox.setSelected(false);
+                            break;
                     default: break;
                 }
             }
@@ -397,8 +397,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
      */
     private void resetOptionsOnScopeChange(){
         dnField.setEnabled(false);
-        dnField.setText(null);
-        this.assertion.setDnText(null);
+        dnField.setText(assertion.getDnText());
         allowMultipleSearchResultsCheckBox.setEnabled(true);
         failIfTooManyResultsCheckBox.setEnabled(true);
     }
