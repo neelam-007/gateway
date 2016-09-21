@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.server.policy.assertion.ServerFalseAssertion;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
@@ -50,6 +51,9 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
 
         // Subscribe our extractor to the module loading events so it can set up its application listener
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.server.module.simplegatewaymetricextractor.SimpleGatewayMetricExtractor");
+
+        // want a placeholder server assertion that always fails
+        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerFalseAssertion.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
