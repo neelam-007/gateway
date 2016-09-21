@@ -4,7 +4,6 @@ import com.l7tech.console.table.HttpHeaderTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpHeader;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -20,9 +19,7 @@ import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Iterator;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 /**
  * Properties dialog for HTTP configurations.
