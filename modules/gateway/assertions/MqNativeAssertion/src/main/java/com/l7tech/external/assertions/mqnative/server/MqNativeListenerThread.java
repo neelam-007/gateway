@@ -8,12 +8,15 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
+import static com.ibm.mq.constants.MQConstants.MQGMO_PROPERTIES_FORCE_MQRFH2;
+import static com.ibm.mq.constants.MQConstants.MQGMO_CONVERT;
 import static java.text.MessageFormat.format;
 
 /**
@@ -24,6 +27,8 @@ class MqNativeListenerThread extends Thread {
     private final AtomicLong oopsSleep = new AtomicLong(MqNativeListener.DEFAULT_OOPS_SLEEP);
     // Time interval to wait before polling again on an empty queue
     private final AtomicInteger pollInterval = new AtomicInteger(MqNativeListener.DEFAULT_POLL_INTERVAL);
+    // Whether to convert the message application data format
+    private final AtomicBoolean messageDataConversionEnabled = new AtomicBoolean(MqNativeListener.MESSAGE_DATA_CONVERSION_ENABLED);
 
     private final MqNativeListener mqNativeListener;
     private final String connectorInfo;
@@ -43,6 +48,10 @@ class MqNativeListenerThread extends Thread {
         this.pollInterval.set(pollIntervalInt);
     }
 
+    public void setMessageDataConversionEnabled(boolean enabledState) {
+        this.messageDataConversionEnabled.set(enabledState);
+    }
+
     @Override
     public final void run() {
         mqNativeListener.log(Level.INFO, MqNativeMessages.INFO_LISTENER_POLLING_START, connectorInfo);
@@ -57,6 +66,7 @@ class MqNativeListenerThread extends Thread {
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
+                            getOptions.options |= MQGMO_PROPERTIES_FORCE_MQRFH2 | MQGMO_CONVERT;
                             getOptions.waitInterval = pollInterval.get();
                             return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
                         }

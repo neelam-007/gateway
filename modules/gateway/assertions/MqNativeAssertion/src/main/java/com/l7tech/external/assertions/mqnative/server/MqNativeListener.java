@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Functions.NullaryThrows;
@@ -35,6 +36,7 @@ import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.IN
 import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.INFO_EVENT_NOT_PUBLISHABLE;
 import static com.l7tech.gateway.common.audit.SystemMessages.CONNECTOR_ERROR;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
 import static com.l7tech.util.Option.some;
 import static java.text.MessageFormat.format;
 
@@ -56,6 +58,7 @@ public abstract class MqNativeListener {
     static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     static final int DEFAULT_OOPS_AUDIT = 0; // 0 seconds
     static final int DEFAULT_POLL_INTERVAL = 5 * 1000; // Set to five seconds so that the un-interrupt-able poll doesn't pause server shutdown for too long.
+    static final boolean MESSAGE_DATA_CONVERSION_ENABLED = true;
 
     private int oopsRetry = DEFAULT_OOPS_RETRY;
 
@@ -337,7 +340,7 @@ public abstract class MqNativeListener {
     private void configureProperties(ServerConfig serverConfig) {
         listenerThread.setOopsSleep(getErrorSleepTime(serverConfig));
         listenerThread.setPollInterval(getPollInterval(serverConfig));
-
+        listenerThread.setMessageDataConversionEnabled(getMessageDataConversionEnabledState(serverConfig));
         preventAuditFloodPeriod = serverConfig.getTimeUnitProperty(MQ_PREVENT_AUDIT_FLOOD_PERIOD_PROPERTY, DEFAULT_OOPS_AUDIT);
     }
 
@@ -368,6 +371,10 @@ public abstract class MqNativeListener {
 
         logger.log(Level.CONFIG, "Updated MQ poll interval to {0}ms.", pollInterval);
         return pollInterval;
+    }
+
+    private boolean getMessageDataConversionEnabledState(ServerConfig serverConfig) {
+        return serverConfig.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, MESSAGE_DATA_CONVERSION_ENABLED);
     }
 
     public void setOopsRetry(int retry) {

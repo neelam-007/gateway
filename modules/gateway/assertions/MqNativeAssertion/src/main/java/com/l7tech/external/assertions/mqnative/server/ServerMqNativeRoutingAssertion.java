@@ -58,6 +58,7 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONN
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.objectmodel.EntityUtil.name;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
 import static com.l7tech.util.ArrayUtils.contains;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -145,8 +146,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 }
             }
 
-            final long retryDelay = config.getTimeUnitProperty( PROP_RETRY_DELAY, RETRY_DELAY );
-            final int maxOopses = config.getIntProperty( PROP_MAX_OOPS, MAX_OOPSES );
+            final long retryDelay = config.getTimeUnitProperty(PROP_RETRY_DELAY, RETRY_DELAY);
+            final int maxOopses = config.getIntProperty(PROP_MAX_OOPS, MAX_OOPSES);
             int oopses = 0;
 
             final Option<MqNativeDynamicProperties> preProcessingMqDynamicProperties = optional( assertion.getDynamicMqRoutingProperties() );
@@ -359,7 +360,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     // else route via read from queue
                 } else {
                     final MQGetMessageOptions gmo = new MQGetMessageOptions();
-                    gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+                    configureGetMessageOptions(gmo);
                     gmo.waitInterval = readTimeout;
 
                     targetQueue = queueManager.accessQueue(cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_GET);
@@ -411,15 +412,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 // todo: move to abstract routing assertion
                 requestMessage.notifyMessage(gatewayResponseMessage, MessageRole.RESPONSE);
                 gatewayResponseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
-            } catch ( MQDataException e ) {
-                exception = e;
-            } catch ( MQException e ) {
-                exception = e;
-            } catch ( MqNativeRuntimeException e ) {
-                exception = e;
-            } catch ( MqNativeConfigException e ) {
-                exception = e;
-            } catch ( IOException e ) {
+            } catch ( MQDataException | MQException | MqNativeRuntimeException | MqNativeConfigException | IOException e ) {
                 exception = e;
             } finally {
                 closeQuietly( targetQueue );
@@ -483,7 +476,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             final byte[] selector = getSelector( outboundRequest, cfg );
 
             final MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+            configureGetMessageOptions(gmo);
             gmo.waitInterval = timeout;
             gmo.matchOptions = MQMO_MATCH_MSG_ID | MQMO_MATCH_CORREL_ID;
             MQMessage mqResponse = new MQMessage();
@@ -564,6 +557,14 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT, String.valueOf( timeout ) );
 
             return timeout;
+        }
+
+        private void configureGetMessageOptions(MQGetMessageOptions gmo) {
+            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+
+            if (config.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, true)) {
+                gmo.options |= MQGMO_PROPERTIES_FORCE_MQRFH2 | MQGMO_CONVERT;
+            }
         }
 
         private <T extends Number> T getPropertyWithDefault( String stringValue,
