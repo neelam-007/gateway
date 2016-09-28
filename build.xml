@@ -3164,12 +3164,10 @@
                 <copy file="${src.root}/etc/appliance/tcp_tune.sh" tofile="@{dir}/etc/init.d/tcp_tune"/>
                 <copy file="${src.root}/etc/appliance/ssgenv.sh" tofile="@{dir}/etc/profile.d/ssgenv.sh"/>
                 <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="@{dir}/etc/snmp/snmpd.conf_example"/>
-                <chmod file="@{dir}/etc/snmp/snmpd.conf" perm="644"/>
                 <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
                 <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
                 <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
                 <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/etc/skel_ssg/.bash_profile"/>
-
 
                 <copy todir="@{dir}/${install.src.app.libexec}">
                     <fileset dir="${src.root}/etc/appliance">
