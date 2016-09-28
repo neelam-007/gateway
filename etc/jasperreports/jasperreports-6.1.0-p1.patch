@@ -1,0 +1,99 @@
+Left base folder: C:\apim\em-1093\old
+Right base folder: C:\apim\em-1093\new
+--- jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRCalculator.java	2015-03-27 22:53:00.000000000 +05-30
++++ jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRCalculator.java	2016-08-09 10:12:54.000000000 +05-30
+@@ -168,27 +168,48 @@
+ 				{
+ 					variable.setIncrementedValue(variable.getValue());
+ 				}
+ 			}
+ 		}
+ 
+-		if (datasets != null && datasets.length > 0)
+-		{
+-			for(int i = 0; i < datasets.length; i++)
+-			{
+-				JRFillElementDataset elementDataset = datasets[i];
+-				elementDataset.evaluate(this);
+-
+-				if (elementDataset.getIncrementTypeValue() == IncrementTypeEnum.NONE)
+-				{
+-					elementDataset.increment();
+-				}
+-			}
+-		}
++		/*
++		if (datasets != null && datasets.length > 0)
++		{
++			for(int i = 0; i < datasets.length; i++)
++			{
++				JRFillElementDataset elementDataset = datasets[i];
++				elementDataset.evaluate(this);
++
++				if (elementDataset.getIncrementTypeValue() == IncrementTypeEnum.NONE)
++				{
++					elementDataset.increment();
++				}
++			}
++		}
++		*/
++	}
++
++	 /**
++      * New method to calculate datasets after return variables have been returned from subreport
++      * @throws JRException
++      */
++     public void calculateDataSets() throws JRException{
++         if (datasets != null && datasets.length > 0)
++         {
++             for(int i = 0; i < datasets.length; i++)
++             {
++                 JRFillElementDataset elementDataset = datasets[i];
++                 elementDataset.evaluate(this);
++				 
++                 if (elementDataset.getIncrementTypeValue() == IncrementTypeEnum.NONE)
++                 {
++                     elementDataset.increment();
++                 }
++             }
++         }
+ 	}
+-
+ 
+ 	/**
+ 	 *
+ 	 */
+ 	public void estimateVariables() throws JRException
+ 	{
+--- jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRFillDatasetRun.java	2015-03-27 22:53:05.000000000 +05-30
++++ jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRFillDatasetRun.java	2016-08-09 10:07:09.000000000 +05-30
+@@ -315,12 +315,13 @@
+ 	}
+ 
+ 	protected void detail() throws JRScriptletException, JRException
+ 	{
+ 		dataset.delegateScriptlet.callBeforeDetailEval();
+ 		dataset.calculator.calculateVariables();
++		dataset.calculator.calculateDataSets();
+ 		dataset.delegateScriptlet.callAfterDetailEval();
+ 	}
+ 
+ 	public String getDatasetName()
+ 	{
+ 		return dataset.getName();
+--- jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRVerticalFiller.java	2015-04-28 18:03:14.000000000 +05-30
++++ jasperreports-6.1.0\src\net\sf\jasperreports\engine\fill\JRVerticalFiller.java	2016-08-09 10:07:09.000000000 +05-30
+@@ -757,12 +757,13 @@
+ 					isFirstPageBand = false;
+ 					isFirstColumnBand = false;
+ 				}
+ 			}
+ 		}
+ 
++		calculator.calculateDataSets();
+ 		isNewPage = false;
+ 		isNewColumn = false;
+ 		isNewGroup = false;
+ 	}
+ 
+ 
