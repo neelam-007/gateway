@@ -26,15 +26,21 @@ import java.util.logging.Logger;
 public class WebSocketTestClient {
 
     private static final Logger log = Logger.getLogger(WebSocketTestClient.class.getName());
-    private static final String hostname = "cirving-01088";
+    private static final String hostname = "localhost";
     private static ChatServerTestServer testServer;
 
     @BeforeClass
     public static void oneTimeSetUp() {
         try {
+
+            System.setProperty("org.eclipse.jetty.util.log.class","org.eclipse.jetty.util.log.StdErrLog");
+            System.setProperty("org.eclipse.jetty.LEVEL","WARN");
+            System.setProperty("org.eclipse.jetty.websocket.LEVEL","DEBUG");
+
             WebSocketClientConnectionManager.createConnectionManager();
             testServer = new ChatServerTestServer();
             testServer.start();
+
         } catch (WebSocketConnectionManagerException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
@@ -50,7 +56,7 @@ public class WebSocketTestClient {
     @Test
      public void testChat() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8081/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8081/", false, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -68,7 +74,7 @@ public class WebSocketTestClient {
     @Test
     public void testLoopback() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8083/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8083/", false, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -87,7 +93,7 @@ public class WebSocketTestClient {
     @Test
     public void testBinary() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8081/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8081/", false, null);
 
         String s = "This is my byte array";
         byte[] bytes = s.getBytes();
@@ -105,21 +111,21 @@ public class WebSocketTestClient {
     @Test(expected = ConnectException.class)
     public void testNoServer() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8095/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8095/", false, null);
         Assert.fail();
     }
 
     @Test(expected = ProtocolException.class)
     public void testLowConnections() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8099/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8099/", false, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
         Assert.assertEquals("Hello", handler.getMessage());
 
         WebSocketClientHandler handler2 = new WebSocketClientHandler();
-        handler2.createConnection(new URI("ws://" + hostname + ":8099/"), false, null);
+        handler2.createConnection("ws://" + hostname + ":8099/", false, null);
 
         Assert.fail();
     }
@@ -127,7 +133,7 @@ public class WebSocketTestClient {
     @Test
     public void testSSL() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("wss://" + hostname + ":9013/"), true, null);
+        handler.createConnection("wss://" + hostname + ":9013/", true, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -135,7 +141,7 @@ public class WebSocketTestClient {
 
         handler.sendMessage("ola");
         while (!handler.hasMessage()) { Thread.sleep(100);}
-        Assert.assertEquals("hola", handler.getMessage());
+        Assert.assertEquals("WebSockets rock!!", handler.getMessage());
 
         handler.sendMessage("");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -146,15 +152,15 @@ public class WebSocketTestClient {
     @Test
     public void testSSLRequiredClientAuth() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("wss://" + hostname + ":9014/"), true, null);
+        handler.createConnection("wss://" + hostname + ":9014/", true, null);
 
         handler.sendMessage("Hello");
-        while (!handler.hasMessage()) { Thread.sleep(100);}
+        while (!handler.hasMessage()) { Thread.sleep(300);}
         Assert.assertEquals("Hello", handler.getMessage());
 
         handler.sendMessage("ola");
         while (!handler.hasMessage()) { Thread.sleep(100);}
-        Assert.assertEquals("hola", handler.getMessage());
+        Assert.assertEquals("WebSockets rock!!", handler.getMessage());
 
         handler.sendMessage("");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -165,7 +171,7 @@ public class WebSocketTestClient {
     @Test
     public void testSSLOptionalClientAuth() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("wss://" + hostname + ":9012/"), true, null);
+        handler.createConnection("wss://" + hostname + ":9012/", true, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -184,7 +190,7 @@ public class WebSocketTestClient {
     @Test(expected = EOFException.class)
     public void testInvalidSSL() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("wss://" + hostname + ":9014/"), false, null);
+        handler.createConnection("wss://" + hostname + ":9014/", false, null);
         Assert.fail();
     }
 
@@ -195,7 +201,7 @@ public class WebSocketTestClient {
         String token = "Basic " + "d3N0ZXN0OndzdGVzdA==";
         headers.put("Authorization", token);
 
-        handler.createConnection(new URI("ws://" + hostname + ":9001/"), false, headers);
+        handler.createConnection("ws://" + hostname + ":9001/", false, headers);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -213,7 +219,7 @@ public class WebSocketTestClient {
         String token = "Basic " + "abcdefGHIJKLdGVzdA==";
         headers.put("Authorization", token);
 
-        handler.createConnection(new URI("ws://" + hostname + ":9001/"), false, headers);
+        handler.createConnection("ws://" + hostname + ":9001/", false, headers);
 
         Assert.fail();
     }
@@ -225,7 +231,7 @@ public class WebSocketTestClient {
         String token = "Bearer " + System.getProperty("oauthToken");
         headers.put("Authorization", token);
 
-        handler.createConnection(new URI("ws://" + hostname + ":9015/"), false, headers);
+        handler.createConnection("ws://" + hostname + ":9015/", false, headers);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -243,7 +249,7 @@ public class WebSocketTestClient {
         String token = "Bearer " + "f3f9dbed-651e-41cc-b38c-c7059f98d79f";
         headers.put("Authorization", token);
 
-        handler.createConnection(new URI("ws://" + hostname + ":9015/"), false, headers);
+        handler.createConnection("ws://" + hostname + ":9015/", false, headers);
 
         Assert.fail();
     }
@@ -255,7 +261,7 @@ public class WebSocketTestClient {
         String token = "Bearer " + System.getProperty("oauthToken");
         headers.put("Authorization", token);
 
-        handler.createConnection(new URI("wss://" + hostname + ":9016/"), true, headers);
+        handler.createConnection("wss://" + hostname + ":9016/", true, headers);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}
@@ -274,7 +280,7 @@ public class WebSocketTestClient {
     @Test(expected = IOException.class)
     public void testServerCrash() throws Exception {
         WebSocketClientHandler handler = new WebSocketClientHandler();
-        handler.createConnection(new URI("ws://" + hostname + ":8081/"), false, null);
+        handler.createConnection("ws://" + hostname + ":8081/", false, null);
 
         handler.sendMessage("Hello");
         while (!handler.hasMessage()) { Thread.sleep(100);}

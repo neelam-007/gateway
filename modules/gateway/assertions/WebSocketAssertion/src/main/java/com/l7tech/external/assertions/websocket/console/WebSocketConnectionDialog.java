@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,6 +47,7 @@ public class WebSocketConnectionDialog extends JDialog {
     private PrivateKeysComboBox outboundPrivateKeysComboBox;
     private JCheckBox useClientAuthenticationCheckBox;
     private JComboBox inboundClientAuthenticationComboBox;
+    private JComboBox connectionPolicyComboBox;
     private boolean dirtyPortFlag;
     private int oldInboundListenPort;
     private boolean oldEnableFlag;
@@ -149,6 +149,7 @@ public class WebSocketConnectionDialog extends JDialog {
         outBoundMaxIdleTime.setEnabled(!readOnly);
         inBoundMaxIdleTime.setEnabled(!readOnly);
         inboundPolicyComboBox.setEnabled(!readOnly);
+        connectionPolicyComboBox.setEnabled(!readOnly);
         outboundPolicyComboBox.setEnabled(!readOnly);
         buttonOK.setEnabled(!readOnly);
         useInboundSSLCheckBox.setEnabled(!readOnly);
@@ -276,12 +277,19 @@ public class WebSocketConnectionDialog extends JDialog {
      */
     private void validateAndSetPolicyOIDS(WebSocketConnectionEntity connection) {
         Object inboundObject = inboundPolicyComboBox.getSelectedItem();
+        Object connectionObject = connectionPolicyComboBox.getSelectedItem();
         Object outboundObject = outboundPolicyComboBox.getSelectedItem();
 
         if (inboundObject instanceof ServiceHeader) {
             connection.setInboundPolicyOID(((ServiceHeader) inboundObject).getGoid());
         } else {
             connection.setInboundPolicyOID(Goid.DEFAULT_GOID);
+        }
+
+        if (connectionObject instanceof ServiceHeader) {
+            connection.setConnectionPolicyGOID(((ServiceHeader) connectionObject).getGoid());
+        } else {
+            connection.setConnectionPolicyGOID(Goid.DEFAULT_GOID);
         }
 
         if (outboundObject instanceof  ServiceHeader) {
@@ -325,8 +333,10 @@ public class WebSocketConnectionDialog extends JDialog {
                 }
             });
             inboundPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
+            connectionPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
             outboundPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
             inboundPolicyComboBox.insertItemAt("NONE", 0);
+            connectionPolicyComboBox.insertItemAt("NONE", 0);
             outboundPolicyComboBox.insertItemAt("NONE", 0);
 
 
@@ -335,6 +345,15 @@ public class WebSocketConnectionDialog extends JDialog {
                 ServiceHeader serviceHeader = (ServiceHeader)inboundPolicyComboBox.getItemAt(i);
                 if(Goid.equals(serviceHeader.getGoid(), connection.getInboundPolicyOID())) {
                     inboundPolicyComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+
+            connectionPolicyComboBox.setSelectedIndex(0);
+            for(int i = 1;i < connectionPolicyComboBox.getItemCount();i++) {
+                ServiceHeader serviceHeader = (ServiceHeader)connectionPolicyComboBox.getItemAt(i);
+                if(Goid.equals(serviceHeader.getGoid(), connection.getConnectionPolicyGOID())) {
+                    connectionPolicyComboBox.setSelectedIndex(i);
                     break;
                 }
             }

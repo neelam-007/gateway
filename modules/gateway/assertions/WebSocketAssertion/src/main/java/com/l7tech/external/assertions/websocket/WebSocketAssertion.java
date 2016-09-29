@@ -43,10 +43,11 @@ public class WebSocketAssertion extends Assertion implements UsesVariables {
         props.put(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, new String[] { "This property sets the maximum connections for a single connection definition. The connection definition " +
                 "can set a lower value if desired. (Default: 4096 connections). Requires gateway restart.", "4096" });
         props.put(WebSocketConstants.CONNECT_TIMEOUT_KEY, new String[] { "This property sets the timeout in seconds an outbound connection will wait before erroring out. (Default: 20 seconds). Requires gateway restart.", "20" });
-        props.put(WebSocketConstants.MIN_INBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for inbound connections. (Default: 10 threads). Requires gateway restart.", "10" });
-        props.put(WebSocketConstants.MAX_INBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for inbound connections. (Default: 25 threads). Requires gateway restart.", "25" });
-        props.put(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for outbound connections. (Default: 10 threads). Requires gateway restart.", "10" });
-        props.put(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for outbound connections. (Default: 25 threads). Requires gateway restart.", "25" });
+        props.put(WebSocketConstants.MIN_INBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single inbound connection definition. (Default: 10 threads). Requires gateway restart.", "10" });
+        props.put(WebSocketConstants.MAX_INBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single inbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25" });
+        props.put(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single outbound connection definition. (Default: 10 threads). Requires gateway restart.", "10" });
+        props.put(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single outbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25" });
+        props.put(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, new String[] { "This property sets the maximum requests that can be buffered. (Default: 100 requests). Requires gateway restart.", "100" });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Add to palette folder(s)

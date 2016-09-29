@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.websocket.server;
 import com.l7tech.server.message.AuthenticationContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,17 +17,21 @@ public class WebSocketMetadata {
     private String id;
     private AuthenticationContext authenticationContext;
     private String accessToken;
+    private HashMap contextVariables;
 
-    public WebSocketMetadata(String id, AuthenticationContext authenticationContext, HttpServletRequest request) {
+
+
+    public WebSocketMetadata(String id, AuthenticationContext authenticationContext, HttpServletRequest request, HashMap contextVariables) {
         this.id = id;
         this.authenticationContext = authenticationContext;
         this.accessToken = extractOAuthToken(request);
+        this.contextVariables = contextVariables;
     }
 
     private String extractOAuthToken( HttpServletRequest request) {
         if ( request.getHeader("Authorization") != null) {
-            String header = request.getHeader("Authorization");
-            return header.trim().substring(header.indexOf(' ')+1);
+            String oAuthAuthorizationHeaderValue = request.getHeader("Authorization");
+            return oAuthAuthorizationHeaderValue.trim().substring(oAuthAuthorizationHeaderValue.indexOf(' ')+1);
         }
 
         if ( request.getParameter("access_token") != null) {
@@ -48,10 +53,11 @@ public class WebSocketMetadata {
         return authenticationContext;
     }
 
-
-
     public String getAccessToken() {
         return accessToken;
     }
 
+    public HashMap getContextVariables() {
+        return contextVariables;
+    }
 }

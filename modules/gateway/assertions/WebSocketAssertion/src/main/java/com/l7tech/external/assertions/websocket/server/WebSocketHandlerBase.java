@@ -10,8 +10,9 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import org.eclipse.jetty.websocket.WebSocketHandler;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -88,10 +89,8 @@ public abstract class WebSocketHandlerBase extends WebSocketHandler {
             message.setStatus(status.getMessage());
             return message;
 
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not pass websocket message to policy");
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Could not pass websocket message to policy");
+            logger.log( Level.WARNING, "Could not pass websocket message to policy " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e) );
         } finally {
             if (context != null)
                 ResourceUtils.closeQuietly(context);
@@ -104,11 +103,11 @@ public abstract class WebSocketHandlerBase extends WebSocketHandler {
 
     abstract void sendMessage(String webSocketId, WebSocketMessage message) throws WebSocketInvalidTypeException, IOException;
 
-    protected static int getMaxIdleTime(int connectionValue, char direction) {
-        if (direction == 'I') {
+    protected static int getMaxIdleTime(int connectionValue, WebSocketConstants.ConnectionType direction) {
+        if (direction == WebSocketConstants.ConnectionType.Inbound) {
             return WebSocketUtils.returnLowerValue(connectionValue, WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY));
         }
-        if (direction == 'O') {
+        if (direction == WebSocketConstants.ConnectionType.Outbound) {
             return WebSocketUtils.returnLowerValue(connectionValue, WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY));
         }
         return -1;

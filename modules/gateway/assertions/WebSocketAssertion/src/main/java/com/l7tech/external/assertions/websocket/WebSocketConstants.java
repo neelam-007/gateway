@@ -11,6 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class WebSocketConstants {
 
+    public enum ConnectionType {
+        Inbound,
+        Outbound
+    }
+
     private static ConcurrentHashMap<String, Integer> clusterprops = new ConcurrentHashMap<String, Integer>();
 
     //General
@@ -32,18 +37,21 @@ public class WebSocketConstants {
     public static final String MIN_OUTBOUND_THREADS_KEY = "websocket.min.outbound.threads";
     public static final String MAX_INBOUND_THREADS_KEY = "websocket.max.inbound.threads";
     public static final String MIN_INBOUND_THREADS_KEY = "websocket.min.inbound.threads";
+    public static final String ACCEPT_QUEUE_SIZE_KEY = "websocket.accept.queue.size";
+
     //Defaults
     public static final int BUFFER_SIZE = 4096;
     public static final int MAX_BINARY_MSG_SIZE = 1048576;
     public static final int MAX_TEXT_MSG_SIZE = 1048576;
     public static final int MAX_INBOUND_IDLE_TIME_MS = 60000;
     public static final int MAX_OUTBOUND_IDLE_TIME_MS = 60000;
-    public static final int CONNECT_TIMEOUT = 20;
+    public static final int CONNECT_TIMEOUT = 20; // seconds.
     public static final int MAX_INBOUND_CONNECTIONS = 4096;
     public static final int MAX_OUTBOUND_THREADS = 25;
     public static final int MIN_OUTBOUND_THREADS = 10;
     public static final int MAX_INBOUND_THREADS = 25;
     public static final int MIN_INBOUND_THREADS = 10;
+    public static final int ACCEPT_QUEUE_SIZE = 100;
 
     public static final int MIN_LISTEN_PORT = 1025;
     public static final int MAX_LISTEN_PORT = 65535;
@@ -55,6 +63,9 @@ public class WebSocketConstants {
     public static final String CONN_VALIDATION = "Invalid Connection: The Name and Listen Port must be unique";
     public static final String CONN_SAVE_ERROR = "Unable to save connection: ";
     public static final String CONN_LOAD_ERROR = "Unable to load connections: ";
+
+    public static final String AUTHENTICATION_CONTEXT_REQ_ATTRIB = "AuthenticationContextRequestAttributes";
+    public static final String REQUEST_CONTEXT_VARIABLES = "RequestContextVariables";
 
     public static void setClusterProperty(String key, int value) {
         clusterprops.put(key, value);

@@ -10,11 +10,12 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.tls.ClientTrustingTrustManager;
 import com.l7tech.util.CachedCallable;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.websocket.WebSocketClient;
-import org.eclipse.jetty.websocket.WebSocketClientFactory;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.eclipse.jetty.websocket.client.masks.ZeroMasker;
+import org.eclipse.jetty.websocket.common.WebSocketSession;
+import org.eclipse.jetty.websocket.common.extensions.compress.PerMessageDeflateExtension;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -23,6 +24,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -37,27 +39,19 @@ public class WebSocketConnectionManager {
     protected static final Logger logger = Logger.getLogger(WebSocketConnectionManager.class.getName());
 
     private static WebSocketConnectionManager instance;
-    private WebSocketClientFactory factory;
-    private final Map<String, WebSocketClientFactory> outboundSslFactoryMap = new ConcurrentHashMap<>();
+    private final Map<String, SslContextFactory> outboundSslFactoryMap = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, WebSocketClient>> handlerIdWebSocketClientMapMap = new ConcurrentHashMap<>();
     private final Map<String, WebSocketInboundHandler> inboundHandlerMap = new ConcurrentHashMap<>();
     private final Map<String, WebSocketOutboundHandler> outboundHandlerMap = new ConcurrentHashMap<>();
-    private QueuedThreadPool inboundQueuedThreadPool;
-    private QueuedThreadPool outboundQueuedThreadPool;
     private SsgKeyStoreManager keyStoreManager;
     private TrustManager trustManager;
     private SecureRandom secureRandom;
     private DefaultKey defaultKey;
 
-    public static void createConnectionManager(SsgKeyStoreManager keyStoreManager, TrustManager trustManager, SecureRandom secureRandom, DefaultKey defaultKey) throws IllegalStateException, WebSocketConnectionManagerException {
+    public static synchronized void createConnectionManager(SsgKeyStoreManager keyStoreManager, TrustManager trustManager, SecureRandom secureRandom, DefaultKey defaultKey) throws IllegalStateException, WebSocketConnectionManagerException {
+
         if (instance == null ) {
             instance = new WebSocketConnectionManager(keyStoreManager, trustManager, secureRandom, defaultKey);
-            try {
-                instance.start();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to start WebSocketConnectionManager", e);
-                instance = null;
-                throw new WebSocketConnectionManagerException("WebSocket Factory failed to start");
-            }
         } else {
             logger.log(Level.WARNING, "Attempt to create a WebSocketConnectionManager that is already initialized");
         }
@@ -68,10 +62,11 @@ public class WebSocketConnectionManager {
         this.trustManager = trustManager;
         this.secureRandom = secureRandom;
         this.defaultKey = defaultKey;
+
     }
 
     public static WebSocketConnectionManager getInstance() throws WebSocketConnectionManagerException {
-        if (instance == null ) {
+        if (instance == null) {
             throw new WebSocketConnectionManagerException("Could not retrieve WebSocket Connection Manager");
         }
 
@@ -79,36 +74,143 @@ public class WebSocketConnectionManager {
     }
 
     public boolean isStarted(String serviceId, boolean isInbound) {
-        if ( isInbound ) {
+        if (isInbound) {
             return inboundHandlerMap.containsKey(serviceId);
         } else {
             return outboundHandlerMap.containsKey(serviceId);
         }
     }
 
-    private WebSocketClient getOutBoundWebSocket(String origin, String protocol, int maxIdleTime, WebSocketClientFactory factory) throws Exception {
-        WebSocketClient client = factory.newWebSocketClient();
-        client.setMaxBinaryMessageSize(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY));
-        client.setMaxTextMessageSize(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY));
-        client.setMaxIdleTime(maxIdleTime);
-        client.setOrigin(origin);
-        client.setProtocol(protocol);
-        return client;
+    private void initWebSocketClient(WebSocketClient client, int maxIdleTime) {
+
+        client.getPolicy().setIdleTimeout(maxIdleTime);
+
+        int connectionTimeOut = WebSocketConstants.getClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY) * 1000;
+        if (connectionTimeOut > 0) {
+            client.setConnectTimeout(connectionTimeOut);
+        }
+
+        int maxTextMessageSize = WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY);
+        if (maxTextMessageSize > 0) {
+            client.getPolicy().setMaxTextMessageSize(maxTextMessageSize);
+        }
+
+        int maxBinaryMessageSize = WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY);
+        if (maxBinaryMessageSize > 0) {
+            client.getPolicy().setMaxBinaryMessageSize(maxBinaryMessageSize);
+        }
+
+        int maxClientBufferSize = WebSocketConstants.getClusterProperty(WebSocketConstants.BUFFER_SIZE_KEY);
+        if (maxClientBufferSize > 0) {
+            client.getPolicy().setMaxTextMessageBufferSize(maxClientBufferSize);
+            client.getPolicy().setMaxBinaryMessageBufferSize(maxClientBufferSize);
+        }
+
+        //TAC-1982 Compress outbound messages  - install the extension.
+        client.getExtensionFactory().register("permessage-deflate", PerMessageDeflateExtension.class);
     }
 
-    public WebSocketClient getOutBoundWebSocket(String origin, String protocol, int maxIdleTime) throws Exception {
-        return getOutBoundWebSocket(origin, protocol, maxIdleTime, factory);
+    public WebSocketClient getOutboundWebSocketClient(boolean isSsl, String handlerId, String outboundUrl, int maxIdleTime, WebSocketConnectionEntity webSocketConnectionEntity) throws Exception {
+
+        Map<String, WebSocketClient> outboundWebSocketClientMap = handlerIdWebSocketClientMapMap.get(handlerId);
+
+        if (outboundWebSocketClientMap == null) {
+            outboundWebSocketClientMap = new ConcurrentHashMap<>();
+
+            Map<String, WebSocketClient> outboundWebSocketClientMapPrev = handlerIdWebSocketClientMapMap.putIfAbsent(handlerId, outboundWebSocketClientMap);
+            if (outboundWebSocketClientMapPrev != null) {
+                outboundWebSocketClientMap = outboundWebSocketClientMapPrev;
+            }
+        }
+
+        WebSocketClient webSocketClient = outboundWebSocketClientMap.get(outboundUrl);
+
+        if (webSocketClient == null) {
+
+            if (isSsl) {
+                SslContextFactory sslCtxFactory = getOutboundSslCtxFactory(webSocketConnectionEntity);
+                SslContextFactory sslCtxFactoryPrev = outboundSslFactoryMap.putIfAbsent(webSocketConnectionEntity.getId(), sslCtxFactory);
+                if (sslCtxFactoryPrev != null) {
+                    sslCtxFactory = sslCtxFactoryPrev;
+                }
+
+                webSocketClient = new WebSocketClient(sslCtxFactory);
+
+            } else {
+                webSocketClient = new WebSocketClient();
+            }
+
+            initWebSocketClient(webSocketClient, maxIdleTime);
+            closeAnyIdleWebSocketClients(handlerId);
+
+            webSocketClient.setExecutor(getOutboundThreadPool());
+            webSocketClient.setMasker(new ZeroMasker());
+
+            WebSocketClient webSocketClientPrev = outboundWebSocketClientMap.putIfAbsent(outboundUrl, webSocketClient);
+            if (webSocketClientPrev != null) {
+                webSocketClient = webSocketClientPrev;
+            }
+
+        }
+        if (!webSocketClient.isStarted()) {
+            webSocketClient.start();
+        }
+
+        return webSocketClient;
     }
 
-    public WebSocketClient getOutBoundSslWebSocket(String origin, String protocol, int maxIdleTime, String handlerId) throws Exception {
-        return getOutBoundWebSocket(origin, protocol, maxIdleTime, outboundSslFactoryMap.get(handlerId));
+    private void closeAnyIdleWebSocketClients(String handlerId) {
+
+        Map<String, WebSocketClient> outboundWebSocketClientMap = handlerIdWebSocketClientMapMap.get(handlerId);
+
+        if (outboundWebSocketClientMap != null) {
+            for (Map.Entry<String, WebSocketClient> entry : outboundWebSocketClientMap.entrySet()) {
+                Set<WebSocketSession> webSocketClientSet = entry.getValue().getOpenSessions();
+                if (webSocketClientSet.isEmpty()) {
+                    try {
+                        entry.getValue().stop();
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Exception stopping WebSocketClient:" + e.toString());
+                    } finally {
+                        outboundWebSocketClientMap.remove(entry.getKey());
+                    }
+                }
+            }
+        }
+    }
+
+    private void closeAllWebSocketClients(String handlerId) {
+
+        Map<String, WebSocketClient> outboundWebSocketClientMap = handlerIdWebSocketClientMapMap.get(handlerId);
+
+        if (outboundWebSocketClientMap != null) {
+            for (Map.Entry<String, WebSocketClient> entry : outboundWebSocketClientMap.entrySet()) {
+                Set<WebSocketSession> webSocketClientSet = entry.getValue().getOpenSessions();
+
+                if (webSocketClientSet != null) {
+                    for (WebSocketSession webSocketSession : webSocketClientSet) {
+                        webSocketSession.close();
+                    }
+                }
+
+                try {
+                    entry.getValue().stop();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception stopping WebSocketClient:" + e.toString());
+                } finally {
+                    outboundWebSocketClientMap.remove(entry.getKey());
+                }
+            }
+        }
     }
 
     public void registerInboundHandler(String id, WebSocketInboundHandler handler) {
+
         inboundHandlerMap.put(id, handler);
     }
 
     public void deregisterInboundHandler(String handlerId) {
+
         inboundHandlerMap.remove(handlerId);
     }
 
@@ -120,16 +222,15 @@ public class WebSocketConnectionManager {
         return inboundHandlerMap.get(handlerId);
     }
 
-    public void registerOutboundHandler(String id, WebSocketOutboundHandler handler, WebSocketConnectionEntity connection) {
+    public void registerOutboundHandler(String id, WebSocketOutboundHandler handler) {
         outboundHandlerMap.put(id, handler);
-        if (connection.isOutboundSsl()) {
-            startSsl(id, connection);
-        }
     }
 
     public void deregisterOutboundHandler(String handlerId) {
         outboundHandlerMap.remove(handlerId);
         try {
+            closeAllWebSocketClients(handlerId);
+
             if (outboundSslFactoryMap.get(handlerId) != null) {
                 outboundSslFactoryMap.remove(handlerId).stop();
             }
@@ -148,26 +249,26 @@ public class WebSocketConnectionManager {
 
 
     private QueuedThreadPool getOutboundThreadPool() {
-        if (outboundQueuedThreadPool == null) {
-            outboundQueuedThreadPool = new QueuedThreadPool();
-            outboundQueuedThreadPool.setMaxThreads(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY));
-            outboundQueuedThreadPool.setMaxThreads(WebSocketConstants.getClusterProperty(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY));
+
+        QueuedThreadPool outboundQueuedThreadPool = new QueuedThreadPool();
+
+        int minOutboundThreads = WebSocketConstants.getClusterProperty(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY);
+        if (minOutboundThreads > 0) {
+            outboundQueuedThreadPool.setMinThreads(minOutboundThreads);
         }
+
+        int maxOutboundThreads = WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY);
+        if (maxOutboundThreads > 0) {
+            outboundQueuedThreadPool.setMaxThreads(maxOutboundThreads);
+        }
+
         return outboundQueuedThreadPool;
     }
 
-    public QueuedThreadPool getInboundThreadPool() {
-        if (inboundQueuedThreadPool == null) {
-            inboundQueuedThreadPool = new QueuedThreadPool();
-            inboundQueuedThreadPool.setMaxThreads(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY));
-            inboundQueuedThreadPool.setMinThreads(WebSocketConstants.getClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY));
-        }
-        return inboundQueuedThreadPool;
-    }
 
-    private SsgKeyEntry getKeyEntry(WebSocketConnectionEntity connection, char direction) throws Exception {
+    private SsgKeyEntry getKeyEntry(WebSocketConnectionEntity connection, WebSocketConstants.ConnectionType direction) throws Exception {
         //Inbound
-        if (direction == 'I') {
+        if (direction == WebSocketConstants.ConnectionType.Inbound) {
             if (Goid.isDefault(connection.getInboundPrivateKeyId())) {
                 return defaultKey.getSslInfo();
             } else {
@@ -176,7 +277,7 @@ public class WebSocketConnectionManager {
         }
 
         //Outbound
-        if (direction == 'O') {
+        if (direction == WebSocketConstants.ConnectionType.Outbound) {
             if (!connection.isOutboundClientAuthentication()) {
                 return null;
             } else if (Goid.isDefault(connection.getOutboundPrivateKeyId())) {
@@ -189,18 +290,18 @@ public class WebSocketConnectionManager {
         return null;
     }
 
-    private SSLContext createSslContext(WebSocketConnectionEntity connection, char direction) throws Exception {
+    private SSLContext createSslContext(WebSocketConnectionEntity connection, WebSocketConstants.ConnectionType direction) throws Exception {
         KeyManager[] keyManagers;
 
         SsgKeyEntry keyEntry = getKeyEntry(connection, direction);
 
-        if ( keyEntry != null)  {
+        if (keyEntry != null) {
             keyManagers = new KeyManager[]{new SingleCertX509KeyManager(keyEntry.getCertificateChain(), keyEntry.getPrivate())};
         } else {
             keyManagers = new KeyManager[0];
         }
         TrustManager tm;
-        if(direction=='I') {
+        if (direction == WebSocketConstants.ConnectionType.Inbound) {
             tm = new ClientTrustingTrustManager(new CachedCallable<>(30000L, new Callable<X509Certificate[]>() {
                 @Override
                 public X509Certificate[] call() throws Exception {
@@ -218,46 +319,40 @@ public class WebSocketConnectionManager {
         return sslContext;
     }
 
-    public SslSelectChannelConnector getInboundSSLConnector(WebSocketConnectionEntity connection) throws Exception {
-        SslContextFactory sslCtx = new SslContextFactory();
-        sslCtx.setSslContext(createSslContext(connection, 'I'));
-        sslCtx.setTrustAll(true);
-        switch (connection.getInboundClientAuth()) {
+    public SslContextFactory getInboundSslCtxFactory(WebSocketConnectionEntity webSocketConnectionEntity) throws Exception {
+        SslContextFactory sslCtxFactory = new SslContextFactory();
+        sslCtxFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Inbound));
+        sslCtxFactory.setTrustAll(true);
+        switch (webSocketConnectionEntity.getInboundClientAuth()) {
             case NONE:
-                sslCtx.setNeedClientAuth(false);
-                sslCtx.setWantClientAuth(false);
+                sslCtxFactory.setNeedClientAuth(false);
+                sslCtxFactory.setWantClientAuth(false);
                 break;
             case OPTIONAL:
-                sslCtx.setNeedClientAuth(false);
-                sslCtx.setWantClientAuth(true);
+                sslCtxFactory.setNeedClientAuth(false);
+                sslCtxFactory.setWantClientAuth(true);
                 break;
             case REQUIRED:
-                sslCtx.setNeedClientAuth(true);
-                sslCtx.setWantClientAuth(true);
+                sslCtxFactory.setNeedClientAuth(true);
+                sslCtxFactory.setWantClientAuth(true);
                 break;
+            default:
+                throw new IllegalStateException("The ClientAuthType was not handled. Could not configure and return the SslContextFactory.");
         }
 
-        return new SslSelectChannelConnector(sslCtx);
+
+        return sslCtxFactory;
     }
 
-    private void start() throws Exception {
-        factory = new WebSocketClientFactory(getOutboundThreadPool());
-        factory.setBufferSize(WebSocketConstants.getClusterProperty(WebSocketConstants.BUFFER_SIZE_KEY));
-        factory.start();
-    }
+    private SslContextFactory getOutboundSslCtxFactory(WebSocketConnectionEntity webSocketConnectionEntity) throws Exception {
 
-    private void startSsl(String id,WebSocketConnectionEntity connection) {
-        WebSocketClientFactory sslFactory = new WebSocketClientFactory(getOutboundThreadPool());
-        sslFactory.setBufferSize(WebSocketConstants.getClusterProperty(WebSocketConstants.BUFFER_SIZE_KEY));
-        try {
-            sslFactory.getSslContextFactory().setSslContext(createSslContext(connection, 'O'));
-            sslFactory.start();
-
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to set SSL Context for outbound websocket connection");
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        SslContextFactory sslContextFactoryPrev = outboundSslFactoryMap.putIfAbsent(webSocketConnectionEntity.getId(), sslContextFactory);
+        if (sslContextFactoryPrev != null) {
+            sslContextFactory = sslContextFactoryPrev;
         }
+        sslContextFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Outbound));
 
-        outboundSslFactoryMap.put(id,sslFactory);
+        return sslContextFactory;
     }
-
 }

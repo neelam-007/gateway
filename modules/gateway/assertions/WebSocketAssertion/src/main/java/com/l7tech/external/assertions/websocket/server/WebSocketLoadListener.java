@@ -20,10 +20,10 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.FirewallRulesManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import com.l7tech.util.ExceptionUtils;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -174,6 +174,7 @@ public class WebSocketLoadListener {
         WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, getProp(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, WebSocketConstants.MIN_OUTBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY, getProp(WebSocketConstants.MAX_INBOUND_THREADS_KEY, WebSocketConstants.MAX_INBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY, getProp(WebSocketConstants.MIN_INBOUND_THREADS_KEY, WebSocketConstants.MIN_INBOUND_THREADS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, getProp(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, WebSocketConstants.ACCEPT_QUEUE_SIZE));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -211,9 +212,11 @@ public class WebSocketLoadListener {
         Set<WebSocketConnectionEntity> connections = servers.keySet();
 
         for (WebSocketConnectionEntity connection : connections) {
+            connection.setRemovePortFlag(true);
             stop(connection);
         }
         isStarted = false;
+        EntityManagerFactory.removeWebSocketConnectionEntity();
     }
 
     private static void restart(WebSocketConnectionEntity connection) {
@@ -221,81 +224,111 @@ public class WebSocketLoadListener {
         start(connection, false);
     }
 
-    private static void start(WebSocketConnectionEntity connection, boolean forceFirewall) {
+    private static void start(WebSocketConnectionEntity connectionEntity, boolean forceFirewall) {
         try {
-            if (connection.isEnabled()) {
-                Server server = new Server(connection.getInboundListenPort());
-                if (!connection.isInboundSsl()) {
-                    server.setThreadPool( WebSocketConnectionManager.getInstance().getInboundThreadPool());
+            if (connectionEntity.isEnabled()) {
+
+                Server server = new Server(getInboundThreadPool());
+
+                if (connectionEntity.isInboundSsl()) {
+
+                    SslContextFactory sslContextFactory = WebSocketConnectionManager.getInstance().getInboundSslCtxFactory(connectionEntity);
+
+                    HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
+                    ServerConnector sslConnector = new ServerConnector(server, sslContextFactory, httpConnectionFactory);
+                    sslConnector.setPort(connectionEntity.getInboundListenPort());
+                    sslConnector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                    server.addConnector(sslConnector);
+
+                } else {
+                    ServerConnector connector = new ServerConnector(server);
+                    connector.setPort(connectionEntity.getInboundListenPort());
+                    connector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                    server.addConnector(connector);
                 }
 
-                WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connection);
-                webSocketInboundHandler.setHandler(new DefaultHandler());
+                WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity);
                 server.setHandler(webSocketInboundHandler);
 
                 //Register Inbound Handler
-                WebSocketConnectionManager.getInstance().registerInboundHandler(connection.getId(), webSocketInboundHandler);
+                WebSocketConnectionManager.getInstance().registerInboundHandler(connectionEntity.getId(), webSocketInboundHandler);
 
-                if (!connection.isLoopback()) {
+                if (!connectionEntity.isLoopback()) {
                     //Register outbound Handler
-                    WebSocketOutboundHandler webSocketOutboundHandler = new WebSocketOutboundHandler(messageProcessor, connection);
-                    WebSocketConnectionManager.getInstance().registerOutboundHandler(connection.getId(), webSocketOutboundHandler,connection);
-                }
-
-                if (connection.isInboundSsl()) {
-                    SslSelectChannelConnector sslSocketConnector = WebSocketConnectionManager.getInstance().getInboundSSLConnector(connection);
-                    sslSocketConnector.setPort(connection.getInboundListenPort());
-                    server.setConnectors(new Connector[] { sslSocketConnector });
+                    WebSocketOutboundHandler webSocketOutboundHandler = new WebSocketOutboundHandler(messageProcessor, connectionEntity);
+                    WebSocketConnectionManager.getInstance().registerOutboundHandler(connectionEntity.getId(), webSocketOutboundHandler);
                 }
 
                 server.start();
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, server.dump());
+                }
+
                 StringBuilder statement = new StringBuilder();
-                if ( connection.isInboundSsl() ) {
+                if (connectionEntity.isInboundSsl()) {
                     statement.append("Starting WSS listener ");
                 } else {
                     statement.append("Starting WS listener ");
                 }
-                statement.append("on port ").append(connection.getInboundListenPort());
+                statement.append("on port ").append(connectionEntity.getInboundListenPort());
 
-                logger.log(Level.INFO, "Checking firewall state for port " + connection.getInboundListenPort() + " with connection state " + connection.getRemovePortFlag() + "," + forceFirewall);
+                logger.log(Level.INFO, "Checking firewall state for port " + connectionEntity.getInboundListenPort() + " with connection state " + connectionEntity.getRemovePortFlag() + "," + forceFirewall);
                 //open the firewall for inbound port
-                if (connection.getRemovePortFlag() || forceFirewall) {
-                    logger.log(Level.INFO, "Adding firewall rules for port " + connection.getInboundListenPort());
-                    fwManager.openPort(connection.getId(), connection.getInboundListenPort());
+                if (connectionEntity.getRemovePortFlag() || forceFirewall) {
+                    logger.log(Level.INFO, "Adding firewall rules for port " + connectionEntity.getInboundListenPort());
+                    fwManager.openPort(connectionEntity.getId(), connectionEntity.getInboundListenPort());
                 }
 
                 logger.log(Level.INFO, statement.toString());
 
-                servers.put(connection, server);
+                servers.put(connectionEntity, server);
+
             }
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Failed to start the WebSockets Server " + connection.getId(), e);
+            logger.log(Level.WARNING, "Failed to start the WebSockets Server " + connectionEntity.getId(), e);
         }
     }
 
-    private static void stop(WebSocketConnectionEntity connection) {
-        Server server = servers.remove(connection);
-        if ( server != null ) {
+    private static void stop(WebSocketConnectionEntity connectionEntity) {
+        Server server = servers.remove(connectionEntity);
+        if (server != null) {
             try {
                 server.stop();
                 //remove the port from firewall only if port has changed
-                if (connection.getRemovePortFlag()){
-                    logger.log(Level.INFO, "Removing firewall rules for port " + connection.getInboundListenPort());
-                    fwManager.removeRule(connection.getId());
+                if (connectionEntity.getRemovePortFlag()) {
+                    logger.log(Level.INFO, "Removing firewall rules for port " + connectionEntity.getInboundListenPort());
+                    fwManager.removeRule(connectionEntity.getId());
                 }
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to stop the WebSockets Server", e);
             } finally {
                 //Deregister handlers
-                logger.log(Level.WARNING, "Deregistering handler : " + connection.getId());
+                logger.log(Level.WARNING, "Deregistering handler : " + connectionEntity.getId());
                 try {
-                    WebSocketConnectionManager.getInstance().deregisterInboundHandler(connection.getId());
-                    WebSocketConnectionManager.getInstance().deregisterOutboundHandler(connection.getId());
+                    WebSocketConnectionManager.getInstance().deregisterInboundHandler(connectionEntity.getId());
+                    WebSocketConnectionManager.getInstance().deregisterOutboundHandler(connectionEntity.getId());
                 } catch (WebSocketConnectionManagerException e) {
                     //Do nothing connection manager is already removed.
+                    logger.log(Level.WARNING, "Caught exception when deregistering Inbound/Outbound handler " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
                 }
-
             }
         }
+    }
+
+    private static QueuedThreadPool getInboundThreadPool() {
+
+        QueuedThreadPool inboundQueuedThreadPool = new QueuedThreadPool();
+
+        int minInboundThreads = WebSocketConstants.getClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY);
+        if (minInboundThreads > 0) {
+            inboundQueuedThreadPool.setMinThreads(minInboundThreads);
+        }
+
+        int maxInboundThreads = WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY);
+        if (maxInboundThreads > 0) {
+            inboundQueuedThreadPool.setMaxThreads(maxInboundThreads);
+        }
+
+        return inboundQueuedThreadPool;
     }
 }

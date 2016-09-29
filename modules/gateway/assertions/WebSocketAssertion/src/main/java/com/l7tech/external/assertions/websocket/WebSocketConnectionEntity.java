@@ -36,6 +36,10 @@ public class WebSocketConnectionEntity extends GenericEntity {
     private boolean removePortFlag;
 
 
+    //Connection Fields
+    private Goid connectionPolicyGOID;
+ 
+
     //Outbound Fields
     private String outboundUrl;
     private int outboundMaxIdleTime;
@@ -218,5 +222,13 @@ public class WebSocketConnectionEntity extends GenericEntity {
 
     public void setRemovePortFlag(boolean removePortFlag){
         this.removePortFlag = removePortFlag;
+    }
+
+    public Goid getConnectionPolicyGOID() {
+        return connectionPolicyGOID;
+    }
+
+    public void setConnectionPolicyGOID(Goid connectionPolicyGOID) {
+        this.connectionPolicyGOID = connectionPolicyGOID;
     }
 }

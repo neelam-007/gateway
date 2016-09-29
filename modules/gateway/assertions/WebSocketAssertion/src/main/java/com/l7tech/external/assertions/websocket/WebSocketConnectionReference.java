@@ -37,6 +37,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private static final String ELMT_NAME_INBOUND_LISTEN_PORT = "InboundListenPort";
     private static final String ELMT_NAME_INBOUND_MAX_CONNECTIONS = "InboundMaxConnections";
     private static final String ELMT_NAME_INBOUND_POLICY_GOID = "InboundPolicyGOID";
+    private static final String ELMT_NAME_CONNECTION_POLICY_GOID = "ConnectionPolicyGOID";
     private static final String ELMT_NAME_INBOUND_SSL = "InboundSSL";
     private static final String ELMT_NAME_INBOUND_PRIVATE_KEY_ID = "InboundPrivateKeyId";
     private static final String ELMT_NAME_INBOUND_PRIVATE_KEY_ALIAS = "InboundPrivateKeyAlias";
@@ -61,6 +62,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private int inboundMaxIdleTime;
     private int inboundMaxConnections;
     private Goid inboundPolicyGOID;
+    private Goid connectionPolicyGOID;
     private int inboundListenPort;
     private boolean inboundSsl;
     private Goid inboundPrivateKeyId;
@@ -102,6 +104,7 @@ public class WebSocketConnectionReference extends ExternalReference {
             inboundMaxConnections = entity.getInboundMaxConnections();
             inboundMaxIdleTime = entity.getInboundMaxIdleTime();
             inboundPolicyGOID = entity.getInboundPolicyOID();
+            connectionPolicyGOID = entity.getConnectionPolicyGOID();
             inboundPrivateKeyAlias = entity.getInboundPrivateKeyAlias();
             inboundPrivateKeyId = entity.getInboundPrivateKeyId();
             inboundSsl = entity.isInboundSsl();
@@ -121,7 +124,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     }
 
     private static WebSocketConnectionEntityAdmin getEntityManager(ExternalReferenceFinder finder) throws FindException {
-        if ( finder.getClass().getName().contains("Console") ) {
+        if (finder.getClass().getName().contains("Console")) {
             return getEntityManager();
         } else {
             return new WebSocketConnectionEntityAdminImpl(finder.getGenericEntityManager(WebSocketConnectionEntity.class));
@@ -159,18 +162,30 @@ public class WebSocketConnectionReference extends ExternalReference {
         addParameterElement(ELMT_NAME_INBOUND_LISTEN_PORT, String.valueOf(inboundListenPort), referenceElement);
 
         addParameterElement(ELMT_NAME_INBOUND_MAX_CONNECTIONS, String.valueOf(inboundMaxConnections), referenceElement);
-        addParameterElement(ELMT_NAME_INBOUND_POLICY_GOID, inboundPolicyGOID.toHexString(), referenceElement);
+
+        if (inboundPolicyGOID != null) {
+            addParameterElement(ELMT_NAME_INBOUND_POLICY_GOID, inboundPolicyGOID.toHexString(), referenceElement);
+        }
+
+        if (connectionPolicyGOID != null) {
+            addParameterElement(ELMT_NAME_CONNECTION_POLICY_GOID, connectionPolicyGOID.toHexString(), referenceElement);
+        }
+
         addParameterElement(ELMT_NAME_INBOUND_SSL, String.valueOf(inboundSsl), referenceElement);
         addParameterElement(ELMT_NAME_INBOUND_PRIVATE_KEY_ID, inboundPrivateKeyId.toHexString(), referenceElement);
         addParameterElement(ELMT_NAME_INBOUND_PRIVATE_KEY_ALIAS, inboundPrivateKeyAlias, referenceElement);
-        if ( inboundClientAuth != null ) {
+        if (inboundClientAuth != null) {
             addParameterElement(ELMT_NAME_INBOUND_CLIENT_AUTH, inboundClientAuth.toString(), referenceElement);
         } else {
             addParameterElement(ELMT_NAME_INBOUND_CLIENT_AUTH, "", referenceElement);
         }
         addParameterElement(ELMT_NAME_OUTBOUND_URL, outboundUrl, referenceElement);
         addParameterElement(ELMT_NAME_OUTBOUND_MAX_IDLE_TIME, String.valueOf(outboundMaxIdleTime), referenceElement);
-        addParameterElement(ELMT_NAME_OUTBOUND_POLICY_GOID, outboundPolicyGOID.toHexString(), referenceElement);
+
+        if (outboundPolicyGOID != null) {
+            addParameterElement(ELMT_NAME_OUTBOUND_POLICY_GOID, outboundPolicyGOID.toHexString(), referenceElement);
+        }
+
         addParameterElement(ELMT_NAME_OUTBOUND_SSL, String.valueOf(outboundSsl), referenceElement);
         addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID, outboundPrivateKeyId.toHexString(), referenceElement);
         addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ALIAS, outboundPrivateKeyAlias, referenceElement);
@@ -215,6 +230,7 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setInboundMaxConnections(inboundMaxConnections);
                     entity.setInboundMaxIdleTime(inboundMaxIdleTime);
                     entity.setInboundPolicyOID(inboundPolicyGOID);
+                    entity.setConnectionPolicyGOID(connectionPolicyGOID);
                     entity.setInboundSsl(inboundSsl);
                     entity.setInboundPrivateKeyAlias(inboundPrivateKeyAlias);
                     entity.setInboundPrivateKeyId(inboundPrivateKeyId);
@@ -302,13 +318,28 @@ public class WebSocketConnectionReference extends ExternalReference {
         output.inboundListenPort = Integer.parseInt(getParamFromEl(el, ELMT_NAME_INBOUND_LISTEN_PORT));
         output.inboundMaxConnections = Integer.parseInt(getParamFromEl(el, ELMT_NAME_INBOUND_MAX_CONNECTIONS));
         output.inboundMaxIdleTime = Integer.parseInt(getParamFromEl(el, ELMT_NAME_INBOUND_MAX_IDLE_TIME));
-        output.inboundPolicyGOID = Goid.parseGoid(getParamFromEl(el, ELMT_NAME_INBOUND_POLICY_GOID));
+
+        String inboundPolicyGOID = getParamFromEl(el, ELMT_NAME_INBOUND_POLICY_GOID);
+        if (inboundPolicyGOID != null) {
+            output.inboundPolicyGOID = Goid.parseGoid(inboundPolicyGOID);
+        }
+
+        String connectionPolicyGOID = getParamFromEl(el, ELMT_NAME_CONNECTION_POLICY_GOID);
+        if (connectionPolicyGOID != null) {
+            output.connectionPolicyGOID = Goid.parseGoid(connectionPolicyGOID);
+        }
+
         output.inboundSsl = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_INBOUND_SSL));
         output.inboundPrivateKeyId = Goid.parseGoid(getParamFromEl(el, ELMT_NAME_INBOUND_PRIVATE_KEY_ID));
         output.inboundPrivateKeyAlias = getParamFromEl(el, ELMT_NAME_INBOUND_PRIVATE_KEY_ALIAS);
         output.outboundUrl = getParamFromEl(el, ELMT_NAME_OUTBOUND_URL);
         output.outboundMaxIdleTime = Integer.parseInt(getParamFromEl(el, ELMT_NAME_OUTBOUND_MAX_IDLE_TIME));
-        output.outboundPolicyGOID = Goid.parseGoid(getParamFromEl(el, ELMT_NAME_OUTBOUND_POLICY_GOID));
+
+        String outboundPolicyGOID = getParamFromEl(el, ELMT_NAME_OUTBOUND_POLICY_GOID);
+        if (outboundPolicyGOID != null) {
+            output.outboundPolicyGOID = Goid.parseGoid(outboundPolicyGOID);
+        }
+
         output.outboundSsl = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_OUTBOUND_SSL));
         output.outboundPrivateKeyId = Goid.parseGoid(getParamFromEl(el, ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID));
         output.outboundPrivateKeyAlias = getParamFromEl(el, ELMT_NAME_OUTBOUND_PRIVATE_KEY_ALIAS);
@@ -319,15 +350,15 @@ public class WebSocketConnectionReference extends ExternalReference {
     }
 
     private static WebSocketConnectionEntity.ClientAuthType parseClientAuthType(String s) {
-         try {
+        try {
             return WebSocketConnectionEntity.ClientAuthType.valueOf(s);
-         } catch (IllegalArgumentException e) {
-             logger.log(Level.WARNING, "Invalid Client Auth Type Value");
-             return null;
-         } catch (NullPointerException e) {
-             logger.log(Level.INFO, "No Client Auth Type Value exists");
-             return null;
-         }
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING, "Invalid Client Auth Type Value");
+            return null;
+        } catch (NullPointerException e) {
+            logger.log(Level.INFO, "No Client Auth Type Value exists");
+            return null;
+        }
     }
 
 }

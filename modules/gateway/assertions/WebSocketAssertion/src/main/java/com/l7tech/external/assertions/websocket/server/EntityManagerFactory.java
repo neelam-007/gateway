@@ -17,19 +17,30 @@ import java.util.logging.Logger;
 public class EntityManagerFactory {
     protected static final Logger logger = Logger.getLogger(EntityManagerFactory.class.getName());
     private static EntityManager<WebSocketConnectionEntity, GenericEntityHeader> entityManager = null;
+    private static GenericEntityManager genericEntityManager = null;
 
     public static synchronized EntityManager<WebSocketConnectionEntity, GenericEntityHeader> getEntityManager(ApplicationContext context) {
 
         if (entityManager == null) {
-            GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
+            genericEntityManager = context.getBean("genericEntityManager", GenericEntityManager.class);
             try {
-                gem.registerClass(WebSocketConnectionEntity.class);
+                genericEntityManager.registerClass(WebSocketConnectionEntity.class);
+
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to register entity manager. Already registered.");
             }
-            entityManager = gem.getEntityManager(WebSocketConnectionEntity.class);
+            entityManager = genericEntityManager.getEntityManager(WebSocketConnectionEntity.class);
         }
 
         return entityManager;
+    }
+
+    public static synchronized void removeWebSocketConnectionEntity() {
+
+        genericEntityManager.unRegisterClass(WebSocketConnectionEntity.class.getName());
+
+        if (genericEntityManager.isRegistered(WebSocketConnectionEntity.class.getName())){
+            logger.log(Level.WARNING, "Failed to unregister {0} from the genericEntityManager.", WebSocketConnectionEntity.class.getName());
+        }
     }
 }

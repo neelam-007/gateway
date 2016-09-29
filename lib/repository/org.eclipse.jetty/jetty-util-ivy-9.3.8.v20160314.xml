@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.eclipse.jetty"
+		module="jetty-util"
+		revision="9.3.8.v20160314"
+		status="release"
+		publication="20160928143232"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jetty-util" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

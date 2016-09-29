@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * This class was created to support policy processing for messages passed via TCP (through websockets).
+ * It supports HttpServletRequests that are retrieved by calling servletUpgradeRequest.getHttpServletRequest().
  */
 public class MockHttpServletRequest implements HttpServletRequest {
 
@@ -26,26 +27,17 @@ public class MockHttpServletRequest implements HttpServletRequest {
     private String method;
     private String pathInfo;
     private String pathTranslated;
-    private String contextPath;
     private String queryString;
     private String remoteUser;
-    private String requestedSessionId;
-    private Principal principal;
     private String requestURI;
     private StringBuffer requestURL;
     private String servletPath;
     private HttpSession httpSession;
-    private boolean requestedSessionIdValid;
-    private boolean requestedSessionIdFromCookie;
-    private boolean requestedSessionIdFromUrl;
-    private boolean requestedSessionIdFromURL;
     private String characterEncoding;
     private int remotePort;
     private String localName;
     private String localAddr;
     private int localPort;
-    private int contentLength;
-    private String contentType;
     private String remoteHost;
     private String remoteAddr;
     private boolean secure;
@@ -55,40 +47,29 @@ public class MockHttpServletRequest implements HttpServletRequest {
     private String scheme;
     private Locale preferredLocale;
 
-    public MockHttpServletRequest() {
-
-    }
-
     public MockHttpServletRequest(HttpServletRequest request) {
         populateHeaders(request);
         populateAttributes(request);
         populateParameters(request);
         populateLocales(request);
         this.authType = request.getAuthType();
-        this.cookies = request.getCookies().clone();
+        if (request.getCookies() != null) {
+            this.cookies = request.getCookies().clone();
+        }
+
         this.method = request.getMethod();
         this.pathInfo = request.getPathInfo();
         this.pathTranslated = request.getPathTranslated();
-        this.contextPath = request.getContextPath();
         this.queryString = request.getQueryString();
         this.remoteUser = request.getRemoteUser();
-        this.requestedSessionId = request.getRequestedSessionId();
-        this.principal = request.getUserPrincipal();
         this.requestURI = request.getRequestURI();
         this.requestURL = request.getRequestURL();
         this.servletPath = request.getServletPath();
         this.httpSession = null; //Session won't be maintained.
-        this.requestedSessionIdValid = request.isRequestedSessionIdValid();
-        this.requestedSessionIdFromURL = request.isRequestedSessionIdFromURL();
-        this.requestedSessionIdFromUrl = request.isRequestedSessionIdFromUrl();
-        this.requestedSessionIdFromCookie = request.isRequestedSessionIdFromCookie();
-        this.characterEncoding = request.getCharacterEncoding();
         this.remotePort = request.getRemotePort();
         this.localName = request.getLocalName();
         this.localAddr = request.getLocalAddr();
         this.localPort = request.getLocalPort();
-        this.contentLength = request.getContentLength();
-        this.contentType = request.getContentType();
         this.remoteHost = request.getRemoteHost();
         this.remoteAddr = request.getRemoteAddr();
         this.secure = request.isSecure();
@@ -100,6 +81,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
 
     }
+
     @Override
     public String getAuthType() {
         return authType;
@@ -130,26 +112,26 @@ public class MockHttpServletRequest implements HttpServletRequest {
     @Override
     public String getHeader(String s) {
         Vector<String> headerEnum = headers.get(s);
-        if ( headerEnum != null) {
+        if (headerEnum != null) {
             return headerEnum.firstElement();
         }
         return null;
     }
 
     public void setHeader(String key, String value) {
-        if ( headers.containsKey(key)) {
+        if (headers.containsKey(key)) {
             headers.get(key).add(value);
         } else {
             Vector v = new Vector<String>();
             v.add(value);
-            headers.put(key, v );
+            headers.put(key, v);
         }
     }
 
     @Override
     public Enumeration getHeaders(String s) {
         Vector v = headers.get(s);
-        return v==null ? new Vector().elements() : v.elements();
+        return v == null ? new Vector().elements() : v.elements();
     }
 
     @Override
@@ -160,7 +142,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
     @Override
     public int getIntHeader(String s) {
         Vector<String> intHeader = headers.get(s.toLowerCase());
-        if ( intHeader == null) {
+        if (intHeader == null) {
             return -1;
         }
         return Integer.parseInt(intHeader.firstElement());
@@ -183,7 +165,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getContextPath() {
-        return contextPath;
+        throw new UnsupportedOperationException("The context path attribute does not exist.");
     }
 
     @Override
@@ -203,12 +185,12 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public Principal getUserPrincipal() {
-        return principal;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("The user principal attribute does not exist.");
     }
 
     @Override
     public String getRequestedSessionId() {
-        return requestedSessionId;
+        throw new UnsupportedOperationException("The requestedSessionId attribute does not exist.");
     }
 
     @Override
@@ -237,24 +219,30 @@ public class MockHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
+    public String changeSessionId() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isRequestedSessionIdValid() {
-        return requestedSessionIdValid;
+        throw new UnsupportedOperationException("The requestedSessionIdValid attribute does not exist.");
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return requestedSessionIdFromCookie;
+        throw new UnsupportedOperationException("The requestedSessionIdFromCookie attribute does not exist.");
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return requestedSessionIdFromURL;
+        throw new UnsupportedOperationException("The requestedSessionIdFromURL attribute does not exist.");
     }
 
     @Override
     public boolean isRequestedSessionIdFromUrl() {
-        return requestedSessionIdFromUrl;
+        throw new UnsupportedOperationException("The requestedSessionIdFromUrl attribute does not exist.");
     }
+
 
     @Override
     public Object getAttribute(String s) {
@@ -278,12 +266,17 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public int getContentLength() {
-        return contentLength;
+        throw new UnsupportedOperationException("The contentLength attribute does not exist.");
+    }
+
+    @Override
+    public long getContentLengthLong() {
+        throw new UnsupportedOperationException("The contentLength attribute does not exist.");
     }
 
     @Override
     public String getContentType() {
-        return contentType;
+        throw new UnsupportedOperationException("The contentType attribute does not exist.");
     }
 
     @Override
@@ -293,7 +286,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(String s) {
-        String [] params = parameters.get(s);
+        String[] params = parameters.get(s);
         if (params != null && params.length > 0) {
             return params[0];
         }
@@ -352,7 +345,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
     @Override
     public void setAttribute(String s, Object o) {
-        attributes.put(s,o);
+        attributes.put(s, o);
     }
 
     @Override
@@ -412,7 +405,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
             String header = headerNames.nextElement();
             Enumeration e = request.getHeaders(header);
             Vector v = new Vector();
-            while ( e.hasMoreElements()) {
+            while (e.hasMoreElements()) {
                 v.add(e.nextElement());
             }
             headers.put(header, v);
@@ -422,7 +415,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
     private void populateAttributes(HttpServletRequest request) {
         Enumeration headerNames = request.getAttributeNames();
         while (headerNames.hasMoreElements()) {
-            String header = (String)headerNames.nextElement();
+            String header = (String) headerNames.nextElement();
             attributes.put(header, request.getAttribute(header));
         }
     }
@@ -430,7 +423,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
     private void populateParameters(HttpServletRequest request) {
         Enumeration headerNames = request.getParameterNames();
         while (headerNames.hasMoreElements()) {
-            String header = (String)headerNames.nextElement();
+            String header = (String) headerNames.nextElement();
             parameters.put(header, request.getParameterValues(header));
         }
     }
@@ -443,14 +436,13 @@ public class MockHttpServletRequest implements HttpServletRequest {
     }
 
 
-
     @Override
-    public boolean authenticate( HttpServletResponse response ) throws IOException, ServletException {
+    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void login( String username, String password ) throws ServletException {
+    public void login(String username, String password) throws ServletException {
         throw new UnsupportedOperationException();
     }
 
@@ -465,7 +457,12 @@ public class MockHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public Part getPart( String name ) throws IOException, ServletException {
+    public Part getPart(String name) throws IOException, ServletException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) {
         throw new UnsupportedOperationException();
     }
 
@@ -480,7 +477,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public AsyncContext startAsync( ServletRequest servletRequest, ServletResponse servletResponse ) throws IllegalStateException {
+    public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
         throw new UnsupportedOperationException();
     }
 

@@ -1,27 +1,31 @@
 package com.l7tech.external.assertions.websocket.server;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.websocket.WebSocket;
+import org.eclipse.jetty.websocket.api.extensions.ExtensionFactory;
+import org.eclipse.jetty.websocket.common.extensions.compress.PerMessageDeflateExtension;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.net.URISyntaxException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,117 +39,155 @@ import java.util.logging.Logger;
 public class WebSocketInboundHandler extends WebSocketHandlerBase {
     protected static final Logger logger = Logger.getLogger(WebSocketInboundHandler.class.getName());
 
-    private final AtomicInteger count = new AtomicInteger();
-    private static AtomicLong socketId = new AtomicLong();
-    private final Map<String, SSGInboundWebSocket> webSockets = new ConcurrentHashMap<String, SSGInboundWebSocket>();
-    private final Map<HttpServletRequest, WebSocketMetadata> socketMetadataMap = new ConcurrentHashMap<HttpServletRequest, WebSocketMetadata>();
-    private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<String, List<String>>();
-
-    private String handlerId;
     // Updated for 8.0 GOID Support
     private Goid serviceGoid;
+    private Goid connectionPolicyGoid;
     private boolean loopback;
     private int maxIdleTime;
     private int maxConnections;
-    private String incomingRelativeURL;
+    private final Map<String, SSGInboundWebSocket> webSocketIdWebSocketMap = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<>();
+    private String handlerId;
+    private String unresolvedOutboundUrl;
 
+    public Goid getConnectionPolicyGoid() {
+        return connectionPolicyGoid;
+    }
 
-    public WebSocketInboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connection) {
+    public int getMaxIdleTime() {
+        return maxIdleTime;
+    }
+
+    public int getMaxConnections() {
+        return maxConnections;
+    }
+
+    public Map<String, SSGInboundWebSocket> getWebSocketIdWebSocketMap() {
+        return webSocketIdWebSocketMap;
+    }
+
+    public Map<String, List<String>> getSocketReverseLookup() {
+        return socketReverseLookup;
+    }
+
+    public Goid getServiceGoid() {
+        return serviceGoid;
+    }
+
+    public String getHandlerId() {
+        return handlerId;
+    }
+
+    public static Logger getLogger() {
+        return logger;
+    }
+
+    public boolean isLoopback() {
+        return loopback;
+    }
+
+    public WebSocketInboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connectionEntity) {
         super(messageProcessor);
-        this.handlerId = connection.getId();
-        this.serviceGoid = connection.getInboundPolicyOID();
-        this.loopback = connection.isLoopback();
-        this.maxIdleTime = getMaxIdleTime(connection.getInboundMaxIdleTime(), 'I');
-        this.maxConnections = getMaxConnections(connection.getInboundMaxConnections());
+        this.handlerId = connectionEntity.getId();
+        this.serviceGoid = connectionEntity.getInboundPolicyOID();
+        this.connectionPolicyGoid = connectionEntity.getConnectionPolicyGOID();
+        this.loopback = connectionEntity.isLoopback();
+        this.maxIdleTime = getMaxIdleTime(connectionEntity.getInboundMaxIdleTime(), WebSocketConstants.ConnectionType.Inbound);
+        this.maxConnections = getMaxConnections(connectionEntity.getInboundMaxConnections());
+        this.unresolvedOutboundUrl = connectionEntity.getOutboundUrl();
+    }
+
+    @Override
+    public void configure(WebSocketServletFactory webSocketServletFactory) {
+
+        webSocketServletFactory.setCreator(new InboundSocketCreator(this));  // handle the inbound requests.
+        ExtensionFactory extFact = webSocketServletFactory.getExtensionFactory();
+        extFact.register("permessage-deflate", PerMessageDeflateExtension.class);
+
+    }
+
+    private void sendResponseErrorAndSetHandled(HttpServletRequest request,
+                                                HttpServletResponse response,
+                                                int httpServletResponse,
+                                                String messageStatus) throws IOException {
+        Request base_request = (request instanceof Request) ? (Request) request : HttpConnection.getCurrentConnection().getHttpChannel().getRequest();
+        base_request.setHandled(true);
+        response.sendError(httpServletResponse, messageStatus);
     }
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        WebSocketMessage msg;
-        String gen_socketid = generateSocketId(request.getHeader("Sec-WebSocket-Protocol"));
 
-        // TAC-1375 - allow dynamic URL
-        // Get the URI and the query string in one line using the line below.
-        setIncomingRelativePartOfURL(((Request) request).getUri().getCompletePath());
+        if (getWebSocketFactory().isUpgradeRequest(request, response)) {
 
-        if ( (serviceGoid.getHi() != 0) && (serviceGoid.getLow() != 0) ) {
-            try {
-                msg = new WebSocketMessage("");
-                msg.setId(gen_socketid);
-                msg = processMessage(serviceGoid, msg, new HttpServletRequestKnob(request), new HttpServletResponseKnob(response), null);
-                if ( msg != null) {
-                    if ( msg.getStatus().equals(AssertionStatus.AUTH_REQUIRED.getMessage())) {
-                        if ( response.containsHeader("WWW-Authenticate")) {
+            if ((getConnectionPolicyGoid() != null) && (getConnectionPolicyGoid().getHi() != 0) && (getConnectionPolicyGoid().getLow() != 0)) {
+                WebSocketMessage msg = null;
+                try {
+                    msg = new WebSocketMessage("");
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "WebSocket handshake failed", e);
+                    sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
+                }
+
+                ProcessResults processResults = processConnectionMessage(getConnectionPolicyGoid(), msg, new HttpServletRequestKnob(request), new HttpServletResponseKnob(response), null);
+
+                if (processResults.webSocketMessage == null) {
+                    logger.log(Level.WARNING, "WebSocket handshake policy failed, can not complete connection");
+                    sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
+                } else {
+                    request.setAttribute(WebSocketConstants.REQUEST_CONTEXT_VARIABLES, processResults.getContextVariable());
+                    request.setAttribute(WebSocketConstants.AUTHENTICATION_CONTEXT_REQ_ATTRIB, processResults.webSocketMessage.getAuthCtx());
+                    if (AssertionStatus.AUTH_REQUIRED.getMessage().equals(processResults.getMsg().getStatus())) {
+                        if (response.containsHeader("WWW-Authenticate")) {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
                             response.addHeader("WWW-Authenticate", "Basic");
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, msg.getStatus());
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
                         } else {
                             logger.log(Level.WARNING, "WebSocket handshake policy failed");
-                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg.getStatus());
+                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processResults.getMsg().getStatus());
                         }
-                    } else if ( msg.getStatus().equals(AssertionStatus.AUTH_FAILED.getMessage())) {
-                        if ( request.getHeader("Authorization") != null && request.getHeader("Authorization").startsWith("Basic")) {
+                    } else if (AssertionStatus.AUTH_FAILED.getMessage().equals(processResults.getMsg().getStatus())) {
+                        if (request.getHeader("Authorization") != null && request.getHeader("Authorization").startsWith("Basic")) {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
                             response.addHeader("WWW-Authenticate", "Basic");
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, msg.getStatus());
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
                         }
-                    } else if (!msg.getStatus().equals(AssertionStatus.NONE.getMessage())) {
+                        else {
+                            logger.log(Level.INFO, "Authentication failed.");
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
+                        }
+                    } else if (!AssertionStatus.NONE.getMessage().equals(processResults.getMsg().getStatus())) {
                         logger.log(Level.WARNING, "WebSocket handshake policy failed");
-                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg.getStatus());
-                    } else { //Policy returned NONE
-                        WebSocketMetadata metadata = new WebSocketMetadata(gen_socketid, msg.getAuthCtx(), request);
-                        socketMetadataMap.put(request, metadata);
-                        super.handle(target, baseRequest, request, response);
+                        sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processResults.getMsg().getStatus());
                     }
-                } else {
-                    logger.log(Level.WARNING, "WebSocket handshake policy failed, can not complete connection");
                 }
-            } catch (Exception e) {
-               logger.log(Level.WARNING, "WebSocket handshake failed", e);
-               response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
-        } else {
-            super.handle(target, baseRequest, request, response);
         }
+        super.handle(target, baseRequest, request, response);
     }
 
-    // If the outbound URL is ws://thecustomerserver.com:8098 and the inbound request is wss://mygateway:8081/mypath?myparam1=bob,
-    // the client request would look like: ws://thecustomerserver.com:8098/mypath?myparam1=bob
-    private void setIncomingRelativePartOfURL(String url){
-        if (url.isEmpty()){
-            incomingRelativeURL=null;
+
+    protected SSGInboundWebSocket createWebSocket(HttpServletRequest httpServletRequest, WebSocketMetadata metaData) throws WebSocketCreationException, URISyntaxException {
+
+        if ((webSocketIdWebSocketMap.size()) > getMaxConnections()) {
+            logger.log(Level.WARNING, "Will not create inbound websocket because the maximum number of connections will be exceeded.");
+            throw new WebSocketCreationException("Will not create inbound websocket because the maximum number of connections will be exceeded.");
         }
-        else {
-            incomingRelativeURL = url.substring(1);
-        }
+        return new SSGInboundWebSocket(this, httpServletRequest, metaData);
     }
 
-    public String getIncomingRelativePartOfURL() {
-        return incomingRelativeURL;
-    }
-
-    private String generateSocketId( String protocol ) {
-        //default generate an id;
-        return handlerId + ":" + String.valueOf(socketId.getAndIncrement()) + ":" + protocol;
-    }
-
-    public WebSocket doWebSocketConnect(HttpServletRequest request, String protocol) {
-        if (count.get() < maxConnections) {
-           return new SSGInboundWebSocket(request, protocol);
-        }
-        return null;
-    }
 
     void broadcastMessage(WebSocketMessage message) throws IOException, WebSocketInvalidTypeException {
-        Set<String> keys = webSockets.keySet();
+
+        Set<String> keys = webSocketIdWebSocketMap.keySet();
         for (String socket : keys) {
             sendMessage(socket, message);
         }
     }
 
     String[] resolveSocketId(String clientId, String protocol) {
-        if ( clientId.startsWith(handlerId) ) {
-            return new String[] { clientId };
+        if (clientId.startsWith(handlerId)) {
+            return new String[]{clientId};
         }
 
         String fullClientId = clientId + ":" + protocol;
@@ -164,182 +206,138 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         }
     }
 
-    void closeInboundConnection(String webSocketId, String message) {
-        webSockets.get(webSocketId).failAndDisconnect(message);
+    void closeInboundConnection(String webSocketId, int closeStatus, String message) {
+
+        if (webSocketIdWebSocketMap.get(webSocketId) != null) {
+            webSocketIdWebSocketMap.get(webSocketId).cleanupOnClose(closeStatus, message);
+        }
     }
 
     private void sendMessage(String webSocketId, String message) throws IOException {
-        if (!webSockets.containsKey(webSocketId)) {
+        if (!webSocketIdWebSocketMap.containsKey(webSocketId)) {
             throw new IOException("Message could not be delivered, connection no longer available");
         }
-        webSockets.get(webSocketId).send(message);
+        webSocketIdWebSocketMap.get(webSocketId).send(message);
     }
 
     private void sendMessage(String webSocketId, byte[] message, int i, int i1) throws IOException {
-        if (!webSockets.containsKey(webSocketId)) {
+        if (!webSocketIdWebSocketMap.containsKey(webSocketId)) {
             throw new IOException("Message could not be delivered, connection no longer available");
         }
-        webSockets.get(webSocketId).send(message, i, i1);
+        webSocketIdWebSocketMap.get(webSocketId).send(message, i, i1);
     }
 
-    private class SSGInboundWebSocket implements WebSocket.OnTextMessage, WebSocket.OnBinaryMessage {
 
-        private String webSocketId;
-        private Connection connection;
-        private String protocol;
-        private String origin;
-        private String clientId;
-        private AuthenticationContext authContext;
-        private MockHttpServletRequest mockRequest;
+    protected ProcessResults processConnectionMessage(Goid serviceGoid,
+                                                      WebSocketMessage message,
+                                                      HttpServletRequestKnob requestKnob,
+                                                      @Nullable HttpServletResponseKnob responseKnob,
+                                                      @Nullable AuthenticationContext authContext) {
 
-        private SSGInboundWebSocket(HttpServletRequest request, String protocol ) {
-            WebSocketMetadata metadata = socketMetadataMap.remove(request);
-            this.webSocketId = metadata.getId();
-            this.origin = request.getRemoteAddr();
-            this.protocol = protocol;
-            this.mockRequest = new MockHttpServletRequest(request);
-            this.authContext = metadata.getAuthenticationContext();
-            this.clientId = generateClientId(metadata);
-            registerClientId(clientId);
-            logger.log(Level.INFO, "Created Websocket -> handler:" + handlerId + ",socket id:" + webSocketId + ",subprotocol:" + protocol + ",origin:" + origin);
-        }
+        ProcessResults messageContextVariable = new ProcessResults();
+        PolicyEnforcementContext context = null;
+        try {
+            Message request = new Message();
+            Message response = new Message();
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
-        private void registerClientId(String clientId) {
-            List<String> ids;
-            if ( clientId != null && !"".equals(clientId)) {
-                if ( socketReverseLookup.containsKey(clientId)) {
-                    ids = socketReverseLookup.get(clientId);
-                    ids.add(webSocketId);
-                } else  {
-                    ids = new ArrayList<String>();
-                    ids.add(webSocketId);
+            request.initialize(message.getMessageAsDocument());
+            if (authContext != null) {
 
-                }
-                socketReverseLookup.put(clientId, ids);
-            }
-
-        }
-
-        private String generateClientId( WebSocketMetadata metadata) {
-            if ( authContext != null && authContext.isAuthenticated()) {
-                return  authContext.getLastCredentials().getLogin()+ ":" + protocol;
-            } else if (metadata.hasAccessToken()) {
-                //create id based on token
-                return metadata.getAccessToken()+":"+protocol;
-            }
-
-            return "";
-        }
-
-
-        @Override
-        public void onOpen(Connection connection) {
-            this.connection = connection;
-            this.connection.setMaxBinaryMessageSize(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY));
-            this.connection.setMaxTextMessageSize(WebSocketConstants.getClusterProperty(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY)-1);
-            this.connection.setMaxIdleTime(maxIdleTime);
-            count.incrementAndGet();
-            webSockets.put(webSocketId, this);
-        }
-
-        private void processOnMessage(WebSocketMessage message) throws WebSocketConnectionManagerException, IOException, WebSocketInvalidTypeException {
-            message.setOrigin(origin);
-            message.setProtocol(protocol);
-            message.setId(webSocketId);
-            message.setClientId(clientId);
-
-            if ( (serviceGoid.getHi() != 0) && (serviceGoid.getLow() != 0) ) {
-                message = processMessage(serviceGoid, message, new HttpServletRequestKnob(mockRequest), null, authContext);
-            }
-            if (message.getStatus().equals(AssertionStatus.NONE.getMessage())) {
-                if (!loopback) {
-                    sendOutboundMessage(message);
-                } else {
-                    sendMessage(webSocketId, message);
-                }
+                request.attachHttpRequestKnob(requestKnob);
+                context.getAuthenticationContext(request).addCredentials(authContext.getLastCredentials());
             } else {
-                disconnectionAndNotify("Unable to process message");
-            }
-        }
-
-        @Override
-        public void onMessage(String data) {
-            try {
-                WebSocketMessage msg = new WebSocketMessage(data);
-                processOnMessage(msg);
-            } catch (Exception e) {
-                disconnectionAndNotify("Unable to create WebSocketMessage");
-            }
-        }
-
-        @Override
-        public void onMessage(byte[] bytes, int i, int i1) {
-            try {
-                WebSocketMessage msg = new WebSocketMessage(bytes, i, i1);
-                processOnMessage(msg);
-            } catch (Exception e) {
-                disconnectionAndNotify("Unable to create WebSocketMessage");
-            }
-
-        }
-
-        public void send(String message) throws IOException {
-            connection.sendMessage(message);
-        }
-
-        public void send(byte[] message, int i, int i1) throws IOException {
-            connection.sendMessage(message, i, i1);
-        }
-
-        @Override
-        public void onClose(int closeCode, String message) {
-            logger.log(Level.INFO, message);
-            cleanupOnClose();
-        }
-
-        private void disconnectionAndNotify(String msg) {
-            failAndDisconnect(msg);
-            //Notify Outbound
-            try {
-                getOutboundHandler(handlerId).closeOutboundConnection(webSocketId, msg);
-            } catch (WebSocketConnectionManagerException e) {
-                logger.log(Level.WARNING,"Failed to notify Outbound connection of outbound closure");
-            }
-        }
-
-        private void degisterClientId(String clientId, String websocketId) {
-            if ( socketReverseLookup.containsKey(clientId)) {
-                socketReverseLookup.get(clientId).remove(websocketId);
-                if ( socketReverseLookup.get(clientId).isEmpty()) {
-                    socketReverseLookup.remove(clientId);
+                if (requestKnob != null) {
+                    request.attachHttpRequestKnob(requestKnob);
+                }
+                if (responseKnob != null) {
+                    response.attachHttpResponseKnob(responseKnob);
                 }
             }
-        }
+            request.attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
 
-        private void cleanupOnClose() {
-            count.decrementAndGet();
-            webSockets.remove(webSocketId);
-            degisterClientId(clientId, webSocketId);
-        }
+            AssertionStatus status = messageProcessor.processMessage(context);
+            message.setAuthCtx(context.getAuthenticationContext(request));
 
-        private void failAndDisconnect(String msg) {
-            logger.log(Level.WARNING, msg);
-            this.connection.close(1, msg);
-            cleanupOnClose();
-        }
+            messageContextVariable.contextVariable = new HashMap<>(context.getAllVariables());
 
-        private void sendOutboundMessage(WebSocketMessage message) throws WebSocketConnectionManagerException {
-            try {
-                //Send to outbound
-                getOutboundHandler(handlerId).sendMessage(webSocketId, message, mockRequest, authContext);
-            } catch (WebSocketInvalidTypeException e) {
-                logger.log(Level.WARNING,"Failed to send Outbound message");
-                disconnectionAndNotify("Outbound handler not available yet");
-            } catch (IOException e) {
-                logger.log(Level.WARNING,"Failed to send Outbound message");
-                disconnectionAndNotify("Outbound handler not available yet");
+            //Check for challenges and process them
+            if (response.isHttpResponse() && response.getHttpResponseKnob() instanceof HttpServletResponseKnob) {
+                HttpServletResponseKnob knob = (HttpServletResponseKnob) response.getHttpResponseKnob();
+                if (knob != null && knob.hasChallenge()) {
+                    knob.beginChallenge();
+                }
+            }
+
+            if (AssertionStatus.NONE.equals(status) && response.isInitialized()) {
+                message.setPayload(XmlUtil.parse(response.getMimeKnob().getEntireMessageBodyAsInputStream()));
+            }
+
+            message.setStatus(status.getMessage());
+            messageContextVariable.webSocketMessage = message;
+
+            return messageContextVariable;
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not pass websocket message to policy");
+        } finally {
+            if (context != null)
+                ResourceUtils.closeQuietly(context);
+        }
+        return null;
+    }
+
+    public void registerClientId(String clientId, String webSocketId) {
+
+        if (StringUtils.isNotEmpty(clientId)) {
+
+            List<String> websocketIds;
+
+            if (socketReverseLookup.containsKey(clientId)) {
+                websocketIds = socketReverseLookup.get(clientId);
+                websocketIds.add(webSocketId);
+            } else {
+                websocketIds = new ArrayList<>();
+                List<String> websocketIdsPrev = socketReverseLookup.putIfAbsent(clientId, websocketIds);
+                if (websocketIdsPrev != null) {
+                    websocketIds = websocketIdsPrev;
+                }
+                websocketIds.add(webSocketId);
             }
         }
+    }
 
+    public void deregisterClientId(String clientId, String websocketId) {
+
+        if (getSocketReverseLookup().containsKey(clientId)) {
+            getSocketReverseLookup().get(clientId).remove(websocketId);
+            // we won't check if the list is empty and remove it to avoid potential synchronziation issues.
+        }
+    }
+
+
+    public void notifyCloseOutboundConnection(String webSocketId, int statusCode, String msg) {
+        try {
+            getOutboundHandler(getHandlerId()).closeOutboundConnection(webSocketId, statusCode, msg);
+        } catch (WebSocketConnectionManagerException e) {
+            logger.log(Level.WARNING, "Could not ");
+        }
+    }
+
+    private class ProcessResults {
+        private WebSocketMessage webSocketMessage;
+        private HashMap contextVariable;
+
+        private WebSocketMessage getMsg() {
+            return webSocketMessage;
+        }
+
+        private HashMap getContextVariable() {
+            return contextVariable;
+        }
+    }
+
+    public String getUnresolvedOutboundUrl() {
+        return unresolvedOutboundUrl;
     }
 }

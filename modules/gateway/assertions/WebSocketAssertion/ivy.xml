@@ -14,18 +14,24 @@
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration" conf="compile->compile;runtime->runtime;test->test"/>
-        <dependency org="org.codehaus.jetty" name="jetty-continuation" rev="7.6.4"  force="true" conf="core"/>
-        <dependency org="org.codehaus.jetty" name="jetty-http" rev="7.6.4"  force="true" conf="core"/>
-        <dependency org="org.codehaus.jetty" name="jetty-io" rev="7.6.4"  force="true" conf="core"/>
-        <dependency org="org.codehaus.jetty" name="jetty-server" rev="7.6.4"  force="true" conf="core"/>
-        <dependency org="org.codehaus.jetty" name="jetty-util" rev="7.6.4"  force="true" conf="core"/>
-        <dependency org="org.codehaus.jetty" name="jetty-websocket-custom" rev="7.6.4"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-io" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-server" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-security" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-util" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="websocket-api" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="websocket-client" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="websocket-common" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="websocket-server" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-http" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="websocket-servlet" rev="9.3.8.v20160314"  force="true" conf="core"/>
+        <dependency org="org.eclipse.jetty" name="jetty-continuation" rev="9.3.8.v20160314"  force="true" conf="core"/>
 		<dependency name="javax.inject" rev="1" org="javax.inject"/>
         <dependency org="com.intellij" name="annotations" rev="13.1.6" force="true" conf="core"/>
-		<dependency name="javax.servlet-api" rev="3.0.1" org="javax.servlet"/>
+        <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="9.3.8.v20160314"  force="true" conf="core"/>
 		<dependency name="spring-tx" rev="3.0.7.RELEASE" org="org.springframework"/>
 		<dependency name="spring-context" rev="3.0.7.RELEASE" org="org.springframework"/>
 		<dependency name="spring-beans" rev="3.0.7.RELEASE" org="org.springframework"/>
 		<dependency name="spring-core" rev="3.0.7.RELEASE" org="org.springframework"/>
+        <dependency name="javax.servlet-api" rev="3.1.0" org="javax.servlet" force="true" conf="core"/>
 	</dependencies>
 </ivy-module>

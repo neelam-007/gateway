@@ -35,7 +35,7 @@ public class WebSocketMessage {
     private String origin;
     private String protocol;
     private String status;
-    private AuthenticationContext context;
+    private AuthenticationContext authenticationContext;
 
     private void initialize() {
         document = null;
@@ -80,11 +80,11 @@ public class WebSocketMessage {
     }
 
     public AuthenticationContext getAuthCtx() {
-        return context;
+        return authenticationContext;
     }
 
     public void setAuthCtx(AuthenticationContext context) {
-        this.context = context;
+        this.authenticationContext = context;
     }
 
     public String getType() {

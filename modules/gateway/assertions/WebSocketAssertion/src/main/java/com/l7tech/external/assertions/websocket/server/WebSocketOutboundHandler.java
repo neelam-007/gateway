@@ -2,21 +2,24 @@ package com.l7tech.external.assertions.websocket.server;
 
 import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
-import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.AuthenticationContext;
-import org.eclipse.jetty.websocket.WebSocket;
-import org.eclipse.jetty.websocket.WebSocketClient;
+import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.StatusCode;
+import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,49 +34,136 @@ import java.util.logging.Logger;
 public class WebSocketOutboundHandler extends WebSocketHandlerBase {
     protected static final Logger logger = Logger.getLogger(WebSocketOutboundHandler.class.getName());
 
-    private final Map<String, SSGOutboundWebSocket> webSockets = new ConcurrentHashMap<String, SSGOutboundWebSocket>();
-    private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<String, List<String>>();
+    // MAG-1603 "sec-websocket-version" header duplicated in websocket connection request.
+    // TAC-1982 - omit sec-websocket-extensions. It will be added later through request.addExtensions().
+    private static final List<String> omitHeaders = Arrays.asList("get", "origin", "connection", "sec-websocket-key", "upgrade", "host", "sec-websocket-version", "sec-websocket-extensions");
+
+    private final Map<String, SSGOutboundWebSocket> webSockets = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<>();
     private String handlerId;
-    private URI uri;
     private int maxIdleTime;
     private WebSocketConnectionEntity connection;
 
 
-    public WebSocketOutboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connection) {
+    public WebSocketOutboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity webSocketConnectionEntity) {
         super(messageProcessor);
-        this.handlerId = connection.getId();
+        this.handlerId = webSocketConnectionEntity.getId();
         this.messageProcessor = messageProcessor;
-        try {
-            this.uri = new URI(connection.getOutboundUrl());
-        } catch (URISyntaxException e) {
-           logger.log(Level.WARNING, "Malformed URI format");
+        this.connection = webSocketConnectionEntity;
+        this.maxIdleTime = getMaxIdleTime(webSocketConnectionEntity.getOutboundMaxIdleTime(), WebSocketConstants.ConnectionType.Outbound);
+    }
+
+    public void registerClientId(String clientId, String webSocketId) {
+
+        if (StringUtils.isNotEmpty(clientId)) {
+
+            List<String> websocketIds;
+
+            if (socketReverseLookup.containsKey(clientId)) {
+                websocketIds = socketReverseLookup.get(clientId);
+                websocketIds.add(webSocketId);
+            } else {
+                websocketIds = new ArrayList<>();
+                List<String> websocketIdsPrev = socketReverseLookup.putIfAbsent(clientId, websocketIds);
+                if (websocketIdsPrev != null) {
+                    websocketIds = websocketIdsPrev;
+                }
+                websocketIds.add(webSocketId);
+            }
         }
-        this.connection = connection;
-        this.maxIdleTime = getMaxIdleTime(connection.getOutboundMaxIdleTime(), 'O');
     }
 
-    public void createConnection(String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest) throws Exception {
-
-        createConnection(webSocketId,message,mockRequest,null);
+    public void degisterClientId(String clientId, final String websocketId) {
+        if (socketReverseLookup.containsKey(clientId)) {
+            socketReverseLookup.get(clientId).remove(websocketId);
+            // we won't check if the list is empty and remove it to avoid potential synchronziation issues.
+        }
     }
 
-    private void createConnection(String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+    public void createConnection(String connectionUrl, String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest) throws Exception {
 
-        // added for TAC-1375
-        URI dynamicURI = new URI(uri.toString() + getInboundHandler(handlerId).getIncomingRelativePartOfURL());
+        createConnection(connectionUrl, webSocketId, message, mockRequest, null);
+    }
+
+    private void createConnection(String connectionUrl, String webSocketId, WebSocketMessage message, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+
+        URI resolvedUrl = new URI(connectionUrl);
 
         if (connection.isOutboundSsl()) {
-            new SSGOutboundWebSocket(webSocketId, message.getClientId(), dynamicURI, WebSocketConnectionManager.getInstance().getOutBoundSslWebSocket(message.getOrigin(),
-                    message.getProtocol(),maxIdleTime, handlerId), connection.getOutboundPolicyOID(), mockRequest, authContext);
+            createOutboundWebSocketClient(true, webSocketId, message.getClientId(), message.getOrigin(), message.getProtocol(), resolvedUrl,
+                    connection.getOutboundPolicyOID(), mockRequest, authContext);
+
         } else {
-            new SSGOutboundWebSocket(webSocketId, message.getClientId(), dynamicURI, WebSocketConnectionManager.getInstance().getOutBoundWebSocket(message.getOrigin(),
-                    message.getProtocol(),maxIdleTime), connection.getOutboundPolicyOID(), mockRequest, authContext);
+
+            createOutboundWebSocketClient(false, webSocketId, message.getClientId(), message.getOrigin(), message.getProtocol(), resolvedUrl,
+                    connection.getOutboundPolicyOID(), mockRequest, authContext);
         }
     }
 
+    private void createOutboundWebSocketClient(boolean isSsl, String webSocketId, String clientId, String origin, String protocol, URI uri, Goid serviceGoid, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+
+        if (uri == null || uri.toString().trim().isEmpty()) {
+            logger.log(Level.SEVERE, "The outbound url is empty!");
+            throw new URISyntaxException("Could not create outbound WebSocketclient.", "The outbound URL is null.");
+        }
+
+        try {
+
+            SSGOutboundWebSocket outboundWebSocket = new SSGOutboundWebSocket(this, webSocketId, uri.toString(), clientId, origin, protocol, serviceGoid, mockRequest, authContext);
+
+            ClientUpgradeRequest request = new ClientUpgradeRequest();
+            addCustomerHeaders(request, mockRequest);
+
+            WebSocketClient wsClient;
+
+            if (isSsl) {
+                wsClient = WebSocketConnectionManager.getInstance().getOutboundWebSocketClient(true, handlerId, uri.toString(), maxIdleTime, connection);
+            } else {
+                wsClient = WebSocketConnectionManager.getInstance().getOutboundWebSocketClient(false, handlerId, uri.toString(), maxIdleTime, null);
+            }
+
+            if (wsClient == null) {
+                getInboundHandler(handlerId).closeInboundConnection(webSocketId, StatusCode.SERVER_ERROR ,"Could not get a websocketclient.  Cannot connect to outbound URL.");
+                return;
+            }
+
+            addCustomerHeaders(request, mockRequest);
+            request.addExtensions("permessage-deflate"); // TAC-1982 Outbound message not being compressed.
+            // Note: if the backend server does not request compression, then compression is not used.
+
+            Future<Session> fut = wsClient.connect(outboundWebSocket, uri, request);
+
+            // fut.get() will return when websocket session object gets created.
+            // Must wait for client to connect before continuing.  Otherwise will get timing issues with WebSocket handler.
+            fut.get(WebSocketConstants.getClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY), TimeUnit.SECONDS);
+
+            if (WebSocketOutboundHandler.this.connection != null) {
+                logger.log(Level.INFO, "Created Websocket connection to: " + uri.toString());
+            }
+        } catch (Exception e) {
+
+            getInboundHandler(handlerId).closeInboundConnection(webSocketId, StatusCode.SERVER_ERROR, "createOutboundWebSocketClient Exception:" + e.toString() + "Terminating WebSocketClient");
+        }
+    }
+
+    // Copy all of the headers from the mockRequest except for: "GET", "Origin", "Connection", "Sec-WebSocket-Key", "Upgrade", "Host", "Sec-WebSocket-Version"
+    // to the request.
+    private void addCustomerHeaders(ClientUpgradeRequest request, MockHttpServletRequest mockRequest) {
+
+        Enumeration<String> e = mockRequest.getHeaderNames();
+
+        while (e.hasMoreElements()) {
+            String requestHeaderKey = e.nextElement();
+            if (!omitHeaders.contains(requestHeaderKey.toLowerCase())) {
+                request.setHeader(requestHeaderKey, mockRequest.getHeader(requestHeaderKey));
+            }
+        }
+    }
+
+
     String[] resolveSocketId(String clientId, String protocol) {
-        if ( clientId.startsWith(handlerId) ) {
-            return new String[] { clientId };
+        if (clientId.startsWith(handlerId)) {
+            return new String[]{clientId};
         }
 
         String fullClientId = clientId + ":" + protocol;
@@ -84,10 +174,11 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
         return null;
     }
 
+
     void broadcastMessage(WebSocketMessage message) throws IOException, WebSocketInvalidTypeException {
         Set<String> keys = webSockets.keySet();
         for (String socket : keys) {
-            if ( message.getType().equals(WebSocketMessage.BINARY_TYPE)) {
+            if (message.getType().equals(WebSocketMessage.BINARY_TYPE)) {
                 sendMessageBinary(socket, message);
             } else {
                 sendMessageText(socket, message);
@@ -96,14 +187,14 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
     }
 
     @Override
-    void sendMessage(String webSocketId, WebSocketMessage message) throws WebSocketInvalidTypeException, IOException {
-        sendMessage(webSocketId, message, null, null);
+    void sendMessage(String webSocketId, WebSocketMessage message) throws WebSocketInvalidTypeException, IOException,UnsupportedOperationException {
+        throw new UnsupportedOperationException("This method is not supported.");
     }
 
-    void sendMessage(String webSocketId, WebSocketMessage message, @Nullable MockHttpServletRequest mockRequest, @Nullable AuthenticationContext authContext) throws WebSocketInvalidTypeException, IOException {
+    void sendMessage(String connectionUrl, String webSocketId, WebSocketMessage message, @Nullable MockHttpServletRequest mockRequest, @Nullable AuthenticationContext authContext) throws WebSocketInvalidTypeException, IOException {
         if (!webSockets.containsKey(webSocketId)) {
             try {
-                createConnection(webSocketId, message, mockRequest, authContext);
+                createConnection(connectionUrl, webSocketId, message, mockRequest, authContext);
             } catch (Exception e) {
                 throw new IOException("Unable to send outbound message", e);
             }
@@ -115,174 +206,54 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
         }
     }
 
-    void closeOutboundConnection(String webSocketId, String message) {
-        webSockets.get(webSocketId).failAndDisconnect(message);
+    void closeOutboundConnection(String webSocketId, int statusCode, String message) {
+
+        if (webSockets.get(webSocketId) != null) {
+            webSockets.get(webSocketId).cleanupOnClose(true, statusCode, message);
+        }
     }
 
     private void sendMessageText(String webSocketId, WebSocketMessage message) throws IOException, WebSocketInvalidTypeException {
         webSockets.get(webSocketId).send(message.getPayloadAsString());
     }
 
-    private void sendMessageBinary(String webSocketId, WebSocketMessage message ) throws IOException, WebSocketInvalidTypeException {
+    private void sendMessageBinary(String webSocketId, WebSocketMessage message) throws IOException, WebSocketInvalidTypeException {
         webSockets.get(webSocketId).send(message.getPayloadAsBytes(), message.getOffset(), message.getLength());
     }
 
     @Override
-    public WebSocket doWebSocketConnect(HttpServletRequest httpServletRequest, String s) {
-        return null; //Meant to do nothing
+    public void configure(WebSocketServletFactory webSocketServletFactory) {
+        webSocketServletFactory.register(SSGOutboundWebSocket.class);
     }
 
-    private class SSGOutboundWebSocket implements WebSocket.OnTextMessage, WebSocket.OnBinaryMessage {
+    public void addToWebSocketMap(String webSocketId, SSGOutboundWebSocket ssgOutboundWebSocket) {
+        webSockets.put(webSocketId, ssgOutboundWebSocket);
+    }
 
-        private String webSocketId;
-        private String clientId;
-        // Updated to use 8.0 GOIDs
-        private Goid serviceGoid;
-        private Connection connection;
-        private String origin;
-        private String protocol;
-        private AuthenticationContext authContext;
-        private MockHttpServletRequest mockRequest;
+    public void removeFromSocketMap(String webSocketId) {
+        webSockets.remove(webSocketId);
+    }
 
-
-        public SSGOutboundWebSocket(String webSocketId, String clientId, URI uri, WebSocketClient client, Goid serviceGoid, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
-            this.serviceGoid = serviceGoid;
-            this.webSocketId = webSocketId;
-            this.clientId = clientId;
-            this.origin = client.getOrigin();
-            this.authContext = authContext;
-            this.mockRequest = mockRequest;
-            this.protocol = client.getProtocol();
-            addCustomerHeaders(client, mockRequest);
-            registerClientId(clientId);
-            connection = client.open(uri, this, WebSocketConstants.getClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY), TimeUnit.SECONDS);
+    public void closeInboundConnection(String websocketId, int codeStatus, String msg) {
+        try {
+            getInboundHandler(handlerId).closeInboundConnection(websocketId, codeStatus, msg);
+        } catch (WebSocketConnectionManagerException e) {
+            logger.log(Level.WARNING, "Caught WebSocketConnectionManagerException when attempting to close the inbound connection. " + e.toString());
         }
+    }
 
-        private void registerClientId(String clientId) {
-            List<String> ids = null;
-            if ( clientId != null && !"".equals(clientId)) {
-                if ( socketReverseLookup.containsKey(clientId)) {
-                    ids = socketReverseLookup.get(clientId);
-                    ids.add(webSocketId);
-                } else  {
-                    ids = new ArrayList<String>();
-                    ids.add(webSocketId);
-
-                }
-                socketReverseLookup.put(clientId, ids);
-            }
-
-        }
-
-        @Override
-        public void onOpen(Connection connection) {
-            webSockets.put(webSocketId, this);
-        }
-
-        private void addCustomerHeaders(WebSocketClient client, MockHttpServletRequest request) {
-            List<String> headers = Arrays.asList("GET", "Origin", "Connection", "Sec-WebSocket-Key", "Upgrade");
-            Enumeration<String> e = request.getHeaderNames();
-            while (e.hasMoreElements()) {
-                String key = e.nextElement();
-                if (!headers.contains(key)) {
-                     client.addHeader(key, request.getHeader(key));
-                }
-            }
-        }
-
-        private void processOnMessage(WebSocketMessage message) throws WebSocketConnectionManagerException, IOException, WebSocketInvalidTypeException {
-            message.setOrigin(origin);
-            message.setProtocol(connection.getProtocol());
-
-            if ( (serviceGoid.getHi() != 0) && (serviceGoid.getLow() != 0) ){
-                message = processMessage(serviceGoid, message, new HttpServletRequestKnob(mockRequest), null, authContext);
-            }
-            if (message.getStatus().equals(AssertionStatus.NONE.getMessage())) {
-                sendInboundMessage(message);
-            } else {
-                disconnectionAndNotify("Unable to process message");
-            }
-
-        }
-
-        @Override
-        public void onMessage(String data) {
-            try {
-                WebSocketMessage msg = new WebSocketMessage(data);
-                processOnMessage(msg);
-            } catch (Exception e) {
-                disconnectionAndNotify("Unable to create WebSocketMessage");
-            }
-        }
-
-        @Override
-        public void onMessage(byte[] bytes, int i, int i1) {
-            try {
-                WebSocketMessage msg = new WebSocketMessage(bytes, i, i1);
-                processOnMessage(msg);
-            } catch (Exception e) {
-                disconnectionAndNotify("Unable to create WebSocketMessage");
-            }
-
-        }
-
-        public void send(String message) throws IOException {
-            connection.sendMessage(message);
-        }
-
-        public void send(byte[] message, int i, int i1) throws IOException {
-            connection.sendMessage(message, i, i1);
-        }
-
-        @Override
-        public void onClose(int closeCode, String message) {
-            cleanupOnClose();
-        }
-
-        private void disconnectionAndNotify (String msg) {
-            failAndDisconnect(msg);
-            //Notify Inbound
-            try {
-                getInboundHandler(handlerId).closeInboundConnection(webSocketId,msg);
-            } catch (WebSocketConnectionManagerException e) {
-                logger.log(Level.WARNING,"Failed to notify Inbound connection of outbound closure");
-            }
-        }
-
-        private void degisterClientId(String clientId, String websocketId) {
-            if ( socketReverseLookup.containsKey(clientId)) {
-                socketReverseLookup.get(clientId).remove(websocketId);
-                if ( socketReverseLookup.get(clientId).isEmpty()) {
-                    socketReverseLookup.remove(clientId);
-                }
-            }
-        }
-
-        private void cleanupOnClose() {
-            webSockets.remove(webSocketId);
-            degisterClientId(clientId, webSocketId);
-        }
-
-        private void failAndDisconnect(String msg) {
-            logger.log(Level.WARNING, msg);
-            this.connection.close(1, msg);
-            cleanupOnClose();
-        }
-
-        private void sendInboundMessage(WebSocketMessage message) {
-            try {
-                //Send to Inbound
-                getInboundHandler(handlerId).sendMessage(webSocketId, message);
-            } catch (WebSocketConnectionManagerException e) {
-                logger.log(Level.WARNING,"Failed to send Inbound message");
-                disconnectionAndNotify("Inbound handler not available yet");
-            } catch (WebSocketInvalidTypeException e) {
-                logger.log(Level.WARNING,"Failed to send Inbound message");
-                disconnectionAndNotify("Inbound handler not available yet");
-            } catch (IOException e) {
-                logger.log(Level.WARNING,"Failed to send Inbound message");
-                disconnectionAndNotify("Inbound handler not available yet");
-            }
+    public void sendMessageToInboundConnection(String webSocketId, WebSocketMessage webSocketMessage) {
+        try {
+            getInboundHandler(handlerId).sendMessage(webSocketId, webSocketMessage);
+        } catch (WebSocketConnectionManagerException e) {
+            logger.log(Level.WARNING, "WebSocketConnectionManagerException:Failed to send Inbound message " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            webSockets.get(webSocketId).cleanupOnClose(true, StatusCode.SERVER_ERROR, "Inbound handler not available yet");
+        } catch (WebSocketInvalidTypeException e) {
+            logger.log(Level.WARNING, "WebSocketInvalidTypeException:Failed to send Inbound message " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            webSockets.get(webSocketId).cleanupOnClose(true, StatusCode.SERVER_ERROR, "Inbound handler not available yet");
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "IOException:Failed to send Inbound message " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            webSockets.get(webSocketId).cleanupOnClose(true, StatusCode.SERVER_ERROR, "Inbound handler not available yet");
         }
     }
 }
