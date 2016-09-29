@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.DuplicateAliasException;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -26,8 +25,8 @@ import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
-import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -173,14 +172,14 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         // PKCS#12 key store containing a single key entry,
         // with the passphrase provided in the SSG_SSL_KEY_PASS env var.
 
-        String pkcs12b64 = System.getenv( "SSG_SSL_KEY" );
+        String pkcs12b64 = getenv( "SSG_SSL_KEY" );
         if ( Boolean.getBoolean( "com.l7tech.bootstrap.env.sslkey.enable" ) &&
                 pkcs12b64 != null &&
                 pkcs12b64.trim().length() > 0 )
         {
             logger.info( "Trying to create default SSL key from the SSG_SSL_KEY environment variable" );
 
-            String kspass = System.getenv( "SSG_SSL_KEY_PASS" );
+            String kspass = getenv( "SSG_SSL_KEY_PASS" );
             if ( kspass == null ) {
                 logger.info( "SSG_SSL_KEY_PASS environment variable not set -- guessing default keystore passphrase for SSG_SSL_KEY" ) ;
                 kspass = "password";
@@ -230,6 +229,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
         // Need to generate new one
         generateKeyPair( sks, alias );
+    }
+
+    protected String getenv( String env ) {
+        return System.getenv( env );
     }
 
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
