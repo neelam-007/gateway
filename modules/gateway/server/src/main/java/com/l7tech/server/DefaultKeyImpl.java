@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.DuplicateAliasException;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -10,25 +11,24 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.net.ssl.KeyManager;
 import javax.security.auth.x500.X500Principal;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.X509Certificate;
+import java.security.*;
+import java.security.cert.*;
+import java.security.cert.Certificate;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -56,6 +56,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final AtomicReference<SsgKeyEntry> cachedAuditViewerInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedAuditSigningInfo = new AtomicReference<SsgKeyEntry>();
     private static final String SC_PROP_SSL_KEY = ServerConfigParams.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
+
+    @Inject
+    @Named( "masterPasswordManager" )
+    private MasterPasswordManager masterPasswordManager;
 
     public DefaultKeyImpl( final ServerConfig serverConfig,
                            final ClusterPropertyManager clusterPropertyManager,
@@ -134,7 +138,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         try {
             String alias = findUnusedAlias(SC_PROP_SSL_KEY, "SSL");
             SsgKeyStore sks = findFirstMutableKeystore();
-            generateKeyPair(sks, alias);
+            findOrGenerateKeyPair(sks, alias);
             return configureAsDefaultSslCert(sks, alias);
         } finally {
             AuditContextUtils.setSystem(wasSystem);
@@ -162,6 +166,70 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         } catch (SaveException e) {
             throw new IOException("Unable to configure default SSL key: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    private void findOrGenerateKeyPair( final SsgKeyStore sks, final String alias ) throws IOException {
+        // Check if a SSG_SSL_KEY env var is present; if so, it is a Base-64 encoded
+        // PKCS#12 key store containing a single key entry,
+        // with the passphrase provided in the SSG_SSL_KEY_PASS env var.
+
+        String pkcs12b64 = System.getenv( "SSG_SSL_KEY" );
+        if ( Boolean.getBoolean( "com.l7tech.bootstrap.env.sslkey.enable" ) &&
+                pkcs12b64 != null &&
+                pkcs12b64.trim().length() > 0 )
+        {
+            logger.info( "Trying to create default SSL key from the SSG_SSL_KEY environment variable" );
+
+            String kspass = System.getenv( "SSG_SSL_KEY_PASS" );
+            if ( kspass == null ) {
+                logger.info( "SSG_SSL_KEY_PASS environment variable not set -- guessing default keystore passphrase for SSG_SSL_KEY" ) ;
+                kspass = "password";
+            }
+
+            if ( masterPasswordManager != null ) {
+                kspass = new String( masterPasswordManager.decryptPasswordIfEncrypted( kspass ) );
+            }
+
+            try {
+                byte[] pkcs12bytes = HexUtils.decodeBase64( pkcs12b64 );
+                KeyStore ks = KeyStore.getInstance( "PKCS12" );
+                ks.load( new ByteArrayInputStream( pkcs12bytes ), kspass.toCharArray() );
+                Enumeration<String> aliases = ks.aliases();
+
+                PrivateKey privateKey = null;
+                X509Certificate[] chain = null;
+
+                while ( aliases.hasMoreElements() ) {
+                    String ksalias = aliases.nextElement();
+                    if ( ks.isKeyEntry( ksalias ) ) {
+                        privateKey = (PrivateKey) ks.getKey( ksalias, kspass.toCharArray() );
+                        Certificate[] certs = ks.getCertificateChain( ksalias );
+                        chain = new X509Certificate[certs.length];
+                        for ( int i = 0; i < certs.length; i++ ) {
+                            chain[i] = (X509Certificate) certs[i];
+                        }
+                        break;
+                    }
+                }
+
+                if ( null == privateKey )
+                    throw new IOException( "No private key entry found in SSG_SSL_KEY keystore" );
+
+                SsgKeyEntry entry = new SsgKeyEntry( sks.getGoid(), alias, chain, privateKey );
+                Future<Boolean> job = sks.storePrivateKeyEntry( true, null, entry, false );
+                job.get();
+                logger.info( "Default SSL key successfully created from SSG_SSL_KEY environment variable" );
+                return;
+
+            } catch ( Exception e ) {
+                logger.log( Level.WARNING, "Failed to create default SSL key from SSG_SSL_KEY environment variable: " +
+                            ExceptionUtils.getMessage( e ), e );
+                /* FALLTHROUGH and generate new one */
+            }
+        }
+
+        // Need to generate new one
+        generateKeyPair( sks, alias );
     }
 
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
