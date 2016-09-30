@@ -161,10 +161,11 @@ public class XencGcmTest {
     }
 
     private static final String[] GCM_AUTH_FAILED_MESSAGES = {
-            // Bouncy Castle
-            "mac check in GCM failed",
-
-            // Crypto-J
-            "GCM Authentication failed"
+        // Bouncy Castle
+        "Tag mismatch",
+        // CryptoComplyJava
+        "mac check in GCM failed",
+        // Other
+        "GCM Authentication failed"
     };
 }

@@ -74,7 +74,7 @@ public class EcdsaSignatureMethodTest {
                 "4266b9239019892cd0e89e146708e9b5e0f6aaf41c94004a0133d0e4c67b9a638561f8fcc409695d6bb6bbe39aff89a93fd8caf4e51471353d3ec7ee733faa3c"
         );
 
-        EcdsaSignatureMethod meth = new EcdsaSignatureMethod("SHA1withECDSA", SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), null);
+        EcdsaSignatureMethod meth = new EcdsaSignatureMethod("SHA1withECDSA", SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "BC");
 
         meth.initVerify(publicKey);
         meth.update(dataSigned);

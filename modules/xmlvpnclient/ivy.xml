@@ -33,6 +33,8 @@
         <dependency org="com.rsa" name="certj" rev="6.2" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="6.2.1" force="true" conf="core"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/> <!-- signed BC provider jar -->
+        <!-- CryptoComply-->
+        <dependency org="com.safelogic.cryptocomply" name="ccj" rev="1.0.0" force="true" conf="core"/>
 
         <!-- The XVC needs the signed version of bouncy castle because it uses it as a provider in some places. -->
         <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" /> <!-- exclude unsigned BC jar -->

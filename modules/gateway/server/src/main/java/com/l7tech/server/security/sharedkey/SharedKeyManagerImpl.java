@@ -244,7 +244,13 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
 
         final Provider pbeProv = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_PBE_WITH_SHA1_AND_DESEDE);
         Cipher cipher = pbeProv == null ? Cipher.getInstance(CIPHER) : Cipher.getInstance(CIPHER, pbeProv);
-        cipher.init(Cipher.DECRYPT_MODE, sharedKeyDecryptionKey, new PBEParameterSpec(saltbytes, iterationCount));
+
+        // [US214165][SSG-13800] [M] Gateway can start with CryptoComply Java for FIPS encryption
+        // [TA506299] Fix gateway start failure due to switching to use CCJ FIPS
+        // The below line is to convert secret key if the provider is CCJ and the algorithm is PBEWithSHA1AndDESede.
+        final SecretKey decryptionKey = JceProvider.getInstance().prepareSecretKeyForPBEWithSHA1AndDESede(cipher, sharedKeyDecryptionKey);
+
+        cipher.init(Cipher.DECRYPT_MODE, decryptionKey, new PBEParameterSpec(saltbytes, iterationCount));
         return cipher.doFinal(cipherbytes);
     }
 

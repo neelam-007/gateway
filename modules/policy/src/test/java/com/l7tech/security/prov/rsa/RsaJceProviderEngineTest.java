@@ -5,10 +5,8 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.FixedSecureRandom;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,14 +38,6 @@ public class RsaJceProviderEngineTest {
     private static byte[] testPrivateKeyBytes;
 
     @BeforeClass
-    public static void installRsaProvider() {
-        final String rsaEngineClass = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
-        SyspropUtil.setProperty( "com.l7tech.common.security.jceProviderEngine", rsaEngineClass );
-        JceProvider.init();
-        assertEquals(rsaEngineClass, JceProvider.getEngineClass());
-    }
-
-    @BeforeClass
     public static void createTestKey() throws GeneralSecurityException {
         Pair<X509Certificate,PrivateKey> gen = new TestCertificateGenerator().curveName("secp384r1").generateWithKey();
         X509Certificate testCert = gen.left;
@@ -56,14 +46,6 @@ public class RsaJceProviderEngineTest {
         testPrivateKeyBytes = testPrivateKey.getEncoded();
         assertTrue("X509".equals(testCert.getPublicKey().getFormat()) || "X.509".equals(testCert.getPublicKey().getFormat()));
         testPublicKeyBytes = testCert.getPublicKey().getEncoded();
-    }
-
-    @AfterClass
-    public static void cleanupSystemProperties() {
-        SyspropUtil.clearProperties(
-            "com.l7tech.common.security.jceProviderEngine",
-            "com.l7tech.common.security.jceProviderEngineName"
-        );
     }
 
     // Playback of Signature usage by ClientHandshaker during one of the failing handshakes

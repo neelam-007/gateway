@@ -1,6 +1,7 @@
 package com.l7tech.internal.audit;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
 import java.security.InvalidKeyException;
@@ -212,7 +213,20 @@ public class AuditRecordCompatibilityVerifier52 {
             updateStringAsBytesThenBlock(sig, ":");
         }
 
-        return sig.verify(HexUtils.decodeBase64(signature.trim(), true));
+        try {
+            return sig.verify(HexUtils.decodeBase64(signature.trim(), true));
+        } catch (SignatureException se) {
+            // Handle a straightforward failure, "error decoding signature bytes".
+            // For other failures, just simply fall back to the original design and throw whatever exceptions are.
+            final String errorDecodingSigBytes = "error decoding signature bytes";
+            final String errorMsg = ExceptionUtils.getMessage(se);
+            if (errorMsg != null && errorMsg.contains(errorDecodingSigBytes)) {
+                logger.info(errorDecodingSigBytes);
+                return false;
+            } else {
+                throw se;
+            }
+        }
     }
 
     void updateDetailMessages(Signature sig, String detailsStr) throws SignatureException {

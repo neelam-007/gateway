@@ -186,6 +186,18 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             logger.log(Level.WARNING, "Key is not properly set");
             return AssertionStatus.FAILED;
         }
+
+        // Ensure TripleDES key with 8 bytes is always converted to 16 bytes.  The following code makes the new version of
+        // this assertion be compatible with policies from previous Gateway versions.
+        if ((transformation.toLowerCase().startsWith("desede") || transformation.toLowerCase().startsWith("tripledes"))  && keyBytes.length == 8) {
+            byte[] newKeyBytes = new byte[16];
+            // Copy K1
+            System.arraycopy( keyBytes, 0, newKeyBytes, 0, keyBytes.length );
+            // Copy K2
+            System.arraycopy( keyBytes, 0, newKeyBytes, 8, keyBytes.length );
+            keyBytes = newKeyBytes;
+        }
+
         SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, algorithmName);
 
         // On decryption, check the IV value if it is present

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -50,6 +51,7 @@ public abstract class JceProvider {
     public static final String NCIPHER_ENGINE = "com.l7tech.security.prov.ncipher.NcipherJceProviderEngine";
     public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
     public static final String GENERIC_ENGINE = "com.l7tech.security.prov.generic.GenericJceProviderEngine";
+    public static final String CRYPTOCOMPLY_ENGINE = "com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine";
 
     // Old driver class names
     private static final String OLD_BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
@@ -92,6 +94,7 @@ public abstract class JceProvider {
         put("rsa", RSA_ENGINE);
         put("ncipher", NCIPHER_ENGINE);
         put("generic", GENERIC_ENGINE);
+        put("ccj", CRYPTOCOMPLY_ENGINE);
     }};
 
     static String mapEngine( final String engineClass ) {
@@ -108,7 +111,7 @@ public abstract class JceProvider {
     }
 
     // Default driver
-    private static final String DEFAULT_ENGINE = RSA_ENGINE;
+    private static final String DEFAULT_ENGINE = CRYPTOCOMPLY_ENGINE;
 
     private static class Holder {
         private static final String ENGINE_NAME = getEngineClassname();
@@ -503,7 +506,7 @@ public abstract class JceProvider {
      * @return The preferred provider for the service, or null if no provider is registered for the service.
      * @see #getProviderFor(String)
      */
-    public final Provider getPreferredProvider( final String service ) {
+    public Provider getPreferredProvider( final String service ) {
         //NOTE: We may want to pre-process the name here, e.g. Ciper.RSA/NONE/NoPadding -> Cipher.RSA
         final Provider sp = getProviderFor( service );
         return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
@@ -593,6 +596,20 @@ public abstract class JceProvider {
      *                   context was created by their JSSE provider and must not assume it was.
      */
     public void prepareSslContext( @NotNull SSLContext sslContext ) {
+    }
+
+    /**
+     * For compatibility to work around an issue where CCJ uses the key differently than Crypto-J and SunJCE
+     * when using PBEWithSHA1AndDESede.
+     * <p/>
+     * This method returns the input unmodified.  The CCJ JceProvider may modify key bytes if necessary.
+     *
+     * @param cipher the cipher using PBEWithSHA1AndDESede
+     * @param secretKey the given secret key to be modified
+     * @return the possibly-modified input key bytes for the PBEWithSHA1AndDESede algorithm for this JceProvider.
+     */
+    public SecretKey prepareSecretKeyForPBEWithSHA1AndDESede(@NotNull final Cipher cipher, @NotNull final SecretKey secretKey) {
+        return secretKey;
     }
 
     /**

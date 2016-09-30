@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -155,6 +156,16 @@ public class DelegatingJceProvider extends JceProvider {
     @Override
     public KeyStore getKeyStore(String kstype) throws KeyStoreException {
         return delegate.getKeyStore(kstype);
+    }
+
+    @Override
+    public Provider getPreferredProvider(String service) {
+        return delegate.getPreferredProvider(service);
+    }
+
+    @Override
+    public SecretKey prepareSecretKeyForPBEWithSHA1AndDESede(@NotNull Cipher cipher, @NotNull SecretKey secretKey) {
+        return delegate.prepareSecretKeyForPBEWithSHA1AndDESede(cipher, secretKey);
     }
 
     @Override
