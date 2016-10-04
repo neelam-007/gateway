@@ -24,22 +24,16 @@ public class GatewayMetricsPublisherTest {
     private AssertionFinished assertionFinished;
 
     private GatewayMetricsPublisher publisher;
-    private GatewayMetricsListener subscriber = new GatewayMetricsListener() {};
+
+    @Mock
+    private GatewayMetricsListener subscriber;
 
     @Before
     public void setUp() throws Exception {
         publisher = new GatewayMetricsPublisher();
     }
 
-    @Test
-    public void testOnApplicationEvent() throws Exception {
-        publisher.addListener(subscriber);
-        assertTrue("Subscriber set should not be empty", publisher.hasSubscribers());
-
-        Mockito.doReturn(sun.misc.Launcher.getLauncher().getClassLoader()).when(assertionModuleUnregistrationEvent).getModuleClassLoader();
-        publisher.onApplicationEvent(assertionModuleUnregistrationEvent);
-        assertFalse("Subscriber set should be empty", publisher.hasSubscribers());
-    }
+//TODO: write test that covers module unload
 
     @Test
     public void testAddRemoveListener() throws Exception {
@@ -57,11 +51,8 @@ public class GatewayMetricsPublisherTest {
         publisher.addListener(subscriber);
         assertTrue("Subscriber set should not be empty", publisher.hasSubscribers());
 
-        try{
-            publisher.publishEvent(assertionFinished);
-        } catch (Throwable ex) {
-            assertNotNull("Error while publishing AssertionFinished event for subscriber", ex.getCause());
-            Assert.fail();
-        }
+        Mockito.verify(subscriber, Mockito.never()).assertionFinished(Mockito.any(AssertionFinished.class));
+        publisher.publishEvent(assertionFinished);
+        Mockito.verify(subscriber, Mockito.times(1)).assertionFinished(assertionFinished);
     }
 }

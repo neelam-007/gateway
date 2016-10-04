@@ -1,5 +1,6 @@
 package com.l7tech.server.message.metrics;
 
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetrics;
@@ -10,6 +11,8 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.ClassUtils;
+import org.apache.xerces.impl.xpath.regex.Match;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -25,8 +28,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * Unit Tests for {@link GatewayMetricsUtils}
@@ -42,9 +44,11 @@ public class GatewayMetricsUtilsTest {
     @Mock
     AssertionTraceListener traceListener;
 
+    @Mock
+    private GatewayMetricsListener subscriber;
+
     private PolicyEnforcementContext context;
     private final GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
-    private GatewayMetricsListener subscriber = new GatewayMetricsListener() {};
 
     @Before
     public void setUp() throws FindException {
@@ -75,7 +79,21 @@ public class GatewayMetricsUtilsTest {
 
         publisher.addListener(subscriber);
         GatewayMetricsUtils.setPublisher(context, publisher);
-        assertNotNull("Publisher has subscribers, should be not null", ((GatewayMetricsSupport)context).getGatewayMetricsEventsPublisher());
+        assertThat("Publisher has subscribers, should be not null", ((GatewayMetricsSupport)context).getGatewayMetricsEventsPublisher(), Matchers.allOf(Matchers.sameInstance(publisher), Matchers.notNullValue()));
+    }
+
+    @Test
+    public void testSetPublisherForChildPec() throws Exception {
+        final GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
+        publisher.addListener(subscriber);
+
+        final PolicyEnforcementContext parent = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext child = PolicyEnforcementContextFactory.createPolicyEnforcementContext(parent);
+
+        GatewayMetricsUtils.setPublisher(parent, publisher);
+        assertThat("Publisher has subscribers, should be not null", ((GatewayMetricsSupport)parent).getGatewayMetricsEventsPublisher(), Matchers.allOf(Matchers.sameInstance(publisher), Matchers.notNullValue()));
+        GatewayMetricsUtils.setPublisher(parent,child);
+        assertThat(((GatewayMetricsSupport)child).getGatewayMetricsEventsPublisher(), Matchers.allOf(Matchers.sameInstance(((GatewayMetricsSupport)parent).getGatewayMetricsEventsPublisher()), Matchers.notNullValue()));
     }
 
     @Test
@@ -208,9 +226,11 @@ public class GatewayMetricsUtilsTest {
     }
 
     @Test
-    public void testAssertionFinishedImpl() throws Exception {
-        AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, serverAssertion.getAssertion(), new AssertionMetrics(0, 0));
-        assertNotNull("Assertion in assertionFinished cannot be null", assertionFinished.getAssertion());
-        assertNotNull("AssertionMetrics in assertionFinished cannot be null", assertionFinished.getAssertionMetrics());
+    public void testCreateAssertionFinishedEvent() throws Exception {
+        final AssertionMetrics assertionMetrics = new AssertionMetrics(0, 0);
+        final Assertion assertion = serverAssertion.getAssertion();
+        final AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, assertion, assertionMetrics);
+        assertThat("Assertion in assertionFinished should be the same instance and cannot be null", assertionFinished.getAssertion(),  Matchers.allOf(Matchers.sameInstance(assertion), Matchers.notNullValue()));
+        assertThat("AssertionMetrics in assertionFinished should be the same instance and cannot be null", assertionFinished.getAssertionMetrics(), Matchers.allOf(Matchers.sameInstance(assertionMetrics), Matchers.notNullValue()));
     }
 }

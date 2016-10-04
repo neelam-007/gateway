@@ -790,6 +790,10 @@
 
     <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
 
+    <bean id="ssgCustomMessageFormatRegistry" class="com.l7tech.server.custom.format.CustomMessageFormatRegistry" depends-on="stashManagerFactory">
+        <constructor-arg ref="stashManagerFactory"/>
+    </bean>
+
     <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
 
     <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">

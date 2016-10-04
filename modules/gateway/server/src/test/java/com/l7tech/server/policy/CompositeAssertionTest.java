@@ -23,14 +23,20 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.metrics.GatewayMetricsListener;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
 import com.l7tech.test.BugId;
-import com.sun.istack.NotNull;
+import com.l7tech.util.Functions;
+import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -210,40 +216,161 @@ public class CompositeAssertionTest {
     @Test
     @BugId( "SSG-13883" )
     public void testAssertionLatencyOnError() throws Exception {
+
+        doTestAssertionLatencyOnError(new RaiseErrorAssertion());
+
+        doTestAssertionLatencyOnError(
+                new TestLatencyOnErrorAssertion(
+                        new Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, RuntimeException>() {
+                            @Override
+                            public AssertionStatus call(final PolicyEnforcementContext context) throws RuntimeException {
+                                throw new RuntimeException("RuntimeException from my TestLatencyOnErrorAssertion");
+                            }
+                        },
+                        "Test Latency onError Assertion with RuntimeException"
+                )
+        );
+
+        doTestAssertionLatencyOnError(
+                new TestLatencyOnErrorAssertion(
+                        new Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, Error>() {
+                            @Override
+                            public AssertionStatus call(final PolicyEnforcementContext context) throws Error {
+                                throw new Error("Error from my TestLatencyOnErrorAssertion");
+                            }
+                        },
+                        "Test Latency onError Assertion with Error"
+                )
+        );
+    }
+
+    private void doTestAssertionLatencyOnError(final Assertion assertion) throws Exception {
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        final GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
+        final GatewayMetricsListener subscriber = Mockito.mock(GatewayMetricsListener.class);
+        publisher.addListener(subscriber);
+        GatewayMetricsUtils.setPublisher(context, publisher);
+
         ServerPolicyFactory.doWithEnforcement(false, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                final PolicyEnforcementContext context =
-                        PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
-                                new Message(),
-                                false);
-                GatewayMetricsPublisher publisher = new GatewayMetricsPublisher();
-                MockSubscriber mockSubscriber = new MockSubscriber();
-                publisher.addListener(mockSubscriber);
-                GatewayMetricsUtils.setPublisher(context, publisher);
-
+                Mockito.verify(subscriber, Mockito.never()).assertionFinished(Mockito.any(AssertionFinished.class));
                 try {
-                    assertFalse(mockSubscriber.getAssertionFinishedFired());
-                    new ServerAllAssertion(new AllAssertion(Arrays.asList(new RaiseErrorAssertion())), applicationContext).checkRequest(context);
-                } catch (RaisedByPolicyException ex) {
-                    assertTrue(mockSubscriber.getAssertionFinishedFired());
+                    new ServerAllAssertion(new AllAssertion(Collections.singletonList(assertion)), applicationContext).checkRequest(context);
+                } catch (final Throwable ex) {
+                    if (assertion instanceof RaiseErrorAssertion) {
+                        Assert.assertThat(ex, Matchers.instanceOf(RaisedByPolicyException.class));
+                    } else if (assertion instanceof TestLatencyOnErrorAssertion) {
+                        final Throwable expectedException = ((TestLatencyOnErrorAssertion)assertion).getExceptionThrown();
+                        Assert.assertNotNull(expectedException);
+                        Assert.assertThat(ex, Matchers.sameInstance(expectedException));
+                    } else {
+                        Assert.fail("Unexpected assertion type: " + assertion.getClass().getName());
+                    }
+                    Mockito.verify(subscriber, Mockito.times(1)).assertionFinished(Mockito.any(AssertionFinished.class));
                 }
-
                 return null;
             }
         });
     }
 
-    private class MockSubscriber extends GatewayMetricsListener {
-        private Boolean assertionFinishedFired = false;
-        @Override
-        public void assertionFinished(@NotNull AssertionFinished event) {
-            assertionFinishedFired = true;
+    @SuppressWarnings("WeakerAccess")
+    public static class TestLatencyOnErrorAssertion extends Assertion {
+
+        private static final String META_INITIALIZED = TestLatencyOnErrorAssertion.class.getName() + ".metadataInitialized";
+
+        private final Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, ? extends Throwable> checkRequestCallback;
+        private final String shortName, longName;
+
+        private Throwable exceptionThrown;
+
+        // default constructor is only used by policy processor framework
+        @SuppressWarnings("unused")
+        public TestLatencyOnErrorAssertion() {
+            this.checkRequestCallback = null;
+            this.shortName = null;
+            this.longName = null;
         }
 
-        public Boolean getAssertionFinishedFired() {
-            return assertionFinishedFired;
+        TestLatencyOnErrorAssertion(
+                final Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, ? extends Throwable> checkRequestCallback,
+                final String name
+        ) {
+            this(checkRequestCallback, name, name);
+        }
+
+        TestLatencyOnErrorAssertion(
+                final Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, ? extends Throwable> checkRequestCallback,
+                final String shortName,
+                final String longName
+        ) {
+            Assert.assertNotNull(checkRequestCallback);
+            this.checkRequestCallback = checkRequestCallback;
+            Assert.assertThat(shortName, Matchers.not(Matchers.isEmptyOrNullString()));
+            this.shortName = shortName;
+            Assert.assertThat(longName, Matchers.not(Matchers.isEmptyOrNullString()));
+            this.longName = longName;
+        }
+
+        @Override
+        public AssertionMetadata meta() {
+            final DefaultAssertionMetadata meta = super.defaultMeta();
+            if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+                return meta;
+
+            // Set description for GUI
+            meta.put(AssertionMetadata.SHORT_NAME, shortName);
+            meta.put(AssertionMetadata.LONG_NAME, longName);
+
+            // request default feature set name for our class name, since we are a known optional module
+            // that is, we want our required feature set to be "assertion:SimpleGatewayMetricExtractor" rather than "set:modularAssertions"
+            meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+
+            // want a placeholder server assertion that always fails
+            meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerTestLatencyOnErrorAssertion.class.getName());
+
+            meta.put(META_INITIALIZED, Boolean.TRUE);
+            return meta;
+        }
+
+        @NotNull
+        Functions.UnaryThrows<AssertionStatus, PolicyEnforcementContext, ? extends Throwable> getCheckRequestCallback() {
+            Assert.assertNotNull(checkRequestCallback);
+            return checkRequestCallback;
+        }
+
+        void setExceptionThrown(final Throwable exceptionThrown) {
+            this.exceptionThrown = exceptionThrown;
+        }
+
+        public Throwable getExceptionThrown() {
+            return exceptionThrown;
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static class ServerTestLatencyOnErrorAssertion extends AbstractServerAssertion<TestLatencyOnErrorAssertion> {
+
+        public ServerTestLatencyOnErrorAssertion(@NotNull final TestLatencyOnErrorAssertion assertion) {
+            super(assertion);
+        }
+
+        @Override
+        public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+            final TestLatencyOnErrorAssertion assertion = getAssertion();
+            Assert.assertNotNull(assertion);
+            try {
+                return assertion.getCheckRequestCallback().call(context);
+            } catch (final Throwable e) {
+                assertion.setExceptionThrown(e);
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException)e;
+                } else if (e instanceof Error) {
+                    throw (Error)e;
+                }
+                Assert.fail("Unexpected exception thrown: " + e.getClass().getName());
+                return null;
+            }
         }
     }
 }
