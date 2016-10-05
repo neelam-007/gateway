@@ -1,10 +1,13 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -26,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.List;
@@ -60,6 +64,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     @Named( "masterPasswordManager" )
     private MasterPasswordManager masterPasswordManager;
 
+    @Inject
+    @Named( "trustedCertManager" )
+    private TrustedCertManager trustedCertManager;
+
     public DefaultKeyImpl( final ServerConfig serverConfig,
                            final ClusterPropertyManager clusterPropertyManager,
                            final SsgKeyStoreManager keyStoreManager,
@@ -68,6 +76,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         this.clusterPropertyManager = clusterPropertyManager;
         this.keyStoreManager = keyStoreManager;
         this.transactionManager = transactionManager;
+    }
+
+    void setTrustedCertManager( TrustedCertManager trustedCertManager ) {
+        this.trustedCertManager = trustedCertManager;
     }
 
     private SsgKeyEntry getOrCreateSslInfo() throws IOException {
@@ -218,6 +230,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                 Future<Boolean> job = sks.storePrivateKeyEntry( true, null, entry, false );
                 job.get();
                 logger.info( "Default SSL key successfully created from SSG_SSL_KEY environment variable" );
+                maybeAddTrustStoreEntryForKey( chain[0] );
                 return;
 
             } catch ( Exception e ) {
@@ -239,13 +252,68 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         X500Principal dn = findDefaultSslKeyDn();
         try {
             Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(), new CertGenParams(dn, 365 * 10, false, null), null);
-            job.get();
+            X509Certificate cert = job.get();
+            maybeAddTrustStoreEntryForKey( cert );
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
         } catch (ExecutionException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /**
+     * After a default SSL key has been generated or imported for the first time, check if we need to add a
+     * trust store entry that trusts our own SSL cert.
+     *
+     * @param cert the cert of the default SSL key that was just generated or imported.
+     */
+    private void maybeAddTrustStoreEntryForKey( X509Certificate cert ) {
+        String params = SyspropUtil.getString( "com.l7tech.bootstrap.autoTrustSslKey", null );
+        if ( params == null || params.trim().length() < 1 )
+            return;
+
+        // Example usage:
+        // -Dcom.l7tech.bootstrap.autoTrustSslKey=trustAnchor,verifyHostname,TrustedFor.SSL,TrustedFor.SAML_ISSUER
+
+        logger.fine( "autoTrustSslKey: checking cert store" );
+
+        // Check for existing trust store entry
+        if ( trustedCertManager == null ) {
+            throw new IllegalStateException( "Unable to set up SSL key autotrust: no trustedCertManager" );
+        }
+
+        try {
+            String thumbprint = CertUtils.getThumbprintSHA1( cert );
+            List<TrustedCert> certs = trustedCertManager.findByThumbprint( thumbprint );
+            if ( certs != null && !certs.isEmpty() ) {
+                logger.fine( "autoTrustSslKey: SSL key is already trusted" );
+                return;
+            }
+
+            logger.info( "Setting up automatic trust of SSL key" );
+            TrustedCert tc = new TrustedCert();
+            tc.setCertificate( cert );
+            tc.setName( "AutoTrustSslKey" );
+            tc.setTrustAnchor( params.contains( "trustAnchor" ) );
+            tc.setVerifyHostname( params.contains( "verifyHostname") );
+            tc.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
+            for ( TrustedCert.TrustedFor trustedFor : TrustedCert.TrustedFor.values() ) {
+                if ( params.contains( "TrustedFor." + trustedFor.name() ) ) {
+                    tc.setTrustedFor( trustedFor, true );
+                }
+            }
+
+            Goid goid = trustedCertManager.save( tc );
+            logger.info( "autoTrustSslKey: new trusted certificate saved with goid=" + goid );
+
+        } catch ( CertificateEncodingException e ) {
+            throw new RuntimeException( "Unable to set up SSL key autotrust: cert invalid: " + ExceptionUtils.getMessage( e ), e );
+        } catch ( FindException e ) {
+            throw new RuntimeException( "Unable to set up SSL key autotrust: unable to look up trusted cert: " + ExceptionUtils.getMessage( e ), e );
+        } catch ( SaveException e ) {
+            throw new RuntimeException( "Unable to set up SSL key autotrust: unable to save new trusted cert: " + ExceptionUtils.getMessage( e ) , e );
         }
     }
 

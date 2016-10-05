@@ -9,6 +9,8 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
@@ -16,15 +18,14 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.NotFuture;
 import com.l7tech.util.SyspropUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyBoolean;
@@ -63,6 +65,8 @@ public class DefaultKeyImplTest {
     PlatformTransactionManager transactionManager;
     @Mock
     TransactionStatus transactionStatus;
+    @Mock
+    TrustedCertManager trustedCertManager;
 
     X509Certificate testCert;
     PrivateKey testKey;
@@ -80,8 +84,14 @@ public class DefaultKeyImplTest {
 
     @After
     public void cleanup() {
+        cleanupSystemProperties();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
         SyspropUtil.clearProperties(
-                "com.l7tech.bootstrap.env.sslkey.enable"
+                "com.l7tech.bootstrap.env.sslkey.enable",
+                "com.l7tech.bootstrap.autoTrustSslKey"
         );
     }
 
@@ -115,6 +125,8 @@ public class DefaultKeyImplTest {
                 thenReturn( transactionStatus );
 
         defaultKey = new DefaultKeyImpl(serverConfig, clusterPropertyManager, keyStoreManager, transactionManager);
+        defaultKey.setTrustedCertManager( trustedCertManager );
+
         SsgKeyEntry sslInfo = defaultKey.getSslInfo();
 
         Mockito.verify( ssgKeyStore, times( 1 ) ).generateKeyPair( Matchers.<Runnable>anyObject(), anyString(), Matchers.<KeyGenParams>anyObject(),
@@ -124,6 +136,31 @@ public class DefaultKeyImplTest {
 
         assertTrue( sslInfo == createdKeyEntry );
 
+    }
+
+    @Test
+    public void testAutoTrustNewSslKey() throws Exception {
+        System.setProperty( "com.l7tech.bootstrap.autoTrustSslKey",
+                "trustAnchor,verifyHostname,TrustedFor.SSL,TrustedFor.SAML_ISSUER" );
+
+        Mockito.when( trustedCertManager.findByThumbprint( anyString() ) ).thenReturn( Collections.<TrustedCert>emptyList() );
+
+        final TrustedCert[] tc = { null };
+        Mockito.when( trustedCertManager.save( Matchers.<TrustedCert>anyObject() ) ).then( new Answer<Goid>() {
+            @Override
+            public Goid answer( InvocationOnMock inv ) throws Throwable {
+                tc[0] = (TrustedCert) inv.getArguments()[0];
+                return new Goid( 13, 42 );
+            }
+        }  );
+
+        testCreateNewSslKey();
+
+        Mockito.verify( trustedCertManager, times( 1 ) ).save( Matchers.<TrustedCert>anyObject() );
+        assertTrue( tc[0].isTrustAnchor() );
+        assertTrue( tc[0].isVerifyHostname() );
+        assertTrue( tc[0].isTrustedForSsl() );
+        assertFalse( tc[0].isTrustedForSigningClientCerts() );
     }
 
     @Test
@@ -162,6 +199,7 @@ public class DefaultKeyImplTest {
                 return ENV.get( env );
             }
         };
+        defaultKey.setTrustedCertManager( trustedCertManager );
 
         SsgKeyEntry sslInfo = defaultKey.getSslInfo();
 
@@ -173,6 +211,30 @@ public class DefaultKeyImplTest {
         assertTrue( sslInfo == createdKeyEntry );
     }
 
+    @Test
+    public void testAutoTrustImportedSslKey() throws Exception {
+        System.setProperty( "com.l7tech.bootstrap.autoTrustSslKey",
+                "trustAnchor,verifyHostname,TrustedFor.SSL,TrustedFor.SAML_ISSUER" );
+
+        Mockito.when( trustedCertManager.findByThumbprint( anyString() ) ).thenReturn( Collections.<TrustedCert>emptyList() );
+
+        final TrustedCert[] tc = { null };
+        Mockito.when( trustedCertManager.save( Matchers.<TrustedCert>anyObject() ) ).then( new Answer<Goid>() {
+            @Override
+            public Goid answer( InvocationOnMock inv ) throws Throwable {
+                tc[0] = (TrustedCert) inv.getArguments()[0];
+                return new Goid( 13, 42 );
+            }
+        }  );
+
+        testCreateDefaultKeyFromEnvironment();
+
+        Mockito.verify( trustedCertManager, times( 1 ) ).save( Matchers.<TrustedCert>anyObject() );
+        assertTrue( tc[0].isTrustAnchor() );
+        assertTrue( tc[0].isVerifyHostname() );
+        assertTrue( tc[0].isTrustedForSsl() );
+        assertFalse( tc[0].isTrustedForSigningClientCerts() );
+    }
 
     @Test
     public void testPropertyWithOid() throws Exception {
