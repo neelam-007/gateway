@@ -841,6 +841,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             TopComponents.getInstance().firePolicyEditDone();
         } catch (ContainerVetoException e) {
             // Won't happen here at this case!
+        } catch (UserCancelledException e) {
+            // If user cancelled save, then don't reload the policy.
+            return;
         }
 
         // Get the refreshed policy assertion
@@ -1991,7 +1994,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
         if (e.getChild() == this) {
-            saveUnsavedPolicyChanges(e);
+            try {
+                saveUnsavedPolicyChanges(e);
+            } catch (UserCancelledException e1) {
+                // Should not happen here!
+            }
             final PolicyToolBar pt = topComponents.getPolicyToolBar();
             pt.disableAll();
             pt.unregisterPolicyTree(PolicyEditorPanel.this.getPolicyTree());
@@ -1999,9 +2006,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    private void saveUnsavedPolicyChanges(ContainerEvent e) throws ContainerVetoException {
+    private void saveUnsavedPolicyChanges(ContainerEvent e) throws ContainerVetoException, UserCancelledException {
         if (! isUnsavedChanges()) return;
-
 
         boolean connectionLost = TopComponents.getInstance().isConnectionLost();
         if ( !connectionLost && getLatestVersionNumber() == null ) {
@@ -2031,6 +2037,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 policyEditorToolbar.buttonSaveOnly.getAction().actionPerformed(null);
             } else if ((answer == JOptionPane.CANCEL_OPTION)) {
                 if (e != null) throw new ContainerVetoException(e, "User aborted");
+                throw new UserCancelledException();
             }
         } else {
             String saveOption = "Save Policy";
