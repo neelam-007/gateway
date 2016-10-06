@@ -787,7 +787,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         // add encrypted assertions
         for (Element encryptedAssertion : resolvedEncryptedAssertions) {
-            final Element samlEncryptedAssertion = responseDoc.createElementNS(SamlConstants.NS_SAML2, "EncryptedAssertion");
+            final Element samlEncryptedAssertion = responseDoc.createElementNS(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX + ":" + "EncryptedAssertion");
             final Node importedAssertion = responseDoc.importNode(encryptedAssertion, true);
             samlEncryptedAssertion.appendChild(importedAssertion);
             responseEl.appendChild(samlEncryptedAssertion);
