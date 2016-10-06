@@ -17,6 +17,8 @@ import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_PROPERTIES_FORCE_MQRFH2;
 import static com.ibm.mq.constants.MQConstants.MQGMO_CONVERT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER;
 import static java.text.MessageFormat.format;
 
 /**
@@ -29,11 +31,13 @@ class MqNativeListenerThread extends Thread {
     private final AtomicInteger pollInterval = new AtomicInteger(MqNativeListener.DEFAULT_POLL_INTERVAL);
     // Whether to convert the message application data format
     private final AtomicBoolean messageDataConversionEnabled = new AtomicBoolean(MqNativeListener.MESSAGE_DATA_CONVERSION_ENABLED);
+    // Whether to force returning MQ Message properties in the MQRFH2 header
+    private final AtomicBoolean forceReturnPropertiesInMQFRH2Header = new AtomicBoolean(MqNativeListener.FORCE_PROPS_IN_MQRFH2_ENABLED);
 
     private final MqNativeListener mqNativeListener;
     private final String connectorInfo;
 
-     MqNativeListenerThread(MqNativeListener mqNativeEndpointListener, String threadName) {
+    MqNativeListenerThread(MqNativeListener mqNativeEndpointListener, String threadName) {
         super(threadName);
         setDaemon( true );
         this.mqNativeListener = mqNativeEndpointListener;
@@ -52,6 +56,10 @@ class MqNativeListenerThread extends Thread {
         this.messageDataConversionEnabled.set(enabledState);
     }
 
+    public void setForceReturnPropertiesInMQFRH2Header(boolean force) {
+        this.forceReturnPropertiesInMQFRH2Header.set(force);
+    }
+
     @Override
     public final void run() {
         mqNativeListener.log(Level.INFO, MqNativeMessages.INFO_LISTENER_POLLING_START, connectorInfo);
@@ -66,7 +74,15 @@ class MqNativeListenerThread extends Thread {
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-                            getOptions.options |= MQGMO_PROPERTIES_FORCE_MQRFH2 | MQGMO_CONVERT;
+
+                            if (messageDataConversionEnabled.get()) {
+                                getOptions.options |= MQGMO_CONVERT;
+                            }
+
+                            if (forceReturnPropertiesInMQFRH2Header.get()) {
+                                getOptions.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
+                            }
+
                             getOptions.waitInterval = pollInterval.get();
                             return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
                         }

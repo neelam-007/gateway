@@ -59,6 +59,7 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.objectmodel.EntityUtil.name;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
 import static com.l7tech.util.ArrayUtils.contains;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -563,7 +564,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
 
             if (config.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, true)) {
-                gmo.options |= MQGMO_PROPERTIES_FORCE_MQRFH2 | MQGMO_CONVERT;
+                gmo.options |= MQGMO_CONVERT;
+            }
+
+            if (config.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, false)) {
+                gmo.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
             }
         }
 
