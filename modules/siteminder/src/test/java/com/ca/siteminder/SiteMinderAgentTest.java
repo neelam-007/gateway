@@ -62,7 +62,7 @@ public class SiteMinderAgentTest {
         assertTrue(fixture.checkProtected("127.0.0.1", "layer7-agent", "", "/resfilter*", "POST", context));
 
         SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
-        assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context));
+        assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context, true));
         for(Attribute attr : context.getAttrList()) {
             System.out.println(attr.getName() + ": " + attr.getValue());
         }

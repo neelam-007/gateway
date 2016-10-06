@@ -330,13 +330,14 @@ public class SiteMinderHighLevelAgent {
      * @param userIp    the client IP address
      * @param ssoCookie the SiteMinder SSO Token cookie
      * @param context the SiteMinder context
+     * @param createToken
      * @return the value of new (or updated) SiteMinder SSO Token cookie
      * @throws SiteMinderApiClassException
      */
     public int processAuthenticationRequest(SiteMinderCredentials credentials,
                                             final String userIp,
                                             @Nullable final String ssoCookie,
-                                            final SiteMinderContext context)
+                                            final SiteMinderContext context, boolean createToken)
         throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
@@ -497,7 +498,7 @@ public class SiteMinderHighLevelAgent {
 
         } else {
             // authenticate user using credentials
-            result = agent.authenticate( credentials, userIp, context.getTransactionId(), context );
+            result = agent.authenticate( credentials, userIp, context.getTransactionId(), context, createToken );
             if(result != YES) {
                logger.log(Level.FINE, "Unable to authenticate user: " + SiteMinderUtil.getCredentialsAsString(credentials));
             } else {

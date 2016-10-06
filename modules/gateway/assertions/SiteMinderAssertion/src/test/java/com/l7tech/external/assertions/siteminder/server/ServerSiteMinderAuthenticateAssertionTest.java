@@ -123,7 +123,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
         attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
@@ -156,7 +156,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
         attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE != fixture.checkRequest(pec));
@@ -182,13 +182,13 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
         attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
         verify(mockContext, times(1)).getSourceIpAddress();
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
 
     }
@@ -216,10 +216,10 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_LOGIN, USER_PASSWORD.toCharArray()), smAuthenticateAssertion.getClass()));
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class), eq(true))).thenReturn(1);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), eq(mockContext), eq(true));
     }
 
     @Test
@@ -244,10 +244,10 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class), eq(true))).thenReturn(1);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext), eq(true));
     }
 
     @Test
@@ -272,12 +272,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
         when(mockContext.getAttrList()).thenReturn(attrList);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), anyString(), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), anyString(), eq(SSO_TOKEN), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext), eq(true));
     }
 
     @Test
@@ -304,12 +304,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
 
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 
@@ -338,12 +338,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
 
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 
@@ -373,12 +373,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
 
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 
@@ -413,12 +413,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD, new X509Certificate[] {mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD, new X509Certificate[] {mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
 
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD,new X509Certificate[]{mockClientCertificate})), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD,new X509Certificate[]{mockClientCertificate})), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 
@@ -446,12 +446,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.FALSIFIED == fixture.checkRequest(pec));
 
-        verify(mockHla, never()).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, never()).processAuthenticationRequest(eq(new SiteMinderCredentials(mockClientCertificate)), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 
@@ -475,12 +475,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(3);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), anyString(), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(3);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.FALSIFIED == fixture.checkRequest(pec));
 
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
     }
 
     @Test
@@ -500,11 +500,11 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
 
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), any(SiteMinderContext.class))).thenReturn(-1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(-1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.FALSIFIED == fixture.checkRequest(pec));
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
     }
 
     private String expandVariable(PolicyEnforcementContext context, String expression) {
@@ -533,13 +533,13 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         attrList.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
         when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockContext.getSourceIpAddress()).thenReturn(SOURCE_IP);
-        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), eq(SOURCE_IP), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), eq(SOURCE_IP), isNull(String.class), any(SiteMinderContext.class), eq(true))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
         verify(mockContext, times(2)).getSourceIpAddress();
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), eq(SOURCE_IP), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), eq(SOURCE_IP), isNull(String.class), eq(mockContext), eq(true));
     }
 
     @Test
@@ -565,7 +565,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext), eq(true));
 
     }
 

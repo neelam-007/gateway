@@ -154,8 +154,9 @@ public class SiteMinderLowLevelAgent {
      * @param userIp    the ip address of the client
      * @param transactionId the transaction id
      * @param context SiteMinderContext object
+     * @param createToken
      */
-    int authenticate(SiteMinderCredentials credentials, String userIp, String transactionId, SiteMinderContext context)
+    int authenticate(SiteMinderCredentials credentials, String userIp, String transactionId, SiteMinderContext context, boolean createToken)
             throws SiteMinderApiClassException {
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
@@ -190,8 +191,10 @@ public class SiteMinderLowLevelAgent {
         }
         else {
             logger.log(Level.FINE, "Authenticated - principal '" + userCreds.name + "'" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'");
-            //addSessionAttributes(attributes, sessionDef);
-            retCode = getSsoToken(userCreds, resCtxDef.resource, sessionDef, attrList, context);
+            if(createToken) {
+                logger.log(Level.FINE, "Creating SSO Token");
+                retCode = getSsoToken(userCreds, resCtxDef.resource, sessionDef, attrList, context);
+            }
         }
 
         //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization

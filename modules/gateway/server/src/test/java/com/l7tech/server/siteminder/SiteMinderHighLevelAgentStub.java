@@ -22,7 +22,7 @@ public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
     }
 
     @Override
-    public int processAuthenticationRequest(SiteMinderCredentials credentials, String userIp, String ssoCookie, SiteMinderContext context) throws SiteMinderApiClassException {
+    public int processAuthenticationRequest(SiteMinderCredentials credentials, String userIp, String ssoCookie, SiteMinderContext context, boolean createToken) throws SiteMinderApiClassException {
         return 1;
     }
 }

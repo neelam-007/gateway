@@ -29,6 +29,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
     protected final MessageTargetableSupport messageTargetableSupport;
     private boolean sendUsernamePasswordCredential = true;
     private boolean sendX509CertificateCredential = false;
+    private boolean createSsoToken = true;
 
     public SiteMinderAuthenticateAssertion() {
         this( TargetMessageType.REQUEST );
@@ -89,6 +90,16 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
     // For compatibility: read old policy with Login element
     public void setLogin(String login) { setNamedUser(login); }
+
+    //bug SSG-13072
+    public boolean isCreateSsoToken() {
+        return createSsoToken;
+    }
+
+    public void setCreateSsoToken(boolean createSsoToken) {
+        this.createSsoToken = createSsoToken;
+    }
+
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override

@@ -61,6 +61,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
         String ssoToken = extractSsoToken(variableMap);
+        boolean createSsoToken = assertion.isCreateSsoToken();
 
       SiteMinderContext smContext = null;
         try {
@@ -80,7 +81,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);
-            int result = hla.processAuthenticationRequest(credentials, getClientIp(message, smContext), ssoToken, smContext);
+            int result = hla.processAuthenticationRequest(credentials, getClientIp(message, smContext), ssoToken, smContext, createSsoToken);
             if(result == SM_YES) {
                 logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
                         (ssoToken != null && ssoToken.trim().length() > 0) ? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
@@ -119,7 +120,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         }
         //we don't have a user so create anonymous one
         if(user == null) user = new AnonymousUserReference("", PersistentEntity.DEFAULT_GOID, "<unknown>");
-        authContext.addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), smContext.getSsoToken().toCharArray())));
+        authContext.addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), smContext.getSsoToken() != null ? smContext.getSsoToken().toCharArray() : null)));
     }
 
     private SiteMinderContext.Attribute findAttributeByName(SiteMinderContext siteMinderContext, String attrName) {

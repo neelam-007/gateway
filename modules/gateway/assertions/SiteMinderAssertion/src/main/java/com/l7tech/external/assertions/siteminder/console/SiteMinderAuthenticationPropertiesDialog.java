@@ -34,6 +34,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JTextField namedCertificate;
     private JLabel usernameLabel;
     private JLabel certificateNameLabel;
+    private JCheckBox createSsoTokenCheckBox;
     private final InputValidator inputValidator;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
@@ -62,6 +63,9 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         authenticateViaSiteMinderCookieCheckBox.addActionListener(buttonSwitchListener);
         usernameAndPasswordCheckBox.addActionListener(buttonSwitchListener);
         x509CertificateCheckBox.addActionListener(buttonSwitchListener);
+
+        createSsoTokenCheckBox.setSelected(true);
+
         Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate);
 
         inputValidator.constrainTextFieldToBeNonEmpty("Username", namedUser, null);
@@ -145,6 +149,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         x509CertificateCheckBox.setSelected(assertion.isSendX509CertificateCredential());
         namedUser.setText(assertion.getNamedUser());
         namedCertificate.setText(assertion.getNamedCertificate());
+        createSsoTokenCheckBox.setSelected(assertion.isCreateSsoToken());
 
         enableDisableComponents();
     }
@@ -176,6 +181,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setSendX509CertificateCredential(x509CertificateCheckBox.isSelected());
         assertion.setNamedUser(namedUser.getText().trim());
         assertion.setNamedCertificate(namedCertificate.getText().trim());
+        assertion.setCreateSsoToken(createSsoTokenCheckBox.isSelected());
         //set user credentials
 
         return assertion;
