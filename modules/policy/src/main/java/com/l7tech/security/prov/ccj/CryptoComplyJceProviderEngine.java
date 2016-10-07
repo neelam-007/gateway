@@ -19,6 +19,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
     private static final Logger logger = Logger.getLogger(CryptoComplyJceProviderEngine.class.getName());
     private static final String PROP_FIPS = "com.l7tech.security.fips.enabled";
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
+    private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
 
     public final Provider PROVIDER;
 
@@ -73,5 +74,66 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         } else {
             return super.prepareSecretKeyForPBEWithSHA1AndDESede(cipher, secretKey);
         }
+    }
+
+    @Override
+    public Provider getProviderFor(String service) {
+        if (SERVICE_KEYSTORE_PKCS12.equalsIgnoreCase(service))
+            return getPkcs12Provider();
+        if (SERVICE_TLS10.equals(service))
+            return getTls10Provider(isFips140ModeEnabled());
+        if (SERVICE_TLS12.equals(service))
+            return getTls12Provider();
+        if ("TrustManagerFactory.PKIX".equals(service))
+            return getSunJsseProvider();
+        return super.getProviderFor(service);
+    }
+
+    private Provider getSunJsseProvider() {
+        return new com.sun.net.ssl.internal.ssl.Provider();
+    }
+
+    private Provider getPkcs12Provider() {
+        // First see if SunJSSE is available
+        Provider prov = getSunJsseProvider();
+        if (prov != null) {
+            logger.fine("Using Sun PKCS#12 implementation");
+            return prov;
+        }
+
+        return null;
+    }
+
+    private Provider getTls10Provider(final boolean fipsMode) {
+        String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
+        if (provName != null && provName.trim().length() > 0) {
+            Provider prov = Security.getProvider(provName);
+            if (prov != null) {
+                logger.info("Using specified TLS 1.0 provider: " + provName);
+                return prov;
+            }
+        }
+
+        // Prefer SunJSSE as TLS 1.0 provider for compatibility with previous behavior
+        Provider prov = fipsMode ? null : getSunJsseProvider();
+        if (prov != null) {
+            logger.fine("Using SunJSSE as TLS 1.0 provider");
+            return prov;
+        }
+
+        return null;
+    }
+
+    private Provider getTls12Provider() {
+        String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
+        if (provName != null && provName.trim().length() > 0) {
+            Provider prov = Security.getProvider(provName);
+            if (prov != null) {
+                logger.info("Using specified TLS 1.2 provider: " + provName);
+                return prov;
+            }
+        }
+
+        return null;
     }
 }
