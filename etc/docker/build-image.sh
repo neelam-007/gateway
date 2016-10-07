@@ -168,8 +168,8 @@ cleanup() {
 	# Prevent trap from triggering twice
 	trap "exit $EXIT_CODE" EXIT INT TERM
 	toLog -s "begin cleanup of images and containers"
-	removeExistingImages
 	removeExistingContainers
+	removeExistingImages
 	toLog -s "===============  DONE  ==============="
 
 	exit $EXIT_CODE
