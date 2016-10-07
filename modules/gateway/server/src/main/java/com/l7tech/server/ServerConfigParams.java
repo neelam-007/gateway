@@ -205,8 +205,8 @@ public interface ServerConfigParams {
     String PARAM_IO_MQ_MESSAGE_MAX_BYTES = "ioMqMessageMaxBytes";
     String PARAM_IO_MQ_SET_ALL_CONTEXT = "ioMqRoutingSetAllContext";
     String PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME = "io.mqIncludeReplyToQueueManagerName";
-    String PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER = "io.mqRoutingForceReturnPropertiesInMQRFH2Header";
-    String PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT = "io.MqRoutingConvertMessageApplicationDataFormat";
+    String PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER = "io.mqForceReturnPropertiesInMQRFH2Header";
+    String PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT = "io.mqConvertMessageApplicationDataFormat";
     String PARAM_DATE_TIME_CUSTOM_FORMATS = "datetime.customFormats";
     String PARAM_DATE_TIME_AUTO_FORMATS = "datetime.autoFormats";
     String PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA = "throughputQuota.enforce_max_quota";
