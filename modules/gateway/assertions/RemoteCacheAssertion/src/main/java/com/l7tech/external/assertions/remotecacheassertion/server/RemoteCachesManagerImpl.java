@@ -8,11 +8,13 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.ExceptionUtils;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,6 +59,7 @@ public class RemoteCachesManagerImpl implements RemoteCachesManager {
         INSTANCE = instance;
     }
 
+    //For testing only
     ConcurrentMap<Goid, RemoteCache> getCurrentlyUsedCaches() {
         return currentlyUsedCaches;
     }
@@ -71,28 +74,23 @@ public class RemoteCachesManagerImpl implements RemoteCachesManager {
 
     public RemoteCache getRemoteCache(Goid goid) throws RemoteCacheConnectionException {
 
-        // JAVA 7
-        RemoteCache remoteCache = currentlyUsedCaches.get(goid);
-
-        if (remoteCache == null) {
-            // Attempt to create the connection
-            RemoteCache cacheCreated = createRemoteCache(goid);
-
-            // if it still does not exists, put it in the cache; otherwise use existing value
-            // we should use the com.google.common.cache.LoadingCache instead with a removal listener
-            //       as it would make the creation of the cache and putting it in the cache atomic
-            try {
-                remoteCache = currentlyUsedCaches.putIfAbsent(goid, cacheCreated);
-            } finally {
-                // This is to handle if a second thread created a cache already, we should shutdown the one thats get
-                // created and use the one from the cache.
-                if (remoteCache == null) {
-                    remoteCache = cacheCreated;
-                } else {
-                    cacheCreated.shutdown();
+        // computeIfAbsent() method is new in Java 1.8.
+        RemoteCache remoteCache = currentlyUsedCaches.computeIfAbsent(goid, new Function<Goid, RemoteCache>() {
+            @Override
+            public RemoteCache apply(Goid goid) {
+                try {
+                    return createRemoteCache(goid);
+                } catch (RemoteCacheConnectionException e) {
+                    LOGGER.log(Level.WARNING, "Error creating remote cache connection: " + ExceptionUtils.getMessage(e));
+                    return null;
                 }
             }
+        });
+
+        if (null == remoteCache) {
+            throw new RemoteCacheConnectionException("Error creating remote cache connection");
         }
+
         return remoteCache;
     }
 
@@ -110,8 +108,14 @@ public class RemoteCachesManagerImpl implements RemoteCachesManager {
         try {
             remoteCacheEntity = entityManager.findByPrimaryKey(goid);
         } catch (FindException e) {
-            throw new RemoteCacheConnectionException("Remote cache with goid " + goid.toString() + " cannot be found.  It may have been removed");
+            LOGGER.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new RemoteCacheConnectionException("Error encountered finding Remote Cache with goid " + goid.toString() + ": " + ExceptionUtils.getMessage(e));
         }
+
+        if (remoteCacheEntity == null) {
+            throw new RemoteCacheConnectionException("Remote Cache with goid " + goid.toString() + " not found. It may have been removed.");
+        }
+
         RemoteCacheTypes type = RemoteCacheTypes.getEntityEnumType(remoteCacheEntity.getType());
         RemoteCache remoteCache;
         if (!remoteCacheEntity.isEnabled()) {

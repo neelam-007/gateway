@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.remotecacheassertion.server;
 
 import com.l7tech.external.assertions.remotecacheassertion.RemoteCacheEntity;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.server.ServerConfig;
@@ -64,25 +63,18 @@ public class RemoteCacheAssertionModuleListener {
                         Goid[] goids = event.getEntityIds();
                         char[] ops = event.getEntityOperations();
                         for (int i = 0; i < ops.length; i++) {
-                            try {
-                                GenericEntity ge = gem.findByPrimaryKey(goids[i]);
-                                if(null != ge && RemoteCacheEntity.class.getName().equals(ge.getEntityClassName())) {
-                                    LOGGER.log(Level.FINE, "Received EntityInvalidationEvent on RemoteCacheEntity with goid {0} and action {1}", new Object[]{goids[i], ops[i]});
-                                    switch (ops[i]) {
-                                        case EntityInvalidationEvent.CREATE:
-                                            // Nothing to invalidate
-                                            break;
-                                        case EntityInvalidationEvent.DELETE:
-                                        case EntityInvalidationEvent.UPDATE:
-                                            remoteCachesManager.invalidateRemoteCache(goids[i]);
-                                            break;
-                                        default:
-                                            LOGGER.log(Level.WARNING, "Unexpected EntityInvalidationEvent Operation: " + ops[i]);
-                                            break;
-                                    }
-                                }
-                            } catch(FindException fe) {
-                                LOGGER.log(Level.WARNING, "Could not find generic entity for goid " + goids[i]);
+                            LOGGER.log(Level.FINE, "Received EntityInvalidationEvent on RemoteCacheEntity with goid {0} and action {1}", new Object[]{goids[i], ops[i]});
+                            switch (ops[i]) {
+                                case EntityInvalidationEvent.CREATE:
+                                    // Nothing to invalidate
+                                    break;
+                                case EntityInvalidationEvent.DELETE:
+                                case EntityInvalidationEvent.UPDATE:
+                                    remoteCachesManager.invalidateRemoteCache(goids[i]);
+                                    break;
+                                default:
+                                    LOGGER.log(Level.WARNING, "Unexpected EntityInvalidationEvent Operation: " + ops[i]);
+                                    break;
                             }
                         }
                     }
