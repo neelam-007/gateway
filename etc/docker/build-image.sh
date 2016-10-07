@@ -164,9 +164,21 @@ generatePackagesListFile() {
 	echo "Done generating the packages list file"
 }
 
+cleanup() {
+	# Prevent trap from triggering twice
+	trap "exit $EXIT_CODE" EXIT INT TERM
+	toLog -s "begin cleanup of images and containers"
+	removeExistingImages
+	removeExistingContainers
+	toLog -s "===============  DONE  ==============="
+
+	exit $EXIT_CODE
+}
+
 removeExistingContainers
 removeExistingImages
 loginToTheRegistry
+trap cleanup EXIT INT TERM # Create trap to delete images and containers
 buildTheImage
 exportTheImage
 
@@ -177,5 +189,3 @@ docker tag "$IMAGE_ID" "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
 pushTheImage
 generateBuildResultsFile
 generatePackagesListFile
-removeExistingImages
-
