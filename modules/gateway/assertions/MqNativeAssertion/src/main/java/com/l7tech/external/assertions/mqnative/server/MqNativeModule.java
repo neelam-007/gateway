@@ -38,8 +38,6 @@ import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +46,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,7 +67,7 @@ import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 /**
  * MQ native listener module (aka boot process).
  */
-public class MqNativeModule extends ActiveTransportModule implements ApplicationListener, PropertyChangeListener {
+public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
     static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     static final int DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS = 1000;
 
@@ -118,8 +115,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     private MQPoolToken connectionPoolToken;
 
-    private boolean includeReplyToQueueManagerName = true;
-
     /**
      * Single constructor for MQNative boot process.
      *
@@ -141,9 +136,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      */
     @Override
     protected void doStart() throws LifecycleException {
-        this.includeReplyToQueueManagerName =
-                serverConfig.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, true);
-
         // initialize the default connection pool
         if ( connectionPoolToken == null && serverConfig.getBooleanProperty( PROP_ENABLE_POOLING, false ) ) {
             connectionPoolToken = new MQPoolToken();
@@ -601,6 +593,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             public Void call( final ClientBag clientBag ) throws MQException {
                                 MQQueue replyToQueue = null;
                                 try {
+                                    boolean includeReplyToQueueManagerName = serverConfig.getBooleanProperty(
+                                            ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, true);
                                     if (includeReplyToQueueManagerName && StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
                                         logger.log(Level.FINER, "Accessing reply queue specifying replyToQueueManagerName: " + requestMessage.replyToQueueManagerName);
                                         replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption(), requestMessage.replyToQueueManagerName, null, null);
@@ -696,13 +690,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
         }
         return posted;
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME.equals(evt.getPropertyName())) {
-            includeReplyToQueueManagerName = Boolean.parseBoolean((String) evt.getNewValue());
-        }
     }
 
     void setMessageProcessor(final MessageProcessor messageProcessor) {

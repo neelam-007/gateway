@@ -456,7 +456,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
 
         mqNativeClient.setClientBag(clientBagOption);
 
-        mqNativeModule.propertyChange(new PropertyChangeEvent(this, "io.mqRoutingIncludeReplyToQueueManagerName", null, "false"));
+        serverConfig.putProperty(ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, "false");
 
         mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
 
