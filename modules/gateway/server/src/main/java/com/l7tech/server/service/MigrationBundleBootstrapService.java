@@ -107,7 +107,9 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
                         });
 
                         for ( File bundleFile : bundleFiles ) {
-                            installBundleFile( bundleFile, adminUser );
+                            if(bundleFile.isFile()) {
+                                installBundleFile(bundleFile, adminUser);
+                            }
                         }
                     }
 
