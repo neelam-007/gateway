@@ -53,7 +53,7 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.server.module.simplegatewaymetricextractor.SimpleGatewayMetricExtractor");
 
         // want a placeholder server assertion that always fails
-        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerFalseAssertion.class.getName());
+        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.server.policy.assertion.ServerFalseAssertion");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
