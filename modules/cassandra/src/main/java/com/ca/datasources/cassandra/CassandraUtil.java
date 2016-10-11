@@ -20,31 +20,31 @@ public class CassandraUtil {
     public static Object javaType2CassandraDataType(ColumnDefinitions.Definition definition, Object value ) {
         if(value == null) return null;
 
-        Class clazz = definition.getType().asJavaClass();
-        if(clazz.isAssignableFrom(Integer.class)){
+        if(definition.getType().equals(DataType.cint())) {
             return getInteger(value);
         }
-        else if(clazz.isAssignableFrom(BigInteger.class)) {
+        else if(definition.getType().equals(DataType.varint())) {
             return getBigInteger(value);
         }
-        else if(clazz.isAssignableFrom(Long.class)) {
+        else if(definition.getType().equals(DataType.bigint()) || definition.getType().equals(DataType.counter())) {
             return getLong(value);
         }
-        else if(clazz.isAssignableFrom(String.class)) {
+        else if(definition.getType().equals(DataType.ascii()) || definition.getType().equals(DataType.text()) || definition.getType().equals(DataType.varchar())) {
             return value.toString();
         }
-        else if(clazz.isAssignableFrom(UUID.class)){
+        else if(definition.getType().equals(DataType.uuid()) || definition.getType().equals(DataType.timeuuid())) {
             return UUID.fromString(value.toString());
         }
-        else if(clazz.isAssignableFrom(Double.class)) {
-            return  getDouble(value);
+        else if(definition.getType().equals(DataType.cdouble())) {
+            return getDouble(value);
         }
-        else if(clazz.isAssignableFrom(BigDecimal.class)) {
+        else if(definition.getType().equals(DataType.decimal())) {
             return getBigDecimal(value);
         }
         else {
             return value;
         }
+
     }
 
     public static Object cassandraDataType2JavaType(ColumnDefinitions.Definition definition, Row row){

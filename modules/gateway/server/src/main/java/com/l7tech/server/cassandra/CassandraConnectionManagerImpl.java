@@ -47,6 +47,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final SecureRandom secureRandom;
     private final static Audit auditor = new LoggingAudit(logger);
     private final Timer timer;
+    private final String[] DEFAULT_SSL_CIPHER_SUITES = { "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA" };
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
     private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
 
@@ -353,7 +354,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         int defaultMaxSimultaneousReqPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST, (hd == HostDistance.LOCAL? MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF: MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF));
         int maxSimultaneousReqPerHost = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_SIMUL_REQ_PER_HOST), defaultMaxSimultaneousReqPerHost) : defaultMaxSimultaneousReqPerHost;
 
-        poolingOptions.setMaxSimultaneousRequestsPerHostThreshold(hd, maxSimultaneousReqPerHost);
+        poolingOptions.setMaxConnectionsPerHost(hd, maxSimultaneousReqPerHost);
 
         clusterBuilder.withPoolingOptions(poolingOptions);
     }
@@ -485,9 +486,9 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             String cipherSuiteList = cassandraConnectionEntity.getTlsEnabledCipherSuites();
             SSLOptions sslOptions;
             if ( !( cipherSuiteList == null || cipherSuiteList.equals("") ) ) {
-                sslOptions = new SSLOptions(sslContext, cipherSuiteList.split("\\s*,\\s*"));
+                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(cipherSuiteList.split("\\s*,\\s*")).build();
             } else {
-                sslOptions = new SSLOptions(sslContext, SSLOptions.DEFAULT_SSL_CIPHER_SUITES);
+                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(DEFAULT_SSL_CIPHER_SUITES).build();
             }
             //add the ssl options to our cluster
             clusterBuilder.withSSL(sslOptions);
