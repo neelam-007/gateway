@@ -599,20 +599,6 @@ public abstract class JceProvider {
     }
 
     /**
-     * For compatibility to work around an issue where CCJ uses the key differently than Crypto-J and SunJCE
-     * when using PBEWithSHA1AndDESede.
-     * <p/>
-     * This method returns the input unmodified.  The CCJ JceProvider may modify key bytes if necessary.
-     *
-     * @param cipher the cipher using PBEWithSHA1AndDESede
-     * @param secretKey the given secret key to be modified
-     * @return the possibly-modified input key bytes for the PBEWithSHA1AndDESede algorithm for this JceProvider.
-     */
-    public SecretKey prepareSecretKeyForPBEWithSHA1AndDESede(@NotNull final Cipher cipher, @NotNull final SecretKey secretKey) {
-        return secretKey;
-    }
-
-    /**
      * Set debug options for the provider.
      *
      * <p>Any options that are not specified in the given set should not be

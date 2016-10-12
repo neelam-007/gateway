@@ -2,13 +2,9 @@ package com.l7tech.security.prov.ccj;
 
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
-import com.safelogic.cryptocomply.jcajce.provider.CryptoComplyFipsProvider;
+import com.safelogic.cryptocomply.jce.provider.SLProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jetbrains.annotations.NotNull;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.util.logging.Logger;
 
@@ -28,7 +24,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         final boolean permafips = ConfigFactory.getBooleanProperty(PROP_PERMAFIPS, false);
         if (FIPS || permafips) {
             logger.info("Initializing CryptoComply library in FIPS 140 mode");
-            PROVIDER = new CryptoComplyFipsProvider();
+            PROVIDER = new SLProvider();
             Security.insertProviderAt(PROVIDER, 1);
         } else {
             PROVIDER = new BouncyCastleProvider();
@@ -39,7 +35,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
 
     @Override
     public boolean isFips140ModeEnabled() {
-        return PROVIDER.getName().equals(CryptoComplyFipsProvider.PROVIDER_NAME);
+        return PROVIDER.getName().equals(SLProvider.PROVIDER_NAME);
     }
 
     @Override
@@ -57,23 +53,6 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         if ("Cipher.RSA/ECB/NoPadding".equals(service))
             return PROVIDER;
         return super.getPreferredProvider(service);
-    }
-
-    @Override
-    public SecretKey prepareSecretKeyForPBEWithSHA1AndDESede(@NotNull final Cipher cipher, @NotNull final SecretKey secretKey) {
-        // If the provider is CCJ, then modify key bytes of the secret key
-        if (CryptoComplyFipsProvider.PROVIDER_NAME.equals(cipher.getProvider() == null? null : cipher.getProvider().getName()))  {
-            final byte[] keyBytes = secretKey.getEncoded();
-            final byte[] modifiedBytes = new byte[keyBytes.length * 2 + 2];
-
-            for (int i = 0; i != keyBytes.length; i++) {
-                modifiedBytes[ 1 + (i * 2)] = (byte)(keyBytes[i] & 0x7f);
-            }
-
-            return new SecretKeySpec(modifiedBytes, "PBEWithSHA1AndDESede" );
-        } else {
-            return super.prepareSecretKeyForPBEWithSHA1AndDESede(cipher, secretKey);
-        }
     }
 
     @Override

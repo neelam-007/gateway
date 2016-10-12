@@ -164,11 +164,6 @@ public class DelegatingJceProvider extends JceProvider {
     }
 
     @Override
-    public SecretKey prepareSecretKeyForPBEWithSHA1AndDESede(@NotNull Cipher cipher, @NotNull SecretKey secretKey) {
-        return delegate.prepareSecretKeyForPBEWithSHA1AndDESede(cipher, secretKey);
-    }
-
-    @Override
     public Provider getBlockCipherProvider() {
         return delegate.getBlockCipherProvider();
     }
