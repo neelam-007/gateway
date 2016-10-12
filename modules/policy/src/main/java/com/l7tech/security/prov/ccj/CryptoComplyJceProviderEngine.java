@@ -78,14 +78,8 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
 
     @Override
     public Provider getProviderFor(String service) {
-        if (SERVICE_KEYSTORE_PKCS12.equalsIgnoreCase(service))
-            return getPkcs12Provider();
         if (SERVICE_TLS10.equals(service))
-            return getTls10Provider(isFips140ModeEnabled());
-        if (SERVICE_TLS12.equals(service))
-            return getTls12Provider();
-        if ("TrustManagerFactory.PKIX".equals(service))
-            return getSunJsseProvider();
+            return getTls10Provider();
         return super.getProviderFor(service);
     }
 
@@ -93,18 +87,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         return new com.sun.net.ssl.internal.ssl.Provider();
     }
 
-    private Provider getPkcs12Provider() {
-        // First see if SunJSSE is available
-        Provider prov = getSunJsseProvider();
-        if (prov != null) {
-            logger.fine("Using Sun PKCS#12 implementation");
-            return prov;
-        }
-
-        return null;
-    }
-
-    private Provider getTls10Provider(final boolean fipsMode) {
+    private Provider getTls10Provider() {
         String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
         if (provName != null && provName.trim().length() > 0) {
             Provider prov = Security.getProvider(provName);
@@ -115,25 +98,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         }
 
         // Prefer SunJSSE as TLS 1.0 provider for compatibility with previous behavior
-        Provider prov = fipsMode ? null : getSunJsseProvider();
-        if (prov != null) {
-            logger.fine("Using SunJSSE as TLS 1.0 provider");
-            return prov;
-        }
-
-        return null;
-    }
-
-    private Provider getTls12Provider() {
-        String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
-        if (provName != null && provName.trim().length() > 0) {
-            Provider prov = Security.getProvider(provName);
-            if (prov != null) {
-                logger.info("Using specified TLS 1.2 provider: " + provName);
-                return prov;
-            }
-        }
-
-        return null;
+        logger.fine("Using SunJSSE as TLS 1.0 provider");
+        return getSunJsseProvider();
     }
 }
