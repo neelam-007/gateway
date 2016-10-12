@@ -594,7 +594,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                                 MQQueue replyToQueue = null;
                                 try {
                                     boolean includeReplyToQueueManagerName = serverConfig.getBooleanProperty(
-                                            ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, true);
+                                            "ioMqIncludeReplyToQueueManagerName", true);
                                     if (includeReplyToQueueManagerName && StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
                                         logger.log(Level.FINER, "Accessing reply queue specifying replyToQueueManagerName: " + requestMessage.replyToQueueManagerName);
                                         replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption(), requestMessage.replyToQueueManagerName, null, null);

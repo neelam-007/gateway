@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Functions.NullaryThrows;
@@ -377,11 +376,11 @@ public abstract class MqNativeListener {
     }
 
     private boolean getMessageDataConversionEnabledState(ServerConfig serverConfig) {
-        return serverConfig.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, MESSAGE_DATA_CONVERSION_ENABLED);
+        return serverConfig.getBooleanProperty("ioMqConvertMessageApplicationDataFormat", MESSAGE_DATA_CONVERSION_ENABLED);
     }
 
     private boolean getForcePropertiesInMQRFH2HeaderEnabledState(ServerConfig serverConfig) {
-        return serverConfig.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, FORCE_PROPS_IN_MQRFH2_ENABLED);
+        return serverConfig.getBooleanProperty("ioMqForceReturnPropertiesInMQRFH2Header", FORCE_PROPS_IN_MQRFH2_ENABLED);
     }
 
     public void setOopsRetry(int retry) {
