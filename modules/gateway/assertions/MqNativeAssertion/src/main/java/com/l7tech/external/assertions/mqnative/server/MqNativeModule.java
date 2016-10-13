@@ -57,6 +57,7 @@ import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.ConfigFactory.getBooleanProperty;
 import static com.l7tech.util.ConfigFactory.getTimeUnitProperty;
@@ -594,7 +595,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                                 MQQueue replyToQueue = null;
                                 try {
                                     boolean includeReplyToQueueManagerName = serverConfig.getBooleanProperty(
-                                            "ioMqIncludeReplyToQueueManagerName", true);
+                                            PARAM_IO_MQ_INCLUDE_REPLY_QUEUE_MANAGER_NAME, true);
                                     if (includeReplyToQueueManagerName && StringUtils.isNotEmpty(requestMessage.replyToQueueManagerName)) {
                                         logger.log(Level.FINER, "Accessing reply queue specifying replyToQueueManagerName: " + requestMessage.replyToQueueManagerName);
                                         replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption(), requestMessage.replyToQueueManagerName, null, null);

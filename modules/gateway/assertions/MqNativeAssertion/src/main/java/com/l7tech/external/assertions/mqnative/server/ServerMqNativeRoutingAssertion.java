@@ -563,11 +563,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         private void configureGetMessageOptions(MQGetMessageOptions gmo) {
             gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
 
-            if (config.getBooleanProperty("ioMqConvertMessageApplicationDataFormat", true)) {
+            if (config.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, true)) {
                 gmo.options |= MQGMO_CONVERT;
             }
 
-            if (config.getBooleanProperty("ioMqForceReturnPropertiesInMQRFH2Header", false)) {
+            if (config.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, false)) {
                 gmo.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
             }
         }
