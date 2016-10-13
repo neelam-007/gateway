@@ -2,6 +2,8 @@ package com.l7tech.server.cassandra;
 
 import com.ca.datasources.cassandra.CassandraUtil;
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.exceptions.DriverInternalError;
+import com.google.common.util.concurrent.Uninterruptibles;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
@@ -25,7 +27,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -259,9 +262,29 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
             //create our cassandra session
             if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
-                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(cassandraConnectionEntity.getKeyspaceName()), cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis())}));
+                }
             } else {
-                session = cluster.connect();
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect();
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(), cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis())}));
+                }
             }
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Created Cassandra Connection " + cassandraConnectionEntity.getName());
         } catch (Exception e) {
@@ -282,9 +305,29 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
             //create our cassandra session
             if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
-                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(cassandraConnectionEntity.getKeyspaceName()), cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis())}));
+                }
             } else {
-                session = cluster.connect();
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect();
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(), cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis())}));
+                }
             }
         }catch(Throwable t) {
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnectionEntity.getName(), t.getMessage()}, ExceptionUtils.getDebugException(t));

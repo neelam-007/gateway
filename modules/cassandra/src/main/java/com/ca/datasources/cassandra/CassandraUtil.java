@@ -85,15 +85,18 @@ public class CassandraUtil {
                 o = row.getInt(columnName);
                 break;
             case LIST:
-                o = row.getList(columnName, Object.class);
+                o = row.getObject(columnName);
                 break;
             case MAP:
-                o =row.getMap(columnName, Object.class, Object.class);
+                o = row.getObject(columnName);
                 break;
             case SET:
-                o = row.getSet(columnName, Object.class);
+                o = row.getObject(columnName);
                 break;
             case TIMESTAMP:
+                o = row.getTimestamp(columnName);
+                break;
+            case DATE:
                 o = row.getDate(columnName);
                 break;
             case UUID:
