@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.siteminder;
 
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -21,7 +23,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author ymoiseyenko
  * Date: 7/12/13
  */
-public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables{
+public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables, UsesEntities{
  
     public static final String DEFAULT_PREFIX = "siteminder";
 
@@ -115,6 +117,21 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress, serverName);
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[] { new EntityHeader(Goid.toString(agentGoid), EntityType.SITEMINDER_CONFIGURATION, null, null) };
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.SITEMINDER_CONFIGURATION) &&
+                oldEntityHeader.getGoid().equals(agentGoid) &&
+                newEntityHeader.getType().equals(EntityType.SITEMINDER_CONFIGURATION))
+        {
+            agentGoid = newEntityHeader.getGoid();
+        }
+    }
     //
     // Metadata
     //
