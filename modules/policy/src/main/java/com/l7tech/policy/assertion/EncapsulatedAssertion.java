@@ -227,11 +227,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         this.noOpIfConfigMissing = noOpIfConfigMissing;
     }
 
-    /**
-     * Migration mapping not supported for EncapsulatedAssertionConfig (it should already exist on the target SSG).
-     */
     @Override
-    @Migration(export = false, mapName = MigrationMappingSelection.NONE)
+    @Migration(mapName = MigrationMappingSelection.NONE)
     public EntityHeader[] getEntitiesUsed() {
         return configHeader.getGuid() == null
             ? new EntityHeader[0]

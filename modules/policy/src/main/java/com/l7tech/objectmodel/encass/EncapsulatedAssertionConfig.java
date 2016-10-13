@@ -141,7 +141,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp implemen
      * @return the policy, or null if not set.
      */
     @Valid
-    @Migration(dependency = false)
+    @Migration(dependency = true)
     @ManyToOne
     @JoinColumn(name = "policy_goid")
     @XmlElement (name = "Policy")

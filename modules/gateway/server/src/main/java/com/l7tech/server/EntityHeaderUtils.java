@@ -319,6 +319,11 @@ public final class EntityHeaderUtils {
                 break;
 
             case ENCAPSULATED_ASSERTION:
+				//EM-989 changes
+                header = new GuidEntityHeader(eh.getStrId(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
+                ((GuidEntityHeader) header).setGuid(eh.getExternalId());
+                break;
+
             case CLUSTER_PROPERTY:
                 header = new GuidEntityHeader(eh.getStrId(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
                 ((GuidEntityHeader) header).setGuid(eh.getStrId());

@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.PolicyAlias;
 
 import javax.xml.bind.annotation.*;
@@ -40,7 +41,7 @@ import java.io.Serializable;
  */
 @XmlRootElement
 @XmlType(propOrder={"metadata", "exportedItems"})
-@XmlSeeAlso({PublishedService.class, PublishedServiceAlias.class, PolicyAlias.class, ServiceDocument.class, ExportedItem.class})
+@XmlSeeAlso({PublishedService.class, PublishedServiceAlias.class, PolicyAlias.class, ServiceDocument.class, EncapsulatedAssertionConfig.class, ExportedItem.class})
 public class MigrationBundle implements Serializable {
 
     private MigrationMetadata metadata;

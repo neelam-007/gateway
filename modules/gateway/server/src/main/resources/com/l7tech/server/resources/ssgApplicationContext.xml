@@ -593,7 +593,7 @@
                 <constructor-arg value="rbacServices"/>
                 <constructor-arg value="com.l7tech.server.security.rbac.RbacServices"/>
             </bean>
-         </property>
+        </property>
     </bean>
     <bean id="rbacServices" class="com.l7tech.server.util.EntityCachingFactoryBean">
         <constructor-arg>
@@ -1946,7 +1946,7 @@
     </bean>
 
     <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager"
-            depends-on="configureServerVariablesSecurePasswordManager">
+          depends-on="configureServerVariablesSecurePasswordManager">
         <constructor-arg ref="jdbcConnectionManager" />
     </bean>
 
@@ -2176,6 +2176,7 @@
         <constructor-arg index="4" ref="policyManager"/>
         <constructor-arg index="5" ref="folderManager"/>
         <constructor-arg index="6" ref="serviceExternalEntityHeaderEnhancer"/>
+        <constructor-arg index="7" ref="encapsulatedAssertionConfigManager"/>
     </bean>
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">

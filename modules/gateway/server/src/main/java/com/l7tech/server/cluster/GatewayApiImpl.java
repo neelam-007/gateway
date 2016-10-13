@@ -7,7 +7,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -15,6 +15,8 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.service.ServiceExternalEntityHeaderEnhancer;
@@ -24,7 +26,7 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Config;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.l7tech.policy.exporter.EncapsulatedAssertionExportUtil;
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import java.util.*;
@@ -47,7 +49,8 @@ public class GatewayApiImpl implements GatewayApi {
                            final ServiceManager serviceManager,
                            final PolicyManager policyManager,
                            final FolderManager folderManager,
-                           final ServiceExternalEntityHeaderEnhancer serviceExternalEntityHeaderEnhancer ) {
+                           final ServiceExternalEntityHeaderEnhancer serviceExternalEntityHeaderEnhancer,
+                           final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
         this.config = config;
         this.clusterInfoManager = clusterInfoManager;
         this.securityFilter = securityFilter;
@@ -55,6 +58,7 @@ public class GatewayApiImpl implements GatewayApi {
         this.policyManager = policyManager;
         this.folderManager = folderManager;
         this.serviceExternalEntityHeaderEnhancer = serviceExternalEntityHeaderEnhancer;
+        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
     }
 
     @Override
@@ -102,7 +106,7 @@ public class GatewayApiImpl implements GatewayApi {
     @WebResult(name = "EntityInfos", targetNamespace = "http://www.layer7tech.com/management/gateway")
     public Collection<EntityInfo> getEntityInfo( Collection<EntityType> entityTypes ) throws GatewayException {
         if (entityTypes == null) // null means "all supported types"
-            entityTypes = Arrays.asList(EntityType.SERVICE, EntityType.SERVICE_ALIAS, EntityType.POLICY, EntityType.POLICY_ALIAS, EntityType.FOLDER);
+            entityTypes = Arrays.asList(EntityType.SERVICE, EntityType.SERVICE_ALIAS, EntityType.POLICY, EntityType.POLICY_ALIAS, EntityType.FOLDER,  EntityType.ENCAPSULATED_ASSERTION);
 
         Collection<EntityInfo> info = new ArrayList<EntityInfo>();
         User user = JaasUtils.getCurrentUser();
@@ -125,6 +129,9 @@ public class GatewayApiImpl implements GatewayApi {
                         break;
                     case FOLDER:
                         findFolderEntities( info, user );
+                        break;
+                    case ENCAPSULATED_ASSERTION:
+                        findEncapAssertionEntities(info, user);
                         break;
                     default:
                         logger.warning("Unsupported entity type requested '"+type+"'.");
@@ -150,7 +157,21 @@ public class GatewayApiImpl implements GatewayApi {
     private final PolicyManager policyManager;
     private final FolderManager folderManager;
     private final ServiceExternalEntityHeaderEnhancer serviceExternalEntityHeaderEnhancer;
+    private final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
+    private void findEncapAssertionEntities(final Collection<EntityInfo> info, final User user) throws FindException {
+        Collection<EncapsulatedAssertionConfig> lists = encapsulatedAssertionConfigManager.findAll();
+
+        for ( EncapsulatedAssertionConfig header : lists ) {
+            EntityType entityType = EntityType.ENCAPSULATED_ASSERTION;
+            String entityGoid = header.getGoid().toString();
+            String relatedOid = null;
+            String parentid = Goid.toString(header.getPolicy().getFolder().getGoid());
+            String entityName = header.getName();
+            ExternalEntityHeader externalHeader = new ExternalEntityHeader(header.getGuid(), entityType, header.getGuid(), entityName, null, header.getVersion());
+            info.add (new EntityInfo(entityType, externalHeader.getExternalId(), entityGoid, null, entityName, null, parentid, header.getVersion()));
+        }
+    }
     private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException {
         Collection<ServiceHeader> serviceHeaders = securityFilter.filter( serviceManager.findAllHeaders(true), user, OperationType.READ, null );
 

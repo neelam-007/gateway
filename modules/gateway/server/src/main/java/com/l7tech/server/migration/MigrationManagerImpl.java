@@ -5,6 +5,9 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.wsp.WspWriter;
@@ -19,6 +22,7 @@ import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -82,7 +86,7 @@ public class MigrationManagerImpl implements MigrationManager {
         }
         return result;
     }
-    
+
     @Override
     public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
@@ -119,7 +123,7 @@ public class MigrationManagerImpl implements MigrationManager {
     @Override
     @Transactional(readOnly = true)
     public MigrationBundle exportBundle(final Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException {
-        if ( headers == null || headers.isEmpty() ) throw new MigrationApi.MigrationException("Missing required parameter.");        
+        if ( headers == null || headers.isEmpty() ) throw new MigrationApi.MigrationException("Missing required parameter.");
         MigrationMetadata metadata = findDependencies(headers);
         MigrationBundle bundle = new MigrationBundle(metadata);
         for (ExternalEntityHeader header : metadata.getAllHeaders()) {
@@ -156,8 +160,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
     @Override
     public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(
-                        Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters)
-                        throws MigrationApi.MigrationException {
+            Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters)
+            throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> result = new HashMap<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>>();
 
@@ -170,7 +174,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     if (header instanceof ValueReferenceEntityHeader) {
                         // special handling for value reference headers
                         MigrationMetadata metadata = findDependencies(EntityHeaderUtils.toExternal(
-                            entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), customFilters, 0, 50)));
+                                entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), customFilters, 0, 50)));
                         for (ExternalEntityHeader maybeCandidate : metadata.getAllHeaders()) {
                             if (maybeCandidate instanceof ValueReferenceEntityHeader)
                                 candidates.add(maybeCandidate);
@@ -273,7 +277,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private void upload(ExternalEntityHeader header, MigrationBundle bundle, Map<ExternalEntityHeader, Entity> entitiesFromTarget, Map<ExternalEntityHeader, MigratedItem> result,
                         boolean overwriteExisting, boolean enableServices, boolean dryRun, boolean isRecursing)
-        throws MigrationApi.MigrationException, UpdateException, SaveException {
+            throws MigrationApi.MigrationException, UpdateException, SaveException {
 
         MigrationMetadata metadata = bundle.getMetadata();
 
@@ -402,7 +406,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     private Entity updateEntity(ExternalEntityHeader header, ExternalEntityHeader targetHeader, MigrationBundle bundle, Map<ExternalEntityHeader, Entity> entitiesFromTarget, boolean dryRun)
-        throws MigrationApi.MigrationException, UpdateException {
+            throws MigrationApi.MigrationException, UpdateException {
 
         if (header instanceof ValueReferenceEntityHeader) return bundle.getExportedEntity(((ValueReferenceEntityHeader)header).getOwnerHeader());
         Entity entity = header.isValueMappable() && header.getMappedValue() != null ? getValueMappedEntity(header, bundle) : bundle.getExportedEntity(header);
@@ -421,6 +425,62 @@ public class MigrationManagerImpl implements MigrationManager {
             ((PublishedService)entity).parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
         }
 
+        //EM-1084 changes
+        if (entity instanceof EncapsulatedAssertionConfig  && onTarget instanceof EncapsulatedAssertionConfig) {
+            EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) entity;
+            EncapsulatedAssertionConfig onTargetcfg = (EncapsulatedAssertionConfig) onTarget;
+            Set<EncapsulatedAssertionArgumentDescriptor> args = config.getArgumentDescriptors();
+            Set<EncapsulatedAssertionArgumentDescriptor> onTargetargs = onTargetcfg.getArgumentDescriptors();
+            boolean bArgPresent = false;
+
+            for (EncapsulatedAssertionArgumentDescriptor arg : args)
+            {
+                bArgPresent = false;
+                for (EncapsulatedAssertionArgumentDescriptor targetarg : onTargetargs) {
+
+                    if (arg.getArgumentName().equalsIgnoreCase(targetarg.getArgumentName())) {
+                        arg.setEncapsulatedAssertionConfig(targetarg.getEncapsulatedAssertionConfig());
+                        arg.setGoid(targetarg.getGoid());
+                        arg.setVersion(targetarg.getVersion());
+                        bArgPresent = true;
+                        break;
+                    }
+                }
+                if (!bArgPresent) {
+                    arg.setEncapsulatedAssertionConfig(config);
+                }
+            }
+
+            Set<EncapsulatedAssertionResultDescriptor> results = config.getResultDescriptors();
+            Set<EncapsulatedAssertionResultDescriptor> onTargetResults = onTargetcfg.getResultDescriptors();
+            boolean bResultPresent = false;
+            for (EncapsulatedAssertionResultDescriptor result : results)
+            {
+                bResultPresent = false;
+                for (EncapsulatedAssertionResultDescriptor targetresult : onTargetResults) {
+
+                    if (result.getResultName().equalsIgnoreCase(targetresult.getResultName())) {
+                        result.setEncapsulatedAssertionConfig(targetresult.getEncapsulatedAssertionConfig());
+                        result.setGoid(targetresult.getGoid());
+                        result.setVersion(targetresult.getVersion());
+                        bResultPresent = true;
+                        break;
+                    }
+                }
+
+                if (!bResultPresent) {
+                    result.setEncapsulatedAssertionConfig(config);
+                }
+            }
+        }
+
+        if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
+            ((PublishedService)entity).getPolicy().setGoid(((PublishedService)onTarget).getPolicy().getGoid());
+            ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
+            ((PublishedService)entity).setDisabled(((PublishedService)onTarget).isDisabled());
+            ((PublishedService)entity).parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
+        }
+
         if (entity instanceof Flushable ) {
             try {
                 ((Flushable)entity).flush();
@@ -432,7 +492,7 @@ public class MigrationManagerImpl implements MigrationManager {
         if (!dryRun) {
             entityCrud.update(entity);
             // todo: need more reliable method of retrieving the new version;
-            // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different) 
+            // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different)
             if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity)
                 ((PersistentEntity) entity).setVersion(((PersistentEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
         }
@@ -463,6 +523,26 @@ public class MigrationManagerImpl implements MigrationManager {
         if (!dryRun) {
             if (entity instanceof PersistentEntity)
                 ((PersistentEntity) entity).setVersion(0);
+            if (entity instanceof EncapsulatedAssertionConfig) {
+                //it is needed to set the goid to the default so that the encass argument and result objects get created in the database properly
+                //(it's a hibernate thing). They will be assigned a goid when they are created
+                EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) entity;
+                Set<EncapsulatedAssertionArgumentDescriptor> args = config.getArgumentDescriptors();
+
+                for (EncapsulatedAssertionArgumentDescriptor arg : args)
+                {
+                    arg.setEncapsulatedAssertionConfig(config);
+                    arg.setGoid(EncapsulatedAssertionArgumentDescriptor.DEFAULT_GOID);
+                }
+
+                Set<EncapsulatedAssertionResultDescriptor> results = config.getResultDescriptors();
+
+                for (EncapsulatedAssertionResultDescriptor result : results)
+                {
+                    result.setEncapsulatedAssertionConfig(config);
+                    result.setGoid(EncapsulatedAssertionResultDescriptor.DEFAULT_GOID);
+                }
+            }
             Serializable id = entityCrud.save(entity);
             if(entity instanceof PersistentEntity){
                 ((PersistentEntity) entity).setGoid((Goid)id);
@@ -552,7 +632,7 @@ public class MigrationManagerImpl implements MigrationManager {
         // check that entity values are available for all headers, either in the bundle or already on the SSG
         for (ExternalEntityHeader header : metadata.getAllHeaders()) {
             if ( ! bundle.hasValueForHeader(header) && ! entitiesFromTarget.containsKey(header) &&
-                 ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) ) {
+                    ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) ) {
                 if (header.getType() == EntityType.ENCAPSULATED_ASSERTION) {
                     errors.add("Encapsulated Assertion not found for header: " + header + ". Please import the Encapsulated Assertion on the target prior to migrating.");
                 } else {
@@ -611,15 +691,15 @@ public class MigrationManagerImpl implements MigrationManager {
                 for (ExternalEntityHeader depHeader : deps.keySet()) {
                     ExternalEntityHeader resolvedDepHeader = resolveHeader(depHeader);
                     for ( MigrationDependency dependency : deps.get(depHeader) ) {
-                        if (dependency != null) { // only the depHeader is useful for inverse dependencies 
+                        if (dependency != null) { // only the depHeader is useful for inverse dependencies
                             dependency.setDependency(resolvedDepHeader);
                             result.addDependency(dependency);
                             logger.log(Level.FINE, "Added dependency: " + dependency);
                         }
                         if ( ! visited.contains(resolvedDepHeader) &&
-                             (dependency == null || dependency.getMappingType() != MigrationMappingSelection.REQUIRED) &&
-                             resolvedDepHeader.getValueMapping() != MigrationMappingSelection.REQUIRED &&
-                             ! (depHeader instanceof ValueReferenceEntityHeader) )  {
+                                (dependency == null || dependency.getMappingType() != MigrationMappingSelection.REQUIRED) &&
+                                resolvedDepHeader.getValueMapping() != MigrationMappingSelection.REQUIRED &&
+                                ! (depHeader instanceof ValueReferenceEntityHeader) )  {
                             findDependenciesRecursive( result, resolvedDepHeader, visited );
                         }
                     }
@@ -690,7 +770,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private String getDisplayId(EntityHeader header) {
         String id = header instanceof GuidEntityHeader ? ((GuidEntityHeader)header).getGuid() :
-                    !header.getGoid().equals(PersistentEntity.DEFAULT_GOID) ? Goid.toString(header.getGoid()) : null;
+                !header.getGoid().equals(PersistentEntity.DEFAULT_GOID) ? Goid.toString(header.getGoid()) : null;
         return id == null ? "" : " (#" + id + ")";
     }
 
