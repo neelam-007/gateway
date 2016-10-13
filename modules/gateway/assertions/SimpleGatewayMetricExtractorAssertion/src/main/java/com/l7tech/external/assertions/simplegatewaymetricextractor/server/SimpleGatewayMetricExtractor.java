@@ -1,38 +1,53 @@
-package com.l7tech.server.module.simplegatewaymetricextractor;
+package com.l7tech.external.assertions.simplegatewaymetricextractor.server;
 
+import com.l7tech.external.assertions.simplegatewaymetricextractor.SimpleGatewayMetricExtractorEntity;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.metrics.AssertionFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.metrics.GatewayMetricsListener;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.variable.DebugTraceVariableContextSelector;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Sample listener for a monitoring assertion.
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractor.class.getName());
 
     private static SimpleGatewayMetricExtractor instance = null;
     private final GatewayMetricsPublisher gatewayMetricsEventsPublisher;
+    private EntityManager<SimpleGatewayMetricExtractorEntity, GenericEntityHeader> entityManager;
+    private String serviceFilterName = null;
 
     private SimpleGatewayMetricExtractor(final ApplicationContext applicationContext) {
         gatewayMetricsEventsPublisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
         gatewayMetricsEventsPublisher.addListener(this);
+
+        GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        entityManager = gem.getEntityManager(SimpleGatewayMetricExtractorEntity.class);
     }
 
     /**
@@ -40,30 +55,46 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
      */
     @Override
     public void assertionFinished(@NotNull final AssertionFinished assertionFinished) {
-        final Assertion assertion = assertionFinished.getAssertion();
-
+        // apply service filter
         final PolicyEnforcementContext pec = assertionFinished.getContext();
-        String assertionNumber = getAssertionNumber(pec, assertion);
-        final AssertionMetrics metrics = assertionFinished.getAssertionMetrics();
-        final Pair<String, String> policyNameAndGuid = getPolicyNameAndGuid(pec);
+        final String serviceName = getServiceName(pec);
+        Collection<SimpleGatewayMetricExtractorEntity> entities;
+        try {
+            entities = entityManager.findAll();
+            if(entities.iterator().hasNext()) {
+                serviceFilterName = entities.iterator().next().getServiceNameFilter();
+            } else {
+                serviceFilterName = null;
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error loading configuration: "+ getMessage(e), getDebugException(e) );
+        }
 
-        //final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        logger.log(
-                Level.INFO,
-                new StringBuilder("ASSERTION LATENCY: ")
-                        .append("request-id=").append(getRequestId(pec)).append(" ")
-                        .append("service name=").append(getServiceName(pec)).append(" ")
-                        .append("policy name=").append(policyNameAndGuid.left).append(" ")
-                        .append("policy guid=").append(policyNameAndGuid.right).append(" ")
-                        .append("number=").append(assertionNumber).append(" ")
-                        .append("assertion name=").append(assertion.meta().get(AssertionMetadata.SHORT_NAME)).append(" ")
-                        .append("startTime=").append(metrics.getStartTimeMs()).append(" ")//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
-                        .append("latency=").append(metrics.getLatencyMs())
-                        .toString()
-        );
+        if (isEmpty(serviceFilterName) || serviceFilterName.equals(serviceName) ) {
+            final Assertion assertion = assertionFinished.getAssertion();
+            String assertionNumber = getAssertionNumber(pec, assertion);
+            final AssertionMetrics metrics = assertionFinished.getAssertionMetrics();
+            final Pair<String, String> policyNameAndGuid = getPolicyNameAndGuid(pec);
+
+            //final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+            logger.log(
+                    Level.INFO,
+                    "ASSERTION LATENCY: " +
+                            "request-id=" + getRequestId(pec) + " " +
+                            "service name=" + serviceName + " " +
+                            "policy name=" + policyNameAndGuid.left + " " +
+                            "policy guid=" + policyNameAndGuid.right + " " +
+                            "number=" + assertionNumber + " " +
+                            "assertion name=" + assertion.meta().get(AssertionMetadata.SHORT_NAME) + " " +
+                            "startTime=" + metrics.getStartTimeMs() + " " +//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
+                            "latency=" + metrics.getLatencyMs()
+            );
+        }
 
         // TODO add access to PolicyHeader (maybe as ${request.executingPolicy.<policy_header_field>
         // TODO add / verify access to requestId
+        // TODO add sample use of ConcurrentLinkedQueue
+        // TODO add sample how to set user defined context variable
     }
 
     private String getAssertionNumber(@NotNull final PolicyEnforcementContext pec, @Nullable final Assertion assertion) {
@@ -121,10 +152,11 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
             try {
                 instance.destroy();
             } catch (Exception e) {
-                logger.log(Level.WARNING, "SimpleGatewayMetricExtractor module threw exception on shutdown: " + ExceptionUtils.getMessage(e), e);
+                logger.log(Level.WARNING, "SimpleGatewayMetricExtractor module threw exception on shutdown: " + getMessage(e), e);
             } finally {
                 instance = null;
             }
         }
+        GenericEntityManagerSimpleGatewayMetricExtractorServerSupport.clearInstance();
     }
 }

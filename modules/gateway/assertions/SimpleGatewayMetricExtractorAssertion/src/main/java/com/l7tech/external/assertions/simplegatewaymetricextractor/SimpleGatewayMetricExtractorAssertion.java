@@ -1,20 +1,25 @@
 package com.l7tech.external.assertions.simplegatewaymetricextractor;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.server.policy.assertion.ServerFalseAssertion;
+import com.l7tech.external.assertions.simplegatewaymetricextractor.server.GenericEntityManagerSimpleGatewayMetricExtractorServerSupport;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * A sample monitoring assertion for the GateWayMetrics framework.
  */
-public class SimpleGatewayMetricExtractorAssertion extends Assertion implements UsesVariables {
-    protected static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractorAssertion.class.getName());
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class SimpleGatewayMetricExtractorAssertion extends Assertion implements UsesVariables, UsesEntities {
+    private Goid genericEntityId;
+    private String genericEntityClass;
 
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
@@ -24,6 +29,7 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
     // Metadata
     //
     private static final String META_INITIALIZED = SimpleGatewayMetricExtractorAssertion.class.getName() + ".metadataInitialized";
+
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -50,13 +56,36 @@ public class SimpleGatewayMetricExtractorAssertion extends Assertion implements 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
         // Subscribe our extractor to the module loading events so it can set up its application listener
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.server.module.simplegatewaymetricextractor.SimpleGatewayMetricExtractor");
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.simplegatewaymetricextractor.server.SimpleGatewayMetricExtractor");
 
         // want a placeholder server assertion that always fails
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.server.policy.assertion.ServerFalseAssertion");
+
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.simplegatewaymetricextractor.console.SimpleGatewayMetricExtractorAction" } );
+
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                return GenericEntityManagerSimpleGatewayMetricExtractorServerSupport.getInstance(appContext).getExtensionInterfaceBindings();
+            }
+        });
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        return genericEntityId == null
+                ? new EntityHeader[0]
+                : new EntityHeader[] { new GenericEntityHeader(genericEntityId.toString(), null, null, null, genericEntityClass) };
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (newEntityHeader != null && EntityType.GENERIC.equals(newEntityHeader.getType()) && newEntityHeader instanceof GenericEntityHeader) {
+            genericEntityId = newEntityHeader.getGoid();
+            genericEntityClass = ((GenericEntityHeader) newEntityHeader).getEntityClassName();
+        }
+    }
 }
