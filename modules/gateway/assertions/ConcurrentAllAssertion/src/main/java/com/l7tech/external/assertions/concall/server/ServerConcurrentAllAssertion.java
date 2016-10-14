@@ -333,9 +333,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             copyValue(ret, name, value);
         }
 
-        for ( final Integer ordinal : source.getAssertionOrdinalPath() ) {
-            ret.pushAssertionOrdinal( ordinal );
-        }
+        source.passDownAssertionOrdinal(ret);
 
         return ret;
     }

@@ -601,7 +601,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     @Override
     public Collection<Integer> getAssertionNumber() {
-        final List<Integer> number = new ArrayList<>( getAssertionOrdinalPath() );
+        final Collection<Integer> number;
+        if (assertionOrdinalPath != null) {
+            number = new ArrayList<>(assertionOrdinalPath.size() + 1); // preallocate assertionOrdinalPath.size + potential one (for currentAssertion)
+            for (final Integer ordinal : assertionOrdinalPath) {
+                number.add(ordinal);
+            }
+        } else {
+            number = new ArrayList<>(); // use default initial size (should be 10)
+        }
+
         final ServerAssertion sass = currentAssertion;
         final Assertion ass = sass == null ? null : sass.getAssertion();
         if ( ass != null ) {
@@ -858,6 +867,15 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         if (assertionOrdinalPath == null)
             throw new NoSuchElementException("no assertion ordinal path");
         return assertionOrdinalPath.removeLast();
+    }
+
+    @Override
+    public void passDownAssertionOrdinal(@NotNull final PolicyEnforcementContext child) {
+        if (assertionOrdinalPath != null) {
+            for (final Integer assertionOrdinal : assertionOrdinalPath) {
+                child.pushAssertionOrdinal(assertionOrdinal);
+            }
+        }
     }
 
     @Override

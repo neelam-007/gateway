@@ -467,6 +467,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public void passDownAssertionOrdinal(@NotNull final PolicyEnforcementContext child) {
+        delegate.passDownAssertionOrdinal(child);
+    }
+
+    @Override
     public void setTraceListener(AssertionTraceListener traceListener) {
         delegate.setTraceListener(traceListener);
     }

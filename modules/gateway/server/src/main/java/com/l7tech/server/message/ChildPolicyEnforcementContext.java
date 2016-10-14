@@ -348,6 +348,11 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
+    public void passDownAssertionOrdinal(@NotNull final PolicyEnforcementContext child) {
+        context.passDownAssertionOrdinal(child);
+    }
+
+    @Override
     public Collection<Integer> getAssertionNumber() {
         return context.getAssertionNumber();
     }

@@ -207,9 +207,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                     .createPolicyEnforcementContext(context, config.getBooleanProperty(PROP_PASS_METRICS_TO_PARENT));
             ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
 
-            for (Integer assertionOrdinal : context.getAssertionOrdinalPath()) {
-                childContext.pushAssertionOrdinal(assertionOrdinal);
-            }
+            context.passDownAssertionOrdinal(childContext);
             enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));
 
             populateInputVariables(config, variableMap, context, childContext, spv);

@@ -36,7 +36,7 @@ import java.util.logging.Level;
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  */
-public interface PolicyEnforcementContext extends Closeable {
+public interface PolicyEnforcementContext extends AssertionOrdinalProcessor, Closeable {
 
     Message getRequest();
 

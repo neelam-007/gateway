@@ -541,6 +541,11 @@ public final class GatewayMetricsUtils {
             }
 
             @Override
+            public void passDownAssertionOrdinal(@NotNull final PolicyEnforcementContext child) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
             public void setTraceListener(final AssertionTraceListener traceListener) {
                 throw new UnsupportedOperationException();
             }

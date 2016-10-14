@@ -342,9 +342,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             copyValue(ret, name, value);
         }
 
-        for ( final Integer ordinal : source.getAssertionOrdinalPath() ) {
-            ret.pushAssertionOrdinal( ordinal );
-        }
+        source.passDownAssertionOrdinal(ret);
 
         return ret;
     }
