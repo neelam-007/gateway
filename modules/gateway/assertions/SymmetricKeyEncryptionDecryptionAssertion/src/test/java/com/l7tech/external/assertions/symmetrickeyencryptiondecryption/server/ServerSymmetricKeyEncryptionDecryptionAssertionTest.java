@@ -192,10 +192,10 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String text = "happypathtest";
         String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
         String Algorithm = "DESede/CBC/PKCS5Padding";
-        String _56bitkey = "thisour1";
-        String _56bitkeyB64 = HexUtils.encodeBase64(_56bitkey.getBytes(Charsets.UTF8));
+        String _key = JceProvider.getInstance().isFips140ModeEnabled()? "thisour1thisour1thisour1" : "thisour1";
+        String _keyB64 = HexUtils.encodeBase64(_key.getBytes(Charsets.UTF8));
         String variableName = "128bitencryptoutputtest";
-        setUpAssertion(encryptassertion, b64encodedText, _56bitkeyB64, variableName, Algorithm, true,"");
+        setUpAssertion(encryptassertion, b64encodedText, _keyB64, variableName, Algorithm, true,"");
 
         ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
         AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
@@ -206,7 +206,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
 
         String decryptVariableName = "128bitdecryptoutputtest";
         SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
-        setUpAssertion(decryptionAssertion, output, _56bitkeyB64, decryptVariableName, Algorithm, false,"");
+        setUpAssertion(decryptionAssertion, output, _keyB64, decryptVariableName, Algorithm, false,"");
 
         ServerSymmetricKeyEncryptionDecryptionAssertion decryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
         status = decryptserverAssertion.checkRequest(mockPolicyEnforcementContext);

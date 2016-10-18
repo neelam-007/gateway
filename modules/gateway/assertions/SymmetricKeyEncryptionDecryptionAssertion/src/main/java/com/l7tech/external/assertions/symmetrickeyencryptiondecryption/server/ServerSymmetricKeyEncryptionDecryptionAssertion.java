@@ -189,7 +189,10 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
 
         // Ensure TripleDES key with 8 bytes is always converted to 16 bytes.  The following code makes the new version of
         // this assertion be compatible with policies from previous Gateway versions.
-        if ((transformation.toLowerCase().startsWith("desede") || transformation.toLowerCase().startsWith("tripledes"))  && keyBytes.length == 8) {
+        // Note this key conversion is only for Non-FIPS mode.
+        // For FIPS, the key size must be either 16 bytes (CCJ 2.2.1 accepts) or 24 bytes (CCJ 2.2.1 and CCJ 3.0 accepts).
+        if ((!JceProvider.getInstance().isFips140ModeEnabled()) && keyBytes.length == 8 &&
+            (transformation.toLowerCase().startsWith("desede") || transformation.toLowerCase().startsWith("tripledes"))) {
             byte[] newKeyBytes = new byte[16];
             // Copy K1
             System.arraycopy( keyBytes, 0, newKeyBytes, 0, keyBytes.length );
