@@ -1,10 +1,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
@@ -121,7 +118,11 @@ public class MimeHeader implements HttpHeader {
                 throw new IOException("Invalid MIME Content-Length header value: " + value);
             }
         }
-        return new MimeHeader(name, value, fullValue, true);
+        try {
+            return new MimeHeader( name, value, fullValue, true );
+        } catch ( IllegalArgumentException e ) {
+            throw new IOException( "Invalid MIME header value: " + ExceptionUtils.getMessage( e ), e );
+        }
     }
 
     private static final Pattern COMMAPAT = Pattern.compile("\\s*,\\s*");

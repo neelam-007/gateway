@@ -136,11 +136,14 @@ public final class Message implements Closeable {
         if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
-        rootFacet = new MimeFacet(this, sm, outerContentType, body,firstPartMaxBytes);
-        for (PreservableFacet preservable : preservables) {
-            rootFacet = preservable.reattach(this, rootFacet);
+        try {
+            rootFacet = new MimeFacet( this, sm, outerContentType, body, firstPartMaxBytes );
+        } finally {
+            for (PreservableFacet preservable : preservables) {
+                rootFacet = preservable.reattach(this, rootFacet);
+            }
+            invalidateCachedKnobs();
         }
-        invalidateCachedKnobs();
         initialized = true;
     }
 
