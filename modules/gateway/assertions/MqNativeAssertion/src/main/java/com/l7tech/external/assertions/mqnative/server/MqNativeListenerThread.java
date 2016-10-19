@@ -14,8 +14,6 @@ import java.util.logging.Level;
 
 import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
-import static com.ibm.mq.constants.MQConstants.MQGMO_PROPERTIES_FORCE_MQRFH2;
-import static com.ibm.mq.constants.MQConstants.MQGMO_CONVERT;
 import static java.text.MessageFormat.format;
 
 /**
@@ -59,15 +57,6 @@ class MqNativeListenerThread extends Thread {
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-
-                            if (MqNativeUtils.isMessageDataConversionEnabled()) {
-                                getOptions.options |= MQGMO_CONVERT;
-                            }
-
-                            if (MqNativeUtils.isForcePropertiesInMQRFH2HeaderEnabled()) {
-                                getOptions.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
-                            }
-
                             getOptions.waitInterval = pollInterval.get();
                             return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
                         }
