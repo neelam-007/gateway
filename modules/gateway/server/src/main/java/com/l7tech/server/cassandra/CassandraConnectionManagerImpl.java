@@ -2,6 +2,8 @@ package com.l7tech.server.cassandra;
 
 import com.ca.datasources.cassandra.CassandraUtil;
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.exceptions.DriverInternalError;
+import com.google.common.util.concurrent.Uninterruptibles;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
@@ -25,7 +27,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -47,6 +50,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final SecureRandom secureRandom;
     private final static Audit auditor = new LoggingAudit(logger);
     private final Timer timer;
+    private final String[] DEFAULT_SSL_CIPHER_SUITES = { "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA" };
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
     private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
 
@@ -256,11 +260,33 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         try {
             cluster = this.buildCluster(cassandraConnectionEntity);
 
+            String keySpaceName = cassandraConnectionEntity.getKeyspaceName();
+            int connectionTimeOutMills = cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis();
             //create our cassandra session
-            if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
-                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+            if (StringUtils.isNotBlank(keySpaceName)) {
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(keySpaceName), connectionTimeOutMills, TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(connectionTimeOutMills)}));
+                }
             } else {
-                session = cluster.connect();
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect();
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(), connectionTimeOutMills, TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(connectionTimeOutMills)}));
+                }
             }
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Created Cassandra Connection " + cassandraConnectionEntity.getName());
         } catch (Exception e) {
@@ -279,11 +305,33 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         try {
             cluster = this.buildCluster(cassandraConnectionEntity);
 
+            String keySpaceName = cassandraConnectionEntity.getKeyspaceName();
+            int connectionTimeOutMills = cluster.getConfiguration().getSocketOptions().getConnectTimeoutMillis();
             //create our cassandra session
-            if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
-                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+            if (StringUtils.isNotBlank(keySpaceName)) {
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(keySpaceName), connectionTimeOutMills, TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(connectionTimeOutMills)}));
+                }
             } else {
-                session = cluster.connect();
+                /**
+                 * cluster.connect in cassandra 3.1.0 no longer support customized connection timeout.
+                 * if the future driver support it, please change below to :
+                 *
+                 * session = cluster.connect();
+                 */
+                try {
+                    session = (Session) Uninterruptibles.getUninterruptibly(cluster.connectAsync(), connectionTimeOutMills, TimeUnit.MILLISECONDS);
+                } catch (ExecutionException var2) {
+                    throw new DriverInternalError(String.format("No responses after %d milliseconds while setting current keyspace. This should not happen, unless you have setup a very low connection timeout.", new Object[]{Long.valueOf(connectionTimeOutMills)}));
+                }
             }
         }catch(Throwable t) {
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnectionEntity.getName(), t.getMessage()}, ExceptionUtils.getDebugException(t));
@@ -353,7 +401,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         int defaultMaxSimultaneousReqPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST, (hd == HostDistance.LOCAL? MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF: MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF));
         int maxSimultaneousReqPerHost = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_SIMUL_REQ_PER_HOST), defaultMaxSimultaneousReqPerHost) : defaultMaxSimultaneousReqPerHost;
 
-        poolingOptions.setMaxSimultaneousRequestsPerHostThreshold(hd, maxSimultaneousReqPerHost);
+        poolingOptions.setMaxConnectionsPerHost(hd, maxSimultaneousReqPerHost);
 
         clusterBuilder.withPoolingOptions(poolingOptions);
     }
@@ -485,9 +533,9 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             String cipherSuiteList = cassandraConnectionEntity.getTlsEnabledCipherSuites();
             SSLOptions sslOptions;
             if ( !( cipherSuiteList == null || cipherSuiteList.equals("") ) ) {
-                sslOptions = new SSLOptions(sslContext, cipherSuiteList.split("\\s*,\\s*"));
+                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(cipherSuiteList.split("\\s*,\\s*")).build();
             } else {
-                sslOptions = new SSLOptions(sslContext, SSLOptions.DEFAULT_SSL_CIPHER_SUITES);
+                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(DEFAULT_SSL_CIPHER_SUITES).build();
             }
             //add the ssl options to our cluster
             clusterBuilder.withSSL(sslOptions);

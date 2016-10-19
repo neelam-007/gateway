@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.UUID;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -49,6 +50,13 @@ public class CassandraUtilTest {
     }
 
     @Test
+    public void  testLongJavaType2CassandraCounterDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.counter());
+        assertEquals(new Long(123456789098786655L), CassandraUtil.javaType2CassandraDataType(mockDefinition, new Long(123456789098786655L)));
+        assertEquals(new Long(123456789098786655L), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("123456789098786655")));
+    }
+
+    @Test
     public void  testDoubleJavaType2CassandraBigIntDataType() throws Exception {
         mockDefinition = new MockDefinition("test","table", "column", DataType.cdouble());
         assertEquals(new Double(33.33), CassandraUtil.javaType2CassandraDataType(mockDefinition, new Double(33.33)));
@@ -61,4 +69,42 @@ public class CassandraUtilTest {
         assertEquals(new BigDecimal(3399999999999999999999999999999999933.), CassandraUtil.javaType2CassandraDataType(mockDefinition, new BigDecimal(3399999999999999999999999999999999933.)));
         assertEquals(new BigDecimal(3399999999999999999999999999999999933.), CassandraUtil.javaType2CassandraDataType(mockDefinition, new BigDecimal(3399999999999999999999999999999999933.).toPlainString()));
     }
+
+    @Test
+    public void testIntegerJavaType2CassandraCintDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.cint());
+        assertEquals(new Integer("1112"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new Integer("1112")));
+        assertEquals(new Integer("1112"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("1112")));
+    }
+
+    @Test
+    public void testStringJavaType2CassandraAsciiDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.ascii());
+        assertEquals(new String("test"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("test")));
+    }
+
+    @Test
+    public void testStringJavaType2CassandraTextDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.text());
+        assertEquals(new String("test"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("test")));
+    }
+
+    @Test
+    public void testStringJavaType2CassandraVarcharDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.varchar());
+        assertEquals(new String("test"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("test")));
+    }
+
+    @Test
+    public void testUUIDJavaType2CassandraUuidDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.uuid());
+        assertEquals(UUID.fromString("123456789"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("123456789")));
+    }
+
+    @Test
+    public void testUUIDJavaType2CassandraTimeuuidDataType() throws Exception {
+        mockDefinition = new MockDefinition("test","table", "column", DataType.timeuuid());
+        assertEquals(UUID.fromString("123456789"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("123456789")));
+    }
+
 }
