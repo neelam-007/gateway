@@ -3391,6 +3391,13 @@
                     </fileset>
                 </copy>
 
+                <!-- Copy a hmac file for CCJ 2.2.1 -->
+                <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
+                    <fileset dir="${src.root}/lib/repository/com.safelogic.cryptocomply" casesensitive="yes">
+                        <include name="cryptocomply-2.2.1.hmac"/>
+                    </fileset>
+                </copy>
+
                 <copy todir="@{dir}/${install.src.ssg.liquibase}">
                     <fileset dir="${src.root}/etc/db/liquibase">
                         <include name="ssg*.xml"/>
