@@ -1,5 +1,6 @@
 package com.l7tech.server.management.migration.bundle;
 
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -41,7 +42,7 @@ import java.io.Serializable;
  */
 @XmlRootElement
 @XmlType(propOrder={"metadata", "exportedItems"})
-@XmlSeeAlso({PublishedService.class, PublishedServiceAlias.class, PolicyAlias.class, ServiceDocument.class, EncapsulatedAssertionConfig.class, ExportedItem.class})
+@XmlSeeAlso(value = {PublishedService.class, PublishedServiceAlias.class, PolicyAlias.class, ServiceDocument.class, EncapsulatedAssertionConfig.class, ExportedItem.class, SecurePassword.class})
 public class MigrationBundle implements Serializable {
 
     private MigrationMetadata metadata;
