@@ -58,8 +58,6 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONN
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.objectmodel.EntityUtil.name;
-import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
-import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
 import static com.l7tech.util.ArrayUtils.contains;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -563,11 +561,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         private void configureGetMessageOptions(MQGetMessageOptions gmo) {
             gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
 
-            if (config.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, true)) {
+            if (isMessageDataConversionEnabled()) {
                 gmo.options |= MQGMO_CONVERT;
             }
 
-            if (config.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, false)) {
+            if (isForcePropertiesInMQRFH2HeaderEnabled()) {
                 gmo.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
             }
         }
@@ -673,7 +671,6 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                                    @Nullable final String replyQueueName )
         throws IOException, MQDataException, MQException, MqNativeRuntimeException, MqNativeConfigException
     {
-        final PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;
         Message gatewayRequestMessage;
         try {
@@ -682,13 +679,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
         final MimeKnob mk = gatewayRequestMessage.getMimeKnob();
-        try {
-            IOUtils.copyStream( mk.getEntireMessageBodyAsInputStream(), outputStream );
+        try (PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream()) {
+            IOUtils.copyStream(mk.getEntireMessageBodyAsInputStream(), outputStream);
             outboundRequestBytes = outputStream.toByteArray();
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Couldn't read from MQ request"); // can't happen
-        } finally {
-            outputStream.close();
         }
 
         // instantiate the request MQMessage

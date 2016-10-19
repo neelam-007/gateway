@@ -155,10 +155,7 @@ public class MqNativeListenerTest extends AbstractJUnit4SpringContextTests {
                             return null;
                         }
                     });
-                } catch (MQException e) {
-                    System.err.println(Arrays.toString(e.getStackTrace()));
-                    fail(e.getMessage());
-                } catch (MqNativeConfigException e) {
+                } catch (MQException | MqNativeConfigException e) {
                     System.err.println(Arrays.toString(e.getStackTrace()));
                     fail(e.getMessage());
                 }

@@ -41,6 +41,8 @@ import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.isNotEmpty;
@@ -449,4 +451,13 @@ public class MqNativeUtils {
         return config.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_SET_ALL_CONTEXT, false);
     }
 
+    public static boolean isMessageDataConversionEnabled() {
+        ServerConfig config = ServerConfig.getInstance();
+        return config.getBooleanProperty(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT, true);
+    }
+
+    public static boolean isForcePropertiesInMQRFH2HeaderEnabled() {
+        ServerConfig config = ServerConfig.getInstance();
+        return config.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, false);
+    }
 }
