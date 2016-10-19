@@ -4,7 +4,7 @@
 		module="cassandra-driver-core"
 		revision="3.1.0"
 		status="release"
-		publication="20141017104632"
+		publication="20160727104632"
 		default="true"
 	/>
 	<configurations>

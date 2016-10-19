@@ -4,7 +4,7 @@
 		module="netty-all"
 		revision="4.1.1.Final"
 		status="release"
-		publication="20141017104808"
+		publication="20160607104808"
 		default="true"
 	/>
 	<configurations>
