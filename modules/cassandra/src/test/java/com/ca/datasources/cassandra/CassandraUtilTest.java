@@ -98,13 +98,13 @@ public class CassandraUtilTest {
     @Test
     public void testUUIDJavaType2CassandraUuidDataType() throws Exception {
         mockDefinition = new MockDefinition("test","table", "column", DataType.uuid());
-        assertEquals(UUID.fromString("123456789"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("123456789")));
+        assertEquals(UUID.fromString("65511f58-a2a9-4c1d-a12b-44b06ea5ecdd"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("65511f58-a2a9-4c1d-a12b-44b06ea5ecdd")));
     }
 
     @Test
     public void testUUIDJavaType2CassandraTimeuuidDataType() throws Exception {
         mockDefinition = new MockDefinition("test","table", "column", DataType.timeuuid());
-        assertEquals(UUID.fromString("123456789"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("123456789")));
+        assertEquals(UUID.fromString("65511f58-a2a9-4c1d-a12b-44b06ea5ecdd"), CassandraUtil.javaType2CassandraDataType(mockDefinition, new String("65511f58-a2a9-4c1d-a12b-44b06ea5ecdd")));
     }
 
 }
